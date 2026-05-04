@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from ..models import UpsertFinding
+from ..commands import UpsertFinding
 from ..records import FindingRecord
 from ..serialization import finding_row, json_dumps, utc_now
 from .base import BaseRepository

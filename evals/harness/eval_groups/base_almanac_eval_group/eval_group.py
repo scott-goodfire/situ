@@ -51,4 +51,3 @@ class BaseAlmanacEvalGroup(BaseModel, Generic[T_Input, T_Output]):
 
     def teardown(self) -> None:
         return None
-

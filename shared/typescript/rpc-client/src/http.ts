@@ -1,0 +1,132 @@
+import type { JsonRpcNotification } from "@almanac/protocol";
+
+type NotificationHandler = (notification: JsonRpcNotification) => void;
+
+type RpcResponse<TResult> =
+  | { result: TResult; error?: never }
+  | { result?: never; error: { message: string } };
+
+export class HttpJsonRpcClient {
+  private notificationAbort: AbortController | null = null;
+  private notificationHandlers = new Set<NotificationHandler>();
+
+  constructor(
+    private readonly baseUrl: string,
+    private readonly token: string,
+  ) {}
+
+  async health(): Promise<boolean> {
+    const response = await fetch(new URL("/health", this.baseUrl), {
+      headers: this.authHeaders(),
+    });
+    return response.ok;
+  }
+
+  async request<TResult, TParams = unknown>(method: string, params?: TParams): Promise<TResult> {
+    const response = await fetch(new URL("/rpc", this.baseUrl), {
+      method: "POST",
+      headers: {
+        ...this.authHeaders(),
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({ method, params }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`RPC request failed with HTTP ${response.status}`);
+    }
+
+    const payload = (await response.json()) as RpcResponse<TResult>;
+    if ("error" in payload && payload.error) {
+      throw new Error(payload.error.message);
+    }
+    return payload.result;
+  }
+
+  onNotification(handler: NotificationHandler): () => void {
+    this.notificationHandlers.add(handler);
+    if (!this.notificationAbort) {
+      this.startNotifications();
+    }
+
+    return () => {
+      this.notificationHandlers.delete(handler);
+      if (this.notificationHandlers.size === 0) {
+        this.notificationAbort?.abort();
+        this.notificationAbort = null;
+      }
+    };
+  }
+
+  close(): void {
+    this.notificationAbort?.abort();
+    this.notificationAbort = null;
+    this.notificationHandlers.clear();
+  }
+
+  private authHeaders(): Record<string, string> {
+    return { authorization: `Bearer ${this.token}` };
+  }
+
+  private startNotifications(): void {
+    const abort = new AbortController();
+    this.notificationAbort = abort;
+
+    const url = new URL("/events", this.baseUrl);
+    url.searchParams.set("token", this.token);
+
+    void this.readEventStream(url, abort.signal).catch((error: unknown) => {
+      if (abort.signal.aborted) {
+        return;
+      }
+      for (const handler of this.notificationHandlers) {
+        handler({
+          method: "client.error",
+          params: { message: error instanceof Error ? error.message : String(error) },
+        });
+      }
+    });
+  }
+
+  private async readEventStream(url: URL, signal: AbortSignal): Promise<void> {
+    const response = await fetch(url, { signal });
+    if (!response.ok || !response.body) {
+      throw new Error(`event stream failed with HTTP ${response.status}`);
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    while (!signal.aborted) {
+      const { value, done } = await reader.read();
+      if (done) {
+        return;
+      }
+      buffer += decoder.decode(value, { stream: true });
+
+      let splitIndex = buffer.indexOf("\n\n");
+      while (splitIndex !== -1) {
+        const rawEvent = buffer.slice(0, splitIndex);
+        buffer = buffer.slice(splitIndex + 2);
+        this.dispatchRawEvent(rawEvent);
+        splitIndex = buffer.indexOf("\n\n");
+      }
+    }
+  }
+
+  private dispatchRawEvent(rawEvent: string): void {
+    const dataLines = rawEvent
+      .split("\n")
+      .filter((line) => line.startsWith("data:"))
+      .map((line) => line.slice("data:".length).trimStart());
+    if (dataLines.length === 0) {
+      return;
+    }
+
+    const notification = JSON.parse(dataLines.join("\n")) as JsonRpcNotification;
+    for (const handler of this.notificationHandlers) {
+      handler(notification);
+    }
+  }
+}

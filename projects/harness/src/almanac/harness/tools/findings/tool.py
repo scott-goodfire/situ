@@ -35,6 +35,6 @@ class RecordFindingTool(BaseAlmanacTool[AlmanacToolDeps, RecordFindingResult]):
         ctx.deps.record_event(
             "finding.recorded",
             summary,
-            payload={"finding_id": finding["id"], "confidence": finding["confidence"]},
+            payload={"finding_id": finding.id, "confidence": finding.confidence},
         )
-        return RecordFindingResult(success=True, finding=finding)
+        return RecordFindingResult(success=True, finding=finding.model_dump())

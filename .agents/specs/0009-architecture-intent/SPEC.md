@@ -27,19 +27,23 @@ experiment work.
 
 ```text
 TypeScript Ink TUI
-  -> Python harness over JSON-RPC stdio
-      -> run ledger
-      -> events
-      -> experiments
-      -> evidence and signals
-      -> findings
-      -> automated trust warnings
-      -> worker execution
+  -> local session server over HTTP/SSE
+      -> Python harness over JSON-RPC stdio
+          -> run ledger
+          -> events
+          -> experiments
+          -> evidence and signals
+          -> findings
+          -> automated trust warnings
+          -> worker execution
 ```
 
 The system should keep these responsibilities distinct:
 
 - TUI: presentation, slim setup, collection-backed rendering, event display
+- Web UI: attach-only monitoring over an existing local session
+- Session server: harness subprocess ownership, HTTP RPC, event streaming, and
+  local session discovery
 - Harness: run lifecycle, state, events, experiments, evidence, findings,
   automated trust warnings
 - Workers: concrete experiments, code changes, eval runs, analysis
@@ -105,8 +109,8 @@ It should stay close to that structure for the first implementation:
 
 ```text
 projects/tui                  projects/harness
-TypeScript + Ink   JSON-RPC   Python
-terminal UI      ---------->  local harness runtime
+TypeScript + Ink   HTTP/SSE   session server   JSON-RPC   Python
+terminal UI      ---------->  TypeScript     ---------->  local harness runtime
 ```
 
 ## Implementation Bias

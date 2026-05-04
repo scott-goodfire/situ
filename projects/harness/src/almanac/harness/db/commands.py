@@ -5,27 +5,27 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 
-class RepositoryModel(BaseModel):
+class RepositoryCommand(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-class SetProjectConfig(RepositoryModel):
+class SetProjectConfig(RepositoryCommand):
     goal: str
     evaluation_context: str
     known_signals: list[str] = Field(default_factory=list)
     experiment_scope: str
 
 
-class CreateRun(RepositoryModel):
+class CreateRun(RepositoryCommand):
     run_id: str
 
 
-class UpdateRunStatus(RepositoryModel):
+class UpdateRunStatus(RepositoryCommand):
     run_id: str
     status: str
 
 
-class CreateExperiment(RepositoryModel):
+class CreateExperiment(RepositoryCommand):
     experiment_id: str
     run_id: str
     intent: str
@@ -34,7 +34,7 @@ class CreateExperiment(RepositoryModel):
     based_on: list[str] = Field(default_factory=list)
 
 
-class UpdateExperiment(RepositoryModel):
+class UpdateExperiment(RepositoryCommand):
     experiment_id: str
     status: str
     suspicious: bool | None = None
@@ -42,7 +42,7 @@ class UpdateExperiment(RepositoryModel):
     note: str | None = None
 
 
-class AddEvidence(RepositoryModel):
+class AddEvidence(RepositoryCommand):
     run_id: str
     experiment_id: str
     summary: str
@@ -50,7 +50,7 @@ class AddEvidence(RepositoryModel):
     raw: dict[str, Any] = Field(default_factory=dict)
 
 
-class UpsertFinding(RepositoryModel):
+class UpsertFinding(RepositoryCommand):
     finding_id: str
     run_id: str
     summary: str
@@ -59,14 +59,14 @@ class UpsertFinding(RepositoryModel):
     status: Literal["open", "supported", "contradicted"]
 
 
-class AddWarning(RepositoryModel):
+class AddWarning(RepositoryCommand):
     run_id: str
     kind: str
     message: str
     experiment_id: str | None = None
 
 
-class AppendAgentMessageHistory(RepositoryModel):
+class AppendAgentMessageHistory(RepositoryCommand):
     run_id: str
     agent_name: str
     messages_json: str
@@ -74,7 +74,7 @@ class AppendAgentMessageHistory(RepositoryModel):
     conversation_id: str | None = None
 
 
-class AddEvent(RepositoryModel):
+class AddEvent(RepositoryCommand):
     event_type: str
     message: str
     run_id: str | None = None

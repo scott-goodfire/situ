@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ..models import CreateRun, UpdateRunStatus
+from ..commands import CreateRun, UpdateRunStatus
 from ..records import RunRecord
 from ..serialization import run_row, utc_now
 from .base import BaseRepository

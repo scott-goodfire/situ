@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from ..models import AddEvidence
+from ..commands import AddEvidence
 from ..records import EvidenceRecord
 from ..serialization import evidence_row, json_dumps, utc_now
 from .base import BaseRepository

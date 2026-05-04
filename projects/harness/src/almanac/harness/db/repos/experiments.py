@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ..models import CreateExperiment, UpdateExperiment
+from ..commands import CreateExperiment, UpdateExperiment
 from ..records import ExperimentRecord
 from ..serialization import experiment_row, json_dumps, utc_now
 from .base import BaseRepository

@@ -74,7 +74,9 @@ def test_record_finding_tool_writes_finding_and_event(repos: Repositories) -> No
     assert result.finding is not None
     assert result.finding["summary"] == "Component A looks promising."
     assert result.finding["confidence"] == "medium"
-    assert repos.findings.list_for_run("run_0001") == [result.finding]
+    assert [finding.model_dump() for finding in repos.findings.list_for_run("run_0001")] == [
+        result.finding
+    ]
     assert emitted == [
         {
             "type": "finding.recorded",

@@ -1,0 +1,20 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Any
+
+from pydantic_evals.evaluators import EvaluationReason, Evaluator, EvaluatorContext
+
+from evals.harness.evaluators.helpers import warnings
+from evals.harness.models import AlmanacEvalOutput
+
+
+@dataclass
+class WarningWasCreated(Evaluator[Any, AlmanacEvalOutput, Any]):
+    kind: str
+
+    def evaluate(self, ctx: EvaluatorContext[Any, AlmanacEvalOutput, Any]) -> EvaluationReason:
+        kinds = [warning.kind for warning in warnings(ctx.output)]
+        if self.kind in kinds:
+            return EvaluationReason(value=True, reason=f"Warning created: {self.kind}")
+        return EvaluationReason(value=False, reason=f"Missing warning {self.kind}. Got {kinds}")

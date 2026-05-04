@@ -15,6 +15,7 @@ Read in this order:
 8. [0008-agent-facing-context/SPEC.md](./0008-agent-facing-context/SPEC.md)
 9. [0009-architecture-intent/SPEC.md](./0009-architecture-intent/SPEC.md)
 10. [0010-evidence-and-findings/SPEC.md](./0010-evidence-and-findings/SPEC.md)
+11. [0011-local-session-web/SPEC.md](./0011-local-session-web/SPEC.md)
 
 ## Product Thesis
 
@@ -26,9 +27,10 @@ The product should answer:
 > What is running, what changed, what evidence came back, what looks suspicious,
 > and what is the run learning?
 
-The first slice should be intentionally slim. Live guidance, final reports, web
-UI, broad health scoring, directions, and decisions are deferred until the
-terminal loop is useful.
+The first slice should be intentionally slim. Live guidance, final reports,
+broad health scoring, directions, and decisions are deferred until the terminal
+loop is useful. The first web surface is attach-only observability over an
+already-running local session.
 
 ## Spec Discipline
 

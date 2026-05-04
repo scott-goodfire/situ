@@ -24,7 +24,7 @@ class GetRunContextTool(BaseAlmanacTool[AlmanacToolDeps, GetRunContextResult]):
         return GetRunContextResult(
             success=True,
             config=snapshot["config"],
-            run=run,
+            run=run.model_dump() if run is not None else None,
             recent_experiments=[
                 item for item in snapshot["experiments"] if item["run_id"] == run_id
             ][-10:],

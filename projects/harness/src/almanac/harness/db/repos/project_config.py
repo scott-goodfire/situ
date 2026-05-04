@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ..models import SetProjectConfig
+from ..commands import SetProjectConfig
 from ..records import ProjectConfigRecord
 from ..serialization import config_row, json_dumps, utc_now
 from .base import BaseRepository

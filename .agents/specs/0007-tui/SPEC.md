@@ -2,15 +2,16 @@
 
 The first product surface is a TypeScript Ink terminal UI.
 
-There is no web UI in the first slice.
+The web surface is attach-only in the local session slice; it monitors an
+already-running session and does not replace the TUI.
 
 ## Role
 
-The TUI starts or connects to the local Python harness, subscribes to live
-events, bootstraps collection-shaped state, and renders the run observability
-surface.
+The TUI attaches to the local session server, subscribes to live events,
+bootstraps collection-shaped state, and renders the run observability surface.
 
-It should not own run behavior, read SQLite directly, or run workers directly.
+It should not own the Python harness subprocess, read SQLite directly, or run
+workers directly.
 
 For the first collection-backed slice, the TUI should render runs, experiments,
 and events from the shared TypeScript collection layer. It should not request

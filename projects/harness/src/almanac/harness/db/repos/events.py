@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from ..models import AddEvent
+from ..commands import AddEvent
 from ..records import EventRecord
 from ..serialization import event_row, json_dumps, utc_now
 from .base import BaseRepository

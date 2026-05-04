@@ -1,5 +1,5 @@
-from .base import BaseAlmanacEvalGroup
-from .models import AlmanacEvalOutput, CapturedToolCall, EvalEvent, EvalFinding, EvalWarning
+from evals.harness.eval_groups import BaseAlmanacEvalGroup
+from evals.harness.models import AlmanacEvalOutput, CapturedToolCall, EvalEvent, EvalFinding, EvalWarning
 
 __all__ = [
     "AlmanacEvalOutput",
@@ -9,4 +9,3 @@ __all__ = [
     "EvalFinding",
     "EvalWarning",
 ]
-

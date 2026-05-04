@@ -24,4 +24,3 @@ def configure_eval_observability() -> None:
     )
     logfire.instrument_pydantic_ai()
     _CONFIGURED = True
-

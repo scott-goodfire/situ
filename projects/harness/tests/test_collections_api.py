@@ -57,7 +57,7 @@ def test_collections_bootstrap_returns_runs_experiments_and_events(app: HarnessA
 
     bootstrap = CollectionsBootstrapResult.model_validate(app.collections_bootstrap({}))
 
-    assert bootstrap.cursor == event["id"]
+    assert bootstrap.cursor == event.id
     assert [run.id for run in bootstrap.runs] == ["run_0001"]
     assert [experiment.id for experiment in bootstrap.experiments] == [
         "exp_run_0001_baseline"
@@ -87,7 +87,7 @@ def test_collections_subscribe_emits_event_upserts(tmp_path: Path, monkeypatch: 
     assert subscribe.cursor == 0
     assert notifications[-1][0] == "collections.upserted"
     upsert = CollectionUpsertedParams.model_validate(notifications[-1][1])
-    assert upsert.cursor == event["id"]
+    assert upsert.cursor == event.id
     assert upsert.collection == "events"
-    assert upsert.key == str(event["id"])
+    assert upsert.key == str(event.id)
     assert upsert.record["type"] == "system.ready"

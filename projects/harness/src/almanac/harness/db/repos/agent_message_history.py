@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from ..models import AppendAgentMessageHistory
+from ..commands import AppendAgentMessageHistory
 from ..records import AgentMessageHistoryRecord
 from ..serialization import agent_message_history_row, json_dumps, json_loads, utc_now
 from .base import BaseRepository
