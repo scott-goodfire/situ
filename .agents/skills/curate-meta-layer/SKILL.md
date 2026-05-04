@@ -1,85 +1,128 @@
 ---
 name: curate-meta-layer
-description: [TODO: Complete and informative explanation of what the skill does and when to use it. Include WHEN to use this skill - specific scenarios, file types, or tasks that trigger it.]
+description: Use when the user invokes /curate-meta-layer or asks to reduce entropy in the repo's meta layer by reviewing specs, policies, skills, docs, recent conversation context, and recent commits/diffs for items to update, combine, remove, rewrite, simplify, or leave alone.
 ---
 
 # Curate Meta Layer
 
 ## Overview
 
-[TODO: 1-2 sentences explaining what this skill enables]
+Use this skill to keep `.agents/` useful over time. The goal is to reduce meta
+layer entropy: stale specs, overlapping policies, redundant docs, bloated skills,
+missing conventions, and instructions that no longer match recent work.
 
-## Structuring This Skill
+Default to proposing changes first. Edit files only when the user asks to apply
+the recommendations.
 
-[TODO: Choose the structure that best fits this skill's purpose. Common patterns:
+## Inputs To Review
 
-**1. Workflow-Based** (best for sequential processes)
-- Works well when there are clear step-by-step procedures
-- Example: DOCX skill with "Workflow Decision Tree" -> "Reading" -> "Creating" -> "Editing"
-- Structure: ## Overview -> ## Workflow Decision Tree -> ## Step 1 -> ## Step 2...
+Use the available current conversation context plus local repo evidence.
 
-**2. Task-Based** (best for tool collections)
-- Works well when the skill offers different operations/capabilities
-- Example: PDF skill with "Quick Start" -> "Merge PDFs" -> "Split PDFs" -> "Extract Text"
-- Structure: ## Overview -> ## Quick Start -> ## Task Category 1 -> ## Task Category 2...
+Read:
 
-**3. Reference/Guidelines** (best for standards or specifications)
-- Works well for brand guidelines, coding standards, or requirements
-- Example: Brand styling with "Brand Guidelines" -> "Colors" -> "Typography" -> "Features"
-- Structure: ## Overview -> ## Guidelines -> ## Specifications -> ## Usage...
+```bash
+git status --short
+git diff --stat
+git log --oneline -20
+find .agents/specs -name SPEC.md | sort
+find .agents/policies -name POLICY.md | sort
+find .agents/docs -name DOC.md | sort
+find .agents/skills -name SKILL.md | sort
+```
 
-**4. Capabilities-Based** (best for integrated systems)
-- Works well when the skill provides multiple interrelated features
-- Example: Product Management with "Core Capabilities" -> numbered capability list
-- Structure: ## Overview -> ## Core Capabilities -> ### 1. Feature -> ### 2. Feature...
+Then inspect the relevant files. Do not bulk-load everything if a targeted read
+is enough; prefer indexes first.
 
-Patterns can be mixed and matched as needed. Most skills combine patterns (e.g., start with task-based, add workflow for complex operations).
+## Evaluation Buckets
 
-Delete this entire "Structuring This Skill" section when done - it's just guidance.]
+Classify recommendations into these buckets.
 
-## [TODO: Replace with the first main section based on chosen structure]
+### Update
 
-[TODO: Add content here. See examples in existing skills:
-- Code samples for technical skills
-- Decision trees for complex workflows
-- Concrete examples with realistic user requests
-- References to scripts/templates/references as needed]
+Use when an artifact is still useful but stale, incomplete, or mismatched with
+recent product decisions.
 
-## Resources (optional)
+### Combine
 
-Create only the resource directories this skill actually needs. Delete this section if no resources are required.
+Use when two artifacts cover the same rule or concept and would be clearer as
+one.
 
-### scripts/
-Executable code (Python/Bash/etc.) that can be run directly to perform specific operations.
+### Remove
 
-**Examples from other skills:**
-- PDF skill: `fill_fillable_fields.py`, `extract_form_field_info.py` - utilities for PDF manipulation
-- DOCX skill: `document.py`, `utilities.py` - Python modules for document processing
+Use when an artifact is obsolete, redundant, misleading, or no longer
+load-bearing.
 
-**Appropriate for:** Python scripts, shell scripts, or any executable code that performs automation, data processing, or specific operations.
+### Rewrite
 
-**Note:** Scripts may be executed without loading into context, but can still be read by Codex for patching or environment adjustments.
+Use when an artifact has the right purpose but the language is too vague,
+overbuilt, or hard for future agents to apply.
 
-### references/
-Documentation and reference material intended to be loaded into context to inform Codex's process and thinking.
+### Simplify
 
-**Examples from other skills:**
-- Product management: `communication.md`, `context_building.md` - detailed workflow guides
-- BigQuery: API reference documentation and query examples
-- Finance: Schema documentation, company policies
+Use when an artifact is directionally correct but too broad, too long, or too
+implementation-heavy for the current stage.
 
-**Appropriate for:** In-depth documentation, API references, database schemas, comprehensive guides, or any detailed information that Codex should reference while working.
+### Add
 
-### assets/
-Files not intended to be loaded into context, but rather used within the output Codex produces.
+Use sparingly. Add only when recent work reveals a recurring risk, durable
+decision, or repeated workflow not covered by existing specs, policies, docs, or
+skills.
 
-**Examples from other skills:**
-- Brand styling: PowerPoint template files (.pptx), logo files
-- Frontend builder: HTML/React boilerplate project directories
-- Typography: Font files (.ttf, .woff2)
+### Leave Alone
 
-**Appropriate for:** Templates, boilerplate code, document templates, images, icons, fonts, or any files meant to be copied or used in the final output.
+This is the default. Most artifacts should remain unchanged unless there is a
+concrete entropy reduction.
 
----
+## Review Criteria
 
-**Not every skill requires all three types of resources.**
+Check whether the meta layer:
+
+- Reflects the latest product contract.
+- Avoids duplicate concepts under different names.
+- Keeps specs product-shaped rather than implementation-heavy.
+- Keeps policies concrete enough for review.
+- Keeps skills as repeatable workflows, not generic docs.
+- Keeps docs reserved for durable explanation that is not a spec or policy.
+- Preserves numbered spec/policy conventions.
+- Avoids stale references to removed concepts or tools.
+- Helps future agents act with less context, not more.
+
+## Output Shape
+
+Use this structure:
+
+```md
+## Meta Layer Curation
+
+Ground truth checked:
+- Recent conversation: <one-line summary or "current thread only">
+- Git state: <clean/dirty + one-line diff summary>
+- Agent surface: <counts of specs/policies/docs/skills reviewed>
+
+### Update
+1. **<artifact>** - <why> - <recommended change>
+
+### Combine
+1. **<artifact A> + <artifact B>** - <why> - <recommended target>
+
+### Remove
+1. **<artifact>** - <why>
+
+### Rewrite
+1. **<artifact>** - <why> - <rewrite focus>
+
+### Simplify
+1. **<artifact>** - <why> - <what to cut>
+
+### Add
+1. **<new artifact>** - <why now>
+
+### Leave Alone
+- **<artifact>** - <why it remains useful>
+
+## Recommendation
+<what is worth doing now, what should wait, and whether to apply changes>
+```
+
+Omit empty buckets unless their absence is itself useful. Keep recommendations
+grounded in actual repo artifacts or current conversation decisions.

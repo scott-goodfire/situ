@@ -69,3 +69,13 @@ skills:
 Linting is intentionally LLM-driven. The skill asks the agent to review
 numbering, indexes, policy frontmatter, link plausibility, and the quality of
 the spec/policy content.
+
+Use the curate-meta-layer skill when the goal is broader entropy reduction:
+
+```text
+.agents/skills/curate-meta-layer/SKILL.md
+```
+
+It reviews specs, policies, docs, skills, recent conversation context, and
+recent commits/diffs for artifacts to update, combine, remove, rewrite,
+simplify, add, or leave alone.

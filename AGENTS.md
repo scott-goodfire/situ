@@ -30,6 +30,10 @@ For code changes, check the applicable policies in `.agents/policies/`.
 Use [.agents/skills/almanac-spec-policy-maintenance/SKILL.md](./.agents/skills/almanac-spec-policy-maintenance/SKILL.md)
 when adding, changing, or linting specs and policies.
 
+Use [.agents/skills/curate-meta-layer/SKILL.md](./.agents/skills/curate-meta-layer/SKILL.md)
+when the goal is to reduce entropy across specs, policies, docs, skills, recent
+conversation context, and recent commits/diffs.
+
 Routine command surface should eventually live in `mise.toml`, with reusable
 scripts in `commands/`, following the pattern from the reference Almanac
 prototype.
