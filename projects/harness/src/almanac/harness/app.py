@@ -88,14 +88,14 @@ PROPOSALS = [
 
 
 class HarnessApp:
-    def __init__(self, repo_root: Path, notify: NotificationWriter) -> None:
-        self.context = ProjectContext(repo_root)
+    def __init__(self, workspace_root: Path, notify: NotificationWriter, app_root: Path | None = None) -> None:
+        self.context = ProjectContext(workspace_root)
         self.store = StateStore(
             self.context.project_dir / "almanac.sqlite",
             project_id=self.context.project_id,
             repo_path=str(self.context.repo_root),
         )
-        self.workers = WorkerManager(self.context.repo_root)
+        self.workers = WorkerManager(self.context.repo_root, app_root=app_root)
         self.notify = notify
         self.subscribed = False
         self._run_counter = len(self.store.snapshot()["runs"])

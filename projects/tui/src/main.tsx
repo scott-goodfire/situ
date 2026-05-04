@@ -47,9 +47,17 @@ const TOY_SETUP: SetupCompleteParams = {
   experiment_scope: "Try baseline, individual toy components, combinations, and one suspicious result.",
 };
 
-function repoRoot(): string {
+function repoRootFromImport(): string {
   const here = dirname(fileURLToPath(import.meta.url));
   return resolve(here, "../../..");
+}
+
+function appRoot(): string {
+  return resolve(process.env.ALMANAC_APP_ROOT ?? repoRootFromImport());
+}
+
+function workspaceRoot(root: string): string {
+  return resolve(process.env.ALMANAC_WORKSPACE ?? root);
 }
 
 function harnessCommand(root: string): { command: string; args: string[] } {
@@ -64,6 +72,48 @@ function harnessCommand(root: string): { command: string; args: string[] } {
   };
 }
 
+function initialSetup(workspace: string, root: string): SetupCompleteParams {
+  const knownSignals = parseSignals(process.env.ALMANAC_KNOWN_SIGNALS);
+  const hasUserSetup =
+    Boolean(process.env.ALMANAC_GOAL) ||
+    Boolean(process.env.ALMANAC_EVALUATION_CONTEXT) ||
+    Boolean(process.env.ALMANAC_EXPERIMENT_SCOPE) ||
+    knownSignals.length > 0 ||
+    Boolean(process.env.ALMANAC_EVAL_COMMAND);
+
+  if (!hasUserSetup && workspace === root) {
+    return TOY_SETUP;
+  }
+
+  return {
+    goal: process.env.ALMANAC_GOAL ?? `Observe autoresearch experiments in ${workspace}`,
+    evaluation_context:
+      process.env.ALMANAC_EVALUATION_CONTEXT ??
+      (process.env.ALMANAC_EVAL_COMMAND
+        ? `Run ${process.env.ALMANAC_EVAL_COMMAND} and capture its JSON signals.`
+        : "Capture evidence, signals, warnings, and findings from local experiments."),
+    known_signals: knownSignals,
+    experiment_scope:
+      process.env.ALMANAC_EXPERIMENT_SCOPE ??
+      "Run the current local worker path and compare evidence across baseline, individual changes, and combinations.",
+  };
+}
+
+function parseSignals(value: string | undefined): string[] {
+  if (!value) {
+    return [];
+  }
+  return value
+    .split(",")
+    .map((signal) => signal.trim())
+    .filter((signal) => signal.length > 0);
+}
+
+function maxExperiments(): number {
+  const parsed = Number.parseInt(process.env.ALMANAC_MAX_EXPERIMENTS ?? "5", 10);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : 5;
+}
+
 function App() {
   const { exit } = useApp();
   const [status, setStatus] = useState<Status>({ kind: "starting" });
@@ -71,9 +121,13 @@ function App() {
   const [events, setEvents] = useState<EventRecord[]>([]);
 
   useEffect(() => {
-    const root = repoRoot();
+    const root = appRoot();
+    const workspace = workspaceRoot(root);
     const harness = harnessCommand(root);
-    const client = StdioJsonRpcClient.spawn(harness.command, harness.args, root);
+    const client = StdioJsonRpcClient.spawn(harness.command, harness.args, workspace, {
+      ALMANAC_APP_ROOT: root,
+      ALMANAC_WORKSPACE: workspace,
+    });
     let runId: string | undefined;
     let closed = false;
 
@@ -126,12 +180,12 @@ function App() {
           return setup;
         }
         return client
-          .request<SetupCompleteResult, SetupCompleteParams>("setup.complete", TOY_SETUP)
+          .request<SetupCompleteResult, SetupCompleteParams>("setup.complete", initialSetup(workspace, root))
           .then(() => client.request<SetupGetResult, SetupGetParams>("setup.get", {}));
       })
       .then(() =>
         client.request<RunStartResult, RunStartParams>("run.start", {
-          max_experiments: 5,
+          max_experiments: maxExperiments(),
         }),
       )
       .then((result) => {
@@ -204,7 +258,8 @@ function App() {
       </Box>
 
       <Section title="Goal">
-        <Text>{snapshot.config?.goal ?? "Configuring toy context..."}</Text>
+        <Text>{snapshot.config?.goal ?? "Configuring context..."}</Text>
+        <Text dimColor>Workspace: {snapshot.config?.repo_path ?? process.env.ALMANAC_WORKSPACE ?? "unknown"}</Text>
       </Section>
 
       <Section title="Evaluation">

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import shlex
 import subprocess
 import sys
 from pathlib import Path
@@ -18,23 +19,29 @@ ProgressHandler = Callable[[dict[str, Any]], None]
 
 
 class WorkerManager:
-    def __init__(self, repo_root: Path) -> None:
-        self.repo_root = repo_root
+    def __init__(self, workspace_root: Path, app_root: Path | None = None) -> None:
+        self.workspace_root = workspace_root
+        self.app_root = app_root
 
     def run_experiment(
         self,
         params: ExperimentRunParams,
         on_progress: ProgressHandler,
     ) -> ExperimentRunResult:
-        worker_path = self.repo_root / "workers" / "examples" / "toy_worker" / "worker.py"
+        command, cwd = self._worker_command()
         process = subprocess.Popen(
-            [sys.executable, str(worker_path)],
-            cwd=self.repo_root,
+            command,
+            cwd=cwd,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
-            env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
+            env={
+                **os.environ,
+                "PYTHONDONTWRITEBYTECODE": "1",
+                "ALMANAC_WORKSPACE": str(self.workspace_root),
+                **({"ALMANAC_APP_ROOT": str(self.app_root)} if self.app_root is not None else {}),
+            },
         )
         assert process.stdin is not None
         assert process.stdout is not None
@@ -102,3 +109,25 @@ class WorkerManager:
 
         stderr = process.stderr.read() if process.stderr is not None else ""
         raise RuntimeError(f"worker exited before responding: {stderr}")
+
+    def _worker_command(self) -> tuple[list[str], Path]:
+        configured_worker = os.environ.get("ALMANAC_WORKER_COMMAND")
+        if configured_worker:
+            return shlex.split(configured_worker), self.workspace_root
+
+        if os.environ.get("ALMANAC_EVAL_COMMAND"):
+            return [sys.executable, str(self._built_in_worker("local_command_worker"))], self.workspace_root
+
+        workspace_worker = self.workspace_root / "almanac_worker.py"
+        if workspace_worker.is_file():
+            return [sys.executable, str(workspace_worker)], self.workspace_root
+
+        return [sys.executable, str(self._built_in_worker("examples/toy_worker"))], self.workspace_root
+
+    def _built_in_worker(self, name: str) -> Path:
+        if self.app_root is None:
+            raise RuntimeError("ALMANAC_APP_ROOT is required for built-in workers")
+        worker = self.app_root / "workers" / name / "worker.py"
+        if not worker.is_file():
+            raise RuntimeError(f"built-in worker not found: {worker}")
+        return worker

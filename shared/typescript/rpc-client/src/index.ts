@@ -27,10 +27,15 @@ export class StdioJsonRpcClient {
     });
   }
 
-  static spawn(command: string, args: string[], cwd: string): StdioJsonRpcClient {
+  static spawn(
+    command: string,
+    args: string[],
+    cwd: string,
+    env: NodeJS.ProcessEnv = {},
+  ): StdioJsonRpcClient {
     const child = spawn(command, args, {
       cwd,
-      env: { ...process.env, PYTHONDONTWRITEBYTECODE: "1" },
+      env: { ...process.env, ...env, PYTHONDONTWRITEBYTECODE: "1" },
       stdio: ["pipe", "pipe", "pipe"],
     });
 

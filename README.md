@@ -27,6 +27,16 @@ Equivalent start path:
 mise run start
 ```
 
+Run against another local workspace:
+
+```bash
+mise run start -- ~/sandbox/some-repo \
+  --eval-command "python almanac_eval.py --json" \
+  --known-signal score
+```
+
+See `examples/micrograd-sandbox/` for a concrete external-repo smoke test.
+
 ## Commands
 
 ```bash
@@ -48,6 +58,8 @@ shared/python/protocol        Pydantic protocol source of truth
 shared/typescript/protocol    generated TypeScript protocol types
 shared/typescript/rpc-client  JSON-RPC stdio client
 workers/examples/toy_worker   deterministic toy worker
+workers/local_command_worker  wrapper for JSON eval commands in a workspace
 examples/toy-eval             toy eval fixture
+examples/micrograd-sandbox    external workspace smoke-test recipe
 protocol/json-schema          generated JSON Schema contracts
 ```

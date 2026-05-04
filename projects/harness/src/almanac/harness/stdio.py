@@ -7,6 +7,7 @@ from almanac.protocol.jsonrpc import JsonRpcNotification, JsonRpcRequest, JsonRp
 from pydantic import ValidationError
 
 from .app import HarnessApp, MethodNotFound
+from .paths import resolve_app_root, resolve_workspace
 
 WRITE_LOCK = threading.Lock()
 
@@ -43,7 +44,8 @@ def write_notification(method: str, params: dict[str, Any]) -> None:
 
 
 def main() -> None:
-    app = HarnessApp(Path.cwd(), notify=write_notification)
+    workspace = resolve_workspace(Path.cwd())
+    app = HarnessApp(workspace, notify=write_notification, app_root=resolve_app_root(Path(__file__)))
     for line in sys.stdin:
         line = line.strip()
         if not line:

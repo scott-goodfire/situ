@@ -14,10 +14,16 @@ findings, and one deterministic worker path.
 
 ## Target User Story
 
-A user runs:
+A user runs from the repo they want to observe:
 
 ```bash
 almanac start
+```
+
+or points Almanac at a workspace explicitly:
+
+```bash
+almanac start ~/sandbox/some-project
 ```
 
 If no local research context exists for the current project, Almanac shows a
@@ -35,9 +41,15 @@ Then Almanac:
 - Starts a tiny sequential experiment loop.
 - Renders a live terminal dashboard.
 
+The Almanac install/dev root and the researched workspace are separate
+concepts. Runtime state, project identity, worker current directory, and trust
+checks are scoped to the researched workspace, even when the TUI and harness
+code are launched from the Almanac repository.
+
 ## MVP Includes
 
 - One-command start
+- Explicit workspace argument for sandbox/project testing
 - Terminal setup flow
 - Local/private project context
 - Baseline evidence when available
