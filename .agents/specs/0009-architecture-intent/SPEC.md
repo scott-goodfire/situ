@@ -45,6 +45,25 @@ The system should keep these responsibilities distinct:
 - Workers: concrete experiments, code changes, eval runs, analysis
 - Protocol/API: stable boundary between clients, harness, and workers
 
+## Agent Runtime
+
+The first real agent runtime should use Pydantic AI for typed agent-facing
+planning and DBOS for durable execution boundaries. This should be introduced as
+infrastructure under the Python harness, not as a new product surface.
+
+For the MVP:
+
+- Pydantic AI may produce compact, typed run/proposal context.
+- DBOS may wrap agent execution so model calls and tool execution can become
+  durable workflow steps.
+- Logfire may observe harness, DBOS, and Pydantic AI spans.
+- The product must still run locally without requiring a hosted model key.
+- Agent output is advisory until the proposal loop is ready; the harness still
+  owns run identity, experiments, evidence, findings, warnings, and events.
+
+This keeps creativity in the agent layer while preserving Almanac as the
+control plane.
+
 ## Reference Prototype
 
 The earlier `~/macromackie/almanac` project proved a useful local vertical

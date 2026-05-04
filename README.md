@@ -49,6 +49,37 @@ mise run example:toy
 mise run start
 ```
 
+## Agent Runtime And Observability
+
+The Python harness now initializes:
+
+- Pydantic AI for typed agent planning
+- DBOS for durable agent execution state
+- Logfire for Pydantic AI / DBOS / harness traces
+
+The default agent runtime uses Pydantic AI's local test model, so the toy and
+micrograd examples still run without an LLM API key.
+
+To send traces to Logfire, set a write token in your shell or local env file:
+
+```bash
+export LOGFIRE_TOKEN="..."
+```
+
+To try a real Pydantic AI model instead of the local test model:
+
+```bash
+export ALMANAC_AGENT_MODEL="openai:gpt-5.2"
+```
+
+DBOS stores its system database beside Almanac project state by default:
+
+```text
+~/.almanac/projects/<project-id>/dbos.sqlite
+```
+
+You can override it with `DBOS_SYSTEM_DATABASE_URL`.
+
 ## Layout
 
 ```text

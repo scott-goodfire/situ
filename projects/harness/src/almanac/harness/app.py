@@ -23,7 +23,9 @@ from almanac.protocol import (
     StateSnapshotParams,
 )
 
+from .agent_runtime import AgentRuntime
 from .findings import update_findings
+from .observability import span
 from .project_context import ProjectContext
 from .state import StateStore
 from .trust_checks import check_evidence
@@ -96,6 +98,7 @@ class HarnessApp:
             repo_path=str(self.context.repo_root),
         )
         self.workers = WorkerManager(self.context.repo_root, app_root=app_root)
+        self.agent_runtime = AgentRuntime(self.context.project_dir)
         self.notify = notify
         self.subscribed = False
         self._run_counter = len(self.store.snapshot()["runs"])
@@ -200,96 +203,12 @@ class HarnessApp:
             if config is None:
                 raise RuntimeError("missing project config")
 
-            for proposal in PROPOSALS[: max_experiments + 1]:
-                experiment_id = f"exp_{run_id}_{proposal.suffix}"
-                based_on = [f"exp_{run_id}_{suffix}" for suffix in proposal.based_on_suffixes]
-                self.store.create_experiment(
-                    experiment_id=experiment_id,
-                    run_id=run_id,
-                    intent=proposal.intent,
-                    change_summary=proposal.change_summary,
-                    components=proposal.components,
-                    based_on=based_on,
-                )
-                self.record_event(
-                    "experiment.queued",
-                    f"Queued {experiment_id}",
-                    run_id=run_id,
-                    payload={"experiment_id": experiment_id, "components": proposal.components},
-                )
+            self._record_agent_plan(run_id, config)
 
-                self.store.update_experiment(experiment_id, status="running")
-                self.record_event(
-                    "experiment.started",
-                    f"Started {experiment_id}",
-                    run_id=run_id,
-                    payload={"experiment_id": experiment_id},
-                )
-
-                result = self.workers.run_experiment(
-                    ExperimentRunParams(
-                        run_id=run_id,
-                        experiment_id=experiment_id,
-                        intent=proposal.intent,
-                        components=proposal.components,
-                        based_on=based_on,
-                    ),
-                    on_progress=lambda notification: self._record_worker_progress(run_id, notification),
-                )
-
-                signals = [signal.model_dump() for signal in result.signals]
-                evidence = self.store.add_evidence(
-                    run_id=run_id,
-                    experiment_id=experiment_id,
-                    summary=result.summary,
-                    signals=signals,
-                    raw=result.raw,
-                )
-                self.record_event(
-                    "evidence.recorded",
-                    result.summary,
-                    run_id=run_id,
-                    payload={"experiment_id": experiment_id, "signals": signals},
-                )
-
-                warnings = check_evidence(
-                    known_signals=config["known_signals"],
-                    baseline_score=self._baseline_score(run_id),
-                    signals=signals,
-                    raw=result.raw,
-                )
-                suspicious_reason = None
-                for kind, message in warnings:
-                    warning = self.store.add_warning(
-                        run_id=run_id,
-                        experiment_id=experiment_id,
-                        kind=kind,
-                        message=f"{experiment_id}: {message}",
-                    )
-                    suspicious_reason = message if suspicious_reason is None else suspicious_reason
-                    self.record_event(
-                        "warning.created",
-                        warning["message"],
-                        run_id=run_id,
-                        payload={"warning": warning},
-                    )
-
-                suspicious = suspicious_reason is not None
-                self.store.update_experiment(
-                    experiment_id,
-                    status="suspicious" if suspicious else result.status,
-                    suspicious=suspicious,
-                    suspicious_reason=suspicious_reason,
-                    note=evidence["summary"],
-                )
-                update_findings(self.store, run_id)
-                self.record_event(
-                    "experiment.completed",
-                    f"Completed {experiment_id}",
-                    run_id=run_id,
-                    payload={"experiment_id": experiment_id, "suspicious": suspicious},
-                )
-                time.sleep(0.25)
+            with span("almanac.run.execute", run_id=run_id, workspace=config["repo_path"]):
+                for proposal in PROPOSALS[: max_experiments + 1]:
+                    self._execute_proposal(run_id, config, proposal)
+                    time.sleep(0.25)
 
             self.store.update_run_status(run_id, "completed")
             self.record_event("run.completed", f"Completed {run_id}", run_id=run_id)
@@ -300,6 +219,121 @@ class HarnessApp:
                 f"Run failed: {error}",
                 run_id=run_id,
                 payload={"error": str(error)},
+            )
+
+    def _record_agent_plan(self, run_id: str, config: dict[str, Any]) -> None:
+        try:
+            plan = self.agent_runtime.plan_run(config=config, snapshot=self.store.snapshot())
+        except Exception as error:
+            warning = self.store.add_warning(
+                run_id=run_id,
+                kind="agent_runtime_failed",
+                message=f"Agent runtime failed: {error}",
+            )
+            self.record_event(
+                "warning.created",
+                warning["message"],
+                run_id=run_id,
+                payload={"warning": warning},
+            )
+            return
+
+        self.record_event(
+            "agent.plan.created",
+            plan.summary,
+            run_id=run_id,
+            payload=plan.model_dump(),
+        )
+
+    def _execute_proposal(self, run_id: str, config: dict[str, Any], proposal: Proposal) -> None:
+        with span("almanac.experiment.execute", run_id=run_id, proposal=proposal.suffix):
+            experiment_id = f"exp_{run_id}_{proposal.suffix}"
+            based_on = [f"exp_{run_id}_{suffix}" for suffix in proposal.based_on_suffixes]
+            self.store.create_experiment(
+                experiment_id=experiment_id,
+                run_id=run_id,
+                intent=proposal.intent,
+                change_summary=proposal.change_summary,
+                components=proposal.components,
+                based_on=based_on,
+            )
+            self.record_event(
+                "experiment.queued",
+                f"Queued {experiment_id}",
+                run_id=run_id,
+                payload={"experiment_id": experiment_id, "components": proposal.components},
+            )
+
+            self.store.update_experiment(experiment_id, status="running")
+            self.record_event(
+                "experiment.started",
+                f"Started {experiment_id}",
+                run_id=run_id,
+                payload={"experiment_id": experiment_id},
+            )
+
+            result = self.workers.run_experiment(
+                ExperimentRunParams(
+                    run_id=run_id,
+                    experiment_id=experiment_id,
+                    intent=proposal.intent,
+                    components=proposal.components,
+                    based_on=based_on,
+                ),
+                on_progress=lambda notification: self._record_worker_progress(run_id, notification),
+            )
+
+            signals = [signal.model_dump() for signal in result.signals]
+            evidence = self.store.add_evidence(
+                run_id=run_id,
+                experiment_id=experiment_id,
+                summary=result.summary,
+                signals=signals,
+                raw=result.raw,
+            )
+            self.record_event(
+                "evidence.recorded",
+                result.summary,
+                run_id=run_id,
+                payload={"experiment_id": experiment_id, "signals": signals},
+            )
+
+            warnings = check_evidence(
+                known_signals=config["known_signals"],
+                baseline_score=self._baseline_score(run_id),
+                signals=signals,
+                raw=result.raw,
+            )
+            suspicious_reason = None
+            for kind, message in warnings:
+                warning = self.store.add_warning(
+                    run_id=run_id,
+                    experiment_id=experiment_id,
+                    kind=kind,
+                    message=f"{experiment_id}: {message}",
+                )
+                suspicious_reason = message if suspicious_reason is None else suspicious_reason
+                self.record_event(
+                    "warning.created",
+                    warning["message"],
+                    run_id=run_id,
+                    payload={"warning": warning},
+                )
+
+            suspicious = suspicious_reason is not None
+            self.store.update_experiment(
+                experiment_id,
+                status="suspicious" if suspicious else result.status,
+                suspicious=suspicious,
+                suspicious_reason=suspicious_reason,
+                note=evidence["summary"],
+            )
+            update_findings(self.store, run_id)
+            self.record_event(
+                "experiment.completed",
+                f"Completed {experiment_id}",
+                run_id=run_id,
+                payload={"experiment_id": experiment_id, "suspicious": suspicious},
             )
 
     def _record_worker_progress(self, run_id: str, notification: dict[str, Any]) -> None:

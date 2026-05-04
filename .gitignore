@@ -1,9 +1,15 @@
 .almanac/
 .venv/
+.env
+.env.*
+!.env.example
+.logfire/
 node_modules/
 __pycache__/
 *.pyc
 *.egg-info/
+*.sqlite
+*.sqlite-*
 dist/
 build/
 .DS_Store
