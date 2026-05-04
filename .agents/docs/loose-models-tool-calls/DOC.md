@@ -165,17 +165,17 @@ Run
 Proposal
   id, run_id, content, status, source
 
-ToolCall
-  id, run_id, proposal_id?, tool_name, arguments, status, output?, error?
+AgentMessageHistory
+  id, run_id, agent_name, pydantic_run_id?, conversation_id?, messages_json
 
 Evidence
-  id, run_id, tool_call_id?, summary, signals, raw
+  id, run_id, experiment_id, summary, signals, raw
 
 Finding
   id, run_id, content, evidence_ids
 
 Warning
-  id, run_id, tool_call_id?, kind, message
+  id, run_id, experiment_id?, kind, message
 ```
 
 The exact implementation can differ, but the principle should hold: keep the
@@ -195,3 +195,24 @@ When adding a new model, tool, workflow, or observability path, ask:
 
 The bias should be: fewer rigid data models, more typed execution envelopes,
 more tool-call-shaped behavior, and hook-driven observability.
+
+## Current Implementation Direction
+
+The first code layer should mirror the lightweight Pydantic AI patterns used in
+the reference backend:
+
+- `BaseAlmanacTool` owns name, typed result shape, permission check, execution,
+  error normalization, and conversion to a Pydantic AI tool.
+- `AlmanacToolDeps` carries the run context, repositories, worker manager, and
+  event emitter into tool calls.
+- Toolsets group related tools and carry tool-specific instructions.
+- `AgentMessageHistoryRepository` stores Pydantic AI message history as the
+  durable transcript for context replay and later inspection.
+- Capabilities/hooks emit live tool-call observability events; derived tool-call
+  views can be built from Pydantic messages later if querying raw messages
+  becomes too awkward.
+
+This should not force the entire run loop to become autonomous immediately. It
+is acceptable for the deterministic MVP loop to call a tool directly while the
+agent layer matures, as long as durable message history and context-passing are
+real.

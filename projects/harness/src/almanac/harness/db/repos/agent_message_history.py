@@ -1,0 +1,146 @@
+from __future__ import annotations
+
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict
+
+from ..database import Database
+from ..models import AppendAgentMessageHistory
+from ..serialization import agent_message_history_row, json_dumps, json_loads, utc_now
+
+
+class AgentMessageHistoryRepository(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    db: Database
+
+    def append_run_messages(
+        self,
+        *,
+        run_id: str,
+        agent_name: str,
+        messages_json: bytes | str,
+        pydantic_run_id: str | None = None,
+        conversation_id: str | None = None,
+    ) -> dict[str, Any]:
+        normalized_json = self._normalize_messages_json(messages_json)
+        messages = self._messages_from_json(normalized_json)
+        inferred_run_id, inferred_conversation_id = self._infer_pydantic_ids(messages)
+        command = AppendAgentMessageHistory(
+            run_id=run_id,
+            agent_name=agent_name,
+            messages_json=normalized_json,
+            pydantic_run_id=pydantic_run_id or inferred_run_id,
+            conversation_id=conversation_id or inferred_conversation_id,
+        )
+        cursor = self.db.execute(
+            """
+            INSERT INTO agent_message_history
+              (run_id, agent_name, pydantic_run_id, conversation_id,
+               messages_json, message_count, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                command.run_id,
+                command.agent_name,
+                command.pydantic_run_id,
+                command.conversation_id,
+                command.messages_json,
+                len(messages),
+                utc_now(),
+            ),
+        )
+        return self.get(int(cursor.lastrowid)) or {}
+
+    def get(self, history_id: int) -> dict[str, Any] | None:
+        row = self.db.fetchone("SELECT * FROM agent_message_history WHERE id = ?", (history_id,))
+        return agent_message_history_row(row) if row else None
+
+    def list_for_run(
+        self,
+        run_id: str,
+        *,
+        agent_name: str | None = None,
+    ) -> list[dict[str, Any]]:
+        if agent_name is None:
+            rows = self.db.fetchall(
+                "SELECT * FROM agent_message_history WHERE run_id = ? ORDER BY id",
+                (run_id,),
+            )
+        else:
+            rows = self.db.fetchall(
+                """
+                SELECT * FROM agent_message_history
+                WHERE run_id = ? AND agent_name = ?
+                ORDER BY id
+                """,
+                (run_id, agent_name),
+            )
+        return [agent_message_history_row(row) for row in rows]
+
+    def list_all(self) -> list[dict[str, Any]]:
+        return [
+            agent_message_history_row(row)
+            for row in self.db.fetchall("SELECT * FROM agent_message_history ORDER BY id")
+        ]
+
+    def get_message_history(
+        self,
+        run_id: str,
+        *,
+        agent_name: str | None = None,
+    ) -> list[dict[str, Any]]:
+        messages: list[dict[str, Any]] = []
+        for record in self.list_for_run(run_id, agent_name=agent_name):
+            messages.extend(record["messages"])
+        return messages
+
+    def get_message_history_json(
+        self,
+        run_id: str,
+        *,
+        agent_name: str | None = None,
+    ) -> bytes:
+        return json_dumps(self.get_message_history(run_id, agent_name=agent_name)).encode()
+
+    def get_model_message_history(
+        self,
+        run_id: str,
+        *,
+        agent_name: str | None = None,
+    ) -> list[Any]:
+        from pydantic_ai import ModelMessagesTypeAdapter
+
+        return list(
+            ModelMessagesTypeAdapter.validate_json(
+                self.get_message_history_json(run_id, agent_name=agent_name)
+            )
+        )
+
+    @staticmethod
+    def _normalize_messages_json(messages_json: bytes | str) -> str:
+        if isinstance(messages_json, bytes):
+            return messages_json.decode()
+        return messages_json
+
+    @staticmethod
+    def _messages_from_json(messages_json: str) -> list[dict[str, Any]]:
+        messages = json_loads(messages_json)
+        if not isinstance(messages, list):
+            raise ValueError("messages_json must encode a list of Pydantic AI messages")
+        if not all(isinstance(message, dict) for message in messages):
+            raise ValueError("messages_json must encode objects")
+        return messages
+
+    @staticmethod
+    def _infer_pydantic_ids(messages: list[dict[str, Any]]) -> tuple[str | None, str | None]:
+        pydantic_run_id = None
+        conversation_id = None
+        for message in reversed(messages):
+            if pydantic_run_id is None and isinstance(message.get("run_id"), str):
+                pydantic_run_id = message["run_id"]
+            if conversation_id is None and isinstance(message.get("conversation_id"), str):
+                conversation_id = message["conversation_id"]
+            if pydantic_run_id is not None and conversation_id is not None:
+                break
+        return pydantic_run_id, conversation_id

@@ -9,11 +9,13 @@ from pydantic_ai import Agent
 from pydantic_ai.durable_exec.dbos import DBOSAgent
 from pydantic_ai.models.test import TestModel
 
+from .db import Repositories
 from .dbos_runtime import configure_dbos, launch_dbos
 from .observability import configure_observability, span
 
 
 DEFAULT_OPENAI_MODEL = "openai:gpt-5.5"
+RESEARCH_PLANNER_AGENT_NAME = "almanac_research_planner"
 
 
 class AgentPlan(BaseModel):
@@ -43,20 +45,58 @@ class AgentRuntime:
                 "evidence-aware planning notes for an autoresearch run. Do not "
                 "claim an experiment succeeded unless evidence supports it."
             ),
-            name="almanac_research_planner",
+            name=RESEARCH_PLANNER_AGENT_NAME,
         )
-        self.dbos_agent = DBOSAgent(self.agent, name="almanac_research_planner")
+        self.dbos_agent = DBOSAgent(self.agent, name=RESEARCH_PLANNER_AGENT_NAME)
         launch_dbos()
 
-    def plan_run(self, *, config: dict[str, Any], snapshot: dict[str, Any]) -> AgentPlan:
+    def plan_run(
+        self,
+        *,
+        config: dict[str, Any],
+        snapshot: dict[str, Any],
+        run_id: str | None = None,
+        repos: Repositories | None = None,
+    ) -> AgentPlan:
         prompt = self._prompt(config=config, snapshot=snapshot)
+        message_history = None
+        conversation_id = None
+        if run_id is not None and repos is not None:
+            stored_messages = repos.agent_message_history.get_message_history(
+                run_id,
+                agent_name=RESEARCH_PLANNER_AGENT_NAME,
+            )
+            if stored_messages:
+                message_history = repos.agent_message_history.get_model_message_history(
+                    run_id,
+                    agent_name=RESEARCH_PLANNER_AGENT_NAME,
+                )
+            else:
+                conversation_id = f"almanac:{run_id}:{RESEARCH_PLANNER_AGENT_NAME}"
+
         with span("almanac.agent.plan", workspace=config.get("repo_path", ""), goal=config.get("goal", "")):
             if self.model_name:
-                result = self.dbos_agent.run_sync(prompt)
+                result = self.dbos_agent.run_sync(
+                    prompt,
+                    message_history=message_history,
+                    conversation_id=conversation_id,
+                )
             else:
                 test_model = TestModel(custom_output_args=self._fallback_plan(config=config).model_dump())
                 with self.agent.override(model=test_model):
-                    result = self.dbos_agent.run_sync(prompt)
+                    result = self.dbos_agent.run_sync(
+                        prompt,
+                        message_history=message_history,
+                        conversation_id=conversation_id,
+                    )
+        if run_id is not None and repos is not None:
+            repos.agent_message_history.append_run_messages(
+                run_id=run_id,
+                agent_name=RESEARCH_PLANNER_AGENT_NAME,
+                messages_json=result.new_messages_json(),
+                pydantic_run_id=getattr(result, "run_id", None),
+                conversation_id=getattr(result, "conversation_id", None),
+            )
         return result.output
 
     def _prompt(self, *, config: dict[str, Any], snapshot: dict[str, Any]) -> str:

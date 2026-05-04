@@ -57,6 +57,7 @@ Use:
 Current docs:
 
 - `.agents/docs/agents-surface/DOC.md` - conventions for the `.agents` layer
+- `.agents/docs/ai-evals-strategy/DOC.md` - strategy for code-first AI evals, fixture worlds, Logfire reporting, and behavioral checks
 - `.agents/docs/loose-models-tool-calls/DOC.md` - guideline for loose semantic models, tool-call-shaped execution, DBOS durability, and hook-driven observability
 - `.agents/docs/milestones/DOC.md` - current milestone and benchmark context
 - `.agents/docs/testing-strategy/DOC.md` - current checks and smoke strategy

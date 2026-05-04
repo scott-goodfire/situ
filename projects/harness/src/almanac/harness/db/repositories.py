@@ -3,6 +3,7 @@ from __future__ import annotations
 from pydantic import BaseModel, ConfigDict
 
 from .database import Database
+from .repos.agent_message_history import AgentMessageHistoryRepository
 from .repos.events import EventsRepository
 from .repos.evidence import EvidenceRepository
 from .repos.experiments import ExperimentsRepository
@@ -22,6 +23,7 @@ class Repositories(BaseModel):
     evidence: EvidenceRepository
     findings: FindingsRepository
     warnings: WarningsRepository
+    agent_message_history: AgentMessageHistoryRepository
     events: EventsRepository
     snapshots: SnapshotsRepository
 
@@ -34,6 +36,7 @@ class Repositories(BaseModel):
             evidence=EvidenceRepository(db=db),
             findings=FindingsRepository(db=db),
             warnings=WarningsRepository(db=db),
+            agent_message_history=AgentMessageHistoryRepository(db=db),
             events=EventsRepository(db=db),
             snapshots=SnapshotsRepository(db=db),
         )

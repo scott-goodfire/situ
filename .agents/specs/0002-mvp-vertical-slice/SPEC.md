@@ -55,7 +55,9 @@ code are launched from the Almanac repository.
 - Baseline evidence when available
 - Sequential experiment loop by default
 - One agent/worker path
+- Tool-call-shaped agent layer for run actions
 - Experiment ledger
+- Agent message history ledger
 - Evidence and signal capture
 - Lightweight findings
 - Automated trust warnings
@@ -67,6 +69,13 @@ code are launched from the Almanac repository.
 - SQLite source of truth
 - Event log
 - Minimal artifact/log references only if immediately useful
+
+The agent path should express active behavior through approved harness tools
+where practical. The MVP can keep a deterministic outer loop, but actions such
+as getting run context, running an experiment, and recording findings should
+have typed tool envelopes. Almanac should persist Pydantic AI message history
+as the durable agent transcript and use hooks/events for live tool-call
+observability rather than making a separate tool-call table the source of truth.
 
 ## MVP Cuts
 

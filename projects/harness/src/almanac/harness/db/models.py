@@ -66,6 +66,14 @@ class AddWarning(RepositoryModel):
     experiment_id: str | None = None
 
 
+class AppendAgentMessageHistory(RepositoryModel):
+    run_id: str
+    agent_name: str
+    messages_json: str
+    pydantic_run_id: str | None = None
+    conversation_id: str | None = None
+
+
 class AddEvent(RepositoryModel):
     event_type: str
     message: str

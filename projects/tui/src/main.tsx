@@ -16,9 +16,7 @@ import type {
   CollectionsSubscribeParams,
   CollectionsSubscribeResult,
   EventRecord,
-  EvidenceRecord,
   ExperimentRecord,
-  FindingRecord,
   RunRecord,
   RunStartParams,
   RunStartResult,
@@ -26,9 +24,6 @@ import type {
   SetupCompleteResult,
   SetupGetParams,
   SetupGetResult,
-  StateSnapshotParams,
-  StateSnapshotResult,
-  WarningRecord,
 } from "@almanac/protocol";
 import { useLiveQuery } from "@tanstack/react-db";
 
@@ -37,16 +32,6 @@ type Status =
   | { kind: "running"; runId?: string }
   | { kind: "completed"; runId: string }
   | { kind: "failed"; message: string };
-
-const EMPTY_SNAPSHOT: StateSnapshotResult = {
-  config: null,
-  runs: [],
-  experiments: [],
-  evidence: [],
-  findings: [],
-  warnings: [],
-  events: [],
-};
 
 const TOY_SETUP: SetupCompleteParams = {
   goal: "Understand which toy components improve score without suspicious evidence.",
@@ -130,7 +115,6 @@ function App() {
   const experimentsQuery = useLiveQuery(() => collections.experiments, [collections]);
   const eventsQuery = useLiveQuery(() => collections.events, [collections]);
   const [status, setStatus] = useState<Status>({ kind: "starting" });
-  const [snapshot, setSnapshot] = useState<StateSnapshotResult>(EMPTY_SNAPSHOT);
 
   const runs = useMemo(
     () => sortByCreated((runsQuery.data ?? []) as RunRecord[]),
@@ -148,13 +132,13 @@ function App() {
   useEffect(() => {
     const root = appRoot();
     const workspace = workspaceRoot(root);
+    const setupParams = initialSetup(workspace, root);
     const harness = harnessCommand(root);
     const client = StdioJsonRpcClient.spawn(harness.command, harness.args, workspace, {
       ALMANAC_APP_ROOT: root,
       ALMANAC_WORKSPACE: workspace,
     });
     let runId: string | undefined;
-    let closed = false;
     let closeScheduled = false;
     let unsubscribe = () => {};
 
@@ -164,7 +148,6 @@ function App() {
       }
       closeScheduled = true;
       setTimeout(() => {
-        closed = true;
         unsubscribe();
         client.close();
         exit();
@@ -184,22 +167,6 @@ function App() {
       }
     };
 
-    const refreshSnapshot = async () => {
-      const next = await client.request<StateSnapshotResult, StateSnapshotParams>(
-        "state.snapshot",
-        {},
-      );
-      setSnapshot(next);
-
-      if (!runId) {
-        return;
-      }
-      const run = next.runs.find((candidate) => candidate.id === runId);
-      if (run) {
-        handleRunRecord(run);
-      }
-    };
-
     unsubscribe = client.onNotification((notification) => {
       if (notification.method !== "collections.upserted") {
         return;
@@ -216,10 +183,6 @@ function App() {
       });
       if (upsert.collection === "runs") {
         handleRunRecord(upsert.record as unknown as RunRecord);
-        return;
-      }
-      if (upsert.collection === "events") {
-        refreshSnapshot().catch(() => undefined);
       }
     });
 
@@ -230,7 +193,7 @@ function App() {
           return setup;
         }
         return client
-          .request<SetupCompleteResult, SetupCompleteParams>("setup.complete", initialSetup(workspace, root))
+          .request<SetupCompleteResult, SetupCompleteParams>("setup.complete", setupParams)
           .then(() => client.request<SetupGetResult, SetupGetParams>("setup.get", {}));
       })
       .then(() =>
@@ -246,7 +209,6 @@ function App() {
         ),
       )
       .then((bootstrap) => applyBootstrap(collections, bootstrap))
-      .then(() => refreshSnapshot())
       .then(() =>
         client.request<RunStartResult, RunStartParams>("run.start", {
           max_experiments: maxExperiments(),
@@ -255,7 +217,6 @@ function App() {
       .then((result) => {
         runId = result.run_id;
         setStatus({ kind: "running", runId });
-        return refreshSnapshot();
       })
       .catch((error: unknown) => {
         setStatus({
@@ -264,20 +225,7 @@ function App() {
         });
       });
 
-    const interval = setInterval(() => {
-      if (!closed) {
-        refreshSnapshot().catch((error: unknown) => {
-          setStatus({
-            kind: "failed",
-            message: error instanceof Error ? error.message : String(error),
-          });
-        });
-      }
-    }, 250);
-
     return () => {
-      closed = true;
-      clearInterval(interval);
       unsubscribe();
       client.close();
     };
@@ -287,25 +235,7 @@ function App() {
   const runExperiments = latestRun
     ? experiments.filter((experiment) => experiment.run_id === latestRun.id)
     : [];
-  const runEvidence = latestRun
-    ? snapshot.evidence.filter((evidence) => evidence.run_id === latestRun.id)
-    : [];
-  const runFindings = latestRun
-    ? snapshot.findings.filter((finding) => finding.run_id === latestRun.id)
-    : [];
-  const runWarnings = latestRun
-    ? snapshot.warnings.filter((warning) => warning.run_id === latestRun.id)
-    : [];
   const activeExperiment = runExperiments.find((experiment) => experiment.status === "running");
-  const baseline = runEvidence.find((evidence) => evidence.experiment_id.endsWith("_baseline"));
-
-  const evidenceByExperiment = useMemo(() => {
-    const map = new Map<string, EvidenceRecord>();
-    for (const evidence of runEvidence) {
-      map.set(evidence.experiment_id, evidence);
-    }
-    return map;
-  }, [runEvidence]);
 
   return (
     <Box flexDirection="column" gap={1}>
@@ -321,18 +251,6 @@ function App() {
         {status.kind === "failed" && <Text color="red">{status.message}</Text>}
       </Box>
 
-      <Section title="Goal">
-        <Text>{snapshot.config?.goal ?? "Configuring context..."}</Text>
-        <Text dimColor>Workspace: {snapshot.config?.repo_path ?? process.env.ALMANAC_WORKSPACE ?? "unknown"}</Text>
-      </Section>
-
-      <Section title="Evaluation">
-        <Text>
-          Signals: {snapshot.config?.known_signals.length ? snapshot.config.known_signals.join(", ") : "unknown"}
-        </Text>
-        <Text>Baseline: {baseline ? formatSignals(baseline.signals) : "waiting"}</Text>
-      </Section>
-
       <Section title="Run">
         <Text>{latestRun ? formatRun(latestRun, runExperiments.length) : "No run yet"}</Text>
       </Section>
@@ -347,26 +265,10 @@ function App() {
         </Text>
       </Section>
 
-      <Section title="Findings">
-        {runFindings.length === 0 && <Text dimColor>Waiting for evidence</Text>}
-        {runFindings.slice(-5).map((finding) => (
-          <Text key={finding.id}>{formatFinding(finding)}</Text>
-        ))}
-      </Section>
-
       <Section title="Experiments">
         {runExperiments.length === 0 && <Text dimColor>None yet</Text>}
         {runExperiments.slice(-8).map((experiment) => (
-          <Text key={experiment.id}>{formatExperiment(experiment, evidenceByExperiment.get(experiment.id))}</Text>
-        ))}
-      </Section>
-
-      <Section title="Warnings">
-        {runWarnings.length === 0 && <Text dimColor>none</Text>}
-        {runWarnings.slice(-4).map((warning) => (
-          <Text key={warning.id} color="yellow">
-            {formatWarning(warning)}
-          </Text>
+          <Text key={experiment.id}>{formatExperiment(experiment)}</Text>
         ))}
       </Section>
 
@@ -395,32 +297,11 @@ function formatRun(run: RunRecord, experimentCount: number): string {
   return `${run.id} | ${run.status} | experiments ${experimentCount}`;
 }
 
-function formatFinding(finding: FindingRecord): string {
-  return `${displayFindingId(finding.id)} | ${finding.status} | ${finding.confidence} | ${finding.summary}`;
-}
-
-function displayFindingId(id: string): string {
-  const match = id.match(/(F-\d+)$/);
-  return match?.[1] ?? id;
-}
-
-function formatExperiment(experiment: ExperimentRecord, evidence?: EvidenceRecord): string {
+function formatExperiment(experiment: ExperimentRecord): string {
   const state = experiment.suspicious ? "suspicious" : experiment.status;
-  const signals = evidence ? formatSignals(evidence.signals) : "-";
   const components = experiment.components.join("+");
   const note = experiment.suspicious_reason ?? experiment.note;
-  return `${experiment.id} | ${state} | ${components} | ${signals} | ${note || experiment.intent}`;
-}
-
-function formatSignals(signals: Array<{ key: string; value: unknown; unit?: string | null }>): string {
-  if (signals.length === 0) {
-    return "-";
-  }
-  return signals.map((signal) => `${signal.key}=${String(signal.value)}${signal.unit ?? ""}`).join(", ");
-}
-
-function formatWarning(warning: WarningRecord): string {
-  return `${warning.kind}: ${warning.message}`;
+  return `${experiment.id} | ${state} | ${components} | ${note || experiment.intent}`;
 }
 
 function sortByCreated<T extends { created_at: string }>(records: T[]): T[] {

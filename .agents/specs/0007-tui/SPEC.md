@@ -13,9 +13,12 @@ surface.
 It should not own run behavior, read SQLite directly, or run workers directly.
 
 For the first collection-backed slice, the TUI should render runs, experiments,
-and events from the shared TypeScript collection layer. It may still request a
-full snapshot for compatibility while evidence, findings, and warnings are not
-yet collection-backed.
+and events from the shared TypeScript collection layer. It should not request
+the full state snapshot for non-collection-backed records.
+
+Evidence, findings, warnings, tool calls, and project config can return to the
+TUI after they have collection-shaped APIs. Until then, keep the frontend loop
+small and prove the collection sync path.
 
 ## First Screen
 

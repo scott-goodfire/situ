@@ -82,3 +82,16 @@ def event_row(row: sqlite3.Row) -> dict[str, Any]:
         "payload": json_loads(row["payload_json"]),
         "created_at": row["created_at"],
     }
+
+
+def agent_message_history_row(row: sqlite3.Row) -> dict[str, Any]:
+    return {
+        "id": row["id"],
+        "run_id": row["run_id"],
+        "agent_name": row["agent_name"],
+        "pydantic_run_id": row["pydantic_run_id"],
+        "conversation_id": row["conversation_id"],
+        "messages": json_loads(row["messages_json"]),
+        "message_count": row["message_count"],
+        "created_at": row["created_at"],
+    }

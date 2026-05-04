@@ -278,7 +278,12 @@ class HarnessApp:
 
     def _record_agent_plan(self, run_id: str, config: dict[str, Any]) -> None:
         try:
-            plan = self.agent_runtime.plan_run(config=config, snapshot=self.repos.snapshots.get())
+            plan = self.agent_runtime.plan_run(
+                config=config,
+                snapshot=self.repos.snapshots.get(),
+                run_id=run_id,
+                repos=self.repos,
+            )
         except Exception as error:
             warning = self.repos.warnings.add(
                 run_id=run_id,

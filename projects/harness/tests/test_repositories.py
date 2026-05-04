@@ -193,6 +193,37 @@ def test_events_repository_add_and_list(repos: Repositories) -> None:
     assert repos.events.list_all() == [event]
 
 
+def test_agent_message_history_repository_appends_and_reconstructs(repos: Repositories) -> None:
+    create_run(repos)
+
+    first = repos.agent_message_history.append_run_messages(
+        run_id="run_0001",
+        agent_name="almanac_research_planner",
+        messages_json=(
+            b'[{"kind":"request","run_id":"pydantic_run_1",'
+            b'"conversation_id":"conversation_1"}]'
+        ),
+    )
+    second = repos.agent_message_history.append_run_messages(
+        run_id="run_0001",
+        agent_name="almanac_research_planner",
+        messages_json='[{"kind":"response","run_id":"pydantic_run_1","conversation_id":"conversation_1"}]',
+    )
+
+    assert first["id"] == 1
+    assert first["message_count"] == 1
+    assert first["pydantic_run_id"] == "pydantic_run_1"
+    assert first["conversation_id"] == "conversation_1"
+    assert second["id"] == 2
+    assert repos.agent_message_history.get_message_history(
+        "run_0001",
+        agent_name="almanac_research_planner",
+    ) == [
+        {"kind": "request", "run_id": "pydantic_run_1", "conversation_id": "conversation_1"},
+        {"kind": "response", "run_id": "pydantic_run_1", "conversation_id": "conversation_1"},
+    ]
+
+
 def test_snapshots_repository_composes_protocol_shaped_state(repos: Repositories) -> None:
     create_experiment(repos)
     repos.evidence.add(

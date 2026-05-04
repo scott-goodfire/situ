@@ -1,3 +1,4 @@
+from .agent_message_history import AgentMessageHistoryRepository
 from .events import EventsRepository
 from .evidence import EvidenceRepository
 from .experiments import ExperimentsRepository
@@ -8,6 +9,7 @@ from .snapshots import SnapshotsRepository
 from .warnings import WarningsRepository
 
 __all__ = [
+    "AgentMessageHistoryRepository",
     "EventsRepository",
     "EvidenceRepository",
     "ExperimentsRepository",

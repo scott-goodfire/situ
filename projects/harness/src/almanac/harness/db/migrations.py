@@ -67,6 +67,17 @@ CREATE TABLE IF NOT EXISTS warnings (
   created_at TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS agent_message_history (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  run_id TEXT NOT NULL REFERENCES runs(id),
+  agent_name TEXT NOT NULL,
+  pydantic_run_id TEXT,
+  conversation_id TEXT,
+  messages_json TEXT NOT NULL,
+  message_count INTEGER NOT NULL,
+  created_at TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS events (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   run_id TEXT REFERENCES runs(id),

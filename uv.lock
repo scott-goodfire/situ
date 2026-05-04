@@ -239,13 +239,17 @@ source = { virtual = "." }
 
 [package.dev-dependencies]
 dev = [
+    { name = "pydantic-evals", extra = ["logfire"] },
     { name = "pytest" },
 ]
 
 [package.metadata]
 
 [package.metadata.requires-dev]
-dev = [{ name = "pytest", specifier = ">=8.0.0" }]
+dev = [
+    { name = "pydantic-evals", extras = ["logfire"], specifier = ">=1.89.1" },
+    { name = "pytest", specifier = ">=8.0.0" },
+]
 
 [[package]]
 name = "beartype"
@@ -2040,6 +2044,11 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/01/22/039c249d08878fad86edccabe7cb1ea3a34dc919270800b5d33e922a70e0/pydantic_evals-1.89.1.tar.gz", hash = "sha256:3854d792029add7f80926f08219a2a8f02c37e6e4d00a0a07e324490cd09218c", size = 76575, upload-time = "2026-05-01T19:09:39.898Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/6d/c3/8db55483b9916de2d64c5e00ae118e64384ef32eb14bdee7204c628d0143/pydantic_evals-1.89.1-py3-none-any.whl", hash = "sha256:91e614adeba56af51415735c49a2b590813eb9d0151480eec892f71bcc1b59c7", size = 91529, upload-time = "2026-05-01T19:09:31.355Z" },
+]
+
+[package.optional-dependencies]
+logfire = [
+    { name = "logfire" },
 ]
 
 [[package]]

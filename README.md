@@ -85,9 +85,26 @@ DBOS stores its system database beside Almanac project state by default:
 
 You can override it with `DBOS_SYSTEM_DATABASE_URL`.
 
+## AI Evals
+
+Almanac has a small code-first AI eval layer for prompt, tool-call, and
+observability behavior:
+
+```bash
+mise run ai-evals
+mise run ai-evals -- --case suspicious
+mise run ai-evals:json
+```
+
+The first suite uses a mocked micrograd world with baseline, A/B/C variants, an
+A+C combination, and one suspicious result. When `ALMANAC_LOGFIRE_TOKEN` or
+`LOGFIRE_TOKEN` is set, eval experiments are sent to Logfire with
+`service_name=almanac-ai-evals`.
+
 ## Layout
 
 ```text
+ai_evals                     Code-first AI evals and fixture worlds
 projects/harness              Python local runtime
 projects/tui                  TypeScript Ink TUI
 shared/python/protocol        Pydantic protocol source of truth

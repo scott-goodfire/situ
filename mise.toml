@@ -12,6 +12,14 @@ run = "./commands/update.sh"
 description = "Run Python syntax checks and TypeScript typechecks"
 run = "./commands/check.sh"
 
+[tasks."ai-evals"]
+description = "Run Almanac AI eval suites"
+run = "./commands/ai-evals.sh"
+
+[tasks."ai-evals:json"]
+description = "Run Almanac AI eval suites and print JSON"
+run = "./commands/ai-evals-json.sh"
+
 [tasks."dev:tui"]
 description = "Run the TypeScript Ink TUI"
 run = "./commands/dev-tui.sh"
