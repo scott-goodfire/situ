@@ -1,0 +1,4 @@
+interface:
+  display_name: "Almanac Spec Policy Maintenance"
+  short_description: "Add and lint Almanac specs and policies."
+  default_prompt: "Use this skill to add, update, or lint numbered Almanac specs and policies."
