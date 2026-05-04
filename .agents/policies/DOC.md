@@ -18,6 +18,7 @@ or agent/worker flows.
 - [0008-docs-before-code/POLICY.md](./0008-docs-before-code/POLICY.md) - update specs before product-significant code
 - [0009-good-specs/POLICY.md](./0009-good-specs/POLICY.md) - define the writing bar for specs
 - [0010-evidence-backed-findings/POLICY.md](./0010-evidence-backed-findings/POLICY.md) - keep findings grounded in evidence
+- [0011-repository-layer/POLICY.md](./0011-repository-layer/POLICY.md) - keep durable state access repository-owned
 
 ## Review Style
 

@@ -7,9 +7,15 @@ There is no web UI in the first slice.
 ## Role
 
 The TUI starts or connects to the local Python harness, subscribes to live
-events, requests snapshots, and renders the run observability surface.
+events, bootstraps collection-shaped state, and renders the run observability
+surface.
 
 It should not own run behavior, read SQLite directly, or run workers directly.
+
+For the first collection-backed slice, the TUI should render runs, experiments,
+and events from the shared TypeScript collection layer. It may still request a
+full snapshot for compatibility while evidence, findings, and warnings are not
+yet collection-backed.
 
 ## First Screen
 

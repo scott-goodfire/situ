@@ -1,0 +1,19 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "subscribed": {
+      "title": "Subscribed",
+      "type": "boolean"
+    },
+    "cursor": {
+      "title": "Cursor",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "subscribed",
+    "cursor"
+  ],
+  "title": "CollectionsSubscribeResult",
+  "type": "object"
+}

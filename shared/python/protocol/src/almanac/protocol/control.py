@@ -1,3 +1,5 @@
+from typing import Any, Literal
+
 from pydantic import BaseModel, ConfigDict
 
 from .events import (
@@ -64,6 +66,42 @@ class StateSnapshotResult(BaseModel):
     findings: list[FindingRecord]
     warnings: list[WarningRecord]
     events: list[EventRecord]
+
+
+CollectionName = Literal["runs", "experiments", "events"]
+
+
+class CollectionsBootstrapParams(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+
+class CollectionsBootstrapResult(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    cursor: int
+    runs: list[RunRecord]
+    experiments: list[ExperimentRecord]
+    events: list[EventRecord]
+
+
+class CollectionsSubscribeParams(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+
+class CollectionsSubscribeResult(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    subscribed: bool
+    cursor: int
+
+
+class CollectionUpsertedParams(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    cursor: int
+    collection: CollectionName
+    key: str
+    record: dict[str, Any]
 
 
 class EventsSubscribeParams(BaseModel):

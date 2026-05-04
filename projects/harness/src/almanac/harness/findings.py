@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from typing import Any
 
-from .state import StateStore
+from .db import Repositories
 
 
-def update_findings(store: StateStore, run_id: str) -> None:
-    snapshot = store.snapshot()
+def update_findings(repos: Repositories, run_id: str) -> None:
+    snapshot = repos.snapshots.get()
     experiments = [
         experiment
         for experiment in snapshot["experiments"]
@@ -32,7 +32,7 @@ def update_findings(store: StateStore, run_id: str) -> None:
 
     if improved:
         best = max(improved, key=lambda item: item[1])
-        store.upsert_finding(
+        repos.findings.upsert(
             finding_id=f"{run_id}_F-001",
             run_id=run_id,
             summary=(
@@ -50,7 +50,7 @@ def update_findings(store: StateStore, run_id: str) -> None:
         if "C" in experiment["components"] and score > baseline_score + 0.02
     ]
     if component_c:
-        store.upsert_finding(
+        repos.findings.upsert(
             finding_id=f"{run_id}_F-002",
             run_id=run_id,
             summary="Component C looks promising across toy evidence.",
@@ -65,7 +65,7 @@ def update_findings(store: StateStore, run_id: str) -> None:
         if len(experiment["components"]) > 1 and score > baseline_score + 0.04
     ]
     if combination:
-        store.upsert_finding(
+        repos.findings.upsert(
             finding_id=f"{run_id}_F-003",
             run_id=run_id,
             summary="Combining components can outperform single changes in the toy loop.",

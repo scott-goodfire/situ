@@ -1,0 +1,17 @@
+{
+  "name": "@almanac/collections",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "check": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@almanac/protocol": "workspace:*",
+    "@tanstack/db": "^0.6.5",
+    "@tanstack/react-db": "^0.1.83"
+  }
+}

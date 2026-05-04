@@ -7,6 +7,10 @@ from pathlib import Path
 from typing import Any, Callable
 
 from almanac.protocol import (
+    CollectionsBootstrapParams,
+    CollectionsBootstrapResult,
+    CollectionsSubscribeParams,
+    CollectionsSubscribeResult,
     EventsSubscribeParams,
     EventsSubscribeResult,
     ExperimentRunParams,
@@ -24,10 +28,10 @@ from almanac.protocol import (
 )
 
 from .agent_runtime import AgentRuntime
+from .db import Database, Repositories
 from .findings import update_findings
 from .observability import span
 from .project_context import ProjectContext
-from .state import StateStore
 from .trust_checks import check_evidence
 from .worker_manager import WorkerManager
 
@@ -92,16 +96,18 @@ PROPOSALS = [
 class HarnessApp:
     def __init__(self, workspace_root: Path, notify: NotificationWriter, app_root: Path | None = None) -> None:
         self.context = ProjectContext(workspace_root)
-        self.store = StateStore(
+        self.db = Database(
             self.context.project_dir / "almanac.sqlite",
             project_id=self.context.project_id,
             repo_path=str(self.context.repo_root),
         )
+        self.repos = Repositories.create(self.db)
         self.workers = WorkerManager(self.context.repo_root, app_root=app_root)
         self.agent_runtime = AgentRuntime(self.context.project_dir)
         self.notify = notify
         self.subscribed = False
-        self._run_counter = len(self.store.snapshot()["runs"])
+        self.collection_subscribed = False
+        self._run_counter = len(self.repos.snapshots.get()["runs"])
 
     def handle(self, method: str, params: dict[str, Any] | None) -> dict[str, Any]:
         handlers = {
@@ -109,6 +115,8 @@ class HarnessApp:
             "setup.get": self.setup_get,
             "setup.complete": self.setup_complete,
             "state.snapshot": self.state_snapshot,
+            "collections.bootstrap": self.collections_bootstrap,
+            "collections.subscribe": self.collections_subscribe,
             "events.subscribe": self.events_subscribe,
             "run.start": self.run_start,
             "run.status": self.run_status,
@@ -124,12 +132,12 @@ class HarnessApp:
 
     def setup_get(self, params: dict[str, Any]) -> dict[str, Any]:
         SetupGetParams.model_validate(params)
-        config = self.store.get_config()
+        config = self.repos.project_config.get()
         return SetupGetResult(configured=config is not None, config=config).model_dump()
 
     def setup_complete(self, params: dict[str, Any]) -> dict[str, Any]:
         setup = SetupCompleteParams.model_validate(params)
-        config = self.store.set_config(
+        config = self.repos.project_config.set(
             goal=setup.goal,
             evaluation_context=setup.evaluation_context,
             known_signals=setup.known_signals,
@@ -144,27 +152,46 @@ class HarnessApp:
 
     def state_snapshot(self, params: dict[str, Any]) -> dict[str, Any]:
         StateSnapshotParams.model_validate(params)
-        return self.store.snapshot()
+        return self.repos.snapshots.get()
+
+    def collections_bootstrap(self, params: dict[str, Any]) -> dict[str, Any]:
+        CollectionsBootstrapParams.model_validate(params)
+        snapshot = self.repos.snapshots.get()
+        return CollectionsBootstrapResult(
+            cursor=self._collection_cursor(snapshot["events"]),
+            runs=snapshot["runs"],
+            experiments=snapshot["experiments"],
+            events=snapshot["events"],
+        ).model_dump()
+
+    def collections_subscribe(self, params: dict[str, Any]) -> dict[str, Any]:
+        CollectionsSubscribeParams.model_validate(params)
+        self.collection_subscribed = True
+        return CollectionsSubscribeResult(
+            subscribed=True,
+            cursor=self._collection_cursor(self.repos.snapshots.get()["events"]),
+        ).model_dump()
 
     def events_subscribe(self, params: dict[str, Any]) -> dict[str, Any]:
         subscribe = EventsSubscribeParams.model_validate(params)
         self.subscribed = True
         replayed = 0
         if subscribe.replay_existing:
-            for event in self.store.snapshot()["events"]:
+            for event in self.repos.snapshots.get()["events"]:
                 self.notify("event.appended", {"event": event})
                 replayed += 1
         return EventsSubscribeResult(subscribed=True, replayed=replayed).model_dump()
 
     def run_start(self, params: dict[str, Any]) -> dict[str, Any]:
         start = RunStartParams.model_validate(params)
-        if self.store.get_config() is None:
+        if self.repos.project_config.get() is None:
             raise RuntimeError("setup must be completed before starting a run")
 
         self._run_counter += 1
         run_id = f"run_{self._run_counter:04d}"
-        self.store.create_run(run_id)
-        self.record_event("run.started", f"Started {run_id}", run_id=run_id)
+        run = self.repos.runs.create(run_id)
+        event = self.record_event("run.started", f"Started {run_id}", run_id=run_id)
+        self.emit_collection_upsert("runs", run_id, run, cursor=event["id"])
 
         thread = threading.Thread(
             target=self._execute_run,
@@ -177,7 +204,7 @@ class HarnessApp:
 
     def run_status(self, params: dict[str, Any]) -> dict[str, Any]:
         status = RunStatusParams.model_validate(params)
-        return RunStatusResult(run=self.store.get_run(status.run_id)).model_dump()
+        return RunStatusResult(run=self.repos.runs.get(status.run_id)).model_dump()
 
     def record_event(
         self,
@@ -187,7 +214,7 @@ class HarnessApp:
         run_id: str | None = None,
         payload: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
-        event = self.store.add_event(
+        event = self.repos.events.add(
             event_type=event_type,
             message=message,
             run_id=run_id,
@@ -195,11 +222,35 @@ class HarnessApp:
         )
         if self.subscribed:
             self.notify("event.appended", {"event": event})
+        self.emit_collection_upsert("events", str(event["id"]), event, cursor=event["id"])
         return event
+
+    def emit_collection_upsert(
+        self,
+        collection: str,
+        key: str,
+        record: dict[str, Any],
+        *,
+        cursor: int,
+    ) -> None:
+        if not self.collection_subscribed:
+            return
+        self.notify(
+            "collections.upserted",
+            {
+                "cursor": cursor,
+                "collection": collection,
+                "key": key,
+                "record": record,
+            },
+        )
+
+    def _collection_cursor(self, events: list[dict[str, Any]]) -> int:
+        return int(events[-1]["id"]) if events else 0
 
     def _execute_run(self, run_id: str, max_experiments: int) -> None:
         try:
-            config = self.store.get_config()
+            config = self.repos.project_config.get()
             if config is None:
                 raise RuntimeError("missing project config")
 
@@ -210,22 +261,26 @@ class HarnessApp:
                     self._execute_proposal(run_id, config, proposal)
                     time.sleep(0.25)
 
-            self.store.update_run_status(run_id, "completed")
-            self.record_event("run.completed", f"Completed {run_id}", run_id=run_id)
+            run = self.repos.runs.update_status(run_id, "completed")
+            event = self.record_event("run.completed", f"Completed {run_id}", run_id=run_id)
+            if run is not None:
+                self.emit_collection_upsert("runs", run_id, run, cursor=event["id"])
         except Exception as error:
-            self.store.update_run_status(run_id, "failed")
-            self.record_event(
+            run = self.repos.runs.update_status(run_id, "failed")
+            event = self.record_event(
                 "run.failed",
                 f"Run failed: {error}",
                 run_id=run_id,
                 payload={"error": str(error)},
             )
+            if run is not None:
+                self.emit_collection_upsert("runs", run_id, run, cursor=event["id"])
 
     def _record_agent_plan(self, run_id: str, config: dict[str, Any]) -> None:
         try:
-            plan = self.agent_runtime.plan_run(config=config, snapshot=self.store.snapshot())
+            plan = self.agent_runtime.plan_run(config=config, snapshot=self.repos.snapshots.get())
         except Exception as error:
-            warning = self.store.add_warning(
+            warning = self.repos.warnings.add(
                 run_id=run_id,
                 kind="agent_runtime_failed",
                 message=f"Agent runtime failed: {error}",
@@ -249,7 +304,7 @@ class HarnessApp:
         with span("almanac.experiment.execute", run_id=run_id, proposal=proposal.suffix):
             experiment_id = f"exp_{run_id}_{proposal.suffix}"
             based_on = [f"exp_{run_id}_{suffix}" for suffix in proposal.based_on_suffixes]
-            self.store.create_experiment(
+            experiment = self.repos.experiments.create(
                 experiment_id=experiment_id,
                 run_id=run_id,
                 intent=proposal.intent,
@@ -257,20 +312,23 @@ class HarnessApp:
                 components=proposal.components,
                 based_on=based_on,
             )
-            self.record_event(
+            event = self.record_event(
                 "experiment.queued",
                 f"Queued {experiment_id}",
                 run_id=run_id,
                 payload={"experiment_id": experiment_id, "components": proposal.components},
             )
+            self.emit_collection_upsert("experiments", experiment_id, experiment, cursor=event["id"])
 
-            self.store.update_experiment(experiment_id, status="running")
-            self.record_event(
+            experiment = self.repos.experiments.update(experiment_id, status="running")
+            event = self.record_event(
                 "experiment.started",
                 f"Started {experiment_id}",
                 run_id=run_id,
                 payload={"experiment_id": experiment_id},
             )
+            if experiment is not None:
+                self.emit_collection_upsert("experiments", experiment_id, experiment, cursor=event["id"])
 
             result = self.workers.run_experiment(
                 ExperimentRunParams(
@@ -284,7 +342,7 @@ class HarnessApp:
             )
 
             signals = [signal.model_dump() for signal in result.signals]
-            evidence = self.store.add_evidence(
+            evidence = self.repos.evidence.add(
                 run_id=run_id,
                 experiment_id=experiment_id,
                 summary=result.summary,
@@ -306,7 +364,7 @@ class HarnessApp:
             )
             suspicious_reason = None
             for kind, message in warnings:
-                warning = self.store.add_warning(
+                warning = self.repos.warnings.add(
                     run_id=run_id,
                     experiment_id=experiment_id,
                     kind=kind,
@@ -321,20 +379,22 @@ class HarnessApp:
                 )
 
             suspicious = suspicious_reason is not None
-            self.store.update_experiment(
+            experiment = self.repos.experiments.update(
                 experiment_id,
                 status="suspicious" if suspicious else result.status,
                 suspicious=suspicious,
                 suspicious_reason=suspicious_reason,
                 note=evidence["summary"],
             )
-            update_findings(self.store, run_id)
-            self.record_event(
+            update_findings(self.repos, run_id)
+            event = self.record_event(
                 "experiment.completed",
                 f"Completed {experiment_id}",
                 run_id=run_id,
                 payload={"experiment_id": experiment_id, "suspicious": suspicious},
             )
+            if experiment is not None:
+                self.emit_collection_upsert("experiments", experiment_id, experiment, cursor=event["id"])
 
     def _record_worker_progress(self, run_id: str, notification: dict[str, Any]) -> None:
         params = notification.get("params") or {}
@@ -347,7 +407,7 @@ class HarnessApp:
 
     def _baseline_score(self, run_id: str) -> float | None:
         baseline_id = f"exp_{run_id}_baseline"
-        for evidence in self.store.snapshot()["evidence"]:
+        for evidence in self.repos.snapshots.get()["evidence"]:
             if evidence["experiment_id"] != baseline_id:
                 continue
             for signal in evidence["signals"]:

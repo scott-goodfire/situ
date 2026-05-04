@@ -11,6 +11,7 @@ Start with:
 - [.agents/policies/DOC.md](./.agents/policies/DOC.md)
 - [.agents/docs/agents-surface/DOC.md](./.agents/docs/agents-surface/DOC.md)
 - [.agents/docs/milestones/DOC.md](./.agents/docs/milestones/DOC.md)
+- [.agents/docs/loose-models-tool-calls/DOC.md](./.agents/docs/loose-models-tool-calls/DOC.md)
 
 The key product thesis:
 

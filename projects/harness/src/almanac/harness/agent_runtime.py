@@ -13,6 +13,9 @@ from .dbos_runtime import configure_dbos, launch_dbos
 from .observability import configure_observability, span
 
 
+DEFAULT_OPENAI_MODEL = "openai:gpt-5.5"
+
+
 class AgentPlan(BaseModel):
     summary: str
     proposed_focus: str
@@ -26,7 +29,11 @@ class AgentRuntime:
         configure_observability(project_dir)
         configure_dbos(project_dir)
 
-        self.model_name = os.environ.get("ALMANAC_AGENT_MODEL")
+        openai_key = os.environ.get("ALMANAC_OPENAI_KEY")
+        if openai_key and not os.environ.get("OPENAI_API_KEY"):
+            os.environ["OPENAI_API_KEY"] = openai_key
+
+        self.model_name = os.environ.get("ALMANAC_AGENT_MODEL") or (DEFAULT_OPENAI_MODEL if openai_key else None)
         model = self.model_name or TestModel(custom_output_args=self._fallback_plan().model_dump())
         self.agent: Agent[None, AgentPlan] = Agent(
             model,

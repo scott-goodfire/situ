@@ -147,6 +147,31 @@ export interface StateSnapshotResult {
   events: EventRecord[];
 }
 
+export interface CollectionsBootstrapParams {
+}
+
+export interface CollectionsBootstrapResult {
+  cursor: number;
+  runs: RunRecord[];
+  experiments: ExperimentRecord[];
+  events: EventRecord[];
+}
+
+export interface CollectionsSubscribeParams {
+}
+
+export interface CollectionsSubscribeResult {
+  subscribed: boolean;
+  cursor: number;
+}
+
+export interface CollectionUpsertedParams {
+  cursor: number;
+  collection: "runs" | "experiments" | "events";
+  key: string;
+  record: Record<string, unknown>;
+}
+
 export interface EventsSubscribeParams {
   replay_existing?: boolean;
 }
@@ -205,5 +230,5 @@ export interface WorkerProgressParams {
   payload?: Record<string, unknown>;
 }
 
-export type ControlMethod = "harness.hello" | "setup.get" | "setup.complete" | "state.snapshot" | "events.subscribe" | "run.start" | "run.status";
+export type ControlMethod = "harness.hello" | "setup.get" | "setup.complete" | "state.snapshot" | "collections.bootstrap" | "collections.subscribe" | "events.subscribe" | "run.start" | "run.status";
 export type WorkerMethod = "worker.initialize" | "experiment.run";

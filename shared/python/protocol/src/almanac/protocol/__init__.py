@@ -1,4 +1,9 @@
 from .control import (
+    CollectionUpsertedParams,
+    CollectionsBootstrapParams,
+    CollectionsBootstrapResult,
+    CollectionsSubscribeParams,
+    CollectionsSubscribeResult,
     EventsSubscribeParams,
     EventsSubscribeResult,
     HarnessHelloParams,
@@ -39,6 +44,11 @@ from .worker import (
 )
 
 __all__ = [
+    "CollectionUpsertedParams",
+    "CollectionsBootstrapParams",
+    "CollectionsBootstrapResult",
+    "CollectionsSubscribeParams",
+    "CollectionsSubscribeResult",
     "EventRecord",
     "EventsSubscribeParams",
     "EventsSubscribeResult",

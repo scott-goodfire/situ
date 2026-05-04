@@ -3,11 +3,19 @@ import React, { useEffect, useMemo, useState } from "react";
 import { existsSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  applyBootstrap,
+  applyCollectionUpsert,
+  createAlmanacCollections,
+} from "@almanac/collections";
 import { StdioJsonRpcClient } from "@almanac/rpc-client";
 import type {
+  CollectionUpsertedParams,
+  CollectionsBootstrapParams,
+  CollectionsBootstrapResult,
+  CollectionsSubscribeParams,
+  CollectionsSubscribeResult,
   EventRecord,
-  EventsSubscribeParams,
-  EventsSubscribeResult,
   EvidenceRecord,
   ExperimentRecord,
   FindingRecord,
@@ -22,6 +30,7 @@ import type {
   StateSnapshotResult,
   WarningRecord,
 } from "@almanac/protocol";
+import { useLiveQuery } from "@tanstack/react-db";
 
 type Status =
   | { kind: "starting" }
@@ -116,9 +125,25 @@ function maxExperiments(): number {
 
 function App() {
   const { exit } = useApp();
+  const collections = useMemo(() => createAlmanacCollections(), []);
+  const runsQuery = useLiveQuery(() => collections.runs, [collections]);
+  const experimentsQuery = useLiveQuery(() => collections.experiments, [collections]);
+  const eventsQuery = useLiveQuery(() => collections.events, [collections]);
   const [status, setStatus] = useState<Status>({ kind: "starting" });
   const [snapshot, setSnapshot] = useState<StateSnapshotResult>(EMPTY_SNAPSHOT);
-  const [events, setEvents] = useState<EventRecord[]>([]);
+
+  const runs = useMemo(
+    () => sortByCreated((runsQuery.data ?? []) as RunRecord[]),
+    [runsQuery.data],
+  );
+  const experiments = useMemo(
+    () => sortByCreated((experimentsQuery.data ?? []) as ExperimentRecord[]),
+    [experimentsQuery.data],
+  );
+  const events = useMemo(
+    () => sortEvents((eventsQuery.data ?? []) as EventRecord[]),
+    [eventsQuery.data],
+  );
 
   useEffect(() => {
     const root = appRoot();
@@ -130,17 +155,34 @@ function App() {
     });
     let runId: string | undefined;
     let closed = false;
+    let closeScheduled = false;
+    let unsubscribe = () => {};
 
-    const unsubscribe = client.onNotification((notification) => {
-      if (notification.method !== "event.appended") {
+    const closeAfterCompletedRun = () => {
+      if (closeScheduled || process.env.ALMANAC_TUI_STAY_OPEN === "1") {
         return;
       }
-      const event = (notification.params as { event?: EventRecord } | undefined)?.event;
-      if (!event) {
+      closeScheduled = true;
+      setTimeout(() => {
+        closed = true;
+        unsubscribe();
+        client.close();
+        exit();
+      }, 1400);
+    };
+
+    const handleRunRecord = (run: RunRecord) => {
+      if (!runId || run.id !== runId) {
         return;
       }
-      setEvents((current) => mergeEvent(current, event));
-    });
+      if (run.status === "completed") {
+        setStatus({ kind: "completed", runId });
+        closeAfterCompletedRun();
+      }
+      if (run.status === "failed") {
+        setStatus({ kind: "failed", message: `Run ${run.id} failed` });
+      }
+    };
 
     const refreshSnapshot = async () => {
       const next = await client.request<StateSnapshotResult, StateSnapshotParams>(
@@ -148,33 +190,41 @@ function App() {
         {},
       );
       setSnapshot(next);
-      setEvents(next.events.slice(-10));
 
       if (!runId) {
         return;
       }
       const run = next.runs.find((candidate) => candidate.id === runId);
-      if (run?.status === "completed") {
-        setStatus({ kind: "completed", runId });
-        if (process.env.ALMANAC_TUI_STAY_OPEN !== "1") {
-          setTimeout(() => {
-            closed = true;
-            unsubscribe();
-            client.close();
-            exit();
-          }, 1400);
-        }
-      }
-      if (run?.status === "failed") {
-        setStatus({ kind: "failed", message: `Run ${run.id} failed` });
+      if (run) {
+        handleRunRecord(run);
       }
     };
 
+    unsubscribe = client.onNotification((notification) => {
+      if (notification.method !== "collections.upserted") {
+        return;
+      }
+      const upsert = notification.params as CollectionUpsertedParams | undefined;
+      if (!upsert) {
+        return;
+      }
+      applyCollectionUpsert(collections, upsert).catch((error: unknown) => {
+        setStatus({
+          kind: "failed",
+          message: error instanceof Error ? error.message : String(error),
+        });
+      });
+      if (upsert.collection === "runs") {
+        handleRunRecord(upsert.record as unknown as RunRecord);
+        return;
+      }
+      if (upsert.collection === "events") {
+        refreshSnapshot().catch(() => undefined);
+      }
+    });
+
     client
-      .request<EventsSubscribeResult, EventsSubscribeParams>("events.subscribe", {
-        replay_existing: false,
-      })
-      .then(() => client.request<SetupGetResult, SetupGetParams>("setup.get", {}))
+      .request<SetupGetResult, SetupGetParams>("setup.get", {})
       .then((setup) => {
         if (setup.configured) {
           return setup;
@@ -183,6 +233,20 @@ function App() {
           .request<SetupCompleteResult, SetupCompleteParams>("setup.complete", initialSetup(workspace, root))
           .then(() => client.request<SetupGetResult, SetupGetParams>("setup.get", {}));
       })
+      .then(() =>
+        client.request<CollectionsSubscribeResult, CollectionsSubscribeParams>(
+          "collections.subscribe",
+          {},
+        ),
+      )
+      .then(() =>
+        client.request<CollectionsBootstrapResult, CollectionsBootstrapParams>(
+          "collections.bootstrap",
+          {},
+        ),
+      )
+      .then((bootstrap) => applyBootstrap(collections, bootstrap))
+      .then(() => refreshSnapshot())
       .then(() =>
         client.request<RunStartResult, RunStartParams>("run.start", {
           max_experiments: maxExperiments(),
@@ -217,11 +281,11 @@ function App() {
       unsubscribe();
       client.close();
     };
-  }, [exit]);
+  }, [collections, exit]);
 
-  const latestRun = snapshot.runs.at(-1);
+  const latestRun = runs.at(-1);
   const runExperiments = latestRun
-    ? snapshot.experiments.filter((experiment) => experiment.run_id === latestRun.id)
+    ? experiments.filter((experiment) => experiment.run_id === latestRun.id)
     : [];
   const runEvidence = latestRun
     ? snapshot.evidence.filter((evidence) => evidence.run_id === latestRun.id)
@@ -327,13 +391,6 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-function mergeEvent(events: EventRecord[], event: EventRecord): EventRecord[] {
-  if (events.some((candidate) => candidate.id === event.id)) {
-    return events;
-  }
-  return [...events, event].slice(-10);
-}
-
 function formatRun(run: RunRecord, experimentCount: number): string {
   return `${run.id} | ${run.status} | experiments ${experimentCount}`;
 }
@@ -364,6 +421,14 @@ function formatSignals(signals: Array<{ key: string; value: unknown; unit?: stri
 
 function formatWarning(warning: WarningRecord): string {
   return `${warning.kind}: ${warning.message}`;
+}
+
+function sortByCreated<T extends { created_at: string }>(records: T[]): T[] {
+  return [...records].sort((left, right) => left.created_at.localeCompare(right.created_at));
+}
+
+function sortEvents(records: EventRecord[]): EventRecord[] {
+  return [...records].sort((left, right) => left.id - right.id);
 }
 
 render(<App />);

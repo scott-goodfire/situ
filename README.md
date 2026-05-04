@@ -57,20 +57,25 @@ The Python harness now initializes:
 - DBOS for durable agent execution state
 - Logfire for Pydantic AI / DBOS / harness traces
 
-The default agent runtime uses Pydantic AI's local test model, so the toy and
-micrograd examples still run without an LLM API key.
+The default agent runtime uses Pydantic AI's local test model unless an
+Almanac-scoped OpenAI key is configured, so the toy and micrograd examples still
+run without an LLM API key.
 
 To send traces to Logfire, set a write token in your shell or local env file:
 
 ```bash
-export LOGFIRE_TOKEN="..."
+export ALMANAC_LOGFIRE_TOKEN="..."
 ```
 
-To try a real Pydantic AI model instead of the local test model:
+To use OpenAI-backed Pydantic AI planning:
 
 ```bash
-export ALMANAC_AGENT_MODEL="openai:gpt-5.2"
+export ALMANAC_OPENAI_KEY="..."
+export ALMANAC_AGENT_MODEL="openai:gpt-5.5"
 ```
+
+When `ALMANAC_OPENAI_KEY` is present and `ALMANAC_AGENT_MODEL` is unset, Almanac
+defaults to `openai:gpt-5.5`.
 
 DBOS stores its system database beside Almanac project state by default:
 

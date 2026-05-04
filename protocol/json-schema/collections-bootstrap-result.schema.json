@@ -1,0 +1,198 @@
+{
+  "$defs": {
+    "EventRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "integer"
+        },
+        "run_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Run Id"
+        },
+        "type": {
+          "title": "Type",
+          "type": "string"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        },
+        "payload": {
+          "additionalProperties": true,
+          "title": "Payload",
+          "type": "object"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "message",
+        "payload",
+        "created_at"
+      ],
+      "title": "EventRecord",
+      "type": "object"
+    },
+    "ExperimentRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "run_id": {
+          "title": "Run Id",
+          "type": "string"
+        },
+        "status": {
+          "title": "Status",
+          "type": "string"
+        },
+        "intent": {
+          "title": "Intent",
+          "type": "string"
+        },
+        "change_summary": {
+          "title": "Change Summary",
+          "type": "string"
+        },
+        "components": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Components",
+          "type": "array"
+        },
+        "based_on": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Based On",
+          "type": "array"
+        },
+        "suspicious": {
+          "default": false,
+          "title": "Suspicious",
+          "type": "boolean"
+        },
+        "suspicious_reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Suspicious Reason"
+        },
+        "note": {
+          "default": "",
+          "title": "Note",
+          "type": "string"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        },
+        "updated_at": {
+          "title": "Updated At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "run_id",
+        "status",
+        "intent",
+        "change_summary",
+        "components",
+        "based_on",
+        "created_at",
+        "updated_at"
+      ],
+      "title": "ExperimentRecord",
+      "type": "object"
+    },
+    "RunRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "status": {
+          "title": "Status",
+          "type": "string"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        },
+        "updated_at": {
+          "title": "Updated At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "status",
+        "created_at",
+        "updated_at"
+      ],
+      "title": "RunRecord",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "cursor": {
+      "title": "Cursor",
+      "type": "integer"
+    },
+    "runs": {
+      "items": {
+        "$ref": "#/$defs/RunRecord"
+      },
+      "title": "Runs",
+      "type": "array"
+    },
+    "experiments": {
+      "items": {
+        "$ref": "#/$defs/ExperimentRecord"
+      },
+      "title": "Experiments",
+      "type": "array"
+    },
+    "events": {
+      "items": {
+        "$ref": "#/$defs/EventRecord"
+      },
+      "title": "Events",
+      "type": "array"
+    }
+  },
+  "required": [
+    "cursor",
+    "runs",
+    "experiments",
+    "events"
+  ],
+  "title": "CollectionsBootstrapResult",
+  "type": "object"
+}

@@ -39,11 +39,31 @@ TypeScript Ink TUI
 
 The system should keep these responsibilities distinct:
 
-- TUI: presentation, slim setup, snapshot rendering, event display
+- TUI: presentation, slim setup, collection-backed rendering, event display
 - Harness: run lifecycle, state, events, experiments, evidence, findings,
   automated trust warnings
 - Workers: concrete experiments, code changes, eval runs, analysis
 - Protocol/API: stable boundary between clients, harness, and workers
+
+## Collection Sync Boundary
+
+The first UI sync surface should be normalized around a few durable records
+instead of one broad application-state object.
+
+For the first collection-backed slice, the sync surface is intentionally small:
+
+- Runs
+- Experiments
+- Events
+
+The existing full-state snapshot may remain as a compatibility and recovery
+path, but new UI work should prefer collection-shaped bootstrap data and
+row-level upsert notifications. This keeps the TUI and future web UI aligned
+with a shared TypeScript collection layer without requiring a full sync engine
+yet.
+
+Evidence, findings, warnings, deletes, pagination, optimistic writes, and a
+durable collection change log are deferred until the basic UI loop works.
 
 ## Agent Runtime
 

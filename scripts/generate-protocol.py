@@ -8,6 +8,11 @@ from typing import Any, Literal, get_args, get_origin
 from pydantic import BaseModel
 
 from almanac.protocol import (
+    CollectionUpsertedParams,
+    CollectionsBootstrapParams,
+    CollectionsBootstrapResult,
+    CollectionsSubscribeParams,
+    CollectionsSubscribeResult,
     EventRecord,
     EventsSubscribeParams,
     EventsSubscribeResult,
@@ -66,6 +71,11 @@ MODELS: list[type[BaseModel]] = [
     SetupCompleteResult,
     StateSnapshotParams,
     StateSnapshotResult,
+    CollectionsBootstrapParams,
+    CollectionsBootstrapResult,
+    CollectionsSubscribeParams,
+    CollectionsSubscribeResult,
+    CollectionUpsertedParams,
     EventsSubscribeParams,
     EventsSubscribeResult,
     RunStartParams,
@@ -99,7 +109,7 @@ def generate_typescript() -> str:
         lines.append("")
     lines.extend(
         [
-            'export type ControlMethod = "harness.hello" | "setup.get" | "setup.complete" | "state.snapshot" | "events.subscribe" | "run.start" | "run.status";',
+            'export type ControlMethod = "harness.hello" | "setup.get" | "setup.complete" | "state.snapshot" | "collections.bootstrap" | "collections.subscribe" | "events.subscribe" | "run.start" | "run.status";',
             'export type WorkerMethod = "worker.initialize" | "experiment.run";',
             "",
         ]
