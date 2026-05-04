@@ -28,6 +28,14 @@ run = "./commands/dev-tui.sh"
 description = "Start the local Almanac TUI"
 run = "./commands/start.sh"
 
+[tasks.web]
+description = "Open the attach-only Almanac web monitor"
+run = "./commands/web.sh"
+
+[tasks."dev:web"]
+description = "Open the attach-only Almanac web monitor"
+run = "./commands/web.sh"
+
 [tasks."dev:harness"]
 description = "Run the Python harness JSON-RPC stdio server"
 run = "./commands/dev-harness.sh"

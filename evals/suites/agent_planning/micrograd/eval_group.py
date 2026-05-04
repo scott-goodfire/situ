@@ -2,14 +2,16 @@ from __future__ import annotations
 
 from typing import ClassVar
 
+from pydantic_evals import Case
 from pydantic_evals.dataset import increment_eval_metric
 
-from evals.harness.base import BaseAlmanacEvalGroup
+from evals.harness import BaseAlmanacEvalGroup
 from evals.harness.models import AlmanacEvalOutput
+from evals.suites.agent_planning.micrograd.cases import micrograd_planning_cases
 from evals.worlds.micrograd import MicrogradEvalInput, run_micrograd_planning_case
 
 
-class BaseMicrogradPlanningEvalGroup(BaseAlmanacEvalGroup[MicrogradEvalInput, AlmanacEvalOutput]):
+class MicrogradPlanningEvalGroup(BaseAlmanacEvalGroup[MicrogradEvalInput, AlmanacEvalOutput]):
     suite_name: ClassVar[str] = "agent_planning"
     world_name: ClassVar[str] = "micrograd"
 
@@ -20,3 +22,5 @@ class BaseMicrogradPlanningEvalGroup(BaseAlmanacEvalGroup[MicrogradEvalInput, Al
         increment_eval_metric("findings", len(output.findings))
         return output
 
+    def eval_cases(self) -> list[Case[MicrogradEvalInput, AlmanacEvalOutput]]:
+        return micrograd_planning_cases()

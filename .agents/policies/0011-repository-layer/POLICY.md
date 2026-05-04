@@ -19,22 +19,30 @@ and read-model composition; orchestration code owns run flow.
 ## Required Checks
 
 - New durable state has a clear repository owner under
-  `projects/harness/src/almanac/harness/db/repos/`.
+  `projects/harness/src/almanac/harness/repositories/<concept>/`.
+- Repository implementation files use the explicit naming pattern
+  `<concept>_repository.py`, for example
+  `repositories/experiments/experiments_repository.py`.
 - Repository classes inherit from `BaseRepository`, which owns the shared
   `BaseModel` + `db: Database` pattern.
-- SQL execution goes through `Database`; runtime code outside `db/` should not
-  open SQLite connections directly.
-- Schema changes live in `db/migrations.py`; JSON encoding/row decoding lives
-  in `db/serialization.py` unless there is a clear reason to keep it local.
-- Repository input validators live in `db/commands.py` when a method benefits
-  from Pydantic validation before writing.
-- Repository methods should return typed Pydantic records from `db/records.py`,
+- SQL execution goes through `Database`; runtime code outside `core/db/` should
+  not open SQLite connections directly.
+- DB infrastructure lives under `projects/harness/src/almanac/harness/core/db/`.
+  Schema changes live in `core/db/migrations.py`; JSON encoding and row
+  decoding live in `core/db/serialization.py` unless there is a clear reason to
+  keep them local.
+- Repository input validators live near the repository they serve, or in a
+  clearly named local support module, when a method benefits from Pydantic
+  validation before writing.
+- Repository methods should return typed Pydantic records from
+  `projects/harness/src/almanac/harness/records/<singular_concept>/<singular_concept>_record.py`,
   not loose `dict[str, Any]`, for durable state objects.
 - Snapshot/read-model methods may convert DB records to protocol-shaped plain
   dictionaries at the TUI/RPC boundary.
-- New repositories are exported from `db/repos/__init__.py` and included in the
+- New repositories are exported from their concept package and included in the
   `Repositories` container when runtime code needs them.
-- Snapshot/read-model changes are centralized in `SnapshotsRepository`.
+- Snapshot/read-model changes are centralized in `SnapshotsRepository`, with the
+  target location `repositories/snapshots/snapshots_repository.py`.
 - Business orchestration stays outside repositories. Repositories should create,
   update, fetch, list, and compose persistence records; they should not decide
   which experiment to run next or whether a run should continue.
@@ -43,8 +51,12 @@ and read-model composition; orchestration code owns run flow.
 
 ## Red Flags
 
-- Importing `sqlite3` outside `db/` for normal runtime persistence.
+- Importing `sqlite3` outside `core/db/` for normal runtime persistence.
 - Adding a table without a repository owner.
+- Adding a new repository to the legacy flat `db/repos/` layout instead of the
+  target `repositories/<concept>/` layout.
+- Adding a new durable record to a broad `records.py` file instead of the target
+  `records/<singular_concept>/<singular_concept>_record.py` file.
 - Adding persistence fields that are written but never surfaced through
   snapshots or agent-facing context when they matter to observability.
 - Reintroducing a broad catch-all state object that hides table ownership.

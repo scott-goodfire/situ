@@ -26,15 +26,11 @@ const appRoot = resolve(process.env.ALMANAC_APP_ROOT ?? repoRootFromImport());
 const workspace = resolve(process.env.ALMANAC_WORKSPACE ?? process.cwd());
 const projectId = projectIdForWorkspace(workspace);
 const token = randomBytes(24).toString("base64url");
-const harness = StdioJsonRpcClient.spawn(
-  harnessCommand().command,
-  harnessCommand().args,
-  workspace,
-  {
-    ALMANAC_APP_ROOT: appRoot,
-    ALMANAC_WORKSPACE: workspace,
-  },
-);
+const command = harnessCommand();
+const harness = StdioJsonRpcClient.spawn(command.command, command.args, workspace, {
+  ALMANAC_APP_ROOT: appRoot,
+  ALMANAC_WORKSPACE: workspace,
+});
 const clients = new Set<ServerResponse>();
 
 harness.onNotification((notification) => {

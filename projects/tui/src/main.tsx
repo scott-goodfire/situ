@@ -1,6 +1,5 @@
 import { Box, render, Text, useApp } from "ink";
 import React, { useEffect, useMemo, useState } from "react";
-import { existsSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
@@ -8,7 +7,7 @@ import {
   applyCollectionUpsert,
   createAlmanacCollections,
 } from "@almanac/collections";
-import { StdioJsonRpcClient } from "@almanac/rpc-client";
+import { HttpJsonRpcClient } from "@almanac/rpc-client/http";
 import type {
   CollectionUpsertedParams,
   CollectionsBootstrapParams,
@@ -52,18 +51,6 @@ function appRoot(): string {
 
 function workspaceRoot(root: string): string {
   return resolve(process.env.ALMANAC_WORKSPACE ?? root);
-}
-
-function harnessCommand(root: string): { command: string; args: string[] } {
-  const localHarness = resolve(root, ".venv/bin/almanac-harness-stdio");
-  if (existsSync(localHarness)) {
-    return { command: localHarness, args: [] };
-  }
-
-  return {
-    command: "uv",
-    args: ["run", "--package", "almanac-harness", "almanac-harness-stdio"],
-  };
 }
 
 function initialSetup(workspace: string, root: string): SetupCompleteParams {
@@ -111,9 +98,21 @@ function maxExperiments(): number {
 function App() {
   const { exit } = useApp();
   const collections = useMemo(() => createAlmanacCollections(), []);
-  const runsQuery = useLiveQuery(() => collections.runs, [collections]);
-  const experimentsQuery = useLiveQuery(() => collections.experiments, [collections]);
-  const eventsQuery = useLiveQuery(() => collections.events, [collections]);
+  const runsQuery = useLiveQuery(
+    (query) => query.from({ run: collections.runs }).select(({ run }) => run),
+    [collections],
+  );
+  const experimentsQuery = useLiveQuery(
+    (query) =>
+      query
+        .from({ experiment: collections.experiments })
+        .select(({ experiment }) => experiment),
+    [collections],
+  );
+  const eventsQuery = useLiveQuery(
+    (query) => query.from({ event: collections.events }).select(({ event }) => event),
+    [collections],
+  );
   const [status, setStatus] = useState<Status>({ kind: "starting" });
 
   const runs = useMemo(
@@ -133,11 +132,18 @@ function App() {
     const root = appRoot();
     const workspace = workspaceRoot(root);
     const setupParams = initialSetup(workspace, root);
-    const harness = harnessCommand(root);
-    const client = StdioJsonRpcClient.spawn(harness.command, harness.args, workspace, {
-      ALMANAC_APP_ROOT: root,
-      ALMANAC_WORKSPACE: workspace,
-    });
+    const sessionUrl = process.env.ALMANAC_SESSION_URL;
+    const sessionToken = process.env.ALMANAC_SESSION_TOKEN;
+
+    if (!sessionUrl || !sessionToken) {
+      setStatus({
+        kind: "failed",
+        message: "No local Almanac session found. Start one with almanac start.",
+      });
+      return;
+    }
+
+    const client = new HttpJsonRpcClient(sessionUrl, sessionToken);
     let runId: string | undefined;
     let closeScheduled = false;
     let unsubscribe = () => {};
@@ -208,13 +214,18 @@ function App() {
           {},
         ),
       )
-      .then((bootstrap) => applyBootstrap(collections, bootstrap))
-      .then(() =>
-        client.request<RunStartResult, RunStartParams>("run.start", {
+      .then(async (bootstrap) => {
+        await applyBootstrap(collections, bootstrap);
+        const activeRun = bootstrap.runs.find((run) => run.status === "running");
+        if (activeRun) {
+          runId = activeRun.id;
+          setStatus({ kind: "running", runId });
+          return;
+        }
+
+        const result = await client.request<RunStartResult, RunStartParams>("run.start", {
           max_experiments: maxExperiments(),
-        }),
-      )
-      .then((result) => {
+        });
         runId = result.run_id;
         setStatus({ kind: "running", runId });
       })
@@ -243,7 +254,7 @@ function App() {
         <Text color="cyan" bold>
           Almanac
         </Text>
-        {status.kind === "starting" && <Text>Starting local harness...</Text>}
+        {status.kind === "starting" && <Text>Connecting to local session...</Text>}
         {status.kind === "running" && (
           <Text color="yellow">Running {status.runId ?? "new run"}...</Text>
         )}

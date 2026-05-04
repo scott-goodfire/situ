@@ -17,13 +17,16 @@ adapted here as:
 
 ```text
 evals/
-  harness/
-  worlds/
-  suites/
+  harness/  shared eval envelopes, evaluators, eval groups, and Logfire setup
+  runner/   CLI discovery, execution, and reporting
+  worlds/   fixture-backed simulated research worlds
+  suites/   concrete eval groups and cases
 ```
 
 Eval suites should define cases in code first. Fixture worlds can live beside
 the suites when the case needs a mocked project, worker, or external system.
+Follow the module organization policy: small ownership folders are preferred
+over broad files like `models.py`, `evaluators.py`, or mixed world/suite files.
 
 ## What To Evaluate
 
@@ -58,9 +61,9 @@ local eval commands or sandbox repos.
 
 ## Logfire
 
-AI evals should report to Logfire when `ALMANAC_LOGFIRE_TOKEN` or
-`LOGFIRE_TOKEN` is present. Use descriptive service names, experiment names, and
-metadata so eval runs are searchable.
+AI evals should report to Logfire when `ALMANAC_LOGFIRE_TOKEN` is present. Use
+descriptive service names, experiment names, and metadata so eval runs are
+searchable.
 
 Recommended metadata:
 

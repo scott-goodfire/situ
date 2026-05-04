@@ -12,7 +12,7 @@ Run all evals:
 Run one file:
 
 ```bash
-./commands/ai-evals.sh evals/suites/agent_planning/micrograd_planning_eval.py
+./commands/ai-evals.sh evals/suites/agent_planning/micrograd/eval_group.py
 ```
 
 Run one case:
@@ -27,16 +27,33 @@ Emit JSON:
 ./commands/ai-evals-json.sh
 ```
 
-When `ALMANAC_LOGFIRE_TOKEN` or `LOGFIRE_TOKEN` is set, eval experiments are
-sent to Logfire with `service_name=almanac-ai-evals`.
+When `ALMANAC_LOGFIRE_TOKEN` is set, eval experiments are sent to Logfire with
+`service_name=almanac-ai-evals`.
 
 ## Layout
 
 ```text
 evals/
-  harness/    shared runner, models, evaluators, and Logfire setup
-  worlds/     fixture-backed simulated research worlds
-  suites/     concrete eval groups and cases
+  harness/
+    eval_groups/base_almanac_eval_group/eval_group.py
+    evaluators/tool_was_called/evaluator.py
+    logfire/configure_eval_observability/configure.py
+    models/almanac_eval_output/model.py
+  runner/
+    cli.py
+    discovery.py
+    execution.py
+  worlds/
+    micrograd/
+      fixtures/results.py
+      models/input/model.py
+      scenarios/suspicious_win/scenario.py
+      world/world.py
+  suites/
+    agent_planning/
+      micrograd/
+        cases.py
+        eval_group.py
 ```
 
 The first suite uses a mocked micrograd world. It is intentionally deterministic
