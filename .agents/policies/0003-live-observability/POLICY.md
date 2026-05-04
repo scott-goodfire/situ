@@ -17,10 +17,11 @@ the TUI observability loop is useful.
 
 ## Required Checks
 
-- The TUI shows goal, run status, baseline, active experiment, current best valid
-  result, recent experiments, warnings, and timeline.
-- Suspicious experiments are visible and excluded from the current best valid
-  result.
+- The TUI shows goal, run status, evaluation context, baseline evidence, active
+  experiment, recent experiments, evidence/signals, findings, warnings, and
+  timeline.
+- Suspicious evidence is visible and excluded from supported findings until
+  resolved.
 - Raw logs are drill-down references, not the main screen.
 - The same state can be returned as agent-readable JSON.
 - The display remains dense and terminal-friendly.
@@ -30,5 +31,7 @@ the TUI observability loop is useful.
 - A dashboard dominated by raw terminal output.
 - A broad Green/Yellow/Red health model before basic events and experiments are
   reliable.
+- A dashboard centered only on one best score when findings and evidence are
+  available.
 - A final report feature before live observability works.
 - A web UI in the first slice.

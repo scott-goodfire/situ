@@ -5,8 +5,8 @@
 Almanac is a local-first terminal observability layer for autoresearch runs.
 
 It helps humans and agents see the live state of a loop: what is running, what
-changed, what the eval said, what looks suspicious, and what the current best
-valid result is.
+changed, what evidence came back, what looks suspicious, and what the run is
+learning.
 
 Short form:
 
@@ -42,12 +42,12 @@ Agents and workers do the work:
 Almanac supervises the first loop by tracking:
 
 - Goal
-- Eval command and primary metric
+- Evaluation context
+- Signals and evidence
 - Experiment ledger
 - Event timeline
-- Current best valid result
-- Simple guardrails
-- Suspicious-result warnings
+- Lightweight findings
+- Automated trust warnings
 - Agent-readable status
 
 ## Product Promise

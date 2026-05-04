@@ -10,10 +10,11 @@ transcript. Almanac should expose compact, current, machine-readable context.
 An agent should be able to ask:
 
 - What is the current goal?
-- What is the primary metric?
-- What slim guardrails apply?
+- What evaluation context and signals are relevant?
+- What automated trust warnings apply?
 - What has already run?
-- What is the current best valid result?
+- What evidence came back?
+- What lightweight findings are currently supported?
 - Which experiments were suspicious, and why?
 - What is running now?
 
@@ -36,14 +37,15 @@ working.
 `snapshot` should include:
 
 - Goal
-- Eval command
-- Metric key and direction
-- Baseline metric
+- Evaluation context
+- Known signals/evals/tools
+- Baseline evidence
 - Current run status
 - Active experiment
 - Recent events
 - Recent experiments
-- Current best valid result
+- Recent evidence
+- Findings
 - Warnings
 
 ## Product Rule

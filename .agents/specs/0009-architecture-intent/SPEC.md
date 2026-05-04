@@ -31,16 +31,17 @@ TypeScript Ink TUI
       -> run ledger
       -> events
       -> experiments
-      -> current best valid result
-      -> slim guardrails
+      -> evidence and signals
+      -> findings
+      -> automated trust warnings
       -> worker execution
 ```
 
 The system should keep these responsibilities distinct:
 
 - TUI: presentation, slim setup, snapshot rendering, event display
-- Harness: run lifecycle, state, events, experiments, best-result calculation,
-  slim guardrails
+- Harness: run lifecycle, state, events, experiments, evidence, findings,
+  automated trust warnings
 - Workers: concrete experiments, code changes, eval runs, analysis
 - Protocol/API: stable boundary between clients, harness, and workers
 
@@ -77,8 +78,9 @@ Start with a narrow, durable core:
 - Run ledger
 - Event log
 - Baseline and experiments
-- Current best valid result
-- Very slim guardrail checks
+- Evidence/signals
+- Lightweight findings
+- Automated trust warnings
 - TypeScript Ink TUI
 
 Only add richer agent orchestration, parallelism, plugins, and remote workers

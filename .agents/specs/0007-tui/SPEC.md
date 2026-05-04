@@ -22,21 +22,25 @@ Goal
   Improve toy eval score
 
 Run
-  running | experiment 3/10 | baseline 0.710
+  running | experiment 3/10
 
-Current Best Valid
-  exp_002 | score 0.760 | delta +0.050 | suspicious no
+Evaluation
+  Signals: score, latency
+  Baseline: score 0.710
 
 Now
   exp_003 running
-  eval command: pnpm eval --json
+
+Findings
+  F-001  Shorter prompts improve score in 2/2 toy runs
+  F-002  Larger context helps score but increases latency
 
 Experiments
-  exp       status       score     delta     valid     note
-  baseline  completed    0.710     -         yes       initial eval
-  exp_001   completed    0.724     +0.014    yes       kept as best
-  exp_002   completed    0.760     +0.050    yes       current best
-  exp_003   running      -         -         -         evaluating
+  exp       status       evidence              note
+  baseline  completed    score 0.710           initial eval
+  exp_001   completed    score 0.724           supports F-001
+  exp_002   completed    score 0.760 latency+  supports F-002
+  exp_003   running      -                     evaluating
 
 Warnings
   none
@@ -52,10 +56,9 @@ Timeline
 If no local context exists, the TUI should run a slim setup flow:
 
 - Goal
-- Eval command
-- Primary metric key
-- Maximize/minimize
-- Optional forbidden paths
+- How progress is judged
+- Relevant evals, tools, metrics, dashboards, logs, or artifacts
+- In-scope experiment types
 
 Avoid advanced setup screens for autonomy, budgets, directions, or guidance in
 the first slice.

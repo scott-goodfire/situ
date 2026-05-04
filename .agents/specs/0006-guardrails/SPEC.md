@@ -1,30 +1,34 @@
 # Guardrails
 
-Guardrails are intentionally slim for the first slice. They protect the current
-best valid result from obvious invalidity.
+Guardrails are automated trust checks in the first slice. They protect findings
+and evidence summaries from obvious invalidity.
 
 ## MVP Guardrails
 
-The MVP should catch only obvious issues:
+The MVP should catch obvious issues without requiring the user to enumerate
+everything up front:
 
-- Eval command exits nonzero.
-- Primary metric is missing.
-- Primary metric is not numeric.
-- Forbidden path changed.
+- Evaluation failed.
+- Expected signal is missing.
+- Signal type or shape changed.
+- Evaluation or measurement artifacts changed unexpectedly.
+- Sample count or eval scope changed unexpectedly when detectable.
+- Result improved suspiciously much without corroborating evidence.
 
 ## Suspicious Results
 
-A suspicious result is an experiment that cannot be trusted as the current best
-valid result.
+A suspicious result is evidence that cannot be trusted as support for a finding
+without review or corroboration.
 
 When this happens:
 
 - Mark the experiment suspicious.
-- Exclude it from best valid result.
+- Keep the evidence in the ledger.
+- Exclude it from supported findings until resolved.
 - Explain the reason.
 - Show the warning in the TUI.
 
 ## Product Rule
 
-Metric improvement is not enough. The dashboard must distinguish best raw metric
-from best valid result.
+Metric movement is not enough. The dashboard must distinguish observed evidence
+from trustworthy evidence.

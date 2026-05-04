@@ -43,8 +43,8 @@ Good:
 
 ```md
 The first slice has no web UI. The TypeScript Ink TUI is the product surface and
-must show goal, run status, active experiment, best valid result, warnings, and
-timeline.
+must show goal, run status, active experiment, evidence/signals, findings,
+warnings, and timeline.
 ```
 
 Weak:

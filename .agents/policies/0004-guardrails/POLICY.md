@@ -7,21 +7,21 @@ status: active
 
 ## Applies To
 
-Experiment execution, result ingestion, diff inspection, warning display, and
-best-valid-result calculation.
+Experiment execution, evidence ingestion, diff inspection, warning display, and
+finding support.
 
 ## Rule
 
-Guardrails should be slim and concrete in the first slice. They exist to keep
-the current best valid result from accepting obviously invalid experiments.
+Guardrails should be automated and concrete in the first slice. They exist to
+keep findings and evidence summaries from relying on obviously invalid evidence.
 
 ## Required Checks
 
-- Experiments record warning/suspicious outcomes alongside primary metrics.
-- Eval failure, missing metric, non-numeric metric, and forbidden path changes
-  are detectable in the MVP path.
-- Suspicious wins are excluded from the best valid result until explicitly
-  resolved.
+- Experiments record warning/suspicious outcomes alongside evidence and signals.
+- Eval failure, missing expected signals, signal shape changes, and measurement
+  artifact changes are detectable in the MVP path when possible.
+- Suspicious evidence is excluded from supported findings until explicitly
+  resolved or corroborated.
 - Suspicious reasons are visible in the TUI.
 
 ## Red Flags
@@ -29,4 +29,6 @@ the current best valid result from accepting obviously invalid experiments.
 - Accepting the best metric result without checking whether the eval changed.
 - Treating suspicious results as ordinary failures without explanation.
 - Keeping guardrail information only in logs.
-- Expanding to a complex policy engine before the slim checks work.
+- Requiring the user to enumerate every forbidden behavior before any automated
+  checks exist.
+- Expanding to a complex policy engine before the slim automated checks work.

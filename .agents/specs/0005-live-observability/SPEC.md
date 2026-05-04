@@ -5,7 +5,7 @@ Live observability is the core first-slice product object.
 It answers:
 
 > What is running, what changed, what did the eval say, what looks suspicious,
-> and what is the current best valid result?
+> and what is the run learning?
 
 Do not model this as a broad health score yet. The first TUI should show live
 facts clearly.
@@ -16,33 +16,38 @@ The TUI should make these immediately visible:
 
 - Goal
 - Run status
-- Baseline metric
+- Evaluation context
+- Baseline evidence when available
 - Current active experiment
-- Current best valid result
 - Recent experiments
+- Recent evidence/signals
+- Lightweight findings
 - Basic warnings
 - Event timeline
 
-## Current Best Valid Result
+## Findings First
 
-The best valid result is the best completed experiment that:
+The first slice should make lightweight findings visible. A finding is a compact
+claim backed by experiment evidence.
 
-- Has a numeric primary metric.
-- Did not fail eval execution.
-- Did not trigger the slim guardrails.
-- Improves according to the configured metric direction.
+Examples:
 
-Suspicious results can still be shown, but they must be excluded from the best
-valid result.
+- `F-003: Retrieval filtering helps cancellation tickets in 3/4 runs.`
+- `F-004: Optimizer beta sweeps look saturated for this setup.`
+- `F-005: A + C looks promising, but C explains most of the lift.`
+
+Best observed signal can still be shown when meaningful, but it is supporting
+context rather than the central product object.
 
 ## Warnings
 
 Warnings are simple and concrete:
 
-- Eval failed.
-- Primary metric missing.
-- Primary metric non-numeric.
-- Forbidden path changed.
+- Evaluation failed.
+- Expected signal missing.
+- Signal shape changed.
+- Evaluation artifact changed unexpectedly.
+- Suspiciously large improvement needs corroboration.
 
 The first UI should not hide these behind a health score.
 

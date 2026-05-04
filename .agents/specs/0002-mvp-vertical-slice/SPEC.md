@@ -5,11 +5,12 @@
 The MVP should prove one experience:
 
 > I start an autoresearch run in the terminal and can see what is running, what
-> changed, what the eval said, what looks suspicious, and what the current best
-> valid result is.
+> changed, what evidence came back, what looks suspicious, and what the run is
+> learning.
 
-The slice should support one local project, one goal, one eval command, one
-primary metric, very slim guardrails, and one deterministic worker path.
+The slice should support one local project, one goal, a lightweight evaluation
+context, multiple possible signals, automated trust warnings, lightweight
+findings, and one deterministic worker path.
 
 ## Target User Story
 
@@ -23,15 +24,14 @@ If no local research context exists for the current project, Almanac shows a
 slim terminal setup flow. It asks only:
 
 - Goal
-- Eval command
-- Primary metric key
-- Metric direction: maximize or minimize
-- Optional forbidden paths
+- How do you currently judge progress?
+- What evals, tools, metrics, dashboards, logs, or artifacts matter?
+- What kinds of experiments are in scope?
 
 Then Almanac:
 
 - Creates local private project state.
-- Runs a baseline.
+- Records or runs a baseline when one is available.
 - Starts a tiny sequential experiment loop.
 - Renders a live terminal dashboard.
 
@@ -40,15 +40,16 @@ Then Almanac:
 - One-command start
 - Terminal setup flow
 - Local/private project context
-- Baseline run
+- Baseline evidence when available
 - Sequential experiment loop by default
 - One agent/worker path
 - Experiment ledger
-- Very slim guardrail checks
+- Evidence and signal capture
+- Lightweight findings
+- Automated trust warnings
 - TypeScript Ink TUI
 - Event timeline
-- Current best valid result
-- Basic suspicious-result warnings
+- Promising findings / notable evidence summary
 - Agent-readable status and context
 - Durable restart/resume
 - SQLite source of truth
@@ -62,8 +63,8 @@ Then Almanac:
 - Final report
 - Broad health model or health snapshots
 - Directions
-- Findings
 - Decisions
+- Variant as a first-class model
 - Multi-goal workspaces
 - Team collaboration
 - Cloud sync
@@ -79,11 +80,11 @@ Then Almanac:
 ## Success Criterion
 
 A user can run the toy loop, watch multiple experiments complete in the TUI, see
-the current best valid result update, and see at least one suspicious result get
-excluded for an obvious reason.
+evidence accumulate into lightweight findings, and see at least one suspicious
+piece of evidence flagged for an obvious automated reason.
 
 ## Quality Bar
 
 The MVP can be narrow, but the live state must be real. The run ledger,
-experiment results, events, current best valid result, and suspicious warnings
-should survive process restart.
+experiment evidence, events, findings, and warnings should survive process
+restart.

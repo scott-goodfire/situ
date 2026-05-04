@@ -11,17 +11,19 @@ Product copy, domain models, APIs, UI labels, reports, and documentation.
 
 ## Rule
 
-Use the MVP product nouns consistently: Goal, Run, Experiment, Event, Current
-Best Valid Result, Warning.
+Use the MVP product nouns consistently: Goal, Evaluation Context, Run,
+Experiment, Evidence, Signal, Finding, Event, Warning.
 
 ## Required Checks
 
 - User-facing surfaces use simple product nouns.
 - Experiments are the main ledger entries.
+- Evidence captures what came back from experiments.
+- Findings summarize what was learned across evidence.
 - Events power the live timeline.
 - Warnings explain why a result is suspicious.
-- Current Best Valid Result is distinct from best raw metric.
-- Direction, Finding, Decision, Report, and broad Health are treated as deferred
+- Best observed signals are supporting details, not the central product object.
+- Direction, Decision, Variant, Report, and broad Health are treated as deferred
   concepts.
 
 ## Red Flags
@@ -29,5 +31,6 @@ Best Valid Result, Warning.
 - User-facing terms like world model, belief graph, trajectory engine, or
   execution substrate.
 - Experiments shown as an undifferentiated event stream.
-- Adding Directions/Findings/Decisions/Reports before the slim loop works.
+- Adding first-class Variants, Directions, Decisions, or Reports before the slim
+  loop works.
 - Calling the first observability summary a health model.

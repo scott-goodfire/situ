@@ -18,8 +18,8 @@ tracker.
 ## Required Checks
 
 - The change helps humans or agents understand, trust, steer, or audit a run.
-- The change strengthens the goal, experiment ledger, event timeline, current
-  best valid result, or slim guardrails.
+- The change strengthens the goal, evaluation context, experiment ledger,
+  evidence, findings, event timeline, or automated trust warnings.
 - The change does not make chat the primary product surface.
 - The change does not make raw logs the primary product surface.
 - The change does not require a specific agent provider.
@@ -30,7 +30,7 @@ tracker.
 
 - Product copy or UI centers on "chat with your research agent".
 - The system stores logs but does not produce a useful event timeline,
-  experiment ledger, or current best valid result.
+  experiment ledger, evidence summary, or findings.
 - The implementation optimizes for generic task execution before run
   supervision exists.
 - The product asks users to manage internal abstractions before they can start a

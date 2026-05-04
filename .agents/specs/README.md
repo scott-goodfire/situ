@@ -14,6 +14,7 @@ Read in this order:
 7. [0007-tui/SPEC.md](./0007-tui/SPEC.md)
 8. [0008-agent-facing-context/SPEC.md](./0008-agent-facing-context/SPEC.md)
 9. [0009-architecture-intent/SPEC.md](./0009-architecture-intent/SPEC.md)
+10. [0010-evidence-and-findings/SPEC.md](./0010-evidence-and-findings/SPEC.md)
 
 ## Product Thesis
 
@@ -22,12 +23,12 @@ running loop observable from the terminal.
 
 The product should answer:
 
-> What is running, what changed, what did the eval say, what looks suspicious,
-> and what is the current best valid result?
+> What is running, what changed, what evidence came back, what looks suspicious,
+> and what is the run learning?
 
 The first slice should be intentionally slim. Live guidance, final reports, web
-UI, broad health scoring, directions, findings, and decisions are deferred until
-the terminal loop is useful.
+UI, broad health scoring, directions, and decisions are deferred until the
+terminal loop is useful.
 
 ## Spec Discipline
 

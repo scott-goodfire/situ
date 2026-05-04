@@ -1,0 +1,4 @@
+interface:
+  display_name: "Curate Meta Layer"
+  short_description: "Reduce entropy across specs, policies, docs, and skills."
+  default_prompt: "Use this skill to review the repo meta layer and propose updates, combinations, removals, rewrites, or simplifications."

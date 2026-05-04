@@ -85,6 +85,8 @@ Check:
 - Specs meet the good-spec policy: clear purpose, intent, scope, deferred work,
   and reviewable criteria.
 - Policies are concrete review rubrics, not generic documentation.
+- Product specs preserve the current MVP language: evaluation context,
+  evidence/signals, lightweight findings, automated trust warnings, TUI-only.
 - Docs explain durable context that is not better as a spec or policy.
 - Skills describe a repeatable workflow and do not depend on stale scripts.
 - Links referenced in changed files are plausible and current.
