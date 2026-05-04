@@ -54,6 +54,11 @@ Use:
 .agents/docs/some-doc/DOC.md
 ```
 
+Current docs:
+
+- `.agents/docs/agents-surface/DOC.md` - conventions for the `.agents` layer
+- `.agents/docs/milestones/DOC.md` - current milestone and benchmark context
+
 ## Skills
 
 Skills are repeatable workflows for agents. Use them when a future agent should

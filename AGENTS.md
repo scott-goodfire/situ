@@ -10,6 +10,7 @@ Start with:
 - [.agents/specs/0002-mvp-vertical-slice/SPEC.md](./.agents/specs/0002-mvp-vertical-slice/SPEC.md)
 - [.agents/policies/DOC.md](./.agents/policies/DOC.md)
 - [.agents/docs/agents-surface/DOC.md](./.agents/docs/agents-surface/DOC.md)
+- [.agents/docs/milestones/DOC.md](./.agents/docs/milestones/DOC.md)
 
 The key product thesis:
 

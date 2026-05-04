@@ -12,8 +12,9 @@ finding support.
 
 ## Rule
 
-Guardrails should be automated and concrete in the first slice. They exist to
-keep findings and evidence summaries from relying on obviously invalid evidence.
+In the first slice, "guardrails" means automated trust checks. They should be
+concrete enough to protect findings and evidence summaries from relying on
+obviously invalid evidence without requiring the user to predeclare every risk.
 
 ## Required Checks
 

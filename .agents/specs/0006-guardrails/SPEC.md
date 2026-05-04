@@ -1,9 +1,12 @@
 # Guardrails
 
-Guardrails are automated trust checks in the first slice. They protect findings
-and evidence summaries from obvious invalidity.
+In the first slice, "guardrails" means automated trust checks.
 
-## MVP Guardrails
+They protect findings and evidence summaries from obvious invalidity. The user
+should not have to manually enumerate every forbidden behavior before Almanac can
+notice suspicious evidence.
+
+## MVP Trust Checks
 
 The MVP should catch obvious issues without requiring the user to enumerate
 everything up front:
