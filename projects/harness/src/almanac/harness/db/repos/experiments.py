@@ -1,19 +1,12 @@
 from __future__ import annotations
 
-from typing import Any
-
-from pydantic import BaseModel, ConfigDict
-
-from ..database import Database
 from ..models import CreateExperiment, UpdateExperiment
+from ..records import ExperimentRecord
 from ..serialization import experiment_row, json_dumps, utc_now
+from .base import BaseRepository
 
 
-class ExperimentsRepository(BaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
-    db: Database
-
+class ExperimentsRepository(BaseRepository):
     def create(
         self,
         *,
@@ -23,7 +16,7 @@ class ExperimentsRepository(BaseModel):
         change_summary: str,
         components: list[str],
         based_on: list[str],
-    ) -> dict[str, Any]:
+    ) -> ExperimentRecord:
         command = CreateExperiment(
             experiment_id=experiment_id,
             run_id=run_id,
@@ -51,7 +44,10 @@ class ExperimentsRepository(BaseModel):
                 now,
             ),
         )
-        return self.get(command.experiment_id) or {}
+        record = self.get(command.experiment_id)
+        if record is None:
+            raise RuntimeError(f"experiment was not persisted: {command.experiment_id}")
+        return record
 
     def update(
         self,
@@ -61,7 +57,7 @@ class ExperimentsRepository(BaseModel):
         suspicious: bool | None = None,
         suspicious_reason: str | None = None,
         note: str | None = None,
-    ) -> dict[str, Any] | None:
+    ) -> ExperimentRecord | None:
         command = UpdateExperiment(
             experiment_id=experiment_id,
             status=status,
@@ -73,9 +69,9 @@ class ExperimentsRepository(BaseModel):
         if current is None:
             return None
 
-        next_suspicious = current["suspicious"] if command.suspicious is None else command.suspicious
-        next_reason = current["suspicious_reason"] if command.suspicious_reason is None else command.suspicious_reason
-        next_note = current["note"] if command.note is None else command.note
+        next_suspicious = current.suspicious if command.suspicious is None else command.suspicious
+        next_reason = current.suspicious_reason if command.suspicious_reason is None else command.suspicious_reason
+        next_note = current.note if command.note is None else command.note
         self.db.execute(
             """
             UPDATE experiments
@@ -93,17 +89,20 @@ class ExperimentsRepository(BaseModel):
         )
         return self.get(command.experiment_id)
 
-    def get(self, experiment_id: str) -> dict[str, Any] | None:
+    def get_by_id(self, experiment_id: str) -> ExperimentRecord | None:
         row = self.db.fetchone("SELECT * FROM experiments WHERE id = ?", (experiment_id,))
         return experiment_row(row) if row else None
 
-    def list_all(self) -> list[dict[str, Any]]:
+    def get(self, experiment_id: str) -> ExperimentRecord | None:
+        return self.get_by_id(experiment_id)
+
+    def list_all(self) -> list[ExperimentRecord]:
         return [
             experiment_row(row)
             for row in self.db.fetchall("SELECT * FROM experiments ORDER BY created_at")
         ]
 
-    def list_for_run(self, run_id: str) -> list[dict[str, Any]]:
+    def list_for_run(self, run_id: str) -> list[ExperimentRecord]:
         return [
             experiment_row(row)
             for row in self.db.fetchall(

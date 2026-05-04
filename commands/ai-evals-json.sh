@@ -4,5 +4,5 @@ set -euo pipefail
 REPO_ROOT=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 cd "$REPO_ROOT"
 
-uv run python -m ai_evals.runner --json "$@"
+uv run python -m evals.runner --json "$@"
 

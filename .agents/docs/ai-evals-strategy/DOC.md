@@ -12,10 +12,11 @@ making trustworthy progress?
 
 ## Shape
 
-Use a code-first eval harness inspired by the Mem backend `ai_evals` pattern:
+Use a code-first eval harness inspired by the Mem backend `ai_evals/` pattern,
+adapted here as:
 
 ```text
-ai_evals/
+evals/
   harness/
   worlds/
   suites/

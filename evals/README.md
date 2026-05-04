@@ -12,7 +12,7 @@ Run all evals:
 Run one file:
 
 ```bash
-./commands/ai-evals.sh ai_evals/suites/agent_planning/micrograd_planning_eval.py
+./commands/ai-evals.sh evals/suites/agent_planning/micrograd_planning_eval.py
 ```
 
 Run one case:
@@ -33,7 +33,7 @@ sent to Logfire with `service_name=almanac-ai-evals`.
 ## Layout
 
 ```text
-ai_evals/
+evals/
   harness/    shared runner, models, evaluators, and Logfire setup
   worlds/     fixture-backed simulated research worlds
   suites/     concrete eval groups and cases

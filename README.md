@@ -104,7 +104,7 @@ A+C combination, and one suspicious result. When `ALMANAC_LOGFIRE_TOKEN` or
 ## Layout
 
 ```text
-ai_evals                     Code-first AI evals and fixture worlds
+evals                     Code-first AI evals and fixture worlds
 projects/harness              Python local runtime
 projects/tui                  TypeScript Ink TUI
 shared/python/protocol        Pydantic protocol source of truth

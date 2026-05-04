@@ -1,19 +1,14 @@
 from __future__ import annotations
 
-from typing import Any, Literal
+from typing import Literal
 
-from pydantic import BaseModel, ConfigDict
-
-from ..database import Database
 from ..models import UpsertFinding
+from ..records import FindingRecord
 from ..serialization import finding_row, json_dumps, utc_now
+from .base import BaseRepository
 
 
-class FindingsRepository(BaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
-    db: Database
-
+class FindingsRepository(BaseRepository):
     def upsert(
         self,
         *,
@@ -23,7 +18,7 @@ class FindingsRepository(BaseModel):
         evidence_experiment_ids: list[str],
         confidence: Literal["low", "medium", "high"],
         status: Literal["open", "supported", "contradicted"],
-    ) -> dict[str, Any]:
+    ) -> FindingRecord:
         command = UpsertFinding(
             finding_id=finding_id,
             run_id=run_id,
@@ -34,7 +29,7 @@ class FindingsRepository(BaseModel):
         )
         now = utc_now()
         existing = self.get(command.finding_id)
-        created_at = existing["created_at"] if existing else now
+        created_at = existing.created_at if existing else now
         self.db.execute(
             """
             INSERT INTO findings
@@ -59,16 +54,22 @@ class FindingsRepository(BaseModel):
                 now,
             ),
         )
-        return self.get(command.finding_id) or {}
+        record = self.get(command.finding_id)
+        if record is None:
+            raise RuntimeError(f"finding was not persisted: {command.finding_id}")
+        return record
 
-    def get(self, finding_id: str) -> dict[str, Any] | None:
+    def get_by_id(self, finding_id: str) -> FindingRecord | None:
         row = self.db.fetchone("SELECT * FROM findings WHERE id = ?", (finding_id,))
         return finding_row(row) if row else None
 
-    def list_all(self) -> list[dict[str, Any]]:
+    def get(self, finding_id: str) -> FindingRecord | None:
+        return self.get_by_id(finding_id)
+
+    def list_all(self) -> list[FindingRecord]:
         return [finding_row(row) for row in self.db.fetchall("SELECT * FROM findings ORDER BY created_at")]
 
-    def list_for_run(self, run_id: str) -> list[dict[str, Any]]:
+    def list_for_run(self, run_id: str) -> list[FindingRecord]:
         return [
             finding_row(row)
             for row in self.db.fetchall("SELECT * FROM findings WHERE run_id = ? ORDER BY created_at", (run_id,))

@@ -6,7 +6,7 @@ from typing import Any, Literal
 import logfire
 from pydantic import BaseModel, ConfigDict, Field
 
-from ai_evals.harness.models import AlmanacEvalOutput, CapturedToolCall, EvalEvent, EvalFinding, EvalWarning
+from evals.harness.models import AlmanacEvalOutput, CapturedToolCall, EvalEvent, EvalFinding, EvalWarning
 
 Scenario = Literal[
     "empty_run",

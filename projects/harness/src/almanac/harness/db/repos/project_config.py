@@ -1,20 +1,13 @@
 from __future__ import annotations
 
-from typing import Any
-
-from pydantic import BaseModel, ConfigDict
-
-from ..database import Database
 from ..models import SetProjectConfig
+from ..records import ProjectConfigRecord
 from ..serialization import config_row, json_dumps, utc_now
+from .base import BaseRepository
 
 
-class ProjectConfigRepository(BaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
-    db: Database
-
-    def get(self) -> dict[str, Any] | None:
+class ProjectConfigRepository(BaseRepository):
+    def get(self) -> ProjectConfigRecord | None:
         row = self.db.fetchone("SELECT * FROM project_config WHERE id = ?", (self.db.project_id,))
         return config_row(row) if row else None
 
@@ -25,7 +18,7 @@ class ProjectConfigRepository(BaseModel):
         evaluation_context: str,
         known_signals: list[str],
         experiment_scope: str,
-    ) -> dict[str, Any]:
+    ) -> ProjectConfigRecord:
         command = SetProjectConfig(
             goal=goal,
             evaluation_context=evaluation_context,
@@ -34,7 +27,7 @@ class ProjectConfigRepository(BaseModel):
         )
         now = utc_now()
         existing = self.get()
-        created_at = existing["created_at"] if existing else now
+        created_at = existing.created_at if existing else now
         self.db.execute(
             """
             INSERT INTO project_config
@@ -60,4 +53,7 @@ class ProjectConfigRepository(BaseModel):
                 now,
             ),
         )
-        return self.get() or {}
+        record = self.get()
+        if record is None:
+            raise RuntimeError("project config was not persisted")
+        return record

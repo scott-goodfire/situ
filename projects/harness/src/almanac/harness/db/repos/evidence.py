@@ -2,18 +2,13 @@ from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict
-
-from ..database import Database
 from ..models import AddEvidence
+from ..records import EvidenceRecord
 from ..serialization import evidence_row, json_dumps, utc_now
+from .base import BaseRepository
 
 
-class EvidenceRepository(BaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
-    db: Database
-
+class EvidenceRepository(BaseRepository):
     def add(
         self,
         *,
@@ -22,7 +17,7 @@ class EvidenceRepository(BaseModel):
         summary: str,
         signals: list[dict[str, Any]],
         raw: dict[str, Any],
-    ) -> dict[str, Any]:
+    ) -> EvidenceRecord:
         command = AddEvidence(
             run_id=run_id,
             experiment_id=experiment_id,
@@ -46,26 +41,30 @@ class EvidenceRepository(BaseModel):
                 created_at,
             ),
         )
-        return {
-            "id": int(cursor.lastrowid),
-            "run_id": command.run_id,
-            "experiment_id": command.experiment_id,
-            "summary": command.summary,
-            "signals": command.signals,
-            "raw": command.raw,
-            "created_at": created_at,
-        }
+        return EvidenceRecord(
+            id=int(cursor.lastrowid),
+            run_id=command.run_id,
+            experiment_id=command.experiment_id,
+            summary=command.summary,
+            signals=command.signals,
+            raw=command.raw,
+            created_at=created_at,
+        )
 
-    def list_all(self) -> list[dict[str, Any]]:
+    def get_by_id(self, evidence_id: int) -> EvidenceRecord | None:
+        row = self.db.fetchone("SELECT * FROM evidence WHERE id = ?", (evidence_id,))
+        return evidence_row(row) if row else None
+
+    def list_all(self) -> list[EvidenceRecord]:
         return [evidence_row(row) for row in self.db.fetchall("SELECT * FROM evidence ORDER BY id")]
 
-    def list_for_run(self, run_id: str) -> list[dict[str, Any]]:
+    def list_for_run(self, run_id: str) -> list[EvidenceRecord]:
         return [
             evidence_row(row)
             for row in self.db.fetchall("SELECT * FROM evidence WHERE run_id = ? ORDER BY id", (run_id,))
         ]
 
-    def get_for_experiment(self, experiment_id: str) -> dict[str, Any] | None:
+    def get_for_experiment(self, experiment_id: str) -> EvidenceRecord | None:
         row = self.db.fetchone(
             "SELECT * FROM evidence WHERE experiment_id = ? ORDER BY id DESC LIMIT 1",
             (experiment_id,),

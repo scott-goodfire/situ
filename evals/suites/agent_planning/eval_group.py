@@ -4,9 +4,9 @@ from typing import ClassVar
 
 from pydantic_evals.dataset import increment_eval_metric
 
-from ai_evals.harness.base import BaseAlmanacEvalGroup
-from ai_evals.harness.models import AlmanacEvalOutput
-from ai_evals.worlds.micrograd import MicrogradEvalInput, run_micrograd_planning_case
+from evals.harness.base import BaseAlmanacEvalGroup
+from evals.harness.models import AlmanacEvalOutput
+from evals.worlds.micrograd import MicrogradEvalInput, run_micrograd_planning_case
 
 
 class BaseMicrogradPlanningEvalGroup(BaseAlmanacEvalGroup[MicrogradEvalInput, AlmanacEvalOutput]):

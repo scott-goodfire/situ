@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pydantic_evals import Case
 
-from ai_evals.harness.evaluators import (
+from evals.harness.evaluators import (
     ContentContains,
     EventWasEmitted,
     FindingContains,
@@ -11,9 +11,9 @@ from ai_evals.harness.evaluators import (
     ToolWasCalled,
     WarningWasCreated,
 )
-from ai_evals.harness.models import AlmanacEvalOutput
-from ai_evals.suites.agent_planning.eval_group import BaseMicrogradPlanningEvalGroup
-from ai_evals.worlds.micrograd import MicrogradEvalInput
+from evals.harness.models import AlmanacEvalOutput
+from evals.suites.agent_planning.eval_group import BaseMicrogradPlanningEvalGroup
+from evals.worlds.micrograd import MicrogradEvalInput
 
 
 class MicrogradPlanningEvalGroup(BaseMicrogradPlanningEvalGroup):
