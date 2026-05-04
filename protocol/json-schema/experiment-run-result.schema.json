@@ -1,0 +1,70 @@
+{
+  "$defs": {
+    "SignalRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "key": {
+          "title": "Key",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Unit"
+        }
+      },
+      "required": [
+        "key",
+        "value"
+      ],
+      "title": "SignalRecord",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "experiment_id": {
+      "title": "Experiment Id",
+      "type": "string"
+    },
+    "status": {
+      "title": "Status",
+      "type": "string"
+    },
+    "summary": {
+      "title": "Summary",
+      "type": "string"
+    },
+    "signals": {
+      "items": {
+        "$ref": "#/$defs/SignalRecord"
+      },
+      "title": "Signals",
+      "type": "array"
+    },
+    "raw": {
+      "additionalProperties": true,
+      "title": "Raw",
+      "type": "object"
+    }
+  },
+  "required": [
+    "experiment_id",
+    "status",
+    "summary",
+    "signals",
+    "raw"
+  ],
+  "title": "ExperimentRunResult",
+  "type": "object"
+}

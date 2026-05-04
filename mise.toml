@@ -3,3 +3,31 @@ bun = "1.2.20"
 node = "24.6.0"
 python = "3.13.7"
 uv = "0.9.7"
+
+[tasks.update]
+description = "Update TypeScript and Python workspace dependencies"
+run = "./commands/update.sh"
+
+[tasks.check]
+description = "Run Python syntax checks and TypeScript typechecks"
+run = "./commands/check.sh"
+
+[tasks."dev:tui"]
+description = "Run the TypeScript Ink TUI"
+run = "./commands/dev-tui.sh"
+
+[tasks.start]
+description = "Start the local Almanac TUI"
+run = "./commands/start.sh"
+
+[tasks."dev:harness"]
+description = "Run the Python harness JSON-RPC stdio server"
+run = "./commands/dev-harness.sh"
+
+[tasks."example:toy"]
+description = "Run the toy autoresearch vertical slice"
+run = "./commands/dev-tui.sh"
+
+[tasks."protocol:generate"]
+description = "Generate JSON Schema and TypeScript protocol types"
+run = "./commands/protocol-generate.sh"

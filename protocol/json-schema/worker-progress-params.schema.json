@@ -1,0 +1,30 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "run_id": {
+      "title": "Run Id",
+      "type": "string"
+    },
+    "experiment_id": {
+      "title": "Experiment Id",
+      "type": "string"
+    },
+    "message": {
+      "title": "Message",
+      "type": "string"
+    },
+    "payload": {
+      "additionalProperties": true,
+      "default": {},
+      "title": "Payload",
+      "type": "object"
+    }
+  },
+  "required": [
+    "run_id",
+    "experiment_id",
+    "message"
+  ],
+  "title": "WorkerProgressParams",
+  "type": "object"
+}

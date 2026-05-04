@@ -1,0 +1,40 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "run_id": {
+      "title": "Run Id",
+      "type": "string"
+    },
+    "experiment_id": {
+      "title": "Experiment Id",
+      "type": "string"
+    },
+    "intent": {
+      "title": "Intent",
+      "type": "string"
+    },
+    "components": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Components",
+      "type": "array"
+    },
+    "based_on": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Based On",
+      "type": "array"
+    }
+  },
+  "required": [
+    "run_id",
+    "experiment_id",
+    "intent",
+    "components"
+  ],
+  "title": "ExperimentRunParams",
+  "type": "object"
+}

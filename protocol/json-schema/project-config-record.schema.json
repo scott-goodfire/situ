@@ -1,0 +1,52 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "repo_path": {
+      "title": "Repo Path",
+      "type": "string"
+    },
+    "goal": {
+      "title": "Goal",
+      "type": "string"
+    },
+    "evaluation_context": {
+      "title": "Evaluation Context",
+      "type": "string"
+    },
+    "known_signals": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Known Signals",
+      "type": "array"
+    },
+    "experiment_scope": {
+      "title": "Experiment Scope",
+      "type": "string"
+    },
+    "created_at": {
+      "title": "Created At",
+      "type": "string"
+    },
+    "updated_at": {
+      "title": "Updated At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "repo_path",
+    "goal",
+    "evaluation_context",
+    "known_signals",
+    "experiment_scope",
+    "created_at",
+    "updated_at"
+  ],
+  "title": "ProjectConfigRecord",
+  "type": "object"
+}

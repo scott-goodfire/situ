@@ -1,0 +1,32 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "goal": {
+      "title": "Goal",
+      "type": "string"
+    },
+    "evaluation_context": {
+      "title": "Evaluation Context",
+      "type": "string"
+    },
+    "known_signals": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Known Signals",
+      "type": "array"
+    },
+    "experiment_scope": {
+      "default": "Toy deterministic experiment loop.",
+      "title": "Experiment Scope",
+      "type": "string"
+    }
+  },
+  "required": [
+    "goal",
+    "evaluation_context"
+  ],
+  "title": "SetupCompleteParams",
+  "type": "object"
+}

@@ -1,0 +1,12 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "replay_existing": {
+      "default": false,
+      "title": "Replay Existing",
+      "type": "boolean"
+    }
+  },
+  "title": "EventsSubscribeParams",
+  "type": "object"
+}

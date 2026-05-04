@@ -1,0 +1,29 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "code": {
+      "title": "Code",
+      "type": "integer"
+    },
+    "message": {
+      "title": "Message",
+      "type": "string"
+    },
+    "data": {
+      "anyOf": [
+        {},
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Data"
+    }
+  },
+  "required": [
+    "code",
+    "message"
+  ],
+  "title": "JsonRpcErrorObject",
+  "type": "object"
+}

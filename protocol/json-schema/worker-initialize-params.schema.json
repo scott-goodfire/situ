@@ -1,0 +1,12 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "protocol_version": {
+      "default": 1,
+      "title": "Protocol Version",
+      "type": "integer"
+    }
+  },
+  "title": "WorkerInitializeParams",
+  "type": "object"
+}

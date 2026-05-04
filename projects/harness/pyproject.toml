@@ -1,0 +1,23 @@
+[project]
+name = "almanac-harness"
+version = "0.0.1"
+requires-python = ">=3.13"
+dependencies = [
+  "almanac-protocol",
+]
+
+[project.scripts]
+almanac = "almanac.harness.cli:main"
+almanac-harness-stdio = "almanac.harness.stdio:main"
+
+[tool.uv.sources]
+almanac-protocol = { workspace = true }
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["almanac*"]
+namespaces = true

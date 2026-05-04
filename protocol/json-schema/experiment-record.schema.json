@@ -1,0 +1,82 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "run_id": {
+      "title": "Run Id",
+      "type": "string"
+    },
+    "status": {
+      "title": "Status",
+      "type": "string"
+    },
+    "intent": {
+      "title": "Intent",
+      "type": "string"
+    },
+    "change_summary": {
+      "title": "Change Summary",
+      "type": "string"
+    },
+    "components": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Components",
+      "type": "array"
+    },
+    "based_on": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Based On",
+      "type": "array"
+    },
+    "suspicious": {
+      "default": false,
+      "title": "Suspicious",
+      "type": "boolean"
+    },
+    "suspicious_reason": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Suspicious Reason"
+    },
+    "note": {
+      "default": "",
+      "title": "Note",
+      "type": "string"
+    },
+    "created_at": {
+      "title": "Created At",
+      "type": "string"
+    },
+    "updated_at": {
+      "title": "Updated At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "run_id",
+    "status",
+    "intent",
+    "change_summary",
+    "components",
+    "based_on",
+    "created_at",
+    "updated_at"
+  ],
+  "title": "ExperimentRecord",
+  "type": "object"
+}

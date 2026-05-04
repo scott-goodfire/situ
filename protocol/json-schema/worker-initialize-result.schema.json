@@ -1,0 +1,19 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "worker_name": {
+      "title": "Worker Name",
+      "type": "string"
+    },
+    "protocol_version": {
+      "default": 1,
+      "title": "Protocol Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "worker_name"
+  ],
+  "title": "WorkerInitializeResult",
+  "type": "object"
+}

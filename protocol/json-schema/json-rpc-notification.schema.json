@@ -1,0 +1,33 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "jsonrpc": {
+      "const": "2.0",
+      "default": "2.0",
+      "title": "Jsonrpc",
+      "type": "string"
+    },
+    "method": {
+      "title": "Method",
+      "type": "string"
+    },
+    "params": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Params"
+    }
+  },
+  "required": [
+    "method"
+  ],
+  "title": "JsonRpcNotification",
+  "type": "object"
+}

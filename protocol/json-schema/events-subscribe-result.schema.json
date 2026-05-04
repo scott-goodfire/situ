@@ -1,0 +1,19 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "subscribed": {
+      "title": "Subscribed",
+      "type": "boolean"
+    },
+    "replayed": {
+      "default": 0,
+      "title": "Replayed",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "subscribed"
+  ],
+  "title": "EventsSubscribeResult",
+  "type": "object"
+}

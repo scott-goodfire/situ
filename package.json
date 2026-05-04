@@ -1,0 +1,18 @@
+{
+  "name": "autoresearch-harness-workspace",
+  "private": true,
+  "type": "module",
+  "packageManager": "bun@1.2.20",
+  "workspaces": [
+    "projects/tui",
+    "shared/typescript/*"
+  ],
+  "scripts": {
+    "check": "./commands/check-typescript.sh",
+    "protocol:generate": "./commands/protocol-generate.sh"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.9.3"
+  }
+}

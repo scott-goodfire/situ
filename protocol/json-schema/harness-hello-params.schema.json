@@ -1,0 +1,12 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "default": "world",
+      "title": "Name",
+      "type": "string"
+    }
+  },
+  "title": "HarnessHelloParams",
+  "type": "object"
+}
