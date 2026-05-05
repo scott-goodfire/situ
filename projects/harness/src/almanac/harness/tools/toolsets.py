@@ -10,6 +10,7 @@ from .comments import AddExperimentCommentTool, AddHypothesisCommentTool
 from .experiments import (
     CreateExperimentTool,
     ListExperimentsTool,
+    RunExperimentTool,
     UpdateExperimentTool,
 )
 from .hypotheses import (
@@ -24,13 +25,17 @@ from .sessions import GetSessionTool
 
 RESEARCH_TOOLSET_INSTRUCTIONS = inspect.cleandoc(
     """
-    Use `get_session` to inspect the current research state before making claims.
-    Use CRUD-shaped tools to create or update hypotheses and experiments. Use
-    `add_hypothesis_comment` and `add_experiment_comment` for durable
-    observations that should persist across sessions.
+    This toolset is the Almanac research ledger.
 
-    Comments should be meaningful research notes, not routine narration.
-    Results and automated concerns are usually harness-owned activity.
+    Start with `get_session` when you need the current board: objective,
+    hypotheses, experiments, activities, artifacts, and events. Use the
+    hypothesis and experiment tools to keep the research structure clear. Use
+    `run_experiment` when there is a concrete attempt for the harness to run
+    through the configured worker path.
+
+    Use comments for durable research judgment: an interpretation, a risk, a
+    useful decision, or a next step. Avoid comments that only narrate routine
+    tool use. Results and automated concerns are recorded by the harness.
     """
 )
 
@@ -48,6 +53,7 @@ def build_research_toolset() -> FunctionToolset[AlmanacToolDeps]:
             ListExperimentsTool().as_tool(),
             CreateExperimentTool().as_tool(),
             UpdateExperimentTool().as_tool(),
+            RunExperimentTool().as_tool(),
             LinkHypothesisExperimentTool().as_tool(),
             AddHypothesisCommentTool().as_tool(),
             AddExperimentCommentTool().as_tool(),

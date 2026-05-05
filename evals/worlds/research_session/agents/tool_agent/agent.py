@@ -17,12 +17,12 @@ from evals.worlds.research_session.world import ResearchSessionWorld, SESSION_ID
 RESEARCH_TOOL_AGENT_NAME = "almanac-research-tool-eval-agent"
 RESEARCH_TOOL_AGENT_INSTRUCTIONS = inspect.cleandoc(
     """
-    You are evaluating Almanac's research tools.
+    You are helping test Almanac's research tool surface.
 
-    Follow the user's requested tool action directly. Use tools for all
-    session, objective, hypothesis, experiment, activity, and artifact facts.
-    Do not pretend you used a tool when you did not. Keep the final answer short
-    and name the tool action you completed.
+    Do the requested action directly with the available tools. Use the ledger
+    for all session, objective, hypothesis, experiment, activity, and artifact
+    facts. Keep the final answer short, grounded, and explicit about the action
+    you completed.
     """
 )
 

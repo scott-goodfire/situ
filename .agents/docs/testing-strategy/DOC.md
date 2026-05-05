@@ -1,7 +1,7 @@
 # Testing Strategy
 
-This repo is still an MVP, so testing should stay fast and focused while making
-the durable session/objective ledger hard to break.
+This repo is still in an early slice, so testing should stay fast and focused
+while making the durable session/objective ledger hard to break.
 
 ## Current Checks
 
@@ -51,8 +51,8 @@ When worker/eval-command behavior changes, also run an external workspace smoke:
 ```bash
 tmp=$(mktemp -d /private/tmp/almanac-ext.XXXXXX)
 ./commands/start.sh "$tmp" \
-  --eval-command "python /path/to/eval.py" \
-  --known-signal score \
+  --objective "Exercise the external workspace eval path." \
+  --context "Run make eval from the repo root. It prints score and tests_passed." \
   --max-experiments 1
 ```
 

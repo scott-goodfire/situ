@@ -25,7 +25,7 @@ The exact interface can evolve, but the slim headless surface should start with
 commands that agents can run without a TTY:
 
 ```bash
-almanac exec --json
+almanac exec --objective "..." --context "..." --json
 almanac status --json
 almanac snapshot --json
 almanac events --json
@@ -43,8 +43,15 @@ Headless output should be machine-readable by default:
 - A final JSON summary for `exec`, with progress and diagnostics on stderr.
 - Human progress and diagnostics on stderr, not mixed into stdout.
 
-Keep the first flags sparse: workspace, setup context, max experiments, and
-timeout are enough until the agent workflow proves it needs more.
+Keep the first setup flags sparse:
+
+- `--objective` names the durable goal.
+- `--context` explains how the project is normally evaluated, which commands
+  matter, what output means, and what should be treated as invalid.
+
+Do not split first-slice setup into `--eval`, `--signals`, or repeated signal
+flags. Almanac should preserve ambiguous project context and structure it over
+time.
 
 Defer richer guidance, proposal-context commands, and broad object-specific
 list commands until the basic loop is working.
@@ -68,10 +75,15 @@ The compact session context, exposed to agents through tools such as
 
 Agent-facing write tools should stay close to the product models:
 `create_hypothesis`, `update_hypothesis`, `create_experiment`,
-`update_experiment`, `link_hypothesis_experiment`,
+`update_experiment`, `run_experiment`, `link_hypothesis_experiment`,
 `add_hypothesis_comment`, and `add_experiment_comment`. Comments are stored as
 `kind="comment"` activities internally, with optional payload metadata when a
 view or agent needs to distinguish results, concerns, plans, or interpretations.
+
+`run_experiment` is the bridge between agent intent and harness-owned effects:
+the agent can request a concrete experiment, but the harness still owns worker
+execution, result comments, automated concern comments, status updates, and
+collection/event observability.
 
 ## Product Rule
 

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -26,8 +27,11 @@ class WorkerManager:
         self,
         params: ExperimentRunParams,
         on_progress: ProgressHandler,
+        *,
+        context: str = "",
     ) -> ExperimentRunResult:
-        command, cwd = self._worker_command()
+        eval_command = infer_eval_command(context)
+        command, cwd = self._worker_command(eval_command)
         process = subprocess.Popen(
             command,
             cwd=cwd,
@@ -39,6 +43,7 @@ class WorkerManager:
                 **os.environ,
                 "PYTHONDONTWRITEBYTECODE": "1",
                 "ALMANAC_WORKSPACE": str(self.workspace_root),
+                **({"ALMANAC_EVAL_COMMAND": eval_command} if eval_command else {}),
                 **({"ALMANAC_APP_ROOT": str(self.app_root)} if self.app_root is not None else {}),
             },
         )
@@ -109,15 +114,18 @@ class WorkerManager:
         stderr = process.stderr.read() if process.stderr is not None else ""
         raise RuntimeError(f"worker exited before responding: {stderr}")
 
-    def _worker_command(self) -> tuple[list[str], Path]:
-        if os.environ.get("ALMANAC_EVAL_COMMAND"):
+    def _worker_command(self, eval_command: str) -> tuple[list[str], Path]:
+        if eval_command or os.environ.get("ALMANAC_EVAL_COMMAND"):
             return [sys.executable, str(self._built_in_worker("local_command_worker"))], self.workspace_root
 
         workspace_worker = self.workspace_root / "almanac_worker.py"
         if workspace_worker.is_file():
             return [sys.executable, str(workspace_worker)], self.workspace_root
 
-        return [sys.executable, str(self._built_in_worker("examples/toy_worker"))], self.workspace_root
+        raise RuntimeError(
+            "No worker configured. Add a command such as 'Run make eval from the repo root' "
+            "to --context, or add almanac_worker.py to the workspace."
+        )
 
     def _built_in_worker(self, name: str) -> Path:
         if self.app_root is None:
@@ -126,3 +134,43 @@ class WorkerManager:
         if not worker.is_file():
             raise RuntimeError(f"built-in worker not found: {worker}")
         return worker
+
+
+def infer_eval_command(context: str) -> str:
+    for pattern in [
+        r"(?:run|execute|use)\s+`([^`]+)`",
+        r"(?:eval command|command)\s*[:=]\s*`?([^`\n.;]+)`?",
+        r"(?:run|execute|use)\s+(.+?)(?:\s+from\b|\.|;|\n|$)",
+    ]:
+        match = re.search(pattern, context, flags=re.IGNORECASE)
+        if match is None:
+            continue
+
+        command = match.group(1).strip(" `")
+        if looks_like_command(command):
+            return command
+
+    return ""
+
+
+def looks_like_command(command: str) -> bool:
+    if not command or command.lower().startswith(("the ", "a ", "an ")):
+        return False
+    executable = command.split()[0]
+    return executable in {
+        "make",
+        "python",
+        "python3",
+        "pytest",
+        "npm",
+        "pnpm",
+        "bun",
+        "yarn",
+        "cargo",
+        "go",
+        "uv",
+        "bash",
+        "sh",
+        "./scripts/eval",
+        "./scripts/eval.sh",
+    } or executable.startswith("./")

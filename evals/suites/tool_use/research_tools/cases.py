@@ -26,14 +26,14 @@ def research_tool_cases() -> list[Case[ResearchToolEvalInput, ResearchToolEvalOu
     return [
         Case(
             name="get_session_reads_graph",
-            inputs=ResearchToolEvalInput(
-                case_id="get_session_reads_graph",
-                seed="with_comments",
-                prompt=(
-                    "Use get_session for the current session. Then briefly state the "
-                    "objective title and one current hypothesis."
-                ),
-            ),
+	            inputs=ResearchToolEvalInput(
+	                case_id="get_session_reads_graph",
+	                seed="with_comments",
+	                prompt=(
+	                    "Please check the current session with get_session, then briefly "
+	                    "state the objective title and one hypothesis on the board."
+	                ),
+	            ),
             metadata={"requires_real_llm": True},
             evaluators=(
                 ToolWasCalled("get_session"),
@@ -44,14 +44,14 @@ def research_tool_cases() -> list[Case[ResearchToolEvalInput, ResearchToolEvalOu
         ),
         Case(
             name="get_objective_reads_current_objective",
-            inputs=ResearchToolEvalInput(
-                case_id="get_objective_reads_current_objective",
-                seed="basic",
-                prompt=(
-                    "Use get_objective without passing an objective_id. Then state the "
-                    "objective title."
-                ),
-            ),
+	            inputs=ResearchToolEvalInput(
+	                case_id="get_objective_reads_current_objective",
+	                seed="basic",
+	                prompt=(
+	                    "Please load the current objective with get_objective, without "
+	                    "passing an objective_id, and state the title."
+	                ),
+	            ),
             metadata={"requires_real_llm": True},
             evaluators=(
                 ToolWasCalled("get_objective"),
@@ -62,14 +62,14 @@ def research_tool_cases() -> list[Case[ResearchToolEvalInput, ResearchToolEvalOu
         ),
         Case(
             name="list_hypotheses_reads_existing_hypothesis",
-            inputs=ResearchToolEvalInput(
-                case_id="list_hypotheses_reads_existing_hypothesis",
-                seed="with_hypothesis",
-                prompt=(
-                    "Use list_hypotheses for the current objective. Then state the "
-                    "hypothesis id and title you found."
-                ),
-            ),
+	            inputs=ResearchToolEvalInput(
+	                case_id="list_hypotheses_reads_existing_hypothesis",
+	                seed="with_hypothesis",
+	                prompt=(
+	                    "Please pull the current objective's hypotheses with "
+	                    "list_hypotheses, then state the id and title you found."
+	                ),
+	            ),
             metadata={"requires_real_llm": True},
             evaluators=(
                 ToolWasCalled("list_hypotheses"),
@@ -79,14 +79,14 @@ def research_tool_cases() -> list[Case[ResearchToolEvalInput, ResearchToolEvalOu
         ),
         Case(
             name="create_hypothesis_writes_new_hypothesis",
-            inputs=ResearchToolEvalInput(
-                case_id="create_hypothesis_writes_new_hypothesis",
-                seed="basic",
-                prompt=(
-                    "Use create_hypothesis to add a hypothesis titled "
-                    "'Cache stability improves score' with summary "
-                    "'Stabilizing cache keys may improve validation score.'"
-                ),
+	            inputs=ResearchToolEvalInput(
+	                case_id="create_hypothesis_writes_new_hypothesis",
+	                seed="basic",
+	                prompt=(
+	                    "Please add a hypothesis with create_hypothesis. Title it "
+	                    "'Cache stability improves score' with summary "
+	                    "'Stabilizing cache keys may improve validation score.'"
+	                ),
             ),
             metadata={"requires_real_llm": True},
             evaluators=(
@@ -99,14 +99,15 @@ def research_tool_cases() -> list[Case[ResearchToolEvalInput, ResearchToolEvalOu
         ),
         Case(
             name="update_hypothesis_writes_status_and_summary",
-            inputs=ResearchToolEvalInput(
-                case_id="update_hypothesis_writes_status_and_summary",
-                seed="with_hypothesis",
-                prompt=(
-                    f"Use update_hypothesis on {HYPOTHESIS_ID}. Set status to "
-                    "'closed' and summary to 'Component A appears saturated.'"
-                ),
-            ),
+	            inputs=ResearchToolEvalInput(
+	                case_id="update_hypothesis_writes_status_and_summary",
+	                seed="with_hypothesis",
+	                prompt=(
+	                    f"Please update hypothesis {HYPOTHESIS_ID} with "
+	                    "update_hypothesis. Set status to 'closed' and summary to "
+	                    "'Component A appears saturated.'"
+	                ),
+	            ),
             metadata={"requires_real_llm": True},
             evaluators=(
                 ToolWasCalled("update_hypothesis"),
@@ -118,14 +119,15 @@ def research_tool_cases() -> list[Case[ResearchToolEvalInput, ResearchToolEvalOu
         ),
         Case(
             name="list_experiments_reads_existing_experiment",
-            inputs=ResearchToolEvalInput(
-                case_id="list_experiments_reads_existing_experiment",
-                seed="with_experiment",
-                prompt=(
-                    "Use list_experiments for the current session. Then state the "
-                    "experiment id and title you found."
-                ),
-            ),
+	            inputs=ResearchToolEvalInput(
+	                case_id="list_experiments_reads_existing_experiment",
+	                seed="with_experiment",
+	                prompt=(
+	                    "Please review the current session's experiments with "
+	                    "list_experiments, then state the experiment id and title you "
+	                    "found."
+	                ),
+	            ),
             metadata={"requires_real_llm": True},
             evaluators=(
                 ToolWasCalled("list_experiments"),
@@ -135,14 +137,14 @@ def research_tool_cases() -> list[Case[ResearchToolEvalInput, ResearchToolEvalOu
         ),
         Case(
             name="create_experiment_writes_new_experiment",
-            inputs=ResearchToolEvalInput(
-                case_id="create_experiment_writes_new_experiment",
-                seed="basic",
-                prompt=(
-                    "Use create_experiment to add an experiment titled "
-                    "'Try cache-key normalization' with summary "
-                    "'Normalize cache keys and compare validation score.'"
-                ),
+	            inputs=ResearchToolEvalInput(
+	                case_id="create_experiment_writes_new_experiment",
+	                seed="basic",
+	                prompt=(
+	                    "Please add an experiment with create_experiment. Title it "
+	                    "'Try cache-key normalization' with summary "
+	                    "'Normalize cache keys and compare validation score.'"
+	                ),
             ),
             metadata={"requires_real_llm": True},
             evaluators=(
@@ -155,14 +157,15 @@ def research_tool_cases() -> list[Case[ResearchToolEvalInput, ResearchToolEvalOu
         ),
         Case(
             name="update_experiment_writes_status_and_summary",
-            inputs=ResearchToolEvalInput(
-                case_id="update_experiment_writes_status_and_summary",
-                seed="with_experiment",
-                prompt=(
-                    f"Use update_experiment on {EXPERIMENT_ID}. Set status to "
-                    "'closed' and summary to 'Component A completed with score lift.'"
-                ),
-            ),
+	            inputs=ResearchToolEvalInput(
+	                case_id="update_experiment_writes_status_and_summary",
+	                seed="with_experiment",
+	                prompt=(
+	                    f"Please update experiment {EXPERIMENT_ID} with "
+	                    "update_experiment. Set status to 'closed' and summary to "
+	                    "'Component A completed with score lift.'"
+	                ),
+	            ),
             metadata={"requires_real_llm": True},
             evaluators=(
                 ToolWasCalled("update_experiment"),
@@ -174,14 +177,15 @@ def research_tool_cases() -> list[Case[ResearchToolEvalInput, ResearchToolEvalOu
         ),
         Case(
             name="link_hypothesis_experiment_writes_join",
-            inputs=ResearchToolEvalInput(
-                case_id="link_hypothesis_experiment_writes_join",
-                seed="with_experiment",
-                prompt=(
-                    f"Use link_hypothesis_experiment to link {HYPOTHESIS_ID} "
-                    f"to {EXPERIMENT_ID} with note 'testing hypothesis directly'."
-                ),
-            ),
+	            inputs=ResearchToolEvalInput(
+	                case_id="link_hypothesis_experiment_writes_join",
+	                seed="with_experiment",
+	                prompt=(
+	                    f"Please connect hypothesis {HYPOTHESIS_ID} to experiment "
+	                    f"{EXPERIMENT_ID} with link_hypothesis_experiment. Use the "
+	                    "note 'testing hypothesis directly'."
+	                ),
+	            ),
             metadata={"requires_real_llm": True},
             evaluators=(
                 ToolWasCalled("link_hypothesis_experiment"),
@@ -192,14 +196,15 @@ def research_tool_cases() -> list[Case[ResearchToolEvalInput, ResearchToolEvalOu
         ),
         Case(
             name="add_hypothesis_comment_writes_activity",
-            inputs=ResearchToolEvalInput(
-                case_id="add_hypothesis_comment_writes_activity",
-                seed="with_hypothesis",
-                prompt=(
-                    f"Use add_hypothesis_comment on {HYPOTHESIS_ID} with comment "
-                    "'Prioritize reproducing Component A before combining it.'"
-                ),
-            ),
+	            inputs=ResearchToolEvalInput(
+	                case_id="add_hypothesis_comment_writes_activity",
+	                seed="with_hypothesis",
+	                prompt=(
+	                    f"Please leave a hypothesis comment on {HYPOTHESIS_ID} with "
+	                    "add_hypothesis_comment: 'Prioritize reproducing Component A "
+	                    "before combining it.'"
+	                ),
+	            ),
             metadata={"requires_real_llm": True},
             evaluators=(
                 ToolWasCalled("add_hypothesis_comment"),
@@ -210,14 +215,15 @@ def research_tool_cases() -> list[Case[ResearchToolEvalInput, ResearchToolEvalOu
         ),
         Case(
             name="add_experiment_comment_writes_activity",
-            inputs=ResearchToolEvalInput(
-                case_id="add_experiment_comment_writes_activity",
-                seed="with_experiment",
-                prompt=(
-                    f"Use add_experiment_comment on {EXPERIMENT_ID} with comment "
-                    "'Score improved but latency needs review.'"
-                ),
-            ),
+	            inputs=ResearchToolEvalInput(
+	                case_id="add_experiment_comment_writes_activity",
+	                seed="with_experiment",
+	                prompt=(
+	                    f"Please leave an experiment comment on {EXPERIMENT_ID} with "
+	                    "add_experiment_comment: 'Score improved but latency needs "
+	                    "review.'"
+	                ),
+	            ),
             metadata={"requires_real_llm": True},
             evaluators=(
                 ToolWasCalled("add_experiment_comment"),
@@ -228,14 +234,14 @@ def research_tool_cases() -> list[Case[ResearchToolEvalInput, ResearchToolEvalOu
         ),
         Case(
             name="list_hypothesis_activities_reads_comments",
-            inputs=ResearchToolEvalInput(
-                case_id="list_hypothesis_activities_reads_comments",
-                seed="with_comments",
-                prompt=(
-                    f"Use list_hypothesis_activities for {HYPOTHESIS_ID}. Then "
-                    "state the existing comment."
-                ),
-            ),
+	            inputs=ResearchToolEvalInput(
+	                case_id="list_hypothesis_activities_reads_comments",
+	                seed="with_comments",
+	                prompt=(
+	                    f"Please read the activity for hypothesis {HYPOTHESIS_ID} with "
+	                    "list_hypothesis_activities, then state the existing comment."
+	                ),
+	            ),
             metadata={"requires_real_llm": True},
             evaluators=(
                 ToolWasCalled("list_hypothesis_activities"),
@@ -245,14 +251,14 @@ def research_tool_cases() -> list[Case[ResearchToolEvalInput, ResearchToolEvalOu
         ),
         Case(
             name="list_experiment_activities_reads_comments",
-            inputs=ResearchToolEvalInput(
-                case_id="list_experiment_activities_reads_comments",
-                seed="with_comments",
-                prompt=(
-                    f"Use list_experiment_activities for {EXPERIMENT_ID}. Then "
-                    "state the existing comment."
-                ),
-            ),
+	            inputs=ResearchToolEvalInput(
+	                case_id="list_experiment_activities_reads_comments",
+	                seed="with_comments",
+	                prompt=(
+	                    f"Please read the activity for experiment {EXPERIMENT_ID} with "
+	                    "list_experiment_activities, then state the existing comment."
+	                ),
+	            ),
             metadata={"requires_real_llm": True},
             evaluators=(
                 ToolWasCalled("list_experiment_activities"),
@@ -262,16 +268,17 @@ def research_tool_cases() -> list[Case[ResearchToolEvalInput, ResearchToolEvalOu
         ),
         Case(
             name="create_artifact_writes_artifact",
-            inputs=ResearchToolEvalInput(
-                case_id="create_artifact_writes_artifact",
-                seed="with_experiment",
-                prompt=(
-                    f"Use create_artifact for session {SESSION_ID} and experiment "
-                    f"{EXPERIMENT_ID}. Use kind 'json', title 'normalized cache raw "
-                    "output', path 'artifacts/normalized-cache.json', media_type "
-                    "'application/json', and size_bytes 256."
-                ),
-            ),
+	            inputs=ResearchToolEvalInput(
+	                case_id="create_artifact_writes_artifact",
+	                seed="with_experiment",
+	                prompt=(
+	                    f"Please record a JSON artifact with create_artifact for "
+	                    f"session {SESSION_ID} and experiment {EXPERIMENT_ID}. Use "
+	                    "title 'normalized cache raw output', path "
+	                    "'artifacts/normalized-cache.json', media_type "
+	                    "'application/json', and size_bytes 256."
+	                ),
+	            ),
             metadata={"requires_real_llm": True},
             evaluators=(
                 ToolWasCalled("create_artifact"),
@@ -283,14 +290,14 @@ def research_tool_cases() -> list[Case[ResearchToolEvalInput, ResearchToolEvalOu
         ),
         Case(
             name="list_artifacts_reads_existing_artifact",
-            inputs=ResearchToolEvalInput(
-                case_id="list_artifacts_reads_existing_artifact",
-                seed="with_artifact",
-                prompt=(
-                    f"Use list_artifacts for experiment {EXPERIMENT_ID}. Then state "
-                    "the artifact id and title you found."
-                ),
-            ),
+	            inputs=ResearchToolEvalInput(
+	                case_id="list_artifacts_reads_existing_artifact",
+	                seed="with_artifact",
+	                prompt=(
+	                    f"Please look up artifacts for experiment {EXPERIMENT_ID} with "
+	                    "list_artifacts, then state the artifact id and title you found."
+	                ),
+	            ),
             metadata={"requires_real_llm": True},
             evaluators=(
                 ToolWasCalled("list_artifacts"),

@@ -6,10 +6,10 @@ They protect interpretation activities from obvious invalidity. The user should
 not have to manually enumerate every forbidden behavior before Almanac can
 notice suspicious results.
 
-## MVP Trust Checks
+## Current Trust Checks
 
-The MVP should catch obvious issues without requiring the user to enumerate
-everything up front:
+The current slice should catch obvious issues without requiring the user to
+enumerate everything up front:
 
 - Evaluation failed.
 - Expected signal is missing.

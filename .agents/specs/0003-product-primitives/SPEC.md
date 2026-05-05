@@ -3,7 +3,7 @@
 Use simple product nouns. For the first slice, keep the domain intentionally
 small and let activities carry nuance.
 
-## MVP Hierarchy
+## Current Hierarchy
 
 ```text
 Objective

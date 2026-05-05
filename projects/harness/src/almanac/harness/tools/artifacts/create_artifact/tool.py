@@ -57,11 +57,12 @@ class CreateArtifactTool(BaseAlmanacTool[AlmanacToolDeps, CreateArtifactResult])
             media_type=media_type,
             size_bytes=size_bytes,
         )
-        ctx.deps.record_event(
+        event = ctx.deps.record_event(
             "artifact.created",
             f"Created artifact {artifact.id}",
             payload={"artifact_id": artifact.id},
         )
+        ctx.deps.publish_record(artifact, event=event)
         return CreateArtifactResult(success=True, artifact=artifact.model_dump())
 
 

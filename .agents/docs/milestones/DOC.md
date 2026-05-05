@@ -3,11 +3,11 @@
 This doc captures execution context for the current phase. It is not the product
 contract; specs remain the contract.
 
-## Milestone 1: Autoresearch Harness MVP
+## Milestone 1: Agentic Autoresearch Harness
 
 Build a basic local terminal observability harness for autoresearch sessions.
 
-The MVP should demonstrate that a user can start a session and see:
+The current slice should demonstrate that a user can start a session and see:
 
 - What is running now
 - Which objective is active
@@ -34,8 +34,8 @@ Examples:
 - Changing random seeds until one looks good
 - Reporting malformed or incomplete metrics
 
-The MVP should surface suspicious results as concern comments rather than
-blindly treating metric movement as progress.
+The current slice should surface suspicious results as concern comments rather
+than blindly treating metric movement as progress.
 
 ### Local Optima
 

@@ -29,6 +29,6 @@ repo or send data to hosted services unless the user explicitly opts in.
 - Creating hidden runtime directories in the target repo by default.
 - Writing generated reports or patches into the repo without an explicit export
   or publish action.
-- Depending on cloud state for the MVP.
+- Depending on cloud state for the current local slice.
 - Losing objective, session, hypothesis, experiment, activity, or event state
   after restart.

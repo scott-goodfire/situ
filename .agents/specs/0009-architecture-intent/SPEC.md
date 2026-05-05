@@ -17,8 +17,7 @@ Almanac should feel like a local agent tool:
 Future optional repo artifacts can include winning patches, PR bodies, project
 briefs, agent instructions, or reports.
 
-For the first slice, avoid repo writes entirely unless needed for the toy example
-or explicitly requested.
+For the first slice, avoid repo writes entirely unless explicitly requested.
 
 ## Runtime Boundary
 
@@ -83,16 +82,15 @@ The first real agent runtime should use Pydantic AI for typed agent-facing
 planning and DBOS for durable execution boundaries. This should be introduced as
 infrastructure under the Python harness, not as a new product surface.
 
-For the MVP:
+For the current slice:
 
 - Pydantic AI may inspect compact, typed session context.
-- DBOS may wrap agent execution so model calls and tool execution can become
-  durable workflow steps.
+- DBOS should wrap agent execution through Pydantic AI `DBOSAgent`.
 - Logfire may observe harness, DBOS, and Pydantic AI spans.
-- The product must still run locally without requiring a hosted model key.
-- Agent output is advisory until the proposal loop is ready; the harness still
-  owns objective/session identity, hypotheses, experiments, activities,
-  artifacts, and events.
+- The agent may request experiment execution through typed Almanac tools.
+- The harness still owns objective/session identity, worker execution,
+  automated trust concerns, activities, artifacts, events, and persisted
+  message history.
 
 This keeps creativity in the agent layer while preserving Almanac as the
 control plane.
@@ -106,7 +104,7 @@ slice:
 - Python harness
 - JSON-RPC over stdio
 - SQLite state
-- Deterministic proposer
+- Agent/tool-driven proposer
 - Worker subprocess
 - Shared Python/TypeScript protocol generation
 
@@ -136,5 +134,5 @@ Start with a narrow, durable core:
 - Internal event log
 - TypeScript Ink TUI
 
-Only add richer agent orchestration, parallelism, plugins, and remote workers
-after the core loop is trustworthy.
+Only add parallelism, plugins, and remote workers after the agent/tool loop is
+trustworthy.

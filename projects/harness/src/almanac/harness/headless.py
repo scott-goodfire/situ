@@ -24,12 +24,6 @@ from .local_session import (
 from .paths import resolve_app_root, resolve_workspace
 
 DEFAULT_MAX_EXPERIMENTS = 6
-TOY_OBJECTIVE = "Understand which toy components improve score without suspicious results."
-TOY_RESEARCH_CONTEXT = (
-    "Toy deterministic eval. Expected signals: score, latency_ms. Preserve results, "
-    "record activities, try baseline, individual toy components, combinations, "
-    "and one suspicious result."
-)
 
 
 def headless_status(args: argparse.Namespace) -> int:
@@ -256,11 +250,8 @@ def resolve_existing_workspace(args: argparse.Namespace) -> Path | None:
 def apply_setup_env(env: dict[str, str], args: argparse.Namespace) -> None:
     max_count = getattr(args, "max_experiments", None)
     optional_env = {
-        "ALMANAC_EVAL_COMMAND": getattr(args, "eval_command", None),
         "ALMANAC_OBJECTIVE": getattr(args, "objective", None),
-        "ALMANAC_RESEARCH_CONTEXT": getattr(args, "research_context", None),
-        "ALMANAC_EVALUATION_CONTEXT": getattr(args, "evaluation_context", None),
-        "ALMANAC_EXPERIMENT_SCOPE": getattr(args, "experiment_scope", None),
+        "ALMANAC_CONTEXT": getattr(args, "context", None),
     }
     if max_count is not None:
         optional_env["ALMANAC_MAX_EXPERIMENTS"] = str(max_count)
@@ -268,10 +259,6 @@ def apply_setup_env(env: dict[str, str], args: argparse.Namespace) -> None:
     for key, value in optional_env.items():
         if value:
             env[key] = value
-
-    known_signals = getattr(args, "known_signals", None)
-    if known_signals:
-        env["ALMANAC_KNOWN_SIGNALS"] = ",".join(known_signals)
 
 
 def ensure_setup(
@@ -296,28 +283,16 @@ def setup_params(
     workspace: Path,
     app_root: Path,
 ) -> dict[str, str]:
-    known_signals = getattr(args, "known_signals", None) or []
     objective = getattr(args, "objective", None)
-    research_context = getattr(args, "research_context", None)
-    eval_command = getattr(args, "eval_command", None)
-
-    has_user_setup = bool(objective or research_context or eval_command or known_signals)
-    if not has_user_setup and workspace == app_root:
-        return {
-            "objective": TOY_OBJECTIVE,
-            "research_context": TOY_RESEARCH_CONTEXT,
-        }
+    context = getattr(args, "context", None)
+    _ = app_root
 
     if not objective:
         objective = f"Observe autoresearch experiments in {workspace}"
 
     parts: list[str] = []
-    if research_context:
-        parts.append(research_context)
-    if eval_command:
-        parts.append(f"Run {eval_command} and capture its JSON signals.")
-    if known_signals:
-        parts.append(f"Expected signals: {', '.join(known_signals)}.")
+    if context:
+        parts.append(context)
     parts.append("Capture results, signals, concerns, and activities from local experiments.")
 
     return {

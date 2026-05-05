@@ -21,11 +21,11 @@ def research_session_planning_cases() -> list[
                 case_id="creates_baseline_hypothesis",
                 seed="needs_baseline",
                 prompt="""
-                Inspect the current session with get_session.
-                Create a hypothesis titled "Baseline first" with summary
-                "Record a baseline before variants." Then add a hypothesis
-                comment containing the exact phrase "baseline is the first step".
-                In your final summary, include "baseline is the first step".
+                Take a look at the current session first. We do not have a
+                baseline yet, so set up the first hypothesis as "Baseline
+                first" with the summary "Record a baseline before variants."
+                Leave a short hypothesis comment that says "baseline is the
+                first step", and mention that same line in your summary.
                 """,
             ),
             metadata={"requires_real_llm": True},
@@ -47,12 +47,12 @@ def research_session_planning_cases() -> list[
                 case_id="creates_followup_after_baseline",
                 seed="with_baseline_result",
                 prompt=f"""
-                Inspect the current session with get_session. The baseline result
-                already exists. Create an experiment titled "Try component A"
-                with summary "Compare component A against baseline." Link the
-                new experiment to hypothesis {HYPOTHESIS_ID}. Add an experiment
-                comment containing the exact phrase "compare against baseline".
-                In your final next_focus or summary, mention "component A".
+                Please review the current session. The baseline result is
+                already recorded, so set up the next experiment as "Try
+                component A" with the summary "Compare component A against
+                baseline." Connect it to hypothesis {HYPOTHESIS_ID}, leave an
+                experiment comment that says "compare against baseline", and
+                make component A the clear next focus in your response.
                 """,
             ),
             metadata={"requires_real_llm": True},
@@ -76,13 +76,12 @@ def research_session_planning_cases() -> list[
                 case_id="proposes_combination_from_promising_results",
                 seed="with_promising_results",
                 prompt=f"""
-                Inspect the current session with get_session. Existing results
-                show components A and C are promising. Create an experiment
-                titled "Try A+C" with summary "Combine the two promising
-                components." Link the new experiment to hypothesis
-                {HYPOTHESIS_ID}. Add a hypothesis comment containing the exact
-                phrase "A and C are promising". In your final next_focus or
-                summary, include "A+C".
+                Look over the session. The recent results make A and C look
+                promising, so propose the combined follow-up as an experiment
+                titled "Try A+C" with the summary "Combine the two promising
+                components." Link it to hypothesis {HYPOTHESIS_ID}. Also leave
+                a hypothesis comment that says "A and C are promising", and
+                make sure your response names A+C as the next move.
                 """,
             ),
             metadata={"requires_real_llm": True},

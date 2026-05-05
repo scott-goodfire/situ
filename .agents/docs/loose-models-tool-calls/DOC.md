@@ -238,7 +238,6 @@ the reference backend:
   views can be built from Pydantic messages later if querying raw messages
   becomes too awkward.
 
-This should not force the entire session loop to become autonomous immediately. It
-is acceptable for the deterministic MVP loop to call a tool directly while the
-agent layer matures, as long as durable message history and context-passing are
-real.
+The session loop should now be agent/tool-shaped: the agent inspects session
+state, requests concrete experiments through `run_experiment`, and the harness
+owns worker execution plus result/concern activity writes.

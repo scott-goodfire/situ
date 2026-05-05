@@ -6,6 +6,7 @@ from typing import Any
 import pytest
 
 from almanac.harness.core.db import Database
+from almanac.harness.core.workers import WorkerManager
 from almanac.harness.repositories import Repositories
 from almanac.harness.tools.activities import (
     ListExperimentActivitiesTool,
@@ -20,6 +21,7 @@ from almanac.harness.tools.common import AlmanacToolDeps, invoke_almanac_tool_sy
 from almanac.harness.tools.experiments import (
     CreateExperimentTool,
     ListExperimentsTool,
+    RunExperimentTool,
     UpdateExperimentTool,
 )
 from almanac.harness.tools.hypotheses import (
@@ -30,6 +32,7 @@ from almanac.harness.tools.hypotheses import (
 from almanac.harness.tools.links import LinkHypothesisExperimentTool
 from almanac.harness.tools.objectives import GetObjectiveTool
 from almanac.harness.tools.sessions import GetSessionTool
+from almanac.protocol import ExperimentRunParams, ExperimentRunResult
 
 
 @pytest.fixture
@@ -284,6 +287,72 @@ def test_artifact_tools_create_and_list_artifacts(repos: Repositories) -> None:
     assert [artifact["id"] for artifact in listed.artifacts] == [
         "artifact_session_0001_001"
     ]
+
+
+def test_run_experiment_tool_executes_worker_and_records_activity(
+    repos: Repositories,
+) -> None:
+    emitted: list[dict[str, Any]] = []
+    deps = AlmanacToolDeps(
+        session_id="session_0001",
+        repos=repos,
+        worker_manager=FakeWorkerManager(),
+        emit_event=_event_collector(emitted),
+    )
+
+    result = invoke_almanac_tool_sync(
+        tool=RunExperimentTool(),
+        deps=deps,
+        title="Try component C",
+        summary="Run component C and capture score.",
+        components=["C"],
+    )
+
+    assert result.success is True
+    assert result.experiment is not None
+    assert result.experiment["status"] == "closed"
+    assert result.result is not None
+    assert result.result["status"] == "completed"
+    assert result.concerns == [
+        {"kind": "missing_signal", "message": "Expected signal missing: latency_ms"}
+    ]
+    activities = repos.experiment_activities.list_for_experiment(result.experiment["id"])
+    assert [activity.payload.get("activity_type") for activity in activities] == [
+        "plan",
+        "result",
+        "concern",
+    ]
+    assert "worker.progress" in [event["type"] for event in emitted]
+
+
+class FakeWorkerManager(WorkerManager):
+    def __init__(self) -> None:
+        pass
+
+    def run_experiment(
+        self,
+        params: ExperimentRunParams,
+        on_progress: Any,
+        *,
+        context: str = "",
+    ) -> ExperimentRunResult:
+        _ = context
+        on_progress(
+            {
+                "params": {
+                    "session_id": params.session_id,
+                    "experiment_id": params.experiment_id,
+                    "message": "fake worker progress",
+                }
+            }
+        )
+        return ExperimentRunResult(
+            experiment_id=params.experiment_id,
+            status="completed",
+            summary="Component C produced a score.",
+            signals=[{"key": "score", "value": 0.72}],
+            raw={"shape": "standard"},
+        )
 
 
 def _event_collector(

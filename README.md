@@ -31,8 +31,8 @@ Run against another local workspace:
 
 ```bash
 mise run start -- ~/sandbox/some-repo \
-  --eval-command "python almanac_eval.py --json" \
-  --known-signal score
+  --objective "Improve the project behavior without breaking correctness." \
+  --context "Run make eval from the repo root. It prints the metrics and checks that matter."
 ```
 
 See `examples/micrograd-sandbox/` for a concrete external-repo smoke test.
@@ -57,9 +57,9 @@ The Python harness now initializes:
 - DBOS for durable agent execution state
 - Logfire for Pydantic AI / DBOS / harness traces
 
-The default agent runtime uses Pydantic AI's local test model unless an
-Almanac-scoped OpenAI key is configured, so the toy and micrograd examples still
-run without an LLM API key.
+The default agent runtime requires an Almanac-scoped OpenAI key. Runtime
+execution should fail loudly if the key is missing rather than falling back to a
+deterministic model.
 
 To send traces to Logfire, set a write token in your shell or local env file:
 

@@ -94,9 +94,8 @@ Initial worlds:
   exercises the actual Almanac research toolset through Pydantic AI for both
   focused tool-use evals and full-agent `ResearchAgent` planning evals.
 
-Future worlds can include `toy_autoresearch` for even faster synthetic local
-smoke tests. Worlds may be fully mocked at first. Later, they can call real
-local eval commands or sandbox repos.
+Future worlds may call real local eval commands or sandbox repos when the
+deterministic mocked session worlds are not enough.
 
 ## Logfire
 

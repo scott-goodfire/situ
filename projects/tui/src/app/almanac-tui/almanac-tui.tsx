@@ -42,12 +42,6 @@ type Status =
   | { kind: "completed"; sessionId: string }
   | { kind: "failed"; message: string };
 
-const TOY_SETUP: SetupCompleteParams = {
-  objective: "Understand which toy components improve score without suspicious results.",
-  research_context:
-    "Toy deterministic eval. Expected signals: score, latency_ms. Preserve results, record activities, try baseline, individual toy components, combinations, and one suspicious result.",
-};
-
 export function AlmanacTui() {
   const { exit } = useApp();
   const collections = useMemo(() => createAlmanacCollections(), []);
@@ -141,7 +135,6 @@ export function AlmanacTui() {
   useEffect(() => {
     const setupParams = initialSetup({
       workspace,
-      root,
     });
     const sessionUrl = process.env.ALMANAC_SESSION_URL;
     const sessionToken = process.env.ALMANAC_SESSION_TOKEN;
@@ -426,67 +419,27 @@ function workspaceRoot({ root }: { root: string }): string {
 
 function initialSetup({
   workspace,
-  root,
 }: {
   workspace: string;
-  root: string;
 }): SetupCompleteParams {
-  const knownSignals = parseSignals({ value: process.env.ALMANAC_KNOWN_SIGNALS });
-  const hasUserSetup =
-    Boolean(process.env.ALMANAC_OBJECTIVE) ||
-    Boolean(process.env.ALMANAC_RESEARCH_CONTEXT) ||
-    Boolean(process.env.ALMANAC_EVALUATION_CONTEXT) ||
-    Boolean(process.env.ALMANAC_EXPERIMENT_SCOPE) ||
-    knownSignals.length > 0 ||
-    Boolean(process.env.ALMANAC_EVAL_COMMAND);
-
-  if (!hasUserSetup && workspace === root) {
-    return TOY_SETUP;
-  }
-
   return {
     objective:
       process.env.ALMANAC_OBJECTIVE ??
-      process.env.ALMANAC_GOAL ??
       `Observe autoresearch experiments in ${workspace}`,
-    research_context: initialResearchContext({ knownSignals }),
+    research_context: initialResearchContext(),
   };
 }
 
-function initialResearchContext({ knownSignals }: { knownSignals: string[] }): string {
+function initialResearchContext(): string {
   const parts: string[] = [];
 
-  if (process.env.ALMANAC_RESEARCH_CONTEXT) {
-    parts.push(process.env.ALMANAC_RESEARCH_CONTEXT);
-  }
-
-  if (process.env.ALMANAC_EVALUATION_CONTEXT) {
-    parts.push(process.env.ALMANAC_EVALUATION_CONTEXT);
-  }
-
-  if (process.env.ALMANAC_EVAL_COMMAND) {
-    parts.push(`Run ${process.env.ALMANAC_EVAL_COMMAND} and capture its JSON signals.`);
-  }
-
-  if (knownSignals.length > 0) {
-    parts.push(`Expected signals: ${knownSignals.join(", ")}.`);
-  }
-
-  if (process.env.ALMANAC_EXPERIMENT_SCOPE) {
-    parts.push(process.env.ALMANAC_EXPERIMENT_SCOPE);
+  if (process.env.ALMANAC_CONTEXT) {
+    parts.push(process.env.ALMANAC_CONTEXT);
   }
 
   parts.push("Capture results, signals, concerns, and activities from local experiments.");
 
   return parts.join(" ");
-}
-
-function parseSignals({ value }: { value: string | undefined }): string[] {
-  if (!value) {
-    return [];
-  }
-
-  return lodash.compact(value.split(",").map((signal) => signal.trim()));
 }
 
 function maxExperiments(): number {

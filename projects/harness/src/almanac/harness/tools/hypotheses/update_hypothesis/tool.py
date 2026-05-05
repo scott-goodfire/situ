@@ -33,9 +33,10 @@ class UpdateHypothesisTool(BaseAlmanacTool[AlmanacToolDeps, UpdateHypothesisResu
         if hypothesis is None:
             raise ValueError(f"hypothesis not found: {hypothesis_id}")
 
-        ctx.deps.record_event(
+        event = ctx.deps.record_event(
             "hypothesis.updated",
             f"Updated hypothesis {hypothesis.id}",
             payload={"hypothesis_id": hypothesis.id},
         )
+        ctx.deps.publish_record(hypothesis, event=event)
         return UpdateHypothesisResult(success=True, hypothesis=hypothesis.model_dump())

@@ -11,7 +11,7 @@ Product copy, domain models, APIs, UI labels, reports, and documentation.
 
 ## Rule
 
-Use the MVP product nouns consistently: Objective, Evaluation Context, Session,
+Use the current product nouns consistently: Objective, Research Context, Session,
 Hypothesis, Experiment, Activity, Artifact, and Event.
 
 ## Required Checks
@@ -34,6 +34,6 @@ Hypothesis, Experiment, Activity, Artifact, and Event.
   execution substrate.
 - Experiments shown as an undifferentiated event stream.
 - Adding first-class Variants, Directions, Decisions, Findings, Warnings, or
-  Evidence before the slim loop works.
+  Evidence before the current loop works.
 - Multiplying statuses when a short activity would capture the nuance better.
 - Calling the first observability summary a health model.

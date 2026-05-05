@@ -1,9 +1,9 @@
 ---
-title: MVP Discipline
+title: Slice Discipline
 status: active
 ---
 
-# Policy: MVP Discipline
+# Policy: Slice Discipline
 
 ## Applies To
 
@@ -26,7 +26,7 @@ artifacts, and automated trust concerns.
 - Parallelism, cloud sync, team features, remote workers, plugin marketplaces,
 - web UI, live guidance, final reports, broad health scoring, and multi-objective
   workspaces are deferred unless explicitly scoped as future design docs.
-- The MVP remains usable by a single user on one machine.
+- The current slice remains usable by a single user on one machine.
 
 ## Red Flags
 

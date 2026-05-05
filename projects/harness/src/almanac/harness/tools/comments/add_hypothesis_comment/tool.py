@@ -34,9 +34,10 @@ class AddHypothesisCommentTool(
             body=comment,
             payload=payload or {},
         )
-        ctx.deps.record_event(
+        event = ctx.deps.record_event(
             "hypothesis.comment_added",
             comment,
             payload={"activity_id": activity.id, "hypothesis_id": hypothesis_id},
         )
+        ctx.deps.publish_record(activity, event=event)
         return AddHypothesisCommentResult(success=True, activity=activity.model_dump())

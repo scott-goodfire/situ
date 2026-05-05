@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import inspect
 from collections.abc import Sequence
 from typing import Any
 
@@ -12,18 +11,9 @@ from pydantic_ai.models import Model
 from ...tools import build_research_toolset
 from ...tools.common import AlmanacToolDeps
 from ..common import AlmanacAgentContext, AlmanacAgentPrompt, BaseAlmanacAgent
+from .prompt import RESEARCH_AGENT_INSTRUCTIONS, build_research_agent_user_prompt
 
 RESEARCH_AGENT_NAME = "almanac-research-agent"
-RESEARCH_AGENT_INSTRUCTIONS = inspect.cleandoc(
-    """
-    You are Almanac's research agent. Your job is to keep an autoresearch
-    session legible and grounded in Almanac's product models. Use tools to
-    inspect current session state, create or update hypotheses and experiments
-    when needed, and leave durable comments for meaningful observations. Do not
-    claim an experiment succeeded unless the session includes recorded results
-    for it.
-    """
-)
 
 
 class ResearchAgentOutput(BaseModel):
@@ -46,13 +36,12 @@ class ResearchAgent(
     capabilities: Sequence[AbstractCapability[Any]] = Field(default_factory=tuple)
 
     def generate_prompt(self, context: ResearchAgentContext) -> AlmanacAgentPrompt:
-        prompt = context.user_prompt or (
-            "Inspect the current session. Summarize what is known, add comments "
-            "only when the state supports them, and suggest the next focus."
-        )
         return AlmanacAgentPrompt(
             instructions=RESEARCH_AGENT_INSTRUCTIONS,
-            user_prompt=f"Objective: {context.objective}\n\n{prompt}",
+            user_prompt=build_research_agent_user_prompt(
+                objective=context.objective,
+                request=context.user_prompt,
+            ),
         )
 
     def build_agent(

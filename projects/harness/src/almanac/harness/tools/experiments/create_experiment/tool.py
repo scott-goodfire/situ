@@ -47,11 +47,12 @@ class CreateExperimentTool(BaseAlmanacTool[AlmanacToolDeps, CreateExperimentResu
             associated_session_id=resolved_session_id,
             status=status,
         )
-        ctx.deps.record_event(
+        event = ctx.deps.record_event(
             "experiment.created",
             f"Created experiment {experiment.id}",
             payload={"experiment_id": experiment.id},
         )
+        ctx.deps.publish_record(experiment, event=event)
         return CreateExperimentResult(success=True, experiment=experiment.model_dump())
 
 

@@ -85,7 +85,7 @@ Check:
 - Specs meet the good-spec policy: clear purpose, intent, scope, deferred work,
   and reviewable criteria.
 - Policies are concrete review rubrics, not generic documentation.
-- Product specs preserve the current MVP language: objective, session,
+- Product specs preserve the current slice language: objective, session,
   research context, hypotheses, experiments, comment activities, artifacts,
   automated trust concerns, and TUI-first observability.
 - Docs explain durable context that is not better as a spec or policy.

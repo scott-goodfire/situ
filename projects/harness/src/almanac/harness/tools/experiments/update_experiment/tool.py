@@ -33,9 +33,10 @@ class UpdateExperimentTool(BaseAlmanacTool[AlmanacToolDeps, UpdateExperimentResu
         if experiment is None:
             raise ValueError(f"experiment not found: {experiment_id}")
 
-        ctx.deps.record_event(
+        event = ctx.deps.record_event(
             "experiment.updated",
             f"Updated experiment {experiment.id}",
             payload={"experiment_id": experiment.id},
         )
+        ctx.deps.publish_record(experiment, event=event)
         return UpdateExperimentResult(success=True, experiment=experiment.model_dump())

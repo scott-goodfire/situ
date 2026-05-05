@@ -23,12 +23,12 @@ def main(argv: list[str] | None = None) -> int:
 
     start_parser = subparsers.add_parser("start", help="start the local TUI")
     add_workspace_argument(start_parser)
-    add_setup_arguments(start_parser, include_legacy=True)
+    add_setup_arguments(start_parser)
 
     exec_parser = subparsers.add_parser("exec", help="run a headless local session")
     add_workspace_argument(exec_parser)
     add_json_argument(exec_parser)
-    add_setup_arguments(exec_parser, include_legacy=False)
+    add_setup_arguments(exec_parser)
     exec_parser.add_argument(
         "--timeout",
         type=float,
@@ -101,42 +101,16 @@ def add_json_argument(parser: argparse.ArgumentParser) -> None:
     )
 
 
-def add_setup_arguments(
-    parser: argparse.ArgumentParser,
-    *,
-    include_legacy: bool,
-) -> None:
-    parser.add_argument(
-        "--eval-command",
-        help="command the built-in local command worker should run for each experiment",
-    )
+def add_setup_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--objective", help="initial objective for first-time setup")
     parser.add_argument(
-        "--research-context",
-        help="plain-language description of evals, tools, metrics, logs, artifacts, and scope",
-    )
-    parser.add_argument(
-        "--known-signal",
-        action="append",
-        dest="known_signals",
-        help="optional expected signal key folded into research context; repeat for multiple signals",
+        "--context",
+        help="plain-language project/run context: how to evaluate, what outputs mean, and what must not break",
     )
     parser.add_argument(
         "--max-experiments",
         type=int,
         help="maximum number of experiments to run",
-    )
-
-    if not include_legacy:
-        return
-
-    parser.add_argument(
-        "--evaluation-context",
-        help="deprecated alias folded into --research-context",
-    )
-    parser.add_argument(
-        "--experiment-scope",
-        help="deprecated scope hint folded into --research-context",
     )
 
 

@@ -26,32 +26,32 @@ The first useful screen should look conceptually like:
 Almanac
 
 Objective
-  Understand which toy components improve score without suspicious results
+  Improve support-agent resolution rate without increasing hallucinations
 
 Session
   session_0001 | active | experiments 3/6
 
 Hypotheses
-  hyp_0001 active  Component A improves score without latency regression
-  hyp_0002 open    Component C may combine with A
+  hyp_0001 active  Retrieval filtering improves billing answers
+  hyp_0002 open    Cancellation-ticket failures need a separate prompt path
 
 Now
-  exp_session_0001_a_c active
+  exp_session_0001_retrieval_filter active
 
 Experiments
-  exp                        status   summary
-  exp_session_0001_baseline  closed   Baseline toy evaluation
-  exp_session_0001_a         closed   Try component A
-  exp_session_0001_a_c       active   Combine A and C
+  exp                                  status   summary
+  exp_session_0001_baseline            closed   Baseline support eval
+  exp_session_0001_retrieval_filter    active   Filter low-score snippets
+  exp_session_0001_cancellation_prompt open     Split cancellation prompt
 
 Recent Activity
-  result   baseline score 0.710 latency 100ms
-  result   A improved score to 0.724
-  concern  bad result changed result shape
-  update   A+C should be tried because A and C were individually promising
+  result   baseline resolution 61.0% hallucination 2.4%
+  result   retrieval filter improved billing slice
+  concern  result missing hallucination_rate signal
+  update   cancellation tickets remain the weakest slice
 
 Timeline
-  #12 experiment.started exp_session_0001_a_c
+  #12 experiment.started exp_session_0001_retrieval_filter
   #13 worker.progress applying candidate
   #14 experiment.activity.result recorded
 ```

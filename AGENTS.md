@@ -7,7 +7,7 @@ Start with:
 
 - [.agents/specs/README.md](./.agents/specs/README.md)
 - [.agents/specs/0001-north-star/SPEC.md](./.agents/specs/0001-north-star/SPEC.md)
-- [.agents/specs/0002-mvp-vertical-slice/SPEC.md](./.agents/specs/0002-mvp-vertical-slice/SPEC.md)
+- [.agents/specs/0002-active-vertical-slice/SPEC.md](./.agents/specs/0002-active-vertical-slice/SPEC.md)
 - [.agents/policies/DOC.md](./.agents/policies/DOC.md)
 - [.agents/docs/agents-surface/DOC.md](./.agents/docs/agents-surface/DOC.md)
 - [.agents/docs/milestones/DOC.md](./.agents/docs/milestones/DOC.md)

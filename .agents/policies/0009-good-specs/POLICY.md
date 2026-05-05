@@ -34,7 +34,8 @@ not so detailed that it prematurely designs code.
 - The spec locks in database schemas, file names, or framework details before
   they are necessary.
 - The spec repeats another spec instead of narrowing or clarifying it.
-- The spec describes a future platform while the MVP remains undefined.
+- The spec describes a future platform while the current slice remains
+  undefined.
 - The spec uses vague phrases like "make it robust" without observable criteria.
 
 ## Examples

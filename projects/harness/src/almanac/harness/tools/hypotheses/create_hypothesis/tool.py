@@ -42,11 +42,12 @@ class CreateHypothesisTool(BaseAlmanacTool[AlmanacToolDeps, CreateHypothesisResu
             status=status,
             associated_session_id=ctx.deps.session_id,
         )
-        ctx.deps.record_event(
+        event = ctx.deps.record_event(
             "hypothesis.created",
             f"Created hypothesis {hypothesis.id}",
             payload={"hypothesis_id": hypothesis.id},
         )
+        ctx.deps.publish_record(hypothesis, event=event)
         return CreateHypothesisResult(success=True, hypothesis=hypothesis.model_dump())
 
 

@@ -1,16 +1,16 @@
-# MVP Vertical Slice
+# Active Vertical Slice
 
 ## Purpose
 
-The MVP should prove one experience:
+The current slice should prove one experience:
 
 > I start an autoresearch session in the terminal and can see the objective,
 > active hypotheses, experiments, activity, artifacts, and internal events as the
 > loop runs.
 
 The slice should support one local project, one active objective, lightweight
-research context, a few hypotheses, a sequential experiment loop, comment
-activities, simple automated trust concerns, and one deterministic worker path.
+research context, a few hypotheses, a sequential agent-requested experiment
+loop, comment activities, simple automated trust concerns, and one worker path.
 
 ## Target User Story
 
@@ -39,8 +39,9 @@ Then Almanac:
 - Creates local private project state.
 - Creates or reuses the active objective.
 - Starts a local session.
-- Creates initial hypotheses when useful.
-- Runs a tiny sequential experiment loop.
+- Starts a DBOS-backed Pydantic AI agent.
+- Lets the agent inspect session state and create hypotheses when useful.
+- Lets the agent call harness tools to run concrete experiments.
 - Records results, concerns, interpretations, and decisions as activities.
 - Renders a live terminal dashboard.
 
@@ -49,7 +50,7 @@ concepts. Runtime state, project identity, worker current directory, and trust
 checks are scoped to the researched workspace, even when the TUI and harness
 code are launched from the Almanac repository.
 
-## MVP Includes
+## Current Slice Includes
 
 - One-command start
 - Explicit workspace argument for sandbox/project testing
@@ -70,18 +71,20 @@ code are launched from the Almanac repository.
 - TypeScript Ink TUI
 - Internal event timeline
 - Agent-readable status and context
+- Agent-requested experiment execution through a typed harness tool
+- Pydantic AI `DBOSAgent` as the agent durability boundary
 - Durable restart/resume
 - SQLite source of truth
 
-The agent path should express active behavior through approved harness tools
-where practical. The MVP can keep a deterministic outer loop, but actions such
-as getting agent context, creating hypotheses, linking experiments, and recording
-activities should have typed tool envelopes. Almanac should persist Pydantic AI
-message history as the durable agent transcript and use hooks/events for live
-tool-call observability rather than making a separate tool-call table the source
-of truth.
+The agent path should express active behavior through approved harness tools.
+Getting session context, creating hypotheses, creating/running experiments,
+linking hypotheses and experiments, attaching artifacts, and recording comments
+should have typed tool envelopes. Almanac should persist Pydantic AI message
+history as the durable agent transcript and use events/collection upserts for
+live tool-call observability rather than making a separate tool-call table the
+source of truth.
 
-## MVP Cuts
+## Deferred
 
 - Web UI as the primary surface
 - Live guidance
@@ -105,13 +108,13 @@ of truth.
 
 ## Success Criterion
 
-A user can run the toy loop, watch multiple experiments complete in the TUI, see
-experiments linked to hypotheses, inspect result/concern/interpretation
-activities, and see at least one suspicious result captured as a concern for an
-obvious automated reason.
+A user can start a session, watch an agent inspect state, create or update
+hypotheses, request concrete experiments through the harness, see worker results
+and automated concern comments land in the TUI, and inspect artifacts when
+useful.
 
 ## Quality Bar
 
-The MVP can be narrow, but the live state must be real. Objectives, sessions,
+The slice can be narrow, but the live state must be real. Objectives, sessions,
 hypotheses, experiments, activities, artifacts, and internal events should
 survive process restart.

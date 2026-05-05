@@ -6,7 +6,7 @@ implementation, review, and future agent work.
 Read in this order:
 
 1. [0001-north-star/SPEC.md](./0001-north-star/SPEC.md)
-2. [0002-mvp-vertical-slice/SPEC.md](./0002-mvp-vertical-slice/SPEC.md)
+2. [0002-active-vertical-slice/SPEC.md](./0002-active-vertical-slice/SPEC.md)
 3. [0003-product-primitives/SPEC.md](./0003-product-primitives/SPEC.md)
 4. [0004-user-flows/SPEC.md](./0004-user-flows/SPEC.md)
 5. [0005-live-observability/SPEC.md](./0005-live-observability/SPEC.md)

@@ -27,6 +27,18 @@ The setup should accept ambiguous plaintext. Almanac can preserve it as research
 context and structure it into hypotheses, experiments, activities, and artifacts
 over time.
 
+The headless setup shape should match the product nouns:
+
+```bash
+almanac exec . \
+  --objective "Improve the target behavior without breaking correctness." \
+  --context "Run make eval from the repo root. It prints score, accuracy, loss, runtime_ms, and tests_passed. Higher score and accuracy are better; lower loss and runtime are better. Failed checks invalidate the result."
+```
+
+`--context` is intentionally broad. It may include how to run the project,
+which outputs matter, how to read ordinary command output, and what should be
+considered suspicious.
+
 After setup, Almanac should create an active objective and render the TUI
 dashboard.
 
@@ -43,8 +55,8 @@ Objective
   -> interpretation comment feeds the next proposal round
 ```
 
-The default loop should be sequential for the MVP. Parallel batches can come
-later after live observability and basic suspicious-result handling are
+The default loop should be sequential for the current slice. Parallel batches
+can come later after live observability and basic suspicious-result handling are
 reliable.
 
 ## Suspicious Result Flow

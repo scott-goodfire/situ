@@ -32,5 +32,5 @@ conclusions without inspectable support.
   basis.
 - A result activity that hides suspicious context.
 - A concern that is only visible in raw logs.
-- An activity system that becomes a complex knowledge graph before the MVP loop
-  is useful.
+- An activity system that becomes a complex knowledge graph before the current
+  loop is useful.

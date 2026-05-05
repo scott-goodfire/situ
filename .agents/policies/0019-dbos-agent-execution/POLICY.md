@@ -39,8 +39,8 @@ reasonably be represented as agent/tool behavior.
   becomes necessary. Keep that wrapping local to the tool, not as a parallel
   session engine.
 - Persist Pydantic AI message history as the durable agent transcript.
-- Keep the deterministic MVP outer loop acceptable until the agent/tool loop is
-  ready to own experiment execution.
+- Keep agent-visible experiment execution inside typed tools instead of
+  reintroducing a deterministic proposal loop.
 
 ## Red Flags
 

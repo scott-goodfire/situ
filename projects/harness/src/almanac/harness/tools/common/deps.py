@@ -6,8 +6,11 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 
+from ...api.collections import publish_record_upsert
 from ...core.db import Database
+from ...core.notifications import emit_project_event
 from ...core.workers import WorkerManager
+from ...records.base import DbRecord
 from ...repositories import Repositories
 
 EventEmitter = Callable[[str, str, str | None, dict[str, Any] | None], dict[str, Any]]
@@ -22,7 +25,7 @@ class AlmanacToolDeps(BaseModel):
     repo_path: str | None = None
     app_root: Path | None = None
     repos: Repositories | None = Field(default=None, exclude=True)
-    worker_manager: WorkerManager | None = None
+    worker_manager: WorkerManager | None = Field(default=None, exclude=True)
     emit_event: EventEmitter | None = Field(default=None, exclude=True)
 
     _opened_db: Database | None = PrivateAttr(default=None)
@@ -65,5 +68,27 @@ class AlmanacToolDeps(BaseModel):
                 session_id=self.session_id,
                 payload=payload,
             )
-            return event.model_dump()
-        return self.emit_event(event_type, message, self.session_id, payload)
+            event_dump = event.model_dump()
+            emit_project_event(self.project_id, event_dump)
+            self.publish_record(event, cursor=event.id)
+            return event_dump
+        event = self.emit_event(event_type, message, self.session_id, payload)
+        event_id = event.get("id") if event is not None else None
+        return event
+
+    def publish_record(
+        self,
+        record: DbRecord,
+        *,
+        event: dict[str, Any] | None = None,
+        cursor: int | None = None,
+    ) -> None:
+        resolved_cursor = cursor
+        if resolved_cursor is None and event is not None:
+            event_id = event.get("id")
+            resolved_cursor = event_id if isinstance(event_id, int) else None
+        publish_record_upsert(
+            project_id=self.project_id,
+            record=record,
+            cursor=resolved_cursor,
+        )
