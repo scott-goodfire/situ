@@ -38,22 +38,25 @@ repository and the relevant API service/schema.
 
 ## Runtime Smoke
 
-When wiring changes touch the harness runtime, run at least one TUI smoke with a
-temporary `ALMANAC_HOME`:
+When wiring changes touch the harness runtime, run at least one TUI smoke:
 
 ```bash
-ALMANAC_HOME=/private/tmp/almanac-smoke ./commands/start.sh . --max-experiments 1
+./commands/start.sh . --max-experiments 1
 ```
 
 When worker/eval-command behavior changes, also run an external workspace smoke:
 
 ```bash
 tmp=$(mktemp -d /private/tmp/almanac-ext.XXXXXX)
-ALMANAC_HOME=/private/tmp/almanac-ext-smoke ./commands/start.sh "$tmp" \
+./commands/start.sh "$tmp" \
   --eval-command "python /path/to/eval.py" \
   --known-signal score \
   --max-experiments 1
 ```
+
+Runtime state is written under `~/.almanac/projects/<project-id>/`. Tests that
+need isolated state should pass temporary paths to constructors instead of
+setting user env vars.
 
 ## Storybook
 

@@ -98,8 +98,14 @@ PROPOSALS = [
 
 
 class HarnessApp:
-    def __init__(self, workspace_root: Path, notify: NotificationWriter, app_root: Path | None = None) -> None:
-        self.context = ProjectContext(workspace_root)
+    def __init__(
+        self,
+        workspace_root: Path,
+        notify: NotificationWriter,
+        app_root: Path | None = None,
+        project_home: Path | None = None,
+    ) -> None:
+        self.context = ProjectContext(workspace_root, home=project_home)
         self.db = Database(
             self.context.project_dir / "almanac.sqlite",
             project_id=self.context.project_id,

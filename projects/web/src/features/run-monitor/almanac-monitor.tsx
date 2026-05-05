@@ -1,9 +1,12 @@
 import type { EventRecord, ExperimentRecord, RunRecord } from "@almanac/protocol";
-import { ConnectionBadge, type ConnectionState } from "../components/connection-badge";
-import { EventTimeline } from "../components/event-timeline";
-import { ExperimentTable } from "../components/experiment-table";
-import { NowPanel } from "../components/now-panel";
-import { RunSummary } from "../components/run-summary";
+import { DxNotice } from "@almanac/web-ui";
+import filter from "lodash/filter";
+import { ConnectionBadge, type ConnectionState } from "./connection-badge";
+import { EventTimeline } from "./event-timeline";
+import { ExperimentTable } from "./experiment-table";
+import { NoActiveHarness } from "./no-active-harness";
+import { NowPanel } from "./now-panel";
+import { RunSummary } from "./run-summary";
 
 export { type ConnectionState };
 
@@ -21,7 +24,7 @@ export function AlmanacMonitor({
   events: EventRecord[];
 }) {
   if (connection.kind === "missing") {
-    return <NoSession workspace={workspace} />;
+    return <NoActiveHarness workspace={workspace} />;
   }
 
   const latestRun = runs.at(-1);
@@ -32,8 +35,8 @@ export function AlmanacMonitor({
   const activeExperiment = runExperiments.find((experiment) => experiment.status === "running");
 
   return (
-    <main className="shell">
-      <header className="topbar">
+    <main className="almanac-shell">
+      <header className="almanac-topbar">
         <div>
           <h1>Almanac</h1>
           <p>{workspace ?? "Local workspace"}</p>
@@ -41,31 +44,14 @@ export function AlmanacMonitor({
         <ConnectionBadge state={connection} />
       </header>
 
-      {connection.kind === "failed" && <div className="notice">{connection.message}</div>}
+      {connection.kind === "failed" && (
+        <DxNotice tone="danger">{connection.message}</DxNotice>
+      )}
 
       <RunSummary run={latestRun} experimentCount={runExperiments.length} />
       <NowPanel activeExperiment={activeExperiment} latestRun={latestRun} />
       <ExperimentTable experiments={runExperiments} />
       <EventTimeline events={events} />
-    </main>
-  );
-}
-
-function NoSession({ workspace }: { workspace: string | undefined }) {
-  return (
-    <main className="shell">
-      <header className="topbar">
-        <div>
-          <h1>Almanac</h1>
-          <p>{workspace ?? "Local workspace"}</p>
-        </div>
-        <span className="badge">No session</span>
-      </header>
-      <section className="empty">
-        <h2>No active Almanac harness found</h2>
-        <p>Start a session from a terminal, then reopen this web monitor.</p>
-        <pre>almanac start</pre>
-      </section>
     </main>
   );
 }
@@ -81,5 +67,5 @@ function experimentsForRun({
     return [];
   }
 
-  return experiments.filter((experiment) => experiment.run_id === run.id);
+  return filter(experiments, (experiment) => experiment.run_id === run.id);
 }

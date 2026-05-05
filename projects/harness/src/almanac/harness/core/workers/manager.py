@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import os
-import shlex
 import subprocess
 import sys
 from pathlib import Path
@@ -111,10 +110,6 @@ class WorkerManager:
         raise RuntimeError(f"worker exited before responding: {stderr}")
 
     def _worker_command(self) -> tuple[list[str], Path]:
-        configured_worker = os.environ.get("ALMANAC_WORKER_COMMAND")
-        if configured_worker:
-            return shlex.split(configured_worker), self.workspace_root
-
         if os.environ.get("ALMANAC_EVAL_COMMAND"):
             return [sys.executable, str(self._built_in_worker("local_command_worker"))], self.workspace_root
 

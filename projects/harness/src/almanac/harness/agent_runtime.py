@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 from pathlib import Path
 from typing import Any
 
@@ -9,12 +8,12 @@ from pydantic_ai import Agent
 from pydantic_ai.durable_exec.dbos import DBOSAgent
 from pydantic_ai.models.test import TestModel
 
+from .config import DEFAULTS, AlmanacSecrets
 from .dbos_runtime import configure_dbos, launch_dbos
 from .observability import configure_observability, span
 from .repositories import Repositories
 
 
-DEFAULT_OPENAI_MODEL = "openai:gpt-5.5"
 RESEARCH_PLANNER_AGENT_NAME = "almanac_research_planner"
 
 
@@ -31,11 +30,10 @@ class AgentRuntime:
         configure_observability(project_dir)
         configure_dbos(project_dir)
 
-        openai_key = os.environ.get("ALMANAC_OPENAI_KEY")
-        if openai_key and not os.environ.get("OPENAI_API_KEY"):
-            os.environ["OPENAI_API_KEY"] = openai_key
+        secrets = AlmanacSecrets()
+        secrets.apply_sdk_environment()
 
-        self.model_name = os.environ.get("ALMANAC_AGENT_MODEL") or (DEFAULT_OPENAI_MODEL if openai_key else None)
+        self.model_name = DEFAULTS.agent_model if secrets.openai_key_value() else None
         model = self.model_name or TestModel(custom_output_args=self._fallback_plan().model_dump())
         self.agent: Agent[None, AgentPlan] = Agent(
             model,

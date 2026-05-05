@@ -37,6 +37,10 @@ control flow when they make intent easier to see.
   or generated route files.
 - Prefer named intermediate values over inline chains when the chain mixes
   filtering, sorting, formatting, and rendering.
+- Prefer `lodash` for non-trivial filtering, sorting, grouping, object, and
+  collection helpers instead of custom utility code.
+- Prefer `luxon` for dates, times, durations, and ISO timestamp parsing instead
+  of native `Date` math or custom date helpers.
 - Prefer explicit guard statements over clever boolean expressions when failure,
   empty, loading, or disconnected states matter to the user experience.
 - Keep component props explicit and descriptive. Avoid magic prop names, boolean
@@ -92,6 +96,8 @@ const statusLabel = connection.kind === "connected" ? "Connected" : connection.k
   modules should use kebab-case.
 - Library APIs can be called in their idiomatic style even when they use
   positional arguments.
+- Tiny native operations are fine when they are clearer than pulling in a
+  helper, such as `array.map(...)` in a render block or direct property access.
 
 ## Red Flags
 

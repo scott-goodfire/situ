@@ -1,4 +1,5 @@
 import type { RunRecord } from "@almanac/protocol";
+import { DxSection } from "@almanac/web-ui";
 
 export function RunSummary({
   run,
@@ -8,10 +9,9 @@ export function RunSummary({
   experimentCount: number;
 }) {
   return (
-    <section className="band">
-      <h2>Run</h2>
+    <DxSection title="Run">
       <p>{runLabel({ run, experimentCount })}</p>
-    </section>
+    </DxSection>
   );
 }
 

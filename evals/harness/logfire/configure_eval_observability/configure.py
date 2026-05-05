@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import os
-
 import logfire
+
+from almanac.harness.config import DEFAULTS, AlmanacSecrets
 
 _CONFIGURED = False
 
@@ -12,14 +12,14 @@ def configure_eval_observability() -> None:
     if _CONFIGURED:
         return
 
-    token = os.environ.get("ALMANAC_LOGFIRE_TOKEN")
-    if token and not os.environ.get("LOGFIRE_TOKEN"):
-        os.environ["LOGFIRE_TOKEN"] = token
+    secrets = AlmanacSecrets()
+    secrets.require_logfire_token()
+    secrets.apply_sdk_environment()
 
     logfire.configure(
         send_to_logfire="always",
-        service_name=os.environ.get("ALMANAC_EVAL_LOGFIRE_SERVICE_NAME", "almanac-ai-evals"),
-        environment=os.environ.get("ALMANAC_ENVIRONMENT", "evals"),
+        service_name=DEFAULTS.eval_logfire_service_name,
+        environment=DEFAULTS.eval_environment,
         console=False,
     )
     logfire.instrument_pydantic_ai()

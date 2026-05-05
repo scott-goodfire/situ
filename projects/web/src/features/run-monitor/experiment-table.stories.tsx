@@ -1,9 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { ExperimentTable } from "./experiment-table";
-import { runningExperiments, suspiciousExperiments } from "../fixtures/story-data";
+import { runningExperiments, suspiciousExperiments } from "./run-monitor.fixtures";
 
 const meta = {
-  title: "Components/Experiment Table",
+  title: "Features/Run Monitor/Experiment Table",
   component: ExperimentTable,
 } satisfies Meta<typeof ExperimentTable>;
 

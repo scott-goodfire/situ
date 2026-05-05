@@ -16,5 +16,6 @@ members = [
 [dependency-groups]
 dev = [
   "pydantic-evals[logfire]>=1.89.1",
+  "pydantic-settings>=2.0.0",
   "pytest>=8.0.0",
 ]

@@ -10,4 +10,5 @@ bun --filter @almanac/collections check
 bun --filter @almanac/collections test
 bun --filter @almanac/session-server check
 bun --filter @almanac/tui check
+bun --filter @almanac/web-ui check
 bun --filter @almanac/web check

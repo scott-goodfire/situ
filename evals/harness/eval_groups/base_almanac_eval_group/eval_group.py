@@ -12,7 +12,7 @@ T_Output = TypeVar("T_Output", bound=BaseModel)
 
 
 class BaseAlmanacEvalGroup(BaseModel, Generic[T_Input, T_Output]):
-    """Base class for Almanac AI eval groups."""
+    """Base class for Almanac eval groups."""
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 

@@ -5,6 +5,8 @@ from pathlib import Path
 
 import logfire
 
+from .config import DEFAULTS, AlmanacSecrets
+
 _CONFIGURED = False
 
 
@@ -13,17 +15,15 @@ def configure_observability(project_dir: Path | None = None) -> None:
     if _CONFIGURED:
         return
 
-    token = os.environ.get("ALMANAC_LOGFIRE_TOKEN")
-    if token and not os.environ.get("LOGFIRE_TOKEN"):
-        os.environ["LOGFIRE_TOKEN"] = token
+    AlmanacSecrets().apply_sdk_environment()
 
     if project_dir is not None:
         os.environ.setdefault("LOGFIRE_DATA_DIR", str(project_dir / "logfire"))
 
     logfire.configure(
-        send_to_logfire=os.environ.get("ALMANAC_LOGFIRE_SEND_TO_LOGFIRE", "if-token-present"),
-        service_name=os.environ.get("ALMANAC_LOGFIRE_SERVICE_NAME", "almanac-harness"),
-        environment=os.environ.get("ALMANAC_ENVIRONMENT", "local"),
+        send_to_logfire="if-token-present",
+        service_name=DEFAULTS.harness_logfire_service_name,
+        environment=DEFAULTS.local_environment,
         console=False,
     )
     logfire.instrument_pydantic_ai()

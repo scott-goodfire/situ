@@ -7,5 +7,12 @@
     "rootDir": ".",
     "types": ["vite/client"]
   },
-  "include": [".storybook/**/*.ts", "scripts/**/*.ts", "src/**/*.ts", "src/**/*.tsx"]
+  "include": [
+    ".storybook/**/*.ts",
+    "packages/ui/src/**/*.ts",
+    "packages/ui/src/**/*.tsx",
+    "scripts/**/*.ts",
+    "src/**/*.ts",
+    "src/**/*.tsx"
+  ]
 }

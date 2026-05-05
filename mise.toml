@@ -12,13 +12,13 @@ run = "./commands/update.sh"
 description = "Run Python syntax checks and TypeScript typechecks"
 run = "./commands/check.sh"
 
-[tasks."ai-evals"]
-description = "Run Almanac AI eval suites"
-run = "./commands/ai-evals.sh"
+[tasks.evals]
+description = "Run Almanac eval suites"
+run = "./commands/evals.sh"
 
-[tasks."ai-evals:json"]
-description = "Run Almanac AI eval suites and print JSON"
-run = "./commands/ai-evals-json.sh"
+[tasks."evals:json"]
+description = "Run Almanac eval suites and print JSON"
+run = "./commands/evals-json.sh"
 
 [tasks."dev:tui"]
 description = "Run the TypeScript Ink TUI"
@@ -35,6 +35,10 @@ run = "./commands/web.sh"
 [tasks."dev:web"]
 description = "Open the attach-only Almanac web monitor"
 run = "./commands/web.sh"
+
+[tasks."web-ui:check"]
+description = "Run typechecks for the Almanac web UI package"
+run = "./commands/web-ui-check.sh"
 
 [tasks.storybook]
 description = "Run Storybook for the Almanac web UI"

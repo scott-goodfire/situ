@@ -7,6 +7,7 @@
     "projects/session-server",
     "projects/tui",
     "projects/web",
+    "projects/web/packages/*",
     "shared/typescript/*"
   ],
   "scripts": {

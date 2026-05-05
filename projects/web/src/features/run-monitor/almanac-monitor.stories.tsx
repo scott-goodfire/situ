@@ -10,10 +10,10 @@ import {
   storyWorkspace,
   suspiciousEvents,
   suspiciousExperiments,
-} from "../fixtures/story-data";
+} from "./run-monitor.fixtures";
 
 const meta = {
-  title: "App/Almanac Monitor",
+  title: "Features/Run Monitor/Almanac Monitor",
   component: AlmanacMonitor,
   parameters: {
     layout: "fullscreen",

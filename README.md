@@ -71,11 +71,10 @@ To use OpenAI-backed Pydantic AI planning:
 
 ```bash
 export ALMANAC_OPENAI_KEY="..."
-export ALMANAC_AGENT_MODEL="openai:gpt-5.5"
 ```
 
-When `ALMANAC_OPENAI_KEY` is present and `ALMANAC_AGENT_MODEL` is unset, Almanac
-defaults to `openai:gpt-5.5`.
+When `ALMANAC_OPENAI_KEY` is present, Almanac uses its code default model,
+currently `openai:gpt-5.5`.
 
 DBOS stores its system database beside Almanac project state by default:
 
@@ -83,28 +82,31 @@ DBOS stores its system database beside Almanac project state by default:
 ~/.almanac/projects/<project-id>/dbos.sqlite
 ```
 
-You can override it with `DBOS_SYSTEM_DATABASE_URL`.
+Non-secret runtime defaults, including model names, Logfire service names, DBOS
+settings, and local state paths, live in typed code config rather than user env
+vars. The intended user-facing env vars are only `ALMANAC_LOGFIRE_TOKEN` and
+`ALMANAC_OPENAI_KEY`.
 
-## AI Evals
+## Evals
 
-Almanac has a small code-first AI eval layer for prompt, tool-call, and
+Almanac has a small code-first eval layer for prompt, tool-call, and
 observability behavior:
 
 ```bash
-mise run ai-evals
-mise run ai-evals -- --case suspicious
-mise run ai-evals:json
+mise run evals
+mise run evals -- --case suspicious
+mise run evals:json
 ```
 
 The first suite uses a mocked micrograd world with baseline, A/B/C variants, an
-A+C combination, and one suspicious result. When `ALMANAC_LOGFIRE_TOKEN` or
-`LOGFIRE_TOKEN` is set, eval experiments are sent to Logfire with
-`service_name=almanac-ai-evals`.
+A+C combination, and one suspicious result. Evals require `ALMANAC_OPENAI_KEY`
+for real LLM calls and `ALMANAC_LOGFIRE_TOKEN` so runs are sent to Logfire with
+`service_name=almanac-evals`.
 
 ## Layout
 
 ```text
-evals                     Code-first AI evals and fixture worlds
+evals                     Code-first evals and fixture worlds
 projects/harness              Python local runtime
 projects/tui                  TypeScript Ink TUI
 shared/python/protocol        Pydantic protocol source of truth

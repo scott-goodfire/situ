@@ -1,8 +1,8 @@
-# AI Evals Strategy
+# Evals Strategy
 
-This repo should use AI evals to improve Almanac's prompts, tool-calling
-behavior, observability, and trust checks over time. Unlike unit tests, AI evals
-should run real LLM calls against controlled fixture worlds.
+This repo should use evals to improve Almanac's prompts, tool-calling behavior,
+observability, and trust checks over time. Unlike unit tests, evals should run
+real LLM calls against controlled fixture worlds.
 
 The eval layer should stay close to the product thesis:
 
@@ -13,8 +13,8 @@ making trustworthy progress?
 
 ## Shape
 
-Use a code-first eval harness inspired by the Mem backend `ai_evals/` pattern,
-adapted here as:
+Use a code-first eval harness inspired by the Mem backend eval pattern, adapted
+here as:
 
 ```text
 evals/
@@ -31,7 +31,7 @@ over broad files like `models.py`, `evaluators.py`, or mixed world/suite files.
 
 The eval/test boundary is defined by
 [../../policies/0014-real-llm-evals/POLICY.md](../../policies/0014-real-llm-evals/POLICY.md):
-tests are deterministic, while AI evals exercise live model behavior.
+tests are deterministic, while evals exercise live model behavior.
 
 ## Harness Practices
 
@@ -39,7 +39,11 @@ Follow Pydantic Evals and Logfire defaults where they fit:
 
 - Configure Logfire before eval discovery and task execution.
 - Send eval runs to Logfire by default; eval commands should not require a
-  per-run `ALMANAC_LOGFIRE_SEND_TO_LOGFIRE=always` override.
+  per-run send-mode override.
+- Load only eval secrets from user environment: `ALMANAC_OPENAI_KEY` for the
+  model call and `ALMANAC_LOGFIRE_TOKEN` for Logfire export.
+- Keep model names, service names, environments, retry defaults, and timeouts
+  in typed code config unless they become real product settings.
 - Use `Dataset.evaluate_sync` for the local synchronous runner.
 - Require real model credentials for AI eval execution; missing credentials
   should fail clearly instead of falling back to scripted behavior.
@@ -90,7 +94,7 @@ local eval commands or sandbox repos.
 
 ## Logfire
 
-AI evals should report to Logfire by default. Use descriptive service names,
+Evals should report to Logfire by default. Use descriptive service names,
 experiment names, and metadata so eval runs are searchable.
 
 Recommended metadata:

@@ -1,9 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { NowPanel } from "./now-panel";
-import { completedRun, runningExperiment, runningRun } from "../fixtures/story-data";
+import { completedRun, runningExperiment, runningRun } from "./run-monitor.fixtures";
 
 const meta = {
-  title: "Components/Now Panel",
+  title: "Features/Run Monitor/Now Panel",
   component: NowPanel,
 } satisfies Meta<typeof NowPanel>;
 

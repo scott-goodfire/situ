@@ -1,48 +1,45 @@
-# Almanac AI Evals
+# Almanac Evals
 
 This package contains code-first evals for Almanac's agent behavior,
 tool-calling flow, and observability.
 
-AI evals make real model calls. They require `ALMANAC_OPENAI_KEY` or
-`OPENAI_API_KEY`. Unit tests should cover deterministic behavior; evals are for
-live model behavior against controlled fixture worlds.
+Evals make real model calls. They require `ALMANAC_OPENAI_KEY`; unit tests
+should cover deterministic behavior, while evals cover live model behavior
+against controlled fixture worlds.
 
 Run all evals:
 
 ```bash
-./commands/ai-evals.sh
+./commands/evals.sh
 ```
 
 Run one file:
 
 ```bash
-./commands/ai-evals.sh evals/suites/agent_planning/micrograd/eval_group.py
+./commands/evals.sh evals/suites/agent_planning/micrograd/eval_group.py
 ```
 
 Run one case:
 
 ```bash
-./commands/ai-evals.sh --case suspicious
+./commands/evals.sh --case suspicious
 ```
 
 Retry transient task or evaluator failures:
 
 ```bash
-./commands/ai-evals.sh --task-retries 2 --evaluator-retries 1
+./commands/evals.sh --task-retries 2 --evaluator-retries 1
 ```
 
 Emit JSON:
 
 ```bash
-./commands/ai-evals-json.sh
+./commands/evals-json.sh
 ```
 
 Eval experiments are sent to Logfire by default with
-`service_name=almanac-ai-evals`. Set `ALMANAC_LOGFIRE_TOKEN` in the environment
+`service_name=almanac-evals`. Set `ALMANAC_LOGFIRE_TOKEN` in the environment
 used to launch evals.
-
-Set `ALMANAC_LOGFIRE_EVALS_BASE_URL` to print direct experiment links in the
-terminal and JSON output.
 
 ## Layout
 

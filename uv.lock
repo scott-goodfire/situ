@@ -131,6 +131,7 @@ dependencies = [
     { name = "dbos" },
     { name = "logfire" },
     { name = "pydantic-ai", extra = ["dbos"] },
+    { name = "pydantic-settings" },
 ]
 
 [package.metadata]
@@ -139,6 +140,7 @@ requires-dist = [
     { name = "dbos", specifier = ">=2.19.0" },
     { name = "logfire", specifier = ">=4.32.1" },
     { name = "pydantic-ai", extras = ["dbos"], specifier = ">=1.89.1" },
+    { name = "pydantic-settings", specifier = ">=2.0.0" },
 ]
 
 [[package]]
@@ -240,6 +242,7 @@ source = { virtual = "." }
 [package.dev-dependencies]
 dev = [
     { name = "pydantic-evals", extra = ["logfire"] },
+    { name = "pydantic-settings" },
     { name = "pytest" },
 ]
 
@@ -248,6 +251,7 @@ dev = [
 [package.metadata.requires-dev]
 dev = [
     { name = "pydantic-evals", extras = ["logfire"], specifier = ">=1.89.1" },
+    { name = "pydantic-settings", specifier = ">=2.0.0" },
     { name = "pytest", specifier = ">=8.0.0" },
 ]
 

@@ -1,2 +1,1 @@
-"""Code-first AI evals for Almanac."""
-
+"""Code-first evals for Almanac."""

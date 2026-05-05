@@ -206,10 +206,6 @@ function sessionPath(): string {
 }
 
 function almanacHome(): string {
-  if (process.env.ALMANAC_HOME) {
-    return resolve(process.env.ALMANAC_HOME);
-  }
-
   return resolve(homedir(), ".almanac");
 }
 

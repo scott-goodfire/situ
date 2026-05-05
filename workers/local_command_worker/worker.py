@@ -7,6 +7,7 @@ import subprocess
 import sys
 from typing import Any
 
+from almanac.harness.config import DEFAULTS
 from almanac.protocol import (
     ExperimentRunParams,
     ExperimentRunResult,
@@ -68,7 +69,7 @@ def run_eval_command(params: ExperimentRunParams) -> ExperimentRunResult:
         text=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        timeout=int(os.environ.get("ALMANAC_EVAL_TIMEOUT_SECONDS", "120")),
+        timeout=DEFAULTS.eval_timeout_seconds,
     )
 
     parsed = parse_json_stdout(completed.stdout)

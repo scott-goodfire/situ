@@ -12,7 +12,7 @@ Start with:
 - [.agents/docs/agents-surface/DOC.md](./.agents/docs/agents-surface/DOC.md)
 - [.agents/docs/milestones/DOC.md](./.agents/docs/milestones/DOC.md)
 - [.agents/docs/loose-models-tool-calls/DOC.md](./.agents/docs/loose-models-tool-calls/DOC.md)
-- [.agents/docs/ai-evals-strategy/DOC.md](./.agents/docs/ai-evals-strategy/DOC.md)
+- [.agents/docs/evals-strategy/DOC.md](./.agents/docs/evals-strategy/DOC.md)
 
 The key product thesis:
 

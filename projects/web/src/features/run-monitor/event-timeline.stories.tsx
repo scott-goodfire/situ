@@ -1,9 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { EventTimeline } from "./event-timeline";
-import { runningEvents, suspiciousEvents } from "../fixtures/story-data";
+import { runningEvents, suspiciousEvents } from "./run-monitor.fixtures";
 
 const meta = {
-  title: "Components/Event Timeline",
+  title: "Features/Run Monitor/Event Timeline",
   component: EventTimeline,
 } satisfies Meta<typeof EventTimeline>;
 

@@ -1,3 +1,5 @@
+import { DxBadge, type DxBadgeTone } from "@almanac/web-ui";
+
 export type ConnectionState =
   | { kind: "checking" }
   | { kind: "connected" }
@@ -6,8 +8,9 @@ export type ConnectionState =
 
 export function ConnectionBadge({ state }: { state: ConnectionState }) {
   const label = connectionLabel({ state });
+  const tone = connectionTone({ state });
 
-  return <span className={`badge ${state.kind}`}>{label}</span>;
+  return <DxBadge tone={tone}>{label}</DxBadge>;
 }
 
 function connectionLabel({ state }: { state: ConnectionState }): string {
@@ -24,4 +27,16 @@ function connectionLabel({ state }: { state: ConnectionState }): string {
   }
 
   return "No session";
+}
+
+function connectionTone({ state }: { state: ConnectionState }): DxBadgeTone {
+  if (state.kind === "connected") {
+    return "success";
+  }
+
+  if (state.kind === "failed") {
+    return "danger";
+  }
+
+  return "neutral";
 }

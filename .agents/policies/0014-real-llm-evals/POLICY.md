@@ -12,8 +12,8 @@ new command or CI workflow that runs Almanac checks.
 
 ## Rule
 
-Unit and integration tests should be deterministic. AI evals should exercise
-real LLM behavior.
+Unit and integration tests should be deterministic. Evals should exercise real
+LLM behavior.
 
 Tests answer:
 
@@ -21,7 +21,7 @@ Tests answer:
 Did the deterministic code path work?
 ```
 
-AI evals answer:
+Evals answer:
 
 ```text
 Did the live model use the tools, evidence, warnings, and findings correctly?
@@ -29,7 +29,7 @@ Did the live model use the tools, evidence, warnings, and findings correctly?
 
 ## Required Checks
 
-- Do not replace AI evals with `TestModel`, hardcoded model outputs, or fully
+- Do not replace evals with `TestModel`, hardcoded model outputs, or fully
   scripted task behavior.
 - Use fixture worlds to control the environment, not to pre-script the agent's
   choices.

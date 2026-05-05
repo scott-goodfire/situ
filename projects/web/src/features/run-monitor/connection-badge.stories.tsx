@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react";
 import { ConnectionBadge } from "./connection-badge";
 
 const meta = {
-  title: "Components/Connection Badge",
+  title: "Features/Run Monitor/Connection Badge",
   component: ConnectionBadge,
 } satisfies Meta<typeof ConnectionBadge>;
 

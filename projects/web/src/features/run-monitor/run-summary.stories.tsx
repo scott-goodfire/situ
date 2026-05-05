@@ -1,9 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { RunSummary } from "./run-summary";
-import { completedRun, runningRun } from "../fixtures/story-data";
+import { completedRun, runningRun } from "./run-monitor.fixtures";
 
 const meta = {
-  title: "Components/Run Summary",
+  title: "Features/Run Monitor/Run Summary",
   component: RunSummary,
 } satisfies Meta<typeof RunSummary>;
 

@@ -1,4 +1,5 @@
 import type { ExperimentRecord, RunRecord } from "@almanac/protocol";
+import { DxSection } from "@almanac/web-ui";
 
 export function NowPanel({
   activeExperiment,
@@ -8,10 +9,9 @@ export function NowPanel({
   latestRun: RunRecord | undefined;
 }) {
   return (
-    <section className="band">
-      <h2>Now</h2>
+    <DxSection title="Now">
       <p>{nowLabel({ activeExperiment, latestRun })}</p>
-    </section>
+    </DxSection>
   );
 }
 

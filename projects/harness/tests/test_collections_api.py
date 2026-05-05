@@ -19,13 +19,13 @@ class FakeAgentRuntime:
 
 @pytest.fixture
 def app(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> HarnessApp:
-    monkeypatch.setenv("ALMANAC_HOME", str(tmp_path / "home"))
     monkeypatch.setattr("almanac.harness.app.AgentRuntime", FakeAgentRuntime)
     workspace = tmp_path / "workspace"
     workspace.mkdir()
     return HarnessApp(
         workspace,
         app_root=Path.cwd(),
+        project_home=tmp_path / "home",
         notify=lambda _method, _params: None,
     )
 
@@ -69,7 +69,6 @@ def test_collections_bootstrap_returns_runs_experiments_and_events(app: HarnessA
 
 
 def test_collections_subscribe_emits_event_upserts(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("ALMANAC_HOME", str(tmp_path / "home"))
     monkeypatch.setattr("almanac.harness.app.AgentRuntime", FakeAgentRuntime)
     workspace = tmp_path / "workspace"
     workspace.mkdir()
@@ -77,6 +76,7 @@ def test_collections_subscribe_emits_event_upserts(tmp_path: Path, monkeypatch: 
     app = HarnessApp(
         workspace,
         app_root=Path.cwd(),
+        project_home=tmp_path / "home",
         notify=lambda method, params: notifications.append((method, params)),
     )
 
