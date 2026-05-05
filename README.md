@@ -46,8 +46,16 @@ mise run protocol:generate
 mise run dev:harness
 mise run dev:tui
 mise run start
+mise run web
+mise run web:smoke
 mise run clear -- ~/sandbox/some-repo
 ```
+
+`mise run web` serves the built local project home and attach-only project
+monitors. Use `mise run web -- --rebuild` to force a browser rebuild before
+serving, `mise run web:dev` for the Vite development server, and
+`mise run web:smoke` to build and verify the local host, discovery API, and
+project-route fallback.
 
 ## Agent Runtime And Observability
 
