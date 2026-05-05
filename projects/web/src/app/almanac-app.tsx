@@ -15,8 +15,11 @@ import type {
   CollectionsSubscribeParams,
   CollectionsSubscribeResult,
   EventRecord,
+  ExperimentActivityRecord,
   ExperimentRecord,
-  RunRecord,
+  HypothesisRecord,
+  ObjectiveRecord,
+  SessionRecord,
 } from "@almanac/protocol";
 import {
   AlmanacMonitor,
@@ -29,8 +32,21 @@ const WORKSPACE = import.meta.env.VITE_ALMANAC_WORKSPACE as string | undefined;
 
 export function AlmanacApp() {
   const collections = useMemo(() => createAlmanacCollections(), []);
-  const runsQuery = useLiveQuery(
-    (query) => query.from({ run: collections.runs }).select(({ run }) => run),
+  const objectivesQuery = useLiveQuery(
+    (query) =>
+      query.from({ objective: collections.objectives }).select(({ objective }) => objective),
+    [collections],
+  );
+  const sessionsQuery = useLiveQuery(
+    (query) =>
+      query.from({ session: collections.sessions }).select(({ session }) => session),
+    [collections],
+  );
+  const hypothesesQuery = useLiveQuery(
+    (query) =>
+      query
+        .from({ hypothesis: collections.hypotheses })
+        .select(({ hypothesis }) => hypothesis),
     [collections],
   );
   const experimentsQuery = useLiveQuery(
@@ -40,19 +56,41 @@ export function AlmanacApp() {
         .select(({ experiment }) => experiment),
     [collections],
   );
+  const experimentActivitiesQuery = useLiveQuery(
+    (query) =>
+      query
+        .from({ activity: collections.experimentActivities })
+        .select(({ activity }) => activity),
+    [collections],
+  );
   const eventsQuery = useLiveQuery(
     (query) => query.from({ event: collections.events }).select(({ event }) => event),
     [collections],
   );
   const [connection, setConnection] = useState<ConnectionState>({ kind: "checking" });
 
-  const runs = useMemo(
-    () => sortByCreated({ records: (runsQuery.data ?? []) as RunRecord[] }),
-    [runsQuery.data],
+  const objectives = useMemo(
+    () => sortByCreated({ records: (objectivesQuery.data ?? []) as ObjectiveRecord[] }),
+    [objectivesQuery.data],
+  );
+  const sessions = useMemo(
+    () => sortByCreated({ records: (sessionsQuery.data ?? []) as SessionRecord[] }),
+    [sessionsQuery.data],
+  );
+  const hypotheses = useMemo(
+    () => sortByCreated({ records: (hypothesesQuery.data ?? []) as HypothesisRecord[] }),
+    [hypothesesQuery.data],
   );
   const experiments = useMemo(
     () => sortByCreated({ records: (experimentsQuery.data ?? []) as ExperimentRecord[] }),
     [experimentsQuery.data],
+  );
+  const experimentActivities = useMemo(
+    () =>
+      sortByCreated({
+        records: (experimentActivitiesQuery.data ?? []) as ExperimentActivityRecord[],
+      }),
+    [experimentActivitiesQuery.data],
   );
   const events = useMemo(
     () => sortEvents({ records: (eventsQuery.data ?? []) as EventRecord[] }),
@@ -152,8 +190,11 @@ export function AlmanacApp() {
     <AlmanacMonitor
       workspace={WORKSPACE}
       connection={connection}
-      runs={runs}
+      objectives={objectives}
+      sessions={sessions}
+      hypotheses={hypotheses}
       experiments={experiments}
+      experimentActivities={experimentActivities}
       events={events}
     />
   );

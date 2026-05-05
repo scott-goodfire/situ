@@ -4,8 +4,8 @@ This is a tiny external-workspace smoke test for Almanac.
 
 It does not ask Almanac to edit `micrograd` yet. Instead, the target repo gets a
 small JSON eval script. Almanac runs its fixed baseline/A/B/C/A+C/bad proposal
-sequence against that eval command, records evidence, extracts findings, and
-flags suspicious output.
+sequence against that eval command, records result activities, and flags
+suspicious output as concerns.
 
 ## Setup
 
@@ -33,7 +33,7 @@ ALMANAC_COMPONENTS_JSON='["A","C"]' python almanac_eval.py --json
 cd ~/autoresearch-harness
 mise run start -- ~/sandbox/micrograd-hillclimb \
   --eval-command "python almanac_eval.py --json" \
-  --goal "Find which tiny micrograd training tweaks improve XOR accuracy without suspicious evidence." \
+  --objective "Find which tiny micrograd training tweaks improve XOR accuracy without suspicious results." \
   --evaluation-context "Run a deterministic micrograd XOR eval that reports score, accuracy, loss, runtime_ms, and tests_passed as JSON." \
   --known-signal score \
   --known-signal accuracy \
@@ -51,7 +51,7 @@ After `mise run update` has created the harness virtualenv:
 cd ~/sandbox/micrograd-hillclimb
 ~/autoresearch-harness/.venv/bin/almanac start . \
   --eval-command "python almanac_eval.py --json" \
-  --goal "Find which tiny micrograd training tweaks improve XOR accuracy without suspicious evidence." \
+  --objective "Find which tiny micrograd training tweaks improve XOR accuracy without suspicious results." \
   --evaluation-context "Run a deterministic micrograd XOR eval that reports score, accuracy, loss, runtime_ms, and tests_passed as JSON." \
   --known-signal score \
   --known-signal accuracy \

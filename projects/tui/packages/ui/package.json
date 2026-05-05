@@ -13,6 +13,7 @@
     "snapshots": "bun run src/stories/snapshot-runner.tsx"
   },
   "dependencies": {
+    "@almanac/chart-model": "workspace:*",
     "@almanac/protocol": "workspace:*",
     "lodash": "^4.18.1",
     "luxon": "^3.7.2"

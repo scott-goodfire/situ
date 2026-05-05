@@ -1,6 +1,10 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { RunSummary } from "./run-summary";
-import { completedRun, runningRun } from "./run-monitor.fixtures";
+import {
+  activeObjective,
+  completedSession,
+  runningSession,
+} from "./run-monitor.fixtures";
 
 const meta = {
   title: "Features/Run Monitor/Run Summary",
@@ -11,23 +15,29 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const NoRun: Story = {
+export const NoSession: Story = {
   args: {
-    run: undefined,
+    objective: activeObjective,
+    session: undefined,
     experimentCount: 0,
+    hypothesisCount: 0,
   },
 };
 
 export const Running: Story = {
   args: {
-    run: runningRun,
+    objective: activeObjective,
+    session: runningSession,
     experimentCount: 3,
+    hypothesisCount: 1,
   },
 };
 
 export const Completed: Story = {
   args: {
-    run: completedRun,
+    objective: activeObjective,
+    session: completedSession,
     experimentCount: 2,
+    hypothesisCount: 1,
   },
 };

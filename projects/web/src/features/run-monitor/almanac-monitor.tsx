@@ -1,4 +1,11 @@
-import type { EventRecord, ExperimentRecord, RunRecord } from "@almanac/protocol";
+import type {
+  EventRecord,
+  ExperimentActivityRecord,
+  ExperimentRecord,
+  HypothesisRecord,
+  ObjectiveRecord,
+  SessionRecord,
+} from "@almanac/protocol";
 import { DxNotice } from "@almanac/web-ui";
 import filter from "lodash/filter";
 import { ConnectionBadge, type ConnectionState } from "./connection-badge";
@@ -13,26 +20,39 @@ export { type ConnectionState };
 export function AlmanacMonitor({
   workspace,
   connection,
-  runs,
+  objectives,
+  sessions,
+  hypotheses,
   experiments,
+  experimentActivities,
   events,
 }: {
   workspace: string | undefined;
   connection: ConnectionState;
-  runs: RunRecord[];
+  objectives: ObjectiveRecord[];
+  sessions: SessionRecord[];
+  hypotheses: HypothesisRecord[];
   experiments: ExperimentRecord[];
+  experimentActivities: ExperimentActivityRecord[];
   events: EventRecord[];
 }) {
   if (connection.kind === "missing") {
     return <NoActiveHarness workspace={workspace} />;
   }
 
-  const latestRun = runs.at(-1);
-  const runExperiments = experimentsForRun({
+  const activeObjective = objectives.find((objective) => objective.status === "active");
+  const latestSession = sessions.at(-1);
+  const sessionExperiments = experimentsForSession({
     experiments,
-    run: latestRun,
+    session: latestSession,
   });
-  const activeExperiment = runExperiments.find((experiment) => experiment.status === "running");
+  const activeExperiment = sessionExperiments.find(
+    (experiment) => experiment.status === "active",
+  );
+  const objectiveHypotheses = hypothesesForObjective({
+    hypotheses,
+    objective: activeObjective,
+  });
 
   return (
     <main className="almanac-shell">
@@ -48,24 +68,52 @@ export function AlmanacMonitor({
         <DxNotice tone="danger">{connection.message}</DxNotice>
       )}
 
-      <RunSummary run={latestRun} experimentCount={runExperiments.length} />
-      <NowPanel activeExperiment={activeExperiment} latestRun={latestRun} />
-      <ExperimentTable experiments={runExperiments} />
+      <RunSummary
+        objective={activeObjective}
+        session={latestSession}
+        experimentCount={sessionExperiments.length}
+        hypothesisCount={objectiveHypotheses.length}
+      />
+      <NowPanel activeExperiment={activeExperiment} latestSession={latestSession} />
+      <ExperimentTable
+        experiments={sessionExperiments}
+        experimentActivities={experimentActivities}
+      />
       <EventTimeline events={events} />
     </main>
   );
 }
 
-function experimentsForRun({
+function experimentsForSession({
   experiments,
-  run,
+  session,
 }: {
   experiments: ExperimentRecord[];
-  run: RunRecord | undefined;
+  session: SessionRecord | undefined;
 }): ExperimentRecord[] {
-  if (!run) {
+  if (!session) {
     return [];
   }
 
-  return filter(experiments, (experiment) => experiment.run_id === run.id);
+  return filter(
+    experiments,
+    (experiment) => experiment.created_in_session_id === session.id,
+  );
+}
+
+function hypothesesForObjective({
+  hypotheses,
+  objective,
+}: {
+  hypotheses: HypothesisRecord[];
+  objective: ObjectiveRecord | undefined;
+}): HypothesisRecord[] {
+  if (!objective) {
+    return [];
+  }
+
+  return filter(
+    hypotheses,
+    (hypothesis) => hypothesis.objective_id === objective.id,
+  );
 }

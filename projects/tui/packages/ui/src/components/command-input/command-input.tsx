@@ -1,4 +1,4 @@
-import { Box, Text, useInput } from "ink";
+import { Box, Text, useInput, useStdin } from "ink";
 
 export type CommandMessage = {
   text: string;
@@ -16,6 +16,9 @@ export function CommandInput({
   onChange: ({ value }: { value: string }) => void;
   onSubmit: ({ value }: { value: string }) => void;
 }) {
+  const { isRawModeSupported } = useStdin();
+  const canUseInput = Boolean(process.stdin.isTTY) && isRawModeSupported;
+
   useInput((input, key) => {
     if (key.return) {
       onSubmit({ value: draft });
@@ -41,7 +44,7 @@ export function CommandInput({
     }
 
     onChange({ value: `${draft}${input}` });
-  });
+  }, { isActive: canUseInput });
 
   return (
     <Box flexDirection="column">

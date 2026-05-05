@@ -1,59 +1,65 @@
-import type { EventRecord, ExperimentRecord, RunRecord } from "@almanac/protocol";
+import type {
+  EventRecord,
+  ExperimentActivityRecord,
+  ExperimentRecord,
+  HypothesisRecord,
+  ObjectiveRecord,
+  SessionRecord,
+} from "@almanac/protocol";
 
 export const storyWorkspace = "/Users/scott-goodfire/sandbox/support-agent";
 
-export const runningRun = runRecord({
+export const activeObjective = objectiveRecord({});
+
+export const runningSession = sessionRecord({
   overrides: {
-    id: "run_0001",
-    status: "running",
+    id: "session_0001",
+    status: "active",
   },
 });
 
-export const completedRun = runRecord({
+export const completedSession = sessionRecord({
   overrides: {
-    id: "run_0001",
-    status: "completed",
+    id: "session_0001",
+    status: "closed",
   },
 });
+
+export const activeHypothesis = hypothesisRecord({});
 
 export const baselineExperiment = experimentRecord({
   overrides: {
-    id: "exp_run_0001_baseline",
-    status: "completed",
-    intent: "Record baseline evidence.",
-    components: ["baseline"],
-    note: "Baseline evidence recorded: resolution_rate 61.0%, latency 1830ms.",
+    id: "exp_session_0001_baseline",
+    status: "closed",
+    title: "Record baseline",
+    summary: "Baseline result recorded: resolution_rate 61.0%, latency 1830ms.",
   },
 });
 
 export const runningExperiment = experimentRecord({
   overrides: {
-    id: "exp_run_0001_retrieval_filter",
-    status: "running",
-    intent: "Try retrieval filtering on cancellation-ticket failures.",
-    components: ["retrieval-filter"],
-    note: "",
+    id: "exp_session_0001_retrieval_filter",
+    status: "active",
+    title: "Try retrieval filtering",
+    summary: "Try retrieval filtering on cancellation-ticket failures.",
   },
 });
 
 export const acceptedExperiment = experimentRecord({
   overrides: {
-    id: "exp_run_0001_tool_discipline",
-    status: "completed",
-    intent: "Tighten tool-use discipline for billing tickets.",
-    components: ["tool-discipline"],
-    note: "Resolution improved with latency still under guardrail.",
+    id: "exp_session_0001_tool_discipline",
+    status: "closed",
+    title: "Tighten tool-use discipline",
+    summary: "Resolution improved with latency still under guardrail.",
   },
 });
 
 export const suspiciousExperiment = experimentRecord({
   overrides: {
-    id: "exp_run_0001_fixture_edit",
-    status: "completed",
-    intent: "Reported large improvement after eval fixture edit.",
-    components: ["fixture-edit"],
-    suspicious: true,
-    suspicious_reason: "Touched eval fixtures, excluded from valid best result.",
+    id: "exp_session_0001_fixture_edit",
+    status: "closed",
+    title: "Reported large improvement",
+    summary: "Reported large improvement after eval fixture edit.",
   },
 });
 
@@ -74,26 +80,57 @@ export const completedExperiments = [
   acceptedExperiment,
 ];
 
+export const runningExperimentActivities = [
+  experimentActivityRecord({
+    overrides: {
+      id: 1,
+      experiment_id: baselineExperiment.id,
+      kind: "result",
+      body: "Baseline result recorded: resolution_rate 61.0%, latency 1830ms.",
+    },
+  }),
+  experimentActivityRecord({
+    overrides: {
+      id: 2,
+      experiment_id: acceptedExperiment.id,
+      kind: "result",
+      body: "Resolution improved with latency still under guardrail.",
+    },
+  }),
+];
+
+export const suspiciousExperimentActivities = [
+  ...runningExperimentActivities,
+  experimentActivityRecord({
+    overrides: {
+      id: 3,
+      experiment_id: suspiciousExperiment.id,
+      kind: "concern",
+      body: "Result shape changed unexpectedly.",
+    },
+  }),
+];
+
 export const runningEvents = [
   eventRecord({
     overrides: {
       id: 1,
-      type: "run.started",
-      message: "Started run_0001",
+      type: "session.started",
+      message: "Started session_0001",
     },
   }),
   eventRecord({
     overrides: {
       id: 2,
       type: "experiment.completed",
-      message: "Completed exp_run_0001_baseline",
+      message: "Completed exp_session_0001_baseline",
     },
   }),
   eventRecord({
     overrides: {
       id: 3,
       type: "experiment.started",
-      message: "Started exp_run_0001_retrieval_filter",
+      message: "Started exp_session_0001_retrieval_filter",
     },
   }),
 ];
@@ -103,8 +140,8 @@ export const suspiciousEvents = [
   eventRecord({
     overrides: {
       id: 4,
-      type: "warning.created",
-      message: "Marked exp_run_0001_fixture_edit suspicious because it touched eval fixtures.",
+      type: "experiment.activity_recorded",
+      message: "Recorded a concern for exp_session_0001_fixture_edit.",
     },
   }),
 ];
@@ -114,18 +151,56 @@ export const completedEvents = [
   eventRecord({
     overrides: {
       id: 4,
-      type: "run.completed",
-      message: "Completed run_0001",
+      type: "session.completed",
+      message: "Completed session_0001",
     },
   }),
 ];
 
-function runRecord({ overrides = {} }: { overrides?: Partial<RunRecord> }): RunRecord {
+function objectiveRecord({
+  overrides = {},
+}: {
+  overrides?: Partial<ObjectiveRecord>;
+}): ObjectiveRecord {
   return {
-    id: "run_0001",
-    status: "running",
+    id: "objective_0001",
+    title: "Improve support-agent resolution",
+    description: "Improve billing and cancellation resolution without hurting latency.",
+    status: "active",
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
+    ...overrides,
+  };
+}
+
+function sessionRecord({
+  overrides = {},
+}: {
+  overrides?: Partial<SessionRecord>;
+}): SessionRecord {
+  return {
+    id: "session_0001",
+    objective_id: "objective_0001",
+    status: "active",
+    created_at: "2026-01-01T00:00:00Z",
+    updated_at: "2026-01-01T00:00:00Z",
+    ...overrides,
+  };
+}
+
+function hypothesisRecord({
+  overrides = {},
+}: {
+  overrides?: Partial<HypothesisRecord>;
+}): HypothesisRecord {
+  return {
+    id: "hyp_0001",
+    objective_id: "objective_0001",
+    title: "Retrieval filtering can improve cancellation tickets",
+    summary: "Filter low-confidence retrieval snippets before tool calls.",
+    status: "active",
+    created_at: "2026-01-01T00:00:01Z",
+    updated_at: "2026-01-01T00:00:01Z",
     ...overrides,
   };
 }
@@ -136,18 +211,32 @@ function experimentRecord({
   overrides?: Partial<ExperimentRecord>;
 }): ExperimentRecord {
   return {
-    id: "exp_run_0001_baseline",
-    run_id: "run_0001",
-    status: "queued",
-    intent: "Record baseline evidence.",
-    change_summary: "Baseline evaluation.",
-    components: ["baseline"],
-    based_on: [],
-    suspicious: false,
-    suspicious_reason: null,
-    note: "",
+    id: "exp_session_0001_baseline",
+    objective_id: "objective_0001",
+    status: "open",
+    title: "Record baseline",
+    summary: "Baseline evaluation.",
+    created_in_session_id: "session_0001",
     created_at: "2026-01-01T00:00:01Z",
     updated_at: "2026-01-01T00:00:01Z",
+    ...overrides,
+  };
+}
+
+function experimentActivityRecord({
+  overrides = {},
+}: {
+  overrides?: Partial<ExperimentActivityRecord>;
+}): ExperimentActivityRecord {
+  return {
+    id: 1,
+    experiment_id: "exp_session_0001_baseline",
+    session_id: "session_0001",
+    actor: "worker",
+    kind: "result",
+    body: "Baseline result recorded.",
+    payload: {},
+    created_at: "2026-01-01T00:00:03Z",
     ...overrides,
   };
 }
@@ -155,9 +244,9 @@ function experimentRecord({
 function eventRecord({ overrides = {} }: { overrides?: Partial<EventRecord> }): EventRecord {
   return {
     id: 1,
-    run_id: "run_0001",
-    type: "run.started",
-    message: "Started run_0001",
+    session_id: "session_0001",
+    type: "session.started",
+    message: "Started session_0001",
     payload: {},
     created_at: "2026-01-01T00:00:02Z",
     ...overrides,

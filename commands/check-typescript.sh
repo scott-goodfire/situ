@@ -5,6 +5,8 @@ REPO_ROOT=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 cd "$REPO_ROOT"
 
 bun --filter @almanac/protocol check
+bun --filter @almanac/chart-model check
+bun --filter @almanac/chart-model test
 bun --filter @almanac/rpc-client check
 bun --filter @almanac/collections check
 bun --filter @almanac/collections test

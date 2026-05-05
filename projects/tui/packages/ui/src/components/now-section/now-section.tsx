@@ -1,38 +1,34 @@
 import { Text } from "ink";
-import type { ExperimentRecord, RunRecord } from "@almanac/protocol";
+import type { ExperimentRecord, SessionRecord } from "@almanac/protocol";
 import { Section } from "../section/section.js";
 
 export function NowSection({
   activeExperiment,
-  latestRun,
+  latestSession,
 }: {
   activeExperiment: ExperimentRecord | undefined;
-  latestRun: RunRecord | undefined;
+  latestSession: SessionRecord | undefined;
 }) {
   return (
     <Section title="Now">
-      <Text>{nowLabel({ activeExperiment, latestRun })}</Text>
+      <Text>{nowLabel({ activeExperiment, latestSession })}</Text>
     </Section>
   );
 }
 
 function nowLabel({
   activeExperiment,
-  latestRun,
+  latestSession,
 }: {
   activeExperiment: ExperimentRecord | undefined;
-  latestRun: RunRecord | undefined;
+  latestSession: SessionRecord | undefined;
 }): string {
   if (activeExperiment) {
-    return `${activeExperiment.id} | ${activeExperiment.intent}`;
+    return `${activeExperiment.id} | ${activeExperiment.title}`;
   }
 
-  if (latestRun?.status === "completed") {
-    return "Run completed";
-  }
-
-  if (latestRun?.status === "failed") {
-    return "Run failed";
+  if (latestSession?.status === "closed") {
+    return "Session closed";
   }
 
   return "Waiting for experiment";

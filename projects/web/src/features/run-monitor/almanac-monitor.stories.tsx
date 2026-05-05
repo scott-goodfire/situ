@@ -1,14 +1,18 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { AlmanacMonitor } from "./almanac-monitor";
 import {
+  activeHypothesis,
+  activeObjective,
   completedEvents,
   completedExperiments,
-  completedRun,
+  completedSession,
+  runningExperimentActivities,
   runningEvents,
   runningExperiments,
-  runningRun,
+  runningSession,
   storyWorkspace,
   suspiciousEvents,
+  suspiciousExperimentActivities,
   suspiciousExperiments,
 } from "./run-monitor.fixtures";
 
@@ -28,8 +32,11 @@ export const NoSession: Story = {
   args: {
     workspace: storyWorkspace,
     connection: { kind: "missing" },
-    runs: [],
+    objectives: [],
+    sessions: [],
+    hypotheses: [],
     experiments: [],
+    experimentActivities: [],
     events: [],
   },
 };
@@ -38,8 +45,11 @@ export const Connecting: Story = {
   args: {
     workspace: storyWorkspace,
     connection: { kind: "checking" },
-    runs: [],
+    objectives: [],
+    sessions: [],
+    hypotheses: [],
     experiments: [],
+    experimentActivities: [],
     events: [],
   },
 };
@@ -48,8 +58,11 @@ export const Running: Story = {
   args: {
     workspace: storyWorkspace,
     connection: { kind: "connected" },
-    runs: [runningRun],
+    objectives: [activeObjective],
+    sessions: [runningSession],
+    hypotheses: [activeHypothesis],
     experiments: runningExperiments,
+    experimentActivities: runningExperimentActivities,
     events: runningEvents,
   },
 };
@@ -58,8 +71,11 @@ export const SuspiciousExperiment: Story = {
   args: {
     workspace: storyWorkspace,
     connection: { kind: "connected" },
-    runs: [runningRun],
+    objectives: [activeObjective],
+    sessions: [runningSession],
+    hypotheses: [activeHypothesis],
     experiments: suspiciousExperiments,
+    experimentActivities: suspiciousExperimentActivities,
     events: suspiciousEvents,
   },
 };
@@ -68,8 +84,11 @@ export const Completed: Story = {
   args: {
     workspace: storyWorkspace,
     connection: { kind: "connected" },
-    runs: [completedRun],
+    objectives: [activeObjective],
+    sessions: [completedSession],
+    hypotheses: [activeHypothesis],
     experiments: completedExperiments,
+    experimentActivities: runningExperimentActivities,
     events: completedEvents,
   },
 };
@@ -81,8 +100,11 @@ export const SessionError: Story = {
       kind: "failed",
       message: "Lost connection to the local Almanac session server.",
     },
-    runs: [runningRun],
+    objectives: [activeObjective],
+    sessions: [runningSession],
+    hypotheses: [activeHypothesis],
     experiments: runningExperiments,
+    experimentActivities: runningExperimentActivities,
     events: runningEvents,
   },
 };

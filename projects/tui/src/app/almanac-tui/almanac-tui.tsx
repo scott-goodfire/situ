@@ -17,10 +17,14 @@ import type {
   CollectionsSubscribeParams,
   CollectionsSubscribeResult,
   EventRecord,
+  ExperimentActivityRecord,
   ExperimentRecord,
-  RunRecord,
-  RunStartParams,
-  RunStartResult,
+  HypothesisActivityRecord,
+  HypothesisRecord,
+  ObjectiveRecord,
+  SessionRecord,
+  SessionStartParams,
+  SessionStartResult,
   SetupCompleteParams,
   SetupCompleteResult,
   SetupGetParams,
@@ -34,14 +38,14 @@ import {
 
 type Status =
   | { kind: "starting" }
-  | { kind: "running"; runId?: string }
-  | { kind: "completed"; runId: string }
+  | { kind: "running"; sessionId?: string }
+  | { kind: "completed"; sessionId: string }
   | { kind: "failed"; message: string };
 
 const TOY_SETUP: SetupCompleteParams = {
-  goal: "Understand which toy components improve score without suspicious evidence.",
+  objective: "Understand which toy components improve score without suspicious results.",
   evaluation_context:
-    "Toy deterministic eval with score and latency signals. The harness should preserve evidence, derive findings, and flag suspicious evidence shape changes.",
+    "Toy deterministic eval with score and latency signals. The harness should preserve results, record activities, and flag suspicious result shape changes.",
   known_signals: ["score", "latency_ms"],
   experiment_scope: "Try baseline, individual toy components, combinations, and one suspicious result.",
 };
@@ -52,8 +56,21 @@ export function AlmanacTui() {
   const root = useMemo(() => appRoot(), []);
   const workspace = useMemo(() => workspaceRoot({ root }), [root]);
   const maxExperimentCount = useMemo(() => maxExperiments(), []);
-  const runsQuery = useLiveQuery(
-    (query) => query.from({ run: collections.runs }).select(({ run }) => run),
+  const objectivesQuery = useLiveQuery(
+    (query) =>
+      query.from({ objective: collections.objectives }).select(({ objective }) => objective),
+    [collections],
+  );
+  const sessionsQuery = useLiveQuery(
+    (query) =>
+      query.from({ session: collections.sessions }).select(({ session }) => session),
+    [collections],
+  );
+  const hypothesesQuery = useLiveQuery(
+    (query) =>
+      query
+        .from({ hypothesis: collections.hypotheses })
+        .select(({ hypothesis }) => hypothesis),
     [collections],
   );
   const experimentsQuery = useLiveQuery(
@@ -61,6 +78,20 @@ export function AlmanacTui() {
       query
         .from({ experiment: collections.experiments })
         .select(({ experiment }) => experiment),
+    [collections],
+  );
+  const hypothesisActivitiesQuery = useLiveQuery(
+    (query) =>
+      query
+        .from({ activity: collections.hypothesisActivities })
+        .select(({ activity }) => activity),
+    [collections],
+  );
+  const experimentActivitiesQuery = useLiveQuery(
+    (query) =>
+      query
+        .from({ activity: collections.experimentActivities })
+        .select(({ activity }) => activity),
     [collections],
   );
   const eventsQuery = useLiveQuery(
@@ -74,13 +105,35 @@ export function AlmanacTui() {
     text: "Type /help for commands.",
   });
 
-  const runs = useMemo(
-    () => sortByCreated({ records: (runsQuery.data ?? []) as RunRecord[] }),
-    [runsQuery.data],
+  const objectives = useMemo(
+    () => sortByCreated({ records: (objectivesQuery.data ?? []) as ObjectiveRecord[] }),
+    [objectivesQuery.data],
+  );
+  const sessions = useMemo(
+    () => sortByCreated({ records: (sessionsQuery.data ?? []) as SessionRecord[] }),
+    [sessionsQuery.data],
+  );
+  const hypotheses = useMemo(
+    () => sortByCreated({ records: (hypothesesQuery.data ?? []) as HypothesisRecord[] }),
+    [hypothesesQuery.data],
   );
   const experiments = useMemo(
     () => sortByCreated({ records: (experimentsQuery.data ?? []) as ExperimentRecord[] }),
     [experimentsQuery.data],
+  );
+  const hypothesisActivities = useMemo(
+    () =>
+      sortByCreated({
+        records: (hypothesisActivitiesQuery.data ?? []) as HypothesisActivityRecord[],
+      }),
+    [hypothesisActivitiesQuery.data],
+  );
+  const experimentActivities = useMemo(
+    () =>
+      sortByCreated({
+        records: (experimentActivitiesQuery.data ?? []) as ExperimentActivityRecord[],
+      }),
+    [experimentActivitiesQuery.data],
   );
   const events = useMemo(
     () => sortEvents({ records: (eventsQuery.data ?? []) as EventRecord[] }),
@@ -108,11 +161,11 @@ export function AlmanacTui() {
       token: sessionToken,
     });
 
-    let runId: string | undefined;
+    let sessionId: string | undefined;
     let closeScheduled = false;
     let unsubscribe = () => {};
 
-    const closeAfterCompletedRun = () => {
+    const closeAfterCompletedSession = () => {
       if (closeScheduled || !shouldAutoExit()) {
         return;
       }
@@ -125,18 +178,14 @@ export function AlmanacTui() {
       }, 1400);
     };
 
-    const handleRunRecord = ({ run }: { run: RunRecord }) => {
-      if (!runId || run.id !== runId) {
+    const handleSessionRecord = ({ session }: { session: SessionRecord }) => {
+      if (!sessionId || session.id !== sessionId) {
         return;
       }
 
-      if (run.status === "completed") {
-        setStatus({ kind: "completed", runId });
-        closeAfterCompletedRun();
-      }
-
-      if (run.status === "failed") {
-        setStatus({ kind: "failed", message: `Run ${run.id} failed` });
+      if (session.status === "closed") {
+        setStatus({ kind: "completed", sessionId });
+        closeAfterCompletedSession();
       }
     };
 
@@ -161,8 +210,8 @@ export function AlmanacTui() {
           });
         });
 
-        if (upsert.collection === "runs") {
-          handleRunRecord({ run: upsert.record as unknown as RunRecord });
+        if (upsert.collection === "sessions") {
+          handleSessionRecord({ session: upsert.record as unknown as SessionRecord });
         }
       },
     });
@@ -207,24 +256,24 @@ export function AlmanacTui() {
           bootstrap,
         });
 
-        const activeRun = lodash.find(
-          bootstrap.runs,
-          (run: RunRecord) => run.status === "running",
+        const activeSession = lodash.find(
+          bootstrap.sessions,
+          (session: SessionRecord) => session.status === "active",
         );
-        if (activeRun) {
-          runId = activeRun.id;
-          setStatus({ kind: "running", runId });
+        if (activeSession) {
+          sessionId = activeSession.id;
+          setStatus({ kind: "running", sessionId });
           return;
         }
 
-        const result = await client.request<RunStartResult, RunStartParams>({
-          method: "run.start",
+        const result = await client.request<SessionStartResult, SessionStartParams>({
+          method: "session.start",
           params: {
             max_experiments: maxExperimentCount,
           },
         });
-        runId = result.run_id;
-        setStatus({ kind: "running", runId });
+        sessionId = result.session_id;
+        setStatus({ kind: "running", sessionId });
       })
       .catch((error: unknown) => {
         setStatus({
@@ -239,19 +288,35 @@ export function AlmanacTui() {
     };
   }, [collections, exit, maxExperimentCount, root, workspace]);
 
-  const latestRun = runs.at(-1);
-  const runExperiments = experimentsForRun({
+  const activeObjective = lodash.find(
+    objectives,
+    (objective: ObjectiveRecord) => objective.status === "active",
+  );
+  const latestSession = sessions.at(-1);
+  const sessionExperiments = experimentsForSession({
     experiments,
-    run: latestRun,
+    session: latestSession,
+  });
+  const sessionHypotheses = hypothesesForObjective({
+    hypotheses,
+    objective: activeObjective,
+  });
+  const sessionHypothesisActivities = activitiesForSession({
+    activities: hypothesisActivities,
+    session: latestSession,
+  });
+  const sessionExperimentActivities = activitiesForSession({
+    activities: experimentActivities,
+    session: latestSession,
   });
   const activeExperiment = lodash.find(
-    runExperiments,
-    (experiment: ExperimentRecord) => experiment.status === "running",
+    sessionExperiments,
+    (experiment: ExperimentRecord) => experiment.status === "active",
   );
   const statusLine = statusSummary({
     status,
-    run: latestRun,
-    experimentCount: runExperiments.length,
+    session: latestSession,
+    experimentCount: sessionExperiments.length,
     maxExperiments: maxExperimentCount,
   });
 
@@ -261,11 +326,15 @@ export function AlmanacTui() {
       statusLine={statusLine}
       commandDraft={commandDraft}
       commandMessage={commandMessage}
-      run={latestRun}
-      experimentCount={runExperiments.length}
+      objective={activeObjective}
+      session={latestSession}
+      experimentCount={sessionExperiments.length}
       maxExperiments={maxExperimentCount}
       activeExperiment={activeExperiment}
-      experiments={runExperiments}
+      hypotheses={sessionHypotheses}
+      experiments={sessionExperiments}
+      hypothesisActivities={sessionHypothesisActivities}
+      experimentActivities={sessionExperimentActivities}
       events={events}
       onCommandChange={({ value }) => {
         setCommandDraft(value);
@@ -275,8 +344,8 @@ export function AlmanacTui() {
           value,
           exit,
           status,
-          run: latestRun,
-          experimentCount: runExperiments.length,
+          session: latestSession,
+          experimentCount: sessionExperiments.length,
           maxExperiments: maxExperimentCount,
           setCommandDraft,
           setCommandMessage,
@@ -290,7 +359,7 @@ function handleCommandSubmit({
   value,
   exit,
   status,
-  run,
+  session,
   experimentCount,
   maxExperiments,
   setCommandDraft,
@@ -299,7 +368,7 @@ function handleCommandSubmit({
   value: string;
   exit: () => void;
   status: Status;
-  run: RunRecord | undefined;
+  session: SessionRecord | undefined;
   experimentCount: number;
   maxExperiments: number;
   setCommandDraft: (value: string) => void;
@@ -330,7 +399,7 @@ function handleCommandSubmit({
       tone: "cyan",
       text: statusSummary({
         status,
-        run,
+        session,
         experimentCount,
         maxExperiments,
       }),
@@ -366,7 +435,7 @@ function initialSetup({
 }): SetupCompleteParams {
   const knownSignals = parseSignals({ value: process.env.ALMANAC_KNOWN_SIGNALS });
   const hasUserSetup =
-    Boolean(process.env.ALMANAC_GOAL) ||
+    Boolean(process.env.ALMANAC_OBJECTIVE) ||
     Boolean(process.env.ALMANAC_EVALUATION_CONTEXT) ||
     Boolean(process.env.ALMANAC_EXPERIMENT_SCOPE) ||
     knownSignals.length > 0 ||
@@ -377,12 +446,15 @@ function initialSetup({
   }
 
   return {
-    goal: process.env.ALMANAC_GOAL ?? `Observe autoresearch experiments in ${workspace}`,
+    objective:
+      process.env.ALMANAC_OBJECTIVE ??
+      process.env.ALMANAC_GOAL ??
+      `Observe autoresearch experiments in ${workspace}`,
     evaluation_context: initialEvaluationContext(),
     known_signals: knownSignals,
     experiment_scope:
       process.env.ALMANAC_EXPERIMENT_SCOPE ??
-      "Run the current local worker path and compare evidence across baseline, individual changes, and combinations.",
+      "Run the current local worker path and compare results across baseline, individual changes, and combinations.",
   };
 }
 
@@ -395,7 +467,7 @@ function initialEvaluationContext(): string {
     return `Run ${process.env.ALMANAC_EVAL_COMMAND} and capture its JSON signals.`;
   }
 
-  return "Capture evidence, signals, warnings, and findings from local experiments.";
+  return "Capture results, signals, concerns, and activities from local experiments.";
 }
 
 function parseSignals({ value }: { value: string | undefined }): string[] {
@@ -407,13 +479,13 @@ function parseSignals({ value }: { value: string | undefined }): string[] {
 }
 
 function maxExperiments(): number {
-  const parsed = Number.parseInt(process.env.ALMANAC_MAX_EXPERIMENTS ?? "5", 10);
+  const parsed = Number.parseInt(process.env.ALMANAC_MAX_EXPERIMENTS ?? "6", 10);
 
   if (Number.isFinite(parsed) && parsed >= 0) {
     return parsed;
   }
 
-  return 5;
+  return 6;
 }
 
 function shouldAutoExit(): boolean {
@@ -426,12 +498,12 @@ function shouldAutoExit(): boolean {
 
 function statusSummary({
   status,
-  run,
+  session,
   experimentCount,
   maxExperiments,
 }: {
   status: Status;
-  run: RunRecord | undefined;
+  session: SessionRecord | undefined;
   experimentCount: number;
   maxExperiments: number;
 }): string {
@@ -443,36 +515,67 @@ function statusSummary({
     return status.message;
   }
 
-  if (!run && status.kind === "running") {
-    return `Running ${status.runId ?? "new run"}...`;
+  if (!session && status.kind === "running") {
+    return `Running ${status.sessionId ?? "new session"}...`;
   }
 
-  if (!run && status.kind === "completed") {
-    return `Completed ${status.runId}`;
+  if (!session && status.kind === "completed") {
+    return `Completed ${status.sessionId}`;
   }
 
-  if (!run) {
-    return "Waiting for run...";
+  if (!session) {
+    return "Waiting for session...";
   }
 
-  return `${run.id} | ${run.status} | experiments ${experimentCount}/${maxExperiments}`;
+  return `${session.id} | ${session.status} | experiments ${experimentCount}/${maxExperiments}`;
 }
 
-function experimentsForRun({
+function experimentsForSession({
   experiments,
-  run,
+  session,
 }: {
   experiments: ExperimentRecord[];
-  run: RunRecord | undefined;
+  session: SessionRecord | undefined;
 }): ExperimentRecord[] {
-  if (!run) {
+  if (!session) {
     return [];
   }
 
   return lodash.filter(
     experiments,
-    (experiment: ExperimentRecord) => experiment.run_id === run.id,
+    (experiment: ExperimentRecord) => experiment.created_in_session_id === session.id,
   );
+}
+
+function hypothesesForObjective({
+  hypotheses,
+  objective,
+}: {
+  hypotheses: HypothesisRecord[];
+  objective: ObjectiveRecord | undefined;
+}): HypothesisRecord[] {
+  if (!objective) {
+    return [];
+  }
+
+  return lodash.filter(
+    hypotheses,
+    (hypothesis: HypothesisRecord) => hypothesis.objective_id === objective.id,
+  );
+}
+
+function activitiesForSession<T extends { session_id?: string | null }>({
+  activities,
+  session,
+}: {
+  activities: T[];
+  session: SessionRecord | undefined;
+}): T[] {
+  if (!session) {
+    return [];
+  }
+
+  return lodash.filter(activities, (activity: T) => activity.session_id === session.id);
 }
 
 function errorMessage({ error }: { error: unknown }): string {

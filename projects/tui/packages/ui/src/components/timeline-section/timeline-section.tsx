@@ -6,7 +6,7 @@ export function TimelineSection({ events }: { events: EventRecord[] }) {
   const visibleEvents = events.slice(-8);
 
   return (
-    <Section title="Timeline">
+    <Section title="Events">
       {visibleEvents.length === 0 && <Text dimColor>No events yet</Text>}
       {visibleEvents.map((event) => (
         <Text key={event.id}>

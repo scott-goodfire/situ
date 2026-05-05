@@ -1,33 +1,33 @@
-import type { ExperimentRecord, RunRecord } from "@almanac/protocol";
+import type { ExperimentRecord, SessionRecord } from "@almanac/protocol";
 import { DxSection } from "@almanac/web-ui";
 
 export function NowPanel({
   activeExperiment,
-  latestRun,
+  latestSession,
 }: {
   activeExperiment: ExperimentRecord | undefined;
-  latestRun: RunRecord | undefined;
+  latestSession: SessionRecord | undefined;
 }) {
   return (
     <DxSection title="Now">
-      <p>{nowLabel({ activeExperiment, latestRun })}</p>
+      <p>{nowLabel({ activeExperiment, latestSession })}</p>
     </DxSection>
   );
 }
 
 function nowLabel({
   activeExperiment,
-  latestRun,
+  latestSession,
 }: {
   activeExperiment: ExperimentRecord | undefined;
-  latestRun: RunRecord | undefined;
+  latestSession: SessionRecord | undefined;
 }): string {
   if (activeExperiment) {
-    return `${activeExperiment.id} | ${activeExperiment.intent}`;
+    return `${activeExperiment.id} | ${activeExperiment.title}`;
   }
 
-  if (latestRun?.status === "completed") {
-    return "Run completed";
+  if (latestSession?.status === "closed") {
+    return "Session closed";
   }
 
   return "Waiting for experiment";

@@ -1,6 +1,10 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { NowPanel } from "./now-panel";
-import { completedRun, runningExperiment, runningRun } from "./run-monitor.fixtures";
+import {
+  completedSession,
+  runningExperiment,
+  runningSession,
+} from "./run-monitor.fixtures";
 
 const meta = {
   title: "Features/Run Monitor/Now Panel",
@@ -14,20 +18,20 @@ type Story = StoryObj<typeof meta>;
 export const Waiting: Story = {
   args: {
     activeExperiment: undefined,
-    latestRun: runningRun,
+    latestSession: runningSession,
   },
 };
 
 export const RunningExperiment: Story = {
   args: {
     activeExperiment: runningExperiment,
-    latestRun: runningRun,
+    latestSession: runningSession,
   },
 };
 
-export const CompletedRun: Story = {
+export const CompletedSession: Story = {
   args: {
     activeExperiment: undefined,
-    latestRun: completedRun,
+    latestSession: completedSession,
   },
 };

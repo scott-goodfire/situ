@@ -56,7 +56,7 @@ TOY_RESULTS: dict[tuple[str, ...], dict[str, Any]] = {
         "raw": {"shape": "standard", "eval_status": "ok", "component": "A+C"},
     },
     ("bad",): {
-        "summary": "Suspicious toy result: large score jump with changed evidence shape.",
+        "summary": "Suspicious toy result: large score jump with changed result shape.",
         "signals": [
             {"key": "score", "value": 0.999},
         ],

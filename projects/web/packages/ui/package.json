@@ -11,9 +11,11 @@
     "check": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
+    "@almanac/chart-model": "workspace:*",
     "@base-ui/react": "^1.4.1",
     "lodash": "^4.18.1",
-    "luxon": "^3.7.2"
+    "luxon": "^3.7.2",
+    "recharts": "^3.6.0"
   },
   "peerDependencies": {
     "react": "^18.3.1",

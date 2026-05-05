@@ -1,10 +1,10 @@
 # Autoresearch Harness
 
-A local-first terminal observability layer for autoresearch runs.
+A local-first terminal observability layer for autoresearch sessions.
 
 The first runnable slice is a local TypeScript Ink TUI talking JSON-RPC over
-stdio to a Python harness. The harness records runs, experiments, evidence,
-signals, findings, warnings, and events in local SQLite state under
+stdio to a Python harness. The harness records objectives, sessions,
+hypotheses, experiments, activities, artifacts, and events in local SQLite state under
 `~/.almanac/projects/<project-id>/`.
 
 Start here:
@@ -100,7 +100,7 @@ mise run evals:json
 
 The first suite uses a mocked micrograd world with baseline, A/B/C variants, an
 A+C combination, and one suspicious result. Evals require `ALMANAC_OPENAI_KEY`
-for real LLM calls and `ALMANAC_LOGFIRE_TOKEN` so runs are sent to Logfire with
+for real LLM calls and `ALMANAC_LOGFIRE_TOKEN` so eval executions are sent to Logfire with
 `service_name=almanac-evals`.
 
 ## Layout

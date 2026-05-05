@@ -13,7 +13,7 @@ from micrograd.nn import MLP
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--json", action="store_true", help="print JSON evidence")
+    parser.add_argument("--json", action="store_true", help="print JSON result")
     parser.parse_args()
 
     components = read_components()
@@ -21,7 +21,7 @@ def main() -> int:
         print(
             json.dumps(
                 {
-                    "summary": "Suspicious result: huge score jump with changed evidence shape.",
+                    "summary": "Suspicious result: huge score jump with changed result shape.",
                     "signals": [{"key": "score", "value": 0.999}],
                     "raw": {"shape": "changed", "eval_status": "ok", "components": components},
                 }

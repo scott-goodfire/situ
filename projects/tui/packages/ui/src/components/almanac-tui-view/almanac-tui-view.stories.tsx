@@ -1,37 +1,54 @@
 import { useState } from "react";
 import { useApp } from "ink";
-import type { EventRecord, ExperimentRecord, RunRecord } from "@almanac/protocol";
+import type {
+  EventRecord,
+  ExperimentActivityRecord,
+  ExperimentRecord,
+  HypothesisActivityRecord,
+  HypothesisRecord,
+  ObjectiveRecord,
+  SessionRecord,
+} from "@almanac/protocol";
 import { AlmanacTuiView } from "./almanac-tui-view.js";
 import type { CommandMessage } from "../command-input/command-input.js";
 import {
+  acceptedExperiment,
+  activeHypothesis,
+  activeObjective,
   completedEvents,
   completedExperiments,
-  completedRun,
-  failedRun,
+  completedSession,
   maxExperimentCount,
   runningEvents,
   runningExperiment,
+  runningExperimentActivities,
   runningExperiments,
-  runningRun,
+  runningHypothesisActivities,
+  runningSession,
   storyWorkspace,
   suspiciousEvents,
-  suspiciousExperiments,
   suspiciousExperiment,
+  suspiciousExperimentActivities,
+  suspiciousExperiments,
 } from "../../fixtures/story-data.js";
 import type { TuiStory } from "../../stories/story-types.js";
 
 export const stories = [
   {
-    id: "almanac-tui-view/no-run",
+    id: "almanac-tui-view/no-session",
     title: "Almanac TUI View",
-    name: "no-run",
+    name: "no-session",
     render: () => (
       <StoryAlmanacTuiView
         statusLine="Connecting to local session..."
-        run={undefined}
+        objective={activeObjective}
+        session={undefined}
         experimentCount={0}
         activeExperiment={undefined}
+        hypotheses={[]}
         experiments={[]}
+        hypothesisActivities={[]}
+        experimentActivities={[]}
         events={[]}
       />
     ),
@@ -42,11 +59,15 @@ export const stories = [
     name: "running",
     render: () => (
       <StoryAlmanacTuiView
-        statusLine="run_0001 | running | experiments 3/5"
-        run={runningRun}
+        statusLine="session_0001 | active | experiments 3/5"
+        objective={activeObjective}
+        session={runningSession}
         experimentCount={runningExperiments.length}
         activeExperiment={runningExperiment}
+        hypotheses={[activeHypothesis]}
         experiments={runningExperiments}
+        hypothesisActivities={runningHypothesisActivities}
+        experimentActivities={runningExperimentActivities}
         events={runningEvents}
       />
     ),
@@ -57,11 +78,15 @@ export const stories = [
     name: "suspicious",
     render: () => (
       <StoryAlmanacTuiView
-        statusLine="run_0001 | running | experiments 3/5"
-        run={runningRun}
+        statusLine="session_0001 | active | experiments 3/5"
+        objective={activeObjective}
+        session={runningSession}
         experimentCount={suspiciousExperiments.length}
         activeExperiment={undefined}
+        hypotheses={[activeHypothesis]}
         experiments={suspiciousExperiments}
+        hypothesisActivities={runningHypothesisActivities}
+        experimentActivities={suspiciousExperimentActivities}
         events={suspiciousEvents}
       />
     ),
@@ -72,11 +97,15 @@ export const stories = [
     name: "completed",
     render: () => (
       <StoryAlmanacTuiView
-        statusLine="run_0001 | completed | experiments 2/5"
-        run={completedRun}
+        statusLine="session_0001 | closed | experiments 2/5"
+        objective={activeObjective}
+        session={completedSession}
         experimentCount={completedExperiments.length}
         activeExperiment={undefined}
+        hypotheses={[activeHypothesis]}
         experiments={completedExperiments}
+        hypothesisActivities={runningHypothesisActivities}
+        experimentActivities={runningExperimentActivities}
         events={completedEvents}
       />
     ),
@@ -87,11 +116,15 @@ export const stories = [
     name: "failed",
     render: () => (
       <StoryAlmanacTuiView
-        statusLine="Run run_0001 failed"
-        run={failedRun}
+        statusLine="Session session_0001 failed"
+        objective={activeObjective}
+        session={runningSession}
         experimentCount={suspiciousExperiments.length}
         activeExperiment={suspiciousExperiment}
-        experiments={suspiciousExperiments}
+        hypotheses={[activeHypothesis]}
+        experiments={[acceptedExperiment, suspiciousExperiment]}
+        hypothesisActivities={runningHypothesisActivities}
+        experimentActivities={suspiciousExperimentActivities}
         events={suspiciousEvents}
       />
     ),
@@ -100,19 +133,27 @@ export const stories = [
 
 type StoryAlmanacTuiViewProps = {
   statusLine: string;
-  run: RunRecord | undefined;
+  objective: ObjectiveRecord | undefined;
+  session: SessionRecord | undefined;
   experimentCount: number;
   activeExperiment: ExperimentRecord | undefined;
+  hypotheses: HypothesisRecord[];
   experiments: ExperimentRecord[];
+  hypothesisActivities: HypothesisActivityRecord[];
+  experimentActivities: ExperimentActivityRecord[];
   events: EventRecord[];
 };
 
 function StoryAlmanacTuiView({
   statusLine,
-  run,
+  objective,
+  session,
   experimentCount,
   activeExperiment,
+  hypotheses,
   experiments,
+  hypothesisActivities,
+  experimentActivities,
   events,
 }: StoryAlmanacTuiViewProps) {
   const { exit } = useApp();
@@ -128,11 +169,15 @@ function StoryAlmanacTuiView({
       statusLine={statusLine}
       commandDraft={draft}
       commandMessage={message}
-      run={run}
+      objective={objective}
+      session={session}
       experimentCount={experimentCount}
       maxExperiments={maxExperimentCount}
       activeExperiment={activeExperiment}
+      hypotheses={hypotheses}
       experiments={experiments}
+      hypothesisActivities={hypothesisActivities}
+      experimentActivities={experimentActivities}
       events={events}
       onCommandChange={({ value }) => {
         setDraft(value);

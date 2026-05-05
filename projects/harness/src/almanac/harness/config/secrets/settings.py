@@ -32,7 +32,9 @@ class AlmanacSecrets(BaseSettings):
     def require_logfire_token(self) -> str:
         token = self.logfire_token_value()
         if token is None:
-            raise RuntimeError("Evals require ALMANAC_LOGFIRE_TOKEN so runs are sent to Logfire.")
+            raise RuntimeError(
+                "Evals require ALMANAC_LOGFIRE_TOKEN so eval executions are sent to Logfire."
+            )
         return token
 
     def require_openai_key(self) -> str:

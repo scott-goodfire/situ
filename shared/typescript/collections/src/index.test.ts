@@ -8,32 +8,36 @@ import type {
   CollectionUpsertedParams,
   CollectionsBootstrapResult,
   EventRecord,
+  ExperimentActivityRecord,
   ExperimentRecord,
-  RunRecord,
+  HypothesisRecord,
+  ObjectiveRecord,
+  SessionRecord,
 } from "@almanac/protocol";
 
 describe("almanac collections", () => {
-  test("hydrates runs, experiments, and events from bootstrap data", async () => {
+  test("hydrates objective, session, research objects, activities, and events", async () => {
     const collections = createAlmanacCollections();
     const bootstrap: CollectionsBootstrapResult = {
       cursor: 2,
-      runs: [
-        runRecord({
-          overrides: { id: "run_0001", status: "running" },
-        }),
+      objectives: [objectiveRecord({})],
+      sessions: [sessionRecord({ overrides: { id: "session_0001" } })],
+      hypotheses: [hypothesisRecord({})],
+      experiments: [experimentRecord({})],
+      hypothesis_experiment_links: [
+        {
+          hypothesis_id: "hyp_0001",
+          experiment_id: "exp_session_0001_baseline",
+          note: "baseline",
+          created_at: "2026-01-01T00:00:01Z",
+        },
       ],
-      experiments: [
-        experimentRecord({
-          overrides: {
-            id: "exp_run_0001_baseline",
-            run_id: "run_0001",
-            status: "completed",
-          },
-        }),
-      ],
+      hypothesis_activities: [],
+      experiment_activities: [experimentActivityRecord({})],
+      artifacts: [],
       events: [
         eventRecord({
-          overrides: { id: 1, type: "run.started" },
+          overrides: { id: 1, type: "session.started" },
         }),
         eventRecord({
           overrides: { id: 2, type: "experiment.completed" },
@@ -46,11 +50,14 @@ describe("almanac collections", () => {
       bootstrap,
     });
 
-    expect(collections.runs.get("run_0001")?.status).toBe("running");
-    expect(collections.experiments.get("exp_run_0001_baseline")?.status).toBe(
-      "completed",
+    expect(collections.objectives.get("objective_0001")?.title).toBe("Improve score");
+    expect(collections.sessions.get("session_0001")?.status).toBe("active");
+    expect(collections.hypotheses.get("hyp_0001")?.status).toBe("active");
+    expect(collections.experiments.get("exp_session_0001_baseline")?.status).toBe(
+      "closed",
     );
-    expect(collections.events.get("1")?.type).toBe("run.started");
+    expect(collections.experimentActivities.get("1")?.kind).toBe("result");
+    expect(collections.events.get("1")?.type).toBe("session.started");
     expect(collections.events.get("2")?.type).toBe("experiment.completed");
   });
 
@@ -60,48 +67,44 @@ describe("almanac collections", () => {
     await applyCollectionUpsert({
       collections,
       upsert: upsert({
-        collection: "runs",
-        key: "run_0001",
-        record: runRecord({
-          overrides: { id: "run_0001", status: "running" },
-        }),
+        collection: "sessions",
+        key: "session_0001",
+        record: sessionRecord({ overrides: { id: "session_0001", status: "active" } }),
       }),
     });
     await applyCollectionUpsert({
       collections,
       upsert: upsert({
-        collection: "runs",
-        key: "run_0001",
-        record: runRecord({
-          overrides: { id: "run_0001", status: "completed" },
-        }),
+        collection: "sessions",
+        key: "session_0001",
+        record: sessionRecord({ overrides: { id: "session_0001", status: "closed" } }),
       }),
     });
     await applyCollectionUpsert({
       collections,
       upsert: upsert({
         collection: "experiments",
-        key: "exp_run_0001_a",
+        key: "exp_session_0001_a",
         record: experimentRecord({
-          overrides: { id: "exp_run_0001_a", status: "running" },
+          overrides: { id: "exp_session_0001_a", status: "active" },
         }),
       }),
     });
     await applyCollectionUpsert({
       collections,
       upsert: upsert({
-        collection: "events",
+        collection: "experiment_activities",
         key: "3",
-        record: eventRecord({
-          overrides: { id: 3, type: "run.completed" },
+        record: experimentActivityRecord({
+          overrides: { id: 3, kind: "concern" },
         }),
       }),
     });
 
-    expect(collections.runs.size).toBe(1);
-    expect(collections.runs.get("run_0001")?.status).toBe("completed");
-    expect(collections.experiments.get("exp_run_0001_a")?.status).toBe("running");
-    expect(collections.events.get("3")?.type).toBe("run.completed");
+    expect(collections.sessions.size).toBe(1);
+    expect(collections.sessions.get("session_0001")?.status).toBe("closed");
+    expect(collections.experiments.get("exp_session_0001_a")?.status).toBe("active");
+    expect(collections.experimentActivities.get("3")?.kind).toBe("concern");
   });
 });
 
@@ -112,7 +115,13 @@ function upsert({
 }: {
   collection: CollectionUpsertedParams["collection"];
   key: string;
-  record: RunRecord | ExperimentRecord | EventRecord;
+  record:
+    | ObjectiveRecord
+    | SessionRecord
+    | HypothesisRecord
+    | ExperimentRecord
+    | ExperimentActivityRecord
+    | EventRecord;
 }): CollectionUpsertedParams {
   return {
     cursor: 1,
@@ -122,12 +131,50 @@ function upsert({
   };
 }
 
-function runRecord({ overrides = {} }: { overrides?: Partial<RunRecord> }): RunRecord {
+function objectiveRecord({
+  overrides = {},
+}: {
+  overrides?: Partial<ObjectiveRecord>;
+}): ObjectiveRecord {
   return {
-    id: "run_0001",
-    status: "running",
+    id: "objective_0001",
+    title: "Improve score",
+    description: "Improve toy score while preserving latency.",
+    status: "active",
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
+    ...overrides,
+  };
+}
+
+function sessionRecord({
+  overrides = {},
+}: {
+  overrides?: Partial<SessionRecord>;
+}): SessionRecord {
+  return {
+    id: "session_0001",
+    objective_id: "objective_0001",
+    status: "active",
+    created_at: "2026-01-01T00:00:00Z",
+    updated_at: "2026-01-01T00:00:00Z",
+    ...overrides,
+  };
+}
+
+function hypothesisRecord({
+  overrides = {},
+}: {
+  overrides?: Partial<HypothesisRecord>;
+}): HypothesisRecord {
+  return {
+    id: "hyp_0001",
+    objective_id: "objective_0001",
+    title: "Component C helps",
+    summary: "Component C may improve score.",
+    status: "active",
+    created_at: "2026-01-01T00:00:01Z",
+    updated_at: "2026-01-01T00:00:01Z",
     ...overrides,
   };
 }
@@ -138,18 +185,32 @@ function experimentRecord({
   overrides?: Partial<ExperimentRecord>;
 }): ExperimentRecord {
   return {
-    id: "exp_run_0001_baseline",
-    run_id: "run_0001",
-    status: "queued",
-    intent: "Record baseline evidence.",
-    change_summary: "Baseline toy evaluation.",
-    components: ["baseline"],
-    based_on: [],
-    suspicious: false,
-    suspicious_reason: null,
-    note: "",
+    id: "exp_session_0001_baseline",
+    objective_id: "objective_0001",
+    status: "closed",
+    title: "Record baseline",
+    summary: "Baseline toy evaluation.",
+    created_in_session_id: "session_0001",
     created_at: "2026-01-01T00:00:01Z",
     updated_at: "2026-01-01T00:00:01Z",
+    ...overrides,
+  };
+}
+
+function experimentActivityRecord({
+  overrides = {},
+}: {
+  overrides?: Partial<ExperimentActivityRecord>;
+}): ExperimentActivityRecord {
+  return {
+    id: 1,
+    experiment_id: "exp_session_0001_baseline",
+    session_id: "session_0001",
+    actor: "worker",
+    kind: "result",
+    body: "Baseline result recorded.",
+    payload: { signals: [{ key: "score", value: 0.71 }] },
+    created_at: "2026-01-01T00:00:02Z",
     ...overrides,
   };
 }
@@ -157,9 +218,9 @@ function experimentRecord({
 function eventRecord({ overrides = {} }: { overrides?: Partial<EventRecord> }): EventRecord {
   return {
     id: 1,
-    run_id: "run_0001",
-    type: "run.started",
-    message: "Started run_0001",
+    session_id: "session_0001",
+    type: "session.started",
+    message: "Started session_0001",
     payload: {},
     created_at: "2026-01-01T00:00:02Z",
     ...overrides,

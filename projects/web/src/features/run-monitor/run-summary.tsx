@@ -1,30 +1,38 @@
-import type { RunRecord } from "@almanac/protocol";
+import type { ObjectiveRecord, SessionRecord } from "@almanac/protocol";
 import { DxSection } from "@almanac/web-ui";
 
 export function RunSummary({
-  run,
+  objective,
+  session,
   experimentCount,
+  hypothesisCount,
 }: {
-  run: RunRecord | undefined;
+  objective: ObjectiveRecord | undefined;
+  session: SessionRecord | undefined;
   experimentCount: number;
+  hypothesisCount: number;
 }) {
   return (
-    <DxSection title="Run">
-      <p>{runLabel({ run, experimentCount })}</p>
+    <DxSection title="Session">
+      <p>{sessionLabel({ objective, session, experimentCount, hypothesisCount })}</p>
     </DxSection>
   );
 }
 
-function runLabel({
-  run,
+function sessionLabel({
+  objective,
+  session,
   experimentCount,
+  hypothesisCount,
 }: {
-  run: RunRecord | undefined;
+  objective: ObjectiveRecord | undefined;
+  session: SessionRecord | undefined;
   experimentCount: number;
+  hypothesisCount: number;
 }): string {
-  if (!run) {
-    return "No run yet";
+  if (!session) {
+    return objective ? `${objective.title} | no session yet` : "No session yet";
   }
 
-  return `${run.id} | ${run.status} | experiments ${experimentCount}`;
+  return `${session.id} | ${session.status} | hypotheses ${hypothesisCount} | experiments ${experimentCount}`;
 }

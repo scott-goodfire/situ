@@ -16,6 +16,15 @@ class FakeAgentRuntime:
     def __init__(self, _project_dir: Path) -> None:
         pass
 
+    def plan_session(self, **_kwargs: Any):
+        class Plan:
+            summary = "fake plan"
+
+            def model_dump(self) -> dict[str, Any]:
+                return {"summary": self.summary}
+
+        return Plan()
+
 
 @pytest.fixture
 def app(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> HarnessApp:
@@ -30,45 +39,66 @@ def app(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> HarnessApp:
     )
 
 
-def test_collections_bootstrap_returns_runs_experiments_and_events(app: HarnessApp) -> None:
+def test_collections_bootstrap_returns_research_objects_and_events(
+    app: HarnessApp,
+) -> None:
     app.setup_complete(
         {
-            "goal": "Improve score",
+            "objective": "Improve score",
             "evaluation_context": "Run local evals.",
             "known_signals": ["score"],
             "experiment_scope": "Baseline and variants.",
         }
     )
-    app.repos.runs.create("run_0001")
+    app.repos.sessions.create("session_0001", objective_id="objective_0001")
+    app.repos.hypotheses.create(
+        hypothesis_id="hyp_0001",
+        objective_id="objective_0001",
+        title="Component A helps",
+        summary="Component A may improve score.",
+        status="active",
+    )
     app.repos.experiments.create(
-        experiment_id="exp_run_0001_baseline",
-        run_id="run_0001",
-        intent="Record baseline.",
-        change_summary="Baseline eval.",
-        components=["baseline"],
-        based_on=[],
+        experiment_id="exp_session_0001_baseline",
+        objective_id="objective_0001",
+        title="Record baseline",
+        summary="Baseline eval.",
+        created_in_session_id="session_0001",
+    )
+    activity = app.repos.experiment_activities.add(
+        experiment_id="exp_session_0001_baseline",
+        session_id="session_0001",
+        actor="worker",
+        kind="result",
+        body="Baseline result recorded.",
     )
     event = app.record_event(
-        "experiment.queued",
-        "Queued exp_run_0001_baseline",
-        run_id="run_0001",
-        payload={"experiment_id": "exp_run_0001_baseline"},
+        "experiment.completed",
+        "Completed exp_session_0001_baseline",
+        session_id="session_0001",
+        payload={"experiment_id": "exp_session_0001_baseline"},
     )
 
     bootstrap = CollectionsBootstrapResult.model_validate(app.collections_bootstrap({}))
 
     assert bootstrap.cursor == event.id
-    assert [run.id for run in bootstrap.runs] == ["run_0001"]
+    assert [objective.id for objective in bootstrap.objectives] == ["objective_0001"]
+    assert [session.id for session in bootstrap.sessions] == ["session_0001"]
+    assert [hypothesis.id for hypothesis in bootstrap.hypotheses] == ["hyp_0001"]
     assert [experiment.id for experiment in bootstrap.experiments] == [
-        "exp_run_0001_baseline"
+        "exp_session_0001_baseline"
     ]
+    assert [item.id for item in bootstrap.experiment_activities] == [activity.id]
     assert [item.type for item in bootstrap.events] == [
         "setup.completed",
-        "experiment.queued",
+        "experiment.completed",
     ]
 
 
-def test_collections_subscribe_emits_event_upserts(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_collections_subscribe_emits_event_upserts(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     monkeypatch.setattr("almanac.harness.app.AgentRuntime", FakeAgentRuntime)
     workspace = tmp_path / "workspace"
     workspace.mkdir()

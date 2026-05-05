@@ -23,8 +23,8 @@ or agent/worker flows.
 - [0013-frontend-code-style/POLICY.md](./0013-frontend-code-style/POLICY.md) - prefer explicit, spacious, kebab-cased frontend code
 - [0014-real-llm-evals/POLICY.md](./0014-real-llm-evals/POLICY.md) - keep tests deterministic and evals backed by real model calls
 - [0015-secrets-only-env/POLICY.md](./0015-secrets-only-env/POLICY.md) - keep user-facing env vars limited to secrets
-- [0016-ui-snapshot-artifacts/POLICY.md](./0016-ui-snapshot-artifacts/POLICY.md) - keep UI snapshots fixture-driven and disposable
 - [0016-ui-snapshot-artifacts/POLICY.md](./0016-ui-snapshot-artifacts/POLICY.md) - keep UI snapshots fixture-driven, disposable, and comparable across text, ANSI, and PNG artifacts
+- [0017-agent-tool-surface/POLICY.md](./0017-agent-tool-surface/POLICY.md) - keep agent tools explicit, model-shaped, and comment-oriented
 
 ## Review Style
 
