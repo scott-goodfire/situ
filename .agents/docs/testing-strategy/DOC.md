@@ -1,7 +1,7 @@
 # Testing Strategy
 
 This repo is still an MVP, so testing should stay fast and focused while making
-the durable run ledger hard to break.
+the durable session/objective ledger hard to break.
 
 ## Current Checks
 
@@ -23,11 +23,13 @@ paths directly:
 Database(temp_path, project_id="project_test", repo_path="/tmp/project")
 Repositories.create(db)
 repos.project_config.set(...)
-repos.runs.create(...)
+repos.objectives.create(...)
+repos.sessions.create(...)
+repos.hypotheses.create(...)
 repos.experiments.create(...)
-repos.evidence.add(...)
-repos.warnings.add(...)
-repos.findings.upsert(...)
+repos.hypothesis_experiment_links.create(...)
+repos.experiment_activities.add(...)
+repos.hypothesis_activities.add(...)
 repos.events.add(...)
 CurrentStateService(repos=repos).get()
 CollectionsService(repos=repos).bootstrap()
@@ -88,6 +90,7 @@ Use these when changing TUI layout, component states, or command-footer behavior
 ./commands/tui-story.sh almanac-tui-view/running
 ./commands/tui-snapshots.sh
 ./commands/tui-snapshots.sh --color
+./commands/tui-snapshots.sh --png
 ```
 
 The story command renders one story in the terminal. The snapshot command uses
@@ -95,7 +98,8 @@ The story command renders one story in the terminal. The snapshot command uses
 text snapshots under `/tmp/almanac-tui-snapshots/<timestamp>/` unless an
 explicit `--out-dir` is passed. Color snapshots preserve ANSI escape codes in
 the `.txt` files for terminal replay; plain snapshots remain the default for
-readable diffs.
+readable diffs. PNG snapshots are derived from the same ANSI frame and write a
+matching `.png` beside each `.txt` file.
 
 ## Protocol Shape
 
@@ -108,11 +112,12 @@ Useful targets:
 ```text
 CollectionsBootstrapResult
 ProjectConfigRecord
-RunRecord
+ObjectiveRecord
+SessionRecord
+HypothesisRecord
 ExperimentRecord
-EvidenceRecord
-FindingRecord
-WarningRecord
+HypothesisActivityRecord
+ExperimentActivityRecord
 EventRecord
 ```
 
@@ -123,4 +128,4 @@ The next durable test improvements should be:
 - A small Python repository test script or pytest suite using temp SQLite.
 - A protocol validation check for `CurrentStateService(repos=repos).get()`.
 - A non-interactive smoke test that runs the harness without rendering the TUI.
-- A regression test for suspicious evidence warnings.
+- A regression test for suspicious result concern activities.

@@ -7,23 +7,23 @@ status: active
 
 ## Applies To
 
-Experiment execution, evidence ingestion, diff inspection, warning display, and
-finding support.
+Experiment execution, result ingestion, diff inspection, concern display, and
+interpretation activities.
 
 ## Rule
 
 In the first slice, "guardrails" means automated trust checks. They should be
-concrete enough to protect findings and evidence summaries from relying on
-obviously invalid evidence without requiring the user to predeclare every risk.
+concrete enough to prevent obviously invalid results from silently shaping
+interpretation without requiring the user to predeclare every risk.
 
 ## Required Checks
 
-- Experiments record warning/suspicious outcomes alongside evidence and signals.
+- Experiments record suspicious or invalid outcomes as concern activities.
 - Eval failure, missing expected signals, signal shape changes, and measurement
   artifact changes are detectable in the MVP path when possible.
-- Suspicious evidence is excluded from supported findings until explicitly
-  resolved or corroborated.
-- Suspicious reasons are visible in the TUI.
+- Suspicious results are visible before they can be treated as trusted
+  interpretation.
+- Concern reasons are visible in the TUI.
 
 ## Red Flags
 

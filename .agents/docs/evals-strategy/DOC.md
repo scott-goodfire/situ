@@ -7,8 +7,8 @@ real LLM calls against controlled fixture worlds.
 The eval layer should stay close to the product thesis:
 
 ```text
-Can Almanac help a human or agent understand whether an autoresearch run is
-making trustworthy progress?
+Can Almanac help a human or agent understand what is happening in an
+autoresearch session and whether the activity is trustworthy?
 ```
 
 ## Shape
@@ -67,11 +67,11 @@ Prefer behavioral evals over schema evals.
 
 Good first targets:
 
-- The planner starts with baseline evidence.
+- The planner starts with baseline result activity.
 - The planner explores simple variants before over-committing.
-- The planner combines promising findings.
+- The planner combines promising hypothesis/experiment activity.
 - Suspicious wins are not treated as accepted progress.
-- Findings are grounded in recorded evidence.
+- Interpretations are grounded in recorded activities and artifacts.
 - Tool calls happen in a sensible order.
 - Logfire spans and Almanac events expose the execution path.
 
@@ -85,7 +85,7 @@ A world is a fixture-backed simulation of the thing Almanac is researching.
 
 Initial world:
 
-- `micrograd`: baseline, variants, combinations, and suspicious evidence based
+- `micrograd`: baseline, variants, combinations, and suspicious results based
   on the existing micrograd sandbox.
 
 Future worlds can include `toy_autoresearch` for even faster synthetic local

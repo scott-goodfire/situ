@@ -42,9 +42,9 @@ not so detailed that it prematurely designs code.
 Good:
 
 ```md
-The first slice has no web UI. The TypeScript Ink TUI is the product surface and
-must show goal, run status, active experiment, evidence/signals, findings,
-warnings, and timeline.
+The first slice has no primary web UI. The TypeScript Ink TUI is the product
+surface and must show objective, session status, active hypotheses, active
+experiment, recent activities, artifacts when useful, and timeline.
 ```
 
 Weak:

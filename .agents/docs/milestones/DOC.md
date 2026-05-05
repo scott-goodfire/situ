@@ -5,15 +5,17 @@ contract; specs remain the contract.
 
 ## Milestone 1: Autoresearch Harness MVP
 
-Build a basic local terminal observability harness for autoresearch runs.
+Build a basic local terminal observability harness for autoresearch sessions.
 
-The MVP should demonstrate that a user can start a run and see:
+The MVP should demonstrate that a user can start a session and see:
 
 - What is running now
+- Which objective is active
+- Which hypotheses are being explored
 - What experiments have completed
-- What evidence and signals came back
-- What findings are currently supported
-- What evidence looks suspicious
+- What result activities came back
+- What concern and interpretation activities were recorded
+- What artifacts can be inspected
 - What automated trust checks fired
 
 The first slice should stay TUI-only and local-first.
@@ -32,14 +34,14 @@ Examples:
 - Changing random seeds until one looks good
 - Reporting malformed or incomplete metrics
 
-The MVP should surface suspicious evidence rather than blindly treating metric
-movement as progress.
+The MVP should surface suspicious results as concern activities rather than
+blindly treating metric movement as progress.
 
 ### Local Optima
 
 Greedy hill-climbing can get stuck early.
 
-The harness should preserve experiment evidence and lightweight findings, not
+The harness should preserve experiment activities and hypothesis context, not
 only a single best score. This lets the user see ideas that were weak alone but
 promising in combination.
 
@@ -47,14 +49,14 @@ promising in combination.
 
 Long-running loops are hard to watch live.
 
-The TUI should make the run legible without reading raw logs.
+The TUI should make the session legible without reading raw logs.
 
 ### Poor Legibility
 
 Hundreds of experiments can become unusable output.
 
 The first answer is not a final report. The first answer is a live, structured
-view of experiments, evidence, warnings, and findings.
+view of objectives, hypotheses, experiments, activities, artifacts, and events.
 
 ## Milestone 2: Karpathy Autoresearch Benchmark
 

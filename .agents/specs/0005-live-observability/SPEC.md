@@ -4,8 +4,9 @@ Live observability is the core first-slice product object.
 
 It answers:
 
-> What is running, what changed, what did the eval say, what looks suspicious,
-> and what is the run learning?
+> What is running, which hypotheses are active, what experiments are being tried,
+> what activity came back, what looks suspicious, and what is the system
+> learning?
 
 Do not model this as a broad health score yet. The first TUI should show live
 facts clearly.
@@ -14,34 +15,36 @@ facts clearly.
 
 The TUI should make these immediately visible:
 
-- Goal
-- Run status
+- Objective
+- Session status
 - Evaluation context
-- Baseline evidence when available
+- Active hypotheses
 - Current active experiment
 - Recent experiments
-- Recent evidence/signals
-- Lightweight findings
-- Basic warnings
-- Event timeline
+- Recent result activities
+- Recent concern activities
+- Recent interpretation/decision activities
+- Artifact references when useful
+- Internal event timeline
 
-## Findings First
+## Activities First
 
-The first slice should make lightweight findings visible. A finding is a compact
-claim backed by experiment evidence.
+The first slice should make activities visible. Activities are compact,
+typed, human-readable entries attached to hypotheses or experiments.
 
 Examples:
 
-- `F-003: Retrieval filtering helps cancellation tickets in 3/4 runs.`
-- `F-004: Optimizer beta sweeps look saturated for this setup.`
-- `F-005: A + C looks promising, but C explains most of the lift.`
+- `result: baseline score 0.710, latency 100ms`
+- `concern: score improved sharply but result shape changed`
+- `update: A+C looks promising, but C explains most of the lift`
+- `decision: keep retrieval hypothesis active; pause prompt-ordering thread`
 
 Best observed signal can still be shown when meaningful, but it is supporting
 context rather than the central product object.
 
-## Warnings
+## Concerns
 
-Warnings are simple and concrete:
+Concerns are simple and concrete activities:
 
 - Evaluation failed.
 - Expected signal missing.

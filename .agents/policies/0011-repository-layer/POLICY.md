@@ -9,13 +9,13 @@ status: active
 
 Database access, repository additions, persistence refactors, API composition
 over durable state, migrations, DBOS integration, and tests touching durable
-run state.
+session/objective state.
 
 ## Rule
 
 Harness runtime code should access durable state through repositories, not
-direct SQL or ad hoc SQLite handles. Repositories own table-level persistence
-and read-model composition; orchestration code owns run flow.
+direct SQL or ad hoc SQLite handles. Repositories own table-level persistence;
+API services own multi-table composition; orchestration code owns session flow.
 
 ## Required Checks
 
@@ -45,8 +45,8 @@ and read-model composition; orchestration code owns run flow.
 - Multi-table read/composition behavior should not be modeled as a repository
   unless it owns durable state. Put it in an API service with local schemas.
 - Business orchestration stays outside repositories. Repositories should create,
-  update, fetch, list, and compose persistence records; they should not decide
-  which experiment to run next or whether a run should continue.
+  update, fetch, and list persistence records; they should not decide which
+  experiment to run next or whether a session should continue.
 - Repository changes include at least a temp-SQLite smoke or unit test strategy
   that exercises creation, update, list/get, and API composition behavior.
 

@@ -24,7 +24,8 @@ Did the deterministic code path work?
 Evals answer:
 
 ```text
-Did the live model use the tools, evidence, warnings, and findings correctly?
+Did the live model use the tools, hypotheses, experiment activities, artifacts,
+and concerns correctly?
 ```
 
 ## Required Checks
@@ -47,8 +48,8 @@ Fixture worlds may provide:
 
 - Stable tool responses.
 - Mocked external systems.
-- Synthetic evidence and signals.
-- Suspicious or malformed evidence cases.
+- Synthetic result activities and signals.
+- Suspicious or malformed result cases.
 
 Fixture worlds must not replace the model's decision-making path in an AI eval.
 
@@ -58,5 +59,5 @@ Fixture worlds must not replace the model's decision-making path in an AI eval.
 - An eval asserts only hardcoded fixture output rather than model behavior.
 - A normal unit test requires an API key or network access.
 - Missing credentials silently fall back to deterministic behavior.
-- The eval checks a rigid schema instead of tool use, evidence grounding, or
+- The eval checks a rigid schema instead of tool use, activity grounding, or
   semantic behavior.

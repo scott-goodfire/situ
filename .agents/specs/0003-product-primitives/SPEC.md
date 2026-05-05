@@ -1,27 +1,30 @@
 # Product Primitives
 
 Use simple product nouns. For the first slice, keep the domain intentionally
-small.
+small and let activities carry nuance.
 
 ## MVP Hierarchy
 
 ```text
-Goal
-  |-- Runs
-  |     |-- Experiments
-  |     |-- Evidence
-  |     |-- Findings
-  |     `-- Events
-  `-- Warnings
+Objective
+  |-- Hypotheses
+  |     `-- HypothesisActivity
+  |-- Experiments
+  |     `-- ExperimentActivity
+  |-- HypothesisExperimentLinks
+  |-- Artifacts
+  `-- Sessions
+        `-- Events
 ```
 
-## Goal
+## Objective
 
 The durable north star. It defines what the research is trying to improve or
 understand.
 
-A first goal needs goal text plus a lightweight evaluation context: how progress
-is judged, what signals matter, and what kinds of experiments are in scope.
+A first objective needs title/description plus lightweight evaluation context:
+how progress is judged, what signals or artifacts matter, and what kinds of
+experiments are in scope.
 
 ## Evaluation Context
 
@@ -31,79 +34,85 @@ It can include commands, tools, dashboards, metrics, eval suites, logs, cluster
 jobs, notebooks, or human review criteria. Do not require the user to reduce
 this to one command or one metric during onboarding.
 
+## Session
+
+An internal execution window for a local Almanac process.
+
+Sessions track runtime lifecycle, worker activity, agent message history, and
+events. They are useful to the system, but they are not the main product object
+the user should organize research around.
+
+## Hypothesis
+
+A research thread under an objective.
+
+Hypotheses should be lightweight and status-light. A hypothesis can be open,
+active, or closed. Whether it is promising, weakened, suspicious, or mostly
+supported should be explained through activities rather than status explosion.
+
 ## Experiment
 
 One concrete attempt: a change, probe, eval run, analysis, or test.
 
-An experiment should record:
+Experiments should also be status-light: open, active, or closed. Details such
+as failure, suspiciousness, reproduction, or interpretation should be expressed
+as experiment activities.
 
-- Hypothesis
-- Intent or method summary
-- Status
-- Components/tags for what was tried
-- `based_on` links when it combines prior experiments
-- Evidence
-- Suspicious flag and reason
-- Short note
-- Minimal log/artifact references if available
+Do not add `Variant` as a first-class model yet. Use experiment summaries,
+activity bodies, artifacts, and links to express baseline + A, baseline + B,
+A + C, or partial-C style combinations.
 
-Do not add `Variant` as a first-class model yet. Use experiment tags,
-components, and `based_on` links to express baseline + A, baseline + B, A + C,
-or partial-C style combinations.
+## HypothesisExperimentLink
 
-## Evidence
+A lightweight many-to-many link between hypotheses and experiments.
 
-What came back from an experiment.
+One experiment may test multiple hypotheses, and one hypothesis may require many
+experiments. Keep the first link shape simple: the linked IDs and an optional
+note are enough.
 
-Evidence can include scalar metrics, pass/fail checks, slice-level results,
-latency/cost, diffs, logs, artifacts, notes, or failures.
+## Activity
 
-## Signal
+The main collaboration primitive.
 
-A specific observed value inside evidence.
+Activities are typed timeline entries attached to hypotheses or experiments.
+They replace standalone evidence, finding, warning, and decision models in the
+first slice.
 
-Examples:
+First activity kinds:
 
-- `val_bpb = 2.84`
-- `resolution_rate = 0.64`
-- `latency_ms = 2410`
-- `cancellation_slice_passed = true`
+- `comment`
+- `update`
+- `result`
+- `concern`
+- `decision`
 
-Signals and evals are related; do not force a single primary signal in the first
-product slice.
+The activity body should remain human-readable. Structured payloads can hold
+metrics, eval outputs, artifact IDs, or machine-readable details when useful.
 
-## Finding
+## Artifact
 
-A lightweight, evidence-backed statement about what the run appears to have
-learned.
+A receipt produced by the loop.
 
-A finding should link to one or more experiments and carry a confidence/status
-small enough for the TUI to show.
+Artifacts are file-like or bulky outputs that activities reference: raw eval
+JSON, logs, diffs, patches, screenshots, traces, samples, or reproduction
+bundles. Activities explain what happened; artifacts preserve the thing.
 
 ## Event
 
-A timestamped record of what happened during the run.
+An internal timestamped record of system/runtime behavior.
 
-Events power the TUI timeline. They should be concise enough to scan.
-
-## Warning
-
-A live observability note that something may be invalid or needs attention.
-
-Examples:
-
-- Evaluation failed.
-- Expected signal missing.
-- Signal shape changed.
-- Evaluation artifact changed unexpectedly.
-- Suspiciously large improvement needs corroboration.
+Events power debugging and session streaming. They should not become the main
+product collaboration layer; activities are for that.
 
 ## Deferred Primitives
 
-These remain important product concepts, but are not part of the first
+These remain possible future concepts, but are not part of the first
 implementation slice:
 
 - Direction
-- Decision
+- Standalone Decision
+- Standalone Finding
+- Standalone Warning
+- Standalone Evidence
 - Report
 - Broad health model

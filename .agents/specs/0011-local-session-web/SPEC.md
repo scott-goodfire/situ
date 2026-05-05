@@ -1,7 +1,7 @@
 # Local Session And Web Attach
 
-This spec defines the boundary that lets a terminal-started run be monitored
-from a web UI without the web command secretly starting work.
+This spec defines the boundary that lets a terminal-started Almanac session be
+monitored from a web UI without the web command secretly starting work.
 
 ## Purpose
 
@@ -16,8 +16,8 @@ almanac web
   opens a browser monitor for that same session
 ```
 
-The local session, not the TUI or browser, owns the Python harness process. This
-keeps terminal and web surfaces as clients over the same run state.
+The local session server, not the TUI or browser, owns the Python harness
+process. This keeps terminal and web surfaces as clients over the same state.
 
 ## Session Ownership
 
@@ -38,11 +38,11 @@ The web command must not create work.
 
 For this slice:
 
-- `almanac start` may start a session and start a run.
+- `almanac start` may start a local session and begin experiments.
 - `almanac web` may start the browser/web dev surface.
 - `almanac web` must not start a session server.
 - `almanac web` must not start a Python harness.
-- `almanac web` must not call `run.start`.
+- `almanac web` must not call `session.start`.
 - If no live session is found, the web UI should show a clear empty state.
 
 This avoids hidden side effects when a user only wants to monitor.
@@ -66,18 +66,19 @@ restarting the session.
 
 The first web UI should use the same collection-backed scope as the slim TUI:
 
-- Runs
+- Objectives
+- Sessions
+- Hypotheses
 - Experiments
+- Hypothesis activities
+- Experiment activities
 - Events
-
-It should not render config, evidence, findings, warnings, or tool calls until
-those have collection-shaped APIs.
 
 ## Deferred
 
 - Reusing an already-running session from `almanac start`.
 - Daemonizing sessions after the terminal command exits.
 - Multi-workspace dashboards.
-- Browser actions that mutate runs.
-- Web-started runs.
+- Browser actions that mutate sessions or experiments.
+- Web-started sessions.
 - Authentication beyond a local random token.

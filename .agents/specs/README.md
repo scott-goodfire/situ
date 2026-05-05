@@ -14,23 +14,24 @@ Read in this order:
 7. [0007-tui/SPEC.md](./0007-tui/SPEC.md)
 8. [0008-agent-facing-context/SPEC.md](./0008-agent-facing-context/SPEC.md)
 9. [0009-architecture-intent/SPEC.md](./0009-architecture-intent/SPEC.md)
-10. [0010-evidence-and-findings/SPEC.md](./0010-evidence-and-findings/SPEC.md)
+10. [0010-activities-and-artifacts/SPEC.md](./0010-activities-and-artifacts/SPEC.md)
 11. [0011-local-session-web/SPEC.md](./0011-local-session-web/SPEC.md)
 
 ## Product Thesis
 
 Autoresearch makes agents willing to try many experiments. Almanac makes a
-running loop observable from the terminal.
+running session observable from the terminal.
 
 The product should answer:
 
-> What is running, what changed, what evidence came back, what looks suspicious,
-> and what is the run learning?
+> What is running, which hypotheses are active, what experiments are being
+> tried, what activity came back, what artifacts can be inspected, and what is
+> the system learning?
 
 The first slice should be intentionally slim. Live guidance, final reports,
-broad health scoring, directions, and decisions are deferred until the terminal
-loop is useful. The first web surface is attach-only observability over an
-already-running local session.
+broad health scoring, directions, and standalone decision/finding/warning models
+are deferred until the terminal loop is useful. The first web surface is
+attach-only observability over an already-running local session.
 
 ## Spec Discipline
 

@@ -29,12 +29,14 @@ experiment work.
 TypeScript Ink TUI
   -> local session server over HTTP/SSE
       -> Python harness over JSON-RPC stdio
-          -> run ledger
-          -> events
+          -> objective
+          -> session ledger
+          -> hypotheses
           -> experiments
-          -> evidence and signals
-          -> findings
-          -> automated trust warnings
+          -> hypothesis/experiment links
+          -> activities
+          -> artifacts
+          -> internal events
           -> worker execution
 ```
 
@@ -44,31 +46,36 @@ The system should keep these responsibilities distinct:
 - Web UI: attach-only monitoring over an existing local session
 - Session server: harness subprocess ownership, HTTP RPC, event streaming, and
   local session discovery
-- Harness: run lifecycle, state, events, experiments, evidence, findings,
-  automated trust warnings
+- Harness: objective/session lifecycle, durable state, internal events,
+  hypotheses, experiments, links, activities, artifacts, and automated trust
+  concerns
 - Workers: concrete experiments, code changes, eval runs, analysis
 - Protocol/API: stable boundary between clients, harness, and workers
 
 ## Collection Sync Boundary
 
-The first UI sync surface should be normalized around a few durable records
-instead of one broad application-state object.
+The first UI sync surface should be normalized around durable records instead of
+one broad application-state object.
 
-For the first collection-backed slice, the sync surface is intentionally small:
+For the first collection-backed slice, the sync surface is:
 
-- Runs
+- Objectives
+- Sessions
+- Hypotheses
 - Experiments
+- Hypothesis activities
+- Experiment activities
 - Events
 
 Full current-state composition should live in harness API services and schemas,
 not in a snapshot repository or durable snapshot model. UI work should use
 collection-shaped bootstrap data and row-level upsert notifications. Agent code
-should use explicit run-context APIs. This keeps the TUI and future web UI
+should use explicit agent-context APIs. This keeps the TUI and future web UI
 aligned with a shared TypeScript collection layer without requiring a full sync
 engine yet.
 
-Evidence, findings, warnings, deletes, pagination, optimistic writes, and a
-durable collection change log are deferred until the basic UI loop works.
+Artifacts, deletes, pagination, optimistic writes, and a durable collection
+change log are deferred until the basic UI loop works.
 
 ## Agent Runtime
 
@@ -78,13 +85,14 @@ infrastructure under the Python harness, not as a new product surface.
 
 For the MVP:
 
-- Pydantic AI may produce compact, typed run/proposal context.
+- Pydantic AI may produce compact, typed agent context.
 - DBOS may wrap agent execution so model calls and tool execution can become
   durable workflow steps.
 - Logfire may observe harness, DBOS, and Pydantic AI spans.
 - The product must still run locally without requiring a hosted model key.
 - Agent output is advisory until the proposal loop is ready; the harness still
-  owns run identity, experiments, evidence, findings, warnings, and events.
+  owns objective/session identity, hypotheses, experiments, activities,
+  artifacts, and events.
 
 This keeps creativity in the agent layer while preserving Almanac as the
 control plane.
@@ -119,12 +127,13 @@ terminal UI      ---------->  TypeScript     ---------->  local harness runtime
 Start with a narrow, durable core:
 
 - Local project context
-- Run ledger
-- Event log
-- Baseline and experiments
-- Evidence/signals
-- Lightweight findings
-- Automated trust warnings
+- Objective
+- Session ledger
+- Hypotheses
+- Experiments
+- Activities
+- Artifact references
+- Internal event log
 - TypeScript Ink TUI
 
 Only add richer agent orchestration, parallelism, plugins, and remote workers

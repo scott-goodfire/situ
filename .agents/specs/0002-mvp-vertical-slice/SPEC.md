@@ -4,13 +4,13 @@
 
 The MVP should prove one experience:
 
-> I start an autoresearch run in the terminal and can see what is running, what
-> changed, what evidence came back, what looks suspicious, and what the run is
-> learning.
+> I start an autoresearch session in the terminal and can see the objective,
+> active hypotheses, experiments, activity, artifacts, and internal events as the
+> loop runs.
 
-The slice should support one local project, one goal, a lightweight evaluation
-context, multiple possible signals, automated trust warnings, lightweight
-findings, and one deterministic worker path.
+The slice should support one local project, one active objective, lightweight
+evaluation context, a few hypotheses, a sequential experiment loop, typed
+activities, simple automated trust concerns, and one deterministic worker path.
 
 ## Target User Story
 
@@ -29,7 +29,7 @@ almanac start ~/sandbox/some-project
 If no local research context exists for the current project, Almanac shows a
 slim terminal setup flow. It asks only:
 
-- Goal
+- Objective
 - How do you currently judge progress?
 - What evals, tools, metrics, dashboards, logs, or artifacts matter?
 - What kinds of experiments are in scope?
@@ -37,8 +37,11 @@ slim terminal setup flow. It asks only:
 Then Almanac:
 
 - Creates local private project state.
-- Records or runs a baseline when one is available.
-- Starts a tiny sequential experiment loop.
+- Creates or reuses the active objective.
+- Starts a local session.
+- Creates initial hypotheses when useful.
+- Runs a tiny sequential experiment loop.
+- Records results, concerns, interpretations, and decisions as activities.
 - Renders a live terminal dashboard.
 
 The Almanac install/dev root and the researched workspace are separate
@@ -52,41 +55,42 @@ code are launched from the Almanac repository.
 - Explicit workspace argument for sandbox/project testing
 - Terminal setup flow
 - Local/private project context
-- Baseline evidence when available
-- Sequential experiment loop by default
-- One agent/worker path
-- Tool-call-shaped agent layer for run actions
+- Active objective
+- Internal session ledger
+- Hypothesis ledger
 - Experiment ledger
+- Many-to-many hypothesis/experiment links
+- Hypothesis activity timeline
+- Experiment activity timeline
 - Agent message history ledger
-- Evidence and signal capture
-- Lightweight findings
-- Automated trust warnings
+- Result, concern, comment, update, and decision activities
+- Minimal artifact references when useful
+- Simple automated trust concerns
 - TypeScript Ink TUI
-- Event timeline
-- Promising findings / notable evidence summary
+- Internal event timeline
 - Agent-readable status and context
 - Durable restart/resume
 - SQLite source of truth
-- Event log
-- Minimal artifact/log references only if immediately useful
 
 The agent path should express active behavior through approved harness tools
 where practical. The MVP can keep a deterministic outer loop, but actions such
-as getting run context, running an experiment, and recording findings should
-have typed tool envelopes. Almanac should persist Pydantic AI message history
-as the durable agent transcript and use hooks/events for live tool-call
-observability rather than making a separate tool-call table the source of truth.
+as getting agent context, creating hypotheses, linking experiments, and recording
+activities should have typed tool envelopes. Almanac should persist Pydantic AI
+message history as the durable agent transcript and use hooks/events for live
+tool-call observability rather than making a separate tool-call table the source
+of truth.
 
 ## MVP Cuts
 
-- Web UI
+- Web UI as the primary surface
 - Live guidance
 - Final report
 - Broad health model or health snapshots
 - Directions
-- Decisions
+- Decisions as a standalone top-level model
+- Evidence, warnings, findings, or signals as standalone top-level models
 - Variant as a first-class model
-- Multi-goal workspaces
+- Multi-objective workspaces
 - Team collaboration
 - Cloud sync
 - Docker execution
@@ -101,11 +105,12 @@ observability rather than making a separate tool-call table the source of truth.
 ## Success Criterion
 
 A user can run the toy loop, watch multiple experiments complete in the TUI, see
-evidence accumulate into lightweight findings, and see at least one suspicious
-piece of evidence flagged for an obvious automated reason.
+experiments linked to hypotheses, inspect result/concern/interpretation
+activities, and see at least one suspicious result captured as a concern for an
+obvious automated reason.
 
 ## Quality Bar
 
-The MVP can be narrow, but the live state must be real. The run ledger,
-experiment evidence, events, findings, and warnings should survive process
-restart.
+The MVP can be narrow, but the live state must be real. Objectives, sessions,
+hypotheses, experiments, activities, artifacts, and internal events should
+survive process restart.

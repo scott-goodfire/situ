@@ -2,11 +2,12 @@
 
 ## Thesis
 
-Almanac is a local-first terminal observability layer for autoresearch runs.
+Almanac is a local-first terminal observability layer for autoresearch sessions.
 
-It helps humans and agents see the live state of a loop: what is running, what
-changed, what evidence came back, what looks suspicious, and what the run is
-learning.
+It helps humans and agents see the live state of a research loop: the objective,
+which hypotheses are being explored, which experiments are running, what
+activity has been recorded, what artifacts can be inspected, and what the system
+appears to be learning.
 
 Short form:
 
@@ -17,7 +18,7 @@ Short form:
 Raw autoresearch loops are powerful because agents can try many experiments, but
 they are fragile:
 
-- They can drift from the goal.
+- They can drift from the objective.
 - They can improve metrics for invalid reasons.
 - They can accidentally or intentionally change the evaluation harness.
 - They can appear busy without producing useful learning.
@@ -39,23 +40,23 @@ Agents and workers do the work:
 - Shell scripts
 - Custom evaluation tools
 
-Almanac supervises the first loop by tracking:
+Almanac supervises the loop by tracking:
 
-- Goal
+- Objective
 - Evaluation context
-- Signals and evidence
+- Hypotheses
 - Experiment ledger
-- Event timeline
-- Lightweight findings
-- Automated trust warnings
-- Agent-readable status
+- Hypothesis and experiment activity
+- Artifacts that back claims and results
+- Internal session/event timeline
+- Agent-readable context
 
 ## Product Promise
 
 A user should be able to watch an autoresearch loop in a terminal and understand
 what is happening without reading raw logs.
 
-That means Almanac must make the run:
+That means Almanac must make the work:
 
 - Observable
 - Reviewable enough for the current session

@@ -34,10 +34,10 @@ domain/
 Examples:
 
 ```text
-repositories/runs/repository.py
-records/run/record.py
-api/runs/schemas.py
-api/runs/service.py
+repositories/sessions/repository.py
+records/session/record.py
+api/sessions/schemas.py
+api/sessions/service.py
 tools/run_experiment/tool.py
 evaluators/tool_was_called/evaluator.py
 worlds/micrograd/scenarios/suspicious_win/scenario.py
@@ -63,23 +63,23 @@ projects/harness/src/almanac/harness/
     collections/
       schemas.py
       service.py
-    run_context/
+    agent_context/
       schemas.py
       service.py
-    runs/
+    sessions/
       schemas.py
       service.py
   repositories/
     experiments/
       repository.py
       command.py
-    findings/
+    experiment_activities/
       repository.py
       command.py
   records/
     experiment/
       record.py
-    finding/
+    experiment_activity/
       record.py
 ```
 
@@ -110,11 +110,11 @@ domain folder.
   and application operations that are not table-owned persistence.
 - Put repositories under `harness/repositories/<concept>/repository.py`.
 - Repository concepts are usually plural collection names, like `experiments`
-  or `findings`.
+  or `experiment_activities`.
 - Put persistence record models under
   `harness/records/<singular_concept>/record.py`.
 - Record concepts are usually singular entity names, like `experiment` or
-  `finding`.
+  `experiment_activity`.
 - Put DB plumbing, trust checks, and worker infrastructure under
   `harness/core/db/`, `harness/core/trust/`, and `harness/core/workers/`.
 - Keep thin entrypoints like `app.py`, `cli.py`, and `stdio.py` flat at the

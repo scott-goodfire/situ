@@ -16,14 +16,16 @@ Start with:
 
 The key product thesis:
 
-> Almanac is a local-first terminal observability layer for autoresearch runs.
-> It helps humans and agents see what is running, what changed, what evidence
-> came back, what looks suspicious, and what the run is learning.
+> Almanac is a local-first terminal observability layer for autoresearch
+> sessions. It helps humans and agents see the objective, active hypotheses,
+> experiments, typed activities, artifacts, and internal events while the loop
+> runs.
 
 Do not treat this as a generic chat app, coding agent, ML experiment tracker,
-or Linear clone. Almanac should supervise runs, track evidence, enforce
-automated trust checks, extract lightweight findings, and make the live run
-understandable from the terminal.
+or Linear clone. Almanac should supervise sessions, track hypotheses and
+experiments, record typed activities, preserve artifacts, enforce automated
+trust checks as concern activities, and make the live session understandable
+from the terminal.
 
 ## Working Rule
 

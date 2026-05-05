@@ -4,6 +4,11 @@ import { tmpdir } from "node:os";
 import { DateTime } from "luxon";
 import type { TuiStory } from "./story-types.js";
 
+type PngRenderer = {
+  capture: ({ frame, pngPath }: { frame: string; pngPath: string }) => Promise<void>;
+  close: () => Promise<void>;
+};
+
 async function main() {
   const options = snapshotOptions({ args: process.argv.slice(2) });
 
@@ -25,23 +30,40 @@ async function main() {
   );
 
   const outDir = options.outDir;
+  const pngRenderer = options.png ? await createPngRenderer() : undefined;
+
   mkdirSync(outDir, { recursive: true });
 
-  for (const story of allStories) {
-    const instance = render(<SnapshotPreview story={story} />);
-    await waitForFrame();
+  try {
+    for (const story of allStories) {
+      const instance = render(<SnapshotPreview story={story} />);
 
-    const frame = instance.lastFrame() ?? "";
-    const filename = `${story.id.replaceAll("/", "__")}.txt`;
-    writeFileSync(join(outDir, filename), `${frame}\n`);
-    instance.unmount();
+      try {
+        await waitForFrame();
+
+        const frame = instance.lastFrame() ?? "";
+        const basename = story.id.replaceAll("/", "__");
+        writeFileSync(join(outDir, `${basename}.txt`), `${frame}\n`);
+
+        if (pngRenderer) {
+          await pngRenderer.capture({
+            frame,
+            pngPath: join(outDir, `${basename}.png`),
+          });
+        }
+      } finally {
+        instance.unmount();
+      }
+    }
+
+    writeFileSync(
+      join(outDir, "stories.txt"),
+      `${allStories.map((story) => story.id).join("\n")}\n`,
+    );
+    console.log(outDir);
+  } finally {
+    await pngRenderer?.close();
   }
-
-  writeFileSync(
-    join(outDir, "stories.txt"),
-    `${allStories.map((story) => story.id).join("\n")}\n`,
-  );
-  console.log(outDir);
 }
 
 function snapshotOptions({
@@ -51,9 +73,11 @@ function snapshotOptions({
 }): {
   outDir: string;
   color: boolean;
+  png: boolean;
 } {
   const outDirIndex = args.indexOf("--out-dir");
-  const color = args.includes("--color") || args.includes("--ansi");
+  const png = args.includes("--png");
+  const color = args.includes("--color") || args.includes("--ansi") || png;
 
   if (outDirIndex >= 0) {
     const explicitOutDir = args[outDirIndex + 1];
@@ -61,6 +85,7 @@ function snapshotOptions({
       return {
         outDir: resolve(explicitOutDir),
         color,
+        png,
       };
     }
   }
@@ -70,12 +95,96 @@ function snapshotOptions({
   return {
     outDir: join(tmpdir(), "almanac-tui-snapshots", timestamp),
     color,
+    png,
   };
 }
 
 function enableAnsiColor() {
   delete process.env.NO_COLOR;
   process.env.FORCE_COLOR = process.env.FORCE_COLOR || "1";
+}
+
+async function createPngRenderer(): Promise<PngRenderer> {
+  const [{ chromium }, ConvertModule] = await Promise.all([
+    import("@playwright/test"),
+    import("ansi-to-html"),
+  ]);
+  const Convert = ConvertModule.default;
+  const converter = new Convert({
+    fg: "#d6deeb",
+    bg: "#0b1020",
+    escapeXML: true,
+  });
+  const browser = await chromium.launch({ headless: true });
+  const page = await browser.newPage({
+    deviceScaleFactor: 2,
+    viewport: {
+      width: 1400,
+      height: 1000,
+    },
+  });
+
+  return {
+    capture: async ({
+      frame,
+      pngPath,
+    }: {
+      frame: string;
+      pngPath: string;
+    }) => {
+      await page.setContent(
+        terminalSnapshotHtml({
+          frame,
+          ansiConverter: converter,
+        }),
+      );
+      await page.locator("[data-terminal-frame]").screenshot({
+        path: pngPath,
+      });
+    },
+    close: async () => {
+      await browser.close();
+    },
+  };
+}
+
+function terminalSnapshotHtml({
+  frame,
+  ansiConverter,
+}: {
+  frame: string;
+  ansiConverter: {
+    toHtml: (frame: string) => string;
+  };
+}): string {
+  return `<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      html,
+      body {
+        margin: 0;
+        background: #0b1020;
+      }
+
+      [data-terminal-frame] {
+        display: inline-block;
+        padding: 16px;
+        color: #d6deeb;
+        background: #0b1020;
+        font-family: "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+        font-size: 14px;
+        line-height: 1.25;
+        letter-spacing: 0;
+        white-space: pre;
+      }
+    </style>
+  </head>
+  <body>
+    <pre data-terminal-frame>${ansiConverter.toHtml(frame)}</pre>
+  </body>
+</html>`;
 }
 
 async function waitForFrame() {

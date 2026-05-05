@@ -9,13 +9,14 @@ transcript. Almanac should expose compact, current, machine-readable context.
 
 An agent should be able to ask:
 
-- What is the current goal?
-- What evaluation context and signals are relevant?
-- What automated trust warnings apply?
-- What has already run?
-- What evidence came back?
-- What lightweight findings are currently supported?
-- Which experiments were suspicious, and why?
+- What is the current objective?
+- What evaluation context is relevant?
+- Which hypotheses are open or active?
+- What has already been tried?
+- Which experiments relate to which hypotheses?
+- What result activities came back?
+- What concern activities apply?
+- What artifacts can be inspected?
 - What is running now?
 
 ## Candidate CLI/API Surface
@@ -24,7 +25,8 @@ The exact interface can evolve, but the product should support commands like:
 
 ```bash
 almanac status --json
-almanac run-context --json
+almanac agent-context --json
+almanac hypotheses --json
 almanac experiments --json
 almanac events --json
 ```
@@ -32,21 +34,21 @@ almanac events --json
 Defer richer guidance and proposal-context commands until the basic loop is
 working.
 
-## Run Context
+## Agent Context
 
-`run-context` should include:
+`agent-context` should include:
 
-- Goal
+- Objective
 - Evaluation context
-- Known signals/evals/tools
-- Baseline evidence
-- Current run status
-- Active experiment
-- Recent events
+- Current session status
+- Active hypotheses
 - Recent experiments
-- Recent evidence
-- Findings
-- Warnings
+- Hypothesis/experiment links
+- Recent hypothesis activities
+- Recent experiment activities
+- Recent concerns/results/decisions
+- Artifact references
+- Internal events when useful
 
 ## Product Rule
 

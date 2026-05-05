@@ -23,8 +23,9 @@ Use structured models for the parts that need software guarantees:
 - Ownership
 - Links between records
 - Tool invocation state
-- Evidence attachment
-- Trust warning attachment
+- Activity attachment
+- Artifact attachment
+- Trust concern attachment
 - TUI rendering boundaries
 
 Use text or lightly structured content for the parts that are mostly semantic:
@@ -33,7 +34,7 @@ Use text or lightly structured content for the parts that are mostly semantic:
 - Research plan
 - Experiment intent
 - Worker interpretation
-- Finding text
+- Activity body
 - Risk notes
 - User/project context
 - Ambiguous evaluation instructions
@@ -62,7 +63,7 @@ Prefer a looser shape:
 ```python
 class Proposal(BaseModel):
     id: str
-    run_id: str
+    session_id: str
     content: str
     status: str
     source: str
@@ -72,8 +73,8 @@ Optional metadata can be added when it supports execution or observability, but
 the semantic center should remain `content`.
 
 The harness can ask the LLM to include useful sections in the text, such as
-intent, why this might help, what to run, what evidence to inspect, and what
-could go wrong. Those sections are guidance for the model and reader, not a
+intent, why this might help, what to run, what activity/artifact to inspect, and
+what could go wrong. Those sections are guidance for the model and reader, not a
 hard storage schema.
 
 ## Tool Calling First
@@ -89,7 +90,7 @@ proposal text
   -> tool call accepted or rejected
   -> tool call started
   -> tool call produced output
-  -> evidence/signals/warnings/findings updated
+  -> activities/artifacts updated
 ```
 
 Useful examples:
@@ -100,9 +101,9 @@ Useful examples:
 - Invoke worker
 - Parse worker output
 - Inspect diff
-- Evaluate evidence
-- Extract finding
-- Update run state
+- Record result activity
+- Record concern activity
+- Update session/objective state
 
 The harness should own which tools exist and whether a call is allowed. The LLM
 can request or choose tool calls, but it should not bypass the harness ledger.
@@ -138,9 +139,9 @@ after_tool_call
 on_tool_error
 before_worker_message
 after_worker_message
-after_evidence_recorded
-after_warning_created
-after_finding_updated
+after_experiment_activity_recorded
+after_hypothesis_activity_recorded
+after_artifact_attached
 ```
 
 Hooks can emit:
@@ -159,23 +160,29 @@ state transitions.
 The first durable records should look more like envelopes than taxonomies:
 
 ```text
-Run
-  id, status, created_at, config, current_state
+Objective
+  id, title, description, status
+
+Session
+  id, objective_id, status
 
 Proposal
-  id, run_id, content, status, source
+  id, session_id, content, status, source
 
 AgentMessageHistory
-  id, run_id, agent_name, pydantic_run_id?, conversation_id?, messages_json
+  id, session_id, agent_name, pydantic_run_id?, conversation_id?, messages_json
 
-Evidence
-  id, run_id, experiment_id, summary, signals, raw
+Hypothesis
+  id, objective_id, title, summary, status
 
-Finding
-  id, run_id, content, evidence_ids
+Experiment
+  id, objective_id, title, summary, status
 
-Warning
-  id, run_id, experiment_id?, kind, message
+Activity
+  id, target_id, session_id?, actor, kind, body, payload
+
+Artifact
+  id, objective_id, experiment_id?, activity_id?, kind, path
 ```
 
 The exact implementation can differ, but the principle should hold: keep the
@@ -191,7 +198,7 @@ When adding a new model, tool, workflow, or observability path, ask:
 - Can DBOS make this tool call durable without extra orchestration machinery?
 - Can hooks provide the needed observability without coupling the feature to
   logging code?
-- Does the harness still own the ledger, trust checks, and run state?
+- Does the harness still own the ledger, trust checks, and session state?
 
 The bias should be: fewer rigid data models, more typed execution envelopes,
 more tool-call-shaped behavior, and hook-driven observability.
@@ -203,7 +210,7 @@ the reference backend:
 
 - `BaseAlmanacTool` owns name, typed result shape, permission check, execution,
   error normalization, and conversion to a Pydantic AI tool.
-- `AlmanacToolDeps` carries the run context, repositories, worker manager, and
+- `AlmanacToolDeps` carries the session context, repositories, worker manager, and
   event emitter into tool calls.
 - Toolsets group related tools and carry tool-specific instructions.
 - `AgentMessageHistoryRepository` stores Pydantic AI message history as the
@@ -212,7 +219,7 @@ the reference backend:
   views can be built from Pydantic messages later if querying raw messages
   becomes too awkward.
 
-This should not force the entire run loop to become autonomous immediately. It
+This should not force the entire session loop to become autonomous immediately. It
 is acceptable for the deterministic MVP loop to call a tool directly while the
 agent layer matures, as long as durable message history and context-passing are
 real.

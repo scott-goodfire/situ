@@ -19,8 +19,8 @@ repo or send data to hosted services unless the user explicitly opts in.
 - Default runtime state lives outside the researched repo, under a user-local
   Almanac directory.
 - Repo writes are explicit exports or user-approved patches.
-- Config, runs, experiments, events, warnings, and minimal log/artifact
-  references are durable locally.
+- Config, objectives, sessions, hypotheses, experiments, activities, events, and
+  minimal artifact references are durable locally.
 - The product can resume after process restart.
 - Hosted model or service calls are optional and visible to the user.
 
@@ -30,4 +30,5 @@ repo or send data to hosted services unless the user explicitly opts in.
 - Writing generated reports or patches into the repo without an explicit export
   or publish action.
 - Depending on cloud state for the MVP.
-- Losing run ledger, experiments, events, or warnings after restart.
+- Losing objective, session, hypothesis, experiment, activity, or event state
+  after restart.
