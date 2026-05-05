@@ -34,7 +34,6 @@ export function DxTabs({
             {tab.label}
           </Tabs.Tab>
         ))}
-        <Tabs.Indicator className="dx-tabs__indicator" />
       </Tabs.List>
       {tabs.map((tab) => (
         <Tabs.Panel key={tab.id} value={tab.id} className="dx-tabs__panel">

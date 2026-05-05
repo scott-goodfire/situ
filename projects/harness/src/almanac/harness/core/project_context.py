@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 from pathlib import Path
 
-from .config import DEFAULTS
+from ..config import DEFAULTS
 
 
 class ProjectContext:

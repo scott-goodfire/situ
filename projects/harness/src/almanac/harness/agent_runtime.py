@@ -18,7 +18,7 @@ from .agents.research.prompt import (
 )
 from .config import DEFAULTS, AlmanacSecrets
 from .core.dbos.runtime import configure_dbos, launch_dbos
-from .observability import configure_observability, span
+from .core.observability import configure_observability, span
 from .repositories import Repositories
 from .tools import build_research_toolset, build_workspace_toolset
 from .tools.common import AlmanacToolDeps

@@ -15,7 +15,9 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
-from .app import HarnessApp
+from ..app import HarnessApp
+from ..core.paths import resolve_app_root, resolve_workspace
+from ..core.project_context import ProjectContext
 from .local_session import (
     base_env,
     ping_session,
@@ -24,8 +26,6 @@ from .local_session import (
     start_session_server,
     stop_process,
 )
-from .paths import resolve_app_root, resolve_workspace
-from .project_context import ProjectContext
 
 DEFAULT_MAX_EXPERIMENTS = 6
 

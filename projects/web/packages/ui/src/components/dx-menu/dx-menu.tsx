@@ -1,5 +1,5 @@
 import { Menu } from "@base-ui/react/menu";
-import type { ReactNode } from "react";
+import type { ReactElement, ReactNode } from "react";
 
 export type DxMenuItem = {
   id: string;
@@ -12,12 +12,12 @@ export function DxMenu({
   trigger,
   items,
 }: {
-  trigger: ReactNode;
+  trigger: ReactElement;
   items: DxMenuItem[];
 }) {
   return (
     <Menu.Root>
-      <Menu.Trigger render={<>{trigger}</>} />
+      <Menu.Trigger render={trigger} />
       <Menu.Portal>
         <Menu.Positioner sideOffset={6} align="start" className="dx-menu__positioner">
           <Menu.Popup className="dx-menu__popup">

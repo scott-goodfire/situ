@@ -6,6 +6,9 @@ import subprocess
 import sys
 from pathlib import Path
 
+from ..core.db.project_registry import upsert_project_registry
+from ..core.paths import resolve_app_root, resolve_workspace
+from ..core.project_context import ProjectContext
 from .headless import (
     apply_session_env,
     headless_clear,
@@ -16,10 +19,7 @@ from .headless import (
     headless_status,
     headless_wait,
 )
-from .core.db.project_registry import upsert_project_registry
 from .local_session import base_env, read_live_session, start_session_server, stop_process
-from .paths import resolve_app_root, resolve_workspace
-from .project_context import ProjectContext
 
 
 def main(argv: list[str] | None = None) -> int:

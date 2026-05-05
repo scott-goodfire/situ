@@ -7,7 +7,7 @@ from typing import Any
 
 import logfire
 
-from almanac.harness import observability
+from almanac.harness.core import observability
 
 
 def test_harness_logfire_configuration_disables_scrubbing(monkeypatch) -> None:

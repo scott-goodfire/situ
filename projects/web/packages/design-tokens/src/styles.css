@@ -8,24 +8,17 @@
   --card-01-hex: #f0efeb;
   --card-02-hex: #ebeae5;
   --card-03-hex: #e6e5e0;
-  --card-04-hex: #e1e0db;
 
   --panel: var(--card-hex);
-  --elevated: var(--card-01-hex);
   --stage: var(--card-03-hex);
 
-  --fg-01: color-mix(in oklab, var(--foreground) 1%, transparent);
-  --fg-02-5: color-mix(in oklab, var(--foreground) 2.5%, transparent);
   --fg-05: color-mix(in oklab, var(--foreground) 5%, transparent);
   --fg-07-5: color-mix(in oklab, var(--foreground) 7.5%, transparent);
   --fg-10: color-mix(in oklab, var(--foreground) 10%, transparent);
-  --fg-15: color-mix(in oklab, var(--foreground) 15%, transparent);
-  --fg-20: color-mix(in oklab, var(--foreground) 20%, transparent);
 
-  --border-01: var(--fg-02-5);
   --border-01-5: var(--fg-05);
   --border-02: var(--fg-10);
-  --border-02-5: var(--fg-20);
+  --border-02-5: color-mix(in oklab, var(--foreground) 20%, transparent);
   --border-03: color-mix(in oklab, var(--foreground) 60%, transparent);
 
   --border: var(--border-02);
@@ -36,8 +29,6 @@
   --muted-foreground-tertiary: color-mix(in oklab, var(--foreground) 40%, transparent);
 
   --accent: #f54e00;
-  --accent-strong: var(--accent);
-  --accent-soft: color-mix(in srgb, var(--accent) 8%, transparent);
 
   --primary: var(--accent);
   --primary-foreground: #fefefe;
@@ -107,7 +98,6 @@
   --card-01-hex: #1d1b15;
   --card-02-hex: #201e18;
   --card-03-hex: #26241e;
-  --card-04-hex: #2b2923;
 
   --success-strong: #3aa885;
   --success-soft: color-mix(in srgb, var(--success-strong) 10%, transparent);

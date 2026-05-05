@@ -8,7 +8,7 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-from .project_context import ProjectContext
+from ..core.project_context import ProjectContext
 
 
 def base_env(app_root: Path, workspace: Path) -> dict[str, str]:

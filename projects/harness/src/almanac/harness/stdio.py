@@ -7,7 +7,7 @@ from almanac.protocol.jsonrpc import JsonRpcNotification, JsonRpcRequest, JsonRp
 from pydantic import ValidationError
 
 from .app import HarnessApp, MethodNotFound
-from .paths import resolve_app_root, resolve_workspace
+from .core.paths import resolve_app_root, resolve_workspace
 
 WRITE_LOCK = threading.Lock()
 

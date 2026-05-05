@@ -1,5 +1,5 @@
 import { Popover } from "@base-ui/react/popover";
-import type { ReactNode } from "react";
+import type { ReactElement, ReactNode } from "react";
 
 export function DxPopover({
   trigger,
@@ -7,14 +7,14 @@ export function DxPopover({
   side = "bottom",
   align = "center",
 }: {
-  trigger: ReactNode;
+  trigger: ReactElement;
   children: ReactNode;
   side?: "top" | "right" | "bottom" | "left";
   align?: "start" | "center" | "end";
 }) {
   return (
     <Popover.Root>
-      <Popover.Trigger render={<>{trigger}</>} />
+      <Popover.Trigger render={trigger} />
       <Popover.Portal>
         <Popover.Positioner
           side={side}

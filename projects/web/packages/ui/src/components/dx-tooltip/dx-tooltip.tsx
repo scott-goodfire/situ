@@ -1,5 +1,5 @@
 import { Tooltip } from "@base-ui/react/tooltip";
-import type { ReactNode } from "react";
+import type { ReactElement, ReactNode } from "react";
 
 export function DxTooltip({
   content,
@@ -7,12 +7,12 @@ export function DxTooltip({
   side = "top",
 }: {
   content: ReactNode;
-  children: ReactNode;
+  children: ReactElement;
   side?: "top" | "right" | "bottom" | "left";
 }) {
   return (
     <Tooltip.Root>
-      <Tooltip.Trigger render={<>{children}</>} />
+      <Tooltip.Trigger render={children} />
       <Tooltip.Portal>
         <Tooltip.Positioner side={side} sideOffset={6} className="dx-tooltip__positioner">
           <Tooltip.Popup className="dx-tooltip__popup">{content}</Tooltip.Popup>

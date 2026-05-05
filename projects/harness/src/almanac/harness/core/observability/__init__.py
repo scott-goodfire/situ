@@ -5,7 +5,7 @@ from pathlib import Path
 
 import logfire
 
-from .config import DEFAULTS, AlmanacSecrets
+from ...config import DEFAULTS, AlmanacSecrets
 
 _CONFIGURED = False
 

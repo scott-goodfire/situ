@@ -35,8 +35,8 @@ from .core.notifications import (
     set_project_collections_subscribed,
     set_project_events_subscribed,
 )
-from .observability import span
-from .project_context import ProjectContext
+from .core.observability import span
+from .core.project_context import ProjectContext
 from .records import EventRecord
 from .records.base import DbRecord
 from .repositories import Repositories

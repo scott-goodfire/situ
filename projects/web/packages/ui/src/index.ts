@@ -2,6 +2,7 @@ export { BucketBars } from "./components/bucket-bars/bucket-bars";
 export { ContrastiveFeatureDiff } from "./components/contrastive-feature-diff/contrastive-feature-diff";
 export { ContributionBars } from "./components/contribution-bars/contribution-bars";
 export { DxAccordion, type DxAccordionItem } from "./components/dx-accordion/dx-accordion";
+export { DxAppFrame } from "./components/dx-app-frame/dx-app-frame";
 export { DxAvatar, type DxAvatarSize } from "./components/dx-avatar/dx-avatar";
 export { DxBadge, type DxBadgeTone } from "./components/dx-badge/dx-badge";
 export { DxBreadcrumbs, type DxBreadcrumb } from "./components/dx-breadcrumbs/dx-breadcrumbs";
@@ -29,6 +30,12 @@ export { DxListRow } from "./components/dx-list-row/dx-list-row";
 export { DxMenu, type DxMenuItem } from "./components/dx-menu/dx-menu";
 export { DxPopover } from "./components/dx-popover/dx-popover";
 export { DxSection } from "./components/dx-section/dx-section";
+export {
+  DxSidebar,
+  DxSidebarSection,
+  DxSidebarItem,
+  type DxSidebarItemProps,
+} from "./components/dx-sidebar/dx-sidebar";
 export { DxSpinner } from "./components/dx-spinner/dx-spinner";
 export { DxStat, type DxStatTone } from "./components/dx-stat/dx-stat";
 export { DxStatBlock } from "./components/dx-stat-block/dx-stat-block";
@@ -44,6 +51,8 @@ export {
   DxThemeToggle,
   type DxThemeMode,
 } from "./components/dx-theme-toggle/dx-theme-toggle";
+export { useDxTheme } from "./components/dx-theme-toggle/use-dx-theme";
+export { useLocalStorage } from "./utils/use-local-storage";
 export { DxToaster, toast } from "./components/dx-toaster/dx-toaster";
 export { DxTooltip, DxTooltipProvider } from "./components/dx-tooltip/dx-tooltip";
 export { HeatmapGrid } from "./components/heatmap-grid/heatmap-grid";

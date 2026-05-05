@@ -53,3 +53,31 @@ projects, creating read tokens, querying traces, or verifying telemetry.
 Routine command surface should eventually live in `mise.toml`, with reusable
 scripts in `commands/`, following the pattern from the reference Almanac
 prototype.
+
+## Python Package Layout
+
+The Python code uses a deliberately nested layout:
+
+```text
+projects/harness/src/almanac/harness/
+shared/python/protocol/src/almanac/protocol/
+```
+
+`almanac` is a [PEP 420 namespace package](https://peps.python.org/pep-0420/),
+not a regular package. It is shared across multiple installable distributions
+so that imports read as siblings under one top-level name:
+
+```python
+from almanac.harness.tools import ...   # from almanac-harness
+from almanac.protocol      import ...   # from almanac-protocol
+```
+
+The inner `harness/` (and `protocol/`) directories are what make each
+distribution importable; the `[tool.setuptools.packages.find]` block in
+`projects/harness/pyproject.toml` sets `namespaces = true` to enable this.
+
+**Do not flatten `src/almanac/harness/` to `src/almanac/`.** Two workspace
+packages cannot both claim `src/almanac/` as a regular package — Python would
+see conflicting definitions at install time. The nesting is the price of
+cross-package namespace sharing, and it is intentional. Future `almanac.*`
+packages (e.g. `almanac.cli`, `almanac.worker`) can slot in the same way.

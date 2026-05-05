@@ -8,9 +8,9 @@ from typing import Any
 
 import pytest
 
-from almanac.harness import cli, headless
 from almanac.harness.app import HarnessApp
-from almanac.harness.project_context import ProjectContext
+from almanac.harness.cli import commands as cli, headless
+from almanac.harness.core.project_context import ProjectContext
 
 
 class FakeAgentRuntime:
