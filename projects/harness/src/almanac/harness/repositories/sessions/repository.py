@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from ...core.db.serialization import session_row, utc_now
-from ...records import SessionRecord
+from ...records import SessionRecord, SessionStatus, parse_session_status
 from ..base import BaseRepository
 from .command import CreateSession, UpdateSessionStatus
 
@@ -13,22 +13,33 @@ class SessionsRepository(BaseRepository):
         self.db.execute(
             """
             INSERT INTO sessions (id, objective_id, status, created_at, updated_at)
-            VALUES (?, ?, 'active', ?, ?)
+            VALUES (?, ?, ?, ?, ?)
             """,
-            (command.session_id, command.objective_id, now, now),
+            (
+                command.session_id,
+                command.objective_id,
+                SessionStatus.ACTIVE.value,
+                now,
+                now,
+            ),
         )
         record = self.get_by_id(command.session_id)
         if record is None:
             raise RuntimeError(f"session was not persisted: {command.session_id}")
         return record
 
-    def update_status(self, session_id: str, status: str) -> SessionRecord | None:
-        command = UpdateSessionStatus(session_id=session_id, status=status)
+    def update_status(
+        self,
+        session_id: str,
+        status: SessionStatus | str,
+    ) -> SessionRecord | None:
+        checked_status = parse_session_status(status=status)
+        command = UpdateSessionStatus(session_id=session_id, status=checked_status)
         if self.get_by_id(command.session_id) is None:
             return None
         self.db.execute(
             "UPDATE sessions SET status = ?, updated_at = ? WHERE id = ?",
-            (command.status, utc_now(), command.session_id),
+            (command.status.value, utc_now(), command.session_id),
         )
         return self.get_by_id(command.session_id)
 

@@ -1,4 +1,14 @@
 {
+  "$defs": {
+    "ObjectiveStatus": {
+      "enum": [
+        "active",
+        "closed"
+      ],
+      "title": "ObjectiveStatus",
+      "type": "string"
+    }
+  },
   "additionalProperties": false,
   "properties": {
     "id": {
@@ -14,12 +24,7 @@
       "type": "string"
     },
     "status": {
-      "enum": [
-        "active",
-        "closed"
-      ],
-      "title": "Status",
-      "type": "string"
+      "$ref": "#/$defs/ObjectiveStatus"
     },
     "associated_session_id": {
       "anyOf": [

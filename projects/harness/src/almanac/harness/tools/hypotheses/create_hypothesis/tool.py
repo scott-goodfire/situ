@@ -4,6 +4,7 @@ from typing import Any
 
 from pydantic_ai import RunContext
 
+from ....records import WorkStatus
 from ...common import AlmanacToolDeps, BaseAlmanacTool
 from .models import CreateHypothesisResult
 
@@ -21,10 +22,13 @@ class CreateHypothesisTool(BaseAlmanacTool[AlmanacToolDeps, CreateHypothesisResu
         summary: str,
         objective_id: str | None = None,
         hypothesis_id: str | None = None,
-        status: str = "open",
+        status: WorkStatus = WorkStatus.OPEN,
         **_kwargs: Any,
     ) -> CreateHypothesisResult:
-        """Create a hypothesis under an objective."""
+        """Create a hypothesis under an objective.
+
+        `status` must be `open`, `active`, or `closed`.
+        """
         repos = ctx.deps.get_repos()
         resolved_objective_id = objective_id or _current_objective_id(ctx)
         if resolved_objective_id is None:

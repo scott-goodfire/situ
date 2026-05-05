@@ -10,7 +10,10 @@ import type {
   SessionRecord,
 } from "@almanac/protocol";
 import { AlmanacTuiView } from "./almanac-tui-view.js";
-import type { CommandMessage } from "../command-input/command-input.js";
+import type {
+  DashboardCommand,
+  DashboardControlMessage,
+} from "../dashboard-controls/dashboard-controls.js";
 import {
   acceptedExperiment,
   activeHypothesis,
@@ -157,18 +160,15 @@ function StoryAlmanacTuiView({
   events,
 }: StoryAlmanacTuiViewProps) {
   const { exit } = useApp();
-  const [draft, setDraft] = useState("");
-  const [message, setMessage] = useState<CommandMessage>({
-    tone: "gray",
-    text: "Type /help for commands.",
-  });
+  const [message, setMessage] = useState<DashboardControlMessage | undefined>(
+    undefined,
+  );
 
   return (
     <AlmanacTuiView
       workspace={storyWorkspace}
       statusLine={statusLine}
-      commandDraft={draft}
-      commandMessage={message}
+      dashboardMessage={message}
       objective={objective}
       session={session}
       experimentCount={experimentCount}
@@ -179,15 +179,11 @@ function StoryAlmanacTuiView({
       hypothesisActivities={hypothesisActivities}
       experimentActivities={experimentActivities}
       events={events}
-      onCommandChange={({ value }) => {
-        setDraft(value);
-      }}
-      onCommandSubmit={({ value }) => {
-        handleStoryCommandSubmit({
-          value,
+      onDashboardCommand={({ command }) => {
+        handleStoryDashboardCommand({
+          command,
           statusLine,
           exit,
-          setDraft,
           setMessage,
         });
       }}
@@ -195,49 +191,32 @@ function StoryAlmanacTuiView({
   );
 }
 
-function handleStoryCommandSubmit({
-  value,
+function handleStoryDashboardCommand({
+  command,
   statusLine,
   exit,
-  setDraft,
   setMessage,
 }: {
-  value: string;
+  command: DashboardCommand;
   statusLine: string;
   exit: () => void;
-  setDraft: (value: string) => void;
-  setMessage: (value: CommandMessage) => void;
+  setMessage: (value: DashboardControlMessage) => void;
 }) {
-  const command = value.trim();
-  setDraft("");
-
-  if (!command) {
-    return;
-  }
-
-  if (command === "/quit" || command === "q") {
+  if (command === "quit") {
     exit();
     return;
   }
 
-  if (command === "/help") {
+  if (command === "help") {
     setMessage({
       tone: "gray",
-      text: "Commands: /status, /help, /quit",
-    });
-    return;
-  }
-
-  if (command === "/status") {
-    setMessage({
-      tone: "cyan",
-      text: statusLine,
+      text: "Keys: ? help, : commands, q quit.",
     });
     return;
   }
 
   setMessage({
-    tone: "yellow",
-    text: `Unknown command: ${command}. Try /help.`,
+    tone: "cyan",
+    text: statusLine,
   });
 }

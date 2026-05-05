@@ -4,6 +4,7 @@ from typing import Any
 
 from pydantic_ai import RunContext
 
+from ....records import WorkStatus
 from ...common import AlmanacToolDeps, BaseAlmanacTool
 from .models import CreateExperimentResult
 
@@ -22,10 +23,13 @@ class CreateExperimentTool(BaseAlmanacTool[AlmanacToolDeps, CreateExperimentResu
         objective_id: str | None = None,
         session_id: str | None = None,
         experiment_id: str | None = None,
-        status: str = "open",
+        status: WorkStatus = WorkStatus.OPEN,
         **_kwargs: Any,
     ) -> CreateExperimentResult:
-        """Create an experiment under an objective and optional session."""
+        """Create an experiment under an objective and optional session.
+
+        `status` must be `open`, `active`, or `closed`.
+        """
         repos = ctx.deps.get_repos()
         resolved_session_id = session_id or ctx.deps.session_id
         resolved_objective_id = objective_id or _current_objective_id(

@@ -176,6 +176,75 @@ def test_experiments_repository_create_update_get_and_list(repos: Repositories) 
     ]
 
 
+def test_work_repositories_reject_invalid_agent_statuses(
+    repos: Repositories,
+) -> None:
+    create_experiment(repos)
+
+    with pytest.raises(ValueError, match="invalid experiment status"):
+        repos.experiments.update(
+            experiment_id="exp_session_0001_a",
+            status="completed",
+        )
+
+    with pytest.raises(ValueError, match="Record result details"):
+        repos.experiments.create(
+            experiment_id="exp_session_0001_b",
+            objective_id="objective_0001",
+            title="Try component B",
+            summary="Apply component B.",
+            associated_session_id="session_0001",
+            status="running",
+        )
+
+    with pytest.raises(ValueError, match="invalid hypothesis status"):
+        repos.hypotheses.update(
+            hypothesis_id="hyp_0001",
+            status="completed",
+        )
+
+
+def test_core_repositories_reject_invalid_statuses(repos: Repositories) -> None:
+    create_session(repos)
+
+    with pytest.raises(ValueError, match="invalid objective status"):
+        repos.objectives.update(
+            objective_id="objective_0001",
+            status="completed",
+        )
+
+    with pytest.raises(ValueError, match="invalid session status"):
+        repos.sessions.update_status(
+            session_id="session_0001",
+            status="completed",
+        )
+
+
+def test_experiments_repository_accepts_work_status_enum(
+    repos: Repositories,
+) -> None:
+    from almanac.harness.records import WorkStatus
+
+    create_hypothesis(repos)
+    experiment = repos.experiments.create(
+        experiment_id="exp_session_0001_b",
+        objective_id="objective_0001",
+        title="Try component B",
+        summary="Apply component B.",
+        associated_session_id="session_0001",
+        status=WorkStatus.ACTIVE,
+    )
+
+    updated = repos.experiments.update(
+        experiment_id="exp_session_0001_b",
+        status=WorkStatus.CLOSED,
+    )
+
+    assert experiment.status == "active"
+    assert updated is not None
+    assert updated.status == "closed"
+
+
 def test_hypothesis_experiment_links_repository_create_and_list(
     repos: Repositories,
 ) -> None:

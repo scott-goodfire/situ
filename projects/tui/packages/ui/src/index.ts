@@ -10,6 +10,11 @@ export {
   CommandInput,
   type CommandMessage,
 } from "./components/command-input/command-input.js";
+export {
+  DashboardControls,
+  type DashboardCommand,
+  type DashboardControlMessage,
+} from "./components/dashboard-controls/dashboard-controls.js";
 export { ActivitySection } from "./components/activity-section/activity-section.js";
 export { ContrastiveFeatureDiff } from "./components/contrastive-feature-diff/contrastive-feature-diff.js";
 export { ContributionBars } from "./components/contribution-bars/contribution-bars.js";
@@ -18,6 +23,7 @@ export { HeatmapGrid } from "./components/heatmap-grid/heatmap-grid.js";
 export { HypothesesSection } from "./components/hypotheses-section/hypotheses-section.js";
 export { MetricTrend } from "./components/metric-trend/metric-trend.js";
 export { NowSection } from "./components/now-section/now-section.js";
+export { ReconnectSessionPrompt } from "./components/reconnect-session-prompt/reconnect-session-prompt.js";
 export { SessionSection } from "./components/session-section/session-section.js";
 export { SteeringDoseResponse } from "./components/steering-dose-response/steering-dose-response.js";
 export { Section } from "./components/section/section.js";

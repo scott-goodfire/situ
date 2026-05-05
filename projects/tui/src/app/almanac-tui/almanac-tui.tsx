@@ -33,11 +33,14 @@ import type {
 import { useLiveQuery } from "@tanstack/react-db";
 import {
   AlmanacTuiView,
-  type CommandMessage,
+  ReconnectSessionPrompt,
+  type DashboardCommand,
+  type DashboardControlMessage,
 } from "@almanac/tui-ui";
 
 type Status =
   | { kind: "starting" }
+  | { kind: "reconnect"; session: SessionRecord }
   | { kind: "running"; sessionId?: string }
   | { kind: "completed"; sessionId: string }
   | { kind: "failed"; message: string };
@@ -92,11 +95,9 @@ export function AlmanacTui() {
     [collections],
   );
   const [status, setStatus] = useState<Status>({ kind: "starting" });
-  const [commandDraft, setCommandDraft] = useState("");
-  const [commandMessage, setCommandMessage] = useState<CommandMessage>({
-    tone: "gray",
-    text: "Type /help for commands.",
-  });
+  const [dashboardMessage, setDashboardMessage] = useState<
+    DashboardControlMessage | undefined
+  >(undefined);
 
   useEffect(() => {
     exitRef.current = exit;
@@ -258,7 +259,7 @@ export function AlmanacTui() {
         );
         if (activeSession) {
           sessionId = activeSession.id;
-          setStatus({ kind: "running", sessionId });
+          setStatus({ kind: "reconnect", session: activeSession });
           return;
         }
 
@@ -288,7 +289,10 @@ export function AlmanacTui() {
     objectives,
     (objective: ObjectiveRecord) => objective.status === "active",
   );
-  const latestSession = sessions.at(-1);
+  const latestSession = sessionForStatus({
+    sessions,
+    status,
+  }) ?? sessions.at(-1);
   const sessionExperiments = experimentsForSession({
     experiments,
     session: latestSession,
@@ -320,12 +324,41 @@ export function AlmanacTui() {
     maxExperiments: maxExperimentCount,
   });
 
+  if (status.kind === "reconnect") {
+    const reconnectSession = sessionForStatus({
+      sessions,
+      status,
+    }) ?? status.session;
+    const reconnectExperiments = experimentsForSession({
+      experiments,
+      session: reconnectSession,
+    });
+
+    return (
+      <ReconnectSessionPrompt
+        workspace={workspace}
+        session={reconnectSession}
+        objective={activeObjective}
+        experimentCount={reconnectExperiments.length}
+        maxExperiments={maxExperimentCount}
+        onReconnect={() => {
+          setStatus({
+            kind: "running",
+            sessionId: reconnectSession.id,
+          });
+        }}
+        onQuit={() => {
+          exit();
+        }}
+      />
+    );
+  }
+
   return (
     <AlmanacTuiView
       workspace={workspace}
       statusLine={statusLine}
-      commandDraft={commandDraft}
-      commandMessage={commandMessage}
+      dashboardMessage={dashboardMessage}
       objective={activeObjective}
       session={latestSession}
       experimentCount={sessionExperiments.length}
@@ -336,80 +369,59 @@ export function AlmanacTui() {
       hypothesisActivities={sessionHypothesisActivities}
       experimentActivities={sessionExperimentActivities}
       events={sessionEvents}
-      onCommandChange={({ value }) => {
-        setCommandDraft(value);
-      }}
-      onCommandSubmit={({ value }) => {
-        handleCommandSubmit({
-          value,
+      onDashboardCommand={({ command }) => {
+        handleDashboardCommand({
+          command,
           exit,
           status,
           session: latestSession,
           experimentCount: sessionExperiments.length,
           maxExperiments: maxExperimentCount,
-          setCommandDraft,
-          setCommandMessage,
+          setDashboardMessage,
         });
       }}
     />
   );
 }
 
-function handleCommandSubmit({
-  value,
+function handleDashboardCommand({
+  command,
   exit,
   status,
   session,
   experimentCount,
   maxExperiments,
-  setCommandDraft,
-  setCommandMessage,
+  setDashboardMessage,
 }: {
-  value: string;
+  command: DashboardCommand;
   exit: () => void;
   status: Status;
   session: SessionRecord | undefined;
   experimentCount: number;
   maxExperiments: number;
-  setCommandDraft: (value: string) => void;
-  setCommandMessage: (value: CommandMessage) => void;
+  setDashboardMessage: (value: DashboardControlMessage) => void;
 }) {
-  const command = value.trim();
-  setCommandDraft("");
-
-  if (!command) {
-    return;
-  }
-
-  if (command === "/quit" || command === "q") {
+  if (command === "quit") {
     exit();
     return;
   }
 
-  if (command === "/help") {
-    setCommandMessage({
+  if (command === "help") {
+    setDashboardMessage({
       tone: "gray",
-      text: "Commands: /status, /help, /quit",
+      text: "Keys: ? help, : commands, q quit. The dashboard is read-only while the session runs.",
     });
     return;
   }
 
-  if (command === "/status") {
-    setCommandMessage({
-      tone: "cyan",
-      text: statusSummary({
-        status,
-        session,
-        experimentCount,
-        maxExperiments,
-      }),
-    });
-    return;
-  }
-
-  setCommandMessage({
-    tone: "yellow",
-    text: `Unknown command: ${command}. Try /help.`,
+  setDashboardMessage({
+    tone: "cyan",
+    text: statusSummary({
+      status,
+      session,
+      experimentCount,
+      maxExperiments,
+    }),
   });
 }
 
@@ -488,6 +500,10 @@ function statusSummary({
     return status.message;
   }
 
+  if (status.kind === "reconnect") {
+    return "Active session found";
+  }
+
   if (!session && status.kind === "running") {
     return `Running ${status.sessionId ?? "new session"}...`;
   }
@@ -501,6 +517,37 @@ function statusSummary({
   }
 
   return `${session.id} | ${session.status} | experiments ${experimentCount}/${maxExperiments}`;
+}
+
+function sessionForStatus({
+  sessions,
+  status,
+}: {
+  sessions: SessionRecord[];
+  status: Status;
+}): SessionRecord | undefined {
+  const sessionId = sessionIdForStatus({ status });
+  if (!sessionId) {
+    return undefined;
+  }
+
+  return lodash.find(sessions, (session: SessionRecord) => session.id === sessionId);
+}
+
+function sessionIdForStatus({ status }: { status: Status }): string | undefined {
+  if (status.kind === "reconnect") {
+    return status.session.id;
+  }
+
+  if (status.kind === "running") {
+    return status.sessionId;
+  }
+
+  if (status.kind === "completed") {
+    return status.sessionId;
+  }
+
+  return undefined;
 }
 
 function experimentsForSession({

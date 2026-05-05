@@ -40,7 +40,7 @@ api/sessions/schemas.py
 api/sessions/service.py
 tools/experiments/create_experiment/tool.py
 evaluators/tool_result_contains/evaluator.py
-worlds/micrograd/scenarios/suspicious_win/scenario.py
+worlds/research_session/agents/research_agent/agent.py
 ```
 
 The preferred Python harness shape is:

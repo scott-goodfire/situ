@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from ...core.db.serialization import objective_row, utc_now
-from ...records import ObjectiveRecord
+from ...records import ObjectiveRecord, ObjectiveStatus, parse_objective_status
 from ..base import BaseRepository
 from .command import CreateObjective, UpdateObjective
 
@@ -13,14 +13,15 @@ class ObjectivesRepository(BaseRepository):
         objective_id: str,
         title: str,
         description: str,
-        status: str = "active",
+        status: ObjectiveStatus | str = ObjectiveStatus.ACTIVE,
         associated_session_id: str | None = None,
     ) -> ObjectiveRecord:
+        checked_status = parse_objective_status(status=status)
         command = CreateObjective(
             objective_id=objective_id,
             title=title,
             description=description,
-            status=status,
+            status=checked_status,
             associated_session_id=associated_session_id,
         )
         now = utc_now()
@@ -35,7 +36,7 @@ class ObjectivesRepository(BaseRepository):
                 command.objective_id,
                 command.title,
                 command.description,
-                command.status,
+                command.status.value,
                 command.associated_session_id,
                 now,
                 now,
@@ -52,7 +53,7 @@ class ObjectivesRepository(BaseRepository):
         objective_id: str,
         title: str,
         description: str,
-        status: str = "active",
+        status: ObjectiveStatus | str = ObjectiveStatus.ACTIVE,
         associated_session_id: str | None = None,
     ) -> ObjectiveRecord:
         existing = self.get_by_id(objective_id)
@@ -81,14 +82,19 @@ class ObjectivesRepository(BaseRepository):
         *,
         title: str | None = None,
         description: str | None = None,
-        status: str | None = None,
+        status: ObjectiveStatus | str | None = None,
         associated_session_id: str | None = None,
     ) -> ObjectiveRecord | None:
+        checked_status = (
+            parse_objective_status(status=status)
+            if status is not None
+            else None
+        )
         command = UpdateObjective(
             objective_id=objective_id,
             title=title,
             description=description,
-            status=status,
+            status=checked_status,
             associated_session_id=associated_session_id,
         )
         current = self.get_by_id(command.objective_id)
@@ -104,7 +110,7 @@ class ObjectivesRepository(BaseRepository):
             (
                 command.title if command.title is not None else current.title,
                 command.description if command.description is not None else current.description,
-                command.status if command.status is not None else current.status,
+                command.status.value if command.status is not None else current.status.value,
                 command.associated_session_id
                 if command.associated_session_id is not None
                 else current.associated_session_id,

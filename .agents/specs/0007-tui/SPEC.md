@@ -56,6 +56,46 @@ Timeline
   #14 experiment.activity.result recorded
 ```
 
+## Layout
+
+The TUI should feel like a terminal-native session surface, not a boxed
+dashboard embedded inside the terminal.
+
+Use a compact framed banner for the initial Almanac identity, workspace, and
+session status at the top of the screen. The live observability body beneath it
+should be unframed: sections may use headings, spacing, and compact separators,
+but the full terminal surface should not be wrapped in a persistent outer box.
+
+## Reconnect
+
+When the TUI starts and collection bootstrap finds an already-active session for
+the workspace, the user should see an intermediate reconnect prompt before the
+full live session view is shown.
+
+The prompt should identify the workspace, active session, and objective when
+available, then offer a small choice menu. The first slice should only offer:
+
+- Reconnect
+- Quit
+
+Do not offer "start new session" from this prompt until the session lifecycle
+supports that explicitly.
+
+## Command Surface
+
+The running observability view should not show an always-on free-text prompt.
+Almanac is supervising a live research session, not hosting a chat conversation.
+
+The default running screen should be read-only except for explicit terminal
+controls. Use a compact footer for common keys such as help, commands, and quit.
+Prefer `?` for help, `:` for commands, and `q` for quit. Reserve `/` for future
+filter or search entry. Free-text entry should appear only in an intentional
+mode, such as a command prompt, setup prompt, reconnect choice, confirmation,
+filter, or future note composer.
+
+The first slice command palette should stay small and operational. It may expose
+status, help, and quit, but should not send arbitrary user text to the agent.
+
 ## Setup
 
 If no local context exists, the TUI should run a slim setup flow:
@@ -91,3 +131,9 @@ them into a full feature browser until the session data model needs that.
 
 The TUI is the product surface and the observability output for now. Keep it
 boring, dense, and legible.
+
+The top-level live view should summarize long evidence instead of printing raw
+stdout, stderr, diffs, or fenced log blocks inline. Experiments, activities, and
+events should show compact previews on the main screen; full evidence remains in
+the durable activity or artifact record for a focused detail view or
+agent-readable export.

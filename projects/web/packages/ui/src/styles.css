@@ -134,22 +134,33 @@
 
 .dx-table__scroll {
   width: 100%;
-  overflow-x: auto;
+  overflow: auto;
+  border: 1px solid var(--dx-color-border-soft);
+  border-radius: 8px;
+  background: var(--dx-color-surface);
 }
 
 .dx-table {
   width: 100%;
-  min-width: 680px;
-  border-collapse: collapse;
+  min-width: 720px;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
   font-size: 14px;
 }
 
 .dx-table th,
 .dx-table td {
-  padding: 8px 12px 8px 0;
+  padding: 10px 12px;
   border-bottom: 1px solid var(--dx-color-border-soft);
   text-align: left;
   vertical-align: top;
+}
+
+.dx-table[data-density="compact"] th,
+.dx-table[data-density="compact"] td {
+  padding-top: 7px;
+  padding-bottom: 7px;
 }
 
 .dx-table th {
@@ -157,6 +168,79 @@
   font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
+}
+
+.dx-table[data-sticky-header="true"] th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--dx-color-surface);
+  box-shadow: 0 1px 0 var(--dx-color-border-soft);
+}
+
+.dx-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.dx-table tbody tr:hover td {
+  background: #f6f8fa;
+}
+
+.dx-table tbody tr[data-tone="success"] td {
+  background: var(--dx-color-success-surface);
+}
+
+.dx-table tbody tr[data-tone="warning"] td {
+  background: var(--dx-color-warning-surface);
+}
+
+.dx-table tbody tr[data-tone="danger"] td {
+  background: var(--dx-color-danger-surface);
+}
+
+.dx-table tbody tr[data-tone="success"]:hover td,
+.dx-table tbody tr[data-tone="warning"]:hover td,
+.dx-table tbody tr[data-tone="danger"]:hover td {
+  filter: brightness(0.99);
+}
+
+.dx-table__header-label {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.dx-table__header-button {
+  all: unset;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  cursor: pointer;
+}
+
+.dx-table__header-button:focus-visible {
+  outline: 2px solid var(--dx-color-focus);
+  outline-offset: 2px;
+}
+
+.dx-table__sort-indicator {
+  color: var(--dx-color-muted);
+  font-family: var(--dx-font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: none;
+}
+
+.dx-table__cell {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  line-height: 1.45;
+}
+
+.dx-table__scroll-anchor {
+  width: 1px;
+  height: 1px;
 }
 
 .dx-text-field {

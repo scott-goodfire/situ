@@ -30,17 +30,23 @@ almanac status --json
 almanac snapshot --json
 almanac events --json
 almanac wait --json
+almanac clear --json
 ```
 
 `exec` may start and own a temporary local session. `status`, `snapshot`,
 `events`, and `wait` should attach to existing local state or a live local
-session instead of rendering the TUI.
+session instead of rendering the TUI. `clear` should remove the local Almanac
+state for one workspace so humans and agents can retry setup from a clean
+project context. If a live local harness is active, `clear` should refuse by
+default and require an explicit force option before terminating it.
 
 Headless output should be machine-readable by default:
 
 - JSON for status, snapshots, and final summaries.
 - JSON Lines for event streams.
 - A final JSON summary for `exec`, with progress and diagnostics on stderr.
+- A JSON result for `clear`, including workspace, project id, state path, and
+  whether anything was removed.
 - Human progress and diagnostics on stderr, not mixed into stdout.
 
 Keep the first setup flags sparse:

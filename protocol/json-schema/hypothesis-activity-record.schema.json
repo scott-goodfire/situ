@@ -1,4 +1,13 @@
 {
+  "$defs": {
+    "ActivityKind": {
+      "enum": [
+        "comment"
+      ],
+      "title": "ActivityKind",
+      "type": "string"
+    }
+  },
   "additionalProperties": false,
   "properties": {
     "id": {
@@ -26,9 +35,7 @@
       "type": "string"
     },
     "kind": {
-      "const": "comment",
-      "title": "Kind",
-      "type": "string"
+      "$ref": "#/$defs/ActivityKind"
     },
     "body": {
       "title": "Body",

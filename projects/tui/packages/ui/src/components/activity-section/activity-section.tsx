@@ -5,6 +5,7 @@ import type {
   HypothesisActivityRecord,
 } from "@almanac/protocol";
 import { Section } from "../section/section.js";
+import { previewText } from "../text-preview/text-preview.js";
 
 type Activity =
   | ({ scope: "hypothesis" } & HypothesisActivityRecord)
@@ -47,10 +48,17 @@ export function ActivitySection({
 }
 
 function formatActivity({ activity }: { activity: Activity }): string {
-  const target =
-    activity.scope === "hypothesis"
-      ? activity.hypothesis_id
-      : activity.experiment_id;
+  const target = (() => {
+    if (activity.scope === "hypothesis") {
+      return activity.hypothesis_id;
+    }
 
-  return `${activity.kind} | ${target} | ${activity.body}`;
+    return activity.experiment_id;
+  })();
+  const preview = previewText({
+    value: activity.body,
+    maxCharacters: 150,
+  });
+
+  return `${activity.kind} | ${target} | ${preview}`;
 }

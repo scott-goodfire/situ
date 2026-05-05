@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from ...records import SessionStatus
 from ..base.command import RepositoryCommand
 
 
@@ -10,4 +11,4 @@ class CreateSession(RepositoryCommand):
 
 class UpdateSessionStatus(RepositoryCommand):
     session_id: str
-    status: str
+    status: SessionStatus

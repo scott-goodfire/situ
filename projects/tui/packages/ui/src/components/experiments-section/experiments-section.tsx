@@ -2,6 +2,7 @@ import lodash from "lodash";
 import { Text } from "ink";
 import type { ExperimentActivityRecord, ExperimentRecord } from "@almanac/protocol";
 import { Section } from "../section/section.js";
+import { previewText } from "../text-preview/text-preview.js";
 
 export function ExperimentsSection({
   experiments,
@@ -36,11 +37,19 @@ function formatExperiment({
     experimentActivities,
   });
   const note = latestActivity?.body ?? experiment.summary;
-  const concern = hasConcern({ experimentId: experiment.id, experimentActivities })
-    ? " concern"
-    : "";
+  const concern = (() => {
+    if (hasConcern({ experimentId: experiment.id, experimentActivities })) {
+      return " concern";
+    }
 
-  return `${experiment.id} | ${experiment.status}${concern} | ${experiment.title} | ${note}`;
+    return "";
+  })();
+  const preview = previewText({
+    value: note,
+    maxCharacters: 150,
+  });
+
+  return `${experiment.id} | ${experiment.status}${concern} | ${experiment.title} | ${preview}`;
 }
 
 function latestExperimentActivity({

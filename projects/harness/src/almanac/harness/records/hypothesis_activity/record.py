@@ -1,13 +1,15 @@
 from __future__ import annotations
 
-from typing import Any, Literal
+from enum import StrEnum
+from typing import Any
 
 from pydantic import Field
 
 from ..base import DbRecord
 
 
-ActivityKind = Literal["comment"]
+class ActivityKind(StrEnum):
+    COMMENT = "comment"
 
 
 class HypothesisActivityRecord(DbRecord):

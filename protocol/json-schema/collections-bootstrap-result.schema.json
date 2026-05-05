@@ -1,5 +1,12 @@
 {
   "$defs": {
+    "ActivityKind": {
+      "enum": [
+        "comment"
+      ],
+      "title": "ActivityKind",
+      "type": "string"
+    },
     "ArtifactRecord": {
       "additionalProperties": false,
       "properties": {
@@ -159,9 +166,7 @@
           "type": "string"
         },
         "kind": {
-          "const": "comment",
-          "title": "Kind",
-          "type": "string"
+          "$ref": "#/$defs/ActivityKind"
         },
         "body": {
           "title": "Body",
@@ -200,13 +205,7 @@
           "type": "string"
         },
         "status": {
-          "enum": [
-            "open",
-            "active",
-            "closed"
-          ],
-          "title": "Status",
-          "type": "string"
+          "$ref": "#/$defs/WorkStatus"
         },
         "title": {
           "title": "Title",
@@ -277,9 +276,7 @@
           "type": "string"
         },
         "kind": {
-          "const": "comment",
-          "title": "Kind",
-          "type": "string"
+          "$ref": "#/$defs/ActivityKind"
         },
         "body": {
           "title": "Body",
@@ -350,13 +347,7 @@
           "type": "string"
         },
         "status": {
-          "enum": [
-            "open",
-            "active",
-            "closed"
-          ],
-          "title": "Status",
-          "type": "string"
+          "$ref": "#/$defs/WorkStatus"
         },
         "associated_session_id": {
           "anyOf": [
@@ -407,12 +398,7 @@
           "type": "string"
         },
         "status": {
-          "enum": [
-            "active",
-            "closed"
-          ],
-          "title": "Status",
-          "type": "string"
+          "$ref": "#/$defs/ObjectiveStatus"
         },
         "associated_session_id": {
           "anyOf": [
@@ -446,6 +432,14 @@
       "title": "ObjectiveRecord",
       "type": "object"
     },
+    "ObjectiveStatus": {
+      "enum": [
+        "active",
+        "closed"
+      ],
+      "title": "ObjectiveStatus",
+      "type": "string"
+    },
     "SessionRecord": {
       "additionalProperties": false,
       "properties": {
@@ -458,12 +452,7 @@
           "type": "string"
         },
         "status": {
-          "enum": [
-            "active",
-            "closed"
-          ],
-          "title": "Status",
-          "type": "string"
+          "$ref": "#/$defs/SessionStatus"
         },
         "created_at": {
           "title": "Created At",
@@ -483,6 +472,23 @@
       ],
       "title": "SessionRecord",
       "type": "object"
+    },
+    "SessionStatus": {
+      "enum": [
+        "active",
+        "closed"
+      ],
+      "title": "SessionStatus",
+      "type": "string"
+    },
+    "WorkStatus": {
+      "enum": [
+        "open",
+        "active",
+        "closed"
+      ],
+      "title": "WorkStatus",
+      "type": "string"
     }
   },
   "additionalProperties": false,

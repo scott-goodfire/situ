@@ -12,12 +12,7 @@
           "type": "string"
         },
         "status": {
-          "enum": [
-            "active",
-            "closed"
-          ],
-          "title": "Status",
-          "type": "string"
+          "$ref": "#/$defs/SessionStatus"
         },
         "created_at": {
           "title": "Created At",
@@ -37,6 +32,14 @@
       ],
       "title": "SessionRecord",
       "type": "object"
+    },
+    "SessionStatus": {
+      "enum": [
+        "active",
+        "closed"
+      ],
+      "title": "SessionStatus",
+      "type": "string"
     }
   },
   "additionalProperties": false,

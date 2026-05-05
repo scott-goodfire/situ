@@ -16,12 +16,7 @@
           "type": "string"
         },
         "status": {
-          "enum": [
-            "active",
-            "closed"
-          ],
-          "title": "Status",
-          "type": "string"
+          "$ref": "#/$defs/ObjectiveStatus"
         },
         "associated_session_id": {
           "anyOf": [
@@ -54,6 +49,14 @@
       ],
       "title": "ObjectiveRecord",
       "type": "object"
+    },
+    "ObjectiveStatus": {
+      "enum": [
+        "active",
+        "closed"
+      ],
+      "title": "ObjectiveStatus",
+      "type": "string"
     },
     "ProjectConfigRecord": {
       "additionalProperties": false,

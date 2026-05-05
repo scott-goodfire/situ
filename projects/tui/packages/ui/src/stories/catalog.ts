@@ -7,11 +7,13 @@ import { stories as choicePromptStories } from "../components/choice-prompt/choi
 import { stories as commandInputStories } from "../components/command-input/command-input.stories.js";
 import { stories as contrastiveFeatureDiffStories } from "../components/contrastive-feature-diff/contrastive-feature-diff.stories.js";
 import { stories as contributionBarsStories } from "../components/contribution-bars/contribution-bars.stories.js";
+import { stories as dashboardControlsStories } from "../components/dashboard-controls/dashboard-controls.stories.js";
 import { stories as experimentsSectionStories } from "../components/experiments-section/experiments-section.stories.js";
 import { stories as heatmapGridStories } from "../components/heatmap-grid/heatmap-grid.stories.js";
 import { stories as hypothesesSectionStories } from "../components/hypotheses-section/hypotheses-section.stories.js";
 import { stories as metricTrendStories } from "../components/metric-trend/metric-trend.stories.js";
 import { stories as nowSectionStories } from "../components/now-section/now-section.stories.js";
+import { stories as reconnectSessionPromptStories } from "../components/reconnect-session-prompt/reconnect-session-prompt.stories.js";
 import { stories as sectionStories } from "../components/section/section.stories.js";
 import { stories as sessionSectionStories } from "../components/session-section/session-section.stories.js";
 import { stories as steeringDoseResponseStories } from "../components/steering-dose-response/steering-dose-response.stories.js";
@@ -25,12 +27,14 @@ export const allStories: TuiStory[] = [
   ...bucketBarsStories,
   ...choicePromptStories,
   ...commandInputStories,
+  ...dashboardControlsStories,
   ...contrastiveFeatureDiffStories,
   ...contributionBarsStories,
   ...heatmapGridStories,
   ...metricTrendStories,
   ...steeringDoseResponseStories,
   ...tokenFeatureMatrixStories,
+  ...reconnectSessionPromptStories,
   ...sessionSectionStories,
   ...nowSectionStories,
   ...hypothesesSectionStories,

@@ -195,6 +195,44 @@ def test_experiment_tools_create_update_and_list(repos: Repositories) -> None:
     ]
 
 
+def test_work_tools_reject_invalid_statuses_with_agent_readable_errors(
+    repos: Repositories,
+) -> None:
+    deps = AlmanacToolDeps(session_id="session_0001", repos=repos)
+
+    experiment_update = invoke_almanac_tool_sync(
+        tool=UpdateExperimentTool(),
+        deps=deps,
+        experiment_id="exp_session_0001_a",
+        status="completed",
+    )
+    hypothesis_update = invoke_almanac_tool_sync(
+        tool=UpdateHypothesisTool(),
+        deps=deps,
+        hypothesis_id="hyp_0001",
+        status="completed",
+    )
+    experiment_list = invoke_almanac_tool_sync(
+        tool=ListExperimentsTool(),
+        deps=deps,
+        status="completed",
+    )
+
+    assert experiment_update.success is False
+    assert experiment_update.error is not None
+    assert "invalid experiment status: 'completed'" in experiment_update.error.message
+    assert "'open', 'active', 'closed'" in experiment_update.error.message
+    assert "comment instead" in experiment_update.error.message
+
+    assert hypothesis_update.success is False
+    assert hypothesis_update.error is not None
+    assert "invalid hypothesis status: 'completed'" in hypothesis_update.error.message
+
+    assert experiment_list.success is False
+    assert experiment_list.error is not None
+    assert "invalid experiment status: 'completed'" in experiment_list.error.message
+
+
 def test_link_tool_links_hypothesis_and_experiment(repos: Repositories) -> None:
     deps = AlmanacToolDeps(session_id="session_0001", repos=repos)
 

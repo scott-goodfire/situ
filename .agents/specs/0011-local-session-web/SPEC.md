@@ -74,6 +74,24 @@ The first web UI should use the same collection-backed scope as the slim TUI:
 - Experiment activities
 - Events
 
+## Web Monitor Behavior
+
+The web monitor should make the attached session easier to scan without becoming
+the primary control surface.
+
+For this slice:
+
+- Session, experiment, activity, and event tables should stay compact enough for
+  long-running sessions.
+- Recent experiment and event views should follow newly appended rows when the
+  user is already at the bottom of the table.
+- Concern-like rows should be visually distinguishable without hiding the
+  underlying record.
+- Motion should be subtle, only reinforce that new rows arrived, and respect
+  reduced-motion preferences.
+- The monitor remains read-only. Table affordances must not imply that the web
+  client can mutate the session.
+
 ## Deferred
 
 - Reusing an already-running session from `almanac start`.

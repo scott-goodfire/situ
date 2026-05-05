@@ -4,6 +4,7 @@ from typing import Any
 
 from pydantic_ai import RunContext
 
+from ....records import WorkStatus
 from ...common import AlmanacToolDeps, BaseAlmanacTool
 from .models import UpdateExperimentResult
 
@@ -20,12 +21,17 @@ class UpdateExperimentTool(BaseAlmanacTool[AlmanacToolDeps, UpdateExperimentResu
         experiment_id: str,
         title: str | None = None,
         summary: str | None = None,
-        status: str | None = None,
+        status: WorkStatus | None = None,
         **_kwargs: Any,
     ) -> UpdateExperimentResult:
-        """Update simple experiment fields."""
+        """Update simple experiment fields.
+
+        `status` must be `open`, `active`, or `closed`. Put result details
+        such as completed, failed, or suspicious in an experiment
+        comment instead.
+        """
         experiment = ctx.deps.get_repos().experiments.update(
-            experiment_id,
+            experiment_id=experiment_id,
             title=title,
             summary=summary,
             status=status,

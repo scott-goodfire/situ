@@ -38,7 +38,7 @@ type LiveStack = {
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 
-test("web client receives live agent events from a real session", async ({ page }) => {
+test("web client receives live agent events from a real session", async ({ page }, testInfo) => {
   const stack = await startLiveStack();
   try {
     await page.goto(stack.webUrl);
@@ -76,6 +76,14 @@ test("web client receives live agent events from a real session", async ({ page 
     await expect(
       page.getByText(/session_0001 \| closed \| hypotheses [1-9]\d* \| experiments [1-9]\d*/),
     ).toBeVisible();
+
+    const screenshotPath = finalScreenshotPath();
+    await page.screenshot({ path: screenshotPath, fullPage: true });
+    await testInfo.attach("final-snapshot", {
+      path: screenshotPath,
+      contentType: "image/png",
+    });
+    console.log(`Almanac E2E final screenshot: ${screenshotPath}`);
   } finally {
     await stack.close();
   }
@@ -328,6 +336,18 @@ function projectIdForWorkspace(workspace: string): string {
 
 function makeTempRoot(): string {
   return mkdtempSync(join(tmpdir(), "almanac-e2e-"));
+}
+
+function finalScreenshotPath(): string {
+  const root =
+    process.env.ALMANAC_E2E_SCREENSHOT_DIR ??
+    join(tmpdir(), "almanac-e2e-screenshots", timestampSlug());
+  mkdirSync(root, { recursive: true });
+  return join(root, "live-web-client-final.png");
+}
+
+function timestampSlug(): string {
+  return new Date().toISOString().replace(/[:.]/g, "-");
 }
 
 function sleep(ms: number): Promise<void> {

@@ -1,12 +1,27 @@
-from typing import Any, Literal
+from enum import StrEnum
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
 
-ObjectiveStatus = Literal["active", "closed"]
-SessionStatus = Literal["active", "closed"]
-WorkStatus = Literal["open", "active", "closed"]
-ActivityKind = Literal["comment"]
+class ObjectiveStatus(StrEnum):
+    ACTIVE = "active"
+    CLOSED = "closed"
+
+
+class SessionStatus(StrEnum):
+    ACTIVE = "active"
+    CLOSED = "closed"
+
+
+class WorkStatus(StrEnum):
+    OPEN = "open"
+    ACTIVE = "active"
+    CLOSED = "closed"
+
+
+class ActivityKind(StrEnum):
+    COMMENT = "comment"
 
 
 class ProjectConfigRecord(BaseModel):

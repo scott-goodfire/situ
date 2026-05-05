@@ -1,11 +1,26 @@
 from __future__ import annotations
 
-from typing import Literal
+from enum import StrEnum
 
 from ..base import DbRecord
 
 
-SessionStatus = Literal["active", "closed"]
+class SessionStatus(StrEnum):
+    ACTIVE = "active"
+    CLOSED = "closed"
+
+
+def parse_session_status(
+    *,
+    status: SessionStatus | str,
+) -> SessionStatus:
+    try:
+        return SessionStatus(status)
+    except ValueError as error:
+        allowed = ", ".join(f"'{item.value}'" for item in SessionStatus)
+        raise ValueError(
+            f"invalid session status: {status!r}. Use exactly one of {allowed}."
+        ) from error
 
 
 class SessionRecord(DbRecord):

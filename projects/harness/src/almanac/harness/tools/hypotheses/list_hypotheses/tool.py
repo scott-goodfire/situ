@@ -4,6 +4,7 @@ from typing import Any
 
 from pydantic_ai import RunContext
 
+from ....records import WorkStatus, parse_work_status
 from ...common import AlmanacToolDeps, BaseAlmanacTool
 from .models import ListHypothesesResult
 
@@ -17,10 +18,15 @@ class ListHypothesesTool(BaseAlmanacTool[AlmanacToolDeps, ListHypothesesResult])
         *,
         ctx: RunContext[AlmanacToolDeps],
         objective_id: str | None = None,
-        status: str | None = None,
+        status: WorkStatus | None = None,
         **_kwargs: Any,
     ) -> ListHypothesesResult:
         """List hypotheses for an objective, defaulting to the current session's objective."""
+        checked_status = (
+            parse_work_status(status=status, noun="hypothesis")
+            if status is not None
+            else None
+        )
         repos = ctx.deps.get_repos()
         resolved_objective_id = objective_id
         if resolved_objective_id is None:
@@ -32,8 +38,12 @@ class ListHypothesesTool(BaseAlmanacTool[AlmanacToolDeps, ListHypothesesResult])
             if resolved_objective_id is not None
             else repos.hypotheses.list_all()
         )
-        if status is not None:
-            hypotheses = [hypothesis for hypothesis in hypotheses if hypothesis.status == status]
+        if checked_status is not None:
+            hypotheses = [
+                hypothesis
+                for hypothesis in hypotheses
+                if hypothesis.status == checked_status
+            ]
 
         return ListHypothesesResult(
             success=True,

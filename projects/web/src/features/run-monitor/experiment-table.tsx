@@ -5,6 +5,7 @@ import {
   DxTable,
   type DxBadgeTone,
   type DxTableColumn,
+  type DxTableRowTone,
 } from "@almanac/web-ui";
 import filter from "lodash/filter";
 
@@ -19,6 +20,7 @@ const experimentColumns: Array<DxTableColumn<ExperimentRow>> = [
     header: "Experiment",
     width: "250px",
     renderCell: ({ row }) => <span className="dx-mono">{row.experiment.id}</span>,
+    sortValue: ({ row }) => row.experiment.id,
   },
   {
     id: "status",
@@ -27,12 +29,14 @@ const experimentColumns: Array<DxTableColumn<ExperimentRow>> = [
     renderCell: ({ row }) => (
       <DxBadge tone={experimentTone({ row })}>{experimentState({ row })}</DxBadge>
     ),
+    sortValue: ({ row }) => experimentState({ row }),
   },
   {
     id: "title",
     header: "Title",
     width: "220px",
     renderCell: ({ row }) => row.experiment.title,
+    sortValue: ({ row }) => row.experiment.title,
   },
   {
     id: "note",
@@ -63,6 +67,12 @@ export function ExperimentTable({
         rows={visibleRows}
         getRowKey={({ row }) => row.experiment.id}
         emptyLabel="None yet"
+        density="compact"
+        maxHeight="360px"
+        stickyHeader
+        animateRows
+        autoScroll
+        getRowTone={experimentRowTone}
       />
     </DxSection>
   );
@@ -83,6 +93,14 @@ function experimentTone({ row }: { row: ExperimentRow }): DxBadgeTone {
 
   if (row.experiment.status === "closed") {
     return "success";
+  }
+
+  return "neutral";
+}
+
+function experimentRowTone({ row }: { row: ExperimentRow }): DxTableRowTone {
+  if (hasConcern(row.activities)) {
+    return "warning";
   }
 
   return "neutral";

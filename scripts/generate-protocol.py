@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import types
+from enum import StrEnum
 from pathlib import Path
 from typing import Any, Literal, get_args, get_origin
 
@@ -137,6 +138,8 @@ def ts_type(annotation: object) -> str:
         return "boolean"
     if annotation is None or annotation is types.NoneType:
         return "null"
+    if isinstance(annotation, type) and issubclass(annotation, StrEnum):
+        return " | ".join(json.dumps(item.value) for item in annotation)
 
     origin = get_origin(annotation)
     args = get_args(annotation)

@@ -10,9 +10,10 @@ import type {
 import { ActivitySection } from "../activity-section/activity-section.js";
 import { AppFrame } from "../app-frame/app-frame.js";
 import {
-  CommandInput,
-  type CommandMessage,
-} from "../command-input/command-input.js";
+  DashboardControls,
+  type DashboardCommand,
+  type DashboardControlMessage,
+} from "../dashboard-controls/dashboard-controls.js";
 import { ExperimentsSection } from "../experiments-section/experiments-section.js";
 import { HypothesesSection } from "../hypotheses-section/hypotheses-section.js";
 import { NowSection } from "../now-section/now-section.js";
@@ -22,8 +23,7 @@ import { TimelineSection } from "../timeline-section/timeline-section.js";
 export function AlmanacTuiView({
   workspace,
   statusLine,
-  commandDraft,
-  commandMessage,
+  dashboardMessage,
   objective,
   session,
   experimentCount,
@@ -34,13 +34,11 @@ export function AlmanacTuiView({
   hypothesisActivities,
   experimentActivities,
   events,
-  onCommandChange,
-  onCommandSubmit,
+  onDashboardCommand,
 }: {
   workspace: string;
   statusLine: string;
-  commandDraft: string;
-  commandMessage: CommandMessage | undefined;
+  dashboardMessage: DashboardControlMessage | undefined;
   objective: ObjectiveRecord | undefined;
   session: SessionRecord | undefined;
   experimentCount: number;
@@ -51,19 +49,16 @@ export function AlmanacTuiView({
   hypothesisActivities: HypothesisActivityRecord[];
   experimentActivities: ExperimentActivityRecord[];
   events: EventRecord[];
-  onCommandChange: ({ value }: { value: string }) => void;
-  onCommandSubmit: ({ value }: { value: string }) => void;
+  onDashboardCommand: ({ command }: { command: DashboardCommand }) => void;
 }) {
   return (
     <AppFrame
       workspace={workspace}
       statusLine={statusLine}
       footer={
-        <CommandInput
-          draft={commandDraft}
-          message={commandMessage}
-          onChange={onCommandChange}
-          onSubmit={onCommandSubmit}
+        <DashboardControls
+          message={dashboardMessage}
+          onCommand={onDashboardCommand}
         />
       }
     >

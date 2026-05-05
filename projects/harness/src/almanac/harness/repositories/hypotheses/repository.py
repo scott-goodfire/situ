@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from ...core.db.serialization import hypothesis_row, utc_now
-from ...records import HypothesisRecord
+from ...records import HypothesisRecord, WorkStatus, parse_work_status
 from ..base import BaseRepository
 from .command import CreateHypothesis, UpdateHypothesis
 
@@ -14,15 +14,16 @@ class HypothesesRepository(BaseRepository):
         objective_id: str,
         title: str,
         summary: str,
-        status: str = "open",
+        status: WorkStatus | str = WorkStatus.OPEN,
         associated_session_id: str | None = None,
     ) -> HypothesisRecord:
+        checked_status = parse_work_status(status=status, noun="hypothesis")
         command = CreateHypothesis(
             hypothesis_id=hypothesis_id,
             objective_id=objective_id,
             title=title,
             summary=summary,
-            status=status,
+            status=checked_status,
             associated_session_id=associated_session_id,
         )
         now = utc_now()
@@ -38,7 +39,7 @@ class HypothesesRepository(BaseRepository):
                 command.objective_id,
                 command.title,
                 command.summary,
-                command.status,
+                command.status.value,
                 command.associated_session_id,
                 now,
                 now,
@@ -56,7 +57,7 @@ class HypothesesRepository(BaseRepository):
         objective_id: str,
         title: str,
         summary: str,
-        status: str = "open",
+        status: WorkStatus | str = WorkStatus.OPEN,
         associated_session_id: str | None = None,
     ) -> HypothesisRecord:
         existing = self.get_by_id(hypothesis_id)
@@ -86,14 +87,19 @@ class HypothesesRepository(BaseRepository):
         *,
         title: str | None = None,
         summary: str | None = None,
-        status: str | None = None,
+        status: WorkStatus | str | None = None,
         associated_session_id: str | None = None,
     ) -> HypothesisRecord | None:
+        checked_status = (
+            parse_work_status(status=status, noun="hypothesis")
+            if status is not None
+            else None
+        )
         command = UpdateHypothesis(
             hypothesis_id=hypothesis_id,
             title=title,
             summary=summary,
-            status=status,
+            status=checked_status,
             associated_session_id=associated_session_id,
         )
         current = self.get_by_id(command.hypothesis_id)
@@ -108,7 +114,7 @@ class HypothesesRepository(BaseRepository):
             (
                 command.title if command.title is not None else current.title,
                 command.summary if command.summary is not None else current.summary,
-                command.status if command.status is not None else current.status,
+                command.status.value if command.status is not None else current.status.value,
                 command.associated_session_id
                 if command.associated_session_id is not None
                 else current.associated_session_id,

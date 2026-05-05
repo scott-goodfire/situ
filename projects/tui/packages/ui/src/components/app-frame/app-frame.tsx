@@ -14,33 +14,48 @@ export function AppFrame({
 }) {
   const { stdout } = useStdout();
   const width = frameWidth({ columns: stdout.columns });
-  const dividerWidth = Math.max(width - 6, 12);
 
   return (
-    <Box width={width} borderStyle="round" borderColor="cyan" flexDirection="column" paddingX={1}>
-      <Box flexDirection="column">
-        <Text color="cyan" bold>
-          Almanac
-        </Text>
-        <Text dimColor>{workspace}</Text>
-        <Text>{statusLine}</Text>
-      </Box>
+    <Box width={width} flexDirection="column" gap={1}>
+      <HeaderBanner
+        workspace={workspace}
+        statusLine={statusLine}
+        width={width}
+      />
 
-      <Divider width={dividerWidth} />
-
-      <Box flexDirection="column" gap={1}>
+      <Box flexDirection="column" gap={1} paddingX={1}>
         {children}
       </Box>
 
-      <Divider width={dividerWidth} />
-
-      {footer}
+      <Box paddingX={1}>{footer}</Box>
     </Box>
   );
 }
 
-function Divider({ width }: { width: number }) {
-  return <Text dimColor>{"-".repeat(width)}</Text>;
+function HeaderBanner({
+  workspace,
+  statusLine,
+  width,
+}: {
+  workspace: string;
+  statusLine: string;
+  width: number;
+}) {
+  return (
+    <Box
+      width={width}
+      borderStyle="round"
+      borderColor="cyan"
+      flexDirection="column"
+      paddingX={1}
+    >
+      <Text color="cyan" bold>
+        Almanac
+      </Text>
+      <Text dimColor>{workspace}</Text>
+      <Text>{statusLine}</Text>
+    </Box>
+  );
 }
 
 function frameWidth({ columns }: { columns: number | undefined }): number {

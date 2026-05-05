@@ -1,11 +1,26 @@
 from __future__ import annotations
 
-from typing import Literal
+from enum import StrEnum
 
 from ..base import DbRecord
 
 
-ObjectiveStatus = Literal["active", "closed"]
+class ObjectiveStatus(StrEnum):
+    ACTIVE = "active"
+    CLOSED = "closed"
+
+
+def parse_objective_status(
+    *,
+    status: ObjectiveStatus | str,
+) -> ObjectiveStatus:
+    try:
+        return ObjectiveStatus(status)
+    except ValueError as error:
+        allowed = ", ".join(f"'{item.value}'" for item in ObjectiveStatus)
+        raise ValueError(
+            f"invalid objective status: {status!r}. Use exactly one of {allowed}."
+        ) from error
 
 
 class ObjectiveRecord(DbRecord):
