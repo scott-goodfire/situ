@@ -1,27 +1,23 @@
 from __future__ import annotations
 
-from evals.harness.models import AlmanacEvalOutput
 from evals.worlds.micrograd.models import MicrogradEvalInput
-from evals.worlds.micrograd.scenarios.after_baseline import run_after_baseline_scenario
-from evals.worlds.micrograd.scenarios.after_simple_variants import run_after_simple_variants_scenario
-from evals.worlds.micrograd.scenarios.empty_run import run_empty_run_scenario
-from evals.worlds.micrograd.scenarios.suspicious_win import run_suspicious_win_scenario
-from evals.worlds.micrograd.scenarios.synthesize_findings import run_synthesize_findings_scenario
-from evals.worlds.micrograd.world import MicrogradWorld
+from evals.worlds.micrograd.scenarios.after_baseline import after_baseline_prompt
+from evals.worlds.micrograd.scenarios.after_simple_variants import after_simple_variants_prompt
+from evals.worlds.micrograd.scenarios.empty_run import empty_run_prompt
+from evals.worlds.micrograd.scenarios.suspicious_win import suspicious_win_prompt
+from evals.worlds.micrograd.scenarios.synthesize_findings import synthesize_findings_prompt
 
 
-def run_micrograd_planning_case(args: MicrogradEvalInput) -> AlmanacEvalOutput:
-    world = MicrogradWorld(expected_signals=args.expected_signals)
-
+def micrograd_scenario_prompt(args: MicrogradEvalInput) -> str:
     if args.scenario == "empty_run":
-        return run_empty_run_scenario(world)
+        return empty_run_prompt(args)
     if args.scenario == "after_baseline":
-        return run_after_baseline_scenario(world)
+        return after_baseline_prompt(args)
     if args.scenario == "after_simple_variants":
-        return run_after_simple_variants_scenario(world)
+        return after_simple_variants_prompt(args)
     if args.scenario == "suspicious_win":
-        return run_suspicious_win_scenario(world)
+        return suspicious_win_prompt(args)
     if args.scenario == "synthesize_findings":
-        return run_synthesize_findings_scenario(world)
+        return synthesize_findings_prompt(args)
 
     raise ValueError(f"Unhandled scenario: {args.scenario}")

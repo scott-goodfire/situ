@@ -24,10 +24,12 @@ from almanac.protocol import (
     SetupCompleteResult,
     SetupGetParams,
     SetupGetResult,
-    StateSnapshotParams,
 )
 
 from .agent_runtime import AgentRuntime
+from .api.collections import CollectionsService
+from .api.current_state import CurrentStateService
+from .api.runs import RunsService
 from .core.db import Database
 from .core.trust import check_evidence
 from .core.workers import WorkerManager
@@ -104,19 +106,20 @@ class HarnessApp:
             repo_path=str(self.context.repo_root),
         )
         self.repos = Repositories.create(self.db)
+        self.collections_api = CollectionsService(repos=self.repos)
+        self.current_state_api = CurrentStateService(repos=self.repos)
+        self.runs_api = RunsService(repos=self.repos)
         self.workers = WorkerManager(self.context.repo_root, app_root=app_root)
         self.agent_runtime = AgentRuntime(self.context.project_dir)
         self.notify = notify
         self.subscribed = False
         self.collection_subscribed = False
-        self._run_counter = len(self.repos.snapshots.get()["runs"])
 
     def handle(self, method: str, params: dict[str, Any] | None) -> dict[str, Any]:
         handlers = {
             "harness.hello": self.hello,
             "setup.get": self.setup_get,
             "setup.complete": self.setup_complete,
-            "state.snapshot": self.state_snapshot,
             "collections.bootstrap": self.collections_bootstrap,
             "collections.subscribe": self.collections_subscribe,
             "events.subscribe": self.events_subscribe,
@@ -155,26 +158,17 @@ class HarnessApp:
         )
         return SetupCompleteResult(config=config.model_dump()).model_dump()
 
-    def state_snapshot(self, params: dict[str, Any]) -> dict[str, Any]:
-        StateSnapshotParams.model_validate(params)
-        return self.repos.snapshots.get()
-
     def collections_bootstrap(self, params: dict[str, Any]) -> dict[str, Any]:
         CollectionsBootstrapParams.model_validate(params)
-        snapshot = self.repos.snapshots.get()
-        return CollectionsBootstrapResult(
-            cursor=self._collection_cursor(snapshot["events"]),
-            runs=snapshot["runs"],
-            experiments=snapshot["experiments"],
-            events=snapshot["events"],
-        ).model_dump()
+        bootstrap = self.collections_api.bootstrap()
+        return CollectionsBootstrapResult.model_validate(bootstrap.model_dump()).model_dump()
 
     def collections_subscribe(self, params: dict[str, Any]) -> dict[str, Any]:
         CollectionsSubscribeParams.model_validate(params)
         self.collection_subscribed = True
         return CollectionsSubscribeResult(
             subscribed=True,
-            cursor=self._collection_cursor(self.repos.snapshots.get()["events"]),
+            cursor=self.collections_api.current_cursor(),
         ).model_dump()
 
     def events_subscribe(self, params: dict[str, Any]) -> dict[str, Any]:
@@ -182,8 +176,8 @@ class HarnessApp:
         self.subscribed = True
         replayed = 0
         if subscribe.replay_existing:
-            for event in self.repos.snapshots.get()["events"]:
-                self.notify("event.appended", {"event": event})
+            for event in self.repos.events.list_all():
+                self.notify("event.appended", {"event": event.model_dump()})
                 replayed += 1
         return EventsSubscribeResult(subscribed=True, replayed=replayed).model_dump()
 
@@ -192,8 +186,7 @@ class HarnessApp:
         if self.repos.project_config.get() is None:
             raise RuntimeError("setup must be completed before starting a run")
 
-        self._run_counter += 1
-        run_id = f"run_{self._run_counter:04d}"
+        run_id = self.runs_api.next_run_id().run_id
         run = self.repos.runs.create(run_id)
         event = self.record_event("run.started", f"Started {run_id}", run_id=run_id)
         self.emit_collection_upsert("runs", run_id, run.model_dump(), cursor=event.id)
@@ -251,9 +244,6 @@ class HarnessApp:
             },
         )
 
-    def _collection_cursor(self, events: list[dict[str, Any]]) -> int:
-        return int(events[-1]["id"]) if events else 0
-
     def _execute_run(self, run_id: str, max_experiments: int) -> None:
         try:
             config = self.repos.project_config.get()
@@ -286,7 +276,7 @@ class HarnessApp:
         try:
             plan = self.agent_runtime.plan_run(
                 config=config.model_dump(),
-                snapshot=self.repos.snapshots.get(),
+                current_state=self.current_state_api.get().model_dump(),
                 run_id=run_id,
                 repos=self.repos,
             )
@@ -418,12 +408,12 @@ class HarnessApp:
 
     def _baseline_score(self, run_id: str) -> float | None:
         baseline_id = f"exp_{run_id}_baseline"
-        for evidence in self.repos.snapshots.get()["evidence"]:
-            if evidence["experiment_id"] != baseline_id:
-                continue
-            for signal in evidence["signals"]:
-                if signal["key"] == "score" and isinstance(signal["value"], int | float):
-                    return float(signal["value"])
+        evidence = self.repos.evidence.get_for_experiment(baseline_id)
+        if evidence is None:
+            return None
+        for signal in evidence.signals:
+            if signal.key == "score" and isinstance(signal.value, int | float):
+                return float(signal.value)
         return None
 
 

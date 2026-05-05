@@ -38,8 +38,6 @@ from almanac.protocol import (
     SetupGetParams,
     SetupGetResult,
     SignalRecord,
-    StateSnapshotParams,
-    StateSnapshotResult,
     WarningRecord,
     WorkerInitializeParams,
     WorkerInitializeResult,
@@ -69,8 +67,6 @@ MODELS: list[type[BaseModel]] = [
     SetupGetResult,
     SetupCompleteParams,
     SetupCompleteResult,
-    StateSnapshotParams,
-    StateSnapshotResult,
     CollectionsBootstrapParams,
     CollectionsBootstrapResult,
     CollectionsSubscribeParams,
@@ -109,7 +105,7 @@ def generate_typescript() -> str:
         lines.append("")
     lines.extend(
         [
-            'export type ControlMethod = "harness.hello" | "setup.get" | "setup.complete" | "state.snapshot" | "collections.bootstrap" | "collections.subscribe" | "events.subscribe" | "run.start" | "run.status";',
+            'export type ControlMethod = "harness.hello" | "setup.get" | "setup.complete" | "collections.bootstrap" | "collections.subscribe" | "events.subscribe" | "run.start" | "run.status";',
             'export type WorkerMethod = "worker.initialize" | "experiment.run";',
             "",
         ]

@@ -1,3 +1,3 @@
-from .db_record import DbRecord
+from .record import DbRecord
 
 __all__ = ["DbRecord"]

@@ -1,3 +1,3 @@
-from .run_record import RunRecord
+from .record import RunRecord
 
 __all__ = ["RunRecord"]

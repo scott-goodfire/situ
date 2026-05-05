@@ -10,7 +10,6 @@ from .experiments import ExperimentsRepository
 from .findings import FindingsRepository
 from .project_config import ProjectConfigRepository
 from .runs import RunsRepository
-from .snapshots import SnapshotsRepository
 from .warnings import WarningsRepository
 
 
@@ -25,7 +24,6 @@ class Repositories(BaseModel):
     warnings: WarningsRepository
     agent_message_history: AgentMessageHistoryRepository
     events: EventsRepository
-    snapshots: SnapshotsRepository
 
     @classmethod
     def create(cls, db: Database) -> Repositories:
@@ -38,5 +36,4 @@ class Repositories(BaseModel):
             warnings=WarningsRepository(db=db),
             agent_message_history=AgentMessageHistoryRepository(db=db),
             events=EventsRepository(db=db),
-            snapshots=SnapshotsRepository(db=db),
         )

@@ -15,7 +15,7 @@ workers directly.
 
 For the first collection-backed slice, the TUI should render runs, experiments,
 and events from the shared TypeScript collection layer. It should not request
-the full state snapshot for non-collection-backed records.
+full current-state composition for non-collection-backed records.
 
 Evidence, findings, warnings, tool calls, and project config can return to the
 TUI after they have collection-shaped APIs. Until then, keep the frontend loop

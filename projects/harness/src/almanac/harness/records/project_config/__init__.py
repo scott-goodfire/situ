@@ -1,3 +1,3 @@
-from .project_config_record import ProjectConfigRecord
+from .record import ProjectConfigRecord
 
 __all__ = ["ProjectConfigRecord"]

@@ -12,4 +12,5 @@ __pycache__/
 *.sqlite-*
 dist/
 build/
+storybook-static/
 .DS_Store

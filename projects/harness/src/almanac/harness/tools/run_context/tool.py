@@ -4,6 +4,7 @@ from typing import Any
 
 from pydantic_ai import RunContext
 
+from ...api.run_context import RunContextService
 from ..common import AlmanacToolDeps, BaseAlmanacTool
 from .models import GetRunContextResult
 
@@ -18,23 +19,15 @@ class GetRunContextTool(BaseAlmanacTool[AlmanacToolDeps, GetRunContextResult]):
         ctx: RunContext[AlmanacToolDeps],
         **_kwargs: Any,
     ) -> GetRunContextResult:
-        snapshot = ctx.deps.repos.snapshots.get()
-        run = ctx.deps.repos.runs.get(ctx.deps.run_id)
-        run_id = ctx.deps.run_id
+        run_context = RunContextService(repos=ctx.deps.repos).get(ctx.deps.run_id)
         return GetRunContextResult(
             success=True,
-            config=snapshot["config"],
-            run=run.model_dump() if run is not None else None,
+            config=run_context.config.model_dump() if run_context.config is not None else None,
+            run=run_context.run.model_dump() if run_context.run is not None else None,
             recent_experiments=[
-                item for item in snapshot["experiments"] if item["run_id"] == run_id
-            ][-10:],
-            recent_evidence=[
-                item for item in snapshot["evidence"] if item["run_id"] == run_id
-            ][-10:],
-            recent_findings=[
-                item for item in snapshot["findings"] if item["run_id"] == run_id
-            ][-10:],
-            recent_warnings=[
-                item for item in snapshot["warnings"] if item["run_id"] == run_id
-            ][-10:],
+                experiment.model_dump() for experiment in run_context.recent_experiments
+            ],
+            recent_evidence=[evidence.model_dump() for evidence in run_context.recent_evidence],
+            recent_findings=[finding.model_dump() for finding in run_context.recent_findings],
+            recent_warnings=[warning.model_dump() for warning in run_context.recent_warnings],
         )

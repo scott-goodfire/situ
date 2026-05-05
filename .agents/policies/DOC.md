@@ -18,8 +18,8 @@ or agent/worker flows.
 - [0008-docs-before-code/POLICY.md](./0008-docs-before-code/POLICY.md) - update specs before product-significant code
 - [0009-good-specs/POLICY.md](./0009-good-specs/POLICY.md) - define the writing bar for specs
 - [0010-evidence-backed-findings/POLICY.md](./0010-evidence-backed-findings/POLICY.md) - keep findings grounded in evidence
-- [0011-repository-layer/POLICY.md](./0011-repository-layer/POLICY.md) - keep durable state access repository-owned and record-backed
-- [0012-module-organization/POLICY.md](./0012-module-organization/POLICY.md) - prefer flat entrypoints and nested ownership folders for durable concepts
+- [0011-repository-layer/POLICY.md](./0011-repository-layer/POLICY.md) - keep durable state repository-owned and API composition service-owned
+- [0012-module-organization/POLICY.md](./0012-module-organization/POLICY.md) - prefer flat entrypoints and generic filenames inside ownership folders
 - [0013-frontend-code-style/POLICY.md](./0013-frontend-code-style/POLICY.md) - prefer explicit, spacious, kebab-cased frontend code
 - [0014-real-llm-evals/POLICY.md](./0014-real-llm-evals/POLICY.md) - keep tests deterministic and AI evals backed by real model calls
 

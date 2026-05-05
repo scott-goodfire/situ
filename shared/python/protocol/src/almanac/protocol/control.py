@@ -52,22 +52,6 @@ class SetupCompleteResult(BaseModel):
     config: ProjectConfigRecord
 
 
-class StateSnapshotParams(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-
-class StateSnapshotResult(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    config: ProjectConfigRecord | None
-    runs: list[RunRecord]
-    experiments: list[ExperimentRecord]
-    evidence: list[EvidenceRecord]
-    findings: list[FindingRecord]
-    warnings: list[WarningRecord]
-    events: list[EventRecord]
-
-
 CollectionName = Literal["runs", "experiments", "events"]
 
 

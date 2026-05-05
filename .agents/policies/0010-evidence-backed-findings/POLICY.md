@@ -7,7 +7,7 @@ status: active
 
 ## Applies To
 
-Findings, experiment summaries, TUI finding panels, agent-readable snapshots,
+Findings, experiment summaries, TUI finding panels, agent-readable run context,
 and any future finding extraction logic.
 
 ## Rule

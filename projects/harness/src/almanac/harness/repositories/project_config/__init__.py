@@ -1,3 +1,3 @@
-from .project_config_repository import ProjectConfigRepository
+from .repository import ProjectConfigRepository
 
 __all__ = ["ProjectConfigRepository"]

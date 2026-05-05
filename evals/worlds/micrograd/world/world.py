@@ -16,10 +16,12 @@ class MicrogradWorld:
         self.events: list[EvalEvent] = []
         self.warnings: list[EvalWarning] = []
         self.findings: list[EvalFinding] = []
+        self.evidence_by_id: dict[str, MicrogradEvidence] = {}
 
     def run_experiment(self, *, content: str, components: list[str]) -> MicrogradEvidence:
-        key = tuple(components or ["baseline"])
+        key = tuple(_normalize_components(components))
         evidence = MICROGRAD_RESULTS[key]
+        self.evidence_by_id[evidence.experiment_id] = evidence
         with logfire.span(
             "almanac.eval.tool_call.run_experiment",
             components=",".join(components),
@@ -41,6 +43,10 @@ class MicrogradWorld:
                 {"tool_name": "run_experiment", "experiment_id": evidence.experiment_id},
             )
         return evidence
+
+    def evaluate_experiment(self, experiment_id: str) -> list[EvalWarning]:
+        evidence = self.evidence_by_id[experiment_id]
+        return self.evaluate_evidence(evidence)
 
     def evaluate_evidence(self, evidence: MicrogradEvidence) -> list[EvalWarning]:
         with logfire.span("almanac.eval.tool_call.evaluate_evidence", experiment_id=evidence.experiment_id):
@@ -105,3 +111,11 @@ class MicrogradWorld:
 
     def _event(self, event_type: str, message: str, payload: dict[str, Any]) -> None:
         self.events.append(EvalEvent(event_type=event_type, message=message, payload=payload))
+
+
+def _normalize_components(components: list[str]) -> list[str]:
+    if not components:
+        return ["baseline"]
+    if len(components) == 1 and components[0].strip().upper() in {"A+C", "A + C"}:
+        return ["A", "C"]
+    return [component.strip() for component in components]

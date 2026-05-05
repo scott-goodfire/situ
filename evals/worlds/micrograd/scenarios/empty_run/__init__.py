@@ -1,3 +1,3 @@
-from evals.worlds.micrograd.scenarios.empty_run.scenario import run_empty_run_scenario
+from evals.worlds.micrograd.scenarios.empty_run.scenario import empty_run_prompt
 
-__all__ = ["run_empty_run_scenario"]
+__all__ = ["empty_run_prompt"]

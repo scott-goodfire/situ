@@ -29,11 +29,12 @@ repos.evidence.add(...)
 repos.warnings.add(...)
 repos.findings.upsert(...)
 repos.events.add(...)
-repos.snapshots.get()
+CurrentStateService(repos=repos).get()
+CollectionsService(repos=repos).bootstrap()
 ```
 
 The minimum useful assertion is that writes round-trip through both the owning
-repository and `SnapshotsRepository`.
+repository and the relevant API service/schema.
 
 ## Runtime Smoke
 
@@ -54,16 +55,33 @@ ALMANAC_HOME=/private/tmp/almanac-ext-smoke ./commands/start.sh "$tmp" \
   --max-experiments 1
 ```
 
+## Storybook
+
+The web UI has Storybook stories for fixture-driven monitor states and
+presentational components. Use Storybook when changing browser UI layout,
+empty/error states, or visual treatment:
+
+```bash
+./commands/storybook.sh
+./commands/storybook-build.sh
+./commands/storybook-screenshots.sh
+```
+
+The build command is the non-interactive verification. It should pass without a
+live Almanac session, because stories use local fixtures rather than RPC/SSE.
+The screenshot command starts Storybook, captures every story with Playwright,
+and writes PNGs under `/tmp/almanac-storybook-screenshots/<timestamp>/`.
+
 ## Protocol Shape
 
-The TUI consumes protocol-shaped dictionaries. If snapshots or repository return
-values change, validate the output against the protocol models before relying on
-manual inspection.
+The TUI consumes protocol-shaped dictionaries. If API schemas or repository
+return values change, validate the output against the protocol models before
+relying on manual inspection.
 
 Useful targets:
 
 ```text
-StateSnapshotResult
+CollectionsBootstrapResult
 ProjectConfigRecord
 RunRecord
 ExperimentRecord
@@ -78,6 +96,6 @@ EventRecord
 The next durable test improvements should be:
 
 - A small Python repository test script or pytest suite using temp SQLite.
-- A protocol validation check for `repos.snapshots.get()`.
+- A protocol validation check for `CurrentStateService(repos=repos).get()`.
 - A non-interactive smoke test that runs the harness without rendering the TUI.
 - A regression test for suspicious evidence warnings.

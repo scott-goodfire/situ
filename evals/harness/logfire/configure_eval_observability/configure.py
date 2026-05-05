@@ -17,7 +17,7 @@ def configure_eval_observability() -> None:
         os.environ["LOGFIRE_TOKEN"] = token
 
     logfire.configure(
-        send_to_logfire=os.environ.get("ALMANAC_LOGFIRE_SEND_TO_LOGFIRE", "if-token-present"),
+        send_to_logfire="always",
         service_name=os.environ.get("ALMANAC_EVAL_LOGFIRE_SERVICE_NAME", "almanac-ai-evals"),
         environment=os.environ.get("ALMANAC_ENVIRONMENT", "evals"),
         console=False,

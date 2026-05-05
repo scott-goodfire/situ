@@ -54,11 +54,11 @@ class AgentRuntime:
         self,
         *,
         config: dict[str, Any],
-        snapshot: dict[str, Any],
+        current_state: dict[str, Any],
         run_id: str | None = None,
         repos: Repositories | None = None,
     ) -> AgentPlan:
-        prompt = self._prompt(config=config, snapshot=snapshot)
+        prompt = self._prompt(config=config, current_state=current_state)
         message_history = None
         conversation_id = None
         if run_id is not None and repos is not None:
@@ -99,9 +99,9 @@ class AgentRuntime:
             )
         return result.output
 
-    def _prompt(self, *, config: dict[str, Any], snapshot: dict[str, Any]) -> str:
-        recent_warnings = snapshot.get("warnings", [])[-5:]
-        recent_findings = snapshot.get("findings", [])[-5:]
+    def _prompt(self, *, config: dict[str, Any], current_state: dict[str, Any]) -> str:
+        recent_warnings = current_state.get("warnings", [])[-5:]
+        recent_findings = current_state.get("findings", [])[-5:]
         return "\n".join(
             [
                 f"Goal: {config.get('goal', '')}",

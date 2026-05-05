@@ -1,3 +1,3 @@
-from evals.worlds.micrograd.scenarios.synthesize_findings.scenario import run_synthesize_findings_scenario
+from evals.worlds.micrograd.scenarios.synthesize_findings.scenario import synthesize_findings_prompt
 
-__all__ = ["run_synthesize_findings_scenario"]
+__all__ = ["synthesize_findings_prompt"]

@@ -1,3 +1,3 @@
-from .event_record import EventRecord
+from .record import EventRecord
 
 __all__ = ["EventRecord"]

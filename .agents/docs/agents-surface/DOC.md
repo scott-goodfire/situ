@@ -87,3 +87,12 @@ Use the curate-meta-layer skill when the goal is broader entropy reduction:
 It reviews specs, policies, docs, skills, recent conversation context, and
 recent commits/diffs for artifacts to update, combine, remove, rewrite,
 simplify, add, or leave alone.
+
+Use the Playwright Storybook screenshots skill when reviewing the web UI:
+
+```text
+.agents/skills/playwright-storybook-screenshots/SKILL.md
+```
+
+It captures fixture-driven Storybook screenshots into `/tmp` and documents the
+Playwright MCP setup for interactive browser inspection.

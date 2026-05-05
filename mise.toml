@@ -44,6 +44,10 @@ run = "./commands/storybook.sh"
 description = "Build Storybook for the Almanac web UI"
 run = "./commands/storybook-build.sh"
 
+[tasks."storybook:screenshots"]
+description = "Capture screenshots for every Storybook story"
+run = "./commands/storybook-screenshots.sh"
+
 [tasks."dev:harness"]
 description = "Run the Python harness JSON-RPC stdio server"
 run = "./commands/dev-harness.sh"

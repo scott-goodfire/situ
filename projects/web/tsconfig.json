@@ -4,8 +4,8 @@
     "jsx": "react-jsx",
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "rootDir": "src",
+    "rootDir": ".",
     "types": ["vite/client"]
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx"]
+  "include": [".storybook/**/*.ts", "scripts/**/*.ts", "src/**/*.ts", "src/**/*.tsx"]
 }

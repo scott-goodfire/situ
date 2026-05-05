@@ -3,7 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from almanac.protocol import StateSnapshotResult
+from almanac.harness.api.current_state import CurrentStateService
+from almanac.harness.api.run_context import RunContextService
 from almanac.harness.core.db import Database
 from almanac.harness.records import ExperimentRecord, ProjectConfigRecord, RunRecord
 from almanac.harness.repositories import Repositories
@@ -229,7 +230,7 @@ def test_agent_message_history_repository_appends_and_reconstructs(repos: Reposi
     ]
 
 
-def test_snapshots_repository_composes_protocol_shaped_state(repos: Repositories) -> None:
+def test_current_state_api_composes_protocol_shaped_state(repos: Repositories) -> None:
     create_experiment(repos)
     repos.evidence.add(
         run_id="run_0001",
@@ -259,14 +260,41 @@ def test_snapshots_repository_composes_protocol_shaped_state(repos: Repositories
         payload={"experiment_id": "exp_run_0001_a"},
     )
 
-    snapshot = repos.snapshots.get()
-    parsed = StateSnapshotResult.model_validate(snapshot)
+    current_state = CurrentStateService(repos=repos).get()
+    assert current_state.config is not None
+    assert current_state.config.id == "project_test"
+    assert [run.id for run in current_state.runs] == ["run_0001"]
+    assert [experiment.id for experiment in current_state.experiments] == ["exp_run_0001_a"]
+    assert [evidence.experiment_id for evidence in current_state.evidence] == ["exp_run_0001_a"]
+    assert [finding.id for finding in current_state.findings] == ["run_0001_F-001"]
+    assert [warning.kind for warning in current_state.warnings] == ["missing_signal"]
+    assert [event.type for event in current_state.events] == ["experiment.completed"]
 
-    assert parsed.config is not None
-    assert parsed.config.id == "project_test"
-    assert [run.id for run in parsed.runs] == ["run_0001"]
-    assert [experiment.id for experiment in parsed.experiments] == ["exp_run_0001_a"]
-    assert [evidence.experiment_id for evidence in parsed.evidence] == ["exp_run_0001_a"]
-    assert [finding.id for finding in parsed.findings] == ["run_0001_F-001"]
-    assert [warning.kind for warning in parsed.warnings] == ["missing_signal"]
-    assert [event.type for event in parsed.events] == ["experiment.completed"]
+
+def test_run_context_api_composes_agent_context(repos: Repositories) -> None:
+    create_experiment(repos)
+    repos.evidence.add(
+        run_id="run_0001",
+        experiment_id="exp_run_0001_a",
+        summary="A improved score.",
+        signals=[{"key": "score", "value": 0.73}],
+        raw={"shape": "standard", "eval_status": "ok"},
+    )
+    repos.findings.upsert(
+        finding_id="run_0001_F-001",
+        run_id="run_0001",
+        summary="A improved over baseline.",
+        evidence_experiment_ids=["exp_run_0001_a"],
+        confidence="low",
+        status="open",
+    )
+
+    context = RunContextService(repos=repos).get("run_0001")
+
+    assert context.config is not None
+    assert context.run is not None
+    assert context.config.id == "project_test"
+    assert context.run.id == "run_0001"
+    assert [experiment.id for experiment in context.recent_experiments] == ["exp_run_0001_a"]
+    assert [evidence.experiment_id for evidence in context.recent_evidence] == ["exp_run_0001_a"]
+    assert [finding.id for finding in context.recent_findings] == ["run_0001_F-001"]

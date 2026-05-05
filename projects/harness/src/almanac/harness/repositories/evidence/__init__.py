@@ -1,3 +1,3 @@
-from .evidence_repository import EvidenceRepository
+from .repository import EvidenceRepository
 
 __all__ = ["EvidenceRepository"]

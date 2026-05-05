@@ -1,3 +1,3 @@
-from .signal_record import SignalRecord
+from .record import SignalRecord
 
 __all__ = ["SignalRecord"]

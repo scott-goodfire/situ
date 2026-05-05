@@ -1,16 +1,18 @@
 from __future__ import annotations
 
-from evals.harness.models import AlmanacEvalOutput
-from evals.worlds.micrograd.world import MicrogradWorld
+from evals.worlds.micrograd.models import MicrogradEvalInput
 
 
-def run_after_baseline_scenario(world: MicrogradWorld) -> AlmanacEvalOutput:
-    content = "Explore simple variants A, B, and C before combining directions."
-    for component in ["A", "B", "C"]:
-        evidence = world.run_experiment(content=f"Try simple variant {component}.", components=[component])
-        world.evaluate_evidence(evidence)
-    world.record_finding(
-        content="A and C look more promising than B; keep breadth before committing.",
-        evidence_ids=["exp_a", "exp_b", "exp_c"],
-    )
-    return world.output(content)
+def after_baseline_prompt(args: MicrogradEvalInput) -> str:
+    return f"""
+    Case: {args.case_id}
+    Scenario: baseline exists, but no simple variants have been tried.
+    State: {args.state}
+
+    Required behavior:
+    - Explore simple variants A, B, and C before combining directions.
+    - Call run_experiment once for ["A"], once for ["B"], and once for ["C"].
+    - Call evaluate_evidence for each returned experiment_id.
+    - Call record_finding with content that includes "A and C".
+    - Final answer must include the exact phrase "A, B, and C".
+    """

@@ -1,3 +1,3 @@
-from .runs_repository import RunsRepository
+from .repository import RunsRepository
 
 __all__ = ["RunsRepository"]

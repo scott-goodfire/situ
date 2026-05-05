@@ -9,7 +9,8 @@ from pydantic_evals.evaluators import Evaluator, HasMatchingSpan
 from evals.harness import BaseAlmanacEvalGroup
 from evals.harness.models import AlmanacEvalOutput
 from evals.suites.agent_planning.micrograd.cases import micrograd_planning_cases
-from evals.worlds.micrograd import MicrogradEvalInput, run_micrograd_planning_case
+from evals.worlds.micrograd import MicrogradEvalInput
+from evals.worlds.micrograd.agents.planning_agent import run_micrograd_agent
 
 
 class MicrogradPlanningEvalGroup(BaseAlmanacEvalGroup[MicrogradEvalInput, AlmanacEvalOutput]):
@@ -23,7 +24,7 @@ class MicrogradPlanningEvalGroup(BaseAlmanacEvalGroup[MicrogradEvalInput, Almana
         set_eval_attribute("scenario", args.scenario)
         set_eval_attribute("expected_signals", args.expected_signals)
         set_eval_attribute("expected_signal_count", len(args.expected_signals))
-        output = run_micrograd_planning_case(args)
+        output = run_micrograd_agent(args)
         increment_eval_metric("tool_calls", len(output.captured_tool_calls))
         increment_eval_metric("warnings", len(output.warnings))
         increment_eval_metric("findings", len(output.findings))

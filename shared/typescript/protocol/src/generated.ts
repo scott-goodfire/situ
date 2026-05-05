@@ -134,19 +134,6 @@ export interface SetupCompleteResult {
   config: ProjectConfigRecord;
 }
 
-export interface StateSnapshotParams {
-}
-
-export interface StateSnapshotResult {
-  config: ProjectConfigRecord | null;
-  runs: RunRecord[];
-  experiments: ExperimentRecord[];
-  evidence: EvidenceRecord[];
-  findings: FindingRecord[];
-  warnings: WarningRecord[];
-  events: EventRecord[];
-}
-
 export interface CollectionsBootstrapParams {
 }
 
@@ -230,5 +217,5 @@ export interface WorkerProgressParams {
   payload?: Record<string, unknown>;
 }
 
-export type ControlMethod = "harness.hello" | "setup.get" | "setup.complete" | "state.snapshot" | "collections.bootstrap" | "collections.subscribe" | "events.subscribe" | "run.start" | "run.status";
+export type ControlMethod = "harness.hello" | "setup.get" | "setup.complete" | "collections.bootstrap" | "collections.subscribe" | "events.subscribe" | "run.start" | "run.status";
 export type WorkerMethod = "worker.initialize" | "experiment.run";

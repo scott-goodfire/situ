@@ -24,14 +24,20 @@ The default durable-concept style is:
 ```text
 domain/
   concept_name/
-    concept_name_kind.py
+    record.py
+    repository.py
+    command.py
+    schemas.py
+    service.py
 ```
 
 Examples:
 
 ```text
-repositories/runs/runs_repository.py
-records/run/run_record.py
+repositories/runs/repository.py
+records/run/record.py
+api/runs/schemas.py
+api/runs/service.py
 tools/run_experiment/tool.py
 evaluators/tool_was_called/evaluator.py
 worlds/micrograd/scenarios/suspicious_win/scenario.py
@@ -53,21 +59,34 @@ projects/harness/src/almanac/harness/
       checks.py
     workers/
       manager.py
+  api/
+    collections/
+      schemas.py
+      service.py
+    run_context/
+      schemas.py
+      service.py
+    runs/
+      schemas.py
+      service.py
   repositories/
     experiments/
-      experiments_repository.py
+      repository.py
+      command.py
     findings/
-      findings_repository.py
+      repository.py
+      command.py
   records/
     experiment/
-      experiment_record.py
+      record.py
     finding/
-      finding_record.py
+      record.py
 ```
 
 `core/` is for cross-cutting harness infrastructure. Product-state concepts
-should not disappear into `core/`; they should live in `repositories/`,
-`records/`, `tools/`, `agents/`, or another product-facing domain folder.
+should not disappear into `core/`; they should live in `api/`,
+`repositories/`, `records/`, `tools/`, `agents/`, or another product-facing
+domain folder.
 
 ## Required Checks
 
@@ -82,14 +101,18 @@ should not disappear into `core/`; they should live in `repositories/`,
   used by many siblings, put it in a clearly named local support file.
 - Keep suite/case files thin. Test or eval cases should read as declarations of
   behavior, not as the place where the world simulation or runner logic lives.
-- Prefer explicit names like `experiments_repository.py`,
-  `experiment_record.py`, `tool.py`, `evaluator.py`, `case.py`, `scenario.py`,
-  or `runner.py` inside a named folder.
-- Put repositories under `harness/repositories/<concept>/<concept>_repository.py`.
+- Inside a named ownership folder, prefer generic filenames like
+  `record.py`, `repository.py`, `command.py`, `schemas.py`, `service.py`,
+  `tool.py`, `evaluator.py`, `case.py`, `scenario.py`, or `runner.py`.
+- Put API/application composition under
+  `harness/api/<surface>/{schemas.py,service.py}`.
+- Use API services for request/response composition, multi-repository reads,
+  and application operations that are not table-owned persistence.
+- Put repositories under `harness/repositories/<concept>/repository.py`.
 - Repository concepts are usually plural collection names, like `experiments`
   or `findings`.
 - Put persistence record models under
-  `harness/records/<singular_concept>/<singular_concept>_record.py`.
+  `harness/records/<singular_concept>/record.py`.
 - Record concepts are usually singular entity names, like `experiment` or
   `finding`.
 - Put DB plumbing, trust checks, and worker infrastructure under
@@ -125,6 +148,8 @@ should not disappear into `core/`; they should live in `repositories/`,
 - Folder names do not explain ownership boundaries.
 - Repository, record, worker, trust, or DB code is added to the old flat layout
   when a target ownership folder would be clearer.
+- A multi-table current-state composition is named a repository or snapshot
+  when it should be an API service/schema.
 
 ## Review Questions
 

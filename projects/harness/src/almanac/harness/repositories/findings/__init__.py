@@ -1,3 +1,3 @@
-from .findings_repository import FindingsRepository
+from .repository import FindingsRepository
 
 __all__ = ["FindingsRepository"]

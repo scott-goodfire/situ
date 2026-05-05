@@ -24,7 +24,7 @@ The exact interface can evolve, but the product should support commands like:
 
 ```bash
 almanac status --json
-almanac snapshot --json
+almanac run-context --json
 almanac experiments --json
 almanac events --json
 ```
@@ -32,9 +32,9 @@ almanac events --json
 Defer richer guidance and proposal-context commands until the basic loop is
 working.
 
-## Snapshot Context
+## Run Context
 
-`snapshot` should include:
+`run-context` should include:
 
 - Goal
 - Evaluation context

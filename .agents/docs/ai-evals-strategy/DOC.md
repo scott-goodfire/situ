@@ -38,6 +38,8 @@ tests are deterministic, while AI evals exercise live model behavior.
 Follow Pydantic Evals and Logfire defaults where they fit:
 
 - Configure Logfire before eval discovery and task execution.
+- Send eval runs to Logfire by default; eval commands should not require a
+  per-run `ALMANAC_LOGFIRE_SEND_TO_LOGFIRE=always` override.
 - Use `Dataset.evaluate_sync` for the local synchronous runner.
 - Require real model credentials for AI eval execution; missing credentials
   should fail clearly instead of falling back to scripted behavior.
@@ -50,6 +52,8 @@ Follow Pydantic Evals and Logfire defaults where they fit:
 - Use native Pydantic Evals retry knobs for transient LLM/tool failures.
 - Keep `StandardAlmanacJudge` available for semantic checks, but do not make LLM
   judges the default for mechanical behavior.
+- Do not force model settings that the configured model rejects; prefer model
+  defaults unless an eval has proven it needs a supported override.
 - For Pydantic AI agents, capture tool calls with hook/capability utilities
   rather than ad hoc wrappers.
 
@@ -86,9 +90,8 @@ local eval commands or sandbox repos.
 
 ## Logfire
 
-AI evals should report to Logfire when `ALMANAC_LOGFIRE_TOKEN` is present. Use
-descriptive service names, experiment names, and metadata so eval runs are
-searchable.
+AI evals should report to Logfire by default. Use descriptive service names,
+experiment names, and metadata so eval runs are searchable.
 
 Recommended metadata:
 

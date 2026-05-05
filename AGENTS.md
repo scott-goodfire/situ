@@ -37,6 +37,10 @@ Use [.agents/skills/curate-meta-layer/SKILL.md](./.agents/skills/curate-meta-lay
 when the goal is to reduce entropy across specs, policies, docs, skills, recent
 conversation context, and recent commits/diffs.
 
+Use [.agents/skills/playwright-storybook-screenshots/SKILL.md](./.agents/skills/playwright-storybook-screenshots/SKILL.md)
+when inspecting web UI with Playwright, capturing Storybook screenshots, or
+using the Playwright MCP server for browser-driven review.
+
 Routine command surface should eventually live in `mise.toml`, with reusable
 scripts in `commands/`, following the pattern from the reference Almanac
 prototype.

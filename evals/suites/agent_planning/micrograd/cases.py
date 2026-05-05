@@ -19,12 +19,13 @@ def micrograd_planning_cases() -> list[Case[MicrogradEvalInput, AlmanacEvalOutpu
     return [
         Case(
             name="baseline_first",
-            inputs=MicrogradEvalInput(
-                case_id="baseline_first",
-                scenario="empty_run",
-                state="No baseline has been recorded yet.",
-            ),
-            evaluators=(
+                inputs=MicrogradEvalInput(
+                    case_id="baseline_first",
+                    scenario="empty_run",
+                    state="No baseline has been recorded yet.",
+                ),
+                metadata={"requires_real_llm": True},
+                evaluators=(
                 ContentContains("baseline"),
                 ToolWasCalled("run_experiment"),
                 ToolArgsContain("run_experiment", "baseline"),
@@ -34,11 +35,12 @@ def micrograd_planning_cases() -> list[Case[MicrogradEvalInput, AlmanacEvalOutpu
         ),
         Case(
             name="breadth_before_commitment",
-            inputs=MicrogradEvalInput(
-                case_id="breadth_before_commitment",
-                scenario="after_baseline",
-                state="Baseline exists. No simple variants have been tried.",
-            ),
+                inputs=MicrogradEvalInput(
+                    case_id="breadth_before_commitment",
+                    scenario="after_baseline",
+                    state="Baseline exists. No simple variants have been tried.",
+                ),
+                metadata={"requires_real_llm": True},
             evaluators=(
                 ContentContains("A, B, and C"),
                 ToolArgsContain("run_experiment", "A"),
@@ -49,11 +51,12 @@ def micrograd_planning_cases() -> list[Case[MicrogradEvalInput, AlmanacEvalOutpu
         ),
         Case(
             name="combine_promising_components",
-            inputs=MicrogradEvalInput(
-                case_id="combine_promising_components",
-                scenario="after_simple_variants",
-                state="A and C improved over baseline. B was weaker and slower.",
-            ),
+                inputs=MicrogradEvalInput(
+                    case_id="combine_promising_components",
+                    scenario="after_simple_variants",
+                    state="A and C improved over baseline. B was weaker and slower.",
+                ),
+                metadata={"requires_real_llm": True},
             evaluators=(
                 ContentContains("A+C"),
                 ToolArgsContain("run_experiment", "A"),
@@ -63,11 +66,12 @@ def micrograd_planning_cases() -> list[Case[MicrogradEvalInput, AlmanacEvalOutpu
         ),
         Case(
             name="suspicious_win_is_not_accepted",
-            inputs=MicrogradEvalInput(
-                case_id="suspicious_win_is_not_accepted",
-                scenario="suspicious_win",
-                state="A bad variant reports a huge score jump but changes evidence shape.",
-            ),
+                inputs=MicrogradEvalInput(
+                    case_id="suspicious_win_is_not_accepted",
+                    scenario="suspicious_win",
+                    state="A bad variant reports a huge score jump but changes evidence shape.",
+                ),
+                metadata={"requires_real_llm": True},
             evaluators=(
                 ContentContains("Do not trust"),
                 ToolWasCalled("evaluate_evidence"),
@@ -78,11 +82,12 @@ def micrograd_planning_cases() -> list[Case[MicrogradEvalInput, AlmanacEvalOutpu
         ),
         Case(
             name="synthesizes_findings_from_evidence",
-            inputs=MicrogradEvalInput(
-                case_id="synthesizes_findings_from_evidence",
-                scenario="synthesize_findings",
-                state="Baseline, A, B, C, and A+C all have valid evidence.",
-            ),
+                inputs=MicrogradEvalInput(
+                    case_id="synthesizes_findings_from_evidence",
+                    scenario="synthesize_findings",
+                    state="Baseline, A, B, C, and A+C all have valid evidence.",
+                ),
+                metadata={"requires_real_llm": True},
             evaluators=(
                 ContentContains("Synthesize"),
                 FindingContains("C improves"),

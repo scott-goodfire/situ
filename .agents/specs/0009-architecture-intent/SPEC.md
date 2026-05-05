@@ -60,11 +60,12 @@ For the first collection-backed slice, the sync surface is intentionally small:
 - Experiments
 - Events
 
-The existing full-state snapshot may remain as a compatibility and recovery
-path for backend and agent code, but new UI work should use collection-shaped
-bootstrap data and row-level upsert notifications only. This keeps the TUI and
-future web UI aligned with a shared TypeScript collection layer without
-requiring a full sync engine yet.
+Full current-state composition should live in harness API services and schemas,
+not in a snapshot repository or durable snapshot model. UI work should use
+collection-shaped bootstrap data and row-level upsert notifications. Agent code
+should use explicit run-context APIs. This keeps the TUI and future web UI
+aligned with a shared TypeScript collection layer without requiring a full sync
+engine yet.
 
 Evidence, findings, warnings, deletes, pagination, optimistic writes, and a
 durable collection change log are deferred until the basic UI loop works.

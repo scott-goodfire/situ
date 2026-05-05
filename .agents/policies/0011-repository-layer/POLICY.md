@@ -7,8 +7,9 @@ status: active
 
 ## Applies To
 
-Database access, repository additions, persistence refactors, snapshots,
-migrations, DBOS integration, and tests touching durable run state.
+Database access, repository additions, persistence refactors, API composition
+over durable state, migrations, DBOS integration, and tests touching durable
+run state.
 
 ## Rule
 
@@ -21,8 +22,7 @@ and read-model composition; orchestration code owns run flow.
 - New durable state has a clear repository owner under
   `projects/harness/src/almanac/harness/repositories/<concept>/`.
 - Repository implementation files use the explicit naming pattern
-  `<concept>_repository.py`, for example
-  `repositories/experiments/experiments_repository.py`.
+  `repository.py`, for example `repositories/experiments/repository.py`.
 - Repository classes inherit from `BaseRepository`, which owns the shared
   `BaseModel` + `db: Database` pattern.
 - SQL execution goes through `Database`; runtime code outside `core/db/` should
@@ -32,22 +32,23 @@ and read-model composition; orchestration code owns run flow.
   decoding live in `core/db/serialization.py` unless there is a clear reason to
   keep them local.
 - Repository input validators live near the repository they serve, or in a
-  clearly named local support module, when a method benefits from Pydantic
-  validation before writing.
+  local `command.py`, when a method benefits from Pydantic validation before
+  writing.
 - Repository methods should return typed Pydantic records from
-  `projects/harness/src/almanac/harness/records/<singular_concept>/<singular_concept>_record.py`,
+  `projects/harness/src/almanac/harness/records/<singular_concept>/record.py`,
   not loose `dict[str, Any]`, for durable state objects.
-- Snapshot/read-model methods may convert DB records to protocol-shaped plain
-  dictionaries at the TUI/RPC boundary.
+- API services under `harness/api/<surface>/service.py` may compose multiple
+  repositories and convert DB records to protocol-shaped schemas at the TUI/RPC
+  boundary.
 - New repositories are exported from their concept package and included in the
   `Repositories` container when runtime code needs them.
-- Snapshot/read-model changes are centralized in `SnapshotsRepository`, with the
-  target location `repositories/snapshots/snapshots_repository.py`.
+- Multi-table read/composition behavior should not be modeled as a repository
+  unless it owns durable state. Put it in an API service with local schemas.
 - Business orchestration stays outside repositories. Repositories should create,
   update, fetch, list, and compose persistence records; they should not decide
   which experiment to run next or whether a run should continue.
 - Repository changes include at least a temp-SQLite smoke or unit test strategy
-  that exercises creation, update, list/get, and snapshot behavior.
+  that exercises creation, update, list/get, and API composition behavior.
 
 ## Red Flags
 
@@ -56,9 +57,11 @@ and read-model composition; orchestration code owns run flow.
 - Adding a new repository to the legacy flat `db/repos/` layout instead of the
   target `repositories/<concept>/` layout.
 - Adding a new durable record to a broad `records.py` file instead of the target
-  `records/<singular_concept>/<singular_concept>_record.py` file.
-- Adding persistence fields that are written but never surfaced through
-  snapshots or agent-facing context when they matter to observability.
+  `records/<singular_concept>/record.py` file.
+- Adding a `SnapshotsRepository` or similar repository that does not own durable
+  state and only composes current API responses.
+- Adding persistence fields that are written but never surfaced through API
+  schemas or agent-facing context when they matter to observability.
 - Reintroducing a broad catch-all state object that hides table ownership.
 - Duplicating JSON serialization or row mapping across repositories.
 - Making repositories call workers, agents, TUI code, or long-running
@@ -72,7 +75,8 @@ For repository changes, prefer fast local checks:
 
 - Run the full command check.
 - Exercise the changed repository against a temporary SQLite file.
-- Validate that `SnapshotsRepository.get()` returns the expected composed state.
+- Validate that API services return the expected composed schemas when
+  repository data changes.
 - Smoke the TUI path when runtime wiring changes.
 
 See `.agents/docs/testing-strategy/DOC.md` for the current testing strategy.

@@ -7,7 +7,6 @@ from .findings import FindingsRepository
 from .project_config import ProjectConfigRepository
 from .repositories import Repositories
 from .runs import RunsRepository
-from .snapshots import SnapshotsRepository
 from .warnings import WarningsRepository
 
 __all__ = [
@@ -20,6 +19,5 @@ __all__ = [
     "ProjectConfigRepository",
     "Repositories",
     "RunsRepository",
-    "SnapshotsRepository",
     "WarningsRepository",
 ]

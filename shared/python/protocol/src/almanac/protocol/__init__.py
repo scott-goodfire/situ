@@ -16,8 +16,6 @@ from .control import (
     SetupCompleteResult,
     SetupGetParams,
     SetupGetResult,
-    StateSnapshotParams,
-    StateSnapshotResult,
 )
 from .events import (
     EventRecord,
@@ -74,8 +72,6 @@ __all__ = [
     "SetupGetParams",
     "SetupGetResult",
     "SignalRecord",
-    "StateSnapshotParams",
-    "StateSnapshotResult",
     "WarningRecord",
     "WorkerInitializeParams",
     "WorkerInitializeResult",

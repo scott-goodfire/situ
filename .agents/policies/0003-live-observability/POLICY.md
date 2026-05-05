@@ -7,7 +7,7 @@ status: active
 
 ## Applies To
 
-TUI, CLI status, state snapshots, event streams, and experiment summaries.
+TUI, CLI status, current-state APIs, event streams, and experiment summaries.
 
 ## Rule
 
