@@ -112,6 +112,8 @@ def session_record() -> SessionRecord:
     return SessionRecord(
         id="session_0001",
         objective_id="objective_0001",
+        objective="Improve score",
+        research_context="Run evals.",
         status="active",
         created_at="now",
         updated_at="now",

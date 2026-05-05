@@ -6,31 +6,37 @@ small and let activities carry nuance.
 ## Current Hierarchy
 
 ```text
-Objective
-  |-- Hypotheses
-  |     `-- HypothesisActivity
-  |-- Experiments
-  |     `-- ExperimentActivity
-  |-- Evaluations
-  |     `-- EvaluationActivity
-  |-- HypothesisExperimentLinks
-  |-- Artifacts
+Project
   `-- Sessions
+        |-- Objective text
+        |-- Research context
+        |-- Hypotheses
+        |     `-- HypothesisActivity
+        |-- Experiments
+        |     `-- ExperimentActivity
+        |-- Evaluations
+        |     `-- EvaluationActivity
+        |-- HypothesisExperimentLinks
+        |-- Artifacts
         `-- Events
 ```
 
+The project is the workspace boundary. The session is the primary product
+object. Starting Almanac creates a fresh session by default; resuming an
+existing session must be explicit.
+
 ## Objective
 
-The durable north star. It defines what the research is trying to improve or
+The session north star. It defines what this session is trying to improve or
 understand.
 
 A first objective needs title/description plus lightweight research context:
 how progress is judged, what signals or artifacts matter, and what kinds of
 experiments are in scope.
 
-Objectives may carry an optional `associated_session_id` as provenance when
-they are created or revised during a session. This is not ownership; objectives
-remain durable across sessions.
+Objectives are owned by sessions in the first slice. A project may have many
+sessions with similar objectives, but each session owns its own objective text
+and ledger.
 
 ## Research Context
 
@@ -46,23 +52,25 @@ experiment scope until the product proves those boundaries are stable.
 
 ## Session
 
-An internal execution window for a local Almanac process.
+The main unit of autoresearch work.
 
-Sessions track runtime lifecycle, worker activity, agent message history, and
-events. They are useful to the system, but they are not the main product object
-the user should organize research around.
+A session has an objective, research context, lifecycle status, agent message
+history, hypotheses, experiments, evaluations, activities, artifacts, and
+events. Each new `almanac start` creates a new session. `almanac resume` is the
+explicit action for continuing the same session id.
 
 ## Hypothesis
 
-A research thread under an objective.
+A research thread inside a session.
 
 Hypotheses should be lightweight and status-light. A hypothesis can be open,
 active, or closed. Whether it is promising, weakened, suspicious, or mostly
 supported should be explained through activities rather than status explosion.
 
-Hypotheses may carry an optional `associated_session_id` to show which session
-introduced or last contextualized them. They should still be considered part of
-the objective, not owned by a single session.
+Hypotheses are owned by the session that created them. Prior-session
+hypotheses may be used as reference material later, but they should not appear
+as current-session state unless explicitly copied or summarized into the new
+session.
 
 ## Experiment
 
@@ -72,9 +80,7 @@ Experiments should also be status-light: open, active, or closed. Details such
 as failure, suspiciousness, reproduction, or interpretation should be expressed
 as experiment activities.
 
-Experiments may carry an optional `associated_session_id` for the session that
-introduced them. This supports session filtering without making sessions the
-main product object.
+Experiments are owned by a session.
 
 Do not add `Variant` as a first-class model yet. Use experiment summaries,
 activity bodies, artifacts, and links to express baseline + A, baseline + B,
@@ -94,10 +100,10 @@ stdout/stderr, observed signals, interpretations, concerns, and reproduction
 notes should be recorded as evaluation activities rather than columns on the
 evaluation itself.
 
-Evaluations may carry an optional `associated_session_id` and an optional
-`associated_experiment_id`. A baseline evaluation usually has no associated
-experiment. A candidate or reproduction evaluation usually points at the
-experiment it measures.
+Evaluations are owned by a session and may optionally point at the experiment
+they measure. A baseline evaluation usually has no associated experiment. A
+candidate or reproduction evaluation usually points at the experiment it
+measures.
 
 Before a session treats candidate experiments as comparable, it should establish
 at least one baseline evaluation activity with evidence. This is a product rule,

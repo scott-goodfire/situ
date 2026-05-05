@@ -125,6 +125,11 @@ def build_session_run_prompt(
     current_state: dict[str, Any],
     max_experiments: int,
 ) -> str:
+    session = current_state.get("session") or {}
+    session_research_context = session.get("research_context") or config.get(
+        "research_context",
+        "",
+    )
     recent_hypothesis_activity = current_state.get("hypothesis_activities", [])[-8:]
     recent_experiment_activity = current_state.get("experiment_activities", [])[-8:]
     return inspect.cleandoc(
@@ -136,7 +141,7 @@ def build_session_run_prompt(
         {objective.get("description", "")}
 
         Research context
-        {config.get("research_context", "")}
+        {session_research_context}
 
         Budget for this pass
         Run at most {max_experiments} experiments.

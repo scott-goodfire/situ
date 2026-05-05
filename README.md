@@ -2,9 +2,10 @@
 
 A local-first terminal observability layer for autoresearch sessions.
 
-The first runnable slice is a local TypeScript Ink TUI talking JSON-RPC over
-stdio to a Python harness. The harness records objectives, sessions,
-hypotheses, experiments, activities, artifacts, and events in local SQLite state under
+The first runnable slice is a local TypeScript Ink TUI talking JSON-RPC to a
+local session server backed by the Python harness. The harness records sessions,
+session-owned objectives, hypotheses, experiments, evaluations, activities,
+artifacts, and events in local SQLite state under
 `~/.almanac/projects/<project-id>/`.
 
 Start here:
@@ -27,6 +28,11 @@ Equivalent start path:
 mise run start
 ```
 
+`start` opens an interactive preflight prompt and creates a fresh session only
+after you select Start session. Use `resume` when you intentionally want to
+continue an older session id, and `attach` when a harness is already running
+and you only want the TUI monitor.
+
 Run against another local workspace:
 
 ```bash
@@ -46,6 +52,9 @@ mise run protocol:generate
 mise run dev:harness
 mise run dev:tui
 mise run start
+mise run resume -- ~/sandbox/some-repo
+mise run attach -- ~/sandbox/some-repo
+mise run sessions -- ~/sandbox/some-repo --json
 mise run web
 mise run web:smoke
 mise run clear -- ~/sandbox/some-repo

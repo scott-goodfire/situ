@@ -61,6 +61,8 @@ def session_row(row: sqlite3.Row) -> SessionRecord:
     return SessionRecord(
         id=row["id"],
         objective_id=row["objective_id"],
+        objective=row["objective"],
+        research_context=row["research_context"],
         status=row["status"],
         created_at=row["created_at"],
         updated_at=row["updated_at"],

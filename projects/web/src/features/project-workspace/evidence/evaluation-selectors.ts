@@ -2,7 +2,6 @@ import type {
   EvaluationActivityRecord,
   EvaluationRecord,
   ExperimentRecord,
-  ObjectiveRecord,
   SessionRecord,
 } from "@almanac/protocol";
 import filter from "lodash/filter";
@@ -14,19 +13,19 @@ export type EvidenceState = "missing" | "waiting" | "present" | "concern";
 
 export function baselineEvaluations({
   data,
-  objective,
+  session,
 }: {
   data: ProjectWorkspaceData;
-  objective: ObjectiveRecord | undefined;
+  session: SessionRecord | undefined;
 }): EvaluationRecord[] {
-  if (!objective) {
+  if (!session) {
     return [];
   }
 
   return filter(
     data.evaluations,
     (evaluation) =>
-      evaluation.objective_id === objective.id &&
+      evaluation.associated_session_id === session.id &&
       !evaluation.associated_experiment_id,
   );
 }

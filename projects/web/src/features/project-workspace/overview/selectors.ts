@@ -10,9 +10,18 @@ import type { ProjectWorkspaceData } from "../types";
 
 export function activeObjectiveFor({
   objectives,
+  session,
 }: {
   objectives: ObjectiveRecord[];
+  session: SessionRecord | undefined;
 }): ObjectiveRecord | undefined {
+  if (session) {
+    const objective = objectives.find((item) => item.id === session.objective_id);
+    if (objective) {
+      return objective;
+    }
+  }
+
   return (
     objectives.find((objective) => objective.status === "active") ??
     objectives.at(-1)
@@ -27,33 +36,33 @@ export function latestSessionFor({
   return sessions.at(-1);
 }
 
-export function hypothesesForObjective({
+export function hypothesesForSession({
   data,
-  objective,
+  session,
 }: {
   data: ProjectWorkspaceData;
-  objective: ObjectiveRecord | undefined;
+  session: SessionRecord | undefined;
 }): HypothesisRecord[] {
-  if (!objective) {
+  if (!session) {
     return [];
   }
 
   return filter(
     data.hypotheses,
-    (hypothesis) => hypothesis.objective_id === objective.id,
+    (hypothesis) => hypothesis.associated_session_id === session.id,
   );
 }
 
 export function overviewHypotheses({
   data,
-  objective,
+  session,
 }: {
   data: ProjectWorkspaceData;
-  objective: ObjectiveRecord | undefined;
+  session: SessionRecord | undefined;
 }): HypothesisRecord[] {
-  const hypotheses = hypothesesForObjective({
+  const hypotheses = hypothesesForSession({
     data,
-    objective,
+    session,
   });
 
   return orderBy(

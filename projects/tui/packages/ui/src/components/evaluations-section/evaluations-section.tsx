@@ -4,7 +4,7 @@ import type {
   EvaluationActivityRecord,
   EvaluationRecord,
 } from "@almanac/protocol";
-import { Section } from "../section/section.js";
+import { PaneSection } from "../pane-section/pane-section.js";
 import { previewText } from "../text-preview/text-preview.js";
 
 export function EvaluationsSection({
@@ -17,14 +17,14 @@ export function EvaluationsSection({
   const visibleEvaluations = evaluations.slice(-8);
 
   return (
-    <Section title="Evaluations">
+    <PaneSection title="Evaluations">
       {visibleEvaluations.length === 0 && <Text dimColor>None yet</Text>}
       {visibleEvaluations.map((evaluation) => (
         <Text key={evaluation.id}>
           {formatEvaluation({ evaluation, evaluationActivities })}
         </Text>
       ))}
-    </Section>
+    </PaneSection>
   );
 }
 

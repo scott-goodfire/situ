@@ -85,6 +85,7 @@
         "hono": "^4.12.16",
         "lodash": "^4.18.1",
         "luxon": "^3.7.2",
+        "motion": "^12.38.0",
         "react": "^18.3.1",
         "react-dom": "^18.3.1",
       },
@@ -102,11 +103,16 @@
         "vite": "^7.2.6",
       },
     },
+    "projects/web/packages/design-tokens": {
+      "name": "@almanac/web-design-tokens",
+      "version": "0.0.1",
+    },
     "projects/web/packages/ui": {
       "name": "@almanac/web-ui",
       "version": "0.0.1",
       "dependencies": {
         "@almanac/chart-model": "workspace:*",
+        "@almanac/web-design-tokens": "workspace:*",
         "@base-ui/react": "^1.4.1",
         "@tanstack/react-table": "^8.21.3",
         "lodash": "^4.18.1",
@@ -180,6 +186,8 @@
     "@almanac/tui-ui": ["@almanac/tui-ui@workspace:projects/tui/packages/ui"],
 
     "@almanac/web": ["@almanac/web@workspace:projects/web"],
+
+    "@almanac/web-design-tokens": ["@almanac/web-design-tokens@workspace:projects/web/packages/design-tokens"],
 
     "@almanac/web-ui": ["@almanac/web-ui@workspace:projects/web/packages/ui"],
 

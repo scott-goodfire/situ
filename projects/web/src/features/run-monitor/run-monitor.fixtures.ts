@@ -184,6 +184,8 @@ function sessionRecord({
   return {
     id: "session_0001",
     objective_id: "objective_0001",
+    objective: "Improve support-agent resolution",
+    research_context: "Run project-native evals and collect plaintext evidence.",
     status: "active",
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",

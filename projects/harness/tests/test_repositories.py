@@ -47,8 +47,15 @@ def create_session(
     repos: Repositories,
     session_id: str = "session_0001",
 ) -> SessionRecord:
-    create_objective(repos)
-    return repos.sessions.create(session_id, objective_id="objective_0001")
+    objective = create_objective(repos)
+    session = repos.sessions.create(
+        session_id,
+        objective_id=objective.id,
+        objective=objective.title,
+        research_context="Run a JSON eval. Expected signals: score, latency_ms.",
+    )
+    repos.objectives.update(objective.id, associated_session_id=session.id)
+    return session
 
 
 def create_hypothesis(repos: Repositories) -> HypothesisRecord:
@@ -130,6 +137,8 @@ def test_sessions_repository_create_update_get_and_list(repos: Repositories) -> 
 
     assert session.id == "session_0001"
     assert session.objective_id == "objective_0001"
+    assert session.objective == "Improve score"
+    assert "score" in session.research_context
     assert session.status == "active"
 
     updated = repos.sessions.update_status("session_0001", "closed")
@@ -159,6 +168,9 @@ def test_hypotheses_repository_create_update_get_and_list(repos: Repositories) -
     assert updated.status == "closed"
     assert repos.hypotheses.get("hyp_0001") == updated
     assert [item.id for item in repos.hypotheses.list_for_objective("objective_0001")] == [
+        "hyp_0001"
+    ]
+    assert [item.id for item in repos.hypotheses.list_for_session("session_0001")] == [
         "hyp_0001"
     ]
 

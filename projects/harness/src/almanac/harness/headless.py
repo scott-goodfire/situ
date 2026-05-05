@@ -99,6 +99,27 @@ def headless_events(args: argparse.Namespace) -> int:
     return 0
 
 
+def headless_sessions(args: argparse.Namespace) -> int:
+    workspace = resolve_existing_workspace(args)
+    if workspace is None:
+        return 1
+
+    try:
+        source, snapshot = load_snapshot(workspace)
+    except Exception as error:
+        print(error_message(error), file=sys.stderr)
+        return 1
+
+    write_json(
+        {
+            "workspace": str(workspace),
+            "source": source,
+            "sessions": snapshot.get("sessions", []),
+        }
+    )
+    return 0
+
+
 def headless_wait(args: argparse.Namespace) -> int:
     workspace = resolve_existing_workspace(args)
     if workspace is None:
@@ -218,7 +239,7 @@ def headless_exec(args: argparse.Namespace) -> int:
         return 1
 
     env = base_env(app_root, workspace)
-    apply_setup_env(env, args)
+    apply_session_env(env, args)
 
     session_process: subprocess.Popen[bytes] | None = None
     session_id = None
@@ -230,11 +251,13 @@ def headless_exec(args: argparse.Namespace) -> int:
             env,
             quiet=True,
         )
-        ensure_setup(session, args, workspace, app_root)
         start_result = rpc_request(
             session,
             "session.start",
-            {"max_experiments": max_experiments(args)},
+            session_start_params(
+                args=args,
+                workspace=workspace,
+            ),
         )
         session_id = str(start_result["session_id"])
         print(f"started {session_id}", file=sys.stderr)
@@ -289,11 +312,12 @@ def resolve_existing_workspace(args: argparse.Namespace) -> Path | None:
     return None
 
 
-def apply_setup_env(env: dict[str, str], args: argparse.Namespace) -> None:
+def apply_session_env(env: dict[str, str], args: argparse.Namespace) -> None:
     max_count = getattr(args, "max_experiments", None)
     optional_env = {
         "ALMANAC_OBJECTIVE": getattr(args, "objective", None),
         "ALMANAC_CONTEXT": getattr(args, "context", None),
+        "ALMANAC_RESUME_SESSION_ID": getattr(args, "session_id", None),
     }
     if max_count is not None:
         optional_env["ALMANAC_MAX_EXPERIMENTS"] = str(max_count)
@@ -330,43 +354,29 @@ def terminate_live_session(*, session: dict[str, str]) -> None:
         time.sleep(0.1)
 
 
-def ensure_setup(
-    session: dict[str, str],
+def session_start_params(
+    *,
     args: argparse.Namespace,
     workspace: Path,
-    app_root: Path,
-) -> None:
-    setup = rpc_request(session, "setup.get", {})
-    if setup.get("configured"):
-        return
-
-    rpc_request(
-        session,
-        "setup.complete",
-        setup_params(args, workspace, app_root),
-    )
-
-
-def setup_params(
-    args: argparse.Namespace,
-    workspace: Path,
-    app_root: Path,
-) -> dict[str, str]:
+) -> dict[str, Any]:
     objective = getattr(args, "objective", None)
     context = getattr(args, "context", None)
-    _ = app_root
 
     if not objective:
-        objective = f"Observe autoresearch experiments in {workspace}"
+        objective = f"Explore autoresearch opportunities in {workspace}"
 
     parts: list[str] = []
     if context:
         parts.append(context)
-    parts.append("Capture results, signals, concerns, and activities from local experiments.")
+    parts.append(
+        "Use project-native tools, tests, evals, benchmarks, logs, and artifacts. "
+        "Capture plaintext evidence, useful interpretations, concerns, and activities."
+    )
 
     return {
         "objective": objective,
         "research_context": " ".join(parts),
+        "max_experiments": max_experiments(args),
     }
 
 

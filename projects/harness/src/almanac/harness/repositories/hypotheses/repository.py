@@ -145,3 +145,16 @@ class HypothesesRepository(BaseRepository):
                 (objective_id,),
             )
         ]
+
+    def list_for_session(self, session_id: str) -> list[HypothesisRecord]:
+        return [
+            hypothesis_row(row)
+            for row in self.db.fetchall(
+                """
+                SELECT * FROM hypotheses
+                WHERE associated_session_id = ?
+                ORDER BY created_at
+                """,
+                (session_id,),
+            )
+        ]

@@ -1,0 +1,19 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "session_id": {
+      "title": "Session Id",
+      "type": "string"
+    },
+    "max_experiments": {
+      "default": 6,
+      "title": "Max Experiments",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "session_id"
+  ],
+  "title": "SessionResumeParams",
+  "type": "object"
+}

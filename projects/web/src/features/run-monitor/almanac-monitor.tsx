@@ -40,8 +40,11 @@ export function AlmanacMonitor({
     return <NoActiveHarness workspace={workspace} />;
   }
 
-  const activeObjective = objectives.find((objective) => objective.status === "active");
   const latestSession = sessions.at(-1);
+  const activeObjective = objectiveForSession({
+    objectives,
+    session: latestSession,
+  });
   const sessionExperiments = experimentsForSession({
     experiments,
     session: latestSession,
@@ -49,9 +52,9 @@ export function AlmanacMonitor({
   const activeExperiment = sessionExperiments.find(
     (experiment) => experiment.status === "active",
   );
-  const objectiveHypotheses = hypothesesForObjective({
+  const sessionHypotheses = hypothesesForSession({
     hypotheses,
-    objective: activeObjective,
+    session: latestSession,
   });
 
   return (
@@ -72,7 +75,7 @@ export function AlmanacMonitor({
         objective={activeObjective}
         session={latestSession}
         experimentCount={sessionExperiments.length}
-        hypothesisCount={objectiveHypotheses.length}
+        hypothesisCount={sessionHypotheses.length}
       />
       <NowPanel activeExperiment={activeExperiment} latestSession={latestSession} />
       <ExperimentTable
@@ -101,19 +104,33 @@ function experimentsForSession({
   );
 }
 
-function hypothesesForObjective({
+function objectiveForSession({
+  objectives,
+  session,
+}: {
+  objectives: ObjectiveRecord[];
+  session: SessionRecord | undefined;
+}): ObjectiveRecord | undefined {
+  if (!session) {
+    return undefined;
+  }
+
+  return objectives.find((objective) => objective.id === session.objective_id);
+}
+
+function hypothesesForSession({
   hypotheses,
-  objective,
+  session,
 }: {
   hypotheses: HypothesisRecord[];
-  objective: ObjectiveRecord | undefined;
+  session: SessionRecord | undefined;
 }): HypothesisRecord[] {
-  if (!objective) {
+  if (!session) {
     return [];
   }
 
   return filter(
     hypotheses,
-    (hypothesis) => hypothesis.objective_id === objective.id,
+    (hypothesis) => hypothesis.associated_session_id === session.id,
   );
 }

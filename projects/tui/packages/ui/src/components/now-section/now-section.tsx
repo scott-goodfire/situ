@@ -1,6 +1,6 @@
 import { Text } from "ink";
 import type { ExperimentRecord, SessionRecord } from "@almanac/protocol";
-import { Section } from "../section/section.js";
+import { PaneSection } from "../pane-section/pane-section.js";
 
 export function NowSection({
   activeExperiment,
@@ -10,9 +10,9 @@ export function NowSection({
   latestSession: SessionRecord | undefined;
 }) {
   return (
-    <Section title="Now">
+    <PaneSection title="Now">
       <Text>{nowLabel({ activeExperiment, latestSession })}</Text>
-    </Section>
+    </PaneSection>
   );
 }
 

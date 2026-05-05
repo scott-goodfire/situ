@@ -44,6 +44,18 @@ run = "./commands/tui-snapshots.sh"
 description = "Start the local Almanac TUI"
 run = "./commands/start.sh"
 
+[tasks.resume]
+description = "Resume an existing Almanac session in the TUI"
+run = "./commands/resume.sh"
+
+[tasks.attach]
+description = "Attach the TUI to a running Almanac harness"
+run = "./commands/attach.sh"
+
+[tasks.sessions]
+description = "List local Almanac sessions as JSON"
+run = "./commands/sessions.sh"
+
 [tasks.clear]
 description = "Clear local Almanac state for a workspace"
 run = "./commands/clear.sh"

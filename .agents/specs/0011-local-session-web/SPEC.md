@@ -9,7 +9,7 @@ Almanac should support this flow:
 
 ```text
 almanac start
-  starts the local harness session
+  starts a fresh Almanac session
   opens the TUI
 
 almanac web
@@ -38,7 +38,11 @@ The web command must not create work.
 
 For this slice:
 
-- `almanac start` may start a local session and begin experiments.
+- `almanac start` may start a local session server, but interactive research
+  work should wait for the TUI Start selection before `session.start` is called.
+- `almanac resume` may continue an existing Almanac session explicitly.
+- `almanac attach` may connect the TUI to an already-running local session
+  server without creating work.
 - `almanac web` may start the local web host and serve the built browser app.
 - `almanac web` should serve the local project home and should not require the
   current working directory to be an Almanac workspace.
@@ -159,7 +163,6 @@ state without guessing.
 
 The first web UI should use the same collection-backed scope as the slim TUI:
 
-- Objectives
 - Sessions
 - Hypotheses
 - Experiments

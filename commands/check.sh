@@ -5,6 +5,6 @@ REPO_ROOT=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 cd "$REPO_ROOT"
 
 uv run python scripts/check-python-syntax.py
-uv run pytest
+uv run --with pytest python -m pytest
 ./commands/protocol-generate.sh
 bun run check

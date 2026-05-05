@@ -44,11 +44,25 @@ def test_collections_bootstrap_returns_research_objects_and_events(
 ) -> None:
     app.setup_complete(
         {
-            "objective": "Improve score",
             "research_context": "Run local evals. Expected signals: score. Baseline and variants.",
         }
     )
-    app.repos.sessions.create("session_0001", objective_id="objective_0001")
+    objective = app.repos.objectives.create(
+        objective_id="objective_0001",
+        title="Improve score",
+        description="Improve score.",
+        associated_session_id=None,
+    )
+    session = app.repos.sessions.create(
+        "session_0001",
+        objective_id=objective.id,
+        objective=objective.title,
+        research_context="Run local evals. Expected signals: score. Baseline and variants.",
+    )
+    app.repos.objectives.update(
+        objective.id,
+        associated_session_id=session.id,
+    )
     app.repos.hypotheses.create(
         hypothesis_id="hyp_0001",
         objective_id="objective_0001",

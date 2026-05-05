@@ -436,6 +436,8 @@ function writeProjectSnapshotDatabase({
       CREATE TABLE sessions (
         id TEXT PRIMARY KEY,
         objective_id TEXT NOT NULL,
+        objective TEXT NOT NULL,
+        research_context TEXT NOT NULL,
         status TEXT NOT NULL,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL
@@ -580,12 +582,14 @@ function writeProjectSnapshotDatabase({
     database
       .query(`
         INSERT INTO sessions
-          (id, objective_id, status, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?)
+          (id, objective_id, objective, research_context, status, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
       `)
       .run(
         "session_0001",
         "objective_0001",
+        "Improve snapshot score",
+        "Run local evals.",
         "closed",
         "2026-05-05T01:01:00.000Z",
         "2026-05-05T01:10:00.000Z",

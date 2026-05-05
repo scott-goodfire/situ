@@ -573,6 +573,14 @@
           "title": "Objective Id",
           "type": "string"
         },
+        "objective": {
+          "title": "Objective",
+          "type": "string"
+        },
+        "research_context": {
+          "title": "Research Context",
+          "type": "string"
+        },
         "status": {
           "$ref": "#/$defs/SessionStatus"
         },
@@ -588,6 +596,8 @@
       "required": [
         "id",
         "objective_id",
+        "objective",
+        "research_context",
         "status",
         "created_at",
         "updated_at"

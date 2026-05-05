@@ -52,6 +52,8 @@ class SessionRecord(BaseModel):
 
     id: str
     objective_id: str
+    objective: str
+    research_context: str
     status: SessionStatus
     created_at: str
     updated_at: str

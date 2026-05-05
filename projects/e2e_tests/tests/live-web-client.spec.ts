@@ -50,7 +50,7 @@ test("web client receives live agent events from a real session", async ({ page 
     await expect(page.getByText("Connected")).toBeVisible();
     await expect(page.getByText("No session yet")).toBeVisible();
 
-    await rpcRequest(stack.session, "setup.complete", {
+    await rpcRequest(stack.session, "session.start", {
       objective: "Improve the tiny evaluator score",
       research_context: [
         "This is a live Almanac E2E smoke test.",
@@ -58,17 +58,9 @@ test("web client receives live agent events from a real session", async ({ page 
         "Use the title `Variant A smoke eval` for the experiment.",
         "Create one hypothesis for variant A.",
         "Run `python eval.py --variant A` with the workspace execute tool.",
-        "Record the command output and your interpretation as an experiment comment.",
+        "Record the command output and your interpretation as plaintext evidence.",
         "Close the experiment after recording the result.",
       ].join(" "),
-    });
-
-    await expect(
-      page.getByText("Improve the tiny evaluator score | no session yet"),
-    ).toBeVisible();
-    await expect(page.getByText("setup.completed")).toBeVisible();
-
-    await rpcRequest(stack.session, "session.start", {
       max_experiments: 1,
     });
 

@@ -5,7 +5,7 @@ import type {
   ExperimentActivityRecord,
   HypothesisActivityRecord,
 } from "@almanac/protocol";
-import { Section } from "../section/section.js";
+import { PaneSection } from "../pane-section/pane-section.js";
 import { previewText } from "../text-preview/text-preview.js";
 
 type Activity =
@@ -44,14 +44,14 @@ export function ActivitySection({
     .slice(-8);
 
   return (
-    <Section title="Activity">
+    <PaneSection title="Activity">
       {activities.length === 0 && <Text dimColor>None yet</Text>}
       {activities.map((activity) => (
         <Text key={`${activity.scope}-${activity.id}`}>
           {formatActivity({ activity })}
         </Text>
       ))}
-    </Section>
+    </PaneSection>
   );
 }
 

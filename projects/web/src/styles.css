@@ -11,15 +11,28 @@
 
 body {
   margin: 0;
-  background: var(--dx-color-page);
-  color: var(--dx-color-text);
-  font-family: var(--dx-font-sans);
+  background: var(--stage);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .almanac-shell {
-  width: min(1120px, calc(100vw - 48px));
-  margin: 0 auto;
-  padding: 28px 0 40px;
+  width: min(1280px, calc(100vw - 64px));
+  margin: 32px auto;
+  padding: 0;
+  background: var(--panel);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-window);
+  overflow: hidden;
+}
+
+.almanac-shell > * {
+  padding-left: 32px;
+  padding-right: 32px;
 }
 
 .almanac-topbar {
@@ -27,8 +40,9 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 24px;
+  padding-top: 18px;
   padding-bottom: 18px;
-  border-bottom: 1px solid var(--dx-color-border);
+  border-bottom: 1px solid var(--border-02);
 }
 
 h1,
@@ -38,115 +52,129 @@ p {
 }
 
 h1 {
-  font-size: 24px;
-  font-weight: 650;
+  font-size: var(--text-display-md);
+  font-weight: 500;
+  letter-spacing: var(--tracking-display);
+  line-height: 1.2;
 }
 
 .almanac-topbar p {
-  color: var(--dx-color-muted);
+  color: var(--muted-foreground);
+  font-size: var(--text-product-lg);
 }
 
 .almanac-empty {
-  padding: 56px 0;
+  padding-top: 56px;
+  padding-bottom: 56px;
 }
 
 .almanac-empty h2 {
   margin-bottom: 8px;
-  color: var(--dx-color-text);
-  font-size: 22px;
+  color: var(--foreground);
+  font-size: var(--text-display-sm);
+  font-weight: 500;
+  letter-spacing: var(--tracking-display);
 }
 
 .almanac-command {
   width: max-content;
   margin-top: 18px;
-  padding: 10px 12px;
-  border: 1px solid #d0d7de;
-  border-radius: var(--dx-radius-control);
-  background: var(--dx-color-surface);
+  padding: 8px 10px;
+  border: 1px solid var(--border-02);
+  border-radius: var(--radius-md);
+  background: var(--card-01-hex);
+  font-family: var(--font-mono);
+  font-size: var(--text-product-base);
 }
 
 .almanac-project-index {
-  padding-top: 22px;
+  padding-top: 18px;
+  padding-bottom: 24px;
 }
 
 .almanac-project-nav {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  padding: 16px 0 4px;
+  gap: 4px;
+  padding: 12px 0 4px;
 }
 
 .almanac-project-nav__link {
   display: inline-flex;
   align-items: center;
-  min-height: 32px;
+  min-height: 26px;
   padding: 0 10px;
   border: 1px solid transparent;
-  border-radius: var(--dx-radius-control);
-  color: var(--dx-color-subtle);
-  font-size: 13px;
-  font-weight: 650;
+  border-radius: var(--radius-sm);
+  color: var(--muted-foreground);
+  font-size: var(--text-product-lg);
+  font-weight: 500;
+  letter-spacing: var(--tracking-product-sm);
   text-decoration: none;
+  transition: background-color 80ms ease, color 80ms ease;
 }
 
 .almanac-project-nav__link:hover {
-  border-color: var(--dx-color-border);
-  background: var(--dx-color-surface);
-  color: var(--dx-color-text);
+  background: var(--fg-05);
+  color: var(--foreground);
 }
 
 .almanac-project-nav__link[data-active="true"] {
-  border-color: var(--dx-color-border);
-  background: var(--dx-color-surface);
-  color: var(--dx-color-text);
+  background: var(--fg-07-5);
+  color: var(--foreground);
 }
 
 .almanac-project-cell {
   display: grid;
-  gap: 3px;
+  gap: 2px;
   min-width: 0;
 }
 
 .almanac-project-link,
 .almanac-record-link {
-  color: var(--dx-color-text);
-  font-weight: 700;
+  color: var(--foreground);
+  font-weight: 500;
   text-decoration: none;
 }
 
 .almanac-project-link:hover,
 .almanac-record-link:hover {
   text-decoration: underline;
+  text-decoration-color: var(--border-02-5);
+  text-underline-offset: 3px;
 }
 
 .almanac-project-id,
 .almanac-project-path,
 .almanac-record-id {
   min-width: 0;
-  color: var(--dx-color-muted);
-  font-family: var(--dx-font-mono);
-  font-size: 12px;
+  color: var(--muted-foreground-tertiary);
+  font-family: var(--font-mono);
+  font-size: var(--text-product-sm);
+  letter-spacing: var(--tracking-product-sm);
   overflow-wrap: anywhere;
 }
 
 .almanac-project-status {
   display: grid;
-  gap: 4px;
+  gap: 3px;
   min-width: 0;
-  color: var(--dx-color-muted);
-  font-size: 12px;
-  line-height: 1.35;
+  color: var(--muted-foreground);
+  font-size: var(--text-product-base);
+  line-height: var(--leading-product-base);
 }
 
 .almanac-record-cell {
   display: grid;
-  gap: 3px;
+  gap: 2px;
   min-width: 0;
 }
 
 .almanac-overview-stack {
   display: grid;
-  gap: 8px;
+  gap: 18px;
+  padding-top: 18px;
+  padding-bottom: 24px;
 }
 
 .almanac-overview-summary {
@@ -161,75 +189,82 @@ h1 {
 }
 
 .almanac-overview-summary__copy h2 {
-  color: var(--dx-color-text);
-  font-size: 24px;
-  font-weight: 650;
+  color: var(--foreground);
+  font-size: var(--text-display-md);
+  font-weight: 500;
+  letter-spacing: var(--tracking-display);
 }
 
 .almanac-overview-summary__copy p {
-  color: var(--dx-color-subtle);
+  color: var(--muted-foreground);
+  font-size: var(--text-body);
   line-height: 1.55;
 }
 
 .almanac-overview-summary__badges {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
 }
 
 .almanac-overview-now {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  color: var(--dx-color-text);
+  gap: 8px;
+  color: var(--foreground);
+  font-size: var(--text-product-lg);
 }
 
 .almanac-cycle-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px;
+  gap: 14px;
 }
 
 .almanac-cycle-lane {
   display: grid;
   align-content: start;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
 }
 
 .almanac-cycle-lane h3 {
   margin: 0;
-  color: var(--dx-color-muted);
-  font-size: 13px;
-  font-weight: 700;
+  color: var(--muted-foreground);
+  font-size: var(--text-product-sm);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .almanac-hypothesis-card {
   display: grid;
-  gap: 12px;
+  gap: 10px;
   min-width: 0;
-  padding: 12px;
-  border: 1px solid var(--dx-color-border-soft);
-  border-radius: 8px;
-  background: var(--dx-color-surface);
+  padding: 12px 14px;
+  border: 1px solid var(--border-01-5);
+  border-radius: var(--radius-md);
+  background: var(--card-01-hex);
 }
 
 .almanac-hypothesis-card__header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
 }
 
 .almanac-hypothesis-card__summary {
-  color: var(--dx-color-subtle);
-  line-height: 1.5;
+  color: var(--muted-foreground);
+  font-size: var(--text-product-lg);
+  line-height: var(--leading-product-base);
 }
 
 .almanac-hypothesis-card__detail,
 .almanac-hypothesis-card__evidence {
-  color: var(--dx-color-subtle);
-  line-height: 1.45;
+  color: var(--muted-foreground);
+  font-size: var(--text-product-lg);
+  line-height: var(--leading-product-base);
 }
 
 .almanac-hypothesis-card__evidence {
@@ -239,21 +274,22 @@ h1 {
 .almanac-hypothesis-card__experiment {
   display: flex;
   align-items: baseline;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
 }
 
 .almanac-agent-presence {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   min-width: 0;
-  color: var(--dx-color-subtle);
-  line-height: 1.45;
+  color: var(--muted-foreground);
+  font-size: var(--text-product-lg);
+  line-height: var(--leading-product-base);
 }
 
 .almanac-agent-presence[data-empty="true"] {
-  color: var(--dx-color-muted);
+  color: var(--muted-foreground-tertiary);
 }
 
 .almanac-agent-presence__avatars {
@@ -267,16 +303,16 @@ h1 {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
-  margin-left: -6px;
-  border: 1px solid var(--dx-color-border-soft);
+  width: 20px;
+  height: 20px;
+  margin-left: -4px;
+  border: 1px solid var(--border-02);
   border-radius: 999px;
-  background: #f6f8fa;
-  color: var(--dx-color-subtle);
-  font-family: var(--dx-font-mono);
-  font-size: 10px;
-  font-weight: 700;
+  background: var(--card-02-hex);
+  color: var(--muted-foreground);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 500;
 }
 
 .almanac-agent-presence__avatar:first-child {
@@ -297,7 +333,7 @@ h1 {
 
 .almanac-agent-transcript__list {
   display: grid;
-  gap: 10px;
+  gap: 8px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -314,7 +350,7 @@ h1 {
 
 .almanac-transcript-item {
   display: grid;
-  grid-template-columns: 24px minmax(0, 1fr);
+  grid-template-columns: 22px minmax(0, 1fr);
   gap: 10px;
   min-width: 0;
 }
@@ -326,22 +362,22 @@ h1 {
 }
 
 .almanac-transcript-item__dot {
-  width: 9px;
-  height: 9px;
-  border: 2px solid var(--dx-color-surface);
+  width: 8px;
+  height: 8px;
+  border: 2px solid var(--card-01-hex);
   border-radius: 999px;
-  background: var(--dx-color-muted);
-  box-shadow: 0 0 0 1px var(--dx-color-border);
+  background: var(--muted-foreground-tertiary);
+  box-shadow: 0 0 0 1px var(--border-02);
 }
 
 .almanac-transcript-item[data-tone="warning"] .almanac-transcript-item__dot {
-  background: var(--dx-color-warning);
-  box-shadow: 0 0 0 1px var(--dx-color-warning-border);
+  background: var(--warning-strong);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--warning-strong) 30%, transparent);
 }
 
 .almanac-transcript-item[data-tone="danger"] .almanac-transcript-item__dot {
-  background: var(--dx-color-danger);
-  box-shadow: 0 0 0 1px var(--dx-color-danger-border);
+  background: var(--danger-strong);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--danger-strong) 30%, transparent);
 }
 
 .almanac-transcript-item[data-latest="true"] .almanac-transcript-item__dot {
@@ -350,70 +386,74 @@ h1 {
 
 .almanac-transcript-item__content {
   display: grid;
-  gap: 8px;
+  gap: 6px;
   min-width: 0;
-  padding: 12px;
-  border: 1px solid var(--dx-color-border-soft);
-  border-radius: 8px;
-  background: var(--dx-color-surface);
+  padding: 10px 12px;
+  border: 1px solid var(--border-01-5);
+  border-radius: var(--radius-md);
+  background: var(--card-01-hex);
 }
 
 .almanac-transcript-item[data-tone="warning"] .almanac-transcript-item__content {
-  border-color: var(--dx-color-warning-border);
-  background: var(--dx-color-warning-surface);
+  border-color: color-mix(in srgb, var(--warning-strong) 30%, transparent);
+  background: var(--warning-soft);
 }
 
 .almanac-transcript-item[data-tone="danger"] .almanac-transcript-item__content {
-  border-color: var(--dx-color-danger-border);
-  background: var(--dx-color-danger-surface);
+  border-color: color-mix(in srgb, var(--danger-strong) 30%, transparent);
+  background: var(--danger-soft);
 }
 
 .almanac-transcript-item__header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 14px;
+  gap: 12px;
 }
 
 .almanac-transcript-item__header time {
   flex: 0 0 auto;
-  color: var(--dx-color-muted);
-  font-family: var(--dx-font-mono);
-  font-size: 12px;
+  color: var(--muted-foreground-tertiary);
+  font-family: var(--font-mono);
+  font-size: var(--text-product-sm);
+  letter-spacing: var(--tracking-product-sm);
 }
 
 .almanac-transcript-item__title {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 5px;
   min-width: 0;
-  color: var(--dx-color-text);
-  font-weight: 700;
+  color: var(--foreground);
+  font-size: var(--text-product-lg);
+  font-weight: 500;
 }
 
 .almanac-transcript-item__preposition {
-  color: var(--dx-color-muted);
-  font-weight: 600;
+  color: var(--muted-foreground);
+  font-weight: 400;
 }
 
 .almanac-transcript-item__body {
-  color: var(--dx-color-subtle);
-  line-height: 1.5;
+  color: var(--muted-foreground);
+  font-size: var(--text-product-lg);
+  line-height: var(--leading-product-base);
   overflow-wrap: anywhere;
 }
 
 .almanac-transcript-item__meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  color: var(--dx-color-muted);
-  font-family: var(--dx-font-mono);
-  font-size: 12px;
+  gap: 6px;
+  color: var(--muted-foreground-tertiary);
+  font-family: var(--font-mono);
+  font-size: var(--text-product-sm);
+  letter-spacing: var(--tracking-product-sm);
 }
 
 @keyframes almanac-transcript-pulse {
   0% {
-    box-shadow: 0 0 0 1px var(--dx-color-border);
+    box-shadow: 0 0 0 1px var(--border-02);
   }
 
   70% {
@@ -428,29 +468,31 @@ h1 {
 .almanac-evidence-summary {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
+  gap: 6px;
   min-width: 0;
 }
 
 .almanac-evidence-summary__text {
   min-width: 0;
-  color: var(--dx-color-subtle);
-  line-height: 1.45;
+  color: var(--muted-foreground);
+  font-size: var(--text-product-lg);
+  line-height: var(--leading-product-base);
   overflow-wrap: anywhere;
 }
 
 .almanac-evidence-cell,
 .almanac-evaluation-latest {
   display: grid;
-  gap: 4px;
+  gap: 3px;
   min-width: 0;
 }
 
 .almanac-object-page {
   display: grid;
-  gap: 14px;
-  padding: 24px 0 20px;
-  border-bottom: 1px solid var(--dx-color-border);
+  gap: 12px;
+  padding-top: 22px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border-02);
 }
 
 .almanac-object-page__header {
@@ -461,27 +503,30 @@ h1 {
 }
 
 .almanac-object-page__header h2 {
-  color: var(--dx-color-text);
-  font-size: 26px;
-  font-weight: 650;
+  color: var(--foreground);
+  font-size: var(--text-display-lg);
+  font-weight: 500;
+  letter-spacing: var(--tracking-display);
 }
 
 .almanac-object-page__eyebrow {
   margin-bottom: 4px;
-  color: var(--dx-color-muted);
-  font-family: var(--dx-font-mono);
-  font-size: 12px;
+  color: var(--muted-foreground-tertiary);
+  font-family: var(--font-mono);
+  font-size: var(--text-product-sm);
+  letter-spacing: var(--tracking-product-sm);
 }
 
 .almanac-object-page__summary {
   max-width: 820px;
-  color: var(--dx-color-subtle);
+  color: var(--muted-foreground);
+  font-size: var(--text-body);
   line-height: 1.55;
 }
 
 .almanac-activity-list {
   display: grid;
-  gap: 10px;
+  gap: 8px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -489,9 +534,9 @@ h1 {
 
 .almanac-activity-item {
   display: grid;
-  gap: 6px;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--dx-color-border-soft);
+  gap: 5px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border-01-5);
 }
 
 .almanac-activity-item:last-child {
@@ -499,47 +544,61 @@ h1 {
 }
 
 .almanac-activity-item p {
-  color: var(--dx-color-text);
-  line-height: 1.5;
+  color: var(--foreground);
+  font-size: var(--text-product-lg);
+  line-height: var(--leading-product-base);
 }
 
 .almanac-activity-item__meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  color: var(--dx-color-muted);
-  font-family: var(--dx-font-mono);
-  font-size: 12px;
+  gap: 8px;
+  color: var(--muted-foreground-tertiary);
+  font-family: var(--font-mono);
+  font-size: var(--text-product-sm);
+  letter-spacing: var(--tracking-product-sm);
 }
 
 .almanac-link-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 30px;
-  padding: 0 10px;
-  border: 1px solid #d0d7de;
-  border-radius: var(--dx-radius-control);
-  background: var(--dx-color-surface);
-  color: var(--dx-color-text);
-  font-size: 13px;
-  font-weight: 600;
+  min-height: 24px;
+  padding: 0 8px;
+  border: 1px solid var(--border-02-5);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--foreground);
+  font-size: var(--text-product-base);
+  font-weight: 500;
+  letter-spacing: var(--tracking-product-sm);
   text-decoration: none;
+  transition: background-color 80ms ease;
+}
+
+.almanac-link-button:hover {
+  background: var(--fg-05);
 }
 
 .almanac-link-button:focus-visible {
-  outline: 2px solid var(--dx-color-focus);
+  outline: 2px solid var(--ring);
   outline-offset: 2px;
 }
 
 .almanac-floating-notice {
-  width: min(1120px, calc(100vw - 48px));
-  margin: -24px auto 40px;
+  width: min(1280px, calc(100vw - 64px));
+  margin: -16px auto 32px;
 }
 
 @media (max-width: 760px) {
   .almanac-shell {
-    width: min(100vw - 28px, 1120px);
+    width: min(100vw - 16px, 1280px);
+    margin: 8px auto;
+  }
+
+  .almanac-shell > * {
+    padding-left: 16px;
+    padding-right: 16px;
   }
 
   .almanac-topbar {
@@ -558,11 +617,11 @@ h1 {
 
   .almanac-transcript-item__header {
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
   }
 
   .almanac-floating-notice {
-    width: min(100vw - 28px, 1120px);
+    width: min(100vw - 16px, 1280px);
   }
 }
 

@@ -376,6 +376,8 @@ async function readProjectSnapshot({
             SELECT
               id,
               objective_id,
+              objective,
+              research_context,
               status,
               created_at,
               updated_at

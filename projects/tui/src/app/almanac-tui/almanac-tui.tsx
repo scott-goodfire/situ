@@ -25,27 +25,28 @@ import type {
   HypothesisRecord,
   ObjectiveRecord,
   SessionRecord,
+  SessionResumeParams,
+  SessionResumeResult,
   SessionStartParams,
   SessionStartResult,
-  SetupCompleteParams,
-  SetupCompleteResult,
-  SetupGetParams,
-  SetupGetResult,
 } from "@almanac/protocol";
 import { useLiveQuery } from "@tanstack/react-db";
 import {
   AlmanacTuiView,
-  ReconnectSessionPrompt,
+  StartSessionPrompt,
   type DashboardCommand,
   type DashboardControlMessage,
 } from "@almanac/tui-ui";
 
 type Status =
   | { kind: "starting" }
-  | { kind: "reconnect"; session: SessionRecord }
+  | { kind: "ready" }
+  | { kind: "launching" }
   | { kind: "running"; sessionId?: string }
   | { kind: "completed"; sessionId: string }
   | { kind: "failed"; message: string };
+
+type SessionMode = "start" | "resume" | "attach";
 
 export function AlmanacTui() {
   const { exit } = useApp();
@@ -54,6 +55,16 @@ export function AlmanacTui() {
   const root = useMemo(() => appRoot(), []);
   const workspace = useMemo(() => workspaceRoot({ root }), [root]);
   const maxExperimentCount = useMemo(() => maxExperiments(), []);
+  const sessionStartParams = useMemo(
+    () =>
+      initialSessionStartParams({
+        workspace,
+        maxExperimentCount,
+      }),
+    [maxExperimentCount, workspace],
+  );
+  const clientRef = useRef<HttpJsonRpcClient | undefined>(undefined);
+  const trackedSessionIdRef = useRef<string | undefined>(undefined);
   const objectivesQuery = useLiveQuery(
     (query) =>
       query.from({ objective: collections.objectives }).select(({ objective }) => objective),
@@ -166,9 +177,7 @@ export function AlmanacTui() {
   );
 
   useEffect(() => {
-    const setupParams = initialSetup({
-      workspace,
-    });
+    const mode = sessionMode();
     const sessionUrl = process.env.ALMANAC_SESSION_URL;
     const sessionToken = process.env.ALMANAC_SESSION_TOKEN;
 
@@ -184,8 +193,9 @@ export function AlmanacTui() {
       baseUrl: sessionUrl,
       token: sessionToken,
     });
+    clientRef.current = client;
+    trackedSessionIdRef.current = undefined;
 
-    let sessionId: string | undefined;
     let closeScheduled = false;
     let unsubscribe = () => {};
 
@@ -203,6 +213,7 @@ export function AlmanacTui() {
     };
 
     const handleSessionRecord = ({ session }: { session: SessionRecord }) => {
+      const sessionId = trackedSessionIdRef.current;
       if (!sessionId || session.id !== sessionId) {
         return;
       }
@@ -241,33 +252,10 @@ export function AlmanacTui() {
     });
 
     client
-      .request<SetupGetResult, SetupGetParams>({
-        method: "setup.get",
+      .request<CollectionsSubscribeResult, CollectionsSubscribeParams>({
+        method: "collections.subscribe",
         params: {},
       })
-      .then((setup) => {
-        if (setup.configured) {
-          return setup;
-        }
-
-        return client
-          .request<SetupCompleteResult, SetupCompleteParams>({
-            method: "setup.complete",
-            params: setupParams,
-          })
-          .then(() =>
-            client.request<SetupGetResult, SetupGetParams>({
-              method: "setup.get",
-              params: {},
-            }),
-          );
-      })
-      .then(() =>
-        client.request<CollectionsSubscribeResult, CollectionsSubscribeParams>({
-          method: "collections.subscribe",
-          params: {},
-        }),
-      )
       .then(() =>
         client.request<CollectionsBootstrapResult, CollectionsBootstrapParams>({
           method: "collections.bootstrap",
@@ -280,24 +268,36 @@ export function AlmanacTui() {
           bootstrap,
         });
 
-        const activeSession = lodash.find(
-          bootstrap.sessions,
-          (session: SessionRecord) => session.status === "active",
-        );
-        if (activeSession) {
-          sessionId = activeSession.id;
-          setStatus({ kind: "reconnect", session: activeSession });
+        if (mode === "attach") {
+          const activeSession = latestActiveSession({ sessions: bootstrap.sessions });
+          if (!activeSession) {
+            throw new Error("No active session found. Start or resume Almanac first.");
+          }
+
+          trackedSessionIdRef.current = activeSession.id;
+          setStatus({ kind: "running", sessionId: activeSession.id });
           return;
         }
 
-        const result = await client.request<SessionStartResult, SessionStartParams>({
-          method: "session.start",
-          params: {
-            max_experiments: maxExperimentCount,
-          },
-        });
-        sessionId = result.session_id;
-        setStatus({ kind: "running", sessionId });
+        if (mode === "resume") {
+          const resumeSession = sessionToResume({ sessions: bootstrap.sessions });
+          if (!resumeSession) {
+            throw new Error("No session found to resume.");
+          }
+
+          const result = await client.request<SessionResumeResult, SessionResumeParams>({
+            method: "session.resume",
+            params: {
+              session_id: resumeSession.id,
+              max_experiments: maxExperimentCount,
+            },
+          });
+          trackedSessionIdRef.current = result.session_id;
+          setStatus({ kind: "running", sessionId: result.session_id });
+          return;
+        }
+
+        setStatus({ kind: "ready" });
       })
       .catch((error: unknown) => {
         setStatus({
@@ -309,24 +309,28 @@ export function AlmanacTui() {
     return () => {
       unsubscribe();
       client.close();
+      if (clientRef.current === client) {
+        clientRef.current = undefined;
+      }
     };
-  }, [collections, maxExperimentCount, workspace]);
+  }, [collections, maxExperimentCount, sessionStartParams, workspace]);
 
-  const activeObjective = lodash.find(
-    objectives,
-    (objective: ObjectiveRecord) => objective.status === "active",
-  );
   const latestSession = sessionForStatus({
     sessions,
     status,
-  }) ?? sessions.at(-1);
+  });
+  const activeObjective =
+    objectiveForSession({
+      objectives,
+      session: latestSession,
+    }) ?? objectives.at(-1);
   const sessionExperiments = experimentsForSession({
     experiments,
     session: latestSession,
   });
-  const sessionHypotheses = hypothesesForObjective({
+  const sessionHypotheses = hypothesesForSession({
     hypotheses,
-    objective: activeObjective,
+    session: latestSession,
   });
   const sessionHypothesisActivities = activitiesForSession({
     activities: hypothesisActivities,
@@ -358,31 +362,44 @@ export function AlmanacTui() {
     experimentCount: sessionExperiments.length,
     maxExperiments: maxExperimentCount,
   });
+  const handleStartSession = () => {
+    const client = clientRef.current;
+    if (!client) {
+      setStatus({
+        kind: "failed",
+        message: "No local Almanac session client is available.",
+      });
+      return;
+    }
 
-  if (status.kind === "reconnect") {
-    const reconnectSession = sessionForStatus({
-      sessions,
-      status,
-    }) ?? status.session;
-    const reconnectExperiments = experimentsForSession({
-      experiments,
-      session: reconnectSession,
-    });
+    setStatus({ kind: "launching" });
+    client
+      .request<SessionStartResult, SessionStartParams>({
+        method: "session.start",
+        params: sessionStartParams,
+      })
+      .then((result) => {
+        trackedSessionIdRef.current = result.session_id;
+        setStatus({
+          kind: "running",
+          sessionId: result.session_id,
+        });
+      })
+      .catch((error: unknown) => {
+        setStatus({
+          kind: "failed",
+          message: errorMessage({ error }),
+        });
+      });
+  };
 
+  if (status.kind === "ready") {
     return (
-      <ReconnectSessionPrompt
+      <StartSessionPrompt
         workspace={workspace}
-        session={reconnectSession}
-        objective={activeObjective}
-        experimentCount={reconnectExperiments.length}
-        maxExperiments={maxExperimentCount}
-        onReconnect={() => {
-          setStatus({
-            kind: "running",
-            sessionId: reconnectSession.id,
-          });
-        }}
-        onQuit={() => {
+        params={sessionStartParams}
+        onStart={handleStartSession}
+        onExit={() => {
           exit();
         }}
       />
@@ -475,16 +492,19 @@ function workspaceRoot({ root }: { root: string }): string {
   return resolve(process.env.ALMANAC_WORKSPACE ?? root);
 }
 
-function initialSetup({
+function initialSessionStartParams({
   workspace,
+  maxExperimentCount,
 }: {
   workspace: string;
-}): SetupCompleteParams {
+  maxExperimentCount: number;
+}): SessionStartParams {
   return {
     objective:
       process.env.ALMANAC_OBJECTIVE ??
-      `Observe autoresearch experiments in ${workspace}`,
+      `Explore autoresearch opportunities in ${workspace}`,
     research_context: initialResearchContext(),
+    max_experiments: maxExperimentCount,
   };
 }
 
@@ -495,9 +515,25 @@ function initialResearchContext(): string {
     parts.push(process.env.ALMANAC_CONTEXT);
   }
 
-  parts.push("Capture results, signals, concerns, and activities from local experiments.");
+  parts.push(
+    "Use project-native tools, tests, evals, benchmarks, logs, and artifacts. " +
+      "Capture plaintext evidence, useful interpretations, concerns, and activities.",
+  );
 
   return parts.join(" ");
+}
+
+function sessionMode(): SessionMode {
+  const rawMode = process.env.ALMANAC_SESSION_MODE;
+  if (rawMode === "resume") {
+    return "resume";
+  }
+
+  if (rawMode === "attach") {
+    return "attach";
+  }
+
+  return "start";
 }
 
 function maxExperiments(): number {
@@ -533,12 +569,16 @@ function statusSummary({
     return "Connecting to local session...";
   }
 
-  if (status.kind === "failed") {
-    return status.message;
+  if (status.kind === "ready") {
+    return "Ready to start";
   }
 
-  if (status.kind === "reconnect") {
-    return "Active session found";
+  if (status.kind === "launching") {
+    return "Starting session...";
+  }
+
+  if (status.kind === "failed") {
+    return status.message;
   }
 
   if (!session && status.kind === "running") {
@@ -572,10 +612,6 @@ function sessionForStatus({
 }
 
 function sessionIdForStatus({ status }: { status: Status }): string | undefined {
-  if (status.kind === "reconnect") {
-    return status.session.id;
-  }
-
   if (status.kind === "running") {
     return status.sessionId;
   }
@@ -585,6 +621,59 @@ function sessionIdForStatus({ status }: { status: Status }): string | undefined 
   }
 
   return undefined;
+}
+
+function sessionToResume({
+  sessions,
+}: {
+  sessions: SessionRecord[];
+}): SessionRecord | undefined {
+  const requestedSessionId = process.env.ALMANAC_RESUME_SESSION_ID;
+  if (requestedSessionId) {
+    return lodash.find(
+      sessions,
+      (session: SessionRecord) => session.id === requestedSessionId,
+    );
+  }
+
+  return latestSessionRecord({ sessions });
+}
+
+function latestActiveSession({
+  sessions,
+}: {
+  sessions: SessionRecord[];
+}): SessionRecord | undefined {
+  const activeSessions = lodash.filter(
+    sessions,
+    (session: SessionRecord) => session.status === "active",
+  );
+  return latestSessionRecord({ sessions: activeSessions });
+}
+
+function latestSessionRecord({
+  sessions,
+}: {
+  sessions: SessionRecord[];
+}): SessionRecord | undefined {
+  return sortByCreated({ records: sessions }).at(-1);
+}
+
+function objectiveForSession({
+  objectives,
+  session,
+}: {
+  objectives: ObjectiveRecord[];
+  session: SessionRecord | undefined;
+}): ObjectiveRecord | undefined {
+  if (!session) {
+    return undefined;
+  }
+
+  return lodash.find(
+    objectives,
+    (objective: ObjectiveRecord) => objective.id === session.objective_id,
+  );
 }
 
 function experimentsForSession({
@@ -621,20 +710,20 @@ function evaluationsForSession({
   );
 }
 
-function hypothesesForObjective({
+function hypothesesForSession({
   hypotheses,
-  objective,
+  session,
 }: {
   hypotheses: HypothesisRecord[];
-  objective: ObjectiveRecord | undefined;
+  session: SessionRecord | undefined;
 }): HypothesisRecord[] {
-  if (!objective) {
+  if (!session) {
     return [];
   }
 
   return lodash.filter(
     hypotheses,
-    (hypothesis: HypothesisRecord) => hypothesis.objective_id === objective.id,
+    (hypothesis: HypothesisRecord) => hypothesis.associated_session_id === session.id,
   );
 }
 

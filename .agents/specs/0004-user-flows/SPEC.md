@@ -5,27 +5,35 @@
 ```text
 User runs `almanac start`
   |
-  |-- Existing local context?
-  |     |-- yes -> open TUI and resume/show current state
-  |     `-- no  -> show slim terminal setup
+  |-- Existing local project context?
+  |     |-- yes -> open TUI preflight
+  |     `-- no  -> use supplied objective/context or sparse defaults, then open TUI preflight
   |
-  `-- Almanac creates/resumes objective and starts a local session
+  |-- User chooses Start session?
+  |     |-- yes -> create a fresh session with objective/context
+  |     `-- no  -> exit without starting research work
+  |
+  `-- TUI renders live session observability
 ```
 
 The default flow should be one command, not a pile of advanced subcommands.
+It should not implicitly resume old research state.
+Interactive `start` should not auto-run agent work on launch. It may start the
+local session server, but `session.start` should wait for the user's explicit
+Start selection.
 
-## Terminal Setup
+## Setup Inputs
 
-The setup flow should ask only:
+The first implementation should keep setup as sparse plaintext inputs:
 
 - Objective
-- How do you currently judge progress?
-- What evals, tools, metrics, dashboards, logs, or artifacts matter?
-- What kinds of experiments are in scope?
+- Research context: how progress is judged, what evals, tools, metrics,
+  dashboards, logs, or artifacts matter, and what kinds of experiments are in
+  scope
 
-The setup should accept ambiguous plaintext. Almanac can preserve it as research
-context and structure it into hypotheses, experiments, activities, and artifacts
-over time.
+The setup should accept ambiguous plaintext. Almanac can preserve it as
+session research context and structure it into hypotheses, experiments,
+activities, and artifacts over time.
 
 The headless setup shape should match the product nouns:
 
@@ -39,13 +47,41 @@ almanac exec . \
 which outputs matter, how to read ordinary command output, and what should be
 considered suspicious.
 
-After setup, Almanac should create an active objective and render the TUI
-dashboard.
+After setup input is resolved, Almanac should create a new session with its own
+objective and research context only after the user confirms the preflight prompt,
+then render the TUI dashboard.
+
+## Resume Flow
+
+```text
+User runs `almanac resume`
+  |
+  |-- latest session for this project exists?
+  |     |-- yes -> resume that session id
+  |     `-- no  -> explain that there is no session to resume
+```
+
+`resume` means continue the same session id and append to the same ledger.
+Starting from prior findings in a new session should be a separate future
+`start --from <session-id>` style flow, not implicit resume.
+
+## Attach Flow
+
+```text
+User runs `almanac attach`
+  |
+  |-- healthy local session server exists?
+  |     |-- yes -> open TUI against the active live process
+  |     `-- no  -> show "no active session found"
+```
+
+`attach` reconnects to a running process. It must not create a new session and
+must not resume a closed session.
 
 ## Running Flow
 
 ```text
-Objective
+Session objective
   -> session starts
   -> hypothesis is created or selected
   -> experiment is created and linked to one or more hypotheses

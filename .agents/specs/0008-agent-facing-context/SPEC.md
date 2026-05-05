@@ -69,8 +69,8 @@ list commands until the basic loop is working.
 The compact session context, exposed to agents through tools such as
 `get_session`, should include:
 
-- Objective
-- Research context
+- Session objective
+- Session research context
 - Current session status
 - Active hypotheses
 - Recent experiments
@@ -110,3 +110,7 @@ benchmark log.
 
 Almanac owns durable research context. Agent prompts can be creative, but they
 should not be the only place where the research contract lives.
+
+Agents should treat only the selected session as current truth. Older sessions
+are reference material until their findings are copied, summarized, or resumed
+explicitly.

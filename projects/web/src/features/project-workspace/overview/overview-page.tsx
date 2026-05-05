@@ -1,15 +1,15 @@
 import { HypothesisCycle } from "./hypothesis-cycle";
 import {
-  activeObjectiveFor,
+  latestSessionFor,
   overviewHypotheses,
 } from "./selectors";
 import type { ProjectWorkspaceData } from "../types";
 
 export function OverviewPage({ data }: { data: ProjectWorkspaceData }) {
-  const activeObjective = activeObjectiveFor({ objectives: data.objectives });
+  const latestSession = latestSessionFor({ sessions: data.sessions });
   const visibleHypotheses = overviewHypotheses({
     data,
-    objective: activeObjective,
+    session: latestSession,
   });
 
   return <HypothesisCycle data={data} hypotheses={visibleHypotheses} />;

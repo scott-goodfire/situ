@@ -168,11 +168,8 @@ state transitions.
 The first durable records should look more like envelopes than taxonomies:
 
 ```text
-Objective
-  id, title, description, status, associated_session_id?
-
 Session
-  id, objective_id, status
+  id, objective_id, objective, research_context, status
 
 Proposal
   id, session_id, content, status, source
@@ -181,10 +178,10 @@ AgentMessageHistory
   id, session_id, agent_name, pydantic_run_id?, conversation_id?, messages_json
 
 Hypothesis
-  id, objective_id, title, summary, status, associated_session_id?
+  id, objective_id, title, summary, status, associated_session_id
 
 Experiment
-  id, objective_id, title, summary, status, associated_session_id?
+  id, objective_id, title, summary, status, associated_session_id
 
 Activity
   id, target_id, session_id?, actor, kind=comment, body, payload
@@ -193,7 +190,7 @@ Artifact
   id, objective_id, associated_session_id?, associated_entity_kind, associated_entity_id, kind, path
 
 ProjectConfig
-  id, repo_path, research_context, associated_session_id?
+  id, repo_path, research_context?, associated_session_id?
 
 HypothesisExperimentLink
   hypothesis_id, experiment_id

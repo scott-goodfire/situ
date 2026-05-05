@@ -11,11 +11,13 @@ import { stories as dashboardControlsStories } from "../components/dashboard-con
 import { stories as experimentsSectionStories } from "../components/experiments-section/experiments-section.stories.js";
 import { stories as heatmapGridStories } from "../components/heatmap-grid/heatmap-grid.stories.js";
 import { stories as hypothesesSectionStories } from "../components/hypotheses-section/hypotheses-section.stories.js";
+import { stories as layoutBoxStories } from "../components/layout-box/layout-box.stories.js";
 import { stories as metricTrendStories } from "../components/metric-trend/metric-trend.stories.js";
 import { stories as nowSectionStories } from "../components/now-section/now-section.stories.js";
+import { stories as paneSectionStories } from "../components/pane-section/pane-section.stories.js";
 import { stories as reconnectSessionPromptStories } from "../components/reconnect-session-prompt/reconnect-session-prompt.stories.js";
-import { stories as sectionStories } from "../components/section/section.stories.js";
 import { stories as sessionSectionStories } from "../components/session-section/session-section.stories.js";
+import { stories as startSessionPromptStories } from "../components/start-session-prompt/start-session-prompt.stories.js";
 import { stories as steeringDoseResponseStories } from "../components/steering-dose-response/steering-dose-response.stories.js";
 import { stories as timelineSectionStories } from "../components/timeline-section/timeline-section.stories.js";
 import { stories as tokenFeatureMatrixStories } from "../components/token-feature-matrix/token-feature-matrix.stories.js";
@@ -31,17 +33,19 @@ export const allStories: TuiStory[] = [
   ...contrastiveFeatureDiffStories,
   ...contributionBarsStories,
   ...heatmapGridStories,
+  ...layoutBoxStories,
   ...metricTrendStories,
   ...steeringDoseResponseStories,
   ...tokenFeatureMatrixStories,
+  ...paneSectionStories,
   ...reconnectSessionPromptStories,
+  ...startSessionPromptStories,
   ...sessionSectionStories,
   ...nowSectionStories,
   ...hypothesesSectionStories,
   ...experimentsSectionStories,
   ...activitySectionStories,
   ...timelineSectionStories,
-  ...sectionStories,
 ];
 
 export function findStory({ id }: { id: string }): TuiStory | undefined {

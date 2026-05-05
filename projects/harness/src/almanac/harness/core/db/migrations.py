@@ -26,6 +26,8 @@ CREATE TABLE IF NOT EXISTS objectives (
 CREATE TABLE IF NOT EXISTS sessions (
   id TEXT PRIMARY KEY,
   objective_id TEXT NOT NULL REFERENCES objectives(id),
+  objective TEXT NOT NULL,
+  research_context TEXT NOT NULL,
   status TEXT NOT NULL,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
@@ -175,11 +177,14 @@ def has_stale_schema(connection: sqlite3.Connection) -> bool:
         return False
 
     project_config_columns = table_columns(connection, "project_config")
+    session_columns = table_columns(connection, "sessions")
     experiment_columns = table_columns(connection, "experiments")
     activity_columns = table_columns(connection, "experiment_activities")
 
     return (
         "research_context" not in project_config_columns
+        or "objective" not in session_columns
+        or "research_context" not in session_columns
         or "associated_session_id" not in experiment_columns
         or has_non_comment_activity_kinds(connection, activity_columns)
     )

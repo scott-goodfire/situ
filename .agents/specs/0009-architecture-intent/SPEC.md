@@ -45,7 +45,7 @@ The system should keep these responsibilities distinct:
 - Web UI: attach-only monitoring over an existing local session
 - Session server: harness subprocess ownership, HTTP RPC, event streaming, and
   local session discovery
-- Harness: objective/session lifecycle, durable state, internal events,
+- Harness: session lifecycle, session objective/context, durable state, internal events,
   hypotheses, experiments, links, activities, artifacts, and automated trust
   concerns
 - Workers: concrete experiments, code changes, eval runs, analysis
@@ -58,7 +58,6 @@ one broad application-state object.
 
 For the first collection-backed slice, the sync surface is:
 
-- Objectives
 - Sessions
 - Hypotheses
 - Experiments
@@ -125,8 +124,7 @@ terminal UI      ---------->  TypeScript     ---------->  local harness runtime
 Start with a narrow, durable core:
 
 - Local project context
-- Objective
-- Session ledger
+- Session ledger with objective and research context
 - Hypotheses
 - Experiments
 - Activities

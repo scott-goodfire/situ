@@ -66,20 +66,30 @@ session status at the top of the screen. The live observability body beneath it
 should be unframed: sections may use headings, spacing, and compact separators,
 but the full terminal surface should not be wrapped in a persistent outer box.
 
-## Reconnect
+## Start, Resume, And Attach
 
-When the TUI starts and collection bootstrap finds an already-active session for
-the workspace, the user should see an intermediate reconnect prompt before the
-full live session view is shown.
+`almanac start` starts a fresh session by default, even when older local
+sessions exist for the same project.
 
-The prompt should identify the workspace, active session, and objective when
-available, then offer a small choice menu. The first slice should only offer:
+Interactive `start` should show a compact preflight picker before any research
+work begins. The first picker should offer:
 
-- Reconnect
-- Quit
+- Start session
+- Exit
 
-Do not offer "start new session" from this prompt until the session lifecycle
-supports that explicitly.
+Selecting Start calls `session.start` and moves into the live dashboard.
+Selecting Exit closes the TUI without starting an agent run. This keeps opening
+the product surface distinct from beginning a long-running autoresearch loop.
+
+`almanac resume` explicitly resumes an existing session id, defaulting to the
+latest local session when the user does not provide one.
+
+`almanac attach` connects the TUI to an already-running harness process. It
+must not start a harness process, start a new session, or resume a closed
+session.
+
+The TUI should not silently reconnect to or resume old research state. Session
+continuity must come from an explicit command.
 
 ## Command Surface
 
@@ -98,15 +108,16 @@ status, help, and quit, but should not send arbitrary user text to the agent.
 
 ## Setup
 
-If no local context exists, the TUI should run a slim setup flow:
+For the current implementation slice, setup is resolved before the live
+observability screen through CLI-provided objective/context or sparse defaults:
 
 - Objective
-- How progress is judged
-- Relevant evals, tools, metrics, dashboards, logs, or artifacts
-- In-scope experiment types
+- Research context: how progress is judged, relevant evals, tools, metrics,
+  dashboards, logs, artifacts, and in-scope experiment types
 
 Avoid advanced setup screens for autonomy, budgets, directions, or guidance in
-the first slice.
+the first slice. A future interactive terminal prompt can be added once the
+session lifecycle is stable.
 
 ## Observability Visualizations
 

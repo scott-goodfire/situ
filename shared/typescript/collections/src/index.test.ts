@@ -223,6 +223,8 @@ function sessionRecord({
   return {
     id: "session_0001",
     objective_id: "objective_0001",
+    objective: "Improve score",
+    research_context: "Run project-native tests and collect plaintext evidence.",
     status: "active",
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",

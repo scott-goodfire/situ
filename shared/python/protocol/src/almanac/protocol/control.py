@@ -40,13 +40,11 @@ class SetupGetResult(BaseModel):
 
     configured: bool
     config: ProjectConfigRecord | None = None
-    objective: ObjectiveRecord | None = None
 
 
 class SetupCompleteParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    objective: str
     research_context: str
 
 
@@ -54,7 +52,6 @@ class SetupCompleteResult(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     config: ProjectConfigRecord
-    objective: ObjectiveRecord
 
 
 CollectionName = Literal[
@@ -129,10 +126,26 @@ class EventsSubscribeResult(BaseModel):
 class SessionStartParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
+    objective: str
+    research_context: str
     max_experiments: int = 6
 
 
 class SessionStartResult(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    session_id: str
+    status: str
+
+
+class SessionResumeParams(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    session_id: str
+    max_experiments: int = 6
+
+
+class SessionResumeResult(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     session_id: str

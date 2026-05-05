@@ -7,17 +7,32 @@ from .command import CreateSession, UpdateSessionStatus
 
 
 class SessionsRepository(BaseRepository):
-    def create(self, session_id: str, *, objective_id: str) -> SessionRecord:
-        command = CreateSession(session_id=session_id, objective_id=objective_id)
+    def create(
+        self,
+        session_id: str,
+        *,
+        objective_id: str,
+        objective: str,
+        research_context: str,
+    ) -> SessionRecord:
+        command = CreateSession(
+            session_id=session_id,
+            objective_id=objective_id,
+            objective=objective,
+            research_context=research_context,
+        )
         now = utc_now()
         self.db.execute(
             """
-            INSERT INTO sessions (id, objective_id, status, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO sessions
+              (id, objective_id, objective, research_context, status, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 command.session_id,
                 command.objective_id,
+                command.objective,
+                command.research_context,
                 SessionStatus.ACTIVE.value,
                 now,
                 now,
@@ -64,3 +79,7 @@ class SessionsRepository(BaseRepository):
                 (objective_id,),
             )
         ]
+
+    def latest(self) -> SessionRecord | None:
+        row = self.db.fetchone("SELECT * FROM sessions ORDER BY created_at DESC LIMIT 1")
+        return session_row(row) if row else None

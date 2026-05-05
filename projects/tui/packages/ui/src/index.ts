@@ -22,11 +22,23 @@ export { ExperimentsSection } from "./components/experiments-section/experiments
 export { EvaluationsSection } from "./components/evaluations-section/evaluations-section.js";
 export { HeatmapGrid } from "./components/heatmap-grid/heatmap-grid.js";
 export { HypothesesSection } from "./components/hypotheses-section/hypotheses-section.js";
+export {
+  LayoutBox,
+  type LayoutBoxDirection,
+  type LayoutBoxProps,
+} from "./components/layout-box/layout-box.js";
 export { MetricTrend } from "./components/metric-trend/metric-trend.js";
 export { NowSection } from "./components/now-section/now-section.js";
+export {
+  PaneSection,
+  type PaneSectionChrome,
+  type PaneSectionDensity,
+  type PaneSectionProps,
+  type PaneSectionTone,
+} from "./components/pane-section/pane-section.js";
 export { ReconnectSessionPrompt } from "./components/reconnect-session-prompt/reconnect-session-prompt.js";
 export { SessionSection } from "./components/session-section/session-section.js";
+export { StartSessionPrompt } from "./components/start-session-prompt/start-session-prompt.js";
 export { SteeringDoseResponse } from "./components/steering-dose-response/steering-dose-response.js";
-export { Section } from "./components/section/section.js";
 export { TimelineSection } from "./components/timeline-section/timeline-section.js";
 export { TokenFeatureMatrix } from "./components/token-feature-matrix/token-feature-matrix.js";

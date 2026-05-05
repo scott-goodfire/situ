@@ -36,6 +36,8 @@ from almanac.protocol import (
     ObjectiveRecord,
     ProjectConfigRecord,
     SessionRecord,
+    SessionResumeParams,
+    SessionResumeResult,
     SessionStartParams,
     SessionStartResult,
     SessionStatusParams,
@@ -83,6 +85,8 @@ MODELS: list[type[BaseModel]] = [
     CollectionUpsertedParams,
     EventsSubscribeParams,
     EventsSubscribeResult,
+    SessionResumeParams,
+    SessionResumeResult,
     SessionStartParams,
     SessionStartResult,
     SessionStatusParams,
@@ -114,7 +118,7 @@ def generate_typescript() -> str:
         lines.append("")
     lines.extend(
         [
-            'export type ControlMethod = "harness.hello" | "setup.get" | "setup.complete" | "collections.bootstrap" | "collections.subscribe" | "events.subscribe" | "session.start" | "session.status";',
+            'export type ControlMethod = "harness.hello" | "setup.get" | "setup.complete" | "collections.bootstrap" | "collections.subscribe" | "events.subscribe" | "session.resume" | "session.start" | "session.status";',
             'export type WorkerMethod = "worker.initialize" | "experiment.run";',
             "",
         ]

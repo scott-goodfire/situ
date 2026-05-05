@@ -36,7 +36,7 @@ class CreateHypothesisTool(BaseAlmanacTool[AlmanacToolDeps, CreateHypothesisResu
 
         resolved_hypothesis_id = hypothesis_id or _next_hypothesis_id(
             repos=repos,
-            objective_id=resolved_objective_id,
+            session_id=ctx.deps.session_id,
         )
         hypothesis = repos.hypotheses.create(
             hypothesis_id=resolved_hypothesis_id,
@@ -63,7 +63,7 @@ def _current_objective_id(ctx: RunContext[AlmanacToolDeps]) -> str | None:
 def _next_hypothesis_id(
     *,
     repos: Any,
-    objective_id: str,
+    session_id: str,
 ) -> str:
-    count = len(repos.hypotheses.list_for_objective(objective_id)) + 1
-    return f"hyp_{objective_id}_agent_{count:03d}"
+    count = len(repos.hypotheses.list_for_session(session_id)) + 1
+    return f"hyp_{session_id}_agent_{count:03d}"

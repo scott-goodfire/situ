@@ -73,7 +73,6 @@ def test_snapshot_json_reads_local_state_without_live_session(
     )
     app.setup_complete(
         {
-            "objective": "Improve the score",
             "research_context": "Run local evals. Expected signals: score.",
         }
     )
@@ -85,7 +84,7 @@ def test_snapshot_json_reads_local_state_without_live_session(
     assert code == 0
     assert captured.err == ""
     assert payload["source"] == "local"
-    assert payload["snapshot"]["objectives"][0]["title"] == "Improve the score"
+    assert payload["snapshot"]["objectives"] == []
     assert payload["snapshot"]["events"][0]["type"] == "setup.completed"
 
 
@@ -238,10 +237,6 @@ def test_exec_uses_shared_rpc_lifecycle_and_prints_final_json(
         **_kwargs: Any,
     ) -> dict[str, Any]:
         calls.append((method, params or {}))
-        if method == "setup.get":
-            return {"configured": False}
-        if method == "setup.complete":
-            return {"config": {}, "objective": {}}
         if method == "session.start":
             return {"session_id": "session_0001", "status": "active"}
         if method == "session.status":
@@ -249,6 +244,12 @@ def test_exec_uses_shared_rpc_lifecycle_and_prints_final_json(
                 "session": {
                     "id": "session_0001",
                     "objective_id": "objective_0001",
+                    "objective": "Improve the score",
+                    "research_context": (
+                        "Run local evals. Use project-native tools, tests, evals, "
+                        "benchmarks, logs, and artifacts. Capture plaintext evidence, "
+                        "useful interpretations, concerns, and activities."
+                    ),
                     "status": "closed",
                 }
             }
@@ -258,6 +259,12 @@ def test_exec_uses_shared_rpc_lifecycle_and_prints_final_json(
                     {
                         "id": "session_0001",
                         "objective_id": "objective_0001",
+                        "objective": "Improve the score",
+                        "research_context": (
+                            "Run local evals. Use project-native tools, tests, evals, "
+                            "benchmarks, logs, and artifacts. Capture plaintext evidence, "
+                            "useful interpretations, concerns, and activities."
+                        ),
                         "status": "closed",
                     }
                 ],
@@ -292,24 +299,24 @@ def test_exec_uses_shared_rpc_lifecycle_and_prints_final_json(
     assert payload["status"] == "completed"
     assert payload["session_id"] == "session_0001"
     assert calls == [
-        ("setup.get", {}),
         (
-            "setup.complete",
+            "session.start",
             {
                 "objective": "Improve the score",
                 "research_context": (
-                    "Run local evals. Capture results, signals, concerns, "
-                    "and activities from local experiments."
+                    "Run local evals. Use project-native tools, tests, evals, "
+                    "benchmarks, logs, and artifacts. Capture plaintext evidence, "
+                    "useful interpretations, concerns, and activities."
                 ),
+                "max_experiments": 2,
             },
         ),
-        ("session.start", {"max_experiments": 2}),
         ("session.status", {"session_id": "session_0001"}),
         ("collections.bootstrap", {}),
     ]
 
 
-def test_setup_params_keeps_context_vague_and_signal_oriented() -> None:
+def test_session_start_params_keeps_context_vague_and_signal_oriented() -> None:
     args = argparse.Namespace(
         objective=None,
         context=(
@@ -319,19 +326,20 @@ def test_setup_params_keeps_context_vague_and_signal_oriented() -> None:
         ),
     )
 
-    params = headless.setup_params(
-        args,
-        Path("/tmp/project"),
-        Path("/tmp/app"),
+    params = headless.session_start_params(
+        args=args,
+        workspace=Path("/tmp/project"),
     )
 
-    assert params["objective"] == "Observe autoresearch experiments in /tmp/project"
+    assert params["objective"] == "Explore autoresearch opportunities in /tmp/project"
     assert params["research_context"] == (
         "Use the available eval scripts and logs. "
         "Run python eval.py --json and capture its JSON signals. "
         "Expected signals: score, latency_ms. "
-        "Capture results, signals, concerns, and activities from local experiments."
+        "Use project-native tools, tests, evals, benchmarks, logs, and artifacts. "
+        "Capture plaintext evidence, useful interpretations, concerns, and activities."
     )
+    assert params["max_experiments"] == 6
 
 
 def test_web_launches_project_home_without_workspace(

@@ -209,7 +209,7 @@ def _build_repos(path: Path, workspace_path: Path) -> Repositories:
             "as plaintext evidence, and avoid modifying setup/evaluation code."
         ),
     )
-    repos.objectives.create(
+    objective = repos.objectives.create(
         objective_id=OBJECTIVE_ID,
         title="Improve validation bits per byte",
         description=(
@@ -217,7 +217,20 @@ def _build_repos(path: Path, workspace_path: Path) -> Repositories:
             "invalidating the measurement surface."
         ),
     )
-    repos.sessions.create(SESSION_ID, objective_id=OBJECTIVE_ID)
+    session = repos.sessions.create(
+        SESSION_ID,
+        objective_id=objective.id,
+        objective=objective.title,
+        research_context=(
+            "You are observing a tiny local autoresearch-style repo. Inspect "
+            "the project docs, run project-native commands, compare val_bpb "
+            "as plaintext evidence, and avoid modifying setup/evaluation code."
+        ),
+    )
+    repos.objectives.update(
+        objective.id,
+        associated_session_id=session.id,
+    )
     return repos
 
 

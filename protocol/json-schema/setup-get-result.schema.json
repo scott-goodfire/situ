@@ -1,63 +1,5 @@
 {
   "$defs": {
-    "ObjectiveRecord": {
-      "additionalProperties": false,
-      "properties": {
-        "id": {
-          "title": "Id",
-          "type": "string"
-        },
-        "title": {
-          "title": "Title",
-          "type": "string"
-        },
-        "description": {
-          "title": "Description",
-          "type": "string"
-        },
-        "status": {
-          "$ref": "#/$defs/ObjectiveStatus"
-        },
-        "associated_session_id": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Associated Session Id"
-        },
-        "created_at": {
-          "title": "Created At",
-          "type": "string"
-        },
-        "updated_at": {
-          "title": "Updated At",
-          "type": "string"
-        }
-      },
-      "required": [
-        "id",
-        "title",
-        "description",
-        "status",
-        "created_at",
-        "updated_at"
-      ],
-      "title": "ObjectiveRecord",
-      "type": "object"
-    },
-    "ObjectiveStatus": {
-      "enum": [
-        "active",
-        "closed"
-      ],
-      "title": "ObjectiveStatus",
-      "type": "string"
-    },
     "ProjectConfigRecord": {
       "additionalProperties": false,
       "properties": {
@@ -115,17 +57,6 @@
       "anyOf": [
         {
           "$ref": "#/$defs/ProjectConfigRecord"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "default": null
-    },
-    "objective": {
-      "anyOf": [
-        {
-          "$ref": "#/$defs/ObjectiveRecord"
         },
         {
           "type": "null"

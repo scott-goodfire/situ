@@ -69,7 +69,19 @@ def repos(tmp_path: Path) -> Repositories:
         title="Improve score",
         description="Improve score without hurting latency.",
     )
-    repositories.sessions.create("session_0001", objective_id="objective_0001")
+    session = repositories.sessions.create(
+        "session_0001",
+        objective_id="objective_0001",
+        objective="Improve score",
+        research_context=(
+            "Use the available eval scripts and compare score/latency. "
+            "Expected signals: score, latency_ms. Baseline, variants, and combinations."
+        ),
+    )
+    repositories.objectives.update(
+        "objective_0001",
+        associated_session_id=session.id,
+    )
     repositories.hypotheses.create(
         hypothesis_id="hyp_0001",
         objective_id="objective_0001",
@@ -133,13 +145,13 @@ def test_hypothesis_tools_create_update_and_list(repos: Repositories) -> None:
     )
     assert created.success is True
     assert created.hypothesis is not None
-    assert created.hypothesis["id"] == "hyp_objective_0001_agent_002"
+    assert created.hypothesis["id"] == "hyp_session_0001_agent_002"
     assert created.hypothesis["status"] == "open"
 
     updated = invoke_almanac_tool_sync(
         tool=UpdateHypothesisTool(),
         deps=deps,
-        hypothesis_id="hyp_objective_0001_agent_002",
+        hypothesis_id="hyp_session_0001_agent_002",
         status="active",
         summary="Component C is ready to test.",
     )
@@ -155,7 +167,7 @@ def test_hypothesis_tools_create_update_and_list(repos: Repositories) -> None:
     assert listed.success is True
     assert [hypothesis["id"] for hypothesis in listed.hypotheses] == [
         "hyp_0001",
-        "hyp_objective_0001_agent_002",
+        "hyp_session_0001_agent_002",
     ]
     assert [event["type"] for event in emitted] == [
         "hypothesis.created",

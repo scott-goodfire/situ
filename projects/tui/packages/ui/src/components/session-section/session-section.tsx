@@ -1,6 +1,6 @@
 import { Text } from "ink";
 import type { ObjectiveRecord, SessionRecord } from "@almanac/protocol";
-import { Section } from "../section/section.js";
+import { PaneSection } from "../pane-section/pane-section.js";
 
 export function SessionSection({
   objective,
@@ -14,9 +14,9 @@ export function SessionSection({
   maxExperiments: number;
 }) {
   return (
-    <Section title="Session">
+    <PaneSection title="Session">
       <Text>{sessionLabel({ objective, session, experimentCount, maxExperiments })}</Text>
-    </Section>
+    </PaneSection>
   );
 }
 

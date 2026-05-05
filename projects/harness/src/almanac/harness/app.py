@@ -13,6 +13,8 @@ from almanac.protocol import (
     EventsSubscribeResult,
     HarnessHelloParams,
     HarnessHelloResult,
+    SessionResumeParams,
+    SessionResumeResult,
     SessionStartParams,
     SessionStartResult,
     SessionStatusParams,
@@ -61,7 +63,7 @@ class HarnessApp:
         self.current_state_api = CurrentStateService(repos=self.repos)
         self.sessions_api = SessionsService(repos=self.repos)
         self.app_root = app_root
-        self.agent_runtime = AgentRuntime(self.context.project_dir)
+        self._agent_runtime: AgentRuntime | None = None
         self.notify = notify
         register_project_notifications(self.context.project_id, notify)
         self.subscribed = False
@@ -75,6 +77,7 @@ class HarnessApp:
             "collections.bootstrap": self.collections_bootstrap,
             "collections.subscribe": self.collections_subscribe,
             "events.subscribe": self.events_subscribe,
+            "session.resume": self.session_resume,
             "session.start": self.session_start,
             "session.status": self.session_status,
         }
@@ -90,11 +93,9 @@ class HarnessApp:
     def setup_get(self, params: dict[str, Any]) -> dict[str, Any]:
         SetupGetParams.model_validate(params)
         config = self.repos.project_config.get()
-        objective = self.repos.objectives.get_active()
         return SetupGetResult(
-            configured=config is not None and objective is not None,
+            configured=config is not None,
             config=config.model_dump() if config is not None else None,
-            objective=objective.model_dump() if objective is not None else None,
         ).model_dump()
 
     def setup_complete(self, params: dict[str, Any]) -> dict[str, Any]:
@@ -102,27 +103,14 @@ class HarnessApp:
         config = self.repos.project_config.set(
             research_context=setup.research_context,
         )
-        objective = self.repos.objectives.upsert(
-            objective_id="objective_0001",
-            title=setup.objective,
-            description=setup.objective,
-            status="active",
-            associated_session_id=None,
-        )
-        event = self.record_event(
+        self.record_event(
             "setup.completed",
             "Configured project context",
             payload={
-                "objective_id": objective.id,
-                "objective": objective.title,
                 "research_context": config.research_context,
             },
         )
-        self.publish_record(objective, cursor=event.id)
-        return SetupCompleteResult(
-            config=config.model_dump(),
-            objective=objective.model_dump(),
-        ).model_dump()
+        return SetupCompleteResult(config=config.model_dump()).model_dump()
 
     def collections_bootstrap(self, params: dict[str, Any]) -> dict[str, Any]:
         CollectionsBootstrapParams.model_validate(params)
@@ -152,23 +140,69 @@ class HarnessApp:
     def session_start(self, params: dict[str, Any]) -> dict[str, Any]:
         start = SessionStartParams.model_validate(params)
         config = self.repos.project_config.get()
-        objective = self.repos.objectives.get_active()
-        if config is None or objective is None:
-            raise RuntimeError("setup must be completed before starting a session")
+        if config is None:
+            config = self.repos.project_config.set(
+                research_context=start.research_context,
+            )
 
         session_id = self.sessions_api.next_session_id().session_id
-        session = self.repos.sessions.create(session_id, objective_id=objective.id)
-        event = self.record_event("session.started", f"Started {session_id}", session_id=session_id)
+        objective_id = f"objective_{session_id}"
+        objective = self.repos.objectives.create(
+            objective_id=objective_id,
+            title=start.objective,
+            description=start.objective,
+            associated_session_id=None,
+        )
+        session = self.repos.sessions.create(
+            session_id,
+            objective_id=objective.id,
+            objective=start.objective,
+            research_context=start.research_context,
+        )
+        objective = self.repos.objectives.update(
+            objective.id,
+            associated_session_id=session.id,
+        ) or objective
+        event = self.record_event(
+            "session.started",
+            f"Started {session_id}",
+            session_id=session_id,
+            payload={
+                "objective_id": objective.id,
+                "objective": session.objective,
+            },
+        )
+        self.publish_record(objective, cursor=event.id)
         self.publish_record(session, cursor=event.id)
 
-        thread = threading.Thread(
-            target=self._execute_session,
-            args=(session_id, start.max_experiments),
-            daemon=True,
+        self._start_session_thread(
+            session_id=session_id,
+            max_experiments=start.max_experiments,
         )
-        thread.start()
 
         return SessionStartResult(session_id=session_id, status="active").model_dump()
+
+    def session_resume(self, params: dict[str, Any]) -> dict[str, Any]:
+        resume = SessionResumeParams.model_validate(params)
+        session = self.repos.sessions.get(resume.session_id)
+        if session is None:
+            raise RuntimeError(f"session not found: {resume.session_id}")
+
+        session = self.repos.sessions.update_status(resume.session_id, "active") or session
+        event = self.record_event(
+            "session.resumed",
+            f"Resumed {resume.session_id}",
+            session_id=resume.session_id,
+        )
+        self.publish_record(session, cursor=event.id)
+        self._start_session_thread(
+            session_id=resume.session_id,
+            max_experiments=resume.max_experiments,
+        )
+        return SessionResumeResult(
+            session_id=resume.session_id,
+            status=session.status.value,
+        ).model_dump()
 
     def session_status(self, params: dict[str, Any]) -> dict[str, Any]:
         status = SessionStatusParams.model_validate(params)
@@ -211,15 +245,18 @@ class HarnessApp:
     def _execute_session(self, session_id: str, max_experiments: int) -> None:
         try:
             config = self.repos.project_config.get()
-            objective = self.repos.objectives.get_active()
-            if config is None or objective is None:
+            session = self.repos.sessions.get(session_id)
+            if config is None or session is None:
                 raise RuntimeError("missing project setup")
+            objective = self.repos.objectives.get(session.objective_id)
+            if objective is None:
+                raise RuntimeError(f"missing session objective: {session.objective_id}")
 
             with span("almanac.session.execute", session_id=session_id, workspace=config.repo_path):
-                result = self.agent_runtime.run_session(
+                result = self._get_agent_runtime().run_session(
                     config=config.model_dump(),
                     objective=objective.model_dump(),
-                    current_state=self.current_state_api.get().model_dump(),
+                    current_state=self.sessions_api.get_session(session_id).model_dump(),
                     session_id=session_id,
                     max_experiments=max_experiments,
                     app_root=self.app_root,
@@ -250,6 +287,24 @@ class HarnessApp:
             )
             if session is not None:
                 self.publish_record(session, cursor=event.id)
+
+    def _get_agent_runtime(self) -> AgentRuntime:
+        if self._agent_runtime is None:
+            self._agent_runtime = AgentRuntime(self.context.project_dir)
+        return self._agent_runtime
+
+    def _start_session_thread(
+        self,
+        *,
+        session_id: str,
+        max_experiments: int,
+    ) -> None:
+        thread = threading.Thread(
+            target=self._execute_session,
+            args=(session_id, max_experiments),
+            daemon=True,
+        )
+        thread.start()
 
 
 class MethodNotFound(Exception):

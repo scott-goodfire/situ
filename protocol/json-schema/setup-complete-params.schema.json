@@ -1,17 +1,12 @@
 {
   "additionalProperties": false,
   "properties": {
-    "objective": {
-      "title": "Objective",
-      "type": "string"
-    },
     "research_context": {
       "title": "Research Context",
       "type": "string"
     }
   },
   "required": [
-    "objective",
     "research_context"
   ],
   "title": "SetupCompleteParams",

@@ -7,16 +7,17 @@ import sys
 from pathlib import Path
 
 from .headless import (
-    apply_setup_env,
+    apply_session_env,
     headless_clear,
     headless_events,
     headless_exec,
+    headless_sessions,
     headless_snapshot,
     headless_status,
     headless_wait,
 )
 from .core.db.project_registry import upsert_project_registry
-from .local_session import base_env, start_session_server, stop_process
+from .local_session import base_env, read_live_session, start_session_server, stop_process
 from .paths import resolve_app_root, resolve_workspace
 from .project_context import ProjectContext
 
@@ -28,6 +29,21 @@ def main(argv: list[str] | None = None) -> int:
     start_parser = subparsers.add_parser("start", help="start the local TUI")
     add_workspace_argument(start_parser)
     add_setup_arguments(start_parser)
+
+    resume_parser = subparsers.add_parser("resume", help="resume an existing session in the TUI")
+    add_workspace_argument(resume_parser)
+    resume_parser.add_argument(
+        "--session-id",
+        help="session id to resume; defaults to the latest local session",
+    )
+    resume_parser.add_argument(
+        "--max-experiments",
+        type=int,
+        help="maximum number of additional experiments to run",
+    )
+
+    attach_parser = subparsers.add_parser("attach", help="attach the TUI to a running harness")
+    add_workspace_argument(attach_parser)
 
     exec_parser = subparsers.add_parser("exec", help="run a headless local session")
     add_workspace_argument(exec_parser)
@@ -46,6 +62,10 @@ def main(argv: list[str] | None = None) -> int:
     snapshot_parser = subparsers.add_parser("snapshot", help="print current local state as JSON")
     add_workspace_argument(snapshot_parser)
     add_json_argument(snapshot_parser)
+
+    sessions_parser = subparsers.add_parser("sessions", help="list local sessions as JSON")
+    add_workspace_argument(sessions_parser)
+    add_json_argument(sessions_parser)
 
     events_parser = subparsers.add_parser("events", help="print events as JSON Lines")
     add_workspace_argument(events_parser)
@@ -104,12 +124,18 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "start":
         return start(args)
+    if args.command == "resume":
+        return resume(args)
+    if args.command == "attach":
+        return attach(args)
     if args.command == "exec":
         return headless_exec(args)
     if args.command == "status":
         return headless_status(args)
     if args.command == "snapshot":
         return headless_snapshot(args)
+    if args.command == "sessions":
+        return headless_sessions(args)
     if args.command == "events":
         return headless_events(args)
     if args.command == "wait":
@@ -153,6 +179,14 @@ def add_setup_arguments(parser: argparse.ArgumentParser) -> None:
 
 
 def start(args: argparse.Namespace) -> int:
+    return launch_managed_tui(args=args, mode="start")
+
+
+def resume(args: argparse.Namespace) -> int:
+    return launch_managed_tui(args=args, mode="resume")
+
+
+def attach(args: argparse.Namespace) -> int:
     app_root = resolve_app_root(Path(__file__))
     if app_root is None:
         print("could not find Almanac app root; set ALMANAC_APP_ROOT", file=sys.stderr)
@@ -163,6 +197,40 @@ def start(args: argparse.Namespace) -> int:
         print(f"workspace does not exist or is not a directory: {workspace}", file=sys.stderr)
         return 1
 
+    session = read_live_session(workspace)
+    if session is None:
+        print("no active Almanac harness found for this workspace", file=sys.stderr)
+        return 1
+
+    env = base_env(app_root, workspace)
+    env["ALMANAC_SESSION_MODE"] = "attach"
+    env["ALMANAC_SESSION_URL"] = session["url"]
+    env["ALMANAC_SESSION_TOKEN"] = session["token"]
+    return run_tui(app_root=app_root, env=env)
+
+
+def launch_managed_tui(
+    *,
+    args: argparse.Namespace,
+    mode: str,
+) -> int:
+    app_root = resolve_app_root(Path(__file__))
+    if app_root is None:
+        print("could not find Almanac app root; set ALMANAC_APP_ROOT", file=sys.stderr)
+        return 1
+
+    workspace = resolve_workspace(Path.cwd(), args.workspace)
+    if not workspace.is_dir():
+        print(f"workspace does not exist or is not a directory: {workspace}", file=sys.stderr)
+        return 1
+
+    if read_live_session(workspace) is not None:
+        print(
+            "active Almanac harness found for this workspace; use almanac attach or stop it first",
+            file=sys.stderr,
+        )
+        return 1
+
     context = ProjectContext(workspace)
     upsert_project_registry(
         almanac_home=context.home,
@@ -171,16 +239,29 @@ def start(args: argparse.Namespace) -> int:
     )
 
     env = base_env(app_root, workspace)
-    apply_setup_env(env, args)
+    apply_session_env(env, args)
+    env["ALMANAC_SESSION_MODE"] = mode
 
     session_process, session = start_session_server(app_root, workspace, env)
     env["ALMANAC_SESSION_URL"] = session["url"]
     env["ALMANAC_SESSION_TOKEN"] = session["token"]
 
     try:
-        return subprocess.run(["bun", "run", "dev"], cwd=app_root / "projects" / "tui", env=env).returncode
+        return run_tui(app_root=app_root, env=env)
     finally:
         stop_process(session_process)
+
+
+def run_tui(
+    *,
+    app_root: Path,
+    env: dict[str, str],
+) -> int:
+    return subprocess.run(
+        ["bun", "run", "dev"],
+        cwd=app_root / "projects" / "tui",
+        env=env,
+    ).returncode
 
 
 def web(args: argparse.Namespace) -> int:

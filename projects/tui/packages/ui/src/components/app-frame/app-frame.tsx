@@ -1,5 +1,7 @@
-import { Box, Text, useStdout } from "ink";
+import { Text, useStdout } from "ink";
 import type { ReactNode } from "react";
+import { LayoutBox } from "../layout-box/layout-box.js";
+import { PaneSection } from "../pane-section/pane-section.js";
 
 export function AppFrame({
   workspace,
@@ -16,19 +18,19 @@ export function AppFrame({
   const width = frameWidth({ columns: stdout.columns });
 
   return (
-    <Box width={width} flexDirection="column" gap={1}>
+    <LayoutBox width={width} gap={1}>
       <HeaderBanner
         workspace={workspace}
         statusLine={statusLine}
         width={width}
       />
 
-      <Box flexDirection="column" gap={1} paddingX={1}>
+      <LayoutBox gap={1} paddingX={1}>
         {children}
-      </Box>
+      </LayoutBox>
 
-      <Box paddingX={1}>{footer}</Box>
-    </Box>
+      <LayoutBox paddingX={1}>{footer}</LayoutBox>
+    </LayoutBox>
   );
 }
 
@@ -42,19 +44,15 @@ function HeaderBanner({
   width: number;
 }) {
   return (
-    <Box
+    <PaneSection
+      title="Almanac"
+      chrome="box"
+      tone="accent"
       width={width}
-      borderStyle="round"
-      borderColor="cyan"
-      flexDirection="column"
-      paddingX={1}
     >
-      <Text color="cyan" bold>
-        Almanac
-      </Text>
       <Text dimColor>{workspace}</Text>
       <Text>{statusLine}</Text>
-    </Box>
+    </PaneSection>
   );
 }
 

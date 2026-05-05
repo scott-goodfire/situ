@@ -50,6 +50,8 @@ export interface ObjectiveRecord {
 export interface SessionRecord {
   id: string;
   objective_id: string;
+  objective: string;
+  research_context: string;
   status: "active" | "closed";
   created_at: string;
   updated_at: string;
@@ -166,17 +168,14 @@ export interface SetupGetParams {
 export interface SetupGetResult {
   configured: boolean;
   config?: ProjectConfigRecord | null;
-  objective?: ObjectiveRecord | null;
 }
 
 export interface SetupCompleteParams {
-  objective: string;
   research_context: string;
 }
 
 export interface SetupCompleteResult {
   config: ProjectConfigRecord;
-  objective: ObjectiveRecord;
 }
 
 export interface CollectionsBootstrapParams {
@@ -221,7 +220,19 @@ export interface EventsSubscribeResult {
   replayed?: number;
 }
 
+export interface SessionResumeParams {
+  session_id: string;
+  max_experiments?: number;
+}
+
+export interface SessionResumeResult {
+  session_id: string;
+  status: string;
+}
+
 export interface SessionStartParams {
+  objective: string;
+  research_context: string;
   max_experiments?: number;
 }
 
@@ -272,5 +283,5 @@ export interface WorkerProgressParams {
   payload?: Record<string, unknown>;
 }
 
-export type ControlMethod = "harness.hello" | "setup.get" | "setup.complete" | "collections.bootstrap" | "collections.subscribe" | "events.subscribe" | "session.start" | "session.status";
+export type ControlMethod = "harness.hello" | "setup.get" | "setup.complete" | "collections.bootstrap" | "collections.subscribe" | "events.subscribe" | "session.resume" | "session.start" | "session.status";
 export type WorkerMethod = "worker.initialize" | "experiment.run";

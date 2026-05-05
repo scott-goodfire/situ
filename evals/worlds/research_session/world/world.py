@@ -92,12 +92,25 @@ def _build_repos(path: Path) -> Repositories:
             "Scope: baseline, simple variants, and promising combinations."
         ),
     )
-    repos.objectives.create(
+    objective = repos.objectives.create(
         objective_id=OBJECTIVE_ID,
         title="Improve validation score",
         description="Improve validation score without worsening latency.",
     )
-    repos.sessions.create(SESSION_ID, objective_id=OBJECTIVE_ID)
+    session = repos.sessions.create(
+        SESSION_ID,
+        objective_id=objective.id,
+        objective=objective.title,
+        research_context=(
+            "Use local eval scripts and compare score, latency_ms, and safety notes. "
+            "Expected signals: score, latency_ms, tests_passed. "
+            "Scope: baseline, simple variants, and promising combinations."
+        ),
+    )
+    repos.objectives.update(
+        objective.id,
+        associated_session_id=session.id,
+    )
     return repos
 
 

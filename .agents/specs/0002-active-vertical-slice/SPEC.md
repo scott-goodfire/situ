@@ -8,7 +8,7 @@ The current slice should prove one experience:
 > active hypotheses, experiments, activity, artifacts, and internal events as the
 > loop runs.
 
-The slice should support one local project, one active objective, lightweight
+The slice should support one local project, session-scoped objective and
 research context, a few hypotheses, a sequential agent-requested experiment
 loop, comment activities, simple automated trust concerns, and one worker path.
 
@@ -26,19 +26,18 @@ or points Almanac at a workspace explicitly:
 almanac start ~/sandbox/some-project
 ```
 
-If no local research context exists for the current project, Almanac shows a
-slim terminal setup flow. It asks only:
+For the current implementation slice, Almanac accepts setup context through
+sparse start/exec inputs and reasonable defaults. The durable inputs are:
 
 - Objective
-- How do you currently judge progress?
-- What evals, tools, metrics, dashboards, logs, or artifacts matter?
-- What kinds of experiments are in scope?
+- Research context: how progress is judged, what evals/tools/metrics/logs or
+  artifacts matter, and what kinds of experiments are in scope
 
 Then Almanac:
 
 - Creates local private project state.
-- Creates or reuses the active objective.
-- Starts a local session.
+- Starts a new session by default.
+- Stores the objective and research context on that session.
 - Starts a DBOS-backed Pydantic AI agent.
 - Lets the agent inspect session state and create hypotheses when useful.
 - Requires the agent to establish baseline evaluation evidence before treating
@@ -57,9 +56,9 @@ code are launched from the Almanac repository.
 
 - One-command start
 - Explicit workspace argument for sandbox/project testing
-- Terminal setup flow
+- Sparse session setup inputs through objective/context
 - Local/private project context
-- Active objective
+- Session-scoped objective and research context
 - Internal session ledger
 - Hypothesis ledger
 - Experiment ledger
@@ -101,6 +100,7 @@ tests/evals, dependencies, or generated files changed. See
 ## Deferred
 
 - Web UI as the primary surface
+- Interactive terminal setup wizard
 - Live guidance
 - Final report
 - Broad health model or health snapshots
@@ -122,13 +122,15 @@ tests/evals, dependencies, or generated files changed. See
 
 ## Success Criterion
 
-A user can start a session, watch an agent inspect state, create or update
-hypotheses, establish baseline evaluation evidence, request concrete
-experiments through the harness, see evaluation evidence, worker results, and
-automated concern comments land in the TUI, and inspect artifacts when useful.
+A user can start a fresh session, watch an agent inspect that session state,
+create or update hypotheses, establish baseline evaluation evidence, request
+concrete experiments through the harness, see evaluation evidence, worker
+results, and automated concern comments land in the TUI, and inspect artifacts
+when useful. If the user wants to continue an existing session, they must resume
+it explicitly.
 
 ## Quality Bar
 
-The slice can be narrow, but the live state must be real. Objectives, sessions,
-hypotheses, experiments, evaluations, activities, artifacts, and internal events
-should survive process restart.
+The slice can be narrow, but the live state must be real. Sessions, session
+objectives, hypotheses, experiments, evaluations, activities, artifacts, and
+internal events should survive process restart.

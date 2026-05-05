@@ -1,7 +1,7 @@
 import lodash from "lodash";
 import { Text } from "ink";
 import type { ExperimentActivityRecord, ExperimentRecord } from "@almanac/protocol";
-import { Section } from "../section/section.js";
+import { PaneSection } from "../pane-section/pane-section.js";
 import { previewText } from "../text-preview/text-preview.js";
 
 export function ExperimentsSection({
@@ -14,14 +14,14 @@ export function ExperimentsSection({
   const visibleExperiments = experiments.slice(-8);
 
   return (
-    <Section title="Experiments">
+    <PaneSection title="Experiments">
       {visibleExperiments.length === 0 && <Text dimColor>None yet</Text>}
       {visibleExperiments.map((experiment) => (
         <Text key={experiment.id}>
           {formatExperiment({ experiment, experimentActivities })}
         </Text>
       ))}
-    </Section>
+    </PaneSection>
   );
 }
 

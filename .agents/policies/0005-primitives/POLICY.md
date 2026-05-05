@@ -18,8 +18,9 @@ Hypothesis, Experiment, Evaluation, Activity, Artifact, and Event.
 
 - User-facing surfaces use simple product nouns.
 - Objectives describe why the research exists.
-- Sessions are execution/runtime containers, not the main user-facing research
-  object.
+- Sessions are the primary user-facing research run. They own the objective,
+  research context, hypotheses, experiments, evaluations, activities, artifacts,
+  and events for one autoresearch attempt.
 - Hypotheses are lightweight research threads with minimal status.
 - Experiments are concrete attempts and may link to many hypotheses.
 - Evaluations are lightweight measurement threads for baseline, candidate,

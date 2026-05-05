@@ -82,7 +82,6 @@ def _run_experiment_impl(
     objective_id = payload.objective_id or session.objective_id
     experiment_id = payload.experiment_id or _next_experiment_id(
         deps=deps,
-        objective_id=objective_id,
     )
 
     experiment = repos.experiments.get(experiment_id)
@@ -276,11 +275,10 @@ def _upsert(
 def _next_experiment_id(
     *,
     deps: AlmanacToolDeps,
-    objective_id: str,
 ) -> str:
     repos = deps.get_repos()
     count = len(repos.experiments.list_for_session(deps.session_id)) + 1
-    return f"exp_{deps.session_id}_{objective_id}_agent_{count:03d}"
+    return f"exp_{deps.session_id}_agent_{count:03d}"
 
 
 def baseline_score(deps: AlmanacToolDeps, session_id: str) -> float | None:

@@ -28,11 +28,7 @@ class SessionsService(BaseModel):
             if session is not None
             else None
         )
-        hypotheses = (
-            self.repos.hypotheses.list_for_objective(objective.id)
-            if objective is not None
-            else []
-        )
+        hypotheses = self.repos.hypotheses.list_for_session(session_id)
         experiments = self.repos.experiments.list_for_session(session_id)
         evaluations = self.repos.evaluations.list_for_session(session_id)
         hypothesis_ids = {hypothesis.id for hypothesis in hypotheses}

@@ -1,6 +1,6 @@
 import { Text } from "ink";
 import type { HypothesisRecord } from "@almanac/protocol";
-import { Section } from "../section/section.js";
+import { PaneSection } from "../pane-section/pane-section.js";
 
 export function HypothesesSection({
   hypotheses,
@@ -10,13 +10,13 @@ export function HypothesesSection({
   const visibleHypotheses = hypotheses.slice(-5);
 
   return (
-    <Section title="Hypotheses">
+    <PaneSection title="Hypotheses">
       {visibleHypotheses.length === 0 && <Text dimColor>None yet</Text>}
       {visibleHypotheses.map((hypothesis) => (
         <Text key={hypothesis.id}>
           {hypothesis.id} | {hypothesis.status} | {hypothesis.title}
         </Text>
       ))}
-    </Section>
+    </PaneSection>
   );
 }
