@@ -13,7 +13,7 @@ from ...tools import build_research_toolset
 from ...tools.common import AlmanacToolDeps
 from ..common import AlmanacAgentContext, AlmanacAgentPrompt, BaseAlmanacAgent
 
-RESEARCH_AGENT_NAME = "almanac_research_agent"
+RESEARCH_AGENT_NAME = "almanac-research-agent"
 RESEARCH_AGENT_INSTRUCTIONS = inspect.cleandoc(
     """
     You are Almanac's research agent. Your job is to keep an autoresearch

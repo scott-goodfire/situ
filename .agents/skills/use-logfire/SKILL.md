@@ -52,8 +52,8 @@ Use the intended project:
 uv run python -m logfire --region us projects use --org <org> <project>
 ```
 
-This repo has used `scott-goodfire/almanac`; verify it is still listed before
-assuming it.
+This repo may have a previously selected Almanac Logfire project; verify the
+active project before assuming it.
 
 ## Token Types
 

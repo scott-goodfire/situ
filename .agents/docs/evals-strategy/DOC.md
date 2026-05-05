@@ -89,11 +89,10 @@ A world is a fixture-backed simulation of the thing Almanac is researching.
 
 Initial worlds:
 
-- `micrograd`: baseline, variants, combinations, and suspicious results based
-  on the existing micrograd sandbox.
 - `research_session`: temporary SQLite session worlds seeded with objective,
   session, hypothesis, experiment, activity, and artifact state. This world
-  exercises the actual Almanac research toolset through Pydantic AI.
+  exercises the actual Almanac research toolset through Pydantic AI for both
+  focused tool-use evals and full-agent `ResearchAgent` planning evals.
 
 Future worlds can include `toy_autoresearch` for even faster synthetic local
 smoke tests. Worlds may be fully mocked at first. Later, they can call real

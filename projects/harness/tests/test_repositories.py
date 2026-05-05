@@ -293,7 +293,7 @@ def test_agent_message_history_repository_appends_and_reconstructs(
 
     first = repos.agent_message_history.append_session_messages(
         session_id="session_0001",
-        agent_name="almanac_research_planner",
+        agent_name="almanac-research-planner",
         messages_json=(
             b'[{"kind":"request","run_id":"pydantic_run_1",'
             b'"conversation_id":"conversation_1"}]'
@@ -301,7 +301,7 @@ def test_agent_message_history_repository_appends_and_reconstructs(
     )
     second = repos.agent_message_history.append_session_messages(
         session_id="session_0001",
-        agent_name="almanac_research_planner",
+        agent_name="almanac-research-planner",
         messages_json='[{"kind":"response","run_id":"pydantic_run_1","conversation_id":"conversation_1"}]',
     )
 
@@ -311,7 +311,7 @@ def test_agent_message_history_repository_appends_and_reconstructs(
     assert second.id == 2
     assert repos.agent_message_history.get_message_history(
         "session_0001",
-        agent_name="almanac_research_planner",
+        agent_name="almanac-research-planner",
     ) == [
         {"kind": "request", "run_id": "pydantic_run_1", "conversation_id": "conversation_1"},
         {"kind": "response", "run_id": "pydantic_run_1", "conversation_id": "conversation_1"},

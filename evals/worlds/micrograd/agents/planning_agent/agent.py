@@ -11,7 +11,7 @@ from evals.worlds.micrograd.models import MicrogradEvalInput
 from evals.worlds.micrograd.scenarios import micrograd_scenario_prompt
 from evals.worlds.micrograd.world import MicrogradWorld
 
-MICROGRAD_AGENT_NAME = "almanac_micrograd_eval_agent"
+MICROGRAD_AGENT_NAME = "almanac-micrograd-eval-agent"
 
 MICROGRAD_AGENT_INSTRUCTIONS = inspect.cleandoc(
     """

@@ -16,7 +16,7 @@ Run all evals:
 Run one file:
 
 ```bash
-./commands/evals.sh evals/suites/agent_planning/micrograd/eval_group.py
+./commands/evals.sh evals/suites/agent_planning/research_session/eval_group.py
 ```
 
 Run the basic research-tool evals:
@@ -63,14 +63,13 @@ evals/
     discovery.py
     execution.py
   worlds/
-    micrograd/
-      fixtures/results.py
-      models/input/model.py
-      scenarios/suspicious_win/scenario.py
+    research_session/
+      agents/research_agent/agent.py
+      agents/tool_agent/agent.py
       world/world.py
   suites/
     agent_planning/
-      micrograd/
+      research_session/
         cases.py
         eval_group.py
     tool_use/
@@ -79,8 +78,11 @@ evals/
         eval_group.py
 ```
 
-The first suite uses a mocked micrograd world. It is intentionally deterministic
-so prompt/tool behavior can be improved without needing a live sandbox repo.
+The `agent-planning.research-session` suite runs the real Almanac
+`ResearchAgent` with the real research toolset against temporary SQLite session
+worlds. The first cases are happy-path checks for inspecting a session, creating
+hypotheses, creating follow-up experiments, linking them, and leaving durable
+comments.
 
 The `tool-use.research-session` suite uses the actual Almanac research toolset
 against temporary SQLite session worlds. Each case asks the model to exercise

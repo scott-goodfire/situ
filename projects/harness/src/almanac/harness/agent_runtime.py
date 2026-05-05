@@ -9,12 +9,13 @@ from pydantic_ai.durable_exec.dbos import DBOSAgent
 from pydantic_ai.models.test import TestModel
 
 from .config import DEFAULTS, AlmanacSecrets
-from .dbos_runtime import configure_dbos, launch_dbos
+from .core.dbos.runtime import configure_dbos, launch_dbos
 from .observability import configure_observability, span
 from .repositories import Repositories
 
 
-RESEARCH_PLANNER_AGENT_NAME = "almanac_research_planner"
+RESEARCH_PLANNER_AGENT_NAME = "almanac-research-planner"
+_RUNTIMES: dict[Path, "AgentRuntime"] = {}
 
 
 class AgentPlan(BaseModel):
@@ -131,3 +132,12 @@ class AgentRuntime:
             risk_notes=[f"Watch for suspicious or malformed outputs relative to {research_context}."],
             should_continue=True,
         )
+
+
+def get_agent_runtime(project_dir: Path) -> AgentRuntime:
+    key = project_dir.resolve()
+    runtime = _RUNTIMES.get(key)
+    if runtime is None:
+        runtime = AgentRuntime(project_dir)
+        _RUNTIMES[key] = runtime
+    return runtime

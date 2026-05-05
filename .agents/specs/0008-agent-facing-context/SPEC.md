@@ -39,7 +39,8 @@ session instead of rendering the TUI.
 Headless output should be machine-readable by default:
 
 - JSON for status, snapshots, and final summaries.
-- JSON Lines for event streams and long-running `exec` output.
+- JSON Lines for event streams.
+- A final JSON summary for `exec`, with progress and diagnostics on stderr.
 - Human progress and diagnostics on stderr, not mixed into stdout.
 
 Keep the first flags sparse: workspace, setup context, max experiments, and

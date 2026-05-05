@@ -50,6 +50,12 @@ Run the research-tool evals:
 ./commands/evals.sh evals/suites/tool_use/research_tools/eval_group.py --concurrency 1
 ```
 
+Run the full ResearchAgent planning evals:
+
+```bash
+./commands/evals.sh evals/suites/agent_planning/research_session/eval_group.py --concurrency 1
+```
+
 Run one case:
 
 ```bash

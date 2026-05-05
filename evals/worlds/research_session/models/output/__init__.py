@@ -1,3 +1,6 @@
-from evals.worlds.research_session.models.output.model import ResearchToolEvalOutput
+from evals.worlds.research_session.models.output.model import (
+    ResearchAgentEvalOutput,
+    ResearchToolEvalOutput,
+)
 
-__all__ = ["ResearchToolEvalOutput"]
+__all__ = ["ResearchAgentEvalOutput", "ResearchToolEvalOutput"]

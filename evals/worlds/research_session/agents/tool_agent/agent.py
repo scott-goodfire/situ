@@ -14,7 +14,7 @@ from evals.worlds.research_session.models import (
 )
 from evals.worlds.research_session.world import ResearchSessionWorld, SESSION_ID
 
-RESEARCH_TOOL_AGENT_NAME = "almanac_research_tool_eval_agent"
+RESEARCH_TOOL_AGENT_NAME = "almanac-research-tool-eval-agent"
 RESEARCH_TOOL_AGENT_INSTRUCTIONS = inspect.cleandoc(
     """
     You are evaluating Almanac's research tools.

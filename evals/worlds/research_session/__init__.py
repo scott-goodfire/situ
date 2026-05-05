@@ -1,5 +1,10 @@
-from evals.worlds.research_session.agents import run_research_tool_agent
+from evals.worlds.research_session.agents import (
+    run_research_agent,
+    run_research_tool_agent,
+)
 from evals.worlds.research_session.models import (
+    ResearchAgentEvalInput,
+    ResearchAgentEvalOutput,
     ResearchSessionSeed,
     ResearchToolEvalInput,
     ResearchToolEvalOutput,
@@ -19,9 +24,12 @@ __all__ = [
     "HYPOTHESIS_ID",
     "OBJECTIVE_ID",
     "SESSION_ID",
+    "ResearchAgentEvalInput",
+    "ResearchAgentEvalOutput",
     "ResearchSessionSeed",
     "ResearchSessionWorld",
     "ResearchToolEvalInput",
     "ResearchToolEvalOutput",
+    "run_research_agent",
     "run_research_tool_agent",
 ]
