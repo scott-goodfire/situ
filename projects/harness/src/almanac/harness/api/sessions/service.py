@@ -34,6 +34,7 @@ class SessionsService(BaseModel):
             else []
         )
         experiments = self.repos.experiments.list_for_session(session_id)
+        evaluations = self.repos.evaluations.list_for_session(session_id)
         hypothesis_ids = {hypothesis.id for hypothesis in hypotheses}
         experiment_ids = {experiment.id for experiment in experiments}
         links = [
@@ -47,11 +48,15 @@ class SessionsService(BaseModel):
             objective=objective,
             hypotheses=hypotheses,
             experiments=experiments,
+            evaluations=evaluations,
             hypothesis_experiment_links=links,
             hypothesis_activities=self.repos.hypothesis_activities.list_for_session(
                 session_id
             ),
             experiment_activities=self.repos.experiment_activities.list_for_session(
+                session_id
+            ),
+            evaluation_activities=self.repos.evaluation_activities.list_for_session(
                 session_id
             ),
             artifacts=self.repos.artifacts.list_for_session(session_id),

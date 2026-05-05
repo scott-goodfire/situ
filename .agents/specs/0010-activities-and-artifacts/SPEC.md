@@ -10,8 +10,8 @@ This spec defines the minimal model for comment activities and artifacts.
 
 ## Activity
 
-An activity is a timestamped, human-readable entry attached to either a
-hypothesis or an experiment.
+An activity is a timestamped, human-readable entry attached to a hypothesis, an
+experiment, or an evaluation.
 
 It can describe:
 
@@ -43,16 +43,22 @@ concern`, but the product model should not expose many activity kinds yet.
 
 ## Results
 
-Results are experiment comment activities.
+Results are usually evaluation activities written through the
+`add_evaluation_result` tool.
 
 They can include scalar metrics, pass/fail checks, slice-level outputs,
 latency/cost, logs, artifact references, or failures. Do not force every result
 into a single numeric metric.
 
+Experiment activities can summarize what a result means for the attempted
+change, but repeated benchmark runs, raw stdout/stderr, and reproduction notes
+belong on the evaluation activity trail.
+
 ## Concerns
 
-Concerns are experiment comment activities that make suspicious or invalid
-results explicit.
+Concerns are comment activities that make suspicious or invalid results
+explicit. They most often attach to evaluations, because evaluations are where
+the evidence arrives.
 
 Examples:
 
@@ -61,8 +67,8 @@ Examples:
 - `Eval failed before producing metrics.`
 - `Large score improvement needs reproduction.`
 
-Concerns replace the standalone warning model in the first slice. They should be
-distinguishable through body text and optional payload metadata rather than a
+Concerns replace the standalone warning model in the first slice. They should
+be distinguishable through body text and optional payload metadata rather than a
 separate database status or activity kind.
 
 ## Interpretations
@@ -75,6 +81,48 @@ Examples:
 - `A improved over baseline, but only on the easy slice.`
 - `A+C looks promising; C explains most of the observed lift.`
 - `The large improvement in exp_004 is suspicious because eval scope changed.`
+
+## Evaluations
+
+An evaluation is the lightweight container for measurement evidence. It exists
+so baseline, candidate, reproduction, sanity, and blocked setup evidence do not
+have to be stuffed into experiment comments.
+
+First-slice evaluation shape:
+
+```text
+id
+objective_id
+title
+summary
+status: open | active | closed
+associated_session_id?
+associated_experiment_id?
+created_at
+updated_at
+```
+
+First-slice evaluation activity shape:
+
+```text
+id
+evaluation_id
+session_id?
+actor
+kind: comment
+body
+payload_json
+created_at
+```
+
+Multiple runs of the same measurement should normally be multiple
+evaluation activities under one evaluation. Create another evaluation only when
+the measurement thread itself changes enough that it deserves a separate card,
+such as a dedicated reproduction track.
+
+Baseline measurement should be represented as an evaluation without an
+associated experiment. Candidate and reproduction measurements should usually
+link to the experiment they measure.
 
 ## Artifacts
 

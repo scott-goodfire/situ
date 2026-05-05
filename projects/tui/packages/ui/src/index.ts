@@ -19,6 +19,7 @@ export { ActivitySection } from "./components/activity-section/activity-section.
 export { ContrastiveFeatureDiff } from "./components/contrastive-feature-diff/contrastive-feature-diff.js";
 export { ContributionBars } from "./components/contribution-bars/contribution-bars.js";
 export { ExperimentsSection } from "./components/experiments-section/experiments-section.js";
+export { EvaluationsSection } from "./components/evaluations-section/evaluations-section.js";
 export { HeatmapGrid } from "./components/heatmap-grid/heatmap-grid.js";
 export { HypothesesSection } from "./components/hypotheses-section/hypotheses-section.js";
 export { MetricTrend } from "./components/metric-trend/metric-trend.js";

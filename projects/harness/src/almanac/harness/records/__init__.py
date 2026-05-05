@@ -1,6 +1,8 @@
 from .agent_message_history import AgentMessageHistoryRecord
 from .artifact import ArtifactRecord
 from .event import EventRecord
+from .evaluation import EvaluationRecord
+from .evaluation_activity import EvaluationActivityRecord
 from .experiment import ExperimentRecord, WorkStatus, parse_work_status
 from .experiment_activity import ExperimentActivityRecord
 from .hypothesis import HypothesisRecord
@@ -15,6 +17,8 @@ __all__ = [
     "AgentMessageHistoryRecord",
     "ArtifactRecord",
     "EventRecord",
+    "EvaluationActivityRecord",
+    "EvaluationRecord",
     "ExperimentActivityRecord",
     "ExperimentRecord",
     "HypothesisActivityRecord",

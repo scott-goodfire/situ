@@ -1,0 +1,259 @@
+import type {
+  ArtifactRecord,
+  EvaluationActivityRecord,
+  EvaluationRecord,
+  ExperimentRecord,
+} from "@almanac/protocol";
+import {
+  DxBadge,
+  DxSection,
+  DxTable,
+  type DxBadgeTone,
+  type DxTableColumn,
+} from "@almanac/web-ui";
+import { Link } from "@tanstack/react-router";
+import filter from "lodash/filter";
+import {
+  activityLabel,
+  evaluationActivitiesForEvaluation,
+  isConcernActivity,
+  latestEvaluationActivity,
+} from "../evidence/evaluation-selectors";
+import { ActivityTimeline } from "../shared/activity-timeline";
+import type { ActivityItem, ProjectWorkspaceData } from "../types";
+
+type ArtifactRow = {
+  artifact: ArtifactRecord;
+};
+
+export function EvaluationDetailPage({
+  data,
+  evaluationId,
+}: {
+  data: ProjectWorkspaceData;
+  evaluationId: string;
+}) {
+  const evaluation = data.evaluations.find((record) => record.id === evaluationId);
+
+  if (!evaluation) {
+    return (
+      <section className="almanac-empty">
+        <h2>Evaluation not found</h2>
+        <p>No evaluation exists with id {evaluationId}.</p>
+      </section>
+    );
+  }
+
+  const activities = evaluationActivitiesForEvaluation({
+    data,
+    evaluationId,
+  });
+  const sourceExperiment = sourceExperimentForEvaluation({
+    data,
+    evaluation,
+  });
+  const artifacts = artifactsForEvaluation({
+    data,
+    evaluationId,
+  });
+  const hasConcern = activities.some((activity) => isConcernActivity({ activity }));
+  const latestActivity = latestEvaluationActivity({
+    activities,
+  });
+
+  return (
+    <>
+      <section className="almanac-object-page">
+        <div className="almanac-object-page__header">
+          <div>
+            <p className="almanac-object-page__eyebrow">{evaluation.id}</p>
+            <h2>{evaluation.title}</h2>
+          </div>
+          <DxBadge
+            tone={statusTone({
+              evaluation,
+              hasConcern,
+            })}
+          >
+            {hasConcern ? "concern" : evaluation.status}
+          </DxBadge>
+        </div>
+        <p className="almanac-object-page__summary">
+          {latestActivity?.body ?? evaluation.summary}
+        </p>
+      </section>
+
+      <EvaluationSource
+        projectId={data.projectId}
+        evaluation={evaluation}
+        experiment={sourceExperiment}
+      />
+      <Artifacts artifacts={artifacts} />
+      <EvaluationTranscript activities={activities} />
+    </>
+  );
+}
+
+function EvaluationSource({
+  projectId,
+  evaluation,
+  experiment,
+}: {
+  projectId: string;
+  evaluation: EvaluationRecord;
+  experiment: ExperimentRecord | undefined;
+}) {
+  if (experiment) {
+    return (
+      <DxSection title="Source">
+        <div className="almanac-record-cell">
+          <Link
+            className="almanac-record-link"
+            to="/projects/$projectId/experiments/$experimentId"
+            params={{
+              projectId,
+              experimentId: experiment.id,
+            }}
+          >
+            {experiment.title}
+          </Link>
+          <span className="almanac-record-id">{experiment.id}</span>
+        </div>
+      </DxSection>
+    );
+  }
+
+  return (
+    <DxSection title="Source">
+      <div className="almanac-record-cell">
+        <span>Baseline evidence</span>
+        <span className="almanac-record-id">{evaluation.objective_id}</span>
+      </div>
+    </DxSection>
+  );
+}
+
+function Artifacts({ artifacts }: { artifacts: ArtifactRecord[] }) {
+  const rows = artifacts.map((artifact) => ({ artifact }));
+
+  return (
+    <DxSection title="Artifacts">
+      <DxTable
+        columns={artifactColumns}
+        rows={rows}
+        getRowKey={({ row }) => row.artifact.id}
+        emptyLabel="No artifacts yet"
+        density="compact"
+        stickyHeader
+      />
+    </DxSection>
+  );
+}
+
+const artifactColumns: Array<DxTableColumn<ArtifactRow>> = [
+  {
+    id: "artifact",
+    header: "Artifact",
+    width: "30%",
+    renderCell: ({ row }) => (
+      <div className="almanac-record-cell">
+        <span className="almanac-record-link">{row.artifact.title}</span>
+        <span className="almanac-record-id">{row.artifact.id}</span>
+      </div>
+    ),
+  },
+  {
+    id: "kind",
+    header: "Kind",
+    width: "120px",
+    renderCell: ({ row }) => row.artifact.kind,
+  },
+  {
+    id: "path",
+    header: "Path",
+    renderCell: ({ row }) => <span className="dx-mono">{row.artifact.path}</span>,
+  },
+];
+
+function EvaluationTranscript({
+  activities,
+}: {
+  activities: EvaluationActivityRecord[];
+}) {
+  const visibleActivities = activities.slice(-5);
+
+  return (
+    <ActivityTimeline
+      title="Evidence"
+      activities={activityItemsForEvaluation({ activities: visibleActivities })}
+      emptyLabel="No evaluation evidence yet"
+    />
+  );
+}
+
+function sourceExperimentForEvaluation({
+  data,
+  evaluation,
+}: {
+  data: ProjectWorkspaceData;
+  evaluation: EvaluationRecord;
+}): ExperimentRecord | undefined {
+  if (!evaluation.associated_experiment_id) {
+    return undefined;
+  }
+
+  return data.experiments.find(
+    (experiment) => experiment.id === evaluation.associated_experiment_id,
+  );
+}
+
+function artifactsForEvaluation({
+  data,
+  evaluationId,
+}: {
+  data: ProjectWorkspaceData;
+  evaluationId: string;
+}): ArtifactRecord[] {
+  return filter(
+    data.artifacts,
+    (artifact) =>
+      artifact.associated_entity_kind === "evaluation" &&
+      artifact.associated_entity_id === evaluationId,
+  );
+}
+
+function activityItemsForEvaluation({
+  activities,
+}: {
+  activities: EvaluationActivityRecord[];
+}): ActivityItem[] {
+  return activities.map((activity) => ({
+    id: `evaluation-activity-${activity.id}`,
+    actor: activity.actor,
+    body: activity.body,
+    kind: activityLabel({ activity }),
+    createdAt: activity.created_at,
+  }));
+}
+
+function statusTone({
+  evaluation,
+  hasConcern,
+}: {
+  evaluation: EvaluationRecord;
+  hasConcern: boolean;
+}): DxBadgeTone {
+  if (hasConcern) {
+    return "warning";
+  }
+
+  if (evaluation.status === "closed") {
+    return "success";
+  }
+
+  if (evaluation.status === "active") {
+    return "warning";
+  }
+
+  return "neutral";
+}

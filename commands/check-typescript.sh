@@ -17,3 +17,4 @@ bun --filter @almanac/tui-ui test
 bun --filter @almanac/tui check
 bun --filter @almanac/web-ui check
 bun --filter @almanac/web check
+bun --filter @almanac/web test

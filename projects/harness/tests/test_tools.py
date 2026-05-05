@@ -14,15 +14,19 @@ from almanac.harness.core.workers import WorkerManager
 from almanac.harness.repositories import Repositories
 from almanac.harness.tools import build_workspace_toolset
 from almanac.harness.tools.activities import (
+    ListEvaluationActivitiesTool,
     ListExperimentActivitiesTool,
     ListHypothesisActivitiesTool,
 )
 from almanac.harness.tools.artifacts import CreateArtifactTool, ListArtifactsTool
-from almanac.harness.tools.comments import (
-    AddExperimentCommentTool,
-    AddHypothesisCommentTool,
-)
+from almanac.harness.tools.comments import AddExperimentCommentTool, AddHypothesisCommentTool
 from almanac.harness.tools.common import AlmanacToolDeps, invoke_almanac_tool_sync
+from almanac.harness.tools.evaluations import (
+    AddEvaluationResultTool,
+    CreateEvaluationTool,
+    ListEvaluationsTool,
+    UpdateEvaluationTool,
+)
 from almanac.harness.tools.experiments import (
     CreateExperimentTool,
     ListExperimentsTool,
@@ -195,6 +199,69 @@ def test_experiment_tools_create_update_and_list(repos: Repositories) -> None:
     ]
 
 
+def test_evaluation_tools_create_update_list_and_add_results(
+    repos: Repositories,
+) -> None:
+    emitted: list[dict[str, Any]] = []
+    deps = AlmanacToolDeps(
+        session_id="session_0001",
+        repos=repos,
+        emit_event=_event_collector(emitted),
+    )
+
+    created = invoke_almanac_tool_sync(
+        tool=CreateEvaluationTool(),
+        deps=deps,
+        title="Baseline project eval",
+        summary="Run the normal project test/eval command before changes.",
+    )
+    assert created.success is True
+    assert created.evaluation is not None
+    assert created.evaluation["id"] == "eval_session_0001_agent_001"
+    assert created.evaluation["status"] == "open"
+
+    result = invoke_almanac_tool_sync(
+        tool=AddEvaluationResultTool(),
+        deps=deps,
+        evaluation_id="eval_session_0001_agent_001",
+        result="Baseline command passed with score 0.71.",
+        payload={"raw": "score=0.71"},
+    )
+    assert result.success is True
+    assert result.activity is not None
+    assert result.activity["body"] == "Baseline command passed with score 0.71."
+    assert result.activity["payload"]["activity_type"] == "result"
+
+    updated = invoke_almanac_tool_sync(
+        tool=UpdateEvaluationTool(),
+        deps=deps,
+        evaluation_id="eval_session_0001_agent_001",
+        status="closed",
+        summary="Baseline result recorded.",
+    )
+    assert updated.success is True
+    assert updated.evaluation is not None
+    assert updated.evaluation["status"] == "closed"
+
+    listed = invoke_almanac_tool_sync(tool=ListEvaluationsTool(), deps=deps)
+    activities = invoke_almanac_tool_sync(
+        tool=ListEvaluationActivitiesTool(),
+        deps=deps,
+        evaluation_id="eval_session_0001_agent_001",
+    )
+
+    assert listed.success is True
+    assert [evaluation["id"] for evaluation in listed.evaluations] == [
+        "eval_session_0001_agent_001"
+    ]
+    assert [activity["id"] for activity in activities.activities] == [1]
+    assert [event["type"] for event in emitted] == [
+        "evaluation.created",
+        "evaluation.result_added",
+        "evaluation.updated",
+    ]
+
+
 def test_work_tools_reject_invalid_statuses_with_agent_readable_errors(
     repos: Repositories,
 ) -> None:
@@ -217,6 +284,11 @@ def test_work_tools_reject_invalid_statuses_with_agent_readable_errors(
         deps=deps,
         status="completed",
     )
+    evaluation_list = invoke_almanac_tool_sync(
+        tool=ListEvaluationsTool(),
+        deps=deps,
+        status="completed",
+    )
 
     assert experiment_update.success is False
     assert experiment_update.error is not None
@@ -231,6 +303,10 @@ def test_work_tools_reject_invalid_statuses_with_agent_readable_errors(
     assert experiment_list.success is False
     assert experiment_list.error is not None
     assert "invalid experiment status: 'completed'" in experiment_list.error.message
+
+    assert evaluation_list.success is False
+    assert evaluation_list.error is not None
+    assert "invalid evaluation status: 'completed'" in evaluation_list.error.message
 
 
 def test_link_tool_links_hypothesis_and_experiment(repos: Repositories) -> None:

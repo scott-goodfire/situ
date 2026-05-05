@@ -12,7 +12,7 @@ Product copy, domain models, APIs, UI labels, reports, and documentation.
 ## Rule
 
 Use the current product nouns consistently: Objective, Research Context, Session,
-Hypothesis, Experiment, Activity, Artifact, and Event.
+Hypothesis, Experiment, Evaluation, Activity, Artifact, and Event.
 
 ## Required Checks
 
@@ -22,11 +22,15 @@ Hypothesis, Experiment, Activity, Artifact, and Event.
   object.
 - Hypotheses are lightweight research threads with minimal status.
 - Experiments are concrete attempts and may link to many hypotheses.
+- Evaluations are lightweight measurement threads for baseline, candidate,
+  reproduction, sanity, and blocked setup evidence.
 - Activities carry results, concerns, comments, decisions, and interpretations.
+- Evaluation activities carry raw measurement evidence, repeated runs,
+  reproduction notes, and concern-like observations.
 - Artifacts preserve inspectable receipts.
 - Events power internal runtime/session timelines.
-- Evidence, Signal, Finding, Warning, Direction, Decision, Variant, Report, and
-  broad Health are treated as deferred or activity-shaped concepts.
+- Signal, Finding, Warning, Direction, Decision, Variant, Report, and broad
+  Health are treated as deferred or activity-shaped concepts.
 
 ## Red Flags
 
@@ -37,3 +41,5 @@ Hypothesis, Experiment, Activity, Artifact, and Event.
   Evidence before the current loop works.
 - Multiplying statuses when a short activity would capture the nuance better.
 - Calling the first observability summary a health model.
+- Making evaluations the primary workflow object instead of the evidence layer
+  underneath hypotheses and experiments.

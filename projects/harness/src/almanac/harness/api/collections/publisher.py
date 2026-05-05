@@ -7,6 +7,8 @@ from ...core.notifications import emit_collection_upsert
 from ...records import (
     ArtifactRecord,
     EventRecord,
+    EvaluationActivityRecord,
+    EvaluationRecord,
     ExperimentActivityRecord,
     ExperimentRecord,
     HypothesisActivityRecord,
@@ -40,12 +42,14 @@ COLLECTION_ROUTES: dict[type[DbRecord], CollectionRoute] = {
     SessionRecord: CollectionRoute("sessions", _record_id),
     HypothesisRecord: CollectionRoute("hypotheses", _record_id),
     ExperimentRecord: CollectionRoute("experiments", _record_id),
+    EvaluationRecord: CollectionRoute("evaluations", _record_id),
     HypothesisExperimentLinkRecord: CollectionRoute(
         "hypothesis_experiment_links",
         _hypothesis_experiment_link_key,
     ),
     HypothesisActivityRecord: CollectionRoute("hypothesis_activities", _record_id),
     ExperimentActivityRecord: CollectionRoute("experiment_activities", _record_id),
+    EvaluationActivityRecord: CollectionRoute("evaluation_activities", _record_id),
     ArtifactRecord: CollectionRoute("artifacts", _record_id),
     EventRecord: CollectionRoute("events", _record_id),
 }

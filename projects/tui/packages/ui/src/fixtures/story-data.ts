@@ -1,5 +1,7 @@
 import type {
   EventRecord,
+  EvaluationActivityRecord,
+  EvaluationRecord,
   ExperimentActivityRecord,
   ExperimentRecord,
   HypothesisActivityRecord,
@@ -65,6 +67,35 @@ export const suspiciousExperiment = experimentRecord({
   },
 });
 
+export const baselineEvaluation = evaluationRecord({
+  overrides: {
+    id: "eval_session_0001_baseline",
+    status: "closed",
+    title: "Baseline project eval",
+    summary: "Baseline result recorded before candidate changes.",
+  },
+});
+
+export const runningEvaluation = evaluationRecord({
+  overrides: {
+    id: "eval_session_0001_retrieval_filter",
+    status: "active",
+    title: "Evaluate retrieval filtering",
+    summary: "Run the normal support-agent eval after retrieval filtering.",
+    associated_experiment_id: runningExperiment.id,
+  },
+});
+
+export const suspiciousEvaluation = evaluationRecord({
+  overrides: {
+    id: "eval_session_0001_fixture_edit",
+    status: "closed",
+    title: "Evaluate reported large improvement",
+    summary: "Candidate output is suspicious because eval fixtures changed.",
+    associated_experiment_id: suspiciousExperiment.id,
+  },
+});
+
 export const runningExperiments = [
   baselineExperiment,
   acceptedExperiment,
@@ -80,6 +111,20 @@ export const suspiciousExperiments = [
 export const completedExperiments = [
   baselineExperiment,
   acceptedExperiment,
+];
+
+export const runningEvaluations = [
+  baselineEvaluation,
+  runningEvaluation,
+];
+
+export const suspiciousEvaluations = [
+  baselineEvaluation,
+  suspiciousEvaluation,
+];
+
+export const completedEvaluations = [
+  baselineEvaluation,
 ];
 
 export const runningHypothesisActivities = [
@@ -111,6 +156,25 @@ export const runningExperimentActivities = [
   }),
 ];
 
+export const runningEvaluationActivities = [
+  evaluationActivityRecord({
+    overrides: {
+      id: 1,
+      evaluation_id: baselineEvaluation.id,
+      body: "Baseline eval result: score 0.61, latency 1830ms.",
+      payload: { activity_type: "result" },
+    },
+  }),
+  evaluationActivityRecord({
+    overrides: {
+      id: 2,
+      evaluation_id: runningEvaluation.id,
+      body: "Running normal eval after retrieval filtering.",
+      payload: { activity_type: "result" },
+    },
+  }),
+];
+
 export const suspiciousExperimentActivities = [
   ...runningExperimentActivities,
   experimentActivityRecord({
@@ -119,6 +183,18 @@ export const suspiciousExperimentActivities = [
       experiment_id: suspiciousExperiment.id,
       kind: "comment",
       body: "exp_session_0001_fixture_edit: Result shape changed unexpectedly.",
+      payload: { activity_type: "concern" },
+    },
+  }),
+];
+
+export const suspiciousEvaluationActivities = [
+  runningEvaluationActivities[0],
+  evaluationActivityRecord({
+    overrides: {
+      id: 3,
+      evaluation_id: suspiciousEvaluation.id,
+      body: "Result shape changed unexpectedly after eval fixture edit.",
       payload: { activity_type: "concern" },
     },
   }),
@@ -236,6 +312,25 @@ function experimentRecord({
   };
 }
 
+function evaluationRecord({
+  overrides = {},
+}: {
+  overrides?: Partial<EvaluationRecord>;
+}): EvaluationRecord {
+  return {
+    id: "eval_session_0001_baseline",
+    objective_id: "objective_0001",
+    status: "open",
+    title: "Baseline project eval",
+    summary: "Baseline evaluation.",
+    associated_session_id: "session_0001",
+    associated_experiment_id: undefined,
+    created_at: "2026-01-01T00:00:01Z",
+    updated_at: "2026-01-01T00:00:01Z",
+    ...overrides,
+  };
+}
+
 function hypothesisActivityRecord({
   overrides = {},
 }: {
@@ -250,6 +345,24 @@ function hypothesisActivityRecord({
     body: "Retrieval filtering is a promising next direction.",
     payload: {},
     created_at: "2026-01-01T00:00:02Z",
+    ...overrides,
+  };
+}
+
+function evaluationActivityRecord({
+  overrides = {},
+}: {
+  overrides?: Partial<EvaluationActivityRecord>;
+}): EvaluationActivityRecord {
+  return {
+    id: 1,
+    evaluation_id: "eval_session_0001_baseline",
+    session_id: "session_0001",
+    actor: "agent",
+    kind: "comment",
+    body: "Baseline eval result recorded.",
+    payload: { activity_type: "result" },
+    created_at: "2026-01-01T00:00:03Z",
     ...overrides,
   };
 }

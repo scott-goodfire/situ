@@ -13,6 +13,8 @@ An agent should be able to ask:
 - What research context is relevant?
 - Which hypotheses are open or active?
 - What has already been tried?
+- What baseline evaluations exist?
+- What evaluation evidence came back for candidate experiments?
 - Which experiments relate to which hypotheses?
 - What result comments came back?
 - What concern comments apply?
@@ -72,19 +74,23 @@ The compact session context, exposed to agents through tools such as
 - Current session status
 - Active hypotheses
 - Recent experiments
+- Recent evaluations
 - Hypothesis/experiment links
 - Recent hypothesis activities
 - Recent experiment activities
+- Recent evaluation activities
 - Recent concern/result/decision comments
 - Artifact references
 - Internal events when useful
 
 Agent-facing write tools should stay close to the product models:
 `create_hypothesis`, `update_hypothesis`, `create_experiment`,
-`update_experiment`, `link_hypothesis_experiment`, `add_hypothesis_comment`,
-and `add_experiment_comment`. Comments are stored as `kind="comment"`
-activities internally, with optional payload metadata when a view or agent
-needs to distinguish results, concerns, plans, or interpretations.
+`update_experiment`, `create_evaluation`, `update_evaluation`,
+`link_hypothesis_experiment`, `add_hypothesis_comment`,
+`add_experiment_comment`, and `add_evaluation_result`. Comments and evaluation
+results are stored as `kind="comment"` activities internally, with optional
+payload metadata when a view or agent needs to distinguish results, concerns,
+plans, raw evidence, or interpretations.
 
 Workspace interaction should come from a separate console toolset backed by the
 current repo path. The first slice should expose ordinary coding-agent tools
@@ -95,8 +101,10 @@ commands described in `--context`.
 Command output should be preserved as plaintext evidence. Almanac should not
 deterministically parse arbitrary stdout into metrics or signals in the tool
 layer. If output matters, the agent records the raw text or an LLM-written
-interpretation as an experiment comment, linked back to the hypothesis and
-experiment being probed.
+interpretation through `add_evaluation_result`, linked back to the experiment
+being measured when there is one. Experiment comments should explain the
+attempted change and the research implication rather than acting as the raw
+benchmark log.
 
 ## Product Rule
 

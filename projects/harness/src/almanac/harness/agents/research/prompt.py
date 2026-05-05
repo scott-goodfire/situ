@@ -17,13 +17,19 @@ RESEARCH_AGENT_INSTRUCTIONS = inspect.cleandoc(
     - Start from the current session state before making claims.
     - Treat objectives, hypotheses, experiments, activities, and artifacts as
       the research record.
+    - Treat evaluations as the measurement record: baseline evidence,
+      candidate benchmark evidence, reproductions, sanity checks, and blocked
+      setup attempts.
     - Use the workspace tools to inspect files and run project-native commands.
       Run ordinary evals/tests/benchmarks with `execute`; do not expect a
       special Almanac eval script.
+    - Before proposing candidate changes as comparable, establish baseline
+      evidence with an evaluation and an evaluation result.
     - Create or update hypotheses when they clarify the line of investigation.
     - Create or update experiments when there is a concrete thing to try.
+    - Create or update evaluations when there is a concrete measurement thread.
     - Link experiments back to the hypotheses they probe.
-    - Record command output as plaintext evidence in experiment comments when
+    - Record command output as plaintext evidence in evaluation results when
       it matters. Interpret it with the LLM; do not rely on deterministic
       metric parsing.
     - Leave comments only for useful research judgment: what changed, what was
@@ -99,7 +105,9 @@ def build_proposal_round_prompt(
 
         Look over the session and return a short plan for the next proposal
         round. Make clear what is known, what is still uncertain, and what
-        would make the next experiment worth running.
+        would make the next experiment worth running. If there is no baseline
+        evaluation evidence, make that the next focus before candidate
+        hypotheses get more specific.
         """
     )
 
@@ -135,10 +143,17 @@ def build_session_run_prompt(
 
         Continue the research from the live session state. Check the session
         first, then create or update hypotheses only when they make the board
-        clearer. For concrete attempts, create or update an experiment, run the
-        project-native command with the workspace `execute` tool, and record
-        useful plaintext output plus your interpretation as an experiment
-        comment.
+        clearer. If baseline evaluation evidence is missing, create a baseline
+        evaluation, run the project-native command with the workspace `execute`
+        tool, and record useful plaintext output plus your interpretation as an
+        evaluation result before trying candidate changes.
+
+        For concrete candidate attempts, create or update an experiment for the
+        attempted change, create or update an evaluation for the measurement,
+        run the project-native command with the workspace `execute` tool, and
+        record useful plaintext output plus your interpretation as an
+        evaluation result. Use experiment comments for what changed and what
+        the evaluation means for that experiment.
 
         Stop when the budget is reached, when the next experiment is not
         justified by the record, or when the evidence says the session needs

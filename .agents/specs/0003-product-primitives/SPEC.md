@@ -11,6 +11,8 @@ Objective
   |     `-- HypothesisActivity
   |-- Experiments
   |     `-- ExperimentActivity
+  |-- Evaluations
+  |     `-- EvaluationActivity
   |-- HypothesisExperimentLinks
   |-- Artifacts
   `-- Sessions
@@ -64,7 +66,7 @@ the objective, not owned by a single session.
 
 ## Experiment
 
-One concrete attempt: a change, probe, eval run, analysis, or test.
+One concrete attempt: a change, probe, analysis, or testable intervention.
 
 Experiments should also be status-light: open, active, or closed. Details such
 as failure, suspiciousness, reproduction, or interpretation should be expressed
@@ -78,6 +80,29 @@ Do not add `Variant` as a first-class model yet. Use experiment summaries,
 activity bodies, artifacts, and links to express baseline + A, baseline + B,
 A + C, or partial-C style combinations.
 
+## Evaluation
+
+A lightweight measurement thread.
+
+Evaluations describe how the session checked behavior and what evidence came
+back. They are intentionally schema-light and text-heavy. An evaluation may
+represent baseline measurement, candidate measurement for an experiment,
+reproduction, sanity checking, or a blocked setup attempt.
+
+Evaluations should be status-light: open, active, or closed. Repeated runs,
+stdout/stderr, observed signals, interpretations, concerns, and reproduction
+notes should be recorded as evaluation activities rather than columns on the
+evaluation itself.
+
+Evaluations may carry an optional `associated_session_id` and an optional
+`associated_experiment_id`. A baseline evaluation usually has no associated
+experiment. A candidate or reproduction evaluation usually points at the
+experiment it measures.
+
+Before a session treats candidate experiments as comparable, it should establish
+at least one baseline evaluation activity with evidence. This is a product rule,
+not a requirement that onboarding reduce evaluation to one command or metric.
+
 ## HypothesisExperimentLink
 
 A lightweight many-to-many link between hypotheses and experiments.
@@ -90,9 +115,9 @@ are enough. Put explanation in hypothesis or experiment activities.
 
 The main collaboration primitive.
 
-Activities are timeline entries attached to hypotheses or experiments. They
-replace standalone evidence, finding, warning, and decision models in the first
-slice.
+Activities are timeline entries attached to hypotheses, experiments, or
+evaluations. They replace standalone evidence, finding, warning, and decision
+models in the first slice.
 
 The first slice uses only `comment` as the activity kind. Results, concerns,
 interpretations, plans, and decisions are written as comments. Structured
@@ -101,6 +126,9 @@ human-readable body is the source of truth.
 
 The activity body should remain human-readable. Structured payloads can hold
 metrics, eval outputs, artifact IDs, or machine-readable details when useful.
+Raw benchmark or command evidence should normally be attached to an evaluation
+activity, with experiment activities reserved for what changed, why it was
+tried, and how the result affects the experiment.
 
 ## Artifact
 
@@ -138,5 +166,7 @@ implementation slice:
 - Standalone Finding
 - Standalone Warning
 - Standalone Evidence
+- Standalone EvaluationProtocol
+- Standalone EvaluationRun
 - Report
 - Broad health model

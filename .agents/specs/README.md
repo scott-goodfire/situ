@@ -25,12 +25,12 @@ running session observable from the terminal.
 The product should answer:
 
 > What is running, which hypotheses are active, what experiments are being
-> tried, what activity came back, what artifacts can be inspected, and what is
-> the system learning?
+> tried, what evaluations came back, what activity was recorded, what artifacts
+> can be inspected, and what is the system learning?
 
 The first slice should be intentionally slim. Live guidance, final reports,
-broad health scoring, directions, and standalone decision/finding/warning models
-are deferred until the terminal loop is useful. The first web surface is
+broad health scoring, directions, and standalone decision/finding/warning
+models are deferred until the terminal loop is useful. The first web surface is
 attach-only observability over an already-running local session.
 
 ## Spec Discipline

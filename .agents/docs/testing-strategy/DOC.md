@@ -130,7 +130,7 @@ The eval runner is opt-in because it makes real model calls:
 
 ```bash
 ./commands/evals.sh --list
-./commands/evals.sh evals/suites/tool_use/research_tools/eval_group.py
+./commands/evals.sh evals/suites/tools/research_tools/eval_group.py
 ```
 
 `--list` should work without model or Logfire credentials. Executing eval cases

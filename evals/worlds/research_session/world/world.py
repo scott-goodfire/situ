@@ -60,6 +60,7 @@ class ResearchSessionWorld:
             "objective": graph.objective.model_dump() if graph.objective is not None else None,
             "hypotheses": [item.model_dump() for item in graph.hypotheses],
             "experiments": [item.model_dump() for item in graph.experiments],
+            "evaluations": [item.model_dump() for item in graph.evaluations],
             "hypothesis_experiment_links": [
                 item.model_dump() for item in graph.hypothesis_experiment_links
             ],
@@ -68,6 +69,9 @@ class ResearchSessionWorld:
             ],
             "experiment_activities": [
                 item.model_dump() for item in graph.experiment_activities
+            ],
+            "evaluation_activities": [
+                item.model_dump() for item in graph.evaluation_activities
             ],
             "artifacts": [item.model_dump() for item in graph.artifacts],
             "events": [item.model_dump() for item in graph.events],

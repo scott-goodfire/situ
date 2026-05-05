@@ -83,6 +83,20 @@ class ExperimentRecord(BaseModel):
     updated_at: str
 
 
+class EvaluationRecord(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: str
+    objective_id: str
+    status: WorkStatus
+    title: str
+    summary: str
+    associated_session_id: str | None = None
+    associated_experiment_id: str | None = None
+    created_at: str
+    updated_at: str
+
+
 class HypothesisExperimentLinkRecord(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -109,6 +123,19 @@ class ExperimentActivityRecord(BaseModel):
 
     id: int
     experiment_id: str
+    session_id: str | None = None
+    actor: str
+    kind: ActivityKind
+    body: str
+    payload: dict[str, Any] = Field(default_factory=dict)
+    created_at: str
+
+
+class EvaluationActivityRecord(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: int
+    evaluation_id: str
     session_id: str | None = None
     actor: str
     kind: ActivityKind

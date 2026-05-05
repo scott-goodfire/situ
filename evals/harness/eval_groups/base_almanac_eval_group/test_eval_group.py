@@ -17,8 +17,8 @@ class _Output(BaseModel):
 
 
 class _KebabNameEvalGroup(BaseAlmanacEvalGroup[_Input, _Output]):
-    suite_name: ClassVar[str] = "tool_use"
-    world_name: ClassVar[str] = "research_session"
+    suite_name: ClassVar[str] = "tools"
+    world_name: ClassVar[str] = "research_tools"
 
     def task(self, args: _Input) -> _Output:
         return _Output(value=args.value)
@@ -30,4 +30,4 @@ class _KebabNameEvalGroup(BaseAlmanacEvalGroup[_Input, _Output]):
 def test_dataset_name_uses_kebab_segments_with_dot_separator() -> None:
     dataset = _KebabNameEvalGroup().dataset()
 
-    assert dataset.name == "tool-use.research-session"
+    assert dataset.name == "tools.research-tools"

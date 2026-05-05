@@ -41,8 +41,11 @@ Then Almanac:
 - Starts a local session.
 - Starts a DBOS-backed Pydantic AI agent.
 - Lets the agent inspect session state and create hypotheses when useful.
+- Requires the agent to establish baseline evaluation evidence before treating
+  candidate experiments as comparable.
 - Lets the agent call harness tools to run concrete experiments.
-- Records results, concerns, interpretations, and decisions as activities.
+- Records evaluation evidence, experiment results, concerns, interpretations,
+  and decisions as activities.
 - Renders a live terminal dashboard.
 
 The Almanac install/dev root and the researched workspace are separate
@@ -60,9 +63,11 @@ code are launched from the Almanac repository.
 - Internal session ledger
 - Hypothesis ledger
 - Experiment ledger
+- Evaluation ledger
 - Many-to-many hypothesis/experiment links
 - Hypothesis activity timeline
 - Experiment activity timeline
+- Evaluation activity timeline
 - Agent message history ledger
 - Comment activities, with results, concerns, plans, and interpretations carried
   in activity bodies and optional payload metadata
@@ -78,11 +83,11 @@ code are launched from the Almanac repository.
 
 The agent path should express active behavior through approved harness tools.
 Getting session context, creating hypotheses, creating/running experiments,
-linking hypotheses and experiments, attaching artifacts, and recording comments
-should have typed tool envelopes. Almanac should persist Pydantic AI message
-history as the durable agent transcript and use events/collection upserts for
-live tool-call observability rather than making a separate tool-call table the
-source of truth.
+creating evaluations, linking hypotheses and experiments, attaching artifacts,
+and recording comments should have typed tool envelopes. Almanac should persist
+Pydantic AI message history as the durable agent transcript and use
+events/collection upserts for live tool-call observability rather than making a
+separate tool-call table the source of truth.
 
 ## Deferred
 
@@ -109,12 +114,12 @@ source of truth.
 ## Success Criterion
 
 A user can start a session, watch an agent inspect state, create or update
-hypotheses, request concrete experiments through the harness, see worker results
-and automated concern comments land in the TUI, and inspect artifacts when
-useful.
+hypotheses, establish baseline evaluation evidence, request concrete
+experiments through the harness, see evaluation evidence, worker results, and
+automated concern comments land in the TUI, and inspect artifacts when useful.
 
 ## Quality Bar
 
 The slice can be narrow, but the live state must be real. Objectives, sessions,
-hypotheses, experiments, activities, artifacts, and internal events should
-survive process restart.
+hypotheses, experiments, evaluations, activities, artifacts, and internal events
+should survive process restart.

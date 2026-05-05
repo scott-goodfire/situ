@@ -92,6 +92,128 @@
       "title": "ArtifactRecord",
       "type": "object"
     },
+    "EvaluationActivityRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "integer"
+        },
+        "evaluation_id": {
+          "title": "Evaluation Id",
+          "type": "string"
+        },
+        "session_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Session Id"
+        },
+        "actor": {
+          "title": "Actor",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/ActivityKind"
+        },
+        "body": {
+          "title": "Body",
+          "type": "string"
+        },
+        "payload": {
+          "additionalProperties": true,
+          "title": "Payload",
+          "type": "object"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "evaluation_id",
+        "actor",
+        "kind",
+        "body",
+        "created_at"
+      ],
+      "title": "EvaluationActivityRecord",
+      "type": "object"
+    },
+    "EvaluationRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "objective_id": {
+          "title": "Objective Id",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/WorkStatus"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "summary": {
+          "title": "Summary",
+          "type": "string"
+        },
+        "associated_session_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Associated Session Id"
+        },
+        "associated_experiment_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Associated Experiment Id"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        },
+        "updated_at": {
+          "title": "Updated At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "objective_id",
+        "status",
+        "title",
+        "summary",
+        "created_at",
+        "updated_at"
+      ],
+      "title": "EvaluationRecord",
+      "type": "object"
+    },
     "EventRecord": {
       "additionalProperties": false,
       "properties": {
@@ -525,6 +647,13 @@
       "title": "Experiments",
       "type": "array"
     },
+    "evaluations": {
+      "items": {
+        "$ref": "#/$defs/EvaluationRecord"
+      },
+      "title": "Evaluations",
+      "type": "array"
+    },
     "hypothesis_experiment_links": {
       "items": {
         "$ref": "#/$defs/HypothesisExperimentLinkRecord"
@@ -544,6 +673,13 @@
         "$ref": "#/$defs/ExperimentActivityRecord"
       },
       "title": "Experiment Activities",
+      "type": "array"
+    },
+    "evaluation_activities": {
+      "items": {
+        "$ref": "#/$defs/EvaluationActivityRecord"
+      },
+      "title": "Evaluation Activities",
       "type": "array"
     },
     "artifacts": {
@@ -567,9 +703,11 @@
     "sessions",
     "hypotheses",
     "experiments",
+    "evaluations",
     "hypothesis_experiment_links",
     "hypothesis_activities",
     "experiment_activities",
+    "evaluation_activities",
     "artifacts",
     "events"
   ],

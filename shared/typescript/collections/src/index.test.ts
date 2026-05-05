@@ -8,6 +8,8 @@ import type {
   CollectionUpsertedParams,
   CollectionsBootstrapResult,
   EventRecord,
+  EvaluationActivityRecord,
+  EvaluationRecord,
   ExperimentActivityRecord,
   ExperimentRecord,
   HypothesisRecord,
@@ -24,6 +26,7 @@ describe("almanac collections", () => {
       sessions: [sessionRecord({ overrides: { id: "session_0001" } })],
       hypotheses: [hypothesisRecord({})],
       experiments: [experimentRecord({})],
+      evaluations: [evaluationRecord({})],
       hypothesis_experiment_links: [
         {
           hypothesis_id: "hyp_0001",
@@ -34,6 +37,7 @@ describe("almanac collections", () => {
       ],
       hypothesis_activities: [],
       experiment_activities: [experimentActivityRecord({})],
+      evaluation_activities: [evaluationActivityRecord({})],
       artifacts: [],
       events: [
         eventRecord({
@@ -56,9 +60,38 @@ describe("almanac collections", () => {
     expect(collections.experiments.get("exp_session_0001_baseline")?.status).toBe(
       "closed",
     );
+    expect(collections.evaluations.get("eval_session_0001_baseline")?.status).toBe(
+      "closed",
+    );
     expect(collections.experimentActivities.get("1")?.kind).toBe("comment");
+    expect(collections.evaluationActivities.get("1")?.kind).toBe("comment");
     expect(collections.events.get("1")?.type).toBe("session.started");
     expect(collections.events.get("2")?.type).toBe("experiment.completed");
+  });
+
+  test("handles bootstrap payloads from sessions missing newer collections", async () => {
+    const collections = createAlmanacCollections();
+    const bootstrap = {
+      cursor: 1,
+      objectives: [objectiveRecord({})],
+      sessions: [],
+      hypotheses: [],
+      experiments: [],
+      hypothesis_experiment_links: [],
+      hypothesis_activities: [],
+      experiment_activities: [],
+      artifacts: [],
+      events: [],
+    } as unknown as CollectionsBootstrapResult;
+
+    await applyBootstrap({
+      collections,
+      bootstrap,
+    });
+
+    expect(collections.objectives.get("objective_0001")?.title).toBe("Improve score");
+    expect(collections.evaluations.size).toBe(0);
+    expect(collections.evaluationActivities.size).toBe(0);
   });
 
   test("applies collection upserts as inserts and updates", async () => {
@@ -93,6 +126,16 @@ describe("almanac collections", () => {
     await applyCollectionUpsert({
       collections,
       upsert: upsert({
+        collection: "evaluations",
+        key: "eval_session_0001_a",
+        record: evaluationRecord({
+          overrides: { id: "eval_session_0001_a", status: "active" },
+        }),
+      }),
+    });
+    await applyCollectionUpsert({
+      collections,
+      upsert: upsert({
         collection: "experiment_activities",
         key: "3",
         record: experimentActivityRecord({
@@ -103,13 +146,30 @@ describe("almanac collections", () => {
         }),
       }),
     });
+    await applyCollectionUpsert({
+      collections,
+      upsert: upsert({
+        collection: "evaluation_activities",
+        key: "4",
+        record: evaluationActivityRecord({
+          overrides: {
+            id: 4,
+            payload: { activity_type: "result" },
+          },
+        }),
+      }),
+    });
 
     expect(collections.sessions.size).toBe(1);
     expect(collections.sessions.get("session_0001")?.status).toBe("closed");
     expect(collections.experiments.get("exp_session_0001_a")?.status).toBe("active");
+    expect(collections.evaluations.get("eval_session_0001_a")?.status).toBe("active");
     expect(collections.experimentActivities.get("3")?.kind).toBe("comment");
     expect(collections.experimentActivities.get("3")?.payload.activity_type).toBe(
       "concern",
+    );
+    expect(collections.evaluationActivities.get("4")?.payload.activity_type).toBe(
+      "result",
     );
   });
 });
@@ -126,7 +186,9 @@ function upsert({
     | SessionRecord
     | HypothesisRecord
     | ExperimentRecord
+    | EvaluationRecord
     | ExperimentActivityRecord
+    | EvaluationActivityRecord
     | EventRecord;
 }): CollectionUpsertedParams {
   return {
@@ -203,6 +265,25 @@ function experimentRecord({
   };
 }
 
+function evaluationRecord({
+  overrides = {},
+}: {
+  overrides?: Partial<EvaluationRecord>;
+}): EvaluationRecord {
+  return {
+    id: "eval_session_0001_baseline",
+    objective_id: "objective_0001",
+    status: "closed",
+    title: "Baseline project eval",
+    summary: "Baseline toy evaluation.",
+    associated_session_id: "session_0001",
+    associated_experiment_id: undefined,
+    created_at: "2026-01-01T00:00:01Z",
+    updated_at: "2026-01-01T00:00:01Z",
+    ...overrides,
+  };
+}
+
 function experimentActivityRecord({
   overrides = {},
 }: {
@@ -213,6 +294,24 @@ function experimentActivityRecord({
     experiment_id: "exp_session_0001_baseline",
     session_id: "session_0001",
     actor: "worker",
+    kind: "comment",
+    body: "Baseline result recorded.",
+    payload: { activity_type: "result", signals: [{ key: "score", value: 0.71 }] },
+    created_at: "2026-01-01T00:00:02Z",
+    ...overrides,
+  };
+}
+
+function evaluationActivityRecord({
+  overrides = {},
+}: {
+  overrides?: Partial<EvaluationActivityRecord>;
+}): EvaluationActivityRecord {
+  return {
+    id: 1,
+    evaluation_id: "eval_session_0001_baseline",
+    session_id: "session_0001",
+    actor: "agent",
     kind: "comment",
     body: "Baseline result recorded.",
     payload: { activity_type: "result", signals: [{ key: "score", value: 0.71 }] },

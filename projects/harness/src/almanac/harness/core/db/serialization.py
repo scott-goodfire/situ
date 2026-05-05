@@ -9,6 +9,8 @@ from ...records import (
     AgentMessageHistoryRecord,
     ArtifactRecord,
     EventRecord,
+    EvaluationActivityRecord,
+    EvaluationRecord,
     ExperimentActivityRecord,
     ExperimentRecord,
     HypothesisActivityRecord,
@@ -91,6 +93,20 @@ def experiment_row(row: sqlite3.Row) -> ExperimentRecord:
     )
 
 
+def evaluation_row(row: sqlite3.Row) -> EvaluationRecord:
+    return EvaluationRecord(
+        id=row["id"],
+        objective_id=row["objective_id"],
+        status=row["status"],
+        title=row["title"],
+        summary=row["summary"],
+        associated_session_id=row["associated_session_id"],
+        associated_experiment_id=row["associated_experiment_id"],
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+    )
+
+
 def hypothesis_experiment_link_row(row: sqlite3.Row) -> HypothesisExperimentLinkRecord:
     return HypothesisExperimentLinkRecord(
         hypothesis_id=row["hypothesis_id"],
@@ -116,6 +132,19 @@ def experiment_activity_row(row: sqlite3.Row) -> ExperimentActivityRecord:
     return ExperimentActivityRecord(
         id=row["id"],
         experiment_id=row["experiment_id"],
+        session_id=row["session_id"],
+        actor=row["actor"],
+        kind=row["kind"],
+        body=row["body"],
+        payload=json_loads(row["payload_json"]),
+        created_at=row["created_at"],
+    )
+
+
+def evaluation_activity_row(row: sqlite3.Row) -> EvaluationActivityRecord:
+    return EvaluationActivityRecord(
+        id=row["id"],
+        evaluation_id=row["evaluation_id"],
         session_id=row["session_id"],
         actor=row["actor"],
         kind=row["kind"],

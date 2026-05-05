@@ -1,0 +1,147 @@
+import type {
+  EvaluationActivityRecord,
+  EvaluationRecord,
+} from "@almanac/protocol";
+import {
+  DxBadge,
+  DxSection,
+  DxTable,
+  type DxTableColumn,
+  type DxTableRowTone,
+} from "@almanac/web-ui";
+import { Link } from "@tanstack/react-router";
+import { DateTime } from "luxon";
+import {
+  activityLabel,
+  evaluationActivitiesForEvaluation,
+  evidenceRowTone,
+  latestEvaluationActivity,
+} from "./evaluation-selectors";
+import type { ProjectWorkspaceData } from "../types";
+
+type EvaluationRow = {
+  evaluation: EvaluationRecord;
+  activities: EvaluationActivityRecord[];
+};
+
+export function EvaluationActivityList({
+  title,
+  data,
+  evaluations,
+  emptyLabel,
+}: {
+  title: string;
+  data: ProjectWorkspaceData;
+  evaluations: EvaluationRecord[];
+  emptyLabel: string;
+}) {
+  const columns = evaluationColumns({
+    projectId: data.projectId,
+  });
+  const rows = evaluations.map((evaluation) => ({
+    evaluation,
+    activities: evaluationActivitiesForEvaluation({
+      data,
+      evaluationId: evaluation.id,
+    }),
+  }));
+
+  return (
+    <DxSection title={title}>
+      <DxTable
+        columns={columns}
+        rows={rows}
+        getRowKey={({ row }) => row.evaluation.id}
+        emptyLabel={emptyLabel}
+        density="compact"
+        stickyHeader
+        sortable
+        getRowTone={evaluationRowTone}
+      />
+    </DxSection>
+  );
+}
+
+function evaluationColumns({
+  projectId,
+}: {
+  projectId: string;
+}): Array<DxTableColumn<EvaluationRow>> {
+  return [
+    {
+      id: "evaluation",
+      header: "Evaluation",
+      width: "28%",
+      renderCell: ({ row }) => (
+        <div className="almanac-record-cell">
+          <Link
+            className="almanac-record-link"
+            to="/projects/$projectId/evaluations/$evaluationId"
+            params={{
+              projectId,
+              evaluationId: row.evaluation.id,
+            }}
+          >
+            {row.evaluation.title}
+          </Link>
+          <span className="almanac-record-id">{row.evaluation.id}</span>
+        </div>
+      ),
+      sortValue: ({ row }) => row.evaluation.title,
+    },
+    {
+      id: "status",
+      header: "Status",
+      width: "110px",
+      renderCell: ({ row }) => <DxBadge>{row.evaluation.status}</DxBadge>,
+      sortValue: ({ row }) => row.evaluation.status,
+    },
+    {
+      id: "latest",
+      header: "Latest Evidence",
+      renderCell: ({ row }) => latestEvidence({ row }),
+    },
+    {
+      id: "updated",
+      header: "Updated",
+      width: "190px",
+      renderCell: ({ row }) => (
+        <span className="dx-mono">{formatTime({ value: row.evaluation.updated_at })}</span>
+      ),
+      sortValue: ({ row }) => row.evaluation.updated_at,
+    },
+  ];
+}
+
+function latestEvidence({ row }: { row: EvaluationRow }) {
+  const latestActivity = latestEvaluationActivity({
+    activities: row.activities,
+  });
+
+  if (!latestActivity) {
+    return row.evaluation.summary;
+  }
+
+  return (
+    <div className="almanac-evaluation-latest">
+      <span className="dx-mono">{activityLabel({ activity: latestActivity })}</span>
+      <span>{latestActivity.body}</span>
+    </div>
+  );
+}
+
+function evaluationRowTone({ row }: { row: EvaluationRow }): DxTableRowTone {
+  const latestActivity = latestEvaluationActivity({
+    activities: row.activities,
+  });
+
+  if (!latestActivity) {
+    return "neutral";
+  }
+
+  return evidenceRowTone({ activity: latestActivity });
+}
+
+function formatTime({ value }: { value: string }): string {
+  return DateTime.fromISO(value).toLocaleString(DateTime.DATETIME_MED_WITH_SECONDS);
+}

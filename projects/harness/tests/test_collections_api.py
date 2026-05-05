@@ -63,10 +63,25 @@ def test_collections_bootstrap_returns_research_objects_and_events(
         summary="Baseline eval.",
         associated_session_id="session_0001",
     )
+    evaluation = app.repos.evaluations.create(
+        evaluation_id="eval_session_0001_baseline",
+        objective_id="objective_0001",
+        title="Baseline project eval",
+        summary="Run the baseline project evaluation.",
+        associated_session_id="session_0001",
+    )
     activity = app.repos.experiment_activities.add(
         experiment_id="exp_session_0001_baseline",
         session_id="session_0001",
         actor="worker",
+        kind="comment",
+        body="Baseline result recorded.",
+        payload={"activity_type": "result"},
+    )
+    evaluation_activity = app.repos.evaluation_activities.add(
+        evaluation_id=evaluation.id,
+        session_id="session_0001",
+        actor="agent",
         kind="comment",
         body="Baseline result recorded.",
         payload={"activity_type": "result"},
@@ -87,7 +102,13 @@ def test_collections_bootstrap_returns_research_objects_and_events(
     assert [experiment.id for experiment in bootstrap.experiments] == [
         "exp_session_0001_baseline"
     ]
+    assert [item.id for item in bootstrap.evaluations] == [
+        "eval_session_0001_baseline"
+    ]
     assert [item.id for item in bootstrap.experiment_activities] == [activity.id]
+    assert [item.id for item in bootstrap.evaluation_activities] == [
+        evaluation_activity.id
+    ]
     assert [item.type for item in bootstrap.events] == [
         "setup.completed",
         "experiment.completed",

@@ -22,7 +22,7 @@ class GetSessionTool(BaseAlmanacTool[AlmanacToolDeps, GetSessionResult]):
     ) -> GetSessionResult:
         """
         Load a session and its related objective, hypotheses, experiments,
-        links, activities, artifacts, and events.
+        evaluations, links, activities, artifacts, and events.
         """
         graph = SessionsService(repos=ctx.deps.get_repos()).get_session(
             session_id or ctx.deps.session_id
@@ -34,6 +34,7 @@ class GetSessionTool(BaseAlmanacTool[AlmanacToolDeps, GetSessionResult]):
             objective=graph.objective.model_dump() if graph.objective is not None else None,
             hypotheses=[hypothesis.model_dump() for hypothesis in graph.hypotheses],
             experiments=[experiment.model_dump() for experiment in graph.experiments],
+            evaluations=[evaluation.model_dump() for evaluation in graph.evaluations],
             hypothesis_experiment_links=[
                 link.model_dump() for link in graph.hypothesis_experiment_links
             ],
@@ -42,6 +43,9 @@ class GetSessionTool(BaseAlmanacTool[AlmanacToolDeps, GetSessionResult]):
             ],
             experiment_activities=[
                 activity.model_dump() for activity in graph.experiment_activities
+            ],
+            evaluation_activities=[
+                activity.model_dump() for activity in graph.evaluation_activities
             ],
             artifacts=[artifact.model_dump() for artifact in graph.artifacts],
             events=[event.model_dump() for event in graph.events],

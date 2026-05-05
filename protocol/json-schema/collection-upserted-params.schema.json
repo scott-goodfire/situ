@@ -11,9 +11,11 @@
         "sessions",
         "hypotheses",
         "experiments",
+        "evaluations",
         "hypothesis_experiment_links",
         "hypothesis_activities",
         "experiment_activities",
+        "evaluation_activities",
         "artifacts",
         "events"
       ],

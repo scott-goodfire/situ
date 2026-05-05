@@ -9,6 +9,8 @@ import type {
   CollectionUpsertedParams,
   CollectionsBootstrapResult,
   EventRecord,
+  EvaluationActivityRecord,
+  EvaluationRecord,
   ExperimentActivityRecord,
   ExperimentRecord,
   HypothesisActivityRecord,
@@ -25,9 +27,11 @@ export type AlmanacCollections = {
   sessions: Collection<SessionRecord, string>;
   hypotheses: Collection<HypothesisRecord, string>;
   experiments: Collection<ExperimentRecord, string>;
+  evaluations: Collection<EvaluationRecord, string>;
   hypothesisExperimentLinks: Collection<HypothesisExperimentLinkRecord, string>;
   hypothesisActivities: Collection<HypothesisActivityRecord, string>;
   experimentActivities: Collection<ExperimentActivityRecord, string>;
+  evaluationActivities: Collection<EvaluationActivityRecord, string>;
   artifacts: Collection<ArtifactRecord, string>;
   events: Collection<EventRecord, string>;
 };
@@ -79,6 +83,12 @@ export function createAlmanacCollections(): AlmanacCollections {
         getKey: (experiment) => experiment.id,
       }),
     ),
+    evaluations: createCollection(
+      localOnlyCollectionOptions<EvaluationRecord, string>({
+        id: "almanac-evaluations",
+        getKey: (evaluation) => evaluation.id,
+      }),
+    ),
     hypothesisExperimentLinks: createCollection(
       localOnlyCollectionOptions<HypothesisExperimentLinkRecord, string>({
         id: "almanac-hypothesis-experiment-links",
@@ -94,6 +104,12 @@ export function createAlmanacCollections(): AlmanacCollections {
     experimentActivities: createCollection(
       localOnlyCollectionOptions<ExperimentActivityRecord, string>({
         id: "almanac-experiment-activities",
+        getKey: (activity) => String(activity.id),
+      }),
+    ),
+    evaluationActivities: createCollection(
+      localOnlyCollectionOptions<EvaluationActivityRecord, string>({
+        id: "almanac-evaluation-activities",
         getKey: (activity) => String(activity.id),
       }),
     ),
@@ -119,39 +135,47 @@ export async function applyBootstrap({
   await Promise.all([
     hydrateCollection({
       collection: collections.objectives,
-      records: bootstrap.objectives,
+      records: bootstrap.objectives ?? [],
     }),
     hydrateCollection({
       collection: collections.sessions,
-      records: bootstrap.sessions,
+      records: bootstrap.sessions ?? [],
     }),
     hydrateCollection({
       collection: collections.hypotheses,
-      records: bootstrap.hypotheses,
+      records: bootstrap.hypotheses ?? [],
     }),
     hydrateCollection({
       collection: collections.experiments,
-      records: bootstrap.experiments,
+      records: bootstrap.experiments ?? [],
+    }),
+    hydrateCollection({
+      collection: collections.evaluations,
+      records: bootstrap.evaluations ?? [],
     }),
     hydrateCollection({
       collection: collections.hypothesisExperimentLinks,
-      records: bootstrap.hypothesis_experiment_links,
+      records: bootstrap.hypothesis_experiment_links ?? [],
     }),
     hydrateCollection({
       collection: collections.hypothesisActivities,
-      records: bootstrap.hypothesis_activities,
+      records: bootstrap.hypothesis_activities ?? [],
     }),
     hydrateCollection({
       collection: collections.experimentActivities,
-      records: bootstrap.experiment_activities,
+      records: bootstrap.experiment_activities ?? [],
+    }),
+    hydrateCollection({
+      collection: collections.evaluationActivities,
+      records: bootstrap.evaluation_activities ?? [],
     }),
     hydrateCollection({
       collection: collections.artifacts,
-      records: bootstrap.artifacts,
+      records: bootstrap.artifacts ?? [],
     }),
     hydrateCollection({
       collection: collections.events,
-      records: bootstrap.events,
+      records: bootstrap.events ?? [],
     }),
   ]);
 }
@@ -196,6 +220,15 @@ export async function applyCollectionUpsert({
     return;
   }
 
+  if (upsert.collection === "evaluations") {
+    await upsertRecord({
+      collection: collections.evaluations,
+      key: upsert.key,
+      record: upsert.record as unknown as EvaluationRecord,
+    });
+    return;
+  }
+
   if (upsert.collection === "hypothesis_experiment_links") {
     await upsertRecord({
       collection: collections.hypothesisExperimentLinks,
@@ -219,6 +252,15 @@ export async function applyCollectionUpsert({
       collection: collections.experimentActivities,
       key: upsert.key,
       record: upsert.record as unknown as ExperimentActivityRecord,
+    });
+    return;
+  }
+
+  if (upsert.collection === "evaluation_activities") {
+    await upsertRecord({
+      collection: collections.evaluationActivities,
+      key: upsert.key,
+      record: upsert.record as unknown as EvaluationActivityRecord,
     });
     return;
   }

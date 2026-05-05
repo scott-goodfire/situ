@@ -1,7 +1,9 @@
 import { ActivitySection } from "./activity-section.js";
 import {
+  runningEvaluationActivities,
   runningExperimentActivities,
   runningHypothesisActivities,
+  suspiciousEvaluationActivities,
   suspiciousExperimentActivities,
 } from "../../fixtures/story-data.js";
 import type { TuiStory } from "../../stories/story-types.js";
@@ -12,7 +14,11 @@ export const stories = [
     title: "Activity Section",
     name: "empty",
     render: () => (
-      <ActivitySection hypothesisActivities={[]} experimentActivities={[]} />
+      <ActivitySection
+        hypothesisActivities={[]}
+        experimentActivities={[]}
+        evaluationActivities={[]}
+      />
     ),
   },
   {
@@ -23,6 +29,7 @@ export const stories = [
       <ActivitySection
         hypothesisActivities={runningHypothesisActivities}
         experimentActivities={runningExperimentActivities}
+        evaluationActivities={runningEvaluationActivities}
       />
     ),
   },
@@ -34,6 +41,7 @@ export const stories = [
       <ActivitySection
         hypothesisActivities={runningHypothesisActivities}
         experimentActivities={suspiciousExperimentActivities}
+        evaluationActivities={suspiciousEvaluationActivities}
       />
     ),
   },

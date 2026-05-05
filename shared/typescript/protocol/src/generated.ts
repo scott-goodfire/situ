@@ -77,6 +77,18 @@ export interface ExperimentRecord {
   updated_at: string;
 }
 
+export interface EvaluationRecord {
+  id: string;
+  objective_id: string;
+  status: "open" | "active" | "closed";
+  title: string;
+  summary: string;
+  associated_session_id?: string | null;
+  associated_experiment_id?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface HypothesisExperimentLinkRecord {
   hypothesis_id: string;
   experiment_id: string;
@@ -97,6 +109,17 @@ export interface HypothesisActivityRecord {
 export interface ExperimentActivityRecord {
   id: number;
   experiment_id: string;
+  session_id?: string | null;
+  actor: string;
+  kind: "comment";
+  body: string;
+  payload?: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface EvaluationActivityRecord {
+  id: number;
+  evaluation_id: string;
   session_id?: string | null;
   actor: string;
   kind: "comment";
@@ -165,9 +188,11 @@ export interface CollectionsBootstrapResult {
   sessions: SessionRecord[];
   hypotheses: HypothesisRecord[];
   experiments: ExperimentRecord[];
+  evaluations: EvaluationRecord[];
   hypothesis_experiment_links: HypothesisExperimentLinkRecord[];
   hypothesis_activities: HypothesisActivityRecord[];
   experiment_activities: ExperimentActivityRecord[];
+  evaluation_activities: EvaluationActivityRecord[];
   artifacts: ArtifactRecord[];
   events: EventRecord[];
 }
@@ -182,7 +207,7 @@ export interface CollectionsSubscribeResult {
 
 export interface CollectionUpsertedParams {
   cursor: number;
-  collection: "objectives" | "sessions" | "hypotheses" | "experiments" | "hypothesis_experiment_links" | "hypothesis_activities" | "experiment_activities" | "artifacts" | "events";
+  collection: "objectives" | "sessions" | "hypotheses" | "experiments" | "evaluations" | "hypothesis_experiment_links" | "hypothesis_activities" | "experiment_activities" | "evaluation_activities" | "artifacts" | "events";
   key: string;
   record: Record<string, unknown>;
 }

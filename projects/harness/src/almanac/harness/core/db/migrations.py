@@ -53,6 +53,18 @@ CREATE TABLE IF NOT EXISTS experiments (
   updated_at TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS evaluations (
+  id TEXT PRIMARY KEY,
+  objective_id TEXT NOT NULL REFERENCES objectives(id),
+  status TEXT NOT NULL,
+  title TEXT NOT NULL,
+  summary TEXT NOT NULL,
+  associated_session_id TEXT REFERENCES sessions(id),
+  associated_experiment_id TEXT REFERENCES experiments(id),
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS hypothesis_experiment_links (
   hypothesis_id TEXT NOT NULL REFERENCES hypotheses(id),
   experiment_id TEXT NOT NULL REFERENCES experiments(id),
@@ -74,6 +86,17 @@ CREATE TABLE IF NOT EXISTS hypothesis_activities (
 CREATE TABLE IF NOT EXISTS experiment_activities (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   experiment_id TEXT NOT NULL REFERENCES experiments(id),
+  session_id TEXT REFERENCES sessions(id),
+  actor TEXT NOT NULL,
+  kind TEXT NOT NULL,
+  body TEXT NOT NULL,
+  payload_json TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS evaluation_activities (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  evaluation_id TEXT NOT NULL REFERENCES evaluations(id),
   session_id TEXT REFERENCES sessions(id),
   actor TEXT NOT NULL,
   kind TEXT NOT NULL,
@@ -134,9 +157,11 @@ def reset_stale_schema(connection: sqlite3.Connection) -> None:
         "sessions",
         "hypotheses",
         "experiments",
+        "evaluations",
         "hypothesis_experiment_links",
         "hypothesis_activities",
         "experiment_activities",
+        "evaluation_activities",
         "artifacts",
         "agent_message_history",
         "events",

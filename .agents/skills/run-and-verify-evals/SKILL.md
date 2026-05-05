@@ -25,7 +25,7 @@ git status --short
 
 ```bash
 ./commands/evals.sh --list evals/suites
-./commands/evals.sh --list evals/suites/tool_use/research_tools/eval_group.py
+./commands/evals.sh --list evals/suites/tools/research_tools/eval_group.py
 ```
 
 3. Required execution credentials:
@@ -44,22 +44,28 @@ Run all evals:
 ./commands/evals.sh --concurrency 1
 ```
 
-Run the research-tool evals:
+Run the research-tool affordance evals:
 
 ```bash
-./commands/evals.sh evals/suites/tool_use/research_tools/eval_group.py --concurrency 1
+./commands/evals.sh evals/suites/tools/research_tools/eval_group.py --concurrency 1
 ```
 
-Run the full ResearchAgent planning evals:
+Run the full ResearchAgent session evals:
 
 ```bash
-./commands/evals.sh evals/suites/agent_planning/research_session/eval_group.py --concurrency 1
+./commands/evals.sh evals/suites/agents/research_agent/research_session/eval_group.py --concurrency 1
+```
+
+Run the ResearchAgent repo-bootstrap evals:
+
+```bash
+./commands/evals.sh evals/suites/agents/research_agent/repo_bootstrap/eval_group.py --concurrency 1
 ```
 
 Run one case:
 
 ```bash
-./commands/evals.sh evals/suites/tool_use/research_tools/eval_group.py --case get_session --concurrency 1
+./commands/evals.sh evals/suites/tools/research_tools/eval_group.py --case get_session --concurrency 1
 ```
 
 Use low concurrency for first-pass debugging. Increase only after the suite is
@@ -71,7 +77,7 @@ Record these in the final response:
 
 - Eval command run.
 - Experiment name printed by the runner, for example
-  `tool-use.research-session-<git-sha>-<session-id>`.
+  `tools.research-tools-<git-sha>-<session-id>`.
 - Number of cases.
 - Whether all assertions passed.
 - Any failed case names and first failure reason.
@@ -93,7 +99,7 @@ Preferred UI path:
 2. Confirm you are logged in.
 3. Open **Evals: Datasets & Experiments**.
 4. Find the local dataset matching the runner's dataset name, such as
-   `tool-use.research-session`.
+   `tools.research-tools` or `agents.research-agent-repo-bootstrap`.
 5. Confirm the experiment name printed by the runner exists.
 6. Open the experiment and confirm case rows, assertions, and trace links are
    present.
@@ -115,7 +121,7 @@ from datetime import datetime, timedelta, timezone
 
 from logfire.query_client import LogfireQueryClient
 
-experiment = "tool-use.research-session-<git-sha>-<session-id>"
+experiment = "tools.research-tools-<git-sha>-<session-id>"
 token = os.environ["ALMANAC_LOGFIRE_READ_TOKEN"]
 
 sql = f"""

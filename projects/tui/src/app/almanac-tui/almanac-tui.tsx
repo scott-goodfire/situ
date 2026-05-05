@@ -17,6 +17,8 @@ import type {
   CollectionsSubscribeParams,
   CollectionsSubscribeResult,
   EventRecord,
+  EvaluationActivityRecord,
+  EvaluationRecord,
   ExperimentActivityRecord,
   ExperimentRecord,
   HypothesisActivityRecord,
@@ -76,6 +78,13 @@ export function AlmanacTui() {
         .select(({ experiment }) => experiment),
     [collections],
   );
+  const evaluationsQuery = useLiveQuery(
+    (query) =>
+      query
+        .from({ evaluation: collections.evaluations })
+        .select(({ evaluation }) => evaluation),
+    [collections],
+  );
   const hypothesisActivitiesQuery = useLiveQuery(
     (query) =>
       query
@@ -87,6 +96,13 @@ export function AlmanacTui() {
     (query) =>
       query
         .from({ activity: collections.experimentActivities })
+        .select(({ activity }) => activity),
+    [collections],
+  );
+  const evaluationActivitiesQuery = useLiveQuery(
+    (query) =>
+      query
+        .from({ activity: collections.evaluationActivities })
         .select(({ activity }) => activity),
     [collections],
   );
@@ -119,6 +135,10 @@ export function AlmanacTui() {
     () => sortByCreated({ records: (experimentsQuery.data ?? []) as ExperimentRecord[] }),
     [experimentsQuery.data],
   );
+  const evaluations = useMemo(
+    () => sortByCreated({ records: (evaluationsQuery.data ?? []) as EvaluationRecord[] }),
+    [evaluationsQuery.data],
+  );
   const hypothesisActivities = useMemo(
     () =>
       sortByCreated({
@@ -132,6 +152,13 @@ export function AlmanacTui() {
         records: (experimentActivitiesQuery.data ?? []) as ExperimentActivityRecord[],
       }),
     [experimentActivitiesQuery.data],
+  );
+  const evaluationActivities = useMemo(
+    () =>
+      sortByCreated({
+        records: (evaluationActivitiesQuery.data ?? []) as EvaluationActivityRecord[],
+      }),
+    [evaluationActivitiesQuery.data],
   );
   const events = useMemo(
     () => sortEvents({ records: (eventsQuery.data ?? []) as EventRecord[] }),
@@ -309,6 +336,14 @@ export function AlmanacTui() {
     activities: experimentActivities,
     session: latestSession,
   });
+  const sessionEvaluations = evaluationsForSession({
+    evaluations,
+    session: latestSession,
+  });
+  const sessionEvaluationActivities = activitiesForSession({
+    activities: evaluationActivities,
+    session: latestSession,
+  });
   const sessionEvents = eventsForSession({
     events,
     session: latestSession,
@@ -366,8 +401,10 @@ export function AlmanacTui() {
       activeExperiment={activeExperiment}
       hypotheses={sessionHypotheses}
       experiments={sessionExperiments}
+      evaluations={sessionEvaluations}
       hypothesisActivities={sessionHypothesisActivities}
       experimentActivities={sessionExperimentActivities}
+      evaluationActivities={sessionEvaluationActivities}
       events={sessionEvents}
       onDashboardCommand={({ command }) => {
         handleDashboardCommand({
@@ -564,6 +601,23 @@ function experimentsForSession({
   return lodash.filter(
     experiments,
     (experiment: ExperimentRecord) => experiment.associated_session_id === session.id,
+  );
+}
+
+function evaluationsForSession({
+  evaluations,
+  session,
+}: {
+  evaluations: EvaluationRecord[];
+  session: SessionRecord | undefined;
+}): EvaluationRecord[] {
+  if (!session) {
+    return [];
+  }
+
+  return lodash.filter(
+    evaluations,
+    (evaluation: EvaluationRecord) => evaluation.associated_session_id === session.id,
   );
 }
 

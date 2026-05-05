@@ -42,6 +42,10 @@ test("web client receives live agent events from a real session", async ({ page 
   const stack = await startLiveStack();
   try {
     await page.goto(stack.webUrl);
+    await expect(page.getByText("Local Almanac Projects")).toBeVisible();
+    await expect(page.getByText(stack.session.project_id)).toBeVisible();
+
+    await page.goto(`${stack.webUrl}/projects/${stack.session.project_id}`);
 
     await expect(page.getByText("Connected")).toBeVisible();
     await expect(page.getByText("No session yet")).toBeVisible();
@@ -122,12 +126,7 @@ async function startLiveStack(): Promise<LiveStack> {
       command: "bun",
       args: ["run", "dev", "--", "--port", String(webPort), "--strictPort"],
       cwd: join(REPO_ROOT, "projects/web"),
-      env: {
-        ...env,
-        VITE_ALMANAC_WORKSPACE: workspace,
-        VITE_ALMANAC_SESSION_URL: session.url,
-        VITE_ALMANAC_SESSION_TOKEN: session.token,
-      },
+      env,
     });
 
     try {

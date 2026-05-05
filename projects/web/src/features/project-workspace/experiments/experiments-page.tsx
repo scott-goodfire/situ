@@ -1,0 +1,192 @@
+import type { ExperimentActivityRecord, ExperimentRecord } from "@almanac/protocol";
+import {
+  DxBadge,
+  DxSection,
+  DxTable,
+  type DxBadgeTone,
+  type DxTableColumn,
+} from "@almanac/web-ui";
+import { Link } from "@tanstack/react-router";
+import filter from "lodash/filter";
+import { EvidenceSummary } from "../evidence/evidence-summary";
+import {
+  evaluationActivitiesForEvaluations,
+  evaluationsForExperiment,
+} from "../evidence/evaluation-selectors";
+import type { ProjectWorkspaceData } from "../types";
+
+type ExperimentRow = {
+  experiment: ExperimentRecord;
+  hypothesisCount: number;
+  latestActivity: string;
+  hasConcern: boolean;
+  evaluations: ReturnType<typeof evaluationsForExperiment>;
+  evaluationActivities: ReturnType<typeof evaluationActivitiesForEvaluations>;
+};
+
+export function ExperimentsPage({ data }: { data: ProjectWorkspaceData }) {
+  const columns = experimentColumns({ projectId: data.projectId });
+  const rows = data.experiments.map((experiment) => {
+    const activities = activitiesForExperiment({
+      data,
+      experimentId: experiment.id,
+    });
+    const evaluations = evaluationsForExperiment({
+      data,
+      experimentId: experiment.id,
+    });
+    const evaluationActivities = evaluationActivitiesForEvaluations({
+      data,
+      evaluations,
+    });
+
+    return {
+      experiment,
+      hypothesisCount: linkedHypothesisCount({
+        data,
+        experimentId: experiment.id,
+      }),
+      latestActivity: activities.at(-1)?.body ?? "No activity yet",
+      hasConcern: hasConcern({ activities }),
+      evaluations,
+      evaluationActivities,
+    };
+  });
+
+  return (
+    <DxSection title="Experiments">
+      <DxTable
+        columns={columns}
+        rows={rows}
+        getRowKey={({ row }) => row.experiment.id}
+        emptyLabel="No experiments yet"
+        density="compact"
+        stickyHeader
+        sortable
+        getRowTone={({ row }) => (row.hasConcern ? "warning" : "neutral")}
+      />
+    </DxSection>
+  );
+}
+
+function experimentColumns({
+  projectId,
+}: {
+  projectId: string;
+}): Array<DxTableColumn<ExperimentRow>> {
+  return [
+    {
+      id: "experiment",
+      header: "Experiment",
+      width: "30%",
+      renderCell: ({ row }) => (
+        <div className="almanac-record-cell">
+          <Link
+            className="almanac-record-link"
+            to="/projects/$projectId/experiments/$experimentId"
+            params={{
+              projectId,
+              experimentId: row.experiment.id,
+            }}
+          >
+            {row.experiment.title}
+          </Link>
+          <span className="almanac-record-id">{row.experiment.id}</span>
+        </div>
+      ),
+      sortValue: ({ row }) => row.experiment.title,
+    },
+    {
+      id: "status",
+      header: "Status",
+      width: "120px",
+      renderCell: ({ row }) => (
+        <DxBadge tone={statusTone({ status: row.experiment.status, hasConcern: row.hasConcern })}>
+          {row.hasConcern ? "concern" : row.experiment.status}
+        </DxBadge>
+      ),
+      sortValue: ({ row }) => (row.hasConcern ? "concern" : row.experiment.status),
+    },
+    {
+      id: "hypotheses",
+      header: "Hypotheses",
+      width: "120px",
+      renderCell: ({ row }) => <span className="dx-mono">{row.hypothesisCount}</span>,
+      sortValue: ({ row }) => row.hypothesisCount,
+    },
+    {
+      id: "evidence",
+      header: "Evidence",
+      width: "260px",
+      renderCell: ({ row }) => (
+        <EvidenceSummary
+          evaluations={row.evaluations}
+          activities={row.evaluationActivities}
+          missingLabel="No evidence yet"
+        />
+      ),
+      sortValue: ({ row }) => row.evaluationActivities.length,
+    },
+    {
+      id: "latest",
+      header: "Latest Activity",
+      renderCell: ({ row }) => row.latestActivity,
+    },
+  ];
+}
+
+function linkedHypothesisCount({
+  data,
+  experimentId,
+}: {
+  data: ProjectWorkspaceData;
+  experimentId: string;
+}): number {
+  return filter(
+    data.hypothesisExperimentLinks,
+    (link) => link.experiment_id === experimentId,
+  ).length;
+}
+
+function activitiesForExperiment({
+  data,
+  experimentId,
+}: {
+  data: ProjectWorkspaceData;
+  experimentId: string;
+}): ExperimentActivityRecord[] {
+  return filter(
+    data.experimentActivities,
+    (activity) => activity.experiment_id === experimentId,
+  );
+}
+
+function hasConcern({
+  activities,
+}: {
+  activities: ExperimentActivityRecord[];
+}): boolean {
+  return activities.some((activity) => activity.payload?.activity_type === "concern");
+}
+
+function statusTone({
+  status,
+  hasConcern: rowHasConcern,
+}: {
+  status: ExperimentRecord["status"];
+  hasConcern: boolean;
+}): DxBadgeTone {
+  if (rowHasConcern) {
+    return "warning";
+  }
+
+  if (status === "closed") {
+    return "success";
+  }
+
+  if (status === "active") {
+    return "warning";
+  }
+
+  return "neutral";
+}

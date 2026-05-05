@@ -16,13 +16,19 @@ Run all evals:
 Run one file:
 
 ```bash
-./commands/evals.sh evals/suites/agent_planning/research_session/eval_group.py
+./commands/evals.sh evals/suites/agents/research_agent/research_session/eval_group.py
 ```
 
 Run the basic research-tool evals:
 
 ```bash
-./commands/evals.sh evals/suites/tool_use/research_tools/eval_group.py
+./commands/evals.sh evals/suites/tools/research_tools/eval_group.py
+```
+
+Run the repo-bootstrap workflow evals:
+
+```bash
+./commands/evals.sh evals/suites/agents/research_agent/repo_bootstrap/eval_group.py
 ```
 
 Run one case:
@@ -63,27 +69,40 @@ evals/
     discovery.py
     execution.py
   worlds/
+    repo_bootstrap/
+      agents/research_agent/agent.py
+      world/world.py
     research_session/
       agents/research_agent/agent.py
       agents/tool_agent/agent.py
       world/world.py
   suites/
-    agent_planning/
-      research_session/
-        cases.py
-        eval_group.py
-    tool_use/
+    tools/
       research_tools/
         cases.py
         eval_group.py
+    agents/
+      research_agent/
+        research_session/
+          cases.py
+          eval_group.py
+        repo_bootstrap/
+          cases.py
+          eval_group.py
 ```
 
-The `agent-planning.research-session` suite runs the real Almanac
-`ResearchAgent` with the real research toolset against temporary SQLite session
-worlds. The first cases are happy-path checks for inspecting a session, creating
-hypotheses, creating follow-up experiments, linking them, and leaving durable
-comments.
-
-The `tool-use.research-session` suite uses the actual Almanac research toolset
+The `tools.research-tools` suite uses the actual Almanac research toolset
 against temporary SQLite session worlds. Each case asks the model to exercise
 one tool and then checks captured tool calls plus durable session state.
+
+The `agents.research-agent-research-session` suite runs the real Almanac
+`ResearchAgent` against temporary SQLite session worlds. The first cases are
+happy-path checks for inspecting a session, creating hypotheses, creating
+follow-up experiments, linking them, and leaving durable comments.
+
+The `agents.research-agent-repo-bootstrap` suite runs the real `ResearchAgent`
+against a temporary local fixture repo that looks like a tiny autoresearch
+project. It checks whether the agent can inspect project-native docs, run the
+native measurement command, record baseline plaintext evidence through
+evaluations, try a bounded candidate after baseline evidence, and avoid editing
+setup/evaluation-surface code.

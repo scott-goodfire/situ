@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import sqlite3
 from pathlib import Path
 from typing import Any
 
@@ -331,3 +332,99 @@ def test_setup_params_keeps_context_vague_and_signal_oriented() -> None:
         "Expected signals: score, latency_ms. "
         "Capture results, signals, concerns, and activities from local experiments."
     )
+
+
+def test_web_launches_project_home_without_workspace(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    launch_directory = tmp_path / "not-an-almanac-workspace"
+    launch_directory.mkdir()
+    calls: list[dict[str, Any]] = []
+
+    class Completed:
+        returncode = 0
+
+    def fake_run(
+        command: list[str],
+        *,
+        cwd: Path,
+        env: dict[str, str],
+    ) -> Completed:
+        calls.append({"command": command, "cwd": cwd, "env": env})
+        return Completed()
+
+    monkeypatch.chdir(launch_directory)
+    monkeypatch.delenv("ALMANAC_WORKSPACE", raising=False)
+    monkeypatch.setattr(cli.subprocess, "run", fake_run)
+
+    code = cli.main(["web", str(launch_directory / "missing-workspace")])
+
+    assert code == 0
+    assert len(calls) == 2
+    assert calls[0]["command"] == ["bun", "run", "build"]
+    assert calls[1]["command"] == [
+        "bun",
+        "run",
+        "serve",
+        "--",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "0",
+    ]
+    assert "ALMANAC_APP_ROOT" in calls[0]["env"]
+    assert calls[0]["cwd"] == (
+        Path(calls[0]["env"]["ALMANAC_APP_ROOT"]) / "projects" / "web"
+    )
+    assert "ALMANAC_WORKSPACE" not in calls[0]["env"]
+    assert "ALMANAC_WORKSPACE" not in calls[1]["env"]
+
+
+def test_start_upserts_global_project_registry(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    calls: list[dict[str, Any]] = []
+
+    class Completed:
+        returncode = 0
+
+    def fake_start_session_server(
+        app_root: Path,
+        workspace: Path,
+        env: dict[str, str],
+    ) -> tuple[Any, dict[str, str]]:
+        return object(), {"url": "http://127.0.0.1:1", "token": "token"}
+
+    def fake_run(
+        command: list[str],
+        *,
+        cwd: Path,
+        env: dict[str, str],
+    ) -> Completed:
+        calls.append({"command": command, "cwd": cwd, "env": env})
+        return Completed()
+
+    monkeypatch.setattr(cli, "start_session_server", fake_start_session_server)
+    monkeypatch.setattr(cli, "stop_process", lambda _process: None)
+    monkeypatch.setattr(cli.subprocess, "run", fake_run)
+
+    code = cli.main(["start", str(workspace)])
+
+    assert code == 0
+    assert len(calls) == 1
+
+    registry_path = Path.home() / ".almanac" / "almanac.sqlite"
+    connection = sqlite3.connect(registry_path)
+    try:
+        row = connection.execute(
+            "SELECT repo_path, label, archived_at FROM projects WHERE project_id = ?",
+            (ProjectContext(workspace).project_id,),
+        ).fetchone()
+    finally:
+        connection.close()
+
+    assert row == (str(workspace), "workspace", None)

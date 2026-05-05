@@ -29,6 +29,16 @@ the suites when the case needs a mocked project, worker, or external system.
 Follow the module organization policy: small ownership folders are preferred
 over broad files like `models.py`, `evaluators.py`, or mixed world/suite files.
 
+Suite paths should make the evaluated surface obvious:
+
+```text
+evals/suites/tools/<tool-surface>/
+evals/suites/agents/<agent-name>/<world-or-workflow>/
+```
+
+Use `tools/...` for LLM tool affordance coverage and `agents/...` for real
+agent behavior in a fixture world.
+
 The eval/test boundary is defined by
 [../../policies/0014-real-llm-evals/POLICY.md](../../policies/0014-real-llm-evals/POLICY.md):
 tests are deterministic, while evals exercise live model behavior.
@@ -69,6 +79,9 @@ Prefer behavioral evals over schema evals.
 Good first targets:
 
 - The planner starts with baseline result activity.
+- The full research agent can inspect an unfamiliar local repo, discover the
+  project-native measurement command, run it, and record plaintext baseline
+  evidence before candidate experiments.
 - The planner explores simple variants before over-committing.
 - The planner combines promising hypothesis/experiment activity.
 - The research-tool agent reads compact session context with `get_session`.
@@ -92,10 +105,15 @@ Initial worlds:
 - `research_session`: temporary SQLite session worlds seeded with objective,
   session, hypothesis, experiment, activity, and artifact state. This world
   exercises the actual Almanac research toolset through Pydantic AI for both
-  focused tool-use evals and full-agent `ResearchAgent` planning evals.
+  focused tool affordance evals and full-agent `ResearchAgent` evals.
+- `repo_bootstrap`: a temporary local fixture repo shaped like a tiny
+  autoresearch project. This world exercises the real `ResearchAgent` with both
+  Almanac ledger tools and workspace tools, checking whether it can infer the
+  native measurement loop, establish baseline evaluation evidence, run bounded
+  candidate measurements, and avoid modifying setup/evaluation-surface code.
 
-Future worlds may call real local eval commands or sandbox repos when the
-deterministic mocked session worlds are not enough.
+Future worlds may add heavier sandbox repos when the deterministic local
+fixture worlds are not enough.
 
 ## Logfire
 

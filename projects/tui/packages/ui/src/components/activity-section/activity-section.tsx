@@ -1,6 +1,7 @@
 import lodash from "lodash";
 import { Text } from "ink";
 import type {
+  EvaluationActivityRecord,
   ExperimentActivityRecord,
   HypothesisActivityRecord,
 } from "@almanac/protocol";
@@ -9,14 +10,17 @@ import { previewText } from "../text-preview/text-preview.js";
 
 type Activity =
   | ({ scope: "hypothesis" } & HypothesisActivityRecord)
-  | ({ scope: "experiment" } & ExperimentActivityRecord);
+  | ({ scope: "experiment" } & ExperimentActivityRecord)
+  | ({ scope: "evaluation" } & EvaluationActivityRecord);
 
 export function ActivitySection({
   hypothesisActivities,
   experimentActivities,
+  evaluationActivities,
 }: {
   hypothesisActivities: HypothesisActivityRecord[];
   experimentActivities: ExperimentActivityRecord[];
+  evaluationActivities: EvaluationActivityRecord[];
 }) {
   const activities = lodash
     .orderBy(
@@ -28,6 +32,10 @@ export function ActivitySection({
         ...experimentActivities.map((activity) => ({
           ...activity,
           scope: "experiment" as const,
+        })),
+        ...evaluationActivities.map((activity) => ({
+          ...activity,
+          scope: "evaluation" as const,
         })),
       ],
       [(activity) => activity.created_at, (activity) => activity.id],
@@ -51,6 +59,10 @@ function formatActivity({ activity }: { activity: Activity }): string {
   const target = (() => {
     if (activity.scope === "hypothesis") {
       return activity.hypothesis_id;
+    }
+
+    if (activity.scope === "evaluation") {
+      return activity.evaluation_id;
     }
 
     return activity.experiment_id;

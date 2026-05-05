@@ -1,5 +1,7 @@
 import type {
   EventRecord,
+  EvaluationActivityRecord,
+  EvaluationRecord,
   ExperimentActivityRecord,
   ExperimentRecord,
   HypothesisActivityRecord,
@@ -14,6 +16,7 @@ import {
   type DashboardCommand,
   type DashboardControlMessage,
 } from "../dashboard-controls/dashboard-controls.js";
+import { EvaluationsSection } from "../evaluations-section/evaluations-section.js";
 import { ExperimentsSection } from "../experiments-section/experiments-section.js";
 import { HypothesesSection } from "../hypotheses-section/hypotheses-section.js";
 import { NowSection } from "../now-section/now-section.js";
@@ -31,8 +34,10 @@ export function AlmanacTuiView({
   activeExperiment,
   hypotheses,
   experiments,
+  evaluations,
   hypothesisActivities,
   experimentActivities,
+  evaluationActivities,
   events,
   onDashboardCommand,
 }: {
@@ -46,8 +51,10 @@ export function AlmanacTuiView({
   activeExperiment: ExperimentRecord | undefined;
   hypotheses: HypothesisRecord[];
   experiments: ExperimentRecord[];
+  evaluations: EvaluationRecord[];
   hypothesisActivities: HypothesisActivityRecord[];
   experimentActivities: ExperimentActivityRecord[];
+  evaluationActivities: EvaluationActivityRecord[];
   events: EventRecord[];
   onDashboardCommand: ({ command }: { command: DashboardCommand }) => void;
 }) {
@@ -74,9 +81,14 @@ export function AlmanacTuiView({
         experiments={experiments}
         experimentActivities={experimentActivities}
       />
+      <EvaluationsSection
+        evaluations={evaluations}
+        evaluationActivities={evaluationActivities}
+      />
       <ActivitySection
         hypothesisActivities={hypothesisActivities}
         experimentActivities={experimentActivities}
+        evaluationActivities={evaluationActivities}
       />
       <TimelineSection events={events} />
     </AppFrame>

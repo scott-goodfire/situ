@@ -1,0 +1,78 @@
+{
+  "$defs": {
+    "WorkStatus": {
+      "enum": [
+        "open",
+        "active",
+        "closed"
+      ],
+      "title": "WorkStatus",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "objective_id": {
+      "title": "Objective Id",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/WorkStatus"
+    },
+    "title": {
+      "title": "Title",
+      "type": "string"
+    },
+    "summary": {
+      "title": "Summary",
+      "type": "string"
+    },
+    "associated_session_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Associated Session Id"
+    },
+    "associated_experiment_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Associated Experiment Id"
+    },
+    "created_at": {
+      "title": "Created At",
+      "type": "string"
+    },
+    "updated_at": {
+      "title": "Updated At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "objective_id",
+    "status",
+    "title",
+    "summary",
+    "created_at",
+    "updated_at"
+  ],
+  "title": "EvaluationRecord",
+  "type": "object"
+}

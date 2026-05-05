@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useApp } from "ink";
 import type {
   EventRecord,
+  EvaluationActivityRecord,
+  EvaluationRecord,
   ExperimentActivityRecord,
   ExperimentRecord,
   HypothesisActivityRecord,
@@ -19,9 +21,12 @@ import {
   activeHypothesis,
   activeObjective,
   completedEvents,
+  completedEvaluations,
   completedExperiments,
   completedSession,
   maxExperimentCount,
+  runningEvaluationActivities,
+  runningEvaluations,
   runningEvents,
   runningExperiment,
   runningExperimentActivities,
@@ -29,6 +34,8 @@ import {
   runningHypothesisActivities,
   runningSession,
   storyWorkspace,
+  suspiciousEvaluationActivities,
+  suspiciousEvaluations,
   suspiciousEvents,
   suspiciousExperiment,
   suspiciousExperimentActivities,
@@ -50,8 +57,10 @@ export const stories = [
         activeExperiment={undefined}
         hypotheses={[]}
         experiments={[]}
+        evaluations={[]}
         hypothesisActivities={[]}
         experimentActivities={[]}
+        evaluationActivities={[]}
         events={[]}
       />
     ),
@@ -69,8 +78,10 @@ export const stories = [
         activeExperiment={runningExperiment}
         hypotheses={[activeHypothesis]}
         experiments={runningExperiments}
+        evaluations={runningEvaluations}
         hypothesisActivities={runningHypothesisActivities}
         experimentActivities={runningExperimentActivities}
+        evaluationActivities={runningEvaluationActivities}
         events={runningEvents}
       />
     ),
@@ -88,8 +99,10 @@ export const stories = [
         activeExperiment={undefined}
         hypotheses={[activeHypothesis]}
         experiments={suspiciousExperiments}
+        evaluations={suspiciousEvaluations}
         hypothesisActivities={runningHypothesisActivities}
         experimentActivities={suspiciousExperimentActivities}
+        evaluationActivities={suspiciousEvaluationActivities}
         events={suspiciousEvents}
       />
     ),
@@ -107,8 +120,10 @@ export const stories = [
         activeExperiment={undefined}
         hypotheses={[activeHypothesis]}
         experiments={completedExperiments}
+        evaluations={completedEvaluations}
         hypothesisActivities={runningHypothesisActivities}
         experimentActivities={runningExperimentActivities}
+        evaluationActivities={runningEvaluationActivities}
         events={completedEvents}
       />
     ),
@@ -126,8 +141,10 @@ export const stories = [
         activeExperiment={suspiciousExperiment}
         hypotheses={[activeHypothesis]}
         experiments={[acceptedExperiment, suspiciousExperiment]}
+        evaluations={suspiciousEvaluations}
         hypothesisActivities={runningHypothesisActivities}
         experimentActivities={suspiciousExperimentActivities}
+        evaluationActivities={suspiciousEvaluationActivities}
         events={suspiciousEvents}
       />
     ),
@@ -142,8 +159,10 @@ type StoryAlmanacTuiViewProps = {
   activeExperiment: ExperimentRecord | undefined;
   hypotheses: HypothesisRecord[];
   experiments: ExperimentRecord[];
+  evaluations: EvaluationRecord[];
   hypothesisActivities: HypothesisActivityRecord[];
   experimentActivities: ExperimentActivityRecord[];
+  evaluationActivities: EvaluationActivityRecord[];
   events: EventRecord[];
 };
 
@@ -155,8 +174,10 @@ function StoryAlmanacTuiView({
   activeExperiment,
   hypotheses,
   experiments,
+  evaluations,
   hypothesisActivities,
   experimentActivities,
+  evaluationActivities,
   events,
 }: StoryAlmanacTuiViewProps) {
   const { exit } = useApp();
@@ -176,8 +197,10 @@ function StoryAlmanacTuiView({
       activeExperiment={activeExperiment}
       hypotheses={hypotheses}
       experiments={experiments}
+      evaluations={evaluations}
       hypothesisActivities={hypothesisActivities}
       experimentActivities={experimentActivities}
+      evaluationActivities={evaluationActivities}
       events={events}
       onDashboardCommand={({ command }) => {
         handleStoryDashboardCommand({

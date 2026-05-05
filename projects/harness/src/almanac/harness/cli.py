@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -14,8 +15,10 @@ from .headless import (
     headless_status,
     headless_wait,
 )
-from .local_session import base_env, read_live_session, start_session_server, stop_process
+from .core.db.project_registry import upsert_project_registry
+from .local_session import base_env, start_session_server, stop_process
 from .paths import resolve_app_root, resolve_workspace
+from .project_context import ProjectContext
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -72,7 +75,22 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     web_parser = subparsers.add_parser("web", help="open the attach-only web monitor")
-    add_workspace_argument(web_parser)
+    web_parser.add_argument(
+        "workspace",
+        nargs="?",
+        help="accepted for compatibility; the web monitor lists all local projects",
+    )
+    web_parser.add_argument(
+        "--host",
+        default="127.0.0.1",
+        help="host for the local web server",
+    )
+    web_parser.add_argument(
+        "--port",
+        type=int,
+        default=0,
+        help="port for the local web server; defaults to a free port",
+    )
 
     args = parser.parse_args(argv)
 
@@ -137,6 +155,13 @@ def start(args: argparse.Namespace) -> int:
         print(f"workspace does not exist or is not a directory: {workspace}", file=sys.stderr)
         return 1
 
+    context = ProjectContext(workspace)
+    upsert_project_registry(
+        almanac_home=context.home,
+        project_id=context.project_id,
+        repo_path=context.repo_root,
+    )
+
     env = base_env(app_root, workspace)
     apply_setup_env(env, args)
 
@@ -156,19 +181,33 @@ def web(args: argparse.Namespace) -> int:
         print("could not find Almanac app root; set ALMANAC_APP_ROOT", file=sys.stderr)
         return 1
 
-    workspace = resolve_workspace(Path.cwd(), args.workspace)
-    if not workspace.is_dir():
-        print(f"workspace does not exist or is not a directory: {workspace}", file=sys.stderr)
-        return 1
+    env = os.environ.copy()
+    env["ALMANAC_APP_ROOT"] = str(app_root)
+    env.pop("ALMANAC_WORKSPACE", None)
 
-    env = base_env(app_root, workspace)
-    session = read_live_session(workspace)
-    env["VITE_ALMANAC_WORKSPACE"] = str(workspace)
-    if session is not None:
-        env["VITE_ALMANAC_SESSION_URL"] = session["url"]
-        env["VITE_ALMANAC_SESSION_TOKEN"] = session["token"]
+    web_root = app_root / "projects" / "web"
+    build = subprocess.run(
+        ["bun", "run", "build"],
+        cwd=web_root,
+        env=env,
+    )
+    if build.returncode != 0:
+        return build.returncode
 
-    return subprocess.run(["bun", "run", "dev"], cwd=app_root / "projects" / "web", env=env).returncode
+    return subprocess.run(
+        [
+            "bun",
+            "run",
+            "serve",
+            "--",
+            "--host",
+            args.host,
+            "--port",
+            str(args.port),
+        ],
+        cwd=web_root,
+        env=env,
+    ).returncode
 
 
 if __name__ == "__main__":

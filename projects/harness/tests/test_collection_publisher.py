@@ -12,6 +12,8 @@ from almanac.harness.core.notifications import (
 from almanac.harness.records import (
     ArtifactRecord,
     EventRecord,
+    EvaluationActivityRecord,
+    EvaluationRecord,
     ExperimentActivityRecord,
     ExperimentRecord,
     HypothesisActivityRecord,
@@ -29,6 +31,7 @@ def test_collection_routes_cover_publishable_records() -> None:
         (session_record(), "sessions", "session_0001"),
         (hypothesis_record(), "hypotheses", "hyp_0001"),
         (experiment_record(), "experiments", "exp_0001"),
+        (evaluation_record(), "evaluations", "eval_0001"),
         (
             HypothesisExperimentLinkRecord(
                 hypothesis_id="hyp_0001",
@@ -40,6 +43,7 @@ def test_collection_routes_cover_publishable_records() -> None:
         ),
         (hypothesis_activity_record(), "hypothesis_activities", "1"),
         (experiment_activity_record(), "experiment_activities", "2"),
+        (evaluation_activity_record(), "evaluation_activities", "4"),
         (artifact_record(), "artifacts", "artifact_0001"),
         (event_record(), "events", "3"),
     ]
@@ -140,6 +144,20 @@ def experiment_record() -> ExperimentRecord:
     )
 
 
+def evaluation_record() -> EvaluationRecord:
+    return EvaluationRecord(
+        id="eval_0001",
+        objective_id="objective_0001",
+        status="active",
+        title="Baseline eval",
+        summary="Run baseline.",
+        associated_session_id="session_0001",
+        associated_experiment_id=None,
+        created_at="now",
+        updated_at="now",
+    )
+
+
 def hypothesis_activity_record() -> HypothesisActivityRecord:
     return HypothesisActivityRecord(
         id=1,
@@ -162,6 +180,19 @@ def experiment_activity_record() -> ExperimentActivityRecord:
         kind="comment",
         body="Comment.",
         payload={},
+        created_at="now",
+    )
+
+
+def evaluation_activity_record() -> EvaluationActivityRecord:
+    return EvaluationActivityRecord(
+        id=4,
+        evaluation_id="eval_0001",
+        session_id="session_0001",
+        actor="agent",
+        kind="comment",
+        body="Baseline result.",
+        payload={"activity_type": "result"},
         created_at="now",
     )
 

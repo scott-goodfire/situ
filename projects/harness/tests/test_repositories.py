@@ -7,6 +7,7 @@ from almanac.harness.api.current_state import CurrentStateService
 from almanac.harness.api.sessions import SessionsService
 from almanac.harness.core.db import Database
 from almanac.harness.records import (
+    EvaluationRecord,
     ExperimentRecord,
     HypothesisRecord,
     ObjectiveRecord,
@@ -72,6 +73,17 @@ def create_experiment(
         objective_id="objective_0001",
         title="Try component A",
         summary="Apply component A.",
+        associated_session_id="session_0001",
+    )
+
+
+def create_evaluation(repos: Repositories) -> EvaluationRecord:
+    create_experiment(repos)
+    return repos.evaluations.create(
+        evaluation_id="eval_session_0001_baseline",
+        objective_id="objective_0001",
+        title="Baseline project eval",
+        summary="Run the baseline project evaluation.",
         associated_session_id="session_0001",
     )
 
@@ -176,6 +188,37 @@ def test_experiments_repository_create_update_get_and_list(repos: Repositories) 
     ]
 
 
+def test_evaluations_repository_create_update_get_and_list(repos: Repositories) -> None:
+    evaluation = create_evaluation(repos)
+
+    assert evaluation.id == "eval_session_0001_baseline"
+    assert evaluation.status == "open"
+    assert evaluation.title == "Baseline project eval"
+    assert evaluation.associated_session_id == "session_0001"
+    assert evaluation.associated_experiment_id is None
+
+    updated = repos.evaluations.update(
+        "eval_session_0001_baseline",
+        status="closed",
+        summary="Baseline result recorded.",
+        associated_experiment_id="exp_session_0001_a",
+    )
+    assert updated is not None
+    assert updated.status == "closed"
+    assert updated.summary == "Baseline result recorded."
+    assert updated.associated_experiment_id == "exp_session_0001_a"
+    assert repos.evaluations.get("eval_session_0001_baseline") == updated
+    assert [item.id for item in repos.evaluations.list_for_session("session_0001")] == [
+        "eval_session_0001_baseline"
+    ]
+    assert [item.id for item in repos.evaluations.list_for_objective("objective_0001")] == [
+        "eval_session_0001_baseline"
+    ]
+    assert [item.id for item in repos.evaluations.list_for_experiment("exp_session_0001_a")] == [
+        "eval_session_0001_baseline"
+    ]
+
+
 def test_work_repositories_reject_invalid_agent_statuses(
     repos: Repositories,
 ) -> None:
@@ -201,6 +244,16 @@ def test_work_repositories_reject_invalid_agent_statuses(
         repos.hypotheses.update(
             hypothesis_id="hyp_0001",
             status="completed",
+        )
+
+    with pytest.raises(ValueError, match="invalid evaluation status"):
+        repos.evaluations.create(
+            evaluation_id="eval_session_0001_bad",
+            objective_id="objective_0001",
+            title="Bad evaluation",
+            summary="This should fail.",
+            associated_session_id="session_0001",
+            status="running",
         )
 
 
@@ -308,6 +361,29 @@ def test_experiment_activities_repository_add_and_list(repos: Repositories) -> N
     assert repos.experiment_activities.list_for_session("session_0001") == [activity]
 
 
+def test_evaluation_activities_repository_add_and_list(repos: Repositories) -> None:
+    create_evaluation(repos)
+
+    activity = repos.evaluation_activities.add(
+        evaluation_id="eval_session_0001_baseline",
+        session_id="session_0001",
+        actor="agent",
+        kind="comment",
+        body="Baseline result recorded.",
+        payload={
+            "activity_type": "result",
+            "signals": [{"key": "score", "value": 0.71}],
+        },
+    )
+
+    assert activity.id == 1
+    assert activity.kind == "comment"
+    assert repos.evaluation_activities.list_for_evaluation(
+        "eval_session_0001_baseline"
+    ) == [activity]
+    assert repos.evaluation_activities.list_for_session("session_0001") == [activity]
+
+
 def test_artifacts_repository_create_and_list(repos: Repositories) -> None:
     create_experiment(repos)
     activity = repos.experiment_activities.add(
@@ -404,6 +480,21 @@ def test_current_state_api_composes_protocol_shaped_state(repos: Repositories) -
             "signals": [{"key": "score", "value": 0.73}],
         },
     )
+    repos.evaluations.create(
+        evaluation_id="eval_session_0001_baseline",
+        objective_id="objective_0001",
+        title="Baseline project eval",
+        summary="Run the baseline project evaluation.",
+        associated_session_id="session_0001",
+    )
+    repos.evaluation_activities.add(
+        evaluation_id="eval_session_0001_baseline",
+        session_id="session_0001",
+        actor="agent",
+        kind="comment",
+        body="Baseline result recorded.",
+        payload={"activity_type": "result"},
+    )
     repos.events.add(
         event_type="experiment.completed",
         message="Completed exp_session_0001_a",
@@ -420,7 +511,13 @@ def test_current_state_api_composes_protocol_shaped_state(repos: Repositories) -
     assert [experiment.id for experiment in current_state.experiments] == [
         "exp_session_0001_a"
     ]
+    assert [evaluation.id for evaluation in current_state.evaluations] == [
+        "eval_session_0001_baseline"
+    ]
     assert [activity.kind for activity in current_state.experiment_activities] == [
+        "comment"
+    ]
+    assert [activity.kind for activity in current_state.evaluation_activities] == [
         "comment"
     ]
     assert [event.type for event in current_state.events] == ["experiment.completed"]
@@ -446,6 +543,20 @@ def test_sessions_api_composes_session_graph(repos: Repositories) -> None:
         kind="comment",
         body="A improved score.",
     )
+    repos.evaluations.create(
+        evaluation_id="eval_session_0001_baseline",
+        objective_id="objective_0001",
+        title="Baseline project eval",
+        summary="Run the baseline project evaluation.",
+        associated_session_id="session_0001",
+    )
+    repos.evaluation_activities.add(
+        evaluation_id="eval_session_0001_baseline",
+        session_id="session_0001",
+        actor="agent",
+        kind="comment",
+        body="Baseline result recorded.",
+    )
 
     graph = SessionsService(repos=repos).get_session("session_0001")
 
@@ -457,6 +568,12 @@ def test_sessions_api_composes_session_graph(repos: Repositories) -> None:
     assert [experiment.id for experiment in graph.experiments] == [
         "exp_session_0001_a"
     ]
+    assert [evaluation.id for evaluation in graph.evaluations] == [
+        "eval_session_0001_baseline"
+    ]
     assert [activity.kind for activity in graph.experiment_activities] == [
+        "comment"
+    ]
+    assert [activity.kind for activity in graph.evaluation_activities] == [
         "comment"
     ]
