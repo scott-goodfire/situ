@@ -32,6 +32,7 @@ const harness = StdioJsonRpcClient.spawn({
   args: command.args,
   cwd: workspace,
   env: {
+    ...process.env,
     ALMANAC_APP_ROOT: appRoot,
     ALMANAC_WORKSPACE: workspace,
   },

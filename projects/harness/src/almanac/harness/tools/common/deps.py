@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
+from pydantic_ai_backends import LocalBackend
 
 from ...api.collections import publish_record_upsert
 from ...core.db import Database
@@ -30,6 +31,22 @@ class AlmanacToolDeps(BaseModel):
 
     _opened_db: Database | None = PrivateAttr(default=None)
     _opened_repos: Repositories | None = PrivateAttr(default=None)
+    _workspace_backend: LocalBackend | None = PrivateAttr(default=None)
+
+    @property
+    def backend(self) -> LocalBackend:
+        if self._workspace_backend is not None:
+            return self._workspace_backend
+        if self.repo_path is None:
+            raise RuntimeError("tool deps require repo_path for workspace tools")
+
+        repo_path = Path(self.repo_path).resolve()
+        self._workspace_backend = LocalBackend(
+            root_dir=repo_path,
+            allowed_directories=[str(repo_path)],
+            enable_execute=True,
+        )
+        return self._workspace_backend
 
     def get_repos(self) -> Repositories:
         if self.repos is not None:

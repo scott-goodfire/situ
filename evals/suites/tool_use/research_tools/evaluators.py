@@ -69,3 +69,36 @@ class SessionGraphContains(
             value=False,
             reason=f"Session graph did not contain {self.text!r}",
         )
+
+
+@dataclass
+class SessionGraphHasLink(
+    Evaluator[ResearchToolEvalInput, ResearchToolEvalOutput, Any]
+):
+    hypothesis_id: str
+    experiment_id: str
+
+    def evaluate(
+        self,
+        ctx: EvaluatorContext[ResearchToolEvalInput, ResearchToolEvalOutput, Any],
+    ) -> EvaluationReason:
+        links = ctx.output.session_graph.get("hypothesis_experiment_links", [])
+        for link in links:
+            if (
+                link.get("hypothesis_id") == self.hypothesis_id
+                and link.get("experiment_id") == self.experiment_id
+            ):
+                return EvaluationReason(
+                    value=True,
+                    reason=(
+                        "Session graph links "
+                        f"{self.hypothesis_id} to {self.experiment_id}"
+                    ),
+                )
+        return EvaluationReason(
+            value=False,
+            reason=(
+                "Session graph did not link "
+                f"{self.hypothesis_id} to {self.experiment_id}"
+            ),
+        )

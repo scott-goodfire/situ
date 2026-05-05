@@ -11,6 +11,7 @@ bun --filter @almanac/rpc-client check
 bun --filter @almanac/collections check
 bun --filter @almanac/collections test
 bun --filter @almanac/session-server check
+bun --filter @almanac/e2e-tests check
 bun --filter @almanac/tui-ui check
 bun --filter @almanac/tui-ui test
 bun --filter @almanac/tui check

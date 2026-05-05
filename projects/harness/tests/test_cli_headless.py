@@ -192,7 +192,7 @@ def test_exec_uses_shared_rpc_lifecycle_and_prints_final_json(
             "--json",
             "--objective",
             "Improve the score",
-            "--research-context",
+            "--context",
             "Run local evals.",
             "--max-experiments",
             "2",
@@ -225,12 +225,14 @@ def test_exec_uses_shared_rpc_lifecycle_and_prints_final_json(
     ]
 
 
-def test_setup_params_keeps_eval_context_vague_and_signal_oriented() -> None:
+def test_setup_params_keeps_context_vague_and_signal_oriented() -> None:
     args = argparse.Namespace(
         objective=None,
-        research_context="Use the available eval scripts and logs.",
-        eval_command="python eval.py --json",
-        known_signals=["score", "latency_ms"],
+        context=(
+            "Use the available eval scripts and logs. "
+            "Run python eval.py --json and capture its JSON signals. "
+            "Expected signals: score, latency_ms."
+        ),
     )
 
     params = headless.setup_params(

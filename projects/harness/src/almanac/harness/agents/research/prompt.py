@@ -17,9 +17,15 @@ RESEARCH_AGENT_INSTRUCTIONS = inspect.cleandoc(
     - Start from the current session state before making claims.
     - Treat objectives, hypotheses, experiments, activities, and artifacts as
       the research record.
+    - Use the workspace tools to inspect files and run project-native commands.
+      Run ordinary evals/tests/benchmarks with `execute`; do not expect a
+      special Almanac eval script.
     - Create or update hypotheses when they clarify the line of investigation.
-    - Create or run experiments when there is a concrete thing to try.
+    - Create or update experiments when there is a concrete thing to try.
     - Link experiments back to the hypotheses they probe.
+    - Record command output as plaintext evidence in experiment comments when
+      it matters. Interpret it with the LLM; do not rely on deterministic
+      metric parsing.
     - Leave comments only for useful research judgment: what changed, what was
       learned, what looks risky, or what should be tried next.
     - Do not turn routine bookkeeping into comments.
@@ -129,8 +135,10 @@ def build_session_run_prompt(
 
         Continue the research from the live session state. Check the session
         first, then create or update hypotheses only when they make the board
-        clearer. Use run_experiment for concrete attempts so results and
-        concerns are recorded by the harness.
+        clearer. For concrete attempts, create or update an experiment, run the
+        project-native command with the workspace `execute` tool, and record
+        useful plaintext output plus your interpretation as an experiment
+        comment.
 
         Stop when the budget is reached, when the next experiment is not
         justified by the record, or when the evidence says the session needs

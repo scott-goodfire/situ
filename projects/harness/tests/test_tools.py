@@ -1,13 +1,18 @@
 from __future__ import annotations
 
+import asyncio
 from pathlib import Path
 from typing import Any
 
 import pytest
+from pydantic_ai import RunContext
+from pydantic_ai.models.test import TestModel
+from pydantic_ai.usage import RunUsage
 
 from almanac.harness.core.db import Database
 from almanac.harness.core.workers import WorkerManager
 from almanac.harness.repositories import Repositories
+from almanac.harness.tools import build_workspace_toolset
 from almanac.harness.tools.activities import (
     ListExperimentActivitiesTool,
     ListHypothesisActivitiesTool,
@@ -289,6 +294,59 @@ def test_artifact_tools_create_and_list_artifacts(repos: Repositories) -> None:
     ]
 
 
+def test_workspace_toolset_uses_repo_path_backend(tmp_path: Path) -> None:
+    marker = tmp_path / "marker.txt"
+    marker.write_text("workspace marker", encoding="utf-8")
+    deps = AlmanacToolDeps(session_id="session_0001", repo_path=str(tmp_path))
+
+    result = deps.backend.execute(
+        "pwd && printf '\\n---\\n' && cat marker.txt",
+        timeout=5,
+    )
+    toolset = build_workspace_toolset()
+    execute_output = asyncio.run(
+        _call_workspace_execute(
+            toolset=toolset,
+            deps=deps,
+        )
+    )
+
+    assert result.exit_code == 0
+    assert str(tmp_path) in result.output
+    assert "workspace marker" in result.output
+    assert "workspace-toolset" in execute_output
+    expected_tools = {
+        "ls",
+        "read_file",
+        "write_file",
+        "edit_file",
+        "glob",
+        "grep",
+        "execute",
+    }
+    assert expected_tools.issubset(set(toolset.tools))
+
+
+async def _call_workspace_execute(
+    *,
+    toolset: Any,
+    deps: AlmanacToolDeps,
+) -> str:
+    ctx = RunContext(
+        deps=deps,
+        model=TestModel(),
+        usage=RunUsage(),
+    )
+    tools = await toolset.get_tools(ctx)
+    result = await toolset.call_tool(
+        "execute",
+        {"command": "printf workspace-toolset", "timeout": 5},
+        ctx,
+        tools["execute"],
+    )
+    return str(result)
+
+
 def test_run_experiment_tool_executes_worker_and_records_activity(
     repos: Repositories,
 ) -> None:
@@ -313,14 +371,11 @@ def test_run_experiment_tool_executes_worker_and_records_activity(
     assert result.experiment["status"] == "closed"
     assert result.result is not None
     assert result.result["status"] == "completed"
-    assert result.concerns == [
-        {"kind": "missing_signal", "message": "Expected signal missing: latency_ms"}
-    ]
+    assert result.concerns == []
     activities = repos.experiment_activities.list_for_experiment(result.experiment["id"])
     assert [activity.payload.get("activity_type") for activity in activities] == [
         "plan",
         "result",
-        "concern",
     ]
     assert "worker.progress" in [event["type"] for event in emitted]
 
@@ -333,10 +388,7 @@ class FakeWorkerManager(WorkerManager):
         self,
         params: ExperimentRunParams,
         on_progress: Any,
-        *,
-        context: str = "",
     ) -> ExperimentRunResult:
-        _ = context
         on_progress(
             {
                 "params": {

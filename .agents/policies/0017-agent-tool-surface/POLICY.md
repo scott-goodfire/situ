@@ -12,10 +12,16 @@ agents read or mutate Almanac research state.
 
 ## Rule
 
-Agent tools should feel like explicit CRUD-style operations over Almanac product
-models. Prefer concrete, inspectable tools such as `get_session`,
+Almanac ledger tools should feel like explicit CRUD-style operations over
+Almanac product models. Prefer concrete, inspectable tools such as `get_session`,
 `create_hypothesis`, `update_experiment`, and `add_experiment_comment` over
 abstract tools that ask the model to choose internal ontology details.
+
+Workspace tools are separate. It is acceptable to use a maintained Pydantic AI
+console/filesystem toolset for ordinary coding-agent operations such as
+`read_file`, `grep`, `glob`, `edit_file`, and `execute`, provided those tools
+are backed by the current workspace root and do not write directly to Almanac's
+research ledger.
 
 The durable storage model can remain general. For example,
 `add_experiment_comment` may create an `ExperimentActivity(kind="comment")`.
@@ -23,10 +29,13 @@ The agent-facing tool name should still describe the product action directly.
 
 ## Required Checks
 
-- Put each durable agent tool in its own ownership folder:
+- Put each durable Almanac ledger tool in its own ownership folder:
   `tools/<domain>/<tool_name>/{tool.py,models.py,__init__.py}`.
-- Build tools by subclassing `BaseAlmanacTool` and exposing `.as_tool()` through
-  a `FunctionToolset`, following the reference pattern from the Mem backend.
+- Build Almanac ledger tools by subclassing `BaseAlmanacTool` and exposing
+  `.as_tool()` through a `FunctionToolset`.
+- Prefer maintained package toolsets over hand-rolled wrappers for generic
+  workspace operations such as shell execution, file reads, file edits, glob,
+  and grep.
 - Tool arguments and returns should be typed Pydantic models or concrete
   Pydantic-compatible primitives. Avoid unstructured catch-all payloads unless
   the domain object itself has a payload field.

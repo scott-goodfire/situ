@@ -16,6 +16,10 @@ run = "./commands/check.sh"
 description = "Run Almanac eval suites"
 run = "./commands/evals.sh"
 
+[tasks.e2e]
+description = "Run live Almanac Playwright smoke tests"
+run = "./commands/e2e-tests.sh"
+
 [tasks."evals:json"]
 description = "Run Almanac eval suites and print JSON"
 run = "./commands/evals-json.sh"
@@ -67,10 +71,6 @@ run = "./commands/storybook-screenshots.sh"
 [tasks."dev:harness"]
 description = "Run the Python harness JSON-RPC stdio server"
 run = "./commands/dev-harness.sh"
-
-[tasks."example:toy"]
-description = "Run the toy autoresearch vertical slice"
-run = "./commands/dev-tui.sh"
 
 [tasks."protocol:generate"]
 description = "Generate JSON Schema and TypeScript protocol types"

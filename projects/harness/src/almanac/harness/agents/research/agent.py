@@ -8,7 +8,7 @@ from pydantic_ai import Agent, FunctionToolset
 from pydantic_ai.capabilities.abstract import AbstractCapability
 from pydantic_ai.models import Model
 
-from ...tools import build_research_toolset
+from ...tools import build_research_toolset, build_workspace_toolset
 from ...tools.common import AlmanacToolDeps
 from ..common import AlmanacAgentContext, AlmanacAgentPrompt, BaseAlmanacAgent
 from .prompt import RESEARCH_AGENT_INSTRUCTIONS, build_research_agent_user_prompt
@@ -51,7 +51,10 @@ class ResearchAgent(
         prompt: AlmanacAgentPrompt,
     ) -> Agent[AlmanacToolDeps, ResearchAgentOutput]:
         _ = (context, prompt)
-        toolsets = list(self.toolsets) or [build_research_toolset()]
+        toolsets = list(self.toolsets) or [
+            build_research_toolset(),
+            build_workspace_toolset(),
+        ]
         return Agent[AlmanacToolDeps, ResearchAgentOutput](
             name=RESEARCH_AGENT_NAME,
             model=self.model,

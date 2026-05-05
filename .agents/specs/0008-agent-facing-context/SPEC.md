@@ -75,15 +75,22 @@ The compact session context, exposed to agents through tools such as
 
 Agent-facing write tools should stay close to the product models:
 `create_hypothesis`, `update_hypothesis`, `create_experiment`,
-`update_experiment`, `run_experiment`, `link_hypothesis_experiment`,
-`add_hypothesis_comment`, and `add_experiment_comment`. Comments are stored as
-`kind="comment"` activities internally, with optional payload metadata when a
-view or agent needs to distinguish results, concerns, plans, or interpretations.
+`update_experiment`, `link_hypothesis_experiment`, `add_hypothesis_comment`,
+and `add_experiment_comment`. Comments are stored as `kind="comment"`
+activities internally, with optional payload metadata when a view or agent
+needs to distinguish results, concerns, plans, or interpretations.
 
-`run_experiment` is the bridge between agent intent and harness-owned effects:
-the agent can request a concrete experiment, but the harness still owns worker
-execution, result comments, automated concern comments, status updates, and
-collection/event observability.
+Workspace interaction should come from a separate console toolset backed by the
+current repo path. The first slice should expose ordinary coding-agent tools
+such as `ls`, `read_file`, `write_file`, `edit_file`, `glob`, `grep`, and
+`execute`. Agents use those tools to inspect the project and run native
+commands described in `--context`.
+
+Command output should be preserved as plaintext evidence. Almanac should not
+deterministically parse arbitrary stdout into metrics or signals in the tool
+layer. If output matters, the agent records the raw text or an LLM-written
+interpretation as an experiment comment, linked back to the hypothesis and
+experiment being probed.
 
 ## Product Rule
 

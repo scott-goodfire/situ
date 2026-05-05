@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import re
 from typing import Any
 
 from almanac.protocol import ExperimentRunParams
@@ -80,7 +79,6 @@ def _run_experiment_impl(
     if session is None:
         raise ValueError(f"session not found: {deps.session_id}")
 
-    config = repos.project_config.get()
     objective_id = payload.objective_id or session.objective_id
     experiment_id = payload.experiment_id or _next_experiment_id(
         deps=deps,
@@ -147,7 +145,6 @@ def _run_experiment_impl(
             based_on=payload.based_on,
         ),
         on_progress=lambda notification: _record_worker_progress(deps, notification),
-        context=config.research_context if config else "",
     )
 
     _record_experiment_activity(
@@ -164,7 +161,7 @@ def _run_experiment_impl(
     )
 
     concerns = check_result(
-        known_signals=expected_signals(config.research_context if config else ""),
+        known_signals=[],
         baseline_score=baseline_score(deps, deps.session_id),
         signals=worker_result.signals,
         raw=worker_result.raw,
@@ -302,18 +299,6 @@ def baseline_score(deps: AlmanacToolDeps, session_id: str) -> float | None:
             if isinstance(value, int | float):
                 return float(value)
     return None
-
-
-def expected_signals(research_context: str) -> list[str]:
-    match = re.search(
-        r"(?:expected|known)\s+signals?\s*:\s*([^\n.]+)",
-        research_context,
-        flags=re.IGNORECASE,
-    )
-    if match is None:
-        return []
-    signals = re.split(r",|\band\b", match.group(1), flags=re.IGNORECASE)
-    return [signal.strip(" `.;") for signal in signals if signal.strip(" `.;")]
 
 
 def interpret_result(

@@ -4,6 +4,7 @@
   "type": "module",
   "packageManager": "bun@1.2.20",
   "workspaces": [
+    "projects/e2e_tests",
     "projects/session-server",
     "projects/tui",
     "projects/tui/packages/*",

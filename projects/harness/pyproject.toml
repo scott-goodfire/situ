@@ -6,6 +6,7 @@ dependencies = [
   "almanac-protocol",
   "dbos>=2.19.0",
   "logfire>=4.32.1",
+  "pydantic-ai-backend[console]>=0.2.5",
   "pydantic-ai[dbos]>=1.89.1",
   "pydantic-settings>=2.0.0",
 ]

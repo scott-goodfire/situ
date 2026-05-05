@@ -131,6 +131,7 @@ dependencies = [
     { name = "dbos" },
     { name = "logfire" },
     { name = "pydantic-ai", extra = ["dbos"] },
+    { name = "pydantic-ai-backend", extra = ["console"] },
     { name = "pydantic-settings" },
 ]
 
@@ -140,6 +141,7 @@ requires-dist = [
     { name = "dbos", specifier = ">=2.19.0" },
     { name = "logfire", specifier = ">=4.32.1" },
     { name = "pydantic-ai", extras = ["dbos"], specifier = ">=1.89.1" },
+    { name = "pydantic-ai-backend", extras = ["console"], specifier = ">=0.2.5" },
     { name = "pydantic-settings", specifier = ">=2.0.0" },
 ]
 
@@ -290,6 +292,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/74/ac/cd55f886e17b6b952dbc95b792d3645a73d58586a1400ababe54406073bd/botocore-1.43.3.tar.gz", hash = "sha256:eac6da0fffccf87888ebf4d89f0b2378218a707efa748cd955b838995e944695", size = 15308705, upload-time = "2026-05-04T19:33:56.28Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/be/99/1d9e296edf244f47e0508032f20999f8fd40704dd3c5b601fed099424eb6/botocore-1.43.3-py3-none-any.whl", hash = "sha256:ec0769eb0f7c5034856bb406a92698dbc02a3d4be0f78a384747106b161d8ea3", size = 14989027, upload-time = "2026-05-04T19:33:50.81Z" },
+]
+
+[[package]]
+name = "bracex"
+version = "2.6"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/63/9a/fec38644694abfaaeca2798b58e276a8e61de49e2e37494ace423395febc/bracex-2.6.tar.gz", hash = "sha256:98f1347cd77e22ee8d967a30ad4e310b233f7754dbf31ff3fceb76145ba47dc7", size = 26642, upload-time = "2025-06-22T19:12:31.254Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/9d/2a/9186535ce58db529927f6cf5990a849aa9e052eea3e2cfefe20b9e1802da/bracex-2.6-py3-none-any.whl", hash = "sha256:0b0049264e7340b3ec782b5cb99beb325f36c3782a32e36e876452fd49a09952", size = 11508, upload-time = "2025-06-22T19:12:29.781Z" },
 ]
 
 [[package]]
@@ -1887,6 +1898,24 @@ dbos = [
 ]
 
 [[package]]
+name = "pydantic-ai-backend"
+version = "0.2.5"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pydantic" },
+    { name = "wcmatch" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/e9/58/aaeef3ed8b01fba056929a37f639d530d30211fe939767d14e2c735267a4/pydantic_ai_backend-0.2.5.tar.gz", hash = "sha256:3bf78015b034e118856dfdd9fe878bb0a165f72955647a8dad09b05fb38343d3", size = 13773682, upload-time = "2026-04-20T21:34:10.414Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ad/59/bf060ddaf43c51b88abcb0026c627fbb696f93e2010316db879575db62ba/pydantic_ai_backend-0.2.5-py3-none-any.whl", hash = "sha256:8b9d6d0e584ca130db7eb11b3fd6da8411f1d866c05065f808e3976fb8f83f2b", size = 58953, upload-time = "2026-04-20T21:34:08.726Z" },
+]
+
+[package.optional-dependencies]
+console = [
+    { name = "pydantic-ai-slim" },
+]
+
+[[package]]
 name = "pydantic-ai-slim"
 version = "1.89.1"
 source = { registry = "https://pypi.org/simple" }
@@ -2811,6 +2840,18 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/4f/55/2af26693fd15165c4ff7857e38330e1b61ab8c37d15dc79118cdba115b7a/watchfiles-1.1.1-cp314-cp314t-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:8c91ed27800188c2ae96d16e3149f199d62f86c7af5f5f4d2c61a3ed8cd3666c", size = 455072, upload-time = "2025-10-14T15:05:48.928Z" },
     { url = "https://files.pythonhosted.org/packages/66/1d/d0d200b10c9311ec25d2273f8aad8c3ef7cc7ea11808022501811208a750/watchfiles-1.1.1-cp314-cp314t-musllinux_1_1_aarch64.whl", hash = "sha256:311ff15a0bae3714ffb603e6ba6dbfba4065ab60865d15a6ec544133bdb21099", size = 629104, upload-time = "2025-10-14T15:05:49.908Z" },
     { url = "https://files.pythonhosted.org/packages/e3/bd/fa9bb053192491b3867ba07d2343d9f2252e00811567d30ae8d0f78136fe/watchfiles-1.1.1-cp314-cp314t-musllinux_1_1_x86_64.whl", hash = "sha256:a916a2932da8f8ab582f242c065f5c81bed3462849ca79ee357dd9551b0e9b01", size = 622112, upload-time = "2025-10-14T15:05:50.941Z" },
+]
+
+[[package]]
+name = "wcmatch"
+version = "10.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "bracex" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/79/3e/c0bdc27cf06f4e47680bd5803a07cb3dfd17de84cde92dd217dcb9e05253/wcmatch-10.1.tar.gz", hash = "sha256:f11f94208c8c8484a16f4f48638a85d771d9513f4ab3f37595978801cb9465af", size = 117421, upload-time = "2025-06-22T19:14:02.49Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/eb/d8/0d1d2e9d3fabcf5d6840362adcf05f8cf3cd06a73358140c3a97189238ae/wcmatch-10.1-py3-none-any.whl", hash = "sha256:5848ace7dbb0476e5e55ab63c6bbd529745089343427caa5537f230cc01beb8a", size = 39854, upload-time = "2025-06-22T19:14:00.978Z" },
 ]
 
 [[package]]

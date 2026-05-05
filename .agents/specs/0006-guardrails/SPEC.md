@@ -12,11 +12,17 @@ The current slice should catch obvious issues without requiring the user to
 enumerate everything up front:
 
 - Evaluation failed.
-- Expected signal is missing.
-- Signal type or shape changed.
+- Command failed or timed out.
+- Command output is missing, malformed for the stated context, or too
+  ambiguous to support a conclusion.
 - Evaluation or measurement artifacts changed unexpectedly.
 - Sample count or eval scope changed unexpectedly when detectable.
 - Result improved suspiciously much without corroborating context.
+
+The first slice should not deterministically parse arbitrary command output
+into signals. When a project prints plaintext, agents should preserve the
+output and use LLM review plus obvious process checks to decide whether a
+concern comment is warranted.
 
 ## Suspicious Results
 

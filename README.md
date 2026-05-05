@@ -18,7 +18,7 @@ Start here:
 
 ```bash
 mise run update
-mise run example:toy
+mise run start
 ```
 
 Equivalent start path:
@@ -45,7 +45,6 @@ mise run check
 mise run protocol:generate
 mise run dev:harness
 mise run dev:tui
-mise run example:toy
 mise run start
 ```
 
@@ -54,6 +53,7 @@ mise run start
 The Python harness now initializes:
 
 - Pydantic AI for typed agent planning
+- pydantic-ai-backend workspace tools for bash/filesystem/search/edit access
 - DBOS for durable agent execution state
 - Logfire for Pydantic AI / DBOS / harness traces
 
@@ -112,9 +112,7 @@ projects/tui                  TypeScript Ink TUI
 shared/python/protocol        Pydantic protocol source of truth
 shared/typescript/protocol    generated TypeScript protocol types
 shared/typescript/rpc-client  JSON-RPC stdio client
-workers/examples/toy_worker   deterministic toy worker
-workers/local_command_worker  wrapper for JSON eval commands in a workspace
-examples/toy-eval             toy eval fixture
+workers/local_command_worker  legacy JSON-RPC worker scaffold
 examples/micrograd-sandbox    external workspace smoke-test recipe
 protocol/json-schema          generated JSON Schema contracts
 ```

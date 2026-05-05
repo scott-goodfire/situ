@@ -49,9 +49,9 @@ Objective
   -> session starts
   -> hypothesis is created or selected
   -> experiment is created and linked to one or more hypotheses
-  -> worker runs experiment
-  -> result comment is recorded
-  -> automated trust checks record concern comments when needed
+  -> agent runs project-native commands with workspace tools
+  -> plaintext command evidence is recorded as a result comment
+  -> lightweight trust or validity concerns are recorded when available
   -> interpretation comment feeds the next proposal round
 ```
 
@@ -66,8 +66,8 @@ When a result looks invalid or untrustworthy:
 ```text
 Experiment result arrives
   -> result comment is recorded
-  -> automated trust checks run
-  -> concern comment is recorded
+  -> lightweight trust checks or LLM review flag concerns when available
+  -> concern comment is recorded if the evidence looks invalid
   -> artifact references are preserved
   -> LLM/human interpretation can decide what it means
   -> TUI shows the concern in context

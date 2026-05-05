@@ -239,5 +239,10 @@ the reference backend:
   becomes too awkward.
 
 The session loop should now be agent/tool-shaped: the agent inspects session
-state, requests concrete experiments through `run_experiment`, and the harness
-owns worker execution plus result/concern activity writes.
+state, creates or updates experiments in the Almanac ledger, runs
+project-native commands through the workspace console tools, and records
+plaintext command evidence plus interpretation as experiment activity.
+
+Almanac should not hide command execution behind deterministic stdout parsers.
+The worker is the Pydantic agent using its bash/filesystem toolkit; the ledger
+is the durable observability layer around that work.

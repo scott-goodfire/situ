@@ -13,8 +13,8 @@ autoresearch session and whether the activity is trustworthy?
 
 ## Shape
 
-Use a code-first eval harness inspired by the Mem backend eval pattern, adapted
-here as:
+Use a code-first eval harness with explicit fixture worlds, evaluators, eval
+groups, and runner code:
 
 ```text
 evals/

@@ -46,7 +46,8 @@ When wiring changes touch the harness runtime, run at least one TUI smoke:
 ./commands/start.sh . --max-experiments 1
 ```
 
-When worker/eval-command behavior changes, also run an external workspace smoke:
+When workspace command execution behavior changes, also run an external
+workspace smoke:
 
 ```bash
 tmp=$(mktemp -d /private/tmp/almanac-ext.XXXXXX)

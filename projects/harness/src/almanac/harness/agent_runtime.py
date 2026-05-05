@@ -19,7 +19,7 @@ from .config import DEFAULTS, AlmanacSecrets
 from .core.dbos.runtime import configure_dbos, launch_dbos
 from .observability import configure_observability, span
 from .repositories import Repositories
-from .tools import build_research_toolset
+from .tools import build_research_toolset, build_workspace_toolset
 from .tools.common import AlmanacToolDeps
 
 
@@ -43,7 +43,10 @@ class AgentRuntime:
             deps_type=AlmanacToolDeps,
             output_type=AgentPlan,
             instructions=RESEARCH_AGENT_INSTRUCTIONS,
-            toolsets=[build_research_toolset()],
+            toolsets=[
+                build_research_toolset(),
+                build_workspace_toolset(),
+            ],
             name=RESEARCH_AGENT_NAME,
         )
         self.dbos_agent = DBOSAgent(self.agent, name=RESEARCH_AGENT_NAME)
@@ -58,7 +61,11 @@ class AgentRuntime:
         session_id: str | None = None,
         repos: Repositories | None = None,
     ) -> AgentPlan:
-        prompt = self._prompt(config=config, objective=objective, current_state=current_state)
+        prompt = self._prompt(
+            config=config,
+            objective=objective,
+            current_state=current_state,
+        )
         message_history = None
         conversation_id = None
         tool_deps = AlmanacToolDeps(
