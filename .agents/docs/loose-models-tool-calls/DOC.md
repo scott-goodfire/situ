@@ -95,14 +95,19 @@ proposal text
 
 Useful examples:
 
+- Get session state
+- Create or update hypothesis
+- Create or update experiment
+- Link hypothesis and experiment
+- Add hypothesis or experiment comment
 - Propose next research step
 - Run baseline
 - Run experiment
 - Invoke worker
 - Parse worker output
 - Inspect diff
-- Record result activity
-- Record concern activity
+- Record result activity as a harness-owned effect
+- Record concern activity as a harness-owned effect
 - Update session/objective state
 
 The harness should own which tools exist and whether a call is allowed. The LLM
@@ -212,7 +217,10 @@ the reference backend:
   error normalization, and conversion to a Pydantic AI tool.
 - `AlmanacToolDeps` carries the session context, repositories, worker manager, and
   event emitter into tool calls.
-- Toolsets group related tools and carry tool-specific instructions.
+- Toolsets group related tools and carry tool-specific instructions. The
+  agent-facing surface should be explicit and model-shaped: `get_session`,
+  hypothesis/experiment CRUD, hypothesis-experiment linking, comment tools, and
+  artifact tools.
 - `AgentMessageHistoryRepository` stores Pydantic AI message history as the
   durable transcript for context replay and later inspection.
 - Capabilities/hooks emit live tool-call observability events; derived tool-call

@@ -29,13 +29,14 @@ def main(argv: list[str] | None = None) -> int:
 
     if not args.verbose:
         quiet_noisy_loggers()
-    configure_eval_observability()
 
     eval_classes = collect_eval_classes(Path(args.path))
     if args.list:
         for name, cls in eval_classes:
             print(f"{name}\t{cls.__module__}.{cls.__name__}")
         return 0
+
+    configure_eval_observability()
 
     if not eval_classes:
         print(f"No eval groups found in {args.path}", file=sys.stderr)

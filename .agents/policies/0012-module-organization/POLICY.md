@@ -63,7 +63,7 @@ projects/harness/src/almanac/harness/
     collections/
       schemas.py
       service.py
-    agent_context/
+    current_state/
       schemas.py
       service.py
     sessions/

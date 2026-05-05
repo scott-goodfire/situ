@@ -19,6 +19,12 @@ Run one file:
 ./commands/evals.sh evals/suites/agent_planning/micrograd/eval_group.py
 ```
 
+Run the basic research-tool evals:
+
+```bash
+./commands/evals.sh evals/suites/tool_use/research_tools/eval_group.py
+```
+
 Run one case:
 
 ```bash
@@ -67,7 +73,15 @@ evals/
       micrograd/
         cases.py
         eval_group.py
+    tool_use/
+      research_tools/
+        cases.py
+        eval_group.py
 ```
 
 The first suite uses a mocked micrograd world. It is intentionally deterministic
 so prompt/tool behavior can be improved without needing a live sandbox repo.
+
+The `tool_use.research_session` suite uses the actual Almanac research toolset
+against temporary SQLite session worlds. Each case asks the model to exercise
+one tool and then checks captured tool calls plus durable session state.

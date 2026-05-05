@@ -7,7 +7,7 @@ status: active
 
 ## Applies To
 
-Product-significant changes, new surfaces, domain model changes, and run
+Product-significant changes, new surfaces, domain model changes, and runtime
 behavior changes.
 
 ## Rule

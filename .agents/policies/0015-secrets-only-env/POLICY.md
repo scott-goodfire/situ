@@ -15,7 +15,7 @@ smoke commands, and any user-facing environment variable.
 User-facing environment variables should be secrets only.
 
 Use `pydantic-settings` for secret loading and validation. Keep non-secret
-defaults in typed code config, and keep run/project inputs in CLI arguments,
+defaults in typed code config, and keep session/project inputs in CLI arguments,
 stored project config, or durable records.
 
 The current user-facing secret env vars are:

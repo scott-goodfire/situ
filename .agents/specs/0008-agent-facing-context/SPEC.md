@@ -25,7 +25,7 @@ The exact interface can evolve, but the product should support commands like:
 
 ```bash
 almanac status --json
-almanac agent-context --json
+almanac session --json
 almanac hypotheses --json
 almanac experiments --json
 almanac events --json
@@ -34,9 +34,10 @@ almanac events --json
 Defer richer guidance and proposal-context commands until the basic loop is
 working.
 
-## Agent Context
+## Session Context
 
-`agent-context` should include:
+The compact session context, exposed to agents through tools such as
+`get_session`, should include:
 
 - Objective
 - Evaluation context
@@ -49,6 +50,13 @@ working.
 - Recent concerns/results/decisions
 - Artifact references
 - Internal events when useful
+
+Agent-facing write tools should stay close to the product models:
+`create_hypothesis`, `update_hypothesis`, `create_experiment`,
+`update_experiment`, `link_hypothesis_experiment`,
+`add_hypothesis_comment`, and `add_experiment_comment`. Comments can be stored
+as typed activities internally, but the tool surface should not ask the model to
+choose generic activity kinds for routine collaboration.
 
 ## Product Rule
 

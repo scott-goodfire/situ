@@ -3,7 +3,7 @@ from __future__ import annotations
 from pydantic import BaseModel, ConfigDict
 
 from ...repositories import Repositories
-from .schemas import NextSessionIdSchema
+from .schemas import NextSessionIdSchema, SessionGraphSchema
 
 
 class SessionsService(BaseModel):
@@ -19,4 +19,41 @@ class SessionsService(BaseModel):
         return NextSessionIdSchema(
             session_id=f"session_{session_number:04d}",
             session_number=session_number,
+        )
+
+    def get_session(self, session_id: str) -> SessionGraphSchema:
+        session = self.repos.sessions.get(session_id)
+        objective = (
+            self.repos.objectives.get(session.objective_id)
+            if session is not None
+            else None
+        )
+        hypotheses = (
+            self.repos.hypotheses.list_for_objective(objective.id)
+            if objective is not None
+            else []
+        )
+        experiments = self.repos.experiments.list_for_session(session_id)
+        hypothesis_ids = {hypothesis.id for hypothesis in hypotheses}
+        experiment_ids = {experiment.id for experiment in experiments}
+        links = [
+            link
+            for link in self.repos.hypothesis_experiment_links.list_all()
+            if link.hypothesis_id in hypothesis_ids or link.experiment_id in experiment_ids
+        ]
+        return SessionGraphSchema(
+            config=self.repos.project_config.get(),
+            session=session,
+            objective=objective,
+            hypotheses=hypotheses,
+            experiments=experiments,
+            hypothesis_experiment_links=links,
+            hypothesis_activities=self.repos.hypothesis_activities.list_for_session(
+                session_id
+            ),
+            experiment_activities=self.repos.experiment_activities.list_for_session(
+                session_id
+            ),
+            artifacts=self.repos.artifacts.list_for_session(session_id),
+            events=self.repos.events.list_for_session(session_id),
         )

@@ -48,6 +48,53 @@ export type NormalizedBucketDatum = BucketDatum & {
   ratio: number;
 };
 
+export type HeatmapCell = {
+  id: string;
+  rowId: string;
+  columnId: string;
+  value: number;
+  label?: string;
+};
+
+export type HeatmapRow = {
+  id: string;
+  label: string;
+};
+
+export type HeatmapColumn = {
+  id: string;
+  label: string;
+};
+
+export type HeatmapMatrix = {
+  id: string;
+  label: string;
+  rows: HeatmapRow[];
+  columns: HeatmapColumn[];
+  cells: HeatmapCell[];
+  valueLabel?: string;
+};
+
+export type NormalizedHeatmapCell = HeatmapCell & {
+  ratio: number;
+  signedRatio: number;
+};
+
+export type NormalizedHeatmapMatrix = HeatmapMatrix & {
+  cells: NormalizedHeatmapCell[];
+};
+
+export type SignedContribution = {
+  id: string;
+  label: string;
+  value: number;
+  group?: string;
+};
+
+export type NormalizedSignedContribution = SignedContribution & {
+  magnitudeRatio: number;
+};
+
 export function summarizeMetricSeries({
   series,
 }: {
@@ -124,6 +171,74 @@ export function normalizeBuckets({
     ratio: normalizedBucketRatio({
       value: bucket.value,
       maxValue,
+    }),
+  }));
+}
+
+export function normalizeHeatmapMatrix({
+  matrix,
+}: {
+  matrix: HeatmapMatrix;
+}): NormalizedHeatmapMatrix {
+  const maxMagnitude = maxMagnitudeFor({
+    values: matrix.cells.map((cell) => cell.value),
+  });
+
+  return {
+    ...matrix,
+    cells: matrix.cells.map((cell) => ({
+      ...cell,
+      ratio: normalizedHeatmapRatio({
+        value: cell.value,
+        maxMagnitude,
+      }),
+      signedRatio: normalizedSignedRatio({
+        value: cell.value,
+        maxMagnitude,
+      }),
+    })),
+  };
+}
+
+export function heatmapCellFor({
+  matrix,
+  rowId,
+  columnId,
+}: {
+  matrix: NormalizedHeatmapMatrix;
+  rowId: string;
+  columnId: string;
+}): NormalizedHeatmapCell | undefined {
+  return lodash.find(
+    matrix.cells,
+    (cell) => cell.rowId === rowId && cell.columnId === columnId,
+  );
+}
+
+export function normalizeSignedContributions({
+  contributions,
+  limit,
+}: {
+  contributions: SignedContribution[];
+  limit?: number;
+}): NormalizedSignedContribution[] {
+  const sortedContributions = lodash.orderBy(
+    contributions,
+    [(contribution) => Math.abs(contribution.value)],
+    ["desc"],
+  );
+  const visibleContributions = limit
+    ? sortedContributions.slice(0, limit)
+    : sortedContributions;
+  const maxMagnitude = maxMagnitudeFor({
+    values: visibleContributions.map((contribution) => contribution.value),
+  });
+
+  return visibleContributions.map((contribution) => ({
+    ...contribution,
+    magnitudeRatio: normalizedMagnitudeRatio({
+      value: contribution.value,
+      maxMagnitude,
     }),
   }));
 }
@@ -212,6 +327,22 @@ export function toneForTrend({
   return "neutral";
 }
 
+export function toneForSignedValue({
+  value,
+}: {
+  value: number;
+}): ChartTone {
+  if (value > 0) {
+    return "success";
+  }
+
+  if (value < 0) {
+    return "danger";
+  }
+
+  return "neutral";
+}
+
 function metricValues({ points }: { points: MetricPoint[] }): number[] {
   return points
     .map((point) => point.value)
@@ -232,6 +363,14 @@ function maxValueFor({ values }: { values: number[] }): number | undefined {
   }
 
   return lodash.max(values);
+}
+
+function maxMagnitudeFor({ values }: { values: number[] }): number | undefined {
+  const magnitudes = values
+    .map((value) => Math.abs(value))
+    .filter((value) => Number.isFinite(value));
+
+  return maxValueFor({ values: magnitudes });
 }
 
 function percentChange({
@@ -305,4 +444,46 @@ function normalizedBucketRatio({
   }
 
   return value / maxValue;
+}
+
+function normalizedHeatmapRatio({
+  value,
+  maxMagnitude,
+}: {
+  value: number;
+  maxMagnitude: number | undefined;
+}): number {
+  if (!maxMagnitude || maxMagnitude <= 0) {
+    return 0.5;
+  }
+
+  return (value + maxMagnitude) / (maxMagnitude * 2);
+}
+
+function normalizedSignedRatio({
+  value,
+  maxMagnitude,
+}: {
+  value: number;
+  maxMagnitude: number | undefined;
+}): number {
+  if (!maxMagnitude || maxMagnitude <= 0) {
+    return 0;
+  }
+
+  return value / maxMagnitude;
+}
+
+function normalizedMagnitudeRatio({
+  value,
+  maxMagnitude,
+}: {
+  value: number;
+  maxMagnitude: number | undefined;
+}): number {
+  if (!maxMagnitude || maxMagnitude <= 0) {
+    return 0;
+  }
+
+  return Math.abs(value) / maxMagnitude;
 }

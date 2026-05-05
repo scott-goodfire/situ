@@ -11,7 +11,9 @@ export {
   type CommandMessage,
 } from "./components/command-input/command-input.js";
 export { ActivitySection } from "./components/activity-section/activity-section.js";
+export { ContributionBars } from "./components/contribution-bars/contribution-bars.js";
 export { ExperimentsSection } from "./components/experiments-section/experiments-section.js";
+export { HeatmapGrid } from "./components/heatmap-grid/heatmap-grid.js";
 export { HypothesesSection } from "./components/hypotheses-section/hypotheses-section.js";
 export { MetricTrend } from "./components/metric-trend/metric-trend.js";
 export { NowSection } from "./components/now-section/now-section.js";

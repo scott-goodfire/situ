@@ -48,9 +48,10 @@ The agent-facing tool name should still describe the product action directly.
   SQLite.
 - Toolsets should include concise instructions that explain when to read state
   and when to write comments.
-- Tool names should avoid implementation phrasing like `agent_context`,
-  `record_finding`, or `record_activity` when a product-model operation is
-  clearer.
+- Tool names should avoid obsolete or overly generic phrasing like
+  `record_finding` or `record_activity` when a product-model operation is
+  clearer. A compact context reader is acceptable in the slim slice, but prefer
+  names that make the session/objective scope obvious.
 
 ## Red Flags
 

@@ -70,7 +70,7 @@ For the first collection-backed slice, the sync surface is:
 Full current-state composition should live in harness API services and schemas,
 not in a snapshot repository or durable snapshot model. UI work should use
 collection-shaped bootstrap data and row-level upsert notifications. Agent code
-should use explicit agent-context APIs. This keeps the TUI and future web UI
+should use explicit session/objective APIs. This keeps the TUI and future web UI
 aligned with a shared TypeScript collection layer without requiring a full sync
 engine yet.
 
@@ -85,7 +85,7 @@ infrastructure under the Python harness, not as a new product surface.
 
 For the MVP:
 
-- Pydantic AI may produce compact, typed agent context.
+- Pydantic AI may inspect compact, typed session context.
 - DBOS may wrap agent execution so model calls and tool execution can become
   durable workflow steps.
 - Logfire may observe harness, DBOS, and Pydantic AI spans.

@@ -1,0 +1,42 @@
+from __future__ import annotations
+
+from typing import Any
+
+from pydantic_ai import RunContext
+
+from ...common import AlmanacToolDeps, BaseAlmanacTool
+from .models import AddHypothesisCommentResult
+
+
+class AddHypothesisCommentTool(
+    BaseAlmanacTool[AlmanacToolDeps, AddHypothesisCommentResult]
+):
+    name = "add_hypothesis_comment"
+    result_type = AddHypothesisCommentResult
+    sequential = True
+
+    def execute_sync(
+        self,
+        *,
+        ctx: RunContext[AlmanacToolDeps],
+        hypothesis_id: str,
+        comment: str,
+        actor: str = "agent",
+        payload: dict[str, Any] | None = None,
+        **_kwargs: Any,
+    ) -> AddHypothesisCommentResult:
+        """Add a human-readable comment to a hypothesis activity trail."""
+        activity = ctx.deps.repos.hypothesis_activities.add(
+            hypothesis_id=hypothesis_id,
+            session_id=ctx.deps.session_id,
+            actor=actor,
+            kind="comment",
+            body=comment,
+            payload=payload or {},
+        )
+        ctx.deps.record_event(
+            "hypothesis.comment_added",
+            comment,
+            payload={"activity_id": activity.id, "hypothesis_id": hypothesis_id},
+        )
+        return AddHypothesisCommentResult(success=True, activity=activity.model_dump())

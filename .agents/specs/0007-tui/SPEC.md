@@ -47,7 +47,7 @@ Experiments
 Recent Activity
   result   baseline score 0.710 latency 100ms
   result   A improved score to 0.724
-  concern  bad result changed evidence shape
+  concern  bad result changed result shape
   update   A+C should be tried because A and C were individually promising
 
 Timeline

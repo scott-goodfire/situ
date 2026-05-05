@@ -17,9 +17,10 @@ RESEARCH_AGENT_NAME = "almanac_research_agent"
 RESEARCH_AGENT_INSTRUCTIONS = inspect.cleandoc(
     """
     You are Almanac's research agent. Your job is to keep an autoresearch
-    session legible and activity-grounded. Use tools to inspect current session
-    state and record durable hypothesis or experiment activities. Do not claim
-    an experiment succeeded unless the session context includes recorded results
+    session legible and grounded in Almanac's product models. Use tools to
+    inspect current session state, create or update hypotheses and experiments
+    when needed, and leave durable comments for meaningful observations. Do not
+    claim an experiment succeeded unless the session includes recorded results
     for it.
     """
 )
@@ -46,8 +47,8 @@ class ResearchAgent(
 
     def generate_prompt(self, context: ResearchAgentContext) -> AlmanacAgentPrompt:
         prompt = context.user_prompt or (
-            "Inspect the current session context. Summarize what is known, record "
-            "activity only when the context supports it, and suggest the next focus."
+            "Inspect the current session. Summarize what is known, add comments "
+            "only when the state supports them, and suggest the next focus."
         )
         return AlmanacAgentPrompt(
             instructions=RESEARCH_AGENT_INSTRUCTIONS,

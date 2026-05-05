@@ -5,7 +5,9 @@ import { stories as appFrameStories } from "../components/app-frame/app-frame.st
 import { stories as bucketBarsStories } from "../components/bucket-bars/bucket-bars.stories.js";
 import { stories as choicePromptStories } from "../components/choice-prompt/choice-prompt.stories.js";
 import { stories as commandInputStories } from "../components/command-input/command-input.stories.js";
+import { stories as contributionBarsStories } from "../components/contribution-bars/contribution-bars.stories.js";
 import { stories as experimentsSectionStories } from "../components/experiments-section/experiments-section.stories.js";
+import { stories as heatmapGridStories } from "../components/heatmap-grid/heatmap-grid.stories.js";
 import { stories as hypothesesSectionStories } from "../components/hypotheses-section/hypotheses-section.stories.js";
 import { stories as metricTrendStories } from "../components/metric-trend/metric-trend.stories.js";
 import { stories as nowSectionStories } from "../components/now-section/now-section.stories.js";
@@ -20,6 +22,8 @@ export const allStories: TuiStory[] = [
   ...bucketBarsStories,
   ...choicePromptStories,
   ...commandInputStories,
+  ...contributionBarsStories,
+  ...heatmapGridStories,
   ...metricTrendStories,
   ...sessionSectionStories,
   ...nowSectionStories,

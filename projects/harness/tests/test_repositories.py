@@ -3,8 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from almanac.harness.api.agent_context import AgentContextService
 from almanac.harness.api.current_state import CurrentStateService
+from almanac.harness.api.sessions import SessionsService
 from almanac.harness.core.db import Database
 from almanac.harness.records import (
     ExperimentRecord,
@@ -353,7 +353,7 @@ def test_current_state_api_composes_protocol_shaped_state(repos: Repositories) -
     assert [event.type for event in current_state.events] == ["experiment.completed"]
 
 
-def test_agent_context_api_composes_agent_context(repos: Repositories) -> None:
+def test_sessions_api_composes_session_graph(repos: Repositories) -> None:
     create_experiment(repos)
     repos.hypothesis_experiment_links.create(
         hypothesis_id="hyp_0001",
@@ -374,16 +374,16 @@ def test_agent_context_api_composes_agent_context(repos: Repositories) -> None:
         body="A improved score.",
     )
 
-    context = AgentContextService(repos=repos).get("session_0001")
+    graph = SessionsService(repos=repos).get_session("session_0001")
 
-    assert context.config is not None
-    assert context.objective is not None
-    assert context.session is not None
-    assert context.session.id == "session_0001"
-    assert [hypothesis.id for hypothesis in context.active_hypotheses] == ["hyp_0001"]
-    assert [experiment.id for experiment in context.recent_experiments] == [
+    assert graph.config is not None
+    assert graph.objective is not None
+    assert graph.session is not None
+    assert graph.session.id == "session_0001"
+    assert [hypothesis.id for hypothesis in graph.hypotheses] == ["hyp_0001"]
+    assert [experiment.id for experiment in graph.experiments] == [
         "exp_session_0001_a"
     ]
-    assert [activity.kind for activity in context.recent_experiment_activities] == [
+    assert [activity.kind for activity in graph.experiment_activities] == [
         "result"
     ]
