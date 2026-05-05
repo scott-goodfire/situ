@@ -1,18 +1,19 @@
 from __future__ import annotations
 
+from typing import Literal
+
 from ..base import DbRecord
+
+
+WorkStatus = Literal["open", "active", "closed"]
 
 
 class ExperimentRecord(DbRecord):
     id: str
-    run_id: str
-    status: str
-    intent: str
-    change_summary: str
-    components: list[str]
-    based_on: list[str]
-    suspicious: bool = False
-    suspicious_reason: str | None = None
-    note: str = ""
+    objective_id: str
+    status: WorkStatus
+    title: str
+    summary: str
+    created_in_session_id: str | None = None
     created_at: str
     updated_at: str

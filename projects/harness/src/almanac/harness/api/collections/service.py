@@ -16,8 +16,14 @@ class CollectionsService(BaseModel):
         events = self.repos.events.list_all()
         return CollectionsBootstrapSchema(
             cursor=self.cursor(events),
-            runs=self.repos.runs.list_all(),
+            objectives=self.repos.objectives.list_all(),
+            sessions=self.repos.sessions.list_all(),
+            hypotheses=self.repos.hypotheses.list_all(),
             experiments=self.repos.experiments.list_all(),
+            hypothesis_experiment_links=self.repos.hypothesis_experiment_links.list_all(),
+            hypothesis_activities=self.repos.hypothesis_activities.list_all(),
+            experiment_activities=self.repos.experiment_activities.list_all(),
+            artifacts=self.repos.artifacts.list_all(),
             events=events,
         )
 

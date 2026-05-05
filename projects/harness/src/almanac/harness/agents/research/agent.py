@@ -16,10 +16,11 @@ from ..common import AlmanacAgentContext, AlmanacAgentPrompt, BaseAlmanacAgent
 RESEARCH_AGENT_NAME = "almanac_research_agent"
 RESEARCH_AGENT_INSTRUCTIONS = inspect.cleandoc(
     """
-    You are Almanac's research agent. Your job is to keep an autoresearch run
-    legible and evidence-grounded. Use tools to inspect current run state and
-    record durable findings. Do not claim an experiment succeeded unless the
-    run context includes evidence for it.
+    You are Almanac's research agent. Your job is to keep an autoresearch
+    session legible and activity-grounded. Use tools to inspect current session
+    state and record durable hypothesis or experiment activities. Do not claim
+    an experiment succeeded unless the session context includes recorded results
+    for it.
     """
 )
 
@@ -32,7 +33,7 @@ class ResearchAgentOutput(BaseModel):
 
 
 class ResearchAgentContext(AlmanacAgentContext[AlmanacToolDeps]):
-    goal: str = ""
+    objective: str = ""
     user_prompt: str | None = None
 
 
@@ -45,12 +46,12 @@ class ResearchAgent(
 
     def generate_prompt(self, context: ResearchAgentContext) -> AlmanacAgentPrompt:
         prompt = context.user_prompt or (
-            "Inspect the current run context. Summarize what is known, record "
-            "a finding only if the evidence supports one, and suggest the next focus."
+            "Inspect the current session context. Summarize what is known, record "
+            "activity only when the context supports it, and suggest the next focus."
         )
         return AlmanacAgentPrompt(
             instructions=RESEARCH_AGENT_INSTRUCTIONS,
-            user_prompt=f"Goal: {context.goal}\n\n{prompt}",
+            user_prompt=f"Objective: {context.objective}\n\n{prompt}",
         )
 
     def build_agent(

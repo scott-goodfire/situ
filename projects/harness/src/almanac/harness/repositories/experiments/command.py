@@ -1,22 +1,19 @@
 from __future__ import annotations
 
-from pydantic import Field
-
 from ..base.command import RepositoryCommand
 
 
 class CreateExperiment(RepositoryCommand):
     experiment_id: str
-    run_id: str
-    intent: str
-    change_summary: str
-    components: list[str] = Field(default_factory=list)
-    based_on: list[str] = Field(default_factory=list)
+    objective_id: str
+    title: str
+    summary: str
+    created_in_session_id: str | None = None
+    status: str = "open"
 
 
 class UpdateExperiment(RepositoryCommand):
     experiment_id: str
-    status: str
-    suspicious: bool | None = None
-    suspicious_reason: str | None = None
-    note: str | None = None
+    title: str | None = None
+    summary: str | None = None
+    status: str | None = None

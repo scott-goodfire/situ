@@ -1,16 +1,24 @@
 {
   "additionalProperties": false,
   "properties": {
-    "run_id": {
-      "title": "Run Id",
+    "session_id": {
+      "title": "Session Id",
+      "type": "string"
+    },
+    "objective_id": {
+      "title": "Objective Id",
       "type": "string"
     },
     "experiment_id": {
       "title": "Experiment Id",
       "type": "string"
     },
-    "intent": {
-      "title": "Intent",
+    "title": {
+      "title": "Title",
+      "type": "string"
+    },
+    "summary": {
+      "title": "Summary",
       "type": "string"
     },
     "components": {
@@ -21,7 +29,6 @@
       "type": "array"
     },
     "based_on": {
-      "default": [],
       "items": {
         "type": "string"
       },
@@ -30,10 +37,11 @@
     }
   },
   "required": [
-    "run_id",
+    "session_id",
+    "objective_id",
     "experiment_id",
-    "intent",
-    "components"
+    "title",
+    "summary"
   ],
   "title": "ExperimentRunParams",
   "type": "object"

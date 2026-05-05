@@ -5,42 +5,28 @@
       "title": "Id",
       "type": "string"
     },
-    "run_id": {
-      "title": "Run Id",
+    "objective_id": {
+      "title": "Objective Id",
       "type": "string"
     },
     "status": {
+      "enum": [
+        "open",
+        "active",
+        "closed"
+      ],
       "title": "Status",
       "type": "string"
     },
-    "intent": {
-      "title": "Intent",
+    "title": {
+      "title": "Title",
       "type": "string"
     },
-    "change_summary": {
-      "title": "Change Summary",
+    "summary": {
+      "title": "Summary",
       "type": "string"
     },
-    "components": {
-      "items": {
-        "type": "string"
-      },
-      "title": "Components",
-      "type": "array"
-    },
-    "based_on": {
-      "items": {
-        "type": "string"
-      },
-      "title": "Based On",
-      "type": "array"
-    },
-    "suspicious": {
-      "default": false,
-      "title": "Suspicious",
-      "type": "boolean"
-    },
-    "suspicious_reason": {
+    "created_in_session_id": {
       "anyOf": [
         {
           "type": "string"
@@ -50,12 +36,7 @@
         }
       ],
       "default": null,
-      "title": "Suspicious Reason"
-    },
-    "note": {
-      "default": "",
-      "title": "Note",
-      "type": "string"
+      "title": "Created In Session Id"
     },
     "created_at": {
       "title": "Created At",
@@ -68,12 +49,10 @@
   },
   "required": [
     "id",
-    "run_id",
+    "objective_id",
     "status",
-    "intent",
-    "change_summary",
-    "components",
-    "based_on",
+    "title",
+    "summary",
     "created_at",
     "updated_at"
   ],

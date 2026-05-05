@@ -16,10 +16,10 @@ from almanac.protocol import (
     ExperimentRunParams,
     HarnessHelloParams,
     HarnessHelloResult,
-    RunStartParams,
-    RunStartResult,
-    RunStatusParams,
-    RunStatusResult,
+    SessionStartParams,
+    SessionStartResult,
+    SessionStatusParams,
+    SessionStatusResult,
     SetupCompleteParams,
     SetupCompleteResult,
     SetupGetParams,
@@ -29,14 +29,13 @@ from almanac.protocol import (
 from .agent_runtime import AgentRuntime
 from .api.collections import CollectionsService
 from .api.current_state import CurrentStateService
-from .api.runs import RunsService
+from .api.sessions import SessionsService
 from .core.db import Database
-from .core.trust import check_evidence
+from .core.trust import check_result
 from .core.workers import WorkerManager
-from .findings import update_findings
 from .observability import span
 from .project_context import ProjectContext
-from .records import EventRecord, ProjectConfigRecord
+from .records import EventRecord, HypothesisRecord, ObjectiveRecord, ProjectConfigRecord
 from .repositories import Repositories
 
 NotificationWriter = Callable[[str, dict[str, Any]], None]
@@ -45,8 +44,8 @@ NotificationWriter = Callable[[str, dict[str, Any]], None]
 @dataclass(frozen=True)
 class Proposal:
     suffix: str
-    intent: str
-    change_summary: str
+    title: str
+    summary: str
     components: list[str]
     based_on_suffixes: list[str]
 
@@ -54,43 +53,43 @@ class Proposal:
 PROPOSALS = [
     Proposal(
         suffix="baseline",
-        intent="Record baseline evidence.",
-        change_summary="Baseline toy evaluation.",
+        title="Record baseline",
+        summary="Run the toy baseline without extra components.",
         components=["baseline"],
         based_on_suffixes=[],
     ),
     Proposal(
         suffix="a",
-        intent="Try component A on its own.",
-        change_summary="Apply toy component A.",
+        title="Try component A",
+        summary="Apply toy component A on its own.",
         components=["A"],
         based_on_suffixes=["baseline"],
     ),
     Proposal(
         suffix="b",
-        intent="Try component B on its own.",
-        change_summary="Apply toy component B.",
+        title="Try component B",
+        summary="Apply toy component B on its own.",
         components=["B"],
         based_on_suffixes=["baseline"],
     ),
     Proposal(
         suffix="c",
-        intent="Try component C on its own.",
-        change_summary="Apply toy component C.",
+        title="Try component C",
+        summary="Apply toy component C on its own.",
         components=["C"],
         based_on_suffixes=["baseline"],
     ),
     Proposal(
         suffix="a_c",
-        intent="Combine promising components A and C.",
-        change_summary="Apply toy components A + C.",
+        title="Combine components A and C",
+        summary="Apply toy components A + C together.",
         components=["A", "C"],
         based_on_suffixes=["a", "c"],
     ),
     Proposal(
         suffix="bad",
-        intent="Demonstrate suspicious evidence handling.",
-        change_summary="Return a suspicious toy result.",
+        title="Demonstrate suspicious result handling",
+        summary="Return a suspicious toy result so automated trust checks create a concern.",
         components=["bad"],
         based_on_suffixes=["baseline"],
     ),
@@ -114,7 +113,7 @@ class HarnessApp:
         self.repos = Repositories.create(self.db)
         self.collections_api = CollectionsService(repos=self.repos)
         self.current_state_api = CurrentStateService(repos=self.repos)
-        self.runs_api = RunsService(repos=self.repos)
+        self.sessions_api = SessionsService(repos=self.repos)
         self.workers = WorkerManager(self.context.repo_root, app_root=app_root)
         self.agent_runtime = AgentRuntime(self.context.project_dir)
         self.notify = notify
@@ -129,8 +128,8 @@ class HarnessApp:
             "collections.bootstrap": self.collections_bootstrap,
             "collections.subscribe": self.collections_subscribe,
             "events.subscribe": self.events_subscribe,
-            "run.start": self.run_start,
-            "run.status": self.run_status,
+            "session.start": self.session_start,
+            "session.status": self.session_status,
         }
         handler = handlers.get(method)
         if handler is None:
@@ -144,25 +143,39 @@ class HarnessApp:
     def setup_get(self, params: dict[str, Any]) -> dict[str, Any]:
         SetupGetParams.model_validate(params)
         config = self.repos.project_config.get()
+        objective = self.repos.objectives.get_active()
         return SetupGetResult(
-            configured=config is not None,
+            configured=config is not None and objective is not None,
             config=config.model_dump() if config is not None else None,
+            objective=objective.model_dump() if objective is not None else None,
         ).model_dump()
 
     def setup_complete(self, params: dict[str, Any]) -> dict[str, Any]:
         setup = SetupCompleteParams.model_validate(params)
         config = self.repos.project_config.set(
-            goal=setup.goal,
             evaluation_context=setup.evaluation_context,
             known_signals=setup.known_signals,
             experiment_scope=setup.experiment_scope,
         )
+        objective = self.repos.objectives.upsert(
+            objective_id="objective_0001",
+            title=setup.objective,
+            description=setup.objective,
+            status="active",
+        )
         self.record_event(
             "setup.completed",
             "Configured project context",
-            payload={"goal": config.goal, "known_signals": config.known_signals},
+            payload={
+                "objective_id": objective.id,
+                "objective": objective.title,
+                "known_signals": config.known_signals,
+            },
         )
-        return SetupCompleteResult(config=config.model_dump()).model_dump()
+        return SetupCompleteResult(
+            config=config.model_dump(),
+            objective=objective.model_dump(),
+        ).model_dump()
 
     def collections_bootstrap(self, params: dict[str, Any]) -> dict[str, Any]:
         CollectionsBootstrapParams.model_validate(params)
@@ -187,42 +200,46 @@ class HarnessApp:
                 replayed += 1
         return EventsSubscribeResult(subscribed=True, replayed=replayed).model_dump()
 
-    def run_start(self, params: dict[str, Any]) -> dict[str, Any]:
-        start = RunStartParams.model_validate(params)
-        if self.repos.project_config.get() is None:
-            raise RuntimeError("setup must be completed before starting a run")
+    def session_start(self, params: dict[str, Any]) -> dict[str, Any]:
+        start = SessionStartParams.model_validate(params)
+        config = self.repos.project_config.get()
+        objective = self.repos.objectives.get_active()
+        if config is None or objective is None:
+            raise RuntimeError("setup must be completed before starting a session")
 
-        run_id = self.runs_api.next_run_id().run_id
-        run = self.repos.runs.create(run_id)
-        event = self.record_event("run.started", f"Started {run_id}", run_id=run_id)
-        self.emit_collection_upsert("runs", run_id, run.model_dump(), cursor=event.id)
+        session_id = self.sessions_api.next_session_id().session_id
+        session = self.repos.sessions.create(session_id, objective_id=objective.id)
+        event = self.record_event("session.started", f"Started {session_id}", session_id=session_id)
+        self.emit_collection_upsert("sessions", session_id, session.model_dump(), cursor=event.id)
 
         thread = threading.Thread(
-            target=self._execute_run,
-            args=(run_id, start.max_experiments),
+            target=self._execute_session,
+            args=(session_id, start.max_experiments),
             daemon=True,
         )
         thread.start()
 
-        return RunStartResult(run_id=run_id, status="running").model_dump()
+        return SessionStartResult(session_id=session_id, status="active").model_dump()
 
-    def run_status(self, params: dict[str, Any]) -> dict[str, Any]:
-        status = RunStatusParams.model_validate(params)
-        run = self.repos.runs.get(status.run_id)
-        return RunStatusResult(run=run.model_dump() if run is not None else None).model_dump()
+    def session_status(self, params: dict[str, Any]) -> dict[str, Any]:
+        status = SessionStatusParams.model_validate(params)
+        session = self.repos.sessions.get(status.session_id)
+        return SessionStatusResult(
+            session=session.model_dump() if session is not None else None
+        ).model_dump()
 
     def record_event(
         self,
         event_type: str,
         message: str,
         *,
-        run_id: str | None = None,
+        session_id: str | None = None,
         payload: dict[str, Any] | None = None,
     ) -> EventRecord:
         event = self.repos.events.add(
             event_type=event_type,
             message=message,
-            run_id=run_id,
+            session_id=session_id,
             payload=payload,
         )
         if self.subscribed:
@@ -250,88 +267,172 @@ class HarnessApp:
             },
         )
 
-    def _execute_run(self, run_id: str, max_experiments: int) -> None:
+    def _execute_session(self, session_id: str, max_experiments: int) -> None:
         try:
             config = self.repos.project_config.get()
-            if config is None:
-                raise RuntimeError("missing project config")
+            objective = self.repos.objectives.get_active()
+            if config is None or objective is None:
+                raise RuntimeError("missing project setup")
 
-            self._record_agent_plan(run_id, config)
+            hypothesis = self._ensure_seed_hypothesis(session_id, objective)
+            self._record_agent_plan(session_id, config, objective, hypothesis)
 
-            with span("almanac.run.execute", run_id=run_id, workspace=config.repo_path):
-                for proposal in PROPOSALS[: max_experiments + 1]:
-                    self._execute_proposal(run_id, config, proposal)
+            with span("almanac.session.execute", session_id=session_id, workspace=config.repo_path):
+                for proposal in PROPOSALS[:max_experiments]:
+                    self._execute_proposal(session_id, config, objective, hypothesis, proposal)
                     time.sleep(0.25)
 
-            run = self.repos.runs.update_status(run_id, "completed")
-            event = self.record_event("run.completed", f"Completed {run_id}", run_id=run_id)
-            if run is not None:
-                self.emit_collection_upsert("runs", run_id, run.model_dump(), cursor=event.id)
-        except Exception as error:
-            run = self.repos.runs.update_status(run_id, "failed")
+            session = self.repos.sessions.update_status(session_id, "closed")
             event = self.record_event(
-                "run.failed",
-                f"Run failed: {error}",
-                run_id=run_id,
+                "session.completed",
+                f"Completed {session_id}",
+                session_id=session_id,
+            )
+            if session is not None:
+                self.emit_collection_upsert("sessions", session_id, session.model_dump(), cursor=event.id)
+        except Exception as error:
+            session = self.repos.sessions.update_status(session_id, "closed")
+            event = self.record_event(
+                "session.failed",
+                f"Session failed: {error}",
+                session_id=session_id,
                 payload={"error": str(error)},
             )
-            if run is not None:
-                self.emit_collection_upsert("runs", run_id, run.model_dump(), cursor=event.id)
+            if session is not None:
+                self.emit_collection_upsert("sessions", session_id, session.model_dump(), cursor=event.id)
 
-    def _record_agent_plan(self, run_id: str, config: ProjectConfigRecord) -> None:
+    def _ensure_seed_hypothesis(
+        self,
+        session_id: str,
+        objective: ObjectiveRecord,
+    ) -> HypothesisRecord:
+        hypothesis_id = f"hyp_{objective.id}_toy_components"
+        existing = self.repos.hypotheses.get(hypothesis_id)
+        if existing is not None:
+            if existing.status != "active":
+                updated = self.repos.hypotheses.update(hypothesis_id, status="active")
+                if updated is not None:
+                    existing = updated
+            return existing
+
+        hypothesis = self.repos.hypotheses.create(
+            hypothesis_id=hypothesis_id,
+            objective_id=objective.id,
+            title="Toy components can improve the score",
+            summary="Compare baseline, individual components, and simple combinations.",
+            status="active",
+        )
+        event = self.record_event(
+            "hypothesis.created",
+            f"Created hypothesis {hypothesis.id}",
+            session_id=session_id,
+            payload={"hypothesis_id": hypothesis.id},
+        )
+        self.emit_collection_upsert("hypotheses", hypothesis.id, hypothesis.model_dump(), cursor=event.id)
+        self._record_hypothesis_activity(
+            session_id=session_id,
+            hypothesis_id=hypothesis.id,
+            actor="harness",
+            kind="comment",
+            body="Seeded the first hypothesis for the deterministic toy loop.",
+            payload={"objective_id": objective.id},
+        )
+        return hypothesis
+
+    def _record_agent_plan(
+        self,
+        session_id: str,
+        config: ProjectConfigRecord,
+        objective: ObjectiveRecord,
+        hypothesis: HypothesisRecord,
+    ) -> None:
         try:
-            plan = self.agent_runtime.plan_run(
+            plan = self.agent_runtime.plan_session(
                 config=config.model_dump(),
+                objective=objective.model_dump(),
                 current_state=self.current_state_api.get().model_dump(),
-                run_id=run_id,
+                session_id=session_id,
                 repos=self.repos,
             )
         except Exception as error:
-            warning = self.repos.warnings.add(
-                run_id=run_id,
-                kind="agent_runtime_failed",
-                message=f"Agent runtime failed: {error}",
-            )
-            self.record_event(
-                "warning.created",
-                warning.message,
-                run_id=run_id,
-                payload={"warning": warning.model_dump()},
+            self._record_hypothesis_activity(
+                session_id=session_id,
+                hypothesis_id=hypothesis.id,
+                actor="harness",
+                kind="concern",
+                body=f"Agent runtime failed: {error}",
+                payload={"error": str(error)},
             )
             return
 
-        self.record_event(
-            "agent.plan.created",
-            plan.summary,
-            run_id=run_id,
+        self._record_hypothesis_activity(
+            session_id=session_id,
+            hypothesis_id=hypothesis.id,
+            actor="agent",
+            kind="update",
+            body=plan.summary,
             payload=plan.model_dump(),
         )
 
-    def _execute_proposal(self, run_id: str, config: ProjectConfigRecord, proposal: Proposal) -> None:
-        with span("almanac.experiment.execute", run_id=run_id, proposal=proposal.suffix):
-            experiment_id = f"exp_{run_id}_{proposal.suffix}"
-            based_on = [f"exp_{run_id}_{suffix}" for suffix in proposal.based_on_suffixes]
+    def _execute_proposal(
+        self,
+        session_id: str,
+        config: ProjectConfigRecord,
+        objective: ObjectiveRecord,
+        hypothesis: HypothesisRecord,
+        proposal: Proposal,
+    ) -> None:
+        with span("almanac.experiment.execute", session_id=session_id, proposal=proposal.suffix):
+            experiment_id = f"exp_{session_id}_{proposal.suffix}"
+            based_on = [f"exp_{session_id}_{suffix}" for suffix in proposal.based_on_suffixes]
             experiment = self.repos.experiments.create(
                 experiment_id=experiment_id,
-                run_id=run_id,
-                intent=proposal.intent,
-                change_summary=proposal.change_summary,
-                components=proposal.components,
-                based_on=based_on,
+                objective_id=objective.id,
+                title=proposal.title,
+                summary=proposal.summary,
+                created_in_session_id=session_id,
+                status="open",
             )
             event = self.record_event(
-                "experiment.queued",
-                f"Queued {experiment_id}",
-                run_id=run_id,
+                "experiment.created",
+                f"Created {experiment_id}",
+                session_id=session_id,
                 payload={"experiment_id": experiment_id, "components": proposal.components},
             )
             self.emit_collection_upsert("experiments", experiment_id, experiment.model_dump(), cursor=event.id)
 
-            experiment = self.repos.experiments.update(experiment_id, status="running")
+            link = self.repos.hypothesis_experiment_links.create(
+                hypothesis_id=hypothesis.id,
+                experiment_id=experiment_id,
+                note="Toy loop proposal",
+            )
+            event = self.record_event(
+                "hypothesis.experiment_linked",
+                f"Linked {experiment_id} to {hypothesis.id}",
+                session_id=session_id,
+                payload=link.model_dump(),
+            )
+            self.emit_collection_upsert(
+                "hypothesis_experiment_links",
+                f"{link.hypothesis_id}:{link.experiment_id}",
+                link.model_dump(),
+                cursor=event.id,
+            )
+
+            self._record_experiment_activity(
+                session_id=session_id,
+                experiment_id=experiment_id,
+                actor="harness",
+                kind="comment",
+                body=proposal.summary,
+                payload={"components": proposal.components, "based_on": based_on},
+            )
+
+            experiment = self.repos.experiments.update(experiment_id, status="active")
             event = self.record_event(
                 "experiment.started",
                 f"Started {experiment_id}",
-                run_id=run_id,
+                session_id=session_id,
                 payload={"experiment_id": experiment_id},
             )
             if experiment is not None:
@@ -339,88 +440,159 @@ class HarnessApp:
 
             result = self.workers.run_experiment(
                 ExperimentRunParams(
-                    run_id=run_id,
+                    session_id=session_id,
+                    objective_id=objective.id,
                     experiment_id=experiment_id,
-                    intent=proposal.intent,
+                    title=proposal.title,
+                    summary=proposal.summary,
                     components=proposal.components,
                     based_on=based_on,
                 ),
-                on_progress=lambda notification: self._record_worker_progress(run_id, notification),
+                on_progress=lambda notification: self._record_worker_progress(session_id, notification),
             )
 
-            signals = [signal.model_dump() for signal in result.signals]
-            evidence = self.repos.evidence.add(
-                run_id=run_id,
+            signals = result.signals
+            self._record_experiment_activity(
+                session_id=session_id,
                 experiment_id=experiment_id,
-                summary=result.summary,
-                signals=signals,
-                raw=result.raw,
-            )
-            self.record_event(
-                "evidence.recorded",
-                result.summary,
-                run_id=run_id,
-                payload={"experiment_id": experiment_id, "signals": signals},
+                actor="worker",
+                kind="result",
+                body=result.summary,
+                payload={"status": result.status, "signals": signals, "raw": result.raw},
             )
 
-            warnings = check_evidence(
+            concerns = check_result(
                 known_signals=config.known_signals,
-                baseline_score=self._baseline_score(run_id),
+                baseline_score=self._baseline_score(session_id),
                 signals=signals,
                 raw=result.raw,
             )
-            suspicious_reason = None
-            for kind, message in warnings:
-                warning = self.repos.warnings.add(
-                    run_id=run_id,
+            for kind, message in concerns:
+                self._record_experiment_activity(
+                    session_id=session_id,
                     experiment_id=experiment_id,
-                    kind=kind,
-                    message=f"{experiment_id}: {message}",
-                )
-                suspicious_reason = message if suspicious_reason is None else suspicious_reason
-                self.record_event(
-                    "warning.created",
-                    warning.message,
-                    run_id=run_id,
-                    payload={"warning": warning.model_dump()},
+                    actor="harness",
+                    kind="concern",
+                    body=f"{experiment_id}: {message}",
+                    payload={"concern_kind": kind},
                 )
 
-            suspicious = suspicious_reason is not None
-            experiment = self.repos.experiments.update(
-                experiment_id,
-                status="suspicious" if suspicious else result.status,
-                suspicious=suspicious,
-                suspicious_reason=suspicious_reason,
-                note=evidence.summary,
+            self._record_hypothesis_activity(
+                session_id=session_id,
+                hypothesis_id=hypothesis.id,
+                actor="harness",
+                kind="update",
+                body=self._interpret_result(experiment_id, result.summary, concerns),
+                payload={"experiment_id": experiment_id, "concern_count": len(concerns)},
             )
-            update_findings(self.repos, run_id)
+
+            experiment = self.repos.experiments.update(experiment_id, status="closed")
             event = self.record_event(
                 "experiment.completed",
                 f"Completed {experiment_id}",
-                run_id=run_id,
-                payload={"experiment_id": experiment_id, "suspicious": suspicious},
+                session_id=session_id,
+                payload={"experiment_id": experiment_id, "concern_count": len(concerns)},
             )
             if experiment is not None:
                 self.emit_collection_upsert("experiments", experiment_id, experiment.model_dump(), cursor=event.id)
 
-    def _record_worker_progress(self, run_id: str, notification: dict[str, Any]) -> None:
+    def _record_worker_progress(self, session_id: str, notification: dict[str, Any]) -> None:
         params = notification.get("params") or {}
         self.record_event(
             "worker.progress",
             str(params.get("message", "worker progress")),
-            run_id=run_id,
+            session_id=session_id,
             payload=params,
         )
 
-    def _baseline_score(self, run_id: str) -> float | None:
-        baseline_id = f"exp_{run_id}_baseline"
-        evidence = self.repos.evidence.get_for_experiment(baseline_id)
-        if evidence is None:
-            return None
-        for signal in evidence.signals:
-            if signal.key == "score" and isinstance(signal.value, int | float):
-                return float(signal.value)
+    def _record_hypothesis_activity(
+        self,
+        *,
+        session_id: str,
+        hypothesis_id: str,
+        actor: str,
+        kind: str,
+        body: str,
+        payload: dict[str, Any] | None = None,
+    ) -> None:
+        activity = self.repos.hypothesis_activities.add(
+            hypothesis_id=hypothesis_id,
+            session_id=session_id,
+            actor=actor,
+            kind=kind,
+            body=body,
+            payload=payload,
+        )
+        event = self.record_event(
+            "hypothesis.activity_recorded",
+            body,
+            session_id=session_id,
+            payload={"activity_id": activity.id, "hypothesis_id": hypothesis_id, "kind": kind},
+        )
+        self.emit_collection_upsert(
+            "hypothesis_activities",
+            str(activity.id),
+            activity.model_dump(),
+            cursor=event.id,
+        )
+
+    def _record_experiment_activity(
+        self,
+        *,
+        session_id: str,
+        experiment_id: str,
+        actor: str,
+        kind: str,
+        body: str,
+        payload: dict[str, Any] | None = None,
+    ) -> None:
+        activity = self.repos.experiment_activities.add(
+            experiment_id=experiment_id,
+            session_id=session_id,
+            actor=actor,
+            kind=kind,
+            body=body,
+            payload=payload,
+        )
+        event = self.record_event(
+            "experiment.activity_recorded",
+            body,
+            session_id=session_id,
+            payload={"activity_id": activity.id, "experiment_id": experiment_id, "kind": kind},
+        )
+        self.emit_collection_upsert(
+            "experiment_activities",
+            str(activity.id),
+            activity.model_dump(),
+            cursor=event.id,
+        )
+
+    def _baseline_score(self, session_id: str) -> float | None:
+        baseline_id = f"exp_{session_id}_baseline"
+        activities = self.repos.experiment_activities.list_for_experiment(baseline_id)
+        for activity in reversed(activities):
+            if activity.kind != "result":
+                continue
+            signals = activity.payload.get("signals", [])
+            if not isinstance(signals, list):
+                continue
+            for signal in signals:
+                if not isinstance(signal, dict):
+                    continue
+                value = signal.get("value") if signal.get("key") == "score" else None
+                if isinstance(value, int | float):
+                    return float(value)
         return None
+
+    @staticmethod
+    def _interpret_result(
+        experiment_id: str,
+        summary: str,
+        concerns: list[tuple[str, str]],
+    ) -> str:
+        if concerns:
+            return f"{experiment_id} produced concerns; keep the result visible but do not trust it blindly."
+        return f"{experiment_id} completed: {summary}"
 
 
 class MethodNotFound(Exception):

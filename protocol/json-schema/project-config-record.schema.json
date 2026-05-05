@@ -9,10 +9,6 @@
       "title": "Repo Path",
       "type": "string"
     },
-    "goal": {
-      "title": "Goal",
-      "type": "string"
-    },
     "evaluation_context": {
       "title": "Evaluation Context",
       "type": "string"
@@ -40,7 +36,6 @@
   "required": [
     "id",
     "repo_path",
-    "goal",
     "evaluation_context",
     "known_signals",
     "experiment_scope",

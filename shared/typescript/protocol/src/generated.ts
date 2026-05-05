@@ -31,7 +31,6 @@ export interface JsonRpcResponse {
 export interface ProjectConfigRecord {
   id: string;
   repo_path: string;
-  goal: string;
   evaluation_context: string;
   known_signals: string[];
   experiment_scope: string;
@@ -39,70 +38,95 @@ export interface ProjectConfigRecord {
   updated_at: string;
 }
 
-export interface RunRecord {
+export interface ObjectiveRecord {
   id: string;
-  status: string;
+  title: string;
+  description: string;
+  status: "active" | "closed";
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SessionRecord {
+  id: string;
+  objective_id: string;
+  status: "active" | "closed";
+  created_at: string;
+  updated_at: string;
+}
+
+export interface HypothesisRecord {
+  id: string;
+  objective_id: string;
+  title: string;
+  summary: string;
+  status: "open" | "active" | "closed";
   created_at: string;
   updated_at: string;
 }
 
 export interface ExperimentRecord {
   id: string;
-  run_id: string;
-  status: string;
-  intent: string;
-  change_summary: string;
-  components: string[];
-  based_on: string[];
-  suspicious?: boolean;
-  suspicious_reason?: string | null;
+  objective_id: string;
+  status: "open" | "active" | "closed";
+  title: string;
+  summary: string;
+  created_in_session_id?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface HypothesisExperimentLinkRecord {
+  hypothesis_id: string;
+  experiment_id: string;
   note?: string;
   created_at: string;
-  updated_at: string;
 }
 
-export interface SignalRecord {
-  key: string;
-  value: unknown;
-  unit?: string | null;
-}
-
-export interface EvidenceRecord {
+export interface HypothesisActivityRecord {
   id: number;
-  run_id: string;
+  hypothesis_id: string;
+  session_id?: string | null;
+  actor: string;
+  kind: "comment" | "update" | "result" | "concern" | "decision";
+  body: string;
+  payload?: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface ExperimentActivityRecord {
+  id: number;
   experiment_id: string;
-  summary: string;
-  signals: SignalRecord[];
-  raw: Record<string, unknown>;
+  session_id?: string | null;
+  actor: string;
+  kind: "comment" | "update" | "result" | "concern" | "decision";
+  body: string;
+  payload?: Record<string, unknown>;
   created_at: string;
 }
 
-export interface FindingRecord {
+export interface ArtifactRecord {
   id: string;
-  run_id: string;
-  summary: string;
-  evidence_experiment_ids: string[];
-  confidence: "low" | "medium" | "high";
-  status: "open" | "supported" | "contradicted";
-  created_at: string;
-  updated_at: string;
-}
-
-export interface WarningRecord {
-  id: number;
-  run_id: string;
+  objective_id: string;
+  session_id?: string | null;
+  hypothesis_id?: string | null;
   experiment_id?: string | null;
+  hypothesis_activity_id?: number | null;
+  experiment_activity_id?: number | null;
   kind: string;
-  message: string;
+  title: string;
+  path: string;
+  media_type?: string | null;
+  size_bytes?: number | null;
   created_at: string;
 }
 
 export interface EventRecord {
   id: number;
-  run_id?: string | null;
+  session_id?: string | null;
   type: string;
   message: string;
-  payload: Record<string, unknown>;
+  payload?: Record<string, unknown>;
   created_at: string;
 }
 
@@ -121,10 +145,11 @@ export interface SetupGetParams {
 export interface SetupGetResult {
   configured: boolean;
   config?: ProjectConfigRecord | null;
+  objective?: ObjectiveRecord | null;
 }
 
 export interface SetupCompleteParams {
-  goal: string;
+  objective: string;
   evaluation_context: string;
   known_signals?: string[];
   experiment_scope?: string;
@@ -132,6 +157,7 @@ export interface SetupCompleteParams {
 
 export interface SetupCompleteResult {
   config: ProjectConfigRecord;
+  objective: ObjectiveRecord;
 }
 
 export interface CollectionsBootstrapParams {
@@ -139,8 +165,14 @@ export interface CollectionsBootstrapParams {
 
 export interface CollectionsBootstrapResult {
   cursor: number;
-  runs: RunRecord[];
+  objectives: ObjectiveRecord[];
+  sessions: SessionRecord[];
+  hypotheses: HypothesisRecord[];
   experiments: ExperimentRecord[];
+  hypothesis_experiment_links: HypothesisExperimentLinkRecord[];
+  hypothesis_activities: HypothesisActivityRecord[];
+  experiment_activities: ExperimentActivityRecord[];
+  artifacts: ArtifactRecord[];
   events: EventRecord[];
 }
 
@@ -154,7 +186,7 @@ export interface CollectionsSubscribeResult {
 
 export interface CollectionUpsertedParams {
   cursor: number;
-  collection: "runs" | "experiments" | "events";
+  collection: "objectives" | "sessions" | "hypotheses" | "experiments" | "hypothesis_experiment_links" | "hypothesis_activities" | "experiment_activities" | "artifacts" | "events";
   key: string;
   record: Record<string, unknown>;
 }
@@ -168,21 +200,21 @@ export interface EventsSubscribeResult {
   replayed?: number;
 }
 
-export interface RunStartParams {
+export interface SessionStartParams {
   max_experiments?: number;
 }
 
-export interface RunStartResult {
-  run_id: string;
+export interface SessionStartResult {
+  session_id: string;
   status: string;
 }
 
-export interface RunStatusParams {
-  run_id: string;
+export interface SessionStatusParams {
+  session_id: string;
 }
 
-export interface RunStatusResult {
-  run: RunRecord | null;
+export interface SessionStatusResult {
+  session: SessionRecord | null;
 }
 
 export interface WorkerInitializeParams {
@@ -195,10 +227,12 @@ export interface WorkerInitializeResult {
 }
 
 export interface ExperimentRunParams {
-  run_id: string;
+  session_id: string;
+  objective_id: string;
   experiment_id: string;
-  intent: string;
-  components: string[];
+  title: string;
+  summary: string;
+  components?: string[];
   based_on?: string[];
 }
 
@@ -206,16 +240,16 @@ export interface ExperimentRunResult {
   experiment_id: string;
   status: string;
   summary: string;
-  signals: SignalRecord[];
-  raw: Record<string, unknown>;
+  signals?: Record<string, unknown>[];
+  raw?: Record<string, unknown>;
 }
 
 export interface WorkerProgressParams {
-  run_id: string;
+  session_id: string;
   experiment_id: string;
   message: string;
   payload?: Record<string, unknown>;
 }
 
-export type ControlMethod = "harness.hello" | "setup.get" | "setup.complete" | "collections.bootstrap" | "collections.subscribe" | "events.subscribe" | "run.start" | "run.status";
+export type ControlMethod = "harness.hello" | "setup.get" | "setup.complete" | "collections.bootstrap" | "collections.subscribe" | "events.subscribe" | "session.start" | "session.status";
 export type WorkerMethod = "worker.initialize" | "experiment.run";

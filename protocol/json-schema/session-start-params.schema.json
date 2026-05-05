@@ -1,0 +1,12 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "max_experiments": {
+      "default": 6,
+      "title": "Max Experiments",
+      "type": "integer"
+    }
+  },
+  "title": "SessionStartParams",
+  "type": "object"
+}

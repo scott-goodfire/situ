@@ -40,39 +40,44 @@ class AgentRuntime:
             output_type=AgentPlan,
             instructions=(
                 "You are Almanac's research planner. Produce compact, typed, "
-                "evidence-aware planning notes for an autoresearch run. Do not "
-                "claim an experiment succeeded unless evidence supports it."
+                "activity-aware planning notes for an autoresearch session. Do not "
+                "claim an experiment succeeded unless recorded results support it."
             ),
             name=RESEARCH_PLANNER_AGENT_NAME,
         )
         self.dbos_agent = DBOSAgent(self.agent, name=RESEARCH_PLANNER_AGENT_NAME)
         launch_dbos()
 
-    def plan_run(
+    def plan_session(
         self,
         *,
         config: dict[str, Any],
+        objective: dict[str, Any],
         current_state: dict[str, Any],
-        run_id: str | None = None,
+        session_id: str | None = None,
         repos: Repositories | None = None,
     ) -> AgentPlan:
-        prompt = self._prompt(config=config, current_state=current_state)
+        prompt = self._prompt(config=config, objective=objective, current_state=current_state)
         message_history = None
         conversation_id = None
-        if run_id is not None and repos is not None:
+        if session_id is not None and repos is not None:
             stored_messages = repos.agent_message_history.get_message_history(
-                run_id,
+                session_id,
                 agent_name=RESEARCH_PLANNER_AGENT_NAME,
             )
             if stored_messages:
                 message_history = repos.agent_message_history.get_model_message_history(
-                    run_id,
+                    session_id,
                     agent_name=RESEARCH_PLANNER_AGENT_NAME,
                 )
             else:
-                conversation_id = f"almanac:{run_id}:{RESEARCH_PLANNER_AGENT_NAME}"
+                conversation_id = f"almanac:{session_id}:{RESEARCH_PLANNER_AGENT_NAME}"
 
-        with span("almanac.agent.plan", workspace=config.get("repo_path", ""), goal=config.get("goal", "")):
+        with span(
+            "almanac.agent.plan",
+            workspace=config.get("repo_path", ""),
+            objective=objective.get("title", ""),
+        ):
             if self.model_name:
                 result = self.dbos_agent.run_sync(
                     prompt,
@@ -87,9 +92,9 @@ class AgentRuntime:
                         message_history=message_history,
                         conversation_id=conversation_id,
                     )
-        if run_id is not None and repos is not None:
-            repos.agent_message_history.append_run_messages(
-                run_id=run_id,
+        if session_id is not None and repos is not None:
+            repos.agent_message_history.append_session_messages(
+                session_id=session_id,
                 agent_name=RESEARCH_PLANNER_AGENT_NAME,
                 messages_json=result.new_messages_json(),
                 pydantic_run_id=getattr(result, "run_id", None),
@@ -97,17 +102,24 @@ class AgentRuntime:
             )
         return result.output
 
-    def _prompt(self, *, config: dict[str, Any], current_state: dict[str, Any]) -> str:
-        recent_warnings = current_state.get("warnings", [])[-5:]
-        recent_findings = current_state.get("findings", [])[-5:]
+    def _prompt(
+        self,
+        *,
+        config: dict[str, Any],
+        objective: dict[str, Any],
+        current_state: dict[str, Any],
+    ) -> str:
+        recent_hypothesis_activity = current_state.get("hypothesis_activities", [])[-5:]
+        recent_experiment_activity = current_state.get("experiment_activities", [])[-5:]
         return "\n".join(
             [
-                f"Goal: {config.get('goal', '')}",
+                f"Objective: {objective.get('title', '')}",
+                f"Objective details: {objective.get('description', '')}",
                 f"Evaluation context: {config.get('evaluation_context', '')}",
                 f"Known signals: {', '.join(config.get('known_signals', []))}",
                 f"Experiment scope: {config.get('experiment_scope', '')}",
-                f"Recent findings: {recent_findings}",
-                f"Recent warnings: {recent_warnings}",
+                f"Recent hypothesis activity: {recent_hypothesis_activity}",
+                f"Recent experiment activity: {recent_experiment_activity}",
                 "Return a short plan for the next proposal round.",
             ]
         )
@@ -115,8 +127,8 @@ class AgentRuntime:
     def _fallback_plan(self, config: dict[str, Any] | None = None) -> AgentPlan:
         known_signals = ", ".join((config or {}).get("known_signals", [])) or "configured signals"
         return AgentPlan(
-            summary="Prepared typed agent planning context for the run.",
-            proposed_focus="Start with baseline evidence, then compare simple changes and combinations.",
+            summary="Prepared typed agent planning context for the session.",
+            proposed_focus="Start with a baseline, then compare simple changes and combinations.",
             next_components=["baseline", "A", "B", "C", "A+C"],
             risk_notes=[f"Watch for missing or malformed {known_signals}."],
             should_continue=True,

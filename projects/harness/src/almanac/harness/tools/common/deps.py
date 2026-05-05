@@ -14,7 +14,7 @@ EventEmitter = Callable[[str, str, str | None, dict[str, Any] | None], dict[str,
 class AlmanacToolDeps(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    run_id: str
+    session_id: str
     repos: Repositories
     worker_manager: WorkerManager | None = None
     emit_event: EventEmitter | None = Field(default=None, exclude=True)
@@ -28,4 +28,4 @@ class AlmanacToolDeps(BaseModel):
     ) -> dict[str, Any] | None:
         if self.emit_event is None:
             return None
-        return self.emit_event(event_type, message, self.run_id, payload)
+        return self.emit_event(event_type, message, self.session_id, payload)

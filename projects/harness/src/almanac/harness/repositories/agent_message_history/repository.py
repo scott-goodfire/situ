@@ -9,10 +9,10 @@ from .command import AppendAgentMessageHistory
 
 
 class AgentMessageHistoryRepository(BaseRepository):
-    def append_run_messages(
+    def append_session_messages(
         self,
         *,
-        run_id: str,
+        session_id: str,
         agent_name: str,
         messages_json: bytes | str,
         pydantic_run_id: str | None = None,
@@ -22,7 +22,7 @@ class AgentMessageHistoryRepository(BaseRepository):
         messages = self._messages_from_json(normalized_json)
         inferred_run_id, inferred_conversation_id = self._infer_pydantic_ids(messages)
         command = AppendAgentMessageHistory(
-            run_id=run_id,
+            session_id=session_id,
             agent_name=agent_name,
             messages_json=normalized_json,
             pydantic_run_id=pydantic_run_id or inferred_run_id,
@@ -31,12 +31,12 @@ class AgentMessageHistoryRepository(BaseRepository):
         cursor = self.db.execute(
             """
             INSERT INTO agent_message_history
-              (run_id, agent_name, pydantic_run_id, conversation_id,
+              (session_id, agent_name, pydantic_run_id, conversation_id,
                messages_json, message_count, created_at)
             VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
             (
-                command.run_id,
+                command.session_id,
                 command.agent_name,
                 command.pydantic_run_id,
                 command.conversation_id,
@@ -57,25 +57,25 @@ class AgentMessageHistoryRepository(BaseRepository):
     def get(self, history_id: int) -> AgentMessageHistoryRecord | None:
         return self.get_by_id(history_id)
 
-    def list_for_run(
+    def list_for_session(
         self,
-        run_id: str,
+        session_id: str,
         *,
         agent_name: str | None = None,
     ) -> list[AgentMessageHistoryRecord]:
         if agent_name is None:
             rows = self.db.fetchall(
-                "SELECT * FROM agent_message_history WHERE run_id = ? ORDER BY id",
-                (run_id,),
+                "SELECT * FROM agent_message_history WHERE session_id = ? ORDER BY id",
+                (session_id,),
             )
         else:
             rows = self.db.fetchall(
                 """
                 SELECT * FROM agent_message_history
-                WHERE run_id = ? AND agent_name = ?
+                WHERE session_id = ? AND agent_name = ?
                 ORDER BY id
                 """,
-                (run_id, agent_name),
+                (session_id, agent_name),
             )
         return [agent_message_history_row(row) for row in rows]
 
@@ -87,26 +87,26 @@ class AgentMessageHistoryRepository(BaseRepository):
 
     def get_message_history(
         self,
-        run_id: str,
+        session_id: str,
         *,
         agent_name: str | None = None,
     ) -> list[dict[str, Any]]:
         messages: list[dict[str, Any]] = []
-        for record in self.list_for_run(run_id, agent_name=agent_name):
+        for record in self.list_for_session(session_id, agent_name=agent_name):
             messages.extend(record.messages)
         return messages
 
     def get_message_history_json(
         self,
-        run_id: str,
+        session_id: str,
         *,
         agent_name: str | None = None,
     ) -> bytes:
-        return json_dumps(self.get_message_history(run_id, agent_name=agent_name)).encode()
+        return json_dumps(self.get_message_history(session_id, agent_name=agent_name)).encode()
 
     def get_model_message_history(
         self,
-        run_id: str,
+        session_id: str,
         *,
         agent_name: str | None = None,
     ) -> list[Any]:
@@ -114,7 +114,7 @@ class AgentMessageHistoryRepository(BaseRepository):
 
         return list(
             ModelMessagesTypeAdapter.validate_json(
-                self.get_message_history_json(run_id, agent_name=agent_name)
+                self.get_message_history_json(session_id, agent_name=agent_name)
             )
         )
 

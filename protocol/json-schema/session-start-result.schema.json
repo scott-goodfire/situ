@@ -1,0 +1,19 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "session_id": {
+      "title": "Session Id",
+      "type": "string"
+    },
+    "status": {
+      "title": "Status",
+      "type": "string"
+    }
+  },
+  "required": [
+    "session_id",
+    "status"
+  ],
+  "title": "SessionStartResult",
+  "type": "object"
+}

@@ -1,15 +1,18 @@
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from .events import (
+    ArtifactRecord,
     EventRecord,
-    EvidenceRecord,
+    ExperimentActivityRecord,
     ExperimentRecord,
-    FindingRecord,
+    HypothesisActivityRecord,
+    HypothesisExperimentLinkRecord,
+    HypothesisRecord,
+    ObjectiveRecord,
     ProjectConfigRecord,
-    RunRecord,
-    WarningRecord,
+    SessionRecord,
 )
 
 
@@ -35,14 +38,15 @@ class SetupGetResult(BaseModel):
 
     configured: bool
     config: ProjectConfigRecord | None = None
+    objective: ObjectiveRecord | None = None
 
 
 class SetupCompleteParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    goal: str
+    objective: str
     evaluation_context: str
-    known_signals: list[str] = []
+    known_signals: list[str] = Field(default_factory=list)
     experiment_scope: str = "Toy deterministic experiment loop."
 
 
@@ -50,9 +54,20 @@ class SetupCompleteResult(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     config: ProjectConfigRecord
+    objective: ObjectiveRecord
 
 
-CollectionName = Literal["runs", "experiments", "events"]
+CollectionName = Literal[
+    "objectives",
+    "sessions",
+    "hypotheses",
+    "experiments",
+    "hypothesis_experiment_links",
+    "hypothesis_activities",
+    "experiment_activities",
+    "artifacts",
+    "events",
+]
 
 
 class CollectionsBootstrapParams(BaseModel):
@@ -63,8 +78,14 @@ class CollectionsBootstrapResult(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     cursor: int
-    runs: list[RunRecord]
+    objectives: list[ObjectiveRecord]
+    sessions: list[SessionRecord]
+    hypotheses: list[HypothesisRecord]
     experiments: list[ExperimentRecord]
+    hypothesis_experiment_links: list[HypothesisExperimentLinkRecord]
+    hypothesis_activities: list[HypothesisActivityRecord]
+    experiment_activities: list[ExperimentActivityRecord]
+    artifacts: list[ArtifactRecord]
     events: list[EventRecord]
 
 
@@ -101,26 +122,26 @@ class EventsSubscribeResult(BaseModel):
     replayed: int = 0
 
 
-class RunStartParams(BaseModel):
+class SessionStartParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     max_experiments: int = 6
 
 
-class RunStartResult(BaseModel):
+class SessionStartResult(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    run_id: str
+    session_id: str
     status: str
 
 
-class RunStatusParams(BaseModel):
+class SessionStatusParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    run_id: str
+    session_id: str
 
 
-class RunStatusResult(BaseModel):
+class SessionStatusResult(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    run: RunRecord | None
+    session: SessionRecord | None

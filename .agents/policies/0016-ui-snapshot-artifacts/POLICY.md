@@ -42,7 +42,7 @@ kept close to the render path a user actually sees.
   snapshot.
 - Color is enabled after importing Ink or story modules, making ANSI output
   inconsistent.
-- Snapshot commands only work when a local run is active.
+- Snapshot commands only work when a local session is active.
 - Generated artifacts are written into source directories by default.
 - A reviewer must mentally map a screenshot back to a different text snapshot.
 

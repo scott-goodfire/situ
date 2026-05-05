@@ -7,7 +7,7 @@ from ..base import DbRecord
 
 class EventRecord(DbRecord):
     id: int
-    run_id: str | None = None
+    session_id: str | None = None
     type: str
     message: str
     payload: dict[str, Any]

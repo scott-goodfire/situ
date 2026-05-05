@@ -1,6 +1,6 @@
 # MVP Vertical Slice
 
-## Goal
+## Purpose
 
 The MVP should prove one experience:
 

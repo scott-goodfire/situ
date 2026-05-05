@@ -1,13 +1,17 @@
 {
   "$defs": {
-    "EventRecord": {
+    "ArtifactRecord": {
       "additionalProperties": false,
       "properties": {
         "id": {
           "title": "Id",
-          "type": "integer"
+          "type": "string"
         },
-        "run_id": {
+        "objective_id": {
+          "title": "Objective Id",
+          "type": "string"
+        },
+        "session_id": {
           "anyOf": [
             {
               "type": "string"
@@ -17,7 +21,126 @@
             }
           ],
           "default": null,
-          "title": "Run Id"
+          "title": "Session Id"
+        },
+        "hypothesis_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Hypothesis Id"
+        },
+        "experiment_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Experiment Id"
+        },
+        "hypothesis_activity_id": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Hypothesis Activity Id"
+        },
+        "experiment_activity_id": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Experiment Activity Id"
+        },
+        "kind": {
+          "title": "Kind",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "media_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Media Type"
+        },
+        "size_bytes": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Size Bytes"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "objective_id",
+        "kind",
+        "title",
+        "path",
+        "created_at"
+      ],
+      "title": "ArtifactRecord",
+      "type": "object"
+    },
+    "EventRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "integer"
+        },
+        "session_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Session Id"
         },
         "type": {
           "title": "Type",
@@ -41,55 +164,23 @@
         "id",
         "type",
         "message",
-        "payload",
         "created_at"
       ],
       "title": "EventRecord",
       "type": "object"
     },
-    "ExperimentRecord": {
+    "ExperimentActivityRecord": {
       "additionalProperties": false,
       "properties": {
         "id": {
           "title": "Id",
+          "type": "integer"
+        },
+        "experiment_id": {
+          "title": "Experiment Id",
           "type": "string"
         },
-        "run_id": {
-          "title": "Run Id",
-          "type": "string"
-        },
-        "status": {
-          "title": "Status",
-          "type": "string"
-        },
-        "intent": {
-          "title": "Intent",
-          "type": "string"
-        },
-        "change_summary": {
-          "title": "Change Summary",
-          "type": "string"
-        },
-        "components": {
-          "items": {
-            "type": "string"
-          },
-          "title": "Components",
-          "type": "array"
-        },
-        "based_on": {
-          "items": {
-            "type": "string"
-          },
-          "title": "Based On",
-          "type": "array"
-        },
-        "suspicious": {
-          "default": false,
-          "title": "Suspicious",
-          "type": "boolean"
-        },
-        "suspicious_reason": {
+        "session_id": {
           "anyOf": [
             {
               "type": "string"
@@ -99,12 +190,87 @@
             }
           ],
           "default": null,
-          "title": "Suspicious Reason"
+          "title": "Session Id"
         },
-        "note": {
-          "default": "",
-          "title": "Note",
+        "actor": {
+          "title": "Actor",
           "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "comment",
+            "update",
+            "result",
+            "concern",
+            "decision"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "body": {
+          "title": "Body",
+          "type": "string"
+        },
+        "payload": {
+          "additionalProperties": true,
+          "title": "Payload",
+          "type": "object"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "experiment_id",
+        "actor",
+        "kind",
+        "body",
+        "created_at"
+      ],
+      "title": "ExperimentActivityRecord",
+      "type": "object"
+    },
+    "ExperimentRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "objective_id": {
+          "title": "Objective Id",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "open",
+            "active",
+            "closed"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "summary": {
+          "title": "Summary",
+          "type": "string"
+        },
+        "created_in_session_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Created In Session Id"
         },
         "created_at": {
           "title": "Created At",
@@ -117,26 +283,133 @@
       },
       "required": [
         "id",
-        "run_id",
+        "objective_id",
         "status",
-        "intent",
-        "change_summary",
-        "components",
-        "based_on",
+        "title",
+        "summary",
         "created_at",
         "updated_at"
       ],
       "title": "ExperimentRecord",
       "type": "object"
     },
-    "RunRecord": {
+    "HypothesisActivityRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "integer"
+        },
+        "hypothesis_id": {
+          "title": "Hypothesis Id",
+          "type": "string"
+        },
+        "session_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Session Id"
+        },
+        "actor": {
+          "title": "Actor",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "comment",
+            "update",
+            "result",
+            "concern",
+            "decision"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "body": {
+          "title": "Body",
+          "type": "string"
+        },
+        "payload": {
+          "additionalProperties": true,
+          "title": "Payload",
+          "type": "object"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "hypothesis_id",
+        "actor",
+        "kind",
+        "body",
+        "created_at"
+      ],
+      "title": "HypothesisActivityRecord",
+      "type": "object"
+    },
+    "HypothesisExperimentLinkRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "hypothesis_id": {
+          "title": "Hypothesis Id",
+          "type": "string"
+        },
+        "experiment_id": {
+          "title": "Experiment Id",
+          "type": "string"
+        },
+        "note": {
+          "default": "",
+          "title": "Note",
+          "type": "string"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "hypothesis_id",
+        "experiment_id",
+        "created_at"
+      ],
+      "title": "HypothesisExperimentLinkRecord",
+      "type": "object"
+    },
+    "HypothesisRecord": {
       "additionalProperties": false,
       "properties": {
         "id": {
           "title": "Id",
           "type": "string"
         },
+        "objective_id": {
+          "title": "Objective Id",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "summary": {
+          "title": "Summary",
+          "type": "string"
+        },
         "status": {
+          "enum": [
+            "open",
+            "active",
+            "closed"
+          ],
           "title": "Status",
           "type": "string"
         },
@@ -151,11 +424,95 @@
       },
       "required": [
         "id",
+        "objective_id",
+        "title",
+        "summary",
         "status",
         "created_at",
         "updated_at"
       ],
-      "title": "RunRecord",
+      "title": "HypothesisRecord",
+      "type": "object"
+    },
+    "ObjectiveRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "active",
+            "closed"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        },
+        "updated_at": {
+          "title": "Updated At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "description",
+        "status",
+        "created_at",
+        "updated_at"
+      ],
+      "title": "ObjectiveRecord",
+      "type": "object"
+    },
+    "SessionRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "objective_id": {
+          "title": "Objective Id",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "active",
+            "closed"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        },
+        "updated_at": {
+          "title": "Updated At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "objective_id",
+        "status",
+        "created_at",
+        "updated_at"
+      ],
+      "title": "SessionRecord",
       "type": "object"
     }
   },
@@ -165,11 +522,25 @@
       "title": "Cursor",
       "type": "integer"
     },
-    "runs": {
+    "objectives": {
       "items": {
-        "$ref": "#/$defs/RunRecord"
+        "$ref": "#/$defs/ObjectiveRecord"
       },
-      "title": "Runs",
+      "title": "Objectives",
+      "type": "array"
+    },
+    "sessions": {
+      "items": {
+        "$ref": "#/$defs/SessionRecord"
+      },
+      "title": "Sessions",
+      "type": "array"
+    },
+    "hypotheses": {
+      "items": {
+        "$ref": "#/$defs/HypothesisRecord"
+      },
+      "title": "Hypotheses",
       "type": "array"
     },
     "experiments": {
@@ -177,6 +548,34 @@
         "$ref": "#/$defs/ExperimentRecord"
       },
       "title": "Experiments",
+      "type": "array"
+    },
+    "hypothesis_experiment_links": {
+      "items": {
+        "$ref": "#/$defs/HypothesisExperimentLinkRecord"
+      },
+      "title": "Hypothesis Experiment Links",
+      "type": "array"
+    },
+    "hypothesis_activities": {
+      "items": {
+        "$ref": "#/$defs/HypothesisActivityRecord"
+      },
+      "title": "Hypothesis Activities",
+      "type": "array"
+    },
+    "experiment_activities": {
+      "items": {
+        "$ref": "#/$defs/ExperimentActivityRecord"
+      },
+      "title": "Experiment Activities",
+      "type": "array"
+    },
+    "artifacts": {
+      "items": {
+        "$ref": "#/$defs/ArtifactRecord"
+      },
+      "title": "Artifacts",
       "type": "array"
     },
     "events": {
@@ -189,8 +588,14 @@
   },
   "required": [
     "cursor",
-    "runs",
+    "objectives",
+    "sessions",
+    "hypotheses",
     "experiments",
+    "hypothesis_experiment_links",
+    "hypothesis_activities",
+    "experiment_activities",
+    "artifacts",
     "events"
   ],
   "title": "CollectionsBootstrapResult",

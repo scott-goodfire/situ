@@ -10,5 +10,5 @@ from ..base.command import RepositoryCommand
 class AddEvent(RepositoryCommand):
     event_type: str
     message: str
-    run_id: str | None = None
+    session_id: str | None = None
     payload: dict[str, Any] = Field(default_factory=dict)

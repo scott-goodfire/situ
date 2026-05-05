@@ -7,13 +7,16 @@ from typing import Any
 
 from ...records import (
     AgentMessageHistoryRecord,
+    ArtifactRecord,
     EventRecord,
-    EvidenceRecord,
+    ExperimentActivityRecord,
     ExperimentRecord,
-    FindingRecord,
+    HypothesisActivityRecord,
+    HypothesisExperimentLinkRecord,
+    HypothesisRecord,
+    ObjectiveRecord,
     ProjectConfigRecord,
-    RunRecord,
-    WarningRecord,
+    SessionRecord,
 )
 
 
@@ -33,7 +36,6 @@ def config_row(row: sqlite3.Row) -> ProjectConfigRecord:
     return ProjectConfigRecord(
         id=row["id"],
         repo_path=row["repo_path"],
-        goal=row["goal"],
         evaluation_context=row["evaluation_context"],
         known_signals=json_loads(row["known_signals_json"]),
         experiment_scope=row["experiment_scope"],
@@ -42,9 +44,33 @@ def config_row(row: sqlite3.Row) -> ProjectConfigRecord:
     )
 
 
-def run_row(row: sqlite3.Row) -> RunRecord:
-    return RunRecord(
+def objective_row(row: sqlite3.Row) -> ObjectiveRecord:
+    return ObjectiveRecord(
         id=row["id"],
+        title=row["title"],
+        description=row["description"],
+        status=row["status"],
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+    )
+
+
+def session_row(row: sqlite3.Row) -> SessionRecord:
+    return SessionRecord(
+        id=row["id"],
+        objective_id=row["objective_id"],
+        status=row["status"],
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+    )
+
+
+def hypothesis_row(row: sqlite3.Row) -> HypothesisRecord:
+    return HypothesisRecord(
+        id=row["id"],
+        objective_id=row["objective_id"],
+        title=row["title"],
+        summary=row["summary"],
         status=row["status"],
         created_at=row["created_at"],
         updated_at=row["updated_at"],
@@ -54,52 +80,65 @@ def run_row(row: sqlite3.Row) -> RunRecord:
 def experiment_row(row: sqlite3.Row) -> ExperimentRecord:
     return ExperimentRecord(
         id=row["id"],
-        run_id=row["run_id"],
+        objective_id=row["objective_id"],
         status=row["status"],
-        intent=row["intent"],
-        change_summary=row["change_summary"],
-        components=json_loads(row["components_json"]),
-        based_on=json_loads(row["based_on_json"]),
-        suspicious=bool(row["suspicious"]),
-        suspicious_reason=row["suspicious_reason"],
+        title=row["title"],
+        summary=row["summary"],
+        created_in_session_id=row["created_in_session_id"],
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+    )
+
+
+def hypothesis_experiment_link_row(row: sqlite3.Row) -> HypothesisExperimentLinkRecord:
+    return HypothesisExperimentLinkRecord(
+        hypothesis_id=row["hypothesis_id"],
+        experiment_id=row["experiment_id"],
         note=row["note"],
         created_at=row["created_at"],
-        updated_at=row["updated_at"],
     )
 
 
-def evidence_row(row: sqlite3.Row) -> EvidenceRecord:
-    return EvidenceRecord(
+def hypothesis_activity_row(row: sqlite3.Row) -> HypothesisActivityRecord:
+    return HypothesisActivityRecord(
         id=row["id"],
-        run_id=row["run_id"],
-        experiment_id=row["experiment_id"],
-        summary=row["summary"],
-        signals=json_loads(row["signals_json"]),
-        raw=json_loads(row["raw_json"]),
-        created_at=row["created_at"],
-    )
-
-
-def finding_row(row: sqlite3.Row) -> FindingRecord:
-    return FindingRecord(
-        id=row["id"],
-        run_id=row["run_id"],
-        summary=row["summary"],
-        evidence_experiment_ids=json_loads(row["evidence_experiment_ids_json"]),
-        confidence=row["confidence"],
-        status=row["status"],
-        created_at=row["created_at"],
-        updated_at=row["updated_at"],
-    )
-
-
-def warning_row(row: sqlite3.Row) -> WarningRecord:
-    return WarningRecord(
-        id=row["id"],
-        run_id=row["run_id"],
-        experiment_id=row["experiment_id"],
+        hypothesis_id=row["hypothesis_id"],
+        session_id=row["session_id"],
+        actor=row["actor"],
         kind=row["kind"],
-        message=row["message"],
+        body=row["body"],
+        payload=json_loads(row["payload_json"]),
+        created_at=row["created_at"],
+    )
+
+
+def experiment_activity_row(row: sqlite3.Row) -> ExperimentActivityRecord:
+    return ExperimentActivityRecord(
+        id=row["id"],
+        experiment_id=row["experiment_id"],
+        session_id=row["session_id"],
+        actor=row["actor"],
+        kind=row["kind"],
+        body=row["body"],
+        payload=json_loads(row["payload_json"]),
+        created_at=row["created_at"],
+    )
+
+
+def artifact_row(row: sqlite3.Row) -> ArtifactRecord:
+    return ArtifactRecord(
+        id=row["id"],
+        objective_id=row["objective_id"],
+        session_id=row["session_id"],
+        hypothesis_id=row["hypothesis_id"],
+        experiment_id=row["experiment_id"],
+        hypothesis_activity_id=row["hypothesis_activity_id"],
+        experiment_activity_id=row["experiment_activity_id"],
+        kind=row["kind"],
+        title=row["title"],
+        path=row["path"],
+        media_type=row["media_type"],
+        size_bytes=row["size_bytes"],
         created_at=row["created_at"],
     )
 
@@ -107,7 +146,7 @@ def warning_row(row: sqlite3.Row) -> WarningRecord:
 def event_row(row: sqlite3.Row) -> EventRecord:
     return EventRecord(
         id=row["id"],
-        run_id=row["run_id"],
+        session_id=row["session_id"],
         type=row["type"],
         message=row["message"],
         payload=json_loads(row["payload_json"]),
@@ -118,7 +157,7 @@ def event_row(row: sqlite3.Row) -> EventRecord:
 def agent_message_history_row(row: sqlite3.Row) -> AgentMessageHistoryRecord:
     return AgentMessageHistoryRecord(
         id=row["id"],
-        run_id=row["run_id"],
+        session_id=row["session_id"],
         agent_name=row["agent_name"],
         pydantic_run_id=row["pydantic_run_id"],
         conversation_id=row["conversation_id"],

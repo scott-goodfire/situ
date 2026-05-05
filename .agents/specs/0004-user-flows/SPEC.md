@@ -60,5 +60,6 @@ Experiment result arrives
   -> TUI shows the concern in context
 ```
 
-Suspicious evidence is a core product moment, but it should not force a
-standalone Warning model. It is an experiment activity with a clear kind/body.
+Suspicious results are a core product moment, but they should not force a
+standalone Warning model. They are experiment activities with clear kinds and
+human-readable bodies.

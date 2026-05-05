@@ -1,3 +1,3 @@
-from .record import ExperimentRecord
+from .record import ExperimentRecord, WorkStatus
 
-__all__ = ["ExperimentRecord"]
+__all__ = ["ExperimentRecord", "WorkStatus"]

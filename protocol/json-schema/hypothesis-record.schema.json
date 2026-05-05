@@ -1,0 +1,49 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "objective_id": {
+      "title": "Objective Id",
+      "type": "string"
+    },
+    "title": {
+      "title": "Title",
+      "type": "string"
+    },
+    "summary": {
+      "title": "Summary",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "open",
+        "active",
+        "closed"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "created_at": {
+      "title": "Created At",
+      "type": "string"
+    },
+    "updated_at": {
+      "title": "Updated At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "objective_id",
+    "title",
+    "summary",
+    "status",
+    "created_at",
+    "updated_at"
+  ],
+  "title": "HypothesisRecord",
+  "type": "object"
+}

@@ -1,6 +1,11 @@
 export { AlmanacTuiView } from "./components/almanac-tui-view/almanac-tui-view.js";
 export { AppFrame } from "./components/app-frame/app-frame.js";
 export {
+  ChoicePrompt,
+  type ChoicePromptOption,
+  type ChoicePromptSelection,
+} from "./components/choice-prompt/choice-prompt.js";
+export {
   CommandInput,
   type CommandMessage,
 } from "./components/command-input/command-input.js";

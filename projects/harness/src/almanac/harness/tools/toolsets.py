@@ -4,15 +4,15 @@ import inspect
 
 from pydantic_ai import FunctionToolset
 
+from .activities import RecordExperimentActivityTool, RecordHypothesisActivityTool
+from .agent_context import GetAgentContextTool
 from .common import AlmanacToolDeps
-from .findings import RecordFindingTool
-from .run_context import GetRunContextTool
 
 RESEARCH_TOOLSET_INSTRUCTIONS = inspect.cleandoc(
     """
-    Use `get_run_context` before making claims about the run. Use
-    `record_finding` when an observation should become durable run knowledge.
-    Keep findings tied to evidence experiment IDs whenever possible.
+    Use `get_agent_context` before making claims about the session. Record durable
+    observations as hypothesis or experiment activities. Prefer concise activity
+    bodies with structured payloads for metrics, artifacts, or raw details.
     """
 )
 
@@ -22,7 +22,8 @@ def build_research_toolset() -> FunctionToolset[AlmanacToolDeps]:
         id="almanac.research.v1",
         instructions=RESEARCH_TOOLSET_INSTRUCTIONS,
         tools=[
-            GetRunContextTool().as_tool(),
-            RecordFindingTool().as_tool(),
+            GetAgentContextTool().as_tool(),
+            RecordHypothesisActivityTool().as_tool(),
+            RecordExperimentActivityTool().as_tool(),
         ],
     )

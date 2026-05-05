@@ -8,7 +8,6 @@ from typing import Any
 from almanac.protocol import (
     ExperimentRunParams,
     ExperimentRunResult,
-    SignalRecord,
     WorkerInitializeParams,
     WorkerInitializeResult,
 )
@@ -17,7 +16,7 @@ from almanac.protocol.jsonrpc import JsonRpcNotification, JsonRpcRequest, JsonRp
 
 TOY_RESULTS: dict[tuple[str, ...], dict[str, Any]] = {
     ("baseline",): {
-        "summary": "Baseline evidence recorded: score 0.710, latency 100ms.",
+        "summary": "Baseline result recorded: score 0.710, latency 100ms.",
         "signals": [
             {"key": "score", "value": 0.710},
             {"key": "latency_ms", "value": 100, "unit": "ms"},
@@ -86,7 +85,7 @@ def handle(request: JsonRpcRequest) -> dict[str, Any]:
         notify(
             "worker.progress",
             {
-                "run_id": params.run_id,
+                "session_id": params.session_id,
                 "experiment_id": params.experiment_id,
                 "message": f"Applying components: {', '.join(params.components)}",
                 "payload": {"components": params.components},
@@ -96,9 +95,9 @@ def handle(request: JsonRpcRequest) -> dict[str, Any]:
         notify(
             "worker.progress",
             {
-                "run_id": params.run_id,
+                "session_id": params.session_id,
                 "experiment_id": params.experiment_id,
-                "message": "Collecting toy evidence",
+                "message": "Collecting toy result",
                 "payload": {},
             },
         )
@@ -108,7 +107,7 @@ def handle(request: JsonRpcRequest) -> dict[str, Any]:
             experiment_id=params.experiment_id,
             status="completed",
             summary=str(result["summary"]),
-            signals=[SignalRecord(**signal) for signal in result["signals"]],
+            signals=list(result["signals"]),
             raw=dict(result["raw"]),
         ).model_dump()
 

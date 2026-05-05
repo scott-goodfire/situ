@@ -1,0 +1,38 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "objective_id": {
+      "title": "Objective Id",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "active",
+        "closed"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "created_at": {
+      "title": "Created At",
+      "type": "string"
+    },
+    "updated_at": {
+      "title": "Updated At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "objective_id",
+    "status",
+    "created_at",
+    "updated_at"
+  ],
+  "title": "SessionRecord",
+  "type": "object"
+}

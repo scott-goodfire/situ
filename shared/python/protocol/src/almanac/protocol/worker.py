@@ -1,8 +1,6 @@
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict
-
-from .events import SignalRecord
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class WorkerInitializeParams(BaseModel):
@@ -21,11 +19,13 @@ class WorkerInitializeResult(BaseModel):
 class ExperimentRunParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    run_id: str
+    session_id: str
+    objective_id: str
     experiment_id: str
-    intent: str
-    components: list[str]
-    based_on: list[str] = []
+    title: str
+    summary: str
+    components: list[str] = Field(default_factory=list)
+    based_on: list[str] = Field(default_factory=list)
 
 
 class ExperimentRunResult(BaseModel):
@@ -34,14 +34,14 @@ class ExperimentRunResult(BaseModel):
     experiment_id: str
     status: str
     summary: str
-    signals: list[SignalRecord]
-    raw: dict[str, Any]
+    signals: list[dict[str, Any]] = Field(default_factory=list)
+    raw: dict[str, Any] = Field(default_factory=dict)
 
 
 class WorkerProgressParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    run_id: str
+    session_id: str
     experiment_id: str
     message: str
-    payload: dict[str, Any] = {}
+    payload: dict[str, Any] = Field(default_factory=dict)

@@ -32,10 +32,10 @@ control flow when they make intent easier to see.
   reads more clearly.
 - Keep nested ternaries out of product UI code.
 - Use kebab-case for manually created frontend file and folder names, such as
-  `run-summary.tsx`, `event-timeline.tsx`, and `session-client.ts`.
+  `session-summary.tsx`, `event-timeline.tsx`, and `session-client.ts`.
 - Put durable components in their own kebab-case folder with the component file,
   stories, tests, styles, and helpers colocated when they exist. Prefer
-  `components/run-section/run-section.tsx` over a flat component bucket.
+  `components/session-section/session-section.tsx` over a flat component bucket.
 - Keep established framework entrypoints when conventional, such as `main.tsx`
   or generated route files.
 - Prefer named intermediate values over inline chains when the chain mixes

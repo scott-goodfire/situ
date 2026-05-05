@@ -7,7 +7,6 @@ SCHEMA_SQL = """
 CREATE TABLE IF NOT EXISTS project_config (
   id TEXT PRIMARY KEY,
   repo_path TEXT NOT NULL,
-  goal TEXT NOT NULL,
   evaluation_context TEXT NOT NULL,
   known_signals_json TEXT NOT NULL,
   experiment_scope TEXT NOT NULL,
@@ -15,8 +14,28 @@ CREATE TABLE IF NOT EXISTS project_config (
   updated_at TEXT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS runs (
+CREATE TABLE IF NOT EXISTS objectives (
   id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  description TEXT NOT NULL,
+  status TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS sessions (
+  id TEXT PRIMARY KEY,
+  objective_id TEXT NOT NULL REFERENCES objectives(id),
+  status TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS hypotheses (
+  id TEXT PRIMARY KEY,
+  objective_id TEXT NOT NULL REFERENCES objectives(id),
+  title TEXT NOT NULL,
+  summary TEXT NOT NULL,
   status TEXT NOT NULL,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
@@ -24,52 +43,64 @@ CREATE TABLE IF NOT EXISTS runs (
 
 CREATE TABLE IF NOT EXISTS experiments (
   id TEXT PRIMARY KEY,
-  run_id TEXT NOT NULL REFERENCES runs(id),
+  objective_id TEXT NOT NULL REFERENCES objectives(id),
   status TEXT NOT NULL,
-  intent TEXT NOT NULL,
-  change_summary TEXT NOT NULL,
-  components_json TEXT NOT NULL,
-  based_on_json TEXT NOT NULL,
-  suspicious INTEGER NOT NULL DEFAULT 0,
-  suspicious_reason TEXT,
-  note TEXT NOT NULL DEFAULT '',
+  title TEXT NOT NULL,
+  summary TEXT NOT NULL,
+  created_in_session_id TEXT REFERENCES sessions(id),
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS evidence (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  run_id TEXT NOT NULL REFERENCES runs(id),
+CREATE TABLE IF NOT EXISTS hypothesis_experiment_links (
+  hypothesis_id TEXT NOT NULL REFERENCES hypotheses(id),
   experiment_id TEXT NOT NULL REFERENCES experiments(id),
-  summary TEXT NOT NULL,
-  signals_json TEXT NOT NULL,
-  raw_json TEXT NOT NULL,
+  note TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL,
+  PRIMARY KEY (hypothesis_id, experiment_id)
+);
+
+CREATE TABLE IF NOT EXISTS hypothesis_activities (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  hypothesis_id TEXT NOT NULL REFERENCES hypotheses(id),
+  session_id TEXT REFERENCES sessions(id),
+  actor TEXT NOT NULL,
+  kind TEXT NOT NULL,
+  body TEXT NOT NULL,
+  payload_json TEXT NOT NULL,
   created_at TEXT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS findings (
-  id TEXT PRIMARY KEY,
-  run_id TEXT NOT NULL REFERENCES runs(id),
-  summary TEXT NOT NULL,
-  evidence_experiment_ids_json TEXT NOT NULL,
-  confidence TEXT NOT NULL,
-  status TEXT NOT NULL,
-  created_at TEXT NOT NULL,
-  updated_at TEXT NOT NULL
+CREATE TABLE IF NOT EXISTS experiment_activities (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  experiment_id TEXT NOT NULL REFERENCES experiments(id),
+  session_id TEXT REFERENCES sessions(id),
+  actor TEXT NOT NULL,
+  kind TEXT NOT NULL,
+  body TEXT NOT NULL,
+  payload_json TEXT NOT NULL,
+  created_at TEXT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS warnings (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  run_id TEXT NOT NULL REFERENCES runs(id),
+CREATE TABLE IF NOT EXISTS artifacts (
+  id TEXT PRIMARY KEY,
+  objective_id TEXT NOT NULL REFERENCES objectives(id),
+  session_id TEXT REFERENCES sessions(id),
+  hypothesis_id TEXT REFERENCES hypotheses(id),
   experiment_id TEXT REFERENCES experiments(id),
+  hypothesis_activity_id INTEGER REFERENCES hypothesis_activities(id),
+  experiment_activity_id INTEGER REFERENCES experiment_activities(id),
   kind TEXT NOT NULL,
-  message TEXT NOT NULL,
+  title TEXT NOT NULL,
+  path TEXT NOT NULL,
+  media_type TEXT,
+  size_bytes INTEGER,
   created_at TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS agent_message_history (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  run_id TEXT NOT NULL REFERENCES runs(id),
+  session_id TEXT NOT NULL REFERENCES sessions(id),
   agent_name TEXT NOT NULL,
   pydantic_run_id TEXT,
   conversation_id TEXT,
@@ -80,7 +111,7 @@ CREATE TABLE IF NOT EXISTS agent_message_history (
 
 CREATE TABLE IF NOT EXISTS events (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  run_id TEXT REFERENCES runs(id),
+  session_id TEXT REFERENCES sessions(id),
   type TEXT NOT NULL,
   message TEXT NOT NULL,
   payload_json TEXT NOT NULL,

@@ -11,7 +11,6 @@ from almanac.harness.config import DEFAULTS
 from almanac.protocol import (
     ExperimentRunParams,
     ExperimentRunResult,
-    SignalRecord,
     WorkerInitializeParams,
     WorkerInitializeResult,
 )
@@ -48,7 +47,7 @@ def run_eval_command(params: ExperimentRunParams) -> ExperimentRunResult:
     notify(
         "worker.progress",
         {
-            "run_id": params.run_id,
+            "session_id": params.session_id,
             "experiment_id": params.experiment_id,
             "message": f"Running eval command for {params.experiment_id}",
             "payload": {"components": params.components, "command": command},
@@ -60,7 +59,8 @@ def run_eval_command(params: ExperimentRunParams) -> ExperimentRunResult:
         cwd=os.environ.get("ALMANAC_WORKSPACE") or os.getcwd(),
         env={
             **os.environ,
-            "ALMANAC_RUN_ID": params.run_id,
+            "ALMANAC_SESSION_ID": params.session_id,
+            "ALMANAC_RUN_ID": params.session_id,
             "ALMANAC_EXPERIMENT_ID": params.experiment_id,
             "ALMANAC_COMPONENTS": ",".join(params.components),
             "ALMANAC_COMPONENTS_JSON": json.dumps(params.components),
@@ -130,25 +130,25 @@ def parse_json_stdout(stdout: str) -> dict[str, Any]:
     return parsed
 
 
-def normalize_signals(parsed: dict[str, Any]) -> list[SignalRecord]:
+def normalize_signals(parsed: dict[str, Any]) -> list[dict[str, Any]]:
     signals = parsed.get("signals")
     if isinstance(signals, list):
-        return [SignalRecord(**signal) for signal in signals if isinstance(signal, dict)]
+        return [signal for signal in signals if isinstance(signal, dict)]
     if isinstance(signals, dict):
-        return [SignalRecord(key=key, value=value) for key, value in signals.items()]
+        return [{"key": key, "value": value} for key, value in signals.items()]
 
     ignored = {"summary", "status", "raw"}
     return [
-        SignalRecord(key=key, value=value)
+        {"key": key, "value": value}
         for key, value in parsed.items()
         if key not in ignored and isinstance(value, str | int | float | bool | type(None))
     ]
 
 
-def summarize(params: ExperimentRunParams, signals: list[SignalRecord]) -> str:
-    rendered = ", ".join(f"{signal.key}={signal.value}" for signal in signals)
+def summarize(params: ExperimentRunParams, signals: list[dict[str, Any]]) -> str:
+    rendered = ", ".join(f"{signal.get('key')}={signal.get('value')}" for signal in signals)
     suffix = f": {rendered}" if rendered else ""
-    return f"Collected evidence for {params.experiment_id}{suffix}."
+    return f"Collected result for {params.experiment_id}{suffix}."
 
 
 def main() -> None:

@@ -27,7 +27,7 @@ def main() -> int:
         "--eval-command",
         help="command the built-in local command worker should run for each experiment",
     )
-    start_parser.add_argument("--goal", help="initial goal for first-time setup")
+    start_parser.add_argument("--objective", help="initial objective for first-time setup")
     start_parser.add_argument(
         "--evaluation-context",
         help="plain-language description of evals, tools, metrics, logs, or artifacts",
@@ -45,7 +45,7 @@ def main() -> int:
     start_parser.add_argument(
         "--max-experiments",
         type=int,
-        help="maximum number of non-baseline experiments to run",
+        help="maximum number of experiments to run",
     )
     web_parser = subparsers.add_parser("web", help="open the attach-only web monitor")
     web_parser.add_argument(
@@ -79,7 +79,7 @@ def start(args: argparse.Namespace) -> int:
 
     optional_env = {
         "ALMANAC_EVAL_COMMAND": args.eval_command,
-        "ALMANAC_GOAL": args.goal,
+        "ALMANAC_OBJECTIVE": args.objective,
         "ALMANAC_EVALUATION_CONTEXT": args.evaluation_context,
         "ALMANAC_EXPERIMENT_SCOPE": args.experiment_scope,
         "ALMANAC_MAX_EXPERIMENTS": str(args.max_experiments) if args.max_experiments is not None else None,

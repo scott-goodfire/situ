@@ -1,5 +1,48 @@
 {
   "$defs": {
+    "ObjectiveRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "active",
+            "closed"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        },
+        "updated_at": {
+          "title": "Updated At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "description",
+        "status",
+        "created_at",
+        "updated_at"
+      ],
+      "title": "ObjectiveRecord",
+      "type": "object"
+    },
     "ProjectConfigRecord": {
       "additionalProperties": false,
       "properties": {
@@ -9,10 +52,6 @@
         },
         "repo_path": {
           "title": "Repo Path",
-          "type": "string"
-        },
-        "goal": {
-          "title": "Goal",
           "type": "string"
         },
         "evaluation_context": {
@@ -42,7 +81,6 @@
       "required": [
         "id",
         "repo_path",
-        "goal",
         "evaluation_context",
         "known_signals",
         "experiment_scope",
@@ -63,6 +101,17 @@
       "anyOf": [
         {
           "$ref": "#/$defs/ProjectConfigRecord"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "objective": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ObjectiveRecord"
         },
         {
           "type": "null"

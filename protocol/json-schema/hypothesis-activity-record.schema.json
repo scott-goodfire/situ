@@ -1,0 +1,63 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "title": "Id",
+      "type": "integer"
+    },
+    "hypothesis_id": {
+      "title": "Hypothesis Id",
+      "type": "string"
+    },
+    "session_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Session Id"
+    },
+    "actor": {
+      "title": "Actor",
+      "type": "string"
+    },
+    "kind": {
+      "enum": [
+        "comment",
+        "update",
+        "result",
+        "concern",
+        "decision"
+      ],
+      "title": "Kind",
+      "type": "string"
+    },
+    "body": {
+      "title": "Body",
+      "type": "string"
+    },
+    "payload": {
+      "additionalProperties": true,
+      "title": "Payload",
+      "type": "object"
+    },
+    "created_at": {
+      "title": "Created At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "hypothesis_id",
+    "actor",
+    "kind",
+    "body",
+    "created_at"
+  ],
+  "title": "HypothesisActivityRecord",
+  "type": "object"
+}

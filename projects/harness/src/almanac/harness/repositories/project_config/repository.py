@@ -14,13 +14,11 @@ class ProjectConfigRepository(BaseRepository):
     def set(
         self,
         *,
-        goal: str,
         evaluation_context: str,
         known_signals: list[str],
         experiment_scope: str,
     ) -> ProjectConfigRecord:
         command = SetProjectConfig(
-            goal=goal,
             evaluation_context=evaluation_context,
             known_signals=known_signals,
             experiment_scope=experiment_scope,
@@ -31,12 +29,11 @@ class ProjectConfigRepository(BaseRepository):
         self.db.execute(
             """
             INSERT INTO project_config
-              (id, repo_path, goal, evaluation_context, known_signals_json,
+              (id, repo_path, evaluation_context, known_signals_json,
                experiment_scope, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET
               repo_path = excluded.repo_path,
-              goal = excluded.goal,
               evaluation_context = excluded.evaluation_context,
               known_signals_json = excluded.known_signals_json,
               experiment_scope = excluded.experiment_scope,
@@ -45,7 +42,6 @@ class ProjectConfigRepository(BaseRepository):
             (
                 self.db.project_id,
                 self.db.repo_path,
-                command.goal,
                 command.evaluation_context,
                 json_dumps(command.known_signals),
                 command.experiment_scope,
