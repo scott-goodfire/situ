@@ -7,6 +7,7 @@ import type {
   HypothesisActivityRecord,
   HypothesisRecord,
   ObjectiveRecord,
+  ResearchContextRecord,
   SessionRecord,
 } from "@almanac/protocol";
 import { ActivitySection } from "../activity-section/activity-section.js";
@@ -28,6 +29,7 @@ export function AlmanacTuiView({
   statusLine,
   dashboardMessage,
   objective,
+  researchContext,
   session,
   experimentCount,
   maxExperiments,
@@ -45,6 +47,7 @@ export function AlmanacTuiView({
   statusLine: string;
   dashboardMessage: DashboardControlMessage | undefined;
   objective: ObjectiveRecord | undefined;
+  researchContext?: ResearchContextRecord | undefined;
   session: SessionRecord | undefined;
   experimentCount: number;
   maxExperiments: number;
@@ -71,6 +74,7 @@ export function AlmanacTuiView({
     >
       <SessionSection
         objective={objective}
+        researchContext={researchContext}
         session={session}
         experimentCount={experimentCount}
         maxExperiments={maxExperiments}

@@ -76,7 +76,7 @@ function reconnectMessage({
   experimentCount: number;
   maxExperiments: number;
 }): string {
-  const objectiveLabel = objective?.title ?? session.objective_id;
+  const objectiveLabel = objective?.title ?? "(no objective)";
 
   return `${session.id} is active for ${objectiveLabel}. Experiments ${experimentCount}/${maxExperiments}.`;
 }

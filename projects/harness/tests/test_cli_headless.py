@@ -71,11 +71,7 @@ def test_snapshot_json_reads_local_state_without_live_session(
         project_home=project_home,
         notify=lambda _method, _params: None,
     )
-    app.setup_complete(
-        {
-            "research_context": "Run local evals. Expected signals: score.",
-        }
-    )
+    app.setup_complete({})
 
     code = cli.main(["snapshot", str(workspace), "--json"])
 
@@ -243,13 +239,7 @@ def test_exec_uses_shared_rpc_lifecycle_and_prints_final_json(
             return {
                 "session": {
                     "id": "session_0001",
-                    "objective_id": "objective_0001",
-                    "objective": "Improve the score",
-                    "research_context": (
-                        "Run local evals. Use project-native tools, tests, evals, "
-                        "benchmarks, logs, and artifacts. Capture plaintext evidence, "
-                        "useful interpretations, concerns, and activities."
-                    ),
+                    "project_id": "project_test",
                     "status": "closed",
                 }
             }
@@ -258,13 +248,7 @@ def test_exec_uses_shared_rpc_lifecycle_and_prints_final_json(
                 "sessions": [
                     {
                         "id": "session_0001",
-                        "objective_id": "objective_0001",
-                        "objective": "Improve the score",
-                        "research_context": (
-                            "Run local evals. Use project-native tools, tests, evals, "
-                            "benchmarks, logs, and artifacts. Capture plaintext evidence, "
-                            "useful interpretations, concerns, and activities."
-                        ),
+                        "project_id": "project_test",
                         "status": "closed",
                     }
                 ],

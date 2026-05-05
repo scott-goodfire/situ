@@ -20,14 +20,21 @@ from almanac.harness.records import (
     HypothesisExperimentLinkRecord,
     HypothesisRecord,
     ObjectiveRecord,
-    ProjectConfigRecord,
+    ProjectRecord,
+    ResearchContextRecord,
     SessionRecord,
 )
 
 
+class _NonCollectionRecord:
+    pass
+
+
 def test_collection_routes_cover_publishable_records() -> None:
     records = [
+        (project_record(), "projects", "project_0001"),
         (objective_record(), "objectives", "objective_0001"),
+        (research_context_record(), "research_contexts", "rctx_0001"),
         (session_record(), "sessions", "session_0001"),
         (hypothesis_record(), "hypotheses", "hyp_0001"),
         (experiment_record(), "experiments", "exp_0001"),
@@ -84,25 +91,35 @@ def test_collection_publisher_emits_generic_upsert() -> None:
 
 def test_collection_route_rejects_non_collection_records() -> None:
     with pytest.raises(TypeError, match="not publishable"):
-        collection_route_for_record(
-            ProjectConfigRecord(
-                id="project_0001",
-                repo_path="/tmp/project",
-                research_context="Run evals.",
-                associated_session_id=None,
-                created_at="now",
-                updated_at="now",
-            )
-        )
+        collection_route_for_record(_NonCollectionRecord())  # type: ignore[arg-type]
+
+
+def project_record() -> ProjectRecord:
+    return ProjectRecord(
+        id="project_0001",
+        repo_path="/tmp/project",
+        created_at="now",
+        updated_at="now",
+    )
 
 
 def objective_record() -> ObjectiveRecord:
     return ObjectiveRecord(
         id="objective_0001",
+        session_id="session_0001",
         title="Improve score",
         description="Improve score.",
         status="active",
-        associated_session_id=None,
+        created_at="now",
+        updated_at="now",
+    )
+
+
+def research_context_record() -> ResearchContextRecord:
+    return ResearchContextRecord(
+        id="rctx_0001",
+        session_id="session_0001",
+        body="Run evals. Expected signals: score.",
         created_at="now",
         updated_at="now",
     )
@@ -111,9 +128,7 @@ def objective_record() -> ObjectiveRecord:
 def session_record() -> SessionRecord:
     return SessionRecord(
         id="session_0001",
-        objective_id="objective_0001",
-        objective="Improve score",
-        research_context="Run evals.",
+        project_id="project_0001",
         status="active",
         created_at="now",
         updated_at="now",
@@ -123,11 +138,10 @@ def session_record() -> SessionRecord:
 def hypothesis_record() -> HypothesisRecord:
     return HypothesisRecord(
         id="hyp_0001",
-        objective_id="objective_0001",
+        session_id="session_0001",
         title="Hypothesis",
         summary="Summary.",
         status="active",
-        associated_session_id="session_0001",
         created_at="now",
         updated_at="now",
     )
@@ -136,11 +150,10 @@ def hypothesis_record() -> HypothesisRecord:
 def experiment_record() -> ExperimentRecord:
     return ExperimentRecord(
         id="exp_0001",
-        objective_id="objective_0001",
+        session_id="session_0001",
         status="active",
         title="Experiment",
         summary="Summary.",
-        associated_session_id="session_0001",
         created_at="now",
         updated_at="now",
     )
@@ -149,11 +162,10 @@ def experiment_record() -> ExperimentRecord:
 def evaluation_record() -> EvaluationRecord:
     return EvaluationRecord(
         id="eval_0001",
-        objective_id="objective_0001",
+        session_id="session_0001",
         status="active",
         title="Baseline eval",
         summary="Run baseline.",
-        associated_session_id="session_0001",
         associated_experiment_id=None,
         created_at="now",
         updated_at="now",
@@ -164,7 +176,6 @@ def hypothesis_activity_record() -> HypothesisActivityRecord:
     return HypothesisActivityRecord(
         id=1,
         hypothesis_id="hyp_0001",
-        session_id="session_0001",
         actor="agent",
         kind="comment",
         body="Comment.",
@@ -177,7 +188,6 @@ def experiment_activity_record() -> ExperimentActivityRecord:
     return ExperimentActivityRecord(
         id=2,
         experiment_id="exp_0001",
-        session_id="session_0001",
         actor="agent",
         kind="comment",
         body="Comment.",
@@ -190,7 +200,6 @@ def evaluation_activity_record() -> EvaluationActivityRecord:
     return EvaluationActivityRecord(
         id=4,
         evaluation_id="eval_0001",
-        session_id="session_0001",
         actor="agent",
         kind="comment",
         body="Baseline result.",
@@ -202,8 +211,7 @@ def evaluation_activity_record() -> EvaluationActivityRecord:
 def artifact_record() -> ArtifactRecord:
     return ArtifactRecord(
         id="artifact_0001",
-        objective_id="objective_0001",
-        associated_session_id="session_0001",
+        session_id="session_0001",
         associated_entity_kind="experiment",
         associated_entity_id="exp_0001",
         kind="json",

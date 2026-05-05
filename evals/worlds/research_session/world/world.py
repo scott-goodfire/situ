@@ -11,6 +11,7 @@ from evals.harness.models import EvalEvent
 from evals.worlds.research_session.models import ResearchSessionSeed
 
 OBJECTIVE_ID = "objective_eval_0001"
+RESEARCH_CONTEXT_ID = "rctx_eval_0001"
 SESSION_ID = "session_eval_0001"
 HYPOTHESIS_ID = "hyp_eval_component_a"
 EXPERIMENT_ID = "exp_eval_component_a"
@@ -18,6 +19,12 @@ ARTIFACT_ID = "artifact_eval_raw_output"
 BASELINE_EXPERIMENT_ID = "exp_eval_baseline"
 COMPONENT_A_EXPERIMENT_ID = "exp_eval_component_a"
 COMPONENT_C_EXPERIMENT_ID = "exp_eval_component_c"
+
+RESEARCH_CONTEXT_BODY = (
+    "Use local eval scripts and compare score, latency_ms, and safety notes. "
+    "Expected signals: score, latency_ms, tests_passed. "
+    "Scope: baseline, simple variants, and promising combinations."
+)
 
 
 class ResearchSessionWorld:
@@ -55,9 +62,14 @@ class ResearchSessionWorld:
     def session_graph(self) -> dict[str, Any]:
         graph = SessionsService(repos=self.repos).get_session(SESSION_ID)
         return {
-            "config": graph.config.model_dump() if graph.config is not None else None,
+            "project": graph.project.model_dump() if graph.project is not None else None,
             "session": graph.session.model_dump() if graph.session is not None else None,
             "objective": graph.objective.model_dump() if graph.objective is not None else None,
+            "research_context": (
+                graph.research_context.model_dump()
+                if graph.research_context is not None
+                else None
+            ),
             "hypotheses": [item.model_dump() for item in graph.hypotheses],
             "experiments": [item.model_dump() for item in graph.experiments],
             "evaluations": [item.model_dump() for item in graph.evaluations],
@@ -85,31 +97,18 @@ def _build_repos(path: Path) -> Repositories:
         repo_path="/tmp/almanac-eval-project",
     )
     repos = Repositories.create(db)
-    repos.project_config.set(
-        research_context=(
-            "Use local eval scripts and compare score, latency_ms, and safety notes. "
-            "Expected signals: score, latency_ms, tests_passed. "
-            "Scope: baseline, simple variants, and promising combinations."
-        ),
-    )
-    objective = repos.objectives.create(
+    project = repos.project.ensure()
+    repos.sessions.create(SESSION_ID, project_id=project.id)
+    repos.objectives.create(
         objective_id=OBJECTIVE_ID,
+        session_id=SESSION_ID,
         title="Improve validation score",
         description="Improve validation score without worsening latency.",
     )
-    session = repos.sessions.create(
-        SESSION_ID,
-        objective_id=objective.id,
-        objective=objective.title,
-        research_context=(
-            "Use local eval scripts and compare score, latency_ms, and safety notes. "
-            "Expected signals: score, latency_ms, tests_passed. "
-            "Scope: baseline, simple variants, and promising combinations."
-        ),
-    )
-    repos.objectives.update(
-        objective.id,
-        associated_session_id=session.id,
+    repos.research_contexts.create(
+        research_context_id=RESEARCH_CONTEXT_ID,
+        session_id=SESSION_ID,
+        body=RESEARCH_CONTEXT_BODY,
     )
     return repos
 
@@ -118,11 +117,10 @@ def _seed(repos: Repositories, seed: ResearchSessionSeed) -> None:
     if seed in {"needs_baseline", "with_baseline_result", "with_promising_results"}:
         repos.hypotheses.create(
             hypothesis_id=HYPOTHESIS_ID,
-            objective_id=OBJECTIVE_ID,
+            session_id=SESSION_ID,
             title="Component changes can improve score",
             summary="Compare baseline, individual components, and simple combinations.",
             status="active",
-            associated_session_id=SESSION_ID,
         )
 
     if seed in {"with_baseline_result", "with_promising_results"}:
@@ -166,7 +164,6 @@ def _seed(repos: Repositories, seed: ResearchSessionSeed) -> None:
         )
         repos.hypothesis_activities.add(
             hypothesis_id=HYPOTHESIS_ID,
-            session_id=SESSION_ID,
             actor="harness",
             kind="comment",
             body="A and C are the strongest individual components so far.",
@@ -182,20 +179,18 @@ def _seed(repos: Repositories, seed: ResearchSessionSeed) -> None:
     }:
         repos.hypotheses.create(
             hypothesis_id=HYPOTHESIS_ID,
-            objective_id=OBJECTIVE_ID,
+            session_id=SESSION_ID,
             title="Component A helps",
             summary="Component A may improve validation score.",
             status="active",
-            associated_session_id=SESSION_ID,
         )
 
     if seed in {"with_experiment", "with_link", "with_comments", "with_artifact"}:
         repos.experiments.create(
             experiment_id=EXPERIMENT_ID,
-            objective_id=OBJECTIVE_ID,
+            session_id=SESSION_ID,
             title="Try component A",
             summary="Run baseline plus component A.",
-            associated_session_id=SESSION_ID,
             status="open",
         )
 
@@ -208,14 +203,12 @@ def _seed(repos: Repositories, seed: ResearchSessionSeed) -> None:
     if seed in {"with_comments", "with_artifact"}:
         repos.hypothesis_activities.add(
             hypothesis_id=HYPOTHESIS_ID,
-            session_id=SESSION_ID,
             actor="agent",
             kind="comment",
             body="Component A is worth testing before combining variants.",
         )
         repos.experiment_activities.add(
             experiment_id=EXPERIMENT_ID,
-            session_id=SESSION_ID,
             actor="worker",
             kind="comment",
             body="Component A completed with score 0.73.",
@@ -224,8 +217,7 @@ def _seed(repos: Repositories, seed: ResearchSessionSeed) -> None:
     if seed == "with_artifact":
         repos.artifacts.create(
             artifact_id=ARTIFACT_ID,
-            objective_id=OBJECTIVE_ID,
-            associated_session_id=SESSION_ID,
+            session_id=SESSION_ID,
             associated_entity_kind="experiment",
             associated_entity_id=EXPERIMENT_ID,
             kind="json",
@@ -247,15 +239,13 @@ def _create_experiment_with_result(
 ) -> None:
     repos.experiments.create(
         experiment_id=experiment_id,
-        objective_id=OBJECTIVE_ID,
+        session_id=SESSION_ID,
         title=title,
         summary=summary,
-        associated_session_id=SESSION_ID,
         status="closed",
     )
     repos.experiment_activities.add(
         experiment_id=experiment_id,
-        session_id=SESSION_ID,
         actor="worker",
         kind="comment",
         body=result_body,

@@ -16,7 +16,7 @@ export function activeObjectiveFor({
   session: SessionRecord | undefined;
 }): ObjectiveRecord | undefined {
   if (session) {
-    const objective = objectives.find((item) => item.id === session.objective_id);
+    const objective = objectives.find((item) => item.session_id === session.id);
     if (objective) {
       return objective;
     }
@@ -47,10 +47,7 @@ export function hypothesesForSession({
     return [];
   }
 
-  return filter(
-    data.hypotheses,
-    (hypothesis) => hypothesis.associated_session_id === session.id,
-  );
+  return filter(data.hypotheses, (hypothesis) => hypothesis.session_id === session.id);
 }
 
 export function overviewHypotheses({
@@ -83,10 +80,7 @@ export function experimentsForSession({
     return [];
   }
 
-  return filter(
-    data.experiments,
-    (experiment) => experiment.associated_session_id === session.id,
-  );
+  return filter(data.experiments, (experiment) => experiment.session_id === session.id);
 }
 
 export function activeExperimentFor({

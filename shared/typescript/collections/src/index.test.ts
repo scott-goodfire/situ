@@ -14,16 +14,23 @@ import type {
   ExperimentRecord,
   HypothesisRecord,
   ObjectiveRecord,
+  ProjectRecord,
+  ResearchContextRecord,
   SessionRecord,
 } from "@almanac/protocol";
 
+const PROJECT_ID = "project_0001";
+const SESSION_ID = "session_0001";
+
 describe("almanac collections", () => {
-  test("hydrates objective, session, research objects, activities, and events", async () => {
+  test("hydrates projects, objectives, research contexts, sessions, activities, and events", async () => {
     const collections = createAlmanacCollections();
     const bootstrap: CollectionsBootstrapResult = {
       cursor: 2,
+      projects: [projectRecord({})],
       objectives: [objectiveRecord({})],
-      sessions: [sessionRecord({ overrides: { id: "session_0001" } })],
+      research_contexts: [researchContextRecord({})],
+      sessions: [sessionRecord({ overrides: { id: SESSION_ID } })],
       hypotheses: [hypothesisRecord({})],
       experiments: [experimentRecord({})],
       evaluations: [evaluationRecord({})],
@@ -31,7 +38,6 @@ describe("almanac collections", () => {
         {
           hypothesis_id: "hyp_0001",
           experiment_id: "exp_session_0001_baseline",
-          note: "baseline",
           created_at: "2026-01-01T00:00:01Z",
         },
       ],
@@ -54,8 +60,12 @@ describe("almanac collections", () => {
       bootstrap,
     });
 
-    expect(collections.objectives.get("objective_0001")?.title).toBe("Improve score");
-    expect(collections.sessions.get("session_0001")?.status).toBe("active");
+    expect(collections.projects.get(PROJECT_ID)?.repo_path).toBe("/tmp/repo");
+    expect(collections.objectives.get(`obj_${SESSION_ID}`)?.title).toBe("Improve score");
+    expect(collections.researchContexts.get(`rctx_${SESSION_ID}`)?.body).toBe(
+      "Run project-native tests and collect plaintext evidence.",
+    );
+    expect(collections.sessions.get(SESSION_ID)?.status).toBe("active");
     expect(collections.hypotheses.get("hyp_0001")?.status).toBe("active");
     expect(collections.experiments.get("exp_session_0001_baseline")?.status).toBe(
       "closed",
@@ -73,6 +83,7 @@ describe("almanac collections", () => {
     const collections = createAlmanacCollections();
     const bootstrap = {
       cursor: 1,
+      projects: [projectRecord({})],
       objectives: [objectiveRecord({})],
       sessions: [],
       hypotheses: [],
@@ -89,7 +100,7 @@ describe("almanac collections", () => {
       bootstrap,
     });
 
-    expect(collections.objectives.get("objective_0001")?.title).toBe("Improve score");
+    expect(collections.objectives.get(`obj_${SESSION_ID}`)?.title).toBe("Improve score");
     expect(collections.evaluations.size).toBe(0);
     expect(collections.evaluationActivities.size).toBe(0);
   });
@@ -100,17 +111,33 @@ describe("almanac collections", () => {
     await applyCollectionUpsert({
       collections,
       upsert: upsert({
-        collection: "sessions",
-        key: "session_0001",
-        record: sessionRecord({ overrides: { id: "session_0001", status: "active" } }),
+        collection: "projects",
+        key: PROJECT_ID,
+        record: projectRecord({ overrides: { id: PROJECT_ID } }),
+      }),
+    });
+    await applyCollectionUpsert({
+      collections,
+      upsert: upsert({
+        collection: "research_contexts",
+        key: `rctx_${SESSION_ID}`,
+        record: researchContextRecord({}),
       }),
     });
     await applyCollectionUpsert({
       collections,
       upsert: upsert({
         collection: "sessions",
-        key: "session_0001",
-        record: sessionRecord({ overrides: { id: "session_0001", status: "closed" } }),
+        key: SESSION_ID,
+        record: sessionRecord({ overrides: { id: SESSION_ID, status: "active" } }),
+      }),
+    });
+    await applyCollectionUpsert({
+      collections,
+      upsert: upsert({
+        collection: "sessions",
+        key: SESSION_ID,
+        record: sessionRecord({ overrides: { id: SESSION_ID, status: "closed" } }),
       }),
     });
     await applyCollectionUpsert({
@@ -160,8 +187,12 @@ describe("almanac collections", () => {
       }),
     });
 
+    expect(collections.projects.get(PROJECT_ID)?.repo_path).toBe("/tmp/repo");
+    expect(collections.researchContexts.get(`rctx_${SESSION_ID}`)?.body).toBe(
+      "Run project-native tests and collect plaintext evidence.",
+    );
     expect(collections.sessions.size).toBe(1);
-    expect(collections.sessions.get("session_0001")?.status).toBe("closed");
+    expect(collections.sessions.get(SESSION_ID)?.status).toBe("closed");
     expect(collections.experiments.get("exp_session_0001_a")?.status).toBe("active");
     expect(collections.evaluations.get("eval_session_0001_a")?.status).toBe("active");
     expect(collections.experimentActivities.get("3")?.kind).toBe("comment");
@@ -182,7 +213,9 @@ function upsert({
   collection: CollectionUpsertedParams["collection"];
   key: string;
   record:
+    | ProjectRecord
     | ObjectiveRecord
+    | ResearchContextRecord
     | SessionRecord
     | HypothesisRecord
     | ExperimentRecord
@@ -199,16 +232,46 @@ function upsert({
   };
 }
 
+function projectRecord({
+  overrides = {},
+}: {
+  overrides?: Partial<ProjectRecord>;
+}): ProjectRecord {
+  return {
+    id: PROJECT_ID,
+    repo_path: "/tmp/repo",
+    created_at: "2026-01-01T00:00:00Z",
+    updated_at: "2026-01-01T00:00:00Z",
+    ...overrides,
+  };
+}
+
 function objectiveRecord({
   overrides = {},
 }: {
   overrides?: Partial<ObjectiveRecord>;
 }): ObjectiveRecord {
   return {
-    id: "objective_0001",
+    id: `obj_${SESSION_ID}`,
+    session_id: SESSION_ID,
     title: "Improve score",
     description: "Improve toy score while preserving latency.",
     status: "active",
+    created_at: "2026-01-01T00:00:00Z",
+    updated_at: "2026-01-01T00:00:00Z",
+    ...overrides,
+  };
+}
+
+function researchContextRecord({
+  overrides = {},
+}: {
+  overrides?: Partial<ResearchContextRecord>;
+}): ResearchContextRecord {
+  return {
+    id: `rctx_${SESSION_ID}`,
+    session_id: SESSION_ID,
+    body: "Run project-native tests and collect plaintext evidence.",
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
     ...overrides,
@@ -221,10 +284,8 @@ function sessionRecord({
   overrides?: Partial<SessionRecord>;
 }): SessionRecord {
   return {
-    id: "session_0001",
-    objective_id: "objective_0001",
-    objective: "Improve score",
-    research_context: "Run project-native tests and collect plaintext evidence.",
+    id: SESSION_ID,
+    project_id: PROJECT_ID,
     status: "active",
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
@@ -239,7 +300,7 @@ function hypothesisRecord({
 }): HypothesisRecord {
   return {
     id: "hyp_0001",
-    objective_id: "objective_0001",
+    session_id: SESSION_ID,
     title: "Component C helps",
     summary: "Component C may improve score.",
     status: "active",
@@ -256,11 +317,10 @@ function experimentRecord({
 }): ExperimentRecord {
   return {
     id: "exp_session_0001_baseline",
-    objective_id: "objective_0001",
+    session_id: SESSION_ID,
     status: "closed",
     title: "Record baseline",
     summary: "Baseline toy evaluation.",
-    associated_session_id: "session_0001",
     created_at: "2026-01-01T00:00:01Z",
     updated_at: "2026-01-01T00:00:01Z",
     ...overrides,
@@ -274,11 +334,10 @@ function evaluationRecord({
 }): EvaluationRecord {
   return {
     id: "eval_session_0001_baseline",
-    objective_id: "objective_0001",
+    session_id: SESSION_ID,
     status: "closed",
     title: "Baseline project eval",
     summary: "Baseline toy evaluation.",
-    associated_session_id: "session_0001",
     associated_experiment_id: undefined,
     created_at: "2026-01-01T00:00:01Z",
     updated_at: "2026-01-01T00:00:01Z",
@@ -294,7 +353,6 @@ function experimentActivityRecord({
   return {
     id: 1,
     experiment_id: "exp_session_0001_baseline",
-    session_id: "session_0001",
     actor: "worker",
     kind: "comment",
     body: "Baseline result recorded.",
@@ -312,7 +370,6 @@ function evaluationActivityRecord({
   return {
     id: 1,
     evaluation_id: "eval_session_0001_baseline",
-    session_id: "session_0001",
     actor: "agent",
     kind: "comment",
     body: "Baseline result recorded.",
@@ -325,7 +382,7 @@ function evaluationActivityRecord({
 function eventRecord({ overrides = {} }: { overrides?: Partial<EventRecord> }): EventRecord {
   return {
     id: 1,
-    session_id: "session_0001",
+    session_id: SESSION_ID,
     type: "session.started",
     message: "Started session_0001",
     payload: {},

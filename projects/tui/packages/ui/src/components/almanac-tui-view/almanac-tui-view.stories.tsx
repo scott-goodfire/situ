@@ -9,6 +9,7 @@ import type {
   HypothesisActivityRecord,
   HypothesisRecord,
   ObjectiveRecord,
+  ResearchContextRecord,
   SessionRecord,
 } from "@almanac/protocol";
 import { AlmanacTuiView } from "./almanac-tui-view.js";
@@ -20,6 +21,7 @@ import {
   acceptedExperiment,
   activeHypothesis,
   activeObjective,
+  activeResearchContext,
   completedEvents,
   completedEvaluations,
   completedExperiments,
@@ -52,6 +54,7 @@ export const stories = [
       <StoryAlmanacTuiView
         statusLine="Connecting to local session..."
         objective={activeObjective}
+        researchContext={activeResearchContext}
         session={undefined}
         experimentCount={0}
         activeExperiment={undefined}
@@ -73,6 +76,7 @@ export const stories = [
       <StoryAlmanacTuiView
         statusLine="session_0001 | active | experiments 3/5"
         objective={activeObjective}
+        researchContext={activeResearchContext}
         session={runningSession}
         experimentCount={runningExperiments.length}
         activeExperiment={runningExperiment}
@@ -94,6 +98,7 @@ export const stories = [
       <StoryAlmanacTuiView
         statusLine="session_0001 | active | experiments 3/5"
         objective={activeObjective}
+        researchContext={activeResearchContext}
         session={runningSession}
         experimentCount={suspiciousExperiments.length}
         activeExperiment={undefined}
@@ -115,6 +120,7 @@ export const stories = [
       <StoryAlmanacTuiView
         statusLine="session_0001 | closed | experiments 2/5"
         objective={activeObjective}
+        researchContext={activeResearchContext}
         session={completedSession}
         experimentCount={completedExperiments.length}
         activeExperiment={undefined}
@@ -136,6 +142,7 @@ export const stories = [
       <StoryAlmanacTuiView
         statusLine="Session session_0001 failed"
         objective={activeObjective}
+        researchContext={activeResearchContext}
         session={runningSession}
         experimentCount={suspiciousExperiments.length}
         activeExperiment={suspiciousExperiment}
@@ -154,6 +161,7 @@ export const stories = [
 type StoryAlmanacTuiViewProps = {
   statusLine: string;
   objective: ObjectiveRecord | undefined;
+  researchContext?: ResearchContextRecord | undefined;
   session: SessionRecord | undefined;
   experimentCount: number;
   activeExperiment: ExperimentRecord | undefined;
@@ -169,6 +177,7 @@ type StoryAlmanacTuiViewProps = {
 function StoryAlmanacTuiView({
   statusLine,
   objective,
+  researchContext,
   session,
   experimentCount,
   activeExperiment,
@@ -191,6 +200,7 @@ function StoryAlmanacTuiView({
       statusLine={statusLine}
       dashboardMessage={message}
       objective={objective}
+      researchContext={researchContext}
       session={session}
       experimentCount={experimentCount}
       maxExperiments={maxExperimentCount}

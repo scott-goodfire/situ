@@ -34,5 +34,6 @@ function sessionLabel({
     return objective ? `${objective.title} | no session yet` : "No session yet";
   }
 
-  return `${session.objective} | ${session.id} | ${session.status} | hypotheses ${hypothesisCount} | experiments ${experimentCount}`;
+  const objectiveLabel = objective?.title ?? "(no objective)";
+  return `${objectiveLabel} | ${session.id} | ${session.status} | hypotheses ${hypothesisCount} | experiments ${experimentCount}`;
 }

@@ -127,7 +127,7 @@ function EvaluationSource({
     <DxSection title="Source">
       <div className="almanac-record-cell">
         <span>Baseline evidence</span>
-        <span className="almanac-record-id">{evaluation.objective_id}</span>
+        <span className="almanac-record-id">{evaluation.session_id}</span>
       </div>
     </DxSection>
   );

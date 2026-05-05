@@ -11,7 +11,8 @@ from almanac.harness.records import (
     ExperimentRecord,
     HypothesisRecord,
     ObjectiveRecord,
-    ProjectConfigRecord,
+    ProjectRecord,
+    ResearchContextRecord,
     SessionRecord,
 )
 from almanac.harness.repositories import Repositories
@@ -27,46 +28,45 @@ def repos(tmp_path: Path) -> Repositories:
     return Repositories.create(db)
 
 
-def create_project_config(repos: Repositories) -> ProjectConfigRecord:
-    return repos.project_config.set(
-        research_context="Run a JSON eval. Expected signals: score, latency_ms. Baseline and variants.",
-    )
-
-
-def create_objective(repos: Repositories) -> ObjectiveRecord:
-    create_project_config(repos)
-    return repos.objectives.create(
-        objective_id="objective_0001",
-        title="Improve score",
-        description="Improve score without hurting latency.",
-        associated_session_id=None,
-    )
+def create_project(repos: Repositories) -> ProjectRecord:
+    return repos.project.ensure()
 
 
 def create_session(
     repos: Repositories,
     session_id: str = "session_0001",
 ) -> SessionRecord:
-    objective = create_objective(repos)
-    session = repos.sessions.create(
-        session_id,
-        objective_id=objective.id,
-        objective=objective.title,
-        research_context="Run a JSON eval. Expected signals: score, latency_ms.",
+    project = create_project(repos)
+    return repos.sessions.create(session_id, project_id=project.id)
+
+
+def create_objective(repos: Repositories) -> ObjectiveRecord:
+    session = create_session(repos)
+    return repos.objectives.create(
+        objective_id="objective_0001",
+        session_id=session.id,
+        title="Improve score",
+        description="Improve score without hurting latency.",
     )
-    repos.objectives.update(objective.id, associated_session_id=session.id)
-    return session
+
+
+def create_research_context(repos: Repositories) -> ResearchContextRecord:
+    session = repos.sessions.get("session_0001") or create_session(repos)
+    return repos.research_contexts.create(
+        research_context_id="rctx_0001",
+        session_id=session.id,
+        body="Run a JSON eval. Expected signals: score, latency_ms.",
+    )
 
 
 def create_hypothesis(repos: Repositories) -> HypothesisRecord:
-    create_session(repos)
+    create_objective(repos)
     return repos.hypotheses.create(
         hypothesis_id="hyp_0001",
-        objective_id="objective_0001",
+        session_id="session_0001",
         title="Component A helps",
         summary="Component A may improve score.",
         status="active",
-        associated_session_id="session_0001",
     )
 
 
@@ -77,10 +77,9 @@ def create_experiment(
     create_hypothesis(repos)
     return repos.experiments.create(
         experiment_id=experiment_id,
-        objective_id="objective_0001",
+        session_id="session_0001",
         title="Try component A",
         summary="Apply component A.",
-        associated_session_id="session_0001",
     )
 
 
@@ -88,37 +87,48 @@ def create_evaluation(repos: Repositories) -> EvaluationRecord:
     create_experiment(repos)
     return repos.evaluations.create(
         evaluation_id="eval_session_0001_baseline",
-        objective_id="objective_0001",
+        session_id="session_0001",
         title="Baseline project eval",
         summary="Run the baseline project evaluation.",
-        associated_session_id="session_0001",
     )
 
 
-def test_project_config_repository_set_get_and_update(repos: Repositories) -> None:
-    config = create_project_config(repos)
+def test_project_repository_ensure_get_and_idempotent(repos: Repositories) -> None:
+    project = create_project(repos)
 
-    assert config.id == "project_test"
-    assert config.repo_path == "/tmp/project"
-    assert "score" in config.research_context
-    created_at = config.created_at
+    assert project.id == "project_test"
+    assert project.repo_path == "/tmp/project"
+    created_at = project.created_at
 
-    updated = repos.project_config.set(
-        research_context="Run a JSON eval with guardrails. Expected signals: score. Baseline only.",
+    again = repos.project.ensure()
+    assert again.id == project.id
+    assert again.created_at == created_at
+    assert repos.project.get() == again
+
+
+def test_research_contexts_repository_create_update_get(repos: Repositories) -> None:
+    research_context = create_research_context(repos)
+
+    assert research_context.id == "rctx_0001"
+    assert research_context.session_id == "session_0001"
+    assert "score" in research_context.body
+
+    updated = repos.research_contexts.update(
+        "rctx_0001",
+        body="Refined: focus on score, ignore latency.",
     )
-
-    assert "guardrails" in updated.research_context
-    assert updated.created_at == created_at
-    assert repos.project_config.get() == updated
+    assert updated is not None
+    assert "Refined" in updated.body
+    assert repos.research_contexts.get_for_session("session_0001") == updated
 
 
 def test_objectives_repository_create_update_get_and_list(repos: Repositories) -> None:
     objective = create_objective(repos)
 
     assert objective.id == "objective_0001"
+    assert objective.session_id == "session_0001"
     assert objective.title == "Improve score"
     assert objective.status == "active"
-    assert objective.associated_session_id is None
 
     updated = repos.objectives.update(
         "objective_0001",
@@ -130,22 +140,21 @@ def test_objectives_repository_create_update_get_and_list(repos: Repositories) -
     assert updated.status == "closed"
     assert repos.objectives.get("objective_0001") == updated
     assert [item.id for item in repos.objectives.list_all()] == ["objective_0001"]
+    assert repos.objectives.get_for_session("session_0001") == updated
 
 
 def test_sessions_repository_create_update_get_and_list(repos: Repositories) -> None:
     session = create_session(repos)
 
     assert session.id == "session_0001"
-    assert session.objective_id == "objective_0001"
-    assert session.objective == "Improve score"
-    assert "score" in session.research_context
+    assert session.project_id == "project_test"
     assert session.status == "active"
 
     updated = repos.sessions.update_status("session_0001", "closed")
     assert updated is not None
     assert updated.status == "closed"
     assert repos.sessions.get("session_0001") == updated
-    assert [item.id for item in repos.sessions.list_for_objective("objective_0001")] == [
+    assert [item.id for item in repos.sessions.list_for_project("project_test")] == [
         "session_0001"
     ]
 
@@ -154,9 +163,8 @@ def test_hypotheses_repository_create_update_get_and_list(repos: Repositories) -
     hypothesis = create_hypothesis(repos)
 
     assert hypothesis.id == "hyp_0001"
-    assert hypothesis.objective_id == "objective_0001"
+    assert hypothesis.session_id == "session_0001"
     assert hypothesis.status == "active"
-    assert hypothesis.associated_session_id == "session_0001"
 
     updated = repos.hypotheses.update(
         "hyp_0001",
@@ -167,9 +175,6 @@ def test_hypotheses_repository_create_update_get_and_list(repos: Repositories) -
     assert updated.summary == "Component A helped in first result."
     assert updated.status == "closed"
     assert repos.hypotheses.get("hyp_0001") == updated
-    assert [item.id for item in repos.hypotheses.list_for_objective("objective_0001")] == [
-        "hyp_0001"
-    ]
     assert [item.id for item in repos.hypotheses.list_for_session("session_0001")] == [
         "hyp_0001"
     ]
@@ -179,9 +184,9 @@ def test_experiments_repository_create_update_get_and_list(repos: Repositories) 
     experiment = create_experiment(repos)
 
     assert experiment.id == "exp_session_0001_a"
+    assert experiment.session_id == "session_0001"
     assert experiment.status == "open"
     assert experiment.title == "Try component A"
-    assert experiment.associated_session_id == "session_0001"
 
     updated = repos.experiments.update(
         "exp_session_0001_a",
@@ -195,18 +200,15 @@ def test_experiments_repository_create_update_get_and_list(repos: Repositories) 
     assert [item.id for item in repos.experiments.list_for_session("session_0001")] == [
         "exp_session_0001_a"
     ]
-    assert [item.id for item in repos.experiments.list_for_objective("objective_0001")] == [
-        "exp_session_0001_a"
-    ]
 
 
 def test_evaluations_repository_create_update_get_and_list(repos: Repositories) -> None:
     evaluation = create_evaluation(repos)
 
     assert evaluation.id == "eval_session_0001_baseline"
+    assert evaluation.session_id == "session_0001"
     assert evaluation.status == "open"
     assert evaluation.title == "Baseline project eval"
-    assert evaluation.associated_session_id == "session_0001"
     assert evaluation.associated_experiment_id is None
 
     updated = repos.evaluations.update(
@@ -221,9 +223,6 @@ def test_evaluations_repository_create_update_get_and_list(repos: Repositories) 
     assert updated.associated_experiment_id == "exp_session_0001_a"
     assert repos.evaluations.get("eval_session_0001_baseline") == updated
     assert [item.id for item in repos.evaluations.list_for_session("session_0001")] == [
-        "eval_session_0001_baseline"
-    ]
-    assert [item.id for item in repos.evaluations.list_for_objective("objective_0001")] == [
         "eval_session_0001_baseline"
     ]
     assert [item.id for item in repos.evaluations.list_for_experiment("exp_session_0001_a")] == [
@@ -245,10 +244,9 @@ def test_work_repositories_reject_invalid_agent_statuses(
     with pytest.raises(ValueError, match="Record result details"):
         repos.experiments.create(
             experiment_id="exp_session_0001_b",
-            objective_id="objective_0001",
+            session_id="session_0001",
             title="Try component B",
             summary="Apply component B.",
-            associated_session_id="session_0001",
             status="running",
         )
 
@@ -261,16 +259,15 @@ def test_work_repositories_reject_invalid_agent_statuses(
     with pytest.raises(ValueError, match="invalid evaluation status"):
         repos.evaluations.create(
             evaluation_id="eval_session_0001_bad",
-            objective_id="objective_0001",
+            session_id="session_0001",
             title="Bad evaluation",
             summary="This should fail.",
-            associated_session_id="session_0001",
             status="running",
         )
 
 
 def test_core_repositories_reject_invalid_statuses(repos: Repositories) -> None:
-    create_session(repos)
+    create_objective(repos)
 
     with pytest.raises(ValueError, match="invalid objective status"):
         repos.objectives.update(
@@ -293,10 +290,9 @@ def test_experiments_repository_accepts_work_status_enum(
     create_hypothesis(repos)
     experiment = repos.experiments.create(
         experiment_id="exp_session_0001_b",
-        objective_id="objective_0001",
+        session_id="session_0001",
         title="Try component B",
         summary="Apply component B.",
-        associated_session_id="session_0001",
         status=WorkStatus.ACTIVE,
     )
 
@@ -337,7 +333,6 @@ def test_hypothesis_activities_repository_add_and_list(repos: Repositories) -> N
 
     activity = repos.hypothesis_activities.add(
         hypothesis_id="hyp_0001",
-        session_id="session_0001",
         actor="agent",
         kind="comment",
         body="A looks worth trying.",
@@ -347,7 +342,6 @@ def test_hypothesis_activities_repository_add_and_list(repos: Repositories) -> N
     assert activity.id == 1
     assert activity.payload == {"experiment_id": "exp_session_0001_a"}
     assert repos.hypothesis_activities.list_for_hypothesis("hyp_0001") == [activity]
-    assert repos.hypothesis_activities.list_for_session("session_0001") == [activity]
 
 
 def test_experiment_activities_repository_add_and_list(repos: Repositories) -> None:
@@ -355,7 +349,6 @@ def test_experiment_activities_repository_add_and_list(repos: Repositories) -> N
 
     activity = repos.experiment_activities.add(
         experiment_id="exp_session_0001_a",
-        session_id="session_0001",
         actor="worker",
         kind="comment",
         body="A improved score.",
@@ -370,7 +363,6 @@ def test_experiment_activities_repository_add_and_list(repos: Repositories) -> N
     assert repos.experiment_activities.list_for_experiment("exp_session_0001_a") == [
         activity
     ]
-    assert repos.experiment_activities.list_for_session("session_0001") == [activity]
 
 
 def test_evaluation_activities_repository_add_and_list(repos: Repositories) -> None:
@@ -378,7 +370,6 @@ def test_evaluation_activities_repository_add_and_list(repos: Repositories) -> N
 
     activity = repos.evaluation_activities.add(
         evaluation_id="eval_session_0001_baseline",
-        session_id="session_0001",
         actor="agent",
         kind="comment",
         body="Baseline result recorded.",
@@ -393,14 +384,12 @@ def test_evaluation_activities_repository_add_and_list(repos: Repositories) -> N
     assert repos.evaluation_activities.list_for_evaluation(
         "eval_session_0001_baseline"
     ) == [activity]
-    assert repos.evaluation_activities.list_for_session("session_0001") == [activity]
 
 
 def test_artifacts_repository_create_and_list(repos: Repositories) -> None:
     create_experiment(repos)
     activity = repos.experiment_activities.add(
         experiment_id="exp_session_0001_a",
-        session_id="session_0001",
         actor="worker",
         kind="comment",
         body="A improved score.",
@@ -408,8 +397,7 @@ def test_artifacts_repository_create_and_list(repos: Repositories) -> None:
 
     artifact = repos.artifacts.create(
         artifact_id="artifact_0001",
-        objective_id="objective_0001",
-        associated_session_id="session_0001",
+        session_id="session_0001",
         associated_entity_kind="experiment_activity",
         associated_entity_id=str(activity.id),
         kind="json",
@@ -420,6 +408,7 @@ def test_artifacts_repository_create_and_list(repos: Repositories) -> None:
     )
 
     assert artifact.id == "artifact_0001"
+    assert artifact.session_id == "session_0001"
     assert artifact.associated_entity_kind == "experiment_activity"
     assert artifact.associated_entity_id == str(activity.id)
     assert repos.artifacts.get("artifact_0001") == artifact
@@ -483,7 +472,6 @@ def test_current_state_api_composes_protocol_shaped_state(repos: Repositories) -
     )
     repos.experiment_activities.add(
         experiment_id="exp_session_0001_a",
-        session_id="session_0001",
         actor="worker",
         kind="comment",
         body="A improved score.",
@@ -494,14 +482,12 @@ def test_current_state_api_composes_protocol_shaped_state(repos: Repositories) -
     )
     repos.evaluations.create(
         evaluation_id="eval_session_0001_baseline",
-        objective_id="objective_0001",
+        session_id="session_0001",
         title="Baseline project eval",
         summary="Run the baseline project evaluation.",
-        associated_session_id="session_0001",
     )
     repos.evaluation_activities.add(
         evaluation_id="eval_session_0001_baseline",
-        session_id="session_0001",
         actor="agent",
         kind="comment",
         body="Baseline result recorded.",
@@ -515,8 +501,8 @@ def test_current_state_api_composes_protocol_shaped_state(repos: Repositories) -
     )
 
     current_state = CurrentStateService(repos=repos).get()
-    assert current_state.config is not None
-    assert current_state.config.id == "project_test"
+    assert current_state.project is not None
+    assert current_state.project.id == "project_test"
     assert [objective.id for objective in current_state.objectives] == ["objective_0001"]
     assert [session.id for session in current_state.sessions] == ["session_0001"]
     assert [hypothesis.id for hypothesis in current_state.hypotheses] == ["hyp_0001"]
@@ -543,28 +529,24 @@ def test_sessions_api_composes_session_graph(repos: Repositories) -> None:
     )
     repos.hypothesis_activities.add(
         hypothesis_id="hyp_0001",
-        session_id="session_0001",
         actor="agent",
         kind="comment",
         body="A is active.",
     )
     repos.experiment_activities.add(
         experiment_id="exp_session_0001_a",
-        session_id="session_0001",
         actor="worker",
         kind="comment",
         body="A improved score.",
     )
     repos.evaluations.create(
         evaluation_id="eval_session_0001_baseline",
-        objective_id="objective_0001",
+        session_id="session_0001",
         title="Baseline project eval",
         summary="Run the baseline project evaluation.",
-        associated_session_id="session_0001",
     )
     repos.evaluation_activities.add(
         evaluation_id="eval_session_0001_baseline",
-        session_id="session_0001",
         actor="agent",
         kind="comment",
         body="Baseline result recorded.",
@@ -572,7 +554,7 @@ def test_sessions_api_composes_session_graph(repos: Repositories) -> None:
 
     graph = SessionsService(repos=repos).get_session("session_0001")
 
-    assert graph.config is not None
+    assert graph.project is not None
     assert graph.objective is not None
     assert graph.session is not None
     assert graph.session.id == "session_0001"

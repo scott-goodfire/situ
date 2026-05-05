@@ -138,11 +138,12 @@ function agentPageData(): ProjectWorkspaceData {
     connection: { kind: "connected" },
     objectives: [
       {
-        id: "objective_0001",
+        id: "obj_session_0001",
+        session_id: "session_0001",
         title: "Improve support-agent resolution",
-        description: "Improve billing and cancellation outcomes without making latency worse.",
+        description:
+          "Improve billing and cancellation outcomes without making latency worse.",
         status: "active",
-        associated_session_id: "session_0001",
         created_at: "2026-01-01T00:00:00Z",
         updated_at: "2026-01-01T00:00:00Z",
       },
@@ -150,9 +151,7 @@ function agentPageData(): ProjectWorkspaceData {
     sessions: [
       {
         id: "session_0001",
-        objective_id: "objective_0001",
-        objective: "Improve support-agent resolution",
-        research_context: "Run project-native evals and collect plaintext evidence.",
+        project_id: "support-agent-demo",
         status: "active",
         created_at: "2026-01-01T00:00:00Z",
         updated_at: "2026-01-01T00:10:00Z",
@@ -161,11 +160,10 @@ function agentPageData(): ProjectWorkspaceData {
     hypotheses: [
       {
         id: "hyp_0001",
-        objective_id: "objective_0001",
+        session_id: "session_0001",
         title: "Retrieval filtering helps cancellation tickets",
         summary: "Drop weak snippets before tool calls.",
         status: "active",
-        associated_session_id: "session_0001",
         created_at: "2026-01-01T00:01:00Z",
         updated_at: "2026-01-01T00:09:00Z",
       },
@@ -173,11 +171,10 @@ function agentPageData(): ProjectWorkspaceData {
     experiments: [
       {
         id: "exp_0002",
-        objective_id: "objective_0001",
+        session_id: "session_0001",
         status: "active",
         title: "Try retrieval filtering",
         summary: "Filter snippets below the confidence floor on cancellation tickets.",
-        associated_session_id: "session_0001",
         created_at: "2026-01-01T00:04:00Z",
         updated_at: "2026-01-01T00:09:00Z",
       },
@@ -185,11 +182,10 @@ function agentPageData(): ProjectWorkspaceData {
     evaluations: [
       {
         id: "eval_0002",
-        objective_id: "objective_0001",
+        session_id: "session_0001",
         status: "active",
         title: "Retrieval filtering candidate",
         summary: "Candidate measurement for exp_0002.",
-        associated_session_id: "session_0001",
         associated_experiment_id: "exp_0002",
         created_at: "2026-01-01T00:05:00Z",
         updated_at: "2026-01-01T00:09:00Z",
@@ -206,7 +202,6 @@ function agentPageData(): ProjectWorkspaceData {
       {
         id: 1,
         hypothesis_id: "hyp_0001",
-        session_id: "session_0001",
         actor: "research-agent",
         kind: "comment",
         body: "Cancellation failures are clustering around weak retrieval snippets, so this hypothesis is the current thread.",
@@ -218,7 +213,6 @@ function agentPageData(): ProjectWorkspaceData {
       {
         id: 1,
         experiment_id: "exp_0002",
-        session_id: "session_0001",
         actor: "research-agent",
         kind: "comment",
         body: "Applied filtering only to retrieval selection; graders and fixtures were unchanged.",
@@ -228,7 +222,6 @@ function agentPageData(): ProjectWorkspaceData {
       {
         id: 2,
         experiment_id: "exp_0002",
-        session_id: "session_0001",
         actor: "worker",
         kind: "comment",
         body: "Ran the candidate eval and preserved stdout as an artifact.",
@@ -240,7 +233,6 @@ function agentPageData(): ProjectWorkspaceData {
       {
         id: 1,
         evaluation_id: "eval_0002",
-        session_id: "session_0001",
         actor: "research-agent",
         kind: "comment",
         body: "Candidate: resolution_rate 64.8%, latency 1910ms. Needs reproduction before treating as accepted.",
@@ -250,7 +242,6 @@ function agentPageData(): ProjectWorkspaceData {
       {
         id: 2,
         evaluation_id: "eval_0002",
-        session_id: "session_0001",
         actor: "research-agent",
         kind: "comment",
         body: "Concern: the best result is not reproduced yet.",

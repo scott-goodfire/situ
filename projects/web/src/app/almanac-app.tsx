@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider } from "@tanstack/react-router";
-import { DxTooltipProvider } from "@almanac/web-ui";
+import { DxToaster, DxTooltipProvider } from "@almanac/web-ui";
 import { router } from "./router";
 
 const queryClient = new QueryClient({
@@ -23,6 +23,7 @@ export function AlmanacApp() {
     <QueryClientProvider client={queryClient}>
       <DxTooltipProvider>
         <RouterProvider router={router} />
+        <DxToaster />
       </DxTooltipProvider>
     </QueryClientProvider>
   );

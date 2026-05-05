@@ -126,11 +126,12 @@ function evaluationPageData(): ProjectWorkspaceData {
     connection: { kind: "connected" },
     objectives: [
       {
-        id: "objective_0001",
+        id: "obj_session_0001",
+        session_id: "session_0001",
         title: "Improve support-agent resolution",
-        description: "Improve billing and cancellation outcomes without making latency worse.",
+        description:
+          "Improve billing and cancellation outcomes without making latency worse.",
         status: "active",
-        associated_session_id: "session_0001",
         created_at: "2026-01-01T00:00:00Z",
         updated_at: "2026-01-01T00:00:00Z",
       },
@@ -138,9 +139,7 @@ function evaluationPageData(): ProjectWorkspaceData {
     sessions: [
       {
         id: "session_0001",
-        objective_id: "objective_0001",
-        objective: "Improve support-agent resolution",
-        research_context: "Run project-native evals and collect plaintext evidence.",
+        project_id: "support-agent-demo",
         status: "active",
         created_at: "2026-01-01T00:00:00Z",
         updated_at: "2026-01-01T00:07:00Z",
@@ -150,11 +149,10 @@ function evaluationPageData(): ProjectWorkspaceData {
     experiments: [
       {
         id: "exp_0002",
-        objective_id: "objective_0001",
+        session_id: "session_0001",
         status: "active",
         title: "Try retrieval filtering",
         summary: "Filter snippets below the confidence floor on cancellation tickets.",
-        associated_session_id: "session_0001",
         created_at: "2026-01-01T00:04:00Z",
         updated_at: "2026-01-01T00:08:00Z",
       },
@@ -162,22 +160,20 @@ function evaluationPageData(): ProjectWorkspaceData {
     evaluations: [
       {
         id: "eval_0001",
-        objective_id: "objective_0001",
+        session_id: "session_0001",
         status: "closed",
         title: "Baseline support eval",
         summary: "Baseline before candidate changes.",
-        associated_session_id: "session_0001",
         associated_experiment_id: null,
         created_at: "2026-01-01T00:02:00Z",
         updated_at: "2026-01-01T00:03:00Z",
       },
       {
         id: "eval_0002",
-        objective_id: "objective_0001",
+        session_id: "session_0001",
         status: "active",
         title: "Retrieval filtering candidate",
         summary: "Candidate measurement for exp_0002.",
-        associated_session_id: "session_0001",
         associated_experiment_id: "exp_0002",
         created_at: "2026-01-01T00:05:00Z",
         updated_at: "2026-01-01T00:08:00Z",
@@ -190,7 +186,6 @@ function evaluationPageData(): ProjectWorkspaceData {
       {
         id: 1,
         evaluation_id: "eval_0001",
-        session_id: "session_0001",
         actor: "agent",
         kind: "comment",
         body: "Baseline: resolution_rate 61.0%, latency 1830ms, hallucination_rate 2.4%.",
@@ -200,7 +195,6 @@ function evaluationPageData(): ProjectWorkspaceData {
       {
         id: 2,
         evaluation_id: "eval_0002",
-        session_id: "session_0001",
         actor: "agent",
         kind: "comment",
         body: "Candidate: resolution_rate 64.8%, latency 1910ms. Needs reproduction before treating as accepted.",
@@ -211,8 +205,7 @@ function evaluationPageData(): ProjectWorkspaceData {
     artifacts: [
       {
         id: "artifact_0001",
-        objective_id: "objective_0001",
-        associated_session_id: "session_0001",
+        session_id: "session_0001",
         associated_entity_kind: "evaluation",
         associated_entity_id: "eval_0002",
         kind: "log",

@@ -97,10 +97,7 @@ function experimentsForSession({
     return [];
   }
 
-  return filter(
-    experiments,
-    (experiment) => experiment.associated_session_id === session.id,
-  );
+  return filter(experiments, (experiment) => experiment.session_id === session.id);
 }
 
 function objectiveForSession({
@@ -114,7 +111,7 @@ function objectiveForSession({
     return undefined;
   }
 
-  return objectives.find((objective) => objective.id === session.objective_id);
+  return objectives.find((objective) => objective.session_id === session.id);
 }
 
 function hypothesesForSession({
@@ -128,8 +125,5 @@ function hypothesesForSession({
     return [];
   }
 
-  return filter(
-    hypotheses,
-    (hypothesis) => hypothesis.associated_session_id === session.id,
-  );
+  return filter(hypotheses, (hypothesis) => hypothesis.session_id === session.id);
 }

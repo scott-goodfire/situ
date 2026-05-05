@@ -374,25 +374,56 @@ function writeProjectDatabase({
 
   try {
     database.run(`
-      CREATE TABLE project_config (
+      CREATE TABLE projects (
         id TEXT PRIMARY KEY,
         repo_path TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    `);
+    database.run(`
+      CREATE TABLE sessions (
+        id TEXT PRIMARY KEY,
+        project_id TEXT NOT NULL,
+        status TEXT NOT NULL,
+        created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL
       )
     `);
     database.run(`
       CREATE TABLE objectives (
         id TEXT PRIMARY KEY,
+        session_id TEXT NOT NULL UNIQUE,
         title TEXT NOT NULL,
+        description TEXT NOT NULL,
+        status TEXT NOT NULL,
+        created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL
       )
     `);
     database
-      .query("INSERT INTO project_config (id, repo_path, updated_at) VALUES (?, ?, ?)")
-      .run(projectId, repoPath, updatedAt);
+      .query(
+        "INSERT INTO projects (id, repo_path, created_at, updated_at) VALUES (?, ?, ?, ?)",
+      )
+      .run(projectId, repoPath, updatedAt, updatedAt);
     database
-      .query("INSERT INTO objectives (id, title, updated_at) VALUES (?, ?, ?)")
-      .run("objective_0001", objectiveTitle, updatedAt);
+      .query(
+        "INSERT INTO sessions (id, project_id, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
+      )
+      .run("session_0001", projectId, "closed", updatedAt, updatedAt);
+    database
+      .query(
+        "INSERT INTO objectives (id, session_id, title, description, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      )
+      .run(
+        "obj_session_0001",
+        "session_0001",
+        objectiveTitle,
+        "",
+        "active",
+        updatedAt,
+        updatedAt,
+      );
   } finally {
     database.close();
   }
@@ -412,22 +443,9 @@ function writeProjectSnapshotDatabase({
 
   try {
     database.run(`
-      CREATE TABLE project_config (
+      CREATE TABLE projects (
         id TEXT PRIMARY KEY,
         repo_path TEXT NOT NULL,
-        research_context TEXT NOT NULL,
-        associated_session_id TEXT,
-        created_at TEXT NOT NULL,
-        updated_at TEXT NOT NULL
-      )
-    `);
-    database.run(`
-      CREATE TABLE objectives (
-        id TEXT PRIMARY KEY,
-        title TEXT NOT NULL,
-        description TEXT NOT NULL,
-        status TEXT NOT NULL,
-        associated_session_id TEXT,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL
       )
@@ -435,10 +453,28 @@ function writeProjectSnapshotDatabase({
     database.run(`
       CREATE TABLE sessions (
         id TEXT PRIMARY KEY,
-        objective_id TEXT NOT NULL,
-        objective TEXT NOT NULL,
-        research_context TEXT NOT NULL,
+        project_id TEXT NOT NULL,
         status TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    `);
+    database.run(`
+      CREATE TABLE objectives (
+        id TEXT PRIMARY KEY,
+        session_id TEXT NOT NULL UNIQUE,
+        title TEXT NOT NULL,
+        description TEXT NOT NULL,
+        status TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    `);
+    database.run(`
+      CREATE TABLE research_contexts (
+        id TEXT PRIMARY KEY,
+        session_id TEXT NOT NULL UNIQUE,
+        body TEXT NOT NULL,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL
       )
@@ -446,11 +482,10 @@ function writeProjectSnapshotDatabase({
     database.run(`
       CREATE TABLE hypotheses (
         id TEXT PRIMARY KEY,
-        objective_id TEXT NOT NULL,
+        session_id TEXT NOT NULL,
         title TEXT NOT NULL,
         summary TEXT NOT NULL,
         status TEXT NOT NULL,
-        associated_session_id TEXT,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL
       )
@@ -458,11 +493,10 @@ function writeProjectSnapshotDatabase({
     database.run(`
       CREATE TABLE experiments (
         id TEXT PRIMARY KEY,
-        objective_id TEXT NOT NULL,
+        session_id TEXT NOT NULL,
         status TEXT NOT NULL,
         title TEXT NOT NULL,
         summary TEXT NOT NULL,
-        associated_session_id TEXT,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL
       )
@@ -470,11 +504,10 @@ function writeProjectSnapshotDatabase({
     database.run(`
       CREATE TABLE evaluations (
         id TEXT PRIMARY KEY,
-        objective_id TEXT NOT NULL,
+        session_id TEXT NOT NULL,
         status TEXT NOT NULL,
         title TEXT NOT NULL,
         summary TEXT NOT NULL,
-        associated_session_id TEXT,
         associated_experiment_id TEXT,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL
@@ -492,7 +525,6 @@ function writeProjectSnapshotDatabase({
       CREATE TABLE hypothesis_activities (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         hypothesis_id TEXT NOT NULL,
-        session_id TEXT,
         actor TEXT NOT NULL,
         kind TEXT NOT NULL,
         body TEXT NOT NULL,
@@ -504,7 +536,6 @@ function writeProjectSnapshotDatabase({
       CREATE TABLE experiment_activities (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         experiment_id TEXT NOT NULL,
-        session_id TEXT,
         actor TEXT NOT NULL,
         kind TEXT NOT NULL,
         body TEXT NOT NULL,
@@ -516,7 +547,6 @@ function writeProjectSnapshotDatabase({
       CREATE TABLE evaluation_activities (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         evaluation_id TEXT NOT NULL,
-        session_id TEXT,
         actor TEXT NOT NULL,
         kind TEXT NOT NULL,
         body TEXT NOT NULL,
@@ -527,8 +557,7 @@ function writeProjectSnapshotDatabase({
     database.run(`
       CREATE TABLE artifacts (
         id TEXT PRIMARY KEY,
-        objective_id TEXT NOT NULL,
-        associated_session_id TEXT,
+        session_id TEXT NOT NULL,
         associated_entity_kind TEXT NOT NULL,
         associated_entity_id TEXT NOT NULL,
         kind TEXT NOT NULL,
@@ -552,93 +581,99 @@ function writeProjectSnapshotDatabase({
 
     database
       .query(`
-        INSERT INTO project_config
-          (id, repo_path, research_context, associated_session_id, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO projects
+          (id, repo_path, created_at, updated_at)
+        VALUES (?, ?, ?, ?)
       `)
       .run(
         projectId,
         repoPath,
-        "Run local evals.",
-        "session_0001",
-        "2026-05-05T01:00:00.000Z",
-        "2026-05-05T01:10:00.000Z",
-      );
-    database
-      .query(`
-        INSERT INTO objectives
-          (id, title, description, status, associated_session_id, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-      `)
-      .run(
-        "objective_0001",
-        "Improve snapshot score",
-        "Capture durable state after disconnect.",
-        "active",
-        "session_0001",
         "2026-05-05T01:00:00.000Z",
         "2026-05-05T01:10:00.000Z",
       );
     database
       .query(`
         INSERT INTO sessions
-          (id, objective_id, objective, research_context, status, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+          (id, project_id, status, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?)
       `)
       .run(
         "session_0001",
-        "objective_0001",
-        "Improve snapshot score",
-        "Run local evals.",
+        projectId,
         "closed",
         "2026-05-05T01:01:00.000Z",
         "2026-05-05T01:10:00.000Z",
       );
     database
       .query(`
+        INSERT INTO objectives
+          (id, session_id, title, description, status, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `)
+      .run(
+        "obj_session_0001",
+        "session_0001",
+        "Improve snapshot score",
+        "Capture durable state after disconnect.",
+        "active",
+        "2026-05-05T01:00:00.000Z",
+        "2026-05-05T01:10:00.000Z",
+      );
+    database
+      .query(`
+        INSERT INTO research_contexts
+          (id, session_id, body, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?)
+      `)
+      .run(
+        "rctx_session_0001",
+        "session_0001",
+        "Run local evals.",
+        "2026-05-05T01:00:00.000Z",
+        "2026-05-05T01:10:00.000Z",
+      );
+    database
+      .query(`
         INSERT INTO hypotheses
-          (id, objective_id, title, summary, status, associated_session_id, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          (id, session_id, title, summary, status, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
       `)
       .run(
         "hyp_0001",
-        "objective_0001",
+        "session_0001",
         "Durable snapshots preserve context",
         "Stopped sessions should still render project data.",
         "active",
-        "session_0001",
         "2026-05-05T01:02:00.000Z",
         "2026-05-05T01:10:00.000Z",
       );
     database
       .query(`
         INSERT INTO experiments
-          (id, objective_id, status, title, summary, associated_session_id, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          (id, session_id, status, title, summary, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
       `)
       .run(
         "exp_0001",
-        "objective_0001",
+        "session_0001",
         "closed",
         "Disconnect the session",
         "Verify web state remains readable.",
-        "session_0001",
         "2026-05-05T01:03:00.000Z",
         "2026-05-05T01:10:00.000Z",
       );
     database
       .query(`
         INSERT INTO evaluations
-          (id, objective_id, status, title, summary, associated_session_id, associated_experiment_id, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+          (id, session_id, status, title, summary, associated_experiment_id, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `)
       .run(
         "eval_0001",
-        "objective_0001",
+        "session_0001",
         "closed",
         "Snapshot evidence",
         "The project page renders without a live session.",
-        "session_0001",
         "exp_0001",
         "2026-05-05T01:04:00.000Z",
         "2026-05-05T01:10:00.000Z",
@@ -653,12 +688,11 @@ function writeProjectSnapshotDatabase({
     database
       .query(`
         INSERT INTO hypothesis_activities
-          (hypothesis_id, session_id, actor, kind, body, payload_json, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+          (hypothesis_id, actor, kind, body, payload_json, created_at)
+        VALUES (?, ?, ?, ?, ?, ?)
       `)
       .run(
         "hyp_0001",
-        "session_0001",
         "agent",
         "comment",
         "Added a hypothesis note.",
@@ -668,12 +702,11 @@ function writeProjectSnapshotDatabase({
     database
       .query(`
         INSERT INTO experiment_activities
-          (experiment_id, session_id, actor, kind, body, payload_json, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+          (experiment_id, actor, kind, body, payload_json, created_at)
+        VALUES (?, ?, ?, ?, ?, ?)
       `)
       .run(
         "exp_0001",
-        "session_0001",
         "agent",
         "comment",
         "Recorded experiment output.",
@@ -683,12 +716,11 @@ function writeProjectSnapshotDatabase({
     database
       .query(`
         INSERT INTO evaluation_activities
-          (evaluation_id, session_id, actor, kind, body, payload_json, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+          (evaluation_id, actor, kind, body, payload_json, created_at)
+        VALUES (?, ?, ?, ?, ?, ?)
       `)
       .run(
         "eval_0001",
-        "session_0001",
         "agent",
         "comment",
         "Recorded evidence.",
@@ -698,12 +730,11 @@ function writeProjectSnapshotDatabase({
     database
       .query(`
         INSERT INTO artifacts
-          (id, objective_id, associated_session_id, associated_entity_kind, associated_entity_id, kind, title, path, media_type, size_bytes, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          (id, session_id, associated_entity_kind, associated_entity_id, kind, title, path, media_type, size_bytes, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `)
       .run(
         "artifact_0001",
-        "objective_0001",
         "session_0001",
         "experiment",
         "exp_0001",

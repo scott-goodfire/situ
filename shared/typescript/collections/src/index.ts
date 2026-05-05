@@ -17,13 +17,17 @@ import type {
   HypothesisExperimentLinkRecord,
   HypothesisRecord,
   ObjectiveRecord,
+  ProjectRecord,
+  ResearchContextRecord,
   SessionRecord,
 } from "@almanac/protocol";
 
 export type AlmanacCollectionName = CollectionUpsertedParams["collection"];
 
 export type AlmanacCollections = {
+  projects: Collection<ProjectRecord, string>;
   objectives: Collection<ObjectiveRecord, string>;
+  researchContexts: Collection<ResearchContextRecord, string>;
   sessions: Collection<SessionRecord, string>;
   hypotheses: Collection<HypothesisRecord, string>;
   experiments: Collection<ExperimentRecord, string>;
@@ -59,10 +63,22 @@ type UpsertRecordOptions<T extends object> = {
 
 export function createAlmanacCollections(): AlmanacCollections {
   return {
+    projects: createCollection(
+      localOnlyCollectionOptions<ProjectRecord, string>({
+        id: "almanac-projects",
+        getKey: (project) => project.id,
+      }),
+    ),
     objectives: createCollection(
       localOnlyCollectionOptions<ObjectiveRecord, string>({
         id: "almanac-objectives",
         getKey: (objective) => objective.id,
+      }),
+    ),
+    researchContexts: createCollection(
+      localOnlyCollectionOptions<ResearchContextRecord, string>({
+        id: "almanac-research-contexts",
+        getKey: (researchContext) => researchContext.id,
       }),
     ),
     sessions: createCollection(
@@ -134,8 +150,16 @@ export async function applyBootstrap({
 }: ApplyBootstrapOptions): Promise<void> {
   await Promise.all([
     hydrateCollection({
+      collection: collections.projects,
+      records: bootstrap.projects ?? [],
+    }),
+    hydrateCollection({
       collection: collections.objectives,
       records: bootstrap.objectives ?? [],
+    }),
+    hydrateCollection({
+      collection: collections.researchContexts,
+      records: bootstrap.research_contexts ?? [],
     }),
     hydrateCollection({
       collection: collections.sessions,
@@ -184,11 +208,29 @@ export async function applyCollectionUpsert({
   collections,
   upsert,
 }: ApplyCollectionUpsertOptions): Promise<void> {
+  if (upsert.collection === "projects") {
+    await upsertRecord({
+      collection: collections.projects,
+      key: upsert.key,
+      record: upsert.record as unknown as ProjectRecord,
+    });
+    return;
+  }
+
   if (upsert.collection === "objectives") {
     await upsertRecord({
       collection: collections.objectives,
       key: upsert.key,
       record: upsert.record as unknown as ObjectiveRecord,
+    });
+    return;
+  }
+
+  if (upsert.collection === "research_contexts") {
+    await upsertRecord({
+      collection: collections.researchContexts,
+      key: upsert.key,
+      record: upsert.record as unknown as ResearchContextRecord,
     });
     return;
   }

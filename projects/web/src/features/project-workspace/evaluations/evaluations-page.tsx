@@ -150,7 +150,7 @@ function sourceCell({
   return (
     <div className="almanac-record-cell">
       <span>Baseline</span>
-      <span className="almanac-record-id">{row.evaluation.objective_id}</span>
+      <span className="almanac-record-id">{row.evaluation.session_id}</span>
     </div>
   );
 }

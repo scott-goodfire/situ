@@ -14,6 +14,8 @@ import type {
   HypothesisExperimentLinkRecord,
   HypothesisRecord,
   ObjectiveRecord,
+  ProjectRecord,
+  ResearchContextRecord,
   SessionRecord,
 } from "@almanac/protocol";
 import {
@@ -65,7 +67,7 @@ type ProjectMetadata = {
   updatedAt: string | null;
 };
 
-type ProjectConfigRow = {
+type ProjectRow = {
   repo_path: string;
   updated_at: string;
 };
@@ -300,15 +302,17 @@ async function readProjectMetadata({
     });
 
     try {
-      const config = database.get(
-        "SELECT repo_path, updated_at FROM project_config WHERE id = ? LIMIT 1",
-        [projectId],
-      ) as ProjectConfigRow | null;
-      const objective = database.get(
-        "SELECT title, updated_at FROM objectives ORDER BY updated_at DESC LIMIT 1",
-      ) as ObjectiveRow | null;
+      const project = readMaybeRow<ProjectRow>({
+        database,
+        sql: "SELECT repo_path, updated_at FROM projects WHERE id = ? LIMIT 1",
+        params: [projectId],
+      });
+      const objective = readMaybeRow<ObjectiveRow>({
+        database,
+        sql: "SELECT title, updated_at FROM objectives ORDER BY updated_at DESC LIMIT 1",
+      });
 
-      return metadataFromRows({ config, objective });
+      return metadataFromRows({ project, objective });
     } finally {
       database.close();
     }
@@ -355,18 +359,43 @@ async function readProjectSnapshot({
 
       return {
         cursor: events.at(-1)?.id ?? 0,
+        projects: readRows<ProjectRecord>({
+          database,
+          sql: `
+            SELECT
+              id,
+              repo_path,
+              created_at,
+              updated_at
+            FROM projects
+            ORDER BY created_at ASC, id ASC
+          `,
+        }),
         objectives: readRows<ObjectiveRecord>({
           database,
           sql: `
             SELECT
               id,
+              session_id,
               title,
               description,
               status,
-              associated_session_id,
               created_at,
               updated_at
             FROM objectives
+            ORDER BY created_at ASC, id ASC
+          `,
+        }),
+        research_contexts: readRows<ResearchContextRecord>({
+          database,
+          sql: `
+            SELECT
+              id,
+              session_id,
+              body,
+              created_at,
+              updated_at
+            FROM research_contexts
             ORDER BY created_at ASC, id ASC
           `,
         }),
@@ -375,9 +404,7 @@ async function readProjectSnapshot({
           sql: `
             SELECT
               id,
-              objective_id,
-              objective,
-              research_context,
+              project_id,
               status,
               created_at,
               updated_at
@@ -390,11 +417,10 @@ async function readProjectSnapshot({
           sql: `
             SELECT
               id,
-              objective_id,
+              session_id,
               title,
               summary,
               status,
-              associated_session_id,
               created_at,
               updated_at
             FROM hypotheses
@@ -406,11 +432,10 @@ async function readProjectSnapshot({
           sql: `
             SELECT
               id,
-              objective_id,
+              session_id,
               status,
               title,
               summary,
-              associated_session_id,
               created_at,
               updated_at
             FROM experiments
@@ -422,11 +447,10 @@ async function readProjectSnapshot({
           sql: `
             SELECT
               id,
-              objective_id,
+              session_id,
               status,
               title,
               summary,
-              associated_session_id,
               associated_experiment_id,
               created_at,
               updated_at
@@ -451,7 +475,6 @@ async function readProjectSnapshot({
             SELECT
               id,
               hypothesis_id,
-              session_id,
               actor,
               kind,
               body,
@@ -467,7 +490,6 @@ async function readProjectSnapshot({
             SELECT
               id,
               experiment_id,
-              session_id,
               actor,
               kind,
               body,
@@ -483,7 +505,6 @@ async function readProjectSnapshot({
             SELECT
               id,
               evaluation_id,
-              session_id,
               actor,
               kind,
               body,
@@ -498,8 +519,7 @@ async function readProjectSnapshot({
           sql: `
             SELECT
               id,
-              objective_id,
-              associated_session_id,
+              session_id,
               associated_entity_kind,
               associated_entity_id,
               kind,
@@ -540,6 +560,26 @@ function readRows<RecordType>({
   }
 }
 
+function readMaybeRow<RowType>({
+  database,
+  sql,
+  params = [],
+}: {
+  database: Awaited<ReturnType<typeof openSqliteDatabase>>;
+  sql: string;
+  params?: unknown[];
+}): RowType | null {
+  try {
+    return (database.get(sql, params) as RowType | null) ?? null;
+  } catch (error) {
+    if (isMissingTableError({ error })) {
+      return null;
+    }
+
+    throw error;
+  }
+}
+
 function readJsonRows<RecordType, RowType extends ActivityRow>({
   database,
   sql,
@@ -557,18 +597,18 @@ function readJsonRows<RecordType, RowType extends ActivityRow>({
 }
 
 function metadataFromRows({
-  config,
+  project,
   objective,
 }: {
-  config: ProjectConfigRow | null;
+  project: ProjectRow | null;
   objective: ObjectiveRow | null;
 }): ProjectMetadata {
   return {
-    repoPath: config?.repo_path ?? null,
+    repoPath: project?.repo_path ?? null,
     objectiveTitle: objective?.title ?? null,
     readStatus: "found",
     updatedAt: latestTimestamp({
-      values: [config?.updated_at ?? null, objective?.updated_at ?? null],
+      values: [project?.updated_at ?? null, objective?.updated_at ?? null],
     }),
   };
 }

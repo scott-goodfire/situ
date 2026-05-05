@@ -12,9 +12,16 @@ from evals.harness.models import EvalEvent
 from evals.worlds.repo_bootstrap.models import RepoBootstrapSeed
 
 OBJECTIVE_ID = "objective_repo_bootstrap_0001"
+RESEARCH_CONTEXT_ID = "rctx_repo_bootstrap_0001"
 SESSION_ID = "session_repo_bootstrap_0001"
 HYPOTHESIS_ID = "hyp_repo_bootstrap_train_variants"
 BASELINE_EVALUATION_ID = "eval_repo_bootstrap_baseline"
+
+RESEARCH_CONTEXT_BODY = (
+    "You are observing a tiny local autoresearch-style repo. Inspect "
+    "the project docs, run project-native commands, compare val_bpb "
+    "as plaintext evidence, and avoid modifying setup/evaluation code."
+)
 
 README_MD = inspect.cleandoc(
     """
@@ -150,9 +157,14 @@ class RepoBootstrapWorld:
     def session_graph(self) -> dict[str, Any]:
         graph = SessionsService(repos=self.repos).get_session(SESSION_ID)
         return {
-            "config": graph.config.model_dump() if graph.config is not None else None,
+            "project": graph.project.model_dump() if graph.project is not None else None,
             "session": graph.session.model_dump() if graph.session is not None else None,
             "objective": graph.objective.model_dump() if graph.objective is not None else None,
+            "research_context": (
+                graph.research_context.model_dump()
+                if graph.research_context is not None
+                else None
+            ),
             "hypotheses": [item.model_dump() for item in graph.hypotheses],
             "experiments": [item.model_dump() for item in graph.experiments],
             "evaluations": [item.model_dump() for item in graph.evaluations],
@@ -202,34 +214,21 @@ def _build_repos(path: Path, workspace_path: Path) -> Repositories:
         repo_path=str(workspace_path),
     )
     repos = Repositories.create(db)
-    repos.project_config.set(
-        research_context=(
-            "You are observing a tiny local autoresearch-style repo. Inspect "
-            "the project docs, run project-native commands, compare val_bpb "
-            "as plaintext evidence, and avoid modifying setup/evaluation code."
-        ),
-    )
-    objective = repos.objectives.create(
+    project = repos.project.ensure()
+    repos.sessions.create(SESSION_ID, project_id=project.id)
+    repos.objectives.create(
         objective_id=OBJECTIVE_ID,
+        session_id=SESSION_ID,
         title="Improve validation bits per byte",
         description=(
             "Find trustworthy training variants that lower val_bpb without "
             "invalidating the measurement surface."
         ),
     )
-    session = repos.sessions.create(
-        SESSION_ID,
-        objective_id=objective.id,
-        objective=objective.title,
-        research_context=(
-            "You are observing a tiny local autoresearch-style repo. Inspect "
-            "the project docs, run project-native commands, compare val_bpb "
-            "as plaintext evidence, and avoid modifying setup/evaluation code."
-        ),
-    )
-    repos.objectives.update(
-        objective.id,
-        associated_session_id=session.id,
+    repos.research_contexts.create(
+        research_context_id=RESEARCH_CONTEXT_ID,
+        session_id=SESSION_ID,
+        body=RESEARCH_CONTEXT_BODY,
     )
     return repos
 
@@ -238,23 +237,20 @@ def _seed(repos: Repositories, seed: RepoBootstrapSeed) -> None:
     if seed == "with_baseline_result":
         repos.hypotheses.create(
             hypothesis_id=HYPOTHESIS_ID,
-            objective_id=OBJECTIVE_ID,
+            session_id=SESSION_ID,
             title="Train.py variants can improve val_bpb",
             summary="Try narrow train.py variants and compare against baseline.",
             status="active",
-            associated_session_id=SESSION_ID,
         )
         repos.evaluations.create(
             evaluation_id=BASELINE_EVALUATION_ID,
-            objective_id=OBJECTIVE_ID,
+            session_id=SESSION_ID,
             title="Baseline train.py measurement",
             summary="Run the project-native baseline measurement before variants.",
             status="closed",
-            associated_session_id=SESSION_ID,
         )
         repos.evaluation_activities.add(
             evaluation_id=BASELINE_EVALUATION_ID,
-            session_id=SESSION_ID,
             actor="worker",
             kind="comment",
             body=(

@@ -8,9 +8,10 @@ from ...common import AlmanacToolReturn
 
 
 class GetSessionResult(AlmanacToolReturn):
-    config: dict[str, Any] | None = None
+    project: dict[str, Any] | None = None
     session: dict[str, Any] | None = None
     objective: dict[str, Any] | None = None
+    research_context: dict[str, Any] | None = None
     hypotheses: list[dict[str, Any]] = Field(default_factory=list)
     experiments: list[dict[str, Any]] = Field(default_factory=list)
     evaluations: list[dict[str, Any]] = Field(default_factory=list)

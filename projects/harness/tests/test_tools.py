@@ -40,7 +40,16 @@ from almanac.harness.tools.hypotheses import (
     UpdateHypothesisTool,
 )
 from almanac.harness.tools.links import LinkHypothesisExperimentTool
-from almanac.harness.tools.objectives import GetObjectiveTool
+from almanac.harness.tools.objectives import (
+    CreateObjectiveTool,
+    GetObjectiveTool,
+    UpdateObjectiveTool,
+)
+from almanac.harness.tools.research_contexts import (
+    CreateResearchContextTool,
+    GetResearchContextTool,
+    UpdateResearchContextTool,
+)
 from almanac.harness.tools.sessions import GetSessionTool
 from almanac.harness.tools.workspace_state import InspectWorkspaceStateTool
 from almanac.protocol import ExperimentRunParams, ExperimentRunResult
@@ -58,44 +67,37 @@ def repos(tmp_path: Path) -> Repositories:
         repo_path="/tmp/project",
     )
     repositories = Repositories.create(db)
-    repositories.project_config.set(
-        research_context=(
-            "Use the available eval scripts and compare score/latency. "
-            "Expected signals: score, latency_ms. Baseline, variants, and combinations."
-        ),
+    project = repositories.project.ensure()
+    repositories.sessions.create(
+        "session_0001",
+        project_id=project.id,
     )
     repositories.objectives.create(
-        objective_id="objective_0001",
+        objective_id="obj_session_0001",
+        session_id="session_0001",
         title="Improve score",
         description="Improve score without hurting latency.",
     )
-    session = repositories.sessions.create(
-        "session_0001",
-        objective_id="objective_0001",
-        objective="Improve score",
-        research_context=(
+    repositories.research_contexts.create(
+        research_context_id="rctx_session_0001",
+        session_id="session_0001",
+        body=(
             "Use the available eval scripts and compare score/latency. "
             "Expected signals: score, latency_ms. Baseline, variants, and combinations."
         ),
     )
-    repositories.objectives.update(
-        "objective_0001",
-        associated_session_id=session.id,
-    )
     repositories.hypotheses.create(
         hypothesis_id="hyp_0001",
-        objective_id="objective_0001",
+        session_id="session_0001",
         title="Component A helps",
         summary="Component A may improve score.",
         status="active",
-        associated_session_id="session_0001",
     )
     repositories.experiments.create(
         experiment_id="exp_session_0001_a",
-        objective_id="objective_0001",
+        session_id="session_0001",
         title="Try component A",
         summary="Apply component A.",
-        associated_session_id="session_0001",
     )
     return repositories
 
@@ -106,7 +108,7 @@ def test_get_session_tool_reads_current_session_graph(repos: Repositories) -> No
     result = invoke_almanac_tool_sync(tool=GetSessionTool(), deps=deps)
 
     assert result.success is True
-    assert result.config is not None
+    assert result.project is not None
     assert result.objective is not None
     assert result.objective["title"] == "Improve score"
     assert result.session is not None
@@ -117,7 +119,7 @@ def test_get_session_tool_reads_current_session_graph(repos: Repositories) -> No
     ]
 
 
-def test_get_objective_tool_defaults_to_current_session_objective(
+def test_get_objective_tool_reads_current_session_objective(
     repos: Repositories,
 ) -> None:
     deps = AlmanacToolDeps(session_id="session_0001", repos=repos)
@@ -126,7 +128,94 @@ def test_get_objective_tool_defaults_to_current_session_objective(
 
     assert result.success is True
     assert result.objective is not None
-    assert result.objective["id"] == "objective_0001"
+    assert result.objective["id"] == "obj_session_0001"
+
+
+def test_create_objective_tool_is_idempotent(repos: Repositories) -> None:
+    db = Database(
+        repos.project.db.path.parent / "fresh.sqlite",
+        project_id="project_fresh",
+        repo_path="/tmp/fresh",
+    )
+    fresh = Repositories.create(db)
+    project = fresh.project.ensure()
+    fresh.sessions.create("session_fresh", project_id=project.id)
+    deps = AlmanacToolDeps(session_id="session_fresh", repos=fresh)
+
+    first = invoke_almanac_tool_sync(
+        tool=CreateObjectiveTool(),
+        deps=deps,
+        title="First",
+        description="First objective",
+    )
+    second = invoke_almanac_tool_sync(
+        tool=CreateObjectiveTool(),
+        deps=deps,
+        title="Different",
+        description="Different objective",
+    )
+
+    assert first.success is True
+    assert second.success is True
+    assert first.objective is not None
+    assert second.objective is not None
+    assert second.objective["id"] == first.objective["id"]
+    assert second.objective["title"] == "First"
+
+
+def test_research_context_tools_create_get_and_update(repos: Repositories) -> None:
+    db = Database(
+        repos.project.db.path.parent / "rctx.sqlite",
+        project_id="project_rctx",
+        repo_path="/tmp/rctx",
+    )
+    fresh = Repositories.create(db)
+    project = fresh.project.ensure()
+    fresh.sessions.create("session_rctx", project_id=project.id)
+    deps = AlmanacToolDeps(session_id="session_rctx", repos=fresh)
+
+    created = invoke_almanac_tool_sync(
+        tool=CreateResearchContextTool(),
+        deps=deps,
+        body="Run eval; expected signals: score.",
+    )
+    assert created.success is True
+    assert created.research_context is not None
+    assert "score" in created.research_context["body"]
+
+    fetched = invoke_almanac_tool_sync(
+        tool=GetResearchContextTool(),
+        deps=deps,
+    )
+    assert fetched.success is True
+    assert fetched.research_context is not None
+    assert fetched.research_context["id"] == created.research_context["id"]
+
+    updated = invoke_almanac_tool_sync(
+        tool=UpdateResearchContextTool(),
+        deps=deps,
+        body="Refined: focus on score, ignore latency.",
+    )
+    assert updated.success is True
+    assert updated.research_context is not None
+    assert "Refined" in updated.research_context["body"]
+
+
+def test_update_objective_tool_updates_session_objective(
+    repos: Repositories,
+) -> None:
+    deps = AlmanacToolDeps(session_id="session_0001", repos=repos)
+
+    updated = invoke_almanac_tool_sync(
+        tool=UpdateObjectiveTool(),
+        deps=deps,
+        title="Improve score safely",
+        status="closed",
+    )
+    assert updated.success is True
+    assert updated.objective is not None
+    assert updated.objective["title"] == "Improve score safely"
+    assert updated.objective["status"] == "closed"
 
 
 def test_hypothesis_tools_create_update_and_list(repos: Repositories) -> None:

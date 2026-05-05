@@ -8,15 +8,23 @@ export function DxCard({
   children,
   tone = "default",
   padding = "default",
+  interactive = false,
   className,
 }: {
   children: ReactNode;
   tone?: DxCardTone;
   padding?: DxCardPadding;
+  interactive?: boolean;
   className?: string;
 }) {
   const cardClassName = classNames({
-    values: ["dx-card", `dx-card--${tone}`, `dx-card--padding-${padding}`, className],
+    values: [
+      "dx-card",
+      `dx-card--${tone}`,
+      `dx-card--padding-${padding}`,
+      interactive && "dx-card--interactive",
+      className,
+    ],
   });
 
   return <div className={cardClassName}>{children}</div>;

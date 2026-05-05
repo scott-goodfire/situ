@@ -49,8 +49,8 @@ def research_tool_cases() -> list[Case[ResearchToolEvalInput, ResearchToolEvalOu
                 case_id="get_objective_reads_current_objective",
                 seed="basic",
                 prompt=(
-                    "Please load the current objective with get_objective, without "
-                    "passing an objective_id, and state the title."
+                    "Please load the current objective with get_objective and "
+                    "state the title."
                 ),
             ),
             metadata={"requires_real_llm": True},

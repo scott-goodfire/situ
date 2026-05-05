@@ -24,6 +24,7 @@ import type {
   HypothesisActivityRecord,
   HypothesisRecord,
   ObjectiveRecord,
+  ResearchContextRecord,
   SessionRecord,
   SessionResumeParams,
   SessionResumeResult,
@@ -68,6 +69,13 @@ export function AlmanacTui() {
   const objectivesQuery = useLiveQuery(
     (query) =>
       query.from({ objective: collections.objectives }).select(({ objective }) => objective),
+    [collections],
+  );
+  const researchContextsQuery = useLiveQuery(
+    (query) =>
+      query
+        .from({ researchContext: collections.researchContexts })
+        .select(({ researchContext }) => researchContext),
     [collections],
   );
   const sessionsQuery = useLiveQuery(
@@ -133,6 +141,13 @@ export function AlmanacTui() {
   const objectives = useMemo(
     () => sortByCreated({ records: (objectivesQuery.data ?? []) as ObjectiveRecord[] }),
     [objectivesQuery.data],
+  );
+  const researchContexts = useMemo(
+    () =>
+      sortByCreated({
+        records: (researchContextsQuery.data ?? []) as ResearchContextRecord[],
+      }),
+    [researchContextsQuery.data],
   );
   const sessions = useMemo(
     () => sortByCreated({ records: (sessionsQuery.data ?? []) as SessionRecord[] }),
@@ -324,6 +339,10 @@ export function AlmanacTui() {
       objectives,
       session: latestSession,
     }) ?? objectives.at(-1);
+  const activeResearchContext = researchContextForSession({
+    researchContexts,
+    session: latestSession,
+  });
   const sessionExperiments = experimentsForSession({
     experiments,
     session: latestSession,
@@ -332,20 +351,23 @@ export function AlmanacTui() {
     hypotheses,
     session: latestSession,
   });
-  const sessionHypothesisActivities = activitiesForSession({
+  const sessionHypothesisActivities = hypothesisActivitiesForSession({
     activities: hypothesisActivities,
+    hypotheses,
     session: latestSession,
   });
-  const sessionExperimentActivities = activitiesForSession({
+  const sessionExperimentActivities = experimentActivitiesForSession({
     activities: experimentActivities,
+    experiments,
     session: latestSession,
   });
   const sessionEvaluations = evaluationsForSession({
     evaluations,
     session: latestSession,
   });
-  const sessionEvaluationActivities = activitiesForSession({
+  const sessionEvaluationActivities = evaluationActivitiesForSession({
     activities: evaluationActivities,
+    evaluations: sessionEvaluations,
     session: latestSession,
   });
   const sessionEvents = eventsForSession({
@@ -412,6 +434,7 @@ export function AlmanacTui() {
       statusLine={statusLine}
       dashboardMessage={dashboardMessage}
       objective={activeObjective}
+      researchContext={activeResearchContext}
       session={latestSession}
       experimentCount={sessionExperiments.length}
       maxExperiments={maxExperimentCount}
@@ -672,7 +695,25 @@ function objectiveForSession({
 
   return lodash.find(
     objectives,
-    (objective: ObjectiveRecord) => objective.id === session.objective_id,
+    (objective: ObjectiveRecord) => objective.session_id === session.id,
+  );
+}
+
+function researchContextForSession({
+  researchContexts,
+  session,
+}: {
+  researchContexts: ResearchContextRecord[];
+  session: SessionRecord | undefined;
+}): ResearchContextRecord | undefined {
+  if (!session) {
+    return undefined;
+  }
+
+  return lodash.find(
+    researchContexts,
+    (researchContext: ResearchContextRecord) =>
+      researchContext.session_id === session.id,
   );
 }
 
@@ -689,7 +730,7 @@ function experimentsForSession({
 
   return lodash.filter(
     experiments,
-    (experiment: ExperimentRecord) => experiment.associated_session_id === session.id,
+    (experiment: ExperimentRecord) => experiment.session_id === session.id,
   );
 }
 
@@ -706,7 +747,7 @@ function evaluationsForSession({
 
   return lodash.filter(
     evaluations,
-    (evaluation: EvaluationRecord) => evaluation.associated_session_id === session.id,
+    (evaluation: EvaluationRecord) => evaluation.session_id === session.id,
   );
 }
 
@@ -723,22 +764,80 @@ function hypothesesForSession({
 
   return lodash.filter(
     hypotheses,
-    (hypothesis: HypothesisRecord) => hypothesis.associated_session_id === session.id,
+    (hypothesis: HypothesisRecord) => hypothesis.session_id === session.id,
   );
 }
 
-function activitiesForSession<T extends { session_id?: string | null }>({
+function hypothesisActivitiesForSession({
   activities,
+  hypotheses,
   session,
 }: {
-  activities: T[];
+  activities: HypothesisActivityRecord[];
+  hypotheses: HypothesisRecord[];
   session: SessionRecord | undefined;
-}): T[] {
+}): HypothesisActivityRecord[] {
   if (!session) {
     return [];
   }
 
-  return lodash.filter(activities, (activity: T) => activity.session_id === session.id);
+  const hypothesisIds = new Set(
+    hypotheses
+      .filter((hypothesis) => hypothesis.session_id === session.id)
+      .map((hypothesis) => hypothesis.id),
+  );
+
+  return lodash.filter(activities, (activity: HypothesisActivityRecord) =>
+    hypothesisIds.has(activity.hypothesis_id),
+  );
+}
+
+function experimentActivitiesForSession({
+  activities,
+  experiments,
+  session,
+}: {
+  activities: ExperimentActivityRecord[];
+  experiments: ExperimentRecord[];
+  session: SessionRecord | undefined;
+}): ExperimentActivityRecord[] {
+  if (!session) {
+    return [];
+  }
+
+  const experimentIds = new Set(
+    experiments
+      .filter((experiment) => experiment.session_id === session.id)
+      .map((experiment) => experiment.id),
+  );
+
+  return lodash.filter(activities, (activity: ExperimentActivityRecord) =>
+    experimentIds.has(activity.experiment_id),
+  );
+}
+
+function evaluationActivitiesForSession({
+  activities,
+  evaluations,
+  session,
+}: {
+  activities: EvaluationActivityRecord[];
+  evaluations: EvaluationRecord[];
+  session: SessionRecord | undefined;
+}): EvaluationActivityRecord[] {
+  if (!session) {
+    return [];
+  }
+
+  const evaluationIds = new Set(
+    evaluations
+      .filter((evaluation) => evaluation.session_id === session.id)
+      .map((evaluation) => evaluation.id),
+  );
+
+  return lodash.filter(activities, (activity: EvaluationActivityRecord) =>
+    evaluationIds.has(activity.evaluation_id),
+  );
 }
 
 function eventsForSession({

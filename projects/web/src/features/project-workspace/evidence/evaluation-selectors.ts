@@ -25,8 +25,7 @@ export function baselineEvaluations({
   return filter(
     data.evaluations,
     (evaluation) =>
-      evaluation.associated_session_id === session.id &&
-      !evaluation.associated_experiment_id,
+      evaluation.session_id === session.id && !evaluation.associated_experiment_id,
   );
 }
 

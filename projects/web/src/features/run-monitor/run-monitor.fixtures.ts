@@ -4,23 +4,28 @@ import type {
   ExperimentRecord,
   HypothesisRecord,
   ObjectiveRecord,
+  ResearchContextRecord,
   SessionRecord,
 } from "@almanac/protocol";
 
 export const storyWorkspace = "/Users/almanac/sandbox/support-agent";
+export const storyProjectId = "project_0001";
+export const storySessionId = "session_0001";
 
 export const activeObjective = objectiveRecord({});
 
+export const activeResearchContext = researchContextRecord({});
+
 export const runningSession = sessionRecord({
   overrides: {
-    id: "session_0001",
+    id: storySessionId,
     status: "active",
   },
 });
 
 export const completedSession = sessionRecord({
   overrides: {
-    id: "session_0001",
+    id: storySessionId,
     status: "closed",
   },
 });
@@ -166,10 +171,26 @@ function objectiveRecord({
   overrides?: Partial<ObjectiveRecord>;
 }): ObjectiveRecord {
   return {
-    id: "objective_0001",
+    id: `obj_${storySessionId}`,
+    session_id: storySessionId,
     title: "Improve support-agent resolution",
     description: "Improve billing and cancellation resolution without hurting latency.",
     status: "active",
+    created_at: "2026-01-01T00:00:00Z",
+    updated_at: "2026-01-01T00:00:00Z",
+    ...overrides,
+  };
+}
+
+function researchContextRecord({
+  overrides = {},
+}: {
+  overrides?: Partial<ResearchContextRecord>;
+}): ResearchContextRecord {
+  return {
+    id: `rctx_${storySessionId}`,
+    session_id: storySessionId,
+    body: "Run project-native evals and collect plaintext evidence.",
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
     ...overrides,
@@ -182,10 +203,8 @@ function sessionRecord({
   overrides?: Partial<SessionRecord>;
 }): SessionRecord {
   return {
-    id: "session_0001",
-    objective_id: "objective_0001",
-    objective: "Improve support-agent resolution",
-    research_context: "Run project-native evals and collect plaintext evidence.",
+    id: storySessionId,
+    project_id: storyProjectId,
     status: "active",
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
@@ -200,7 +219,7 @@ function hypothesisRecord({
 }): HypothesisRecord {
   return {
     id: "hyp_0001",
-    objective_id: "objective_0001",
+    session_id: storySessionId,
     title: "Retrieval filtering can improve cancellation tickets",
     summary: "Filter low-confidence retrieval snippets before tool calls.",
     status: "active",
@@ -217,11 +236,10 @@ function experimentRecord({
 }): ExperimentRecord {
   return {
     id: "exp_session_0001_baseline",
-    objective_id: "objective_0001",
+    session_id: storySessionId,
     status: "open",
     title: "Record baseline",
     summary: "Baseline evaluation.",
-    associated_session_id: "session_0001",
     created_at: "2026-01-01T00:00:01Z",
     updated_at: "2026-01-01T00:00:01Z",
     ...overrides,
@@ -236,7 +254,6 @@ function experimentActivityRecord({
   return {
     id: 1,
     experiment_id: "exp_session_0001_baseline",
-    session_id: "session_0001",
     actor: "worker",
     kind: "comment",
     body: "Baseline result recorded.",
@@ -249,7 +266,7 @@ function experimentActivityRecord({
 function eventRecord({ overrides = {} }: { overrides?: Partial<EventRecord> }): EventRecord {
   return {
     id: 1,
-    session_id: "session_0001",
+    session_id: storySessionId,
     type: "session.started",
     message: "Started session_0001",
     payload: {},

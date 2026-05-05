@@ -1,6 +1,7 @@
 import { SessionSection } from "./session-section.js";
 import {
   activeObjective,
+  activeResearchContext,
   completedSession,
   maxExperimentCount,
   runningSession,
@@ -15,6 +16,7 @@ export const stories = [
     render: () => (
       <SessionSection
         objective={activeObjective}
+        researchContext={activeResearchContext}
         session={undefined}
         experimentCount={0}
         maxExperiments={maxExperimentCount}
@@ -28,6 +30,7 @@ export const stories = [
     render: () => (
       <SessionSection
         objective={activeObjective}
+        researchContext={activeResearchContext}
         session={runningSession}
         experimentCount={3}
         maxExperiments={maxExperimentCount}
@@ -41,6 +44,7 @@ export const stories = [
     render: () => (
       <SessionSection
         objective={activeObjective}
+        researchContext={activeResearchContext}
         session={completedSession}
         experimentCount={5}
         maxExperiments={maxExperimentCount}
