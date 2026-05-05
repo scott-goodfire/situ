@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import threading
 import time
 from dataclasses import dataclass
@@ -153,15 +154,14 @@ class HarnessApp:
     def setup_complete(self, params: dict[str, Any]) -> dict[str, Any]:
         setup = SetupCompleteParams.model_validate(params)
         config = self.repos.project_config.set(
-            evaluation_context=setup.evaluation_context,
-            known_signals=setup.known_signals,
-            experiment_scope=setup.experiment_scope,
+            research_context=setup.research_context,
         )
         objective = self.repos.objectives.upsert(
             objective_id="objective_0001",
             title=setup.objective,
             description=setup.objective,
             status="active",
+            associated_session_id=None,
         )
         self.record_event(
             "setup.completed",
@@ -169,7 +169,7 @@ class HarnessApp:
             payload={
                 "objective_id": objective.id,
                 "objective": objective.title,
-                "known_signals": config.known_signals,
+                "research_context": config.research_context,
             },
         )
         return SetupCompleteResult(
@@ -321,6 +321,7 @@ class HarnessApp:
             title="Toy components can improve the score",
             summary="Compare baseline, individual components, and simple combinations.",
             status="active",
+            associated_session_id=session_id,
         )
         event = self.record_event(
             "hypothesis.created",
@@ -359,9 +360,9 @@ class HarnessApp:
                 session_id=session_id,
                 hypothesis_id=hypothesis.id,
                 actor="harness",
-                kind="concern",
+                kind="comment",
                 body=f"Agent runtime failed: {error}",
-                payload={"error": str(error)},
+                payload={"activity_type": "concern", "error": str(error)},
             )
             return
 
@@ -369,9 +370,9 @@ class HarnessApp:
             session_id=session_id,
             hypothesis_id=hypothesis.id,
             actor="agent",
-            kind="update",
+            kind="comment",
             body=plan.summary,
-            payload=plan.model_dump(),
+            payload={"activity_type": "plan", **plan.model_dump()},
         )
 
     def _execute_proposal(
@@ -390,7 +391,7 @@ class HarnessApp:
                 objective_id=objective.id,
                 title=proposal.title,
                 summary=proposal.summary,
-                created_in_session_id=session_id,
+                associated_session_id=session_id,
                 status="open",
             )
             event = self.record_event(
@@ -404,7 +405,6 @@ class HarnessApp:
             link = self.repos.hypothesis_experiment_links.create(
                 hypothesis_id=hypothesis.id,
                 experiment_id=experiment_id,
-                note="Toy loop proposal",
             )
             event = self.record_event(
                 "hypothesis.experiment_linked",
@@ -456,13 +456,18 @@ class HarnessApp:
                 session_id=session_id,
                 experiment_id=experiment_id,
                 actor="worker",
-                kind="result",
+                kind="comment",
                 body=result.summary,
-                payload={"status": result.status, "signals": signals, "raw": result.raw},
+                payload={
+                    "activity_type": "result",
+                    "status": result.status,
+                    "signals": signals,
+                    "raw": result.raw,
+                },
             )
 
             concerns = check_result(
-                known_signals=config.known_signals,
+                known_signals=self._expected_signals(config.research_context),
                 baseline_score=self._baseline_score(session_id),
                 signals=signals,
                 raw=result.raw,
@@ -472,18 +477,22 @@ class HarnessApp:
                     session_id=session_id,
                     experiment_id=experiment_id,
                     actor="harness",
-                    kind="concern",
+                    kind="comment",
                     body=f"{experiment_id}: {message}",
-                    payload={"concern_kind": kind},
+                    payload={"activity_type": "concern", "concern_kind": kind},
                 )
 
             self._record_hypothesis_activity(
                 session_id=session_id,
                 hypothesis_id=hypothesis.id,
                 actor="harness",
-                kind="update",
+                kind="comment",
                 body=self._interpret_result(experiment_id, result.summary, concerns),
-                payload={"experiment_id": experiment_id, "concern_count": len(concerns)},
+                payload={
+                    "activity_type": "interpretation",
+                    "experiment_id": experiment_id,
+                    "concern_count": len(concerns),
+                },
             )
 
             experiment = self.repos.experiments.update(experiment_id, status="closed")
@@ -571,7 +580,10 @@ class HarnessApp:
         baseline_id = f"exp_{session_id}_baseline"
         activities = self.repos.experiment_activities.list_for_experiment(baseline_id)
         for activity in reversed(activities):
-            if activity.kind != "result":
+            if (
+                activity.payload.get("activity_type") != "result"
+                and "signals" not in activity.payload
+            ):
                 continue
             signals = activity.payload.get("signals", [])
             if not isinstance(signals, list):
@@ -583,6 +595,18 @@ class HarnessApp:
                 if isinstance(value, int | float):
                     return float(value)
         return None
+
+    @staticmethod
+    def _expected_signals(research_context: str) -> list[str]:
+        match = re.search(
+            r"(?:expected|known)\s+signals?\s*:\s*([^\n.]+)",
+            research_context,
+            flags=re.IGNORECASE,
+        )
+        if match is None:
+            return []
+        signals = re.split(r",|\band\b", match.group(1), flags=re.IGNORECASE)
+        return [signal.strip(" `.;") for signal in signals if signal.strip(" `.;")]
 
     @staticmethod
     def _interpret_result(

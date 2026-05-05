@@ -97,7 +97,7 @@ function experimentsForSession({
 
   return filter(
     experiments,
-    (experiment) => experiment.created_in_session_id === session.id,
+    (experiment) => experiment.associated_session_id === session.id,
   );
 }
 

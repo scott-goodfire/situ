@@ -22,7 +22,7 @@ Objective
 The durable north star. It defines what the research is trying to improve or
 understand.
 
-A first objective needs title/description plus lightweight evaluation context:
+A first objective needs title/description plus lightweight research context:
 how progress is judged, what signals or artifacts matter, and what kinds of
 experiments are in scope.
 

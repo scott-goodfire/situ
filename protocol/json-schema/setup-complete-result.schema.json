@@ -23,6 +23,18 @@
           "title": "Status",
           "type": "string"
         },
+        "associated_session_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Associated Session Id"
+        },
         "created_at": {
           "title": "Created At",
           "type": "string"
@@ -54,20 +66,21 @@
           "title": "Repo Path",
           "type": "string"
         },
-        "evaluation_context": {
-          "title": "Evaluation Context",
+        "research_context": {
+          "title": "Research Context",
           "type": "string"
         },
-        "known_signals": {
-          "items": {
-            "type": "string"
-          },
-          "title": "Known Signals",
-          "type": "array"
-        },
-        "experiment_scope": {
-          "title": "Experiment Scope",
-          "type": "string"
+        "associated_session_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Associated Session Id"
         },
         "created_at": {
           "title": "Created At",
@@ -81,9 +94,7 @@
       "required": [
         "id",
         "repo_path",
-        "evaluation_context",
-        "known_signals",
-        "experiment_scope",
+        "research_context",
         "created_at",
         "updated_at"
       ],

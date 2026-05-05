@@ -86,8 +86,8 @@ Check:
   and reviewable criteria.
 - Policies are concrete review rubrics, not generic documentation.
 - Product specs preserve the current MVP language: objective, session,
-  hypotheses, experiments, typed activities, artifacts, automated trust
-  concerns, and TUI-first observability.
+  research context, hypotheses, experiments, comment activities, artifacts,
+  automated trust concerns, and TUI-first observability.
 - Docs explain durable context that is not better as a spec or policy.
 - Skills describe a repeatable workflow and do not depend on stale scripts.
 - Links referenced in changed files are plausible and current.

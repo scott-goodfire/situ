@@ -18,7 +18,7 @@ interpretation without requiring the user to predeclare every risk.
 
 ## Required Checks
 
-- Experiments record suspicious or invalid outcomes as concern activities.
+- Experiments record suspicious or invalid outcomes as concern comments.
 - Eval failure, missing expected signals, signal shape changes, and measurement
   artifact changes are detectable in the MVP path when possible.
 - Suspicious results are visible before they can be treated as trusted

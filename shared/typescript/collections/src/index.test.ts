@@ -56,7 +56,7 @@ describe("almanac collections", () => {
     expect(collections.experiments.get("exp_session_0001_baseline")?.status).toBe(
       "closed",
     );
-    expect(collections.experimentActivities.get("1")?.kind).toBe("result");
+    expect(collections.experimentActivities.get("1")?.kind).toBe("comment");
     expect(collections.events.get("1")?.type).toBe("session.started");
     expect(collections.events.get("2")?.type).toBe("experiment.completed");
   });
@@ -96,7 +96,10 @@ describe("almanac collections", () => {
         collection: "experiment_activities",
         key: "3",
         record: experimentActivityRecord({
-          overrides: { id: 3, kind: "concern" },
+          overrides: {
+            id: 3,
+            payload: { activity_type: "concern" },
+          },
         }),
       }),
     });
@@ -104,7 +107,10 @@ describe("almanac collections", () => {
     expect(collections.sessions.size).toBe(1);
     expect(collections.sessions.get("session_0001")?.status).toBe("closed");
     expect(collections.experiments.get("exp_session_0001_a")?.status).toBe("active");
-    expect(collections.experimentActivities.get("3")?.kind).toBe("concern");
+    expect(collections.experimentActivities.get("3")?.kind).toBe("comment");
+    expect(collections.experimentActivities.get("3")?.payload.activity_type).toBe(
+      "concern",
+    );
   });
 });
 
@@ -190,7 +196,7 @@ function experimentRecord({
     status: "closed",
     title: "Record baseline",
     summary: "Baseline toy evaluation.",
-    created_in_session_id: "session_0001",
+    associated_session_id: "session_0001",
     created_at: "2026-01-01T00:00:01Z",
     updated_at: "2026-01-01T00:00:01Z",
     ...overrides,
@@ -207,9 +213,9 @@ function experimentActivityRecord({
     experiment_id: "exp_session_0001_baseline",
     session_id: "session_0001",
     actor: "worker",
-    kind: "result",
+    kind: "comment",
     body: "Baseline result recorded.",
-    payload: { signals: [{ key: "score", value: 0.71 }] },
+    payload: { activity_type: "result", signals: [{ key: "score", value: 0.71 }] },
     created_at: "2026-01-01T00:00:02Z",
     ...overrides,
   };

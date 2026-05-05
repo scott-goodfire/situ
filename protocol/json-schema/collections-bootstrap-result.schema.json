@@ -11,7 +11,7 @@
           "title": "Objective Id",
           "type": "string"
         },
-        "session_id": {
+        "associated_session_id": {
           "anyOf": [
             {
               "type": "string"
@@ -21,55 +21,15 @@
             }
           ],
           "default": null,
-          "title": "Session Id"
+          "title": "Associated Session Id"
         },
-        "hypothesis_id": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Hypothesis Id"
+        "associated_entity_kind": {
+          "title": "Associated Entity Kind",
+          "type": "string"
         },
-        "experiment_id": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Experiment Id"
-        },
-        "hypothesis_activity_id": {
-          "anyOf": [
-            {
-              "type": "integer"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Hypothesis Activity Id"
-        },
-        "experiment_activity_id": {
-          "anyOf": [
-            {
-              "type": "integer"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Experiment Activity Id"
+        "associated_entity_id": {
+          "title": "Associated Entity Id",
+          "type": "string"
         },
         "kind": {
           "title": "Kind",
@@ -115,6 +75,8 @@
       "required": [
         "id",
         "objective_id",
+        "associated_entity_kind",
+        "associated_entity_id",
         "kind",
         "title",
         "path",
@@ -197,13 +159,7 @@
           "type": "string"
         },
         "kind": {
-          "enum": [
-            "comment",
-            "update",
-            "result",
-            "concern",
-            "decision"
-          ],
+          "const": "comment",
           "title": "Kind",
           "type": "string"
         },
@@ -260,7 +216,7 @@
           "title": "Summary",
           "type": "string"
         },
-        "created_in_session_id": {
+        "associated_session_id": {
           "anyOf": [
             {
               "type": "string"
@@ -270,7 +226,7 @@
             }
           ],
           "default": null,
-          "title": "Created In Session Id"
+          "title": "Associated Session Id"
         },
         "created_at": {
           "title": "Created At",
@@ -321,13 +277,7 @@
           "type": "string"
         },
         "kind": {
-          "enum": [
-            "comment",
-            "update",
-            "result",
-            "concern",
-            "decision"
-          ],
+          "const": "comment",
           "title": "Kind",
           "type": "string"
         },
@@ -365,11 +315,6 @@
         },
         "experiment_id": {
           "title": "Experiment Id",
-          "type": "string"
-        },
-        "note": {
-          "default": "",
-          "title": "Note",
           "type": "string"
         },
         "created_at": {
@@ -412,6 +357,18 @@
           ],
           "title": "Status",
           "type": "string"
+        },
+        "associated_session_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Associated Session Id"
         },
         "created_at": {
           "title": "Created At",
@@ -456,6 +413,18 @@
           ],
           "title": "Status",
           "type": "string"
+        },
+        "associated_session_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Associated Session Id"
         },
         "created_at": {
           "title": "Created At",

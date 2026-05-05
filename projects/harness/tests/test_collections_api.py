@@ -45,9 +45,7 @@ def test_collections_bootstrap_returns_research_objects_and_events(
     app.setup_complete(
         {
             "objective": "Improve score",
-            "evaluation_context": "Run local evals.",
-            "known_signals": ["score"],
-            "experiment_scope": "Baseline and variants.",
+            "research_context": "Run local evals. Expected signals: score. Baseline and variants.",
         }
     )
     app.repos.sessions.create("session_0001", objective_id="objective_0001")
@@ -63,14 +61,15 @@ def test_collections_bootstrap_returns_research_objects_and_events(
         objective_id="objective_0001",
         title="Record baseline",
         summary="Baseline eval.",
-        created_in_session_id="session_0001",
+        associated_session_id="session_0001",
     )
     activity = app.repos.experiment_activities.add(
         experiment_id="exp_session_0001_baseline",
         session_id="session_0001",
         actor="worker",
-        kind="result",
+        kind="comment",
         body="Baseline result recorded.",
+        payload={"activity_type": "result"},
     )
     event = app.record_event(
         "experiment.completed",

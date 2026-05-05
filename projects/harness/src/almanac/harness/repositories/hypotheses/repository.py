@@ -15,6 +15,7 @@ class HypothesesRepository(BaseRepository):
         title: str,
         summary: str,
         status: str = "open",
+        associated_session_id: str | None = None,
     ) -> HypothesisRecord:
         command = CreateHypothesis(
             hypothesis_id=hypothesis_id,
@@ -22,13 +23,15 @@ class HypothesesRepository(BaseRepository):
             title=title,
             summary=summary,
             status=status,
+            associated_session_id=associated_session_id,
         )
         now = utc_now()
         self.db.execute(
             """
             INSERT INTO hypotheses
-              (id, objective_id, title, summary, status, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+              (id, objective_id, title, summary, status, associated_session_id,
+               created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 command.hypothesis_id,
@@ -36,6 +39,7 @@ class HypothesesRepository(BaseRepository):
                 command.title,
                 command.summary,
                 command.status,
+                command.associated_session_id,
                 now,
                 now,
             ),
@@ -53,6 +57,7 @@ class HypothesesRepository(BaseRepository):
         title: str,
         summary: str,
         status: str = "open",
+        associated_session_id: str | None = None,
     ) -> HypothesisRecord:
         existing = self.get_by_id(hypothesis_id)
         if existing is None:
@@ -62,12 +67,14 @@ class HypothesesRepository(BaseRepository):
                 title=title,
                 summary=summary,
                 status=status,
+                associated_session_id=associated_session_id,
             )
         updated = self.update(
             hypothesis_id,
             title=title,
             summary=summary,
             status=status,
+            associated_session_id=associated_session_id,
         )
         if updated is None:
             raise RuntimeError(f"hypothesis disappeared during update: {hypothesis_id}")
@@ -80,12 +87,14 @@ class HypothesesRepository(BaseRepository):
         title: str | None = None,
         summary: str | None = None,
         status: str | None = None,
+        associated_session_id: str | None = None,
     ) -> HypothesisRecord | None:
         command = UpdateHypothesis(
             hypothesis_id=hypothesis_id,
             title=title,
             summary=summary,
             status=status,
+            associated_session_id=associated_session_id,
         )
         current = self.get_by_id(command.hypothesis_id)
         if current is None:
@@ -93,13 +102,16 @@ class HypothesesRepository(BaseRepository):
         self.db.execute(
             """
             UPDATE hypotheses
-            SET title = ?, summary = ?, status = ?, updated_at = ?
+            SET title = ?, summary = ?, status = ?, associated_session_id = ?, updated_at = ?
             WHERE id = ?
             """,
             (
                 command.title if command.title is not None else current.title,
                 command.summary if command.summary is not None else current.summary,
                 command.status if command.status is not None else current.status,
+                command.associated_session_id
+                if command.associated_session_id is not None
+                else current.associated_session_id,
                 utc_now(),
                 command.hypothesis_id,
             ),

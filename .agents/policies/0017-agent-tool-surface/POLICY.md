@@ -36,11 +36,11 @@ The agent-facing tool name should still describe the product action directly.
 - Prefer comment-shaped collaboration tools:
   `add_hypothesis_comment`, `add_experiment_comment`.
 - Do not expose a generic `record_activity(kind=...)` tool as the primary agent
-  interface. The harness may still store comments, results, concerns, updates,
-  and decisions as typed activities internally.
-- Harness-owned activity kinds such as `result`, `concern`, and automated
-  trust-check output should stay harness-owned until there is a clear product
-  need for an explicit agent tool.
+  interface. The harness should store first-slice collaboration as
+  `kind="comment"` activities, with optional payload metadata for result,
+  concern, plan, or interpretation comments.
+- Harness-owned result and concern comments should stay harness-owned until
+  there is a clear product need for an explicit agent tool.
 - Mutation tools that append comments, create records, or link records should
   set `sequential = True` unless there is a clear reason they are safe to run in
   parallel.

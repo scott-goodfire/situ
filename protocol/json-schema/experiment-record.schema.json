@@ -26,7 +26,7 @@
       "title": "Summary",
       "type": "string"
     },
-    "created_in_session_id": {
+    "associated_session_id": {
       "anyOf": [
         {
           "type": "string"
@@ -36,7 +36,7 @@
         }
       ],
       "default": null,
-      "title": "Created In Session Id"
+      "title": "Associated Session Id"
     },
     "created_at": {
       "title": "Created At",

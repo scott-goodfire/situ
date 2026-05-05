@@ -14,7 +14,7 @@ class ExperimentsRepository(BaseRepository):
         objective_id: str,
         title: str,
         summary: str,
-        created_in_session_id: str | None = None,
+        associated_session_id: str | None = None,
         status: str = "open",
     ) -> ExperimentRecord:
         command = CreateExperiment(
@@ -22,14 +22,14 @@ class ExperimentsRepository(BaseRepository):
             objective_id=objective_id,
             title=title,
             summary=summary,
-            created_in_session_id=created_in_session_id,
+            associated_session_id=associated_session_id,
             status=status,
         )
         now = utc_now()
         self.db.execute(
             """
             INSERT INTO experiments
-              (id, objective_id, status, title, summary, created_in_session_id,
+              (id, objective_id, status, title, summary, associated_session_id,
                created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
@@ -39,7 +39,7 @@ class ExperimentsRepository(BaseRepository):
                 command.status,
                 command.title,
                 command.summary,
-                command.created_in_session_id,
+                command.associated_session_id,
                 now,
                 now,
             ),
@@ -56,12 +56,14 @@ class ExperimentsRepository(BaseRepository):
         title: str | None = None,
         summary: str | None = None,
         status: str | None = None,
+        associated_session_id: str | None = None,
     ) -> ExperimentRecord | None:
         command = UpdateExperiment(
             experiment_id=experiment_id,
             title=title,
             summary=summary,
             status=status,
+            associated_session_id=associated_session_id,
         )
         current = self.get_by_id(command.experiment_id)
         if current is None:
@@ -70,13 +72,16 @@ class ExperimentsRepository(BaseRepository):
         self.db.execute(
             """
             UPDATE experiments
-            SET title = ?, summary = ?, status = ?, updated_at = ?
+            SET title = ?, summary = ?, status = ?, associated_session_id = ?, updated_at = ?
             WHERE id = ?
             """,
             (
                 command.title if command.title is not None else current.title,
                 command.summary if command.summary is not None else current.summary,
                 command.status if command.status is not None else current.status,
+                command.associated_session_id
+                if command.associated_session_id is not None
+                else current.associated_session_id,
                 utc_now(),
                 command.experiment_id,
             ),
@@ -109,7 +114,7 @@ class ExperimentsRepository(BaseRepository):
         return [
             experiment_row(row)
             for row in self.db.fetchall(
-                "SELECT * FROM experiments WHERE created_in_session_id = ? ORDER BY created_at",
+                "SELECT * FROM experiments WHERE associated_session_id = ? ORDER BY created_at",
                 (session_id,),
             )
         ]

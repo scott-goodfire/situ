@@ -29,18 +29,22 @@ def main() -> int:
     )
     start_parser.add_argument("--objective", help="initial objective for first-time setup")
     start_parser.add_argument(
+        "--research-context",
+        help="plain-language description of evals, tools, metrics, logs, artifacts, and scope",
+    )
+    start_parser.add_argument(
         "--evaluation-context",
-        help="plain-language description of evals, tools, metrics, logs, or artifacts",
+        help="deprecated alias folded into --research-context",
     )
     start_parser.add_argument(
         "--known-signal",
         action="append",
         dest="known_signals",
-        help="expected signal key; repeat for multiple signals",
+        help="optional expected signal key folded into research context; repeat for multiple signals",
     )
     start_parser.add_argument(
         "--experiment-scope",
-        help="plain-language description of the experiments that are in scope",
+        help="deprecated scope hint folded into --research-context",
     )
     start_parser.add_argument(
         "--max-experiments",
@@ -80,6 +84,7 @@ def start(args: argparse.Namespace) -> int:
     optional_env = {
         "ALMANAC_EVAL_COMMAND": args.eval_command,
         "ALMANAC_OBJECTIVE": args.objective,
+        "ALMANAC_RESEARCH_CONTEXT": args.research_context,
         "ALMANAC_EVALUATION_CONTEXT": args.evaluation_context,
         "ALMANAC_EXPERIMENT_SCOPE": args.experiment_scope,
         "ALMANAC_MAX_EXPERIMENTS": str(args.max_experiments) if args.max_experiments is not None else None,

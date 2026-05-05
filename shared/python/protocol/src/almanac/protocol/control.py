@@ -1,6 +1,6 @@
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 from .events import (
     ArtifactRecord,
@@ -45,9 +45,7 @@ class SetupCompleteParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     objective: str
-    evaluation_context: str
-    known_signals: list[str] = Field(default_factory=list)
-    experiment_scope: str = "Toy deterministic experiment loop."
+    research_context: str
 
 
 class SetupCompleteResult(BaseModel):

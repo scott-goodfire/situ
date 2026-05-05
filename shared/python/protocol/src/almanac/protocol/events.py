@@ -6,7 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field
 ObjectiveStatus = Literal["active", "closed"]
 SessionStatus = Literal["active", "closed"]
 WorkStatus = Literal["open", "active", "closed"]
-ActivityKind = Literal["comment", "update", "result", "concern", "decision"]
+ActivityKind = Literal["comment"]
 
 
 class ProjectConfigRecord(BaseModel):
@@ -14,9 +14,8 @@ class ProjectConfigRecord(BaseModel):
 
     id: str
     repo_path: str
-    evaluation_context: str
-    known_signals: list[str]
-    experiment_scope: str
+    research_context: str
+    associated_session_id: str | None = None
     created_at: str
     updated_at: str
 
@@ -28,6 +27,7 @@ class ObjectiveRecord(BaseModel):
     title: str
     description: str
     status: ObjectiveStatus
+    associated_session_id: str | None = None
     created_at: str
     updated_at: str
 
@@ -50,6 +50,7 @@ class HypothesisRecord(BaseModel):
     title: str
     summary: str
     status: WorkStatus
+    associated_session_id: str | None = None
     created_at: str
     updated_at: str
 
@@ -62,7 +63,7 @@ class ExperimentRecord(BaseModel):
     status: WorkStatus
     title: str
     summary: str
-    created_in_session_id: str | None = None
+    associated_session_id: str | None = None
     created_at: str
     updated_at: str
 
@@ -72,7 +73,6 @@ class HypothesisExperimentLinkRecord(BaseModel):
 
     hypothesis_id: str
     experiment_id: str
-    note: str = ""
     created_at: str
 
 
@@ -107,11 +107,9 @@ class ArtifactRecord(BaseModel):
 
     id: str
     objective_id: str
-    session_id: str | None = None
-    hypothesis_id: str | None = None
-    experiment_id: str | None = None
-    hypothesis_activity_id: int | None = None
-    experiment_activity_id: int | None = None
+    associated_session_id: str | None = None
+    associated_entity_kind: str
+    associated_entity_id: str
     kind: str
     title: str
     path: str

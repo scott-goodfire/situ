@@ -22,17 +22,15 @@ class CreateArtifactTool(BaseAlmanacTool[AlmanacToolDeps, CreateArtifactResult])
         path: str,
         artifact_id: str | None = None,
         objective_id: str | None = None,
-        session_id: str | None = None,
-        hypothesis_id: str | None = None,
-        experiment_id: str | None = None,
-        hypothesis_activity_id: int | None = None,
-        experiment_activity_id: int | None = None,
+        associated_session_id: str | None = None,
+        associated_entity_kind: str | None = None,
+        associated_entity_id: str | None = None,
         media_type: str | None = None,
         size_bytes: int | None = None,
         **_kwargs: Any,
     ) -> CreateArtifactResult:
         """Create an artifact reference for a session, hypothesis, or experiment."""
-        resolved_session_id = session_id or ctx.deps.session_id
+        resolved_session_id = associated_session_id or ctx.deps.session_id
         resolved_objective_id = objective_id or _current_objective_id(
             ctx=ctx,
             session_id=resolved_session_id,
@@ -40,6 +38,8 @@ class CreateArtifactTool(BaseAlmanacTool[AlmanacToolDeps, CreateArtifactResult])
         if resolved_objective_id is None:
             raise ValueError("objective_id is required when there is no current session objective")
 
+        resolved_entity_kind = associated_entity_kind or "session"
+        resolved_entity_id = associated_entity_id or resolved_session_id
         resolved_artifact_id = artifact_id or _next_artifact_id(
             ctx=ctx,
             session_id=resolved_session_id,
@@ -47,11 +47,9 @@ class CreateArtifactTool(BaseAlmanacTool[AlmanacToolDeps, CreateArtifactResult])
         artifact = ctx.deps.repos.artifacts.create(
             artifact_id=resolved_artifact_id,
             objective_id=resolved_objective_id,
-            session_id=resolved_session_id,
-            hypothesis_id=hypothesis_id,
-            experiment_id=experiment_id,
-            hypothesis_activity_id=hypothesis_activity_id,
-            experiment_activity_id=experiment_activity_id,
+            associated_session_id=resolved_session_id,
+            associated_entity_kind=resolved_entity_kind,
+            associated_entity_id=resolved_entity_id,
             kind=kind,
             title=title,
             path=path,

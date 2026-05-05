@@ -44,10 +44,8 @@ type Status =
 
 const TOY_SETUP: SetupCompleteParams = {
   objective: "Understand which toy components improve score without suspicious results.",
-  evaluation_context:
-    "Toy deterministic eval with score and latency signals. The harness should preserve results, record activities, and flag suspicious result shape changes.",
-  known_signals: ["score", "latency_ms"],
-  experiment_scope: "Try baseline, individual toy components, combinations, and one suspicious result.",
+  research_context:
+    "Toy deterministic eval. Expected signals: score, latency_ms. Preserve results, record activities, try baseline, individual toy components, combinations, and one suspicious result.",
 };
 
 export function AlmanacTui() {
@@ -436,6 +434,7 @@ function initialSetup({
   const knownSignals = parseSignals({ value: process.env.ALMANAC_KNOWN_SIGNALS });
   const hasUserSetup =
     Boolean(process.env.ALMANAC_OBJECTIVE) ||
+    Boolean(process.env.ALMANAC_RESEARCH_CONTEXT) ||
     Boolean(process.env.ALMANAC_EVALUATION_CONTEXT) ||
     Boolean(process.env.ALMANAC_EXPERIMENT_SCOPE) ||
     knownSignals.length > 0 ||
@@ -450,24 +449,36 @@ function initialSetup({
       process.env.ALMANAC_OBJECTIVE ??
       process.env.ALMANAC_GOAL ??
       `Observe autoresearch experiments in ${workspace}`,
-    evaluation_context: initialEvaluationContext(),
-    known_signals: knownSignals,
-    experiment_scope:
-      process.env.ALMANAC_EXPERIMENT_SCOPE ??
-      "Run the current local worker path and compare results across baseline, individual changes, and combinations.",
+    research_context: initialResearchContext({ knownSignals }),
   };
 }
 
-function initialEvaluationContext(): string {
+function initialResearchContext({ knownSignals }: { knownSignals: string[] }): string {
+  const parts: string[] = [];
+
+  if (process.env.ALMANAC_RESEARCH_CONTEXT) {
+    parts.push(process.env.ALMANAC_RESEARCH_CONTEXT);
+  }
+
   if (process.env.ALMANAC_EVALUATION_CONTEXT) {
-    return process.env.ALMANAC_EVALUATION_CONTEXT;
+    parts.push(process.env.ALMANAC_EVALUATION_CONTEXT);
   }
 
   if (process.env.ALMANAC_EVAL_COMMAND) {
-    return `Run ${process.env.ALMANAC_EVAL_COMMAND} and capture its JSON signals.`;
+    parts.push(`Run ${process.env.ALMANAC_EVAL_COMMAND} and capture its JSON signals.`);
   }
 
-  return "Capture results, signals, concerns, and activities from local experiments.";
+  if (knownSignals.length > 0) {
+    parts.push(`Expected signals: ${knownSignals.join(", ")}.`);
+  }
+
+  if (process.env.ALMANAC_EXPERIMENT_SCOPE) {
+    parts.push(process.env.ALMANAC_EXPERIMENT_SCOPE);
+  }
+
+  parts.push("Capture results, signals, concerns, and activities from local experiments.");
+
+  return parts.join(" ");
 }
 
 function parseSignals({ value }: { value: string | undefined }): string[] {
@@ -543,7 +554,7 @@ function experimentsForSession({
 
   return lodash.filter(
     experiments,
-    (experiment: ExperimentRecord) => experiment.created_in_session_id === session.id,
+    (experiment: ExperimentRecord) => experiment.associated_session_id === session.id,
   );
 }
 

@@ -12,25 +12,21 @@ class HypothesisExperimentLinksRepository(BaseRepository):
         *,
         hypothesis_id: str,
         experiment_id: str,
-        note: str = "",
     ) -> HypothesisExperimentLinkRecord:
         command = LinkHypothesisExperiment(
             hypothesis_id=hypothesis_id,
             experiment_id=experiment_id,
-            note=note,
         )
         self.db.execute(
             """
             INSERT INTO hypothesis_experiment_links
-              (hypothesis_id, experiment_id, note, created_at)
-            VALUES (?, ?, ?, ?)
-            ON CONFLICT(hypothesis_id, experiment_id) DO UPDATE SET
-              note = excluded.note
+              (hypothesis_id, experiment_id, created_at)
+            VALUES (?, ?, ?)
+            ON CONFLICT(hypothesis_id, experiment_id) DO NOTHING
             """,
             (
                 command.hypothesis_id,
                 command.experiment_id,
-                command.note,
                 utc_now(),
             ),
         )

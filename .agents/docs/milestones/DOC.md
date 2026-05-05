@@ -13,8 +13,8 @@ The MVP should demonstrate that a user can start a session and see:
 - Which objective is active
 - Which hypotheses are being explored
 - What experiments have completed
-- What result activities came back
-- What concern and interpretation activities were recorded
+- What result comments came back
+- What concern and interpretation comments were recorded
 - What artifacts can be inspected
 - What automated trust checks fired
 
@@ -34,7 +34,7 @@ Examples:
 - Changing random seeds until one looks good
 - Reporting malformed or incomplete metrics
 
-The MVP should surface suspicious results as concern activities rather than
+The MVP should surface suspicious results as concern comments rather than
 blindly treating metric movement as progress.
 
 ### Local Optima

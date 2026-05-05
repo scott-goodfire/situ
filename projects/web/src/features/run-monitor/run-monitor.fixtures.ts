@@ -85,16 +85,18 @@ export const runningExperimentActivities = [
     overrides: {
       id: 1,
       experiment_id: baselineExperiment.id,
-      kind: "result",
+      kind: "comment",
       body: "Baseline result recorded: resolution_rate 61.0%, latency 1830ms.",
+      payload: { activity_type: "result" },
     },
   }),
   experimentActivityRecord({
     overrides: {
       id: 2,
       experiment_id: acceptedExperiment.id,
-      kind: "result",
+      kind: "comment",
       body: "Resolution improved with latency still under guardrail.",
+      payload: { activity_type: "result" },
     },
   }),
 ];
@@ -105,8 +107,9 @@ export const suspiciousExperimentActivities = [
     overrides: {
       id: 3,
       experiment_id: suspiciousExperiment.id,
-      kind: "concern",
+      kind: "comment",
       body: "Result shape changed unexpectedly.",
+      payload: { activity_type: "concern" },
     },
   }),
 ];
@@ -216,7 +219,7 @@ function experimentRecord({
     status: "open",
     title: "Record baseline",
     summary: "Baseline evaluation.",
-    created_in_session_id: "session_0001",
+    associated_session_id: "session_0001",
     created_at: "2026-01-01T00:00:01Z",
     updated_at: "2026-01-01T00:00:01Z",
     ...overrides,
@@ -233,9 +236,9 @@ function experimentActivityRecord({
     experiment_id: "exp_session_0001_baseline",
     session_id: "session_0001",
     actor: "worker",
-    kind: "result",
+    kind: "comment",
     body: "Baseline result recorded.",
-    payload: {},
+    payload: { activity_type: "result" },
     created_at: "2026-01-01T00:00:03Z",
     ...overrides,
   };

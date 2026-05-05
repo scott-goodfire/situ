@@ -12,9 +12,9 @@ Planning, implementation sequencing, architecture, and feature requests.
 ## Rule
 
 The first slice should be extremely narrow but real: one local project, one
-objective, one evaluation context, one worker path, sequential experiments,
-durable state, terminal observability, hypotheses, typed activities, artifacts,
-and automated trust concerns.
+objective, one research context, one worker path, sequential experiments,
+durable state, terminal observability, hypotheses, comment activities,
+artifacts, and automated trust concerns.
 
 ## Required Checks
 

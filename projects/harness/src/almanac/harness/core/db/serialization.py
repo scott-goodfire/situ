@@ -36,9 +36,8 @@ def config_row(row: sqlite3.Row) -> ProjectConfigRecord:
     return ProjectConfigRecord(
         id=row["id"],
         repo_path=row["repo_path"],
-        evaluation_context=row["evaluation_context"],
-        known_signals=json_loads(row["known_signals_json"]),
-        experiment_scope=row["experiment_scope"],
+        research_context=row["research_context"],
+        associated_session_id=row["associated_session_id"],
         created_at=row["created_at"],
         updated_at=row["updated_at"],
     )
@@ -50,6 +49,7 @@ def objective_row(row: sqlite3.Row) -> ObjectiveRecord:
         title=row["title"],
         description=row["description"],
         status=row["status"],
+        associated_session_id=row["associated_session_id"],
         created_at=row["created_at"],
         updated_at=row["updated_at"],
     )
@@ -72,6 +72,7 @@ def hypothesis_row(row: sqlite3.Row) -> HypothesisRecord:
         title=row["title"],
         summary=row["summary"],
         status=row["status"],
+        associated_session_id=row["associated_session_id"],
         created_at=row["created_at"],
         updated_at=row["updated_at"],
     )
@@ -84,7 +85,7 @@ def experiment_row(row: sqlite3.Row) -> ExperimentRecord:
         status=row["status"],
         title=row["title"],
         summary=row["summary"],
-        created_in_session_id=row["created_in_session_id"],
+        associated_session_id=row["associated_session_id"],
         created_at=row["created_at"],
         updated_at=row["updated_at"],
     )
@@ -94,7 +95,6 @@ def hypothesis_experiment_link_row(row: sqlite3.Row) -> HypothesisExperimentLink
     return HypothesisExperimentLinkRecord(
         hypothesis_id=row["hypothesis_id"],
         experiment_id=row["experiment_id"],
-        note=row["note"],
         created_at=row["created_at"],
     )
 
@@ -129,11 +129,9 @@ def artifact_row(row: sqlite3.Row) -> ArtifactRecord:
     return ArtifactRecord(
         id=row["id"],
         objective_id=row["objective_id"],
-        session_id=row["session_id"],
-        hypothesis_id=row["hypothesis_id"],
-        experiment_id=row["experiment_id"],
-        hypothesis_activity_id=row["hypothesis_activity_id"],
-        experiment_activity_id=row["experiment_activity_id"],
+        associated_session_id=row["associated_session_id"],
+        associated_entity_kind=row["associated_entity_kind"],
+        associated_entity_id=row["associated_entity_id"],
         kind=row["kind"],
         title=row["title"],
         path=row["path"],
@@ -162,6 +160,5 @@ def agent_message_history_row(row: sqlite3.Row) -> AgentMessageHistoryRecord:
         pydantic_run_id=row["pydantic_run_id"],
         conversation_id=row["conversation_id"],
         messages=json_loads(row["messages_json"]),
-        message_count=row["message_count"],
         created_at=row["created_at"],
     )

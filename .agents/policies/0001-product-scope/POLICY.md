@@ -19,7 +19,7 @@ tracker.
 
 - The change helps humans or agents understand, trust, steer, or audit an
   autoresearch session.
-- The change strengthens objective, evaluation context, hypotheses,
+- The change strengthens objective, research context, hypotheses,
   experiments, activities, artifacts, internal events, or agent-readable
   context.
 - The change keeps evidence, warnings, findings, and decisions activity-shaped

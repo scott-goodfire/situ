@@ -41,9 +41,10 @@ def repos(tmp_path: Path) -> Repositories:
     )
     repositories = Repositories.create(db)
     repositories.project_config.set(
-        evaluation_context="Use the available eval scripts and compare score/latency.",
-        known_signals=["score", "latency_ms"],
-        experiment_scope="Baseline, variants, and combinations.",
+        research_context=(
+            "Use the available eval scripts and compare score/latency. "
+            "Expected signals: score, latency_ms. Baseline, variants, and combinations."
+        ),
     )
     repositories.objectives.create(
         objective_id="objective_0001",
@@ -57,13 +58,14 @@ def repos(tmp_path: Path) -> Repositories:
         title="Component A helps",
         summary="Component A may improve score.",
         status="active",
+        associated_session_id="session_0001",
     )
     repositories.experiments.create(
         experiment_id="exp_session_0001_a",
         objective_id="objective_0001",
         title="Try component A",
         summary="Apply component A.",
-        created_in_session_id="session_0001",
+        associated_session_id="session_0001",
     )
     return repositories
 
@@ -193,14 +195,12 @@ def test_link_tool_links_hypothesis_and_experiment(repos: Repositories) -> None:
         deps=deps,
         hypothesis_id="hyp_0001",
         experiment_id="exp_session_0001_a",
-        note="first concrete attempt",
     )
 
     assert result.success is True
     assert result.link is not None
     assert result.link["hypothesis_id"] == "hyp_0001"
     assert result.link["experiment_id"] == "exp_session_0001_a"
-    assert result.link["note"] == "first concrete attempt"
 
 
 def test_comment_tools_write_activity_records(repos: Repositories) -> None:
@@ -263,19 +263,22 @@ def test_artifact_tools_create_and_list_artifacts(repos: Repositories) -> None:
         kind="json",
         title="raw eval output",
         path="artifacts/raw.json",
-        experiment_id="exp_session_0001_a",
+        associated_entity_kind="experiment",
+        associated_entity_id="exp_session_0001_a",
         media_type="application/json",
         size_bytes=120,
     )
     assert created.success is True
     assert created.artifact is not None
     assert created.artifact["id"] == "artifact_session_0001_001"
-    assert created.artifact["experiment_id"] == "exp_session_0001_a"
+    assert created.artifact["associated_entity_kind"] == "experiment"
+    assert created.artifact["associated_entity_id"] == "exp_session_0001_a"
 
     listed = invoke_almanac_tool_sync(
         tool=ListArtifactsTool(),
         deps=deps,
-        experiment_id="exp_session_0001_a",
+        associated_entity_kind="experiment",
+        associated_entity_id="exp_session_0001_a",
     )
     assert listed.success is True
     assert [artifact["id"] for artifact in listed.artifacts] == [

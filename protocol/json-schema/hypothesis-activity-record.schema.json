@@ -26,13 +26,7 @@
       "type": "string"
     },
     "kind": {
-      "enum": [
-        "comment",
-        "update",
-        "result",
-        "concern",
-        "decision"
-      ],
+      "const": "comment",
       "title": "Kind",
       "type": "string"
     },

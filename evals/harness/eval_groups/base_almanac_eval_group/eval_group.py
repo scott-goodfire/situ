@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
+import re
 from typing import Any, ClassVar, Generic, Sequence, TypeVar
 
 from pydantic import BaseModel, ConfigDict
@@ -41,7 +42,7 @@ class BaseAlmanacEvalGroup(BaseModel, Generic[T_Input, T_Output]):
             if not (case.metadata and isinstance(case.metadata, dict) and case.metadata.get("@skip"))
         ]
         return Dataset(
-            name=f"{self.suite_name}.{self.world_name}",
+            name=f"{_eval_name_segment(self.suite_name)}.{_eval_name_segment(self.world_name)}",
             cases=cases,
             evaluators=list(self.dataset_evaluators()),
         )
@@ -51,3 +52,7 @@ class BaseAlmanacEvalGroup(BaseModel, Generic[T_Input, T_Output]):
 
     def teardown(self) -> None:
         return None
+
+
+def _eval_name_segment(value: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")

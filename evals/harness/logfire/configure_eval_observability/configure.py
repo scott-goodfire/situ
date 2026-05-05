@@ -21,6 +21,7 @@ def configure_eval_observability() -> None:
         service_name=DEFAULTS.eval_logfire_service_name,
         environment=DEFAULTS.eval_environment,
         console=False,
+        scrubbing=False,
     )
     logfire.instrument_pydantic_ai()
     _CONFIGURED = True

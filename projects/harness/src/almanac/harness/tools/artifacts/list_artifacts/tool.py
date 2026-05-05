@@ -18,10 +18,14 @@ class ListArtifactsTool(BaseAlmanacTool[AlmanacToolDeps, ListArtifactsResult]):
         ctx: RunContext[AlmanacToolDeps],
         session_id: str | None = None,
         experiment_id: str | None = None,
+        associated_entity_kind: str | None = None,
+        associated_entity_id: str | None = None,
         **_kwargs: Any,
     ) -> ListArtifactsResult:
         """List artifact references by experiment or session."""
-        if experiment_id is not None:
+        if associated_entity_kind == "experiment" and associated_entity_id is not None:
+            artifacts = ctx.deps.repos.artifacts.list_for_experiment(associated_entity_id)
+        elif experiment_id is not None:
             artifacts = ctx.deps.repos.artifacts.list_for_experiment(experiment_id)
         else:
             artifacts = ctx.deps.repos.artifacts.list_for_session(

@@ -65,7 +65,7 @@ Record these in the final response:
 
 - Eval command run.
 - Experiment name printed by the runner, for example
-  `tool_use.research_session-<git-sha>-<session-id>`.
+  `tool-use.research-session-<git-sha>-<session-id>`.
 - Number of cases.
 - Whether all assertions passed.
 - Any failed case names and first failure reason.
@@ -75,13 +75,19 @@ to verify Logfire.
 
 ## Logfire Verification
 
+For detailed auth, token, and query workflows, use:
+
+```text
+.agents/skills/use-logfire/SKILL.md
+```
+
 Preferred UI path:
 
 1. Open Logfire in the US region.
 2. Confirm you are logged in.
 3. Open **Evals: Datasets & Experiments**.
 4. Find the local dataset matching the runner's dataset name, such as
-   `tool_use.research_session`.
+   `tool-use.research-session`.
 5. Confirm the experiment name printed by the runner exists.
 6. Open the experiment and confirm case rows, assertions, and trace links are
    present.
@@ -103,7 +109,7 @@ from datetime import datetime, timedelta, timezone
 
 from logfire.query_client import LogfireQueryClient
 
-experiment = "tool_use.research_session-<git-sha>-<session-id>"
+experiment = "tool-use.research-session-<git-sha>-<session-id>"
 token = os.environ["ALMANAC_LOGFIRE_READ_TOKEN"]
 
 sql = f"""

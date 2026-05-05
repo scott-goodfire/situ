@@ -69,7 +69,7 @@ export function ExperimentTable({
 }
 
 function experimentState({ row }: { row: ExperimentRow }): string {
-  if (row.activities.some((activity) => activity.kind === "concern")) {
+  if (hasConcern(row.activities)) {
     return "concern";
   }
 
@@ -77,7 +77,7 @@ function experimentState({ row }: { row: ExperimentRow }): string {
 }
 
 function experimentTone({ row }: { row: ExperimentRow }): DxBadgeTone {
-  if (row.activities.some((activity) => activity.kind === "concern")) {
+  if (hasConcern(row.activities)) {
     return "warning";
   }
 
@@ -90,4 +90,8 @@ function experimentTone({ row }: { row: ExperimentRow }): DxBadgeTone {
 
 function experimentNote({ row }: { row: ExperimentRow }): string {
   return row.activities.at(-1)?.body ?? row.experiment.summary;
+}
+
+function hasConcern(activities: ExperimentActivityRecord[]): boolean {
+  return activities.some((activity) => activity.payload?.activity_type === "concern");
 }

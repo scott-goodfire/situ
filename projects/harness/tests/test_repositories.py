@@ -28,9 +28,7 @@ def repos(tmp_path: Path) -> Repositories:
 
 def create_project_config(repos: Repositories) -> ProjectConfigRecord:
     return repos.project_config.set(
-        evaluation_context="Run a JSON eval.",
-        known_signals=["score", "latency_ms"],
-        experiment_scope="Baseline and variants.",
+        research_context="Run a JSON eval. Expected signals: score, latency_ms. Baseline and variants.",
     )
 
 
@@ -40,6 +38,7 @@ def create_objective(repos: Repositories) -> ObjectiveRecord:
         objective_id="objective_0001",
         title="Improve score",
         description="Improve score without hurting latency.",
+        associated_session_id=None,
     )
 
 
@@ -59,6 +58,7 @@ def create_hypothesis(repos: Repositories) -> HypothesisRecord:
         title="Component A helps",
         summary="Component A may improve score.",
         status="active",
+        associated_session_id="session_0001",
     )
 
 
@@ -72,7 +72,7 @@ def create_experiment(
         objective_id="objective_0001",
         title="Try component A",
         summary="Apply component A.",
-        created_in_session_id="session_0001",
+        associated_session_id="session_0001",
     )
 
 
@@ -81,16 +81,14 @@ def test_project_config_repository_set_get_and_update(repos: Repositories) -> No
 
     assert config.id == "project_test"
     assert config.repo_path == "/tmp/project"
-    assert config.known_signals == ["score", "latency_ms"]
+    assert "score" in config.research_context
     created_at = config.created_at
 
     updated = repos.project_config.set(
-        evaluation_context="Run a JSON eval with guardrails.",
-        known_signals=["score"],
-        experiment_scope="Baseline only.",
+        research_context="Run a JSON eval with guardrails. Expected signals: score. Baseline only.",
     )
 
-    assert updated.known_signals == ["score"]
+    assert "guardrails" in updated.research_context
     assert updated.created_at == created_at
     assert repos.project_config.get() == updated
 
@@ -101,6 +99,7 @@ def test_objectives_repository_create_update_get_and_list(repos: Repositories) -
     assert objective.id == "objective_0001"
     assert objective.title == "Improve score"
     assert objective.status == "active"
+    assert objective.associated_session_id is None
 
     updated = repos.objectives.update(
         "objective_0001",
@@ -136,6 +135,7 @@ def test_hypotheses_repository_create_update_get_and_list(repos: Repositories) -
     assert hypothesis.id == "hyp_0001"
     assert hypothesis.objective_id == "objective_0001"
     assert hypothesis.status == "active"
+    assert hypothesis.associated_session_id == "session_0001"
 
     updated = repos.hypotheses.update(
         "hyp_0001",
@@ -157,7 +157,7 @@ def test_experiments_repository_create_update_get_and_list(repos: Repositories) 
     assert experiment.id == "exp_session_0001_a"
     assert experiment.status == "open"
     assert experiment.title == "Try component A"
-    assert experiment.created_in_session_id == "session_0001"
+    assert experiment.associated_session_id == "session_0001"
 
     updated = repos.experiments.update(
         "exp_session_0001_a",
@@ -184,7 +184,6 @@ def test_hypothesis_experiment_links_repository_create_and_list(
     link = repos.hypothesis_experiment_links.create(
         hypothesis_id="hyp_0001",
         experiment_id="exp_session_0001_a",
-        note="first attempt",
     )
 
     assert link.hypothesis_id == "hyp_0001"
@@ -206,7 +205,7 @@ def test_hypothesis_activities_repository_add_and_list(repos: Repositories) -> N
         hypothesis_id="hyp_0001",
         session_id="session_0001",
         actor="agent",
-        kind="update",
+        kind="comment",
         body="A looks worth trying.",
         payload={"experiment_id": "exp_session_0001_a"},
     )
@@ -224,13 +223,16 @@ def test_experiment_activities_repository_add_and_list(repos: Repositories) -> N
         experiment_id="exp_session_0001_a",
         session_id="session_0001",
         actor="worker",
-        kind="result",
+        kind="comment",
         body="A improved score.",
-        payload={"signals": [{"key": "score", "value": 0.73}]},
+        payload={
+            "activity_type": "result",
+            "signals": [{"key": "score", "value": 0.73}],
+        },
     )
 
     assert activity.id == 1
-    assert activity.kind == "result"
+    assert activity.kind == "comment"
     assert repos.experiment_activities.list_for_experiment("exp_session_0001_a") == [
         activity
     ]
@@ -243,16 +245,16 @@ def test_artifacts_repository_create_and_list(repos: Repositories) -> None:
         experiment_id="exp_session_0001_a",
         session_id="session_0001",
         actor="worker",
-        kind="result",
+        kind="comment",
         body="A improved score.",
     )
 
     artifact = repos.artifacts.create(
         artifact_id="artifact_0001",
         objective_id="objective_0001",
-        session_id="session_0001",
-        experiment_id="exp_session_0001_a",
-        experiment_activity_id=activity.id,
+        associated_session_id="session_0001",
+        associated_entity_kind="experiment_activity",
+        associated_entity_id=str(activity.id),
         kind="json",
         title="raw eval output",
         path="artifacts/raw.json",
@@ -261,10 +263,10 @@ def test_artifacts_repository_create_and_list(repos: Repositories) -> None:
     )
 
     assert artifact.id == "artifact_0001"
-    assert artifact.experiment_activity_id == activity.id
+    assert artifact.associated_entity_kind == "experiment_activity"
+    assert artifact.associated_entity_id == str(activity.id)
     assert repos.artifacts.get("artifact_0001") == artifact
     assert repos.artifacts.list_for_session("session_0001") == [artifact]
-    assert repos.artifacts.list_for_experiment("exp_session_0001_a") == [artifact]
 
 
 def test_events_repository_add_and_list(repos: Repositories) -> None:
@@ -304,7 +306,6 @@ def test_agent_message_history_repository_appends_and_reconstructs(
     )
 
     assert first.id == 1
-    assert first.message_count == 1
     assert first.pydantic_run_id == "pydantic_run_1"
     assert first.conversation_id == "conversation_1"
     assert second.id == 2
@@ -327,9 +328,12 @@ def test_current_state_api_composes_protocol_shaped_state(repos: Repositories) -
         experiment_id="exp_session_0001_a",
         session_id="session_0001",
         actor="worker",
-        kind="result",
+        kind="comment",
         body="A improved score.",
-        payload={"signals": [{"key": "score", "value": 0.73}]},
+        payload={
+            "activity_type": "result",
+            "signals": [{"key": "score", "value": 0.73}],
+        },
     )
     repos.events.add(
         event_type="experiment.completed",
@@ -348,7 +352,7 @@ def test_current_state_api_composes_protocol_shaped_state(repos: Repositories) -
         "exp_session_0001_a"
     ]
     assert [activity.kind for activity in current_state.experiment_activities] == [
-        "result"
+        "comment"
     ]
     assert [event.type for event in current_state.events] == ["experiment.completed"]
 
@@ -363,14 +367,14 @@ def test_sessions_api_composes_session_graph(repos: Repositories) -> None:
         hypothesis_id="hyp_0001",
         session_id="session_0001",
         actor="agent",
-        kind="update",
+        kind="comment",
         body="A is active.",
     )
     repos.experiment_activities.add(
         experiment_id="exp_session_0001_a",
         session_id="session_0001",
         actor="worker",
-        kind="result",
+        kind="comment",
         body="A improved score.",
     )
 
@@ -385,5 +389,5 @@ def test_sessions_api_composes_session_graph(repos: Repositories) -> None:
         "exp_session_0001_a"
     ]
     assert [activity.kind for activity in graph.experiment_activities] == [
-        "result"
+        "comment"
     ]

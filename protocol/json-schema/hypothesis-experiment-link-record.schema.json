@@ -9,11 +9,6 @@
       "title": "Experiment Id",
       "type": "string"
     },
-    "note": {
-      "default": "",
-      "title": "Note",
-      "type": "string"
-    },
     "created_at": {
       "title": "Created At",
       "type": "string"

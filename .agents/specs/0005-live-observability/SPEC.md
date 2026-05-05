@@ -17,26 +17,26 @@ The TUI should make these immediately visible:
 
 - Objective
 - Session status
-- Evaluation context
+- Research context
 - Active hypotheses
 - Current active experiment
 - Recent experiments
-- Recent result activities
-- Recent concern activities
-- Recent interpretation/decision activities
+- Recent result comments
+- Recent concern comments
+- Recent interpretation/decision comments
 - Artifact references when useful
 - Internal event timeline
 
 ## Activities First
 
 The first slice should make activities visible. Activities are compact,
-typed, human-readable entries attached to hypotheses or experiments.
+comment-shaped, human-readable entries attached to hypotheses or experiments.
 
 Examples:
 
-- `result: baseline score 0.710, latency 100ms`
+- `baseline score 0.710, latency 100ms`
 - `concern: score improved sharply but result shape changed`
-- `update: A+C looks promising, but C explains most of the lift`
+- `A+C looks promising, but C explains most of the lift`
 - `decision: keep retrieval hypothesis active; pause prompt-ordering thread`
 
 Best observed signal can still be shown when meaningful, but it is supporting
@@ -44,7 +44,7 @@ context rather than the central product object.
 
 ## Concerns
 
-Concerns are simple and concrete activities:
+Concerns are simple and concrete comments:
 
 - Evaluation failed.
 - Expected signal missing.

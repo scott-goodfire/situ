@@ -31,9 +31,8 @@ export interface JsonRpcResponse {
 export interface ProjectConfigRecord {
   id: string;
   repo_path: string;
-  evaluation_context: string;
-  known_signals: string[];
-  experiment_scope: string;
+  research_context: string;
+  associated_session_id?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -43,6 +42,7 @@ export interface ObjectiveRecord {
   title: string;
   description: string;
   status: "active" | "closed";
+  associated_session_id?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -61,6 +61,7 @@ export interface HypothesisRecord {
   title: string;
   summary: string;
   status: "open" | "active" | "closed";
+  associated_session_id?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -71,7 +72,7 @@ export interface ExperimentRecord {
   status: "open" | "active" | "closed";
   title: string;
   summary: string;
-  created_in_session_id?: string | null;
+  associated_session_id?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -79,7 +80,6 @@ export interface ExperimentRecord {
 export interface HypothesisExperimentLinkRecord {
   hypothesis_id: string;
   experiment_id: string;
-  note?: string;
   created_at: string;
 }
 
@@ -88,7 +88,7 @@ export interface HypothesisActivityRecord {
   hypothesis_id: string;
   session_id?: string | null;
   actor: string;
-  kind: "comment" | "update" | "result" | "concern" | "decision";
+  kind: "comment";
   body: string;
   payload?: Record<string, unknown>;
   created_at: string;
@@ -99,7 +99,7 @@ export interface ExperimentActivityRecord {
   experiment_id: string;
   session_id?: string | null;
   actor: string;
-  kind: "comment" | "update" | "result" | "concern" | "decision";
+  kind: "comment";
   body: string;
   payload?: Record<string, unknown>;
   created_at: string;
@@ -108,11 +108,9 @@ export interface ExperimentActivityRecord {
 export interface ArtifactRecord {
   id: string;
   objective_id: string;
-  session_id?: string | null;
-  hypothesis_id?: string | null;
-  experiment_id?: string | null;
-  hypothesis_activity_id?: number | null;
-  experiment_activity_id?: number | null;
+  associated_session_id?: string | null;
+  associated_entity_kind: string;
+  associated_entity_id: string;
   kind: string;
   title: string;
   path: string;
@@ -150,9 +148,7 @@ export interface SetupGetResult {
 
 export interface SetupCompleteParams {
   objective: string;
-  evaluation_context: string;
-  known_signals?: string[];
-  experiment_scope?: string;
+  research_context: string;
 }
 
 export interface SetupCompleteResult {

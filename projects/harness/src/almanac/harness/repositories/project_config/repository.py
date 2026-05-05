@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ...core.db.serialization import config_row, json_dumps, utc_now
+from ...core.db.serialization import config_row, utc_now
 from ...records import ProjectConfigRecord
 from ..base import BaseRepository
 from .command import SetProjectConfig
@@ -14,14 +14,12 @@ class ProjectConfigRepository(BaseRepository):
     def set(
         self,
         *,
-        evaluation_context: str,
-        known_signals: list[str],
-        experiment_scope: str,
+        research_context: str,
+        associated_session_id: str | None = None,
     ) -> ProjectConfigRecord:
         command = SetProjectConfig(
-            evaluation_context=evaluation_context,
-            known_signals=known_signals,
-            experiment_scope=experiment_scope,
+            research_context=research_context,
+            associated_session_id=associated_session_id,
         )
         now = utc_now()
         existing = self.get()
@@ -29,22 +27,20 @@ class ProjectConfigRepository(BaseRepository):
         self.db.execute(
             """
             INSERT INTO project_config
-              (id, repo_path, evaluation_context, known_signals_json,
-               experiment_scope, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+              (id, repo_path, research_context, associated_session_id,
+               created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET
               repo_path = excluded.repo_path,
-              evaluation_context = excluded.evaluation_context,
-              known_signals_json = excluded.known_signals_json,
-              experiment_scope = excluded.experiment_scope,
+              research_context = excluded.research_context,
+              associated_session_id = excluded.associated_session_id,
               updated_at = excluded.updated_at
             """,
             (
                 self.db.project_id,
                 self.db.repo_path,
-                command.evaluation_context,
-                json_dumps(command.known_signals),
-                command.experiment_scope,
+                command.research_context,
+                command.associated_session_id,
                 created_at,
                 now,
             ),

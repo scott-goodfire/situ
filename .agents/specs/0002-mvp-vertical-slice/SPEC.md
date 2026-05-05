@@ -9,7 +9,7 @@ The MVP should prove one experience:
 > loop runs.
 
 The slice should support one local project, one active objective, lightweight
-evaluation context, a few hypotheses, a sequential experiment loop, typed
+research context, a few hypotheses, a sequential experiment loop, comment
 activities, simple automated trust concerns, and one deterministic worker path.
 
 ## Target User Story
@@ -63,7 +63,8 @@ code are launched from the Almanac repository.
 - Hypothesis activity timeline
 - Experiment activity timeline
 - Agent message history ledger
-- Result, concern, comment, update, and decision activities
+- Comment activities, with results, concerns, plans, and interpretations carried
+  in activity bodies and optional payload metadata
 - Minimal artifact references when useful
 - Simple automated trust concerns
 - TypeScript Ink TUI

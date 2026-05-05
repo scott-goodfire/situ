@@ -14,24 +14,29 @@ class ObjectivesRepository(BaseRepository):
         title: str,
         description: str,
         status: str = "active",
+        associated_session_id: str | None = None,
     ) -> ObjectiveRecord:
         command = CreateObjective(
             objective_id=objective_id,
             title=title,
             description=description,
             status=status,
+            associated_session_id=associated_session_id,
         )
         now = utc_now()
         self.db.execute(
             """
-            INSERT INTO objectives (id, title, description, status, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO objectives
+              (id, title, description, status, associated_session_id,
+               created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 command.objective_id,
                 command.title,
                 command.description,
                 command.status,
+                command.associated_session_id,
                 now,
                 now,
             ),
@@ -48,6 +53,7 @@ class ObjectivesRepository(BaseRepository):
         title: str,
         description: str,
         status: str = "active",
+        associated_session_id: str | None = None,
     ) -> ObjectiveRecord:
         existing = self.get_by_id(objective_id)
         if existing is None:
@@ -56,12 +62,14 @@ class ObjectivesRepository(BaseRepository):
                 title=title,
                 description=description,
                 status=status,
+                associated_session_id=associated_session_id,
             )
         updated = self.update(
             objective_id,
             title=title,
             description=description,
             status=status,
+            associated_session_id=associated_session_id,
         )
         if updated is None:
             raise RuntimeError(f"objective disappeared during update: {objective_id}")
@@ -74,12 +82,14 @@ class ObjectivesRepository(BaseRepository):
         title: str | None = None,
         description: str | None = None,
         status: str | None = None,
+        associated_session_id: str | None = None,
     ) -> ObjectiveRecord | None:
         command = UpdateObjective(
             objective_id=objective_id,
             title=title,
             description=description,
             status=status,
+            associated_session_id=associated_session_id,
         )
         current = self.get_by_id(command.objective_id)
         if current is None:
@@ -88,13 +98,16 @@ class ObjectivesRepository(BaseRepository):
         self.db.execute(
             """
             UPDATE objectives
-            SET title = ?, description = ?, status = ?, updated_at = ?
+            SET title = ?, description = ?, status = ?, associated_session_id = ?, updated_at = ?
             WHERE id = ?
             """,
             (
                 command.title if command.title is not None else current.title,
                 command.description if command.description is not None else current.description,
                 command.status if command.status is not None else current.status,
+                command.associated_session_id
+                if command.associated_session_id is not None
+                else current.associated_session_id,
                 utc_now(),
                 command.objective_id,
             ),

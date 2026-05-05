@@ -18,10 +18,10 @@ guidance, or final reports before the TUI observability loop is useful.
 
 ## Required Checks
 
-- The TUI shows objective, session status, evaluation context, active
+- The TUI shows objective, session status, research context, active
   hypotheses, active experiment, recent experiments, recent activities,
   artifacts when useful, and internal timeline.
-- Suspicious results are visible as concern activities in context.
+- Suspicious results are visible as concern comments in context.
 - Raw logs are artifact/drill-down references, not the main screen.
 - The same state can be returned as agent-readable JSON.
 - The display remains dense and terminal-friendly.

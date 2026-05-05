@@ -46,6 +46,10 @@ using the Playwright MCP server for browser-driven review.
 Use [.agents/skills/run-and-verify-evals/SKILL.md](./.agents/skills/run-and-verify-evals/SKILL.md)
 when running Almanac eval suites and verifying their local and Logfire results.
 
+Use [.agents/skills/use-logfire/SKILL.md](./.agents/skills/use-logfire/SKILL.md)
+when checking Logfire CLI auth, telling the user how to log in, selecting
+projects, creating read tokens, querying traces, or verifying telemetry.
+
 Routine command surface should eventually live in `mise.toml`, with reusable
 scripts in `commands/`, following the pattern from the reference Almanac
 prototype.

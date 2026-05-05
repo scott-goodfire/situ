@@ -15,11 +15,9 @@ class ArtifactsRepository(BaseRepository):
         kind: str,
         title: str,
         path: str,
-        session_id: str | None = None,
-        hypothesis_id: str | None = None,
-        experiment_id: str | None = None,
-        hypothesis_activity_id: int | None = None,
-        experiment_activity_id: int | None = None,
+        associated_entity_kind: str,
+        associated_entity_id: str,
+        associated_session_id: str | None = None,
         media_type: str | None = None,
         size_bytes: int | None = None,
     ) -> ArtifactRecord:
@@ -29,30 +27,26 @@ class ArtifactsRepository(BaseRepository):
             kind=kind,
             title=title,
             path=path,
-            session_id=session_id,
-            hypothesis_id=hypothesis_id,
-            experiment_id=experiment_id,
-            hypothesis_activity_id=hypothesis_activity_id,
-            experiment_activity_id=experiment_activity_id,
+            associated_entity_kind=associated_entity_kind,
+            associated_entity_id=associated_entity_id,
+            associated_session_id=associated_session_id,
             media_type=media_type,
             size_bytes=size_bytes,
         )
         self.db.execute(
             """
             INSERT INTO artifacts
-              (id, objective_id, session_id, hypothesis_id, experiment_id,
-               hypothesis_activity_id, experiment_activity_id, kind, title, path,
-               media_type, size_bytes, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+              (id, objective_id, associated_session_id, associated_entity_kind,
+               associated_entity_id, kind, title, path, media_type, size_bytes,
+               created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 command.artifact_id,
                 command.objective_id,
-                command.session_id,
-                command.hypothesis_id,
-                command.experiment_id,
-                command.hypothesis_activity_id,
-                command.experiment_activity_id,
+                command.associated_session_id,
+                command.associated_entity_kind,
+                command.associated_entity_id,
                 command.kind,
                 command.title,
                 command.path,
@@ -83,7 +77,12 @@ class ArtifactsRepository(BaseRepository):
         return [
             artifact_row(row)
             for row in self.db.fetchall(
-                "SELECT * FROM artifacts WHERE experiment_id = ? ORDER BY created_at",
+                """
+                SELECT * FROM artifacts
+                WHERE associated_entity_kind = 'experiment'
+                  AND associated_entity_id = ?
+                ORDER BY created_at
+                """,
                 (experiment_id,),
             )
         ]
@@ -92,7 +91,15 @@ class ArtifactsRepository(BaseRepository):
         return [
             artifact_row(row)
             for row in self.db.fetchall(
-                "SELECT * FROM artifacts WHERE session_id = ? ORDER BY created_at",
-                (session_id,),
+                """
+                SELECT * FROM artifacts
+                WHERE associated_session_id = ?
+                   OR (
+                     associated_entity_kind = 'session'
+                     AND associated_entity_id = ?
+                   )
+                ORDER BY created_at
+                """,
+                (session_id, session_id),
             )
         ]

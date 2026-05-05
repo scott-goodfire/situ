@@ -21,14 +21,12 @@ class LinkHypothesisExperimentTool(
         ctx: RunContext[AlmanacToolDeps],
         hypothesis_id: str,
         experiment_id: str,
-        note: str = "",
         **_kwargs: Any,
     ) -> LinkHypothesisExperimentResult:
         """Link a hypothesis to an experiment."""
         link = ctx.deps.repos.hypothesis_experiment_links.create(
             hypothesis_id=hypothesis_id,
             experiment_id=experiment_id,
-            note=note,
         )
         ctx.deps.record_event(
             "hypothesis.experiment_linked",

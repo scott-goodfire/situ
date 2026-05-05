@@ -50,7 +50,7 @@ Fixture worlds may provide:
 
 - Stable tool responses.
 - Mocked external systems.
-- Synthetic result activities and signals.
+- Synthetic result comments and signals.
 - Suspicious or malformed result cases.
 
 Fixture worlds must not replace the model's decision-making path in an AI eval.

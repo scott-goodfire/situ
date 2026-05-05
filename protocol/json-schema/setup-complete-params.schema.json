@@ -5,26 +5,14 @@
       "title": "Objective",
       "type": "string"
     },
-    "evaluation_context": {
-      "title": "Evaluation Context",
-      "type": "string"
-    },
-    "known_signals": {
-      "items": {
-        "type": "string"
-      },
-      "title": "Known Signals",
-      "type": "array"
-    },
-    "experiment_scope": {
-      "default": "Toy deterministic experiment loop.",
-      "title": "Experiment Scope",
+    "research_context": {
+      "title": "Research Context",
       "type": "string"
     }
   },
   "required": [
     "objective",
-    "evaluation_context"
+    "research_context"
   ],
   "title": "SetupCompleteParams",
   "type": "object"

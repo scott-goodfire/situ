@@ -10,29 +10,43 @@ transcript. Almanac should expose compact, current, machine-readable context.
 An agent should be able to ask:
 
 - What is the current objective?
-- What evaluation context is relevant?
+- What research context is relevant?
 - Which hypotheses are open or active?
 - What has already been tried?
 - Which experiments relate to which hypotheses?
-- What result activities came back?
-- What concern activities apply?
+- What result comments came back?
+- What concern comments apply?
 - What artifacts can be inspected?
 - What is running now?
 
 ## Candidate CLI/API Surface
 
-The exact interface can evolve, but the product should support commands like:
+The exact interface can evolve, but the slim headless surface should start with
+commands that agents can run without a TTY:
 
 ```bash
+almanac exec --json
 almanac status --json
-almanac session --json
-almanac hypotheses --json
-almanac experiments --json
+almanac snapshot --json
 almanac events --json
+almanac wait --json
 ```
 
-Defer richer guidance and proposal-context commands until the basic loop is
-working.
+`exec` may start and own a temporary local session. `status`, `snapshot`,
+`events`, and `wait` should attach to existing local state or a live local
+session instead of rendering the TUI.
+
+Headless output should be machine-readable by default:
+
+- JSON for status, snapshots, and final summaries.
+- JSON Lines for event streams and long-running `exec` output.
+- Human progress and diagnostics on stderr, not mixed into stdout.
+
+Keep the first flags sparse: workspace, setup context, max experiments, and
+timeout are enough until the agent workflow proves it needs more.
+
+Defer richer guidance, proposal-context commands, and broad object-specific
+list commands until the basic loop is working.
 
 ## Session Context
 
@@ -40,23 +54,23 @@ The compact session context, exposed to agents through tools such as
 `get_session`, should include:
 
 - Objective
-- Evaluation context
+- Research context
 - Current session status
 - Active hypotheses
 - Recent experiments
 - Hypothesis/experiment links
 - Recent hypothesis activities
 - Recent experiment activities
-- Recent concerns/results/decisions
+- Recent concern/result/decision comments
 - Artifact references
 - Internal events when useful
 
 Agent-facing write tools should stay close to the product models:
 `create_hypothesis`, `update_hypothesis`, `create_experiment`,
 `update_experiment`, `link_hypothesis_experiment`,
-`add_hypothesis_comment`, and `add_experiment_comment`. Comments can be stored
-as typed activities internally, but the tool surface should not ask the model to
-choose generic activity kinds for routine collaboration.
+`add_hypothesis_comment`, and `add_experiment_comment`. Comments are stored as
+`kind="comment"` activities internally, with optional payload metadata when a
+view or agent needs to distinguish results, concerns, plans, or interpretations.
 
 ## Product Rule
 

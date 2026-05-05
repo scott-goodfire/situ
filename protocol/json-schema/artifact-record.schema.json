@@ -9,7 +9,7 @@
       "title": "Objective Id",
       "type": "string"
     },
-    "session_id": {
+    "associated_session_id": {
       "anyOf": [
         {
           "type": "string"
@@ -19,55 +19,15 @@
         }
       ],
       "default": null,
-      "title": "Session Id"
+      "title": "Associated Session Id"
     },
-    "hypothesis_id": {
-      "anyOf": [
-        {
-          "type": "string"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "default": null,
-      "title": "Hypothesis Id"
+    "associated_entity_kind": {
+      "title": "Associated Entity Kind",
+      "type": "string"
     },
-    "experiment_id": {
-      "anyOf": [
-        {
-          "type": "string"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "default": null,
-      "title": "Experiment Id"
-    },
-    "hypothesis_activity_id": {
-      "anyOf": [
-        {
-          "type": "integer"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "default": null,
-      "title": "Hypothesis Activity Id"
-    },
-    "experiment_activity_id": {
-      "anyOf": [
-        {
-          "type": "integer"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "default": null,
-      "title": "Experiment Activity Id"
+    "associated_entity_id": {
+      "title": "Associated Entity Id",
+      "type": "string"
     },
     "kind": {
       "title": "Kind",
@@ -113,6 +73,8 @@
   "required": [
     "id",
     "objective_id",
+    "associated_entity_kind",
+    "associated_entity_id",
     "kind",
     "title",
     "path",

@@ -115,9 +115,7 @@ class AgentRuntime:
             [
                 f"Objective: {objective.get('title', '')}",
                 f"Objective details: {objective.get('description', '')}",
-                f"Evaluation context: {config.get('evaluation_context', '')}",
-                f"Known signals: {', '.join(config.get('known_signals', []))}",
-                f"Experiment scope: {config.get('experiment_scope', '')}",
+                f"Research context: {config.get('research_context', '')}",
                 f"Recent hypothesis activity: {recent_hypothesis_activity}",
                 f"Recent experiment activity: {recent_experiment_activity}",
                 "Return a short plan for the next proposal round.",
@@ -125,11 +123,11 @@ class AgentRuntime:
         )
 
     def _fallback_plan(self, config: dict[str, Any] | None = None) -> AgentPlan:
-        known_signals = ", ".join((config or {}).get("known_signals", [])) or "configured signals"
+        research_context = (config or {}).get("research_context", "the research context")
         return AgentPlan(
             summary="Prepared typed agent planning context for the session.",
             proposed_focus="Start with a baseline, then compare simple changes and combinations.",
             next_components=["baseline", "A", "B", "C", "A+C"],
-            risk_notes=[f"Watch for missing or malformed {known_signals}."],
+            risk_notes=[f"Watch for suspicious or malformed outputs relative to {research_context}."],
             should_continue=True,
         )

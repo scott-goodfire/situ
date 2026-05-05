@@ -39,6 +39,7 @@ class CreateHypothesisTool(BaseAlmanacTool[AlmanacToolDeps, CreateHypothesisResu
             title=title,
             summary=summary,
             status=status,
+            associated_session_id=ctx.deps.session_id,
         )
         ctx.deps.record_event(
             "hypothesis.created",

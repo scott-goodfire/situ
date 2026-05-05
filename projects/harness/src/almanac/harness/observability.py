@@ -25,6 +25,7 @@ def configure_observability(project_dir: Path | None = None) -> None:
         service_name=DEFAULTS.harness_logfire_service_name,
         environment=DEFAULTS.local_environment,
         console=False,
+        scrubbing=False,
     )
     logfire.instrument_pydantic_ai()
     _CONFIGURED = True

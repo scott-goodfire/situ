@@ -43,7 +43,7 @@ class CreateExperimentTool(BaseAlmanacTool[AlmanacToolDeps, CreateExperimentResu
             objective_id=resolved_objective_id,
             title=title,
             summary=summary,
-            created_in_session_id=resolved_session_id,
+            associated_session_id=resolved_session_id,
             status=status,
         )
         ctx.deps.record_event(

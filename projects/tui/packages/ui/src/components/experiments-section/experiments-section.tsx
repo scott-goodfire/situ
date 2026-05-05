@@ -65,6 +65,8 @@ function hasConcern({
 }): boolean {
   return lodash.some(
     experimentActivities,
-    (activity) => activity.experiment_id === experimentId && activity.kind === "concern",
+    (activity) =>
+      activity.experiment_id === experimentId &&
+      activity.payload?.activity_type === "concern",
   );
 }

@@ -32,8 +32,8 @@ class AgentMessageHistoryRepository(BaseRepository):
             """
             INSERT INTO agent_message_history
               (session_id, agent_name, pydantic_run_id, conversation_id,
-               messages_json, message_count, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+               messages_json, created_at)
+            VALUES (?, ?, ?, ?, ?, ?)
             """,
             (
                 command.session_id,
@@ -41,7 +41,6 @@ class AgentMessageHistoryRepository(BaseRepository):
                 command.pydantic_run_id,
                 command.conversation_id,
                 command.messages_json,
-                len(messages),
                 utc_now(),
             ),
         )

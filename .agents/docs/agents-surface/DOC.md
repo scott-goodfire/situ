@@ -106,3 +106,13 @@ checking Logfire:
 
 It documents local eval commands, required credentials, and the distinction
 between Logfire write tokens and read-token/UI verification.
+
+Use the Logfire skill when checking CLI auth, creating read tokens, querying
+trace data, or explaining how the user should log in:
+
+```text
+.agents/skills/use-logfire/SKILL.md
+```
+
+It keeps Logfire auth, project selection, token handling, query, and UI
+verification steps in one place.
