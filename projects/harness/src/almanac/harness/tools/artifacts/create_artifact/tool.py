@@ -30,9 +30,10 @@ class CreateArtifactTool(BaseAlmanacTool[AlmanacToolDeps, CreateArtifactResult])
         **_kwargs: Any,
     ) -> CreateArtifactResult:
         """Create an artifact reference for a session, hypothesis, or experiment."""
+        repos = ctx.deps.get_repos()
         resolved_session_id = associated_session_id or ctx.deps.session_id
         resolved_objective_id = objective_id or _current_objective_id(
-            ctx=ctx,
+            repos=repos,
             session_id=resolved_session_id,
         )
         if resolved_objective_id is None:
@@ -41,10 +42,10 @@ class CreateArtifactTool(BaseAlmanacTool[AlmanacToolDeps, CreateArtifactResult])
         resolved_entity_kind = associated_entity_kind or "session"
         resolved_entity_id = associated_entity_id or resolved_session_id
         resolved_artifact_id = artifact_id or _next_artifact_id(
-            ctx=ctx,
+            repos=repos,
             session_id=resolved_session_id,
         )
-        artifact = ctx.deps.repos.artifacts.create(
+        artifact = repos.artifacts.create(
             artifact_id=resolved_artifact_id,
             objective_id=resolved_objective_id,
             associated_session_id=resolved_session_id,
@@ -66,17 +67,17 @@ class CreateArtifactTool(BaseAlmanacTool[AlmanacToolDeps, CreateArtifactResult])
 
 def _current_objective_id(
     *,
-    ctx: RunContext[AlmanacToolDeps],
+    repos: Any,
     session_id: str,
 ) -> str | None:
-    session = ctx.deps.repos.sessions.get(session_id)
+    session = repos.sessions.get(session_id)
     return session.objective_id if session is not None else None
 
 
 def _next_artifact_id(
     *,
-    ctx: RunContext[AlmanacToolDeps],
+    repos: Any,
     session_id: str,
 ) -> str:
-    count = len(ctx.deps.repos.artifacts.list_for_session(session_id)) + 1
+    count = len(repos.artifacts.list_for_session(session_id)) + 1
     return f"artifact_{session_id}_{count:03d}"

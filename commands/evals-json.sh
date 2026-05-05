@@ -4,5 +4,4 @@ set -euo pipefail
 REPO_ROOT=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 cd "$REPO_ROOT"
 
-uv run python -m evals.runner --json "$@"
-
+uv run --package almanac-harness python -m evals.runner --json "$@"

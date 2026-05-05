@@ -23,12 +23,13 @@ class ListHypothesisActivitiesTool(
         **_kwargs: Any,
     ) -> ListHypothesisActivitiesResult:
         """List hypothesis activity by hypothesis or session."""
+        repos = ctx.deps.get_repos()
         if hypothesis_id is not None:
-            activities = ctx.deps.repos.hypothesis_activities.list_for_hypothesis(
+            activities = repos.hypothesis_activities.list_for_hypothesis(
                 hypothesis_id
             )
         else:
-            activities = ctx.deps.repos.hypothesis_activities.list_for_session(
+            activities = repos.hypothesis_activities.list_for_session(
                 session_id or ctx.deps.session_id
             )
 

@@ -26,19 +26,20 @@ class CreateExperimentTool(BaseAlmanacTool[AlmanacToolDeps, CreateExperimentResu
         **_kwargs: Any,
     ) -> CreateExperimentResult:
         """Create an experiment under an objective and optional session."""
+        repos = ctx.deps.get_repos()
         resolved_session_id = session_id or ctx.deps.session_id
         resolved_objective_id = objective_id or _current_objective_id(
-            ctx=ctx,
+            repos=repos,
             session_id=resolved_session_id,
         )
         if resolved_objective_id is None:
             raise ValueError("objective_id is required when there is no current session objective")
 
         resolved_experiment_id = experiment_id or _next_experiment_id(
-            ctx=ctx,
+            repos=repos,
             session_id=resolved_session_id,
         )
-        experiment = ctx.deps.repos.experiments.create(
+        experiment = repos.experiments.create(
             experiment_id=resolved_experiment_id,
             objective_id=resolved_objective_id,
             title=title,
@@ -56,17 +57,17 @@ class CreateExperimentTool(BaseAlmanacTool[AlmanacToolDeps, CreateExperimentResu
 
 def _current_objective_id(
     *,
-    ctx: RunContext[AlmanacToolDeps],
+    repos: Any,
     session_id: str,
 ) -> str | None:
-    session = ctx.deps.repos.sessions.get(session_id)
+    session = repos.sessions.get(session_id)
     return session.objective_id if session is not None else None
 
 
 def _next_experiment_id(
     *,
-    ctx: RunContext[AlmanacToolDeps],
+    repos: Any,
     session_id: str,
 ) -> str:
-    count = len(ctx.deps.repos.experiments.list_for_session(session_id)) + 1
+    count = len(repos.experiments.list_for_session(session_id)) + 1
     return f"exp_{session_id}_agent_{count:03d}"

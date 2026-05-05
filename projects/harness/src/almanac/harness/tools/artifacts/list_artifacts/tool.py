@@ -23,12 +23,13 @@ class ListArtifactsTool(BaseAlmanacTool[AlmanacToolDeps, ListArtifactsResult]):
         **_kwargs: Any,
     ) -> ListArtifactsResult:
         """List artifact references by experiment or session."""
+        repos = ctx.deps.get_repos()
         if associated_entity_kind == "experiment" and associated_entity_id is not None:
-            artifacts = ctx.deps.repos.artifacts.list_for_experiment(associated_entity_id)
+            artifacts = repos.artifacts.list_for_experiment(associated_entity_id)
         elif experiment_id is not None:
-            artifacts = ctx.deps.repos.artifacts.list_for_experiment(experiment_id)
+            artifacts = repos.artifacts.list_for_experiment(experiment_id)
         else:
-            artifacts = ctx.deps.repos.artifacts.list_for_session(
+            artifacts = repos.artifacts.list_for_session(
                 session_id or ctx.deps.session_id
             )
 

@@ -24,7 +24,7 @@ class GetSessionTool(BaseAlmanacTool[AlmanacToolDeps, GetSessionResult]):
         Load a session and its related objective, hypotheses, experiments,
         links, activities, artifacts, and events.
         """
-        graph = SessionsService(repos=ctx.deps.repos).get_session(
+        graph = SessionsService(repos=ctx.deps.get_repos()).get_session(
             session_id or ctx.deps.session_id
         )
         return GetSessionResult(

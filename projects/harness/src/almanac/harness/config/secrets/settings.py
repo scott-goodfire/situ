@@ -41,7 +41,7 @@ class AlmanacSecrets(BaseSettings):
         key = self.openai_key_value()
         if key is None:
             raise RuntimeError(
-                "Evals require ALMANAC_OPENAI_KEY; evals must not fall back to deterministic model output."
+                "Almanac requires ALMANAC_OPENAI_KEY; runtime execution must not fall back to deterministic model output."
             )
         return key
 

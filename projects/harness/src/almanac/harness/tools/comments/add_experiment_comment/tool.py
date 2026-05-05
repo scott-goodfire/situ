@@ -26,7 +26,7 @@ class AddExperimentCommentTool(
         **_kwargs: Any,
     ) -> AddExperimentCommentResult:
         """Add a human-readable comment to an experiment activity trail."""
-        activity = ctx.deps.repos.experiment_activities.add(
+        activity = ctx.deps.get_repos().experiment_activities.add(
             experiment_id=experiment_id,
             session_id=ctx.deps.session_id,
             actor=actor,

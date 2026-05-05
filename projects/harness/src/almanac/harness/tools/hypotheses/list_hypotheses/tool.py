@@ -21,15 +21,16 @@ class ListHypothesesTool(BaseAlmanacTool[AlmanacToolDeps, ListHypothesesResult])
         **_kwargs: Any,
     ) -> ListHypothesesResult:
         """List hypotheses for an objective, defaulting to the current session's objective."""
+        repos = ctx.deps.get_repos()
         resolved_objective_id = objective_id
         if resolved_objective_id is None:
-            session = ctx.deps.repos.sessions.get(ctx.deps.session_id)
+            session = repos.sessions.get(ctx.deps.session_id)
             resolved_objective_id = session.objective_id if session is not None else None
 
         hypotheses = (
-            ctx.deps.repos.hypotheses.list_for_objective(resolved_objective_id)
+            repos.hypotheses.list_for_objective(resolved_objective_id)
             if resolved_objective_id is not None
-            else ctx.deps.repos.hypotheses.list_all()
+            else repos.hypotheses.list_all()
         )
         if status is not None:
             hypotheses = [hypothesis for hypothesis in hypotheses if hypothesis.status == status]

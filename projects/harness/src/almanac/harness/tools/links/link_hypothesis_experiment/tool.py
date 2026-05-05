@@ -24,7 +24,7 @@ class LinkHypothesisExperimentTool(
         **_kwargs: Any,
     ) -> LinkHypothesisExperimentResult:
         """Link a hypothesis to an experiment."""
-        link = ctx.deps.repos.hypothesis_experiment_links.create(
+        link = ctx.deps.get_repos().hypothesis_experiment_links.create(
             hypothesis_id=hypothesis_id,
             experiment_id=experiment_id,
         )

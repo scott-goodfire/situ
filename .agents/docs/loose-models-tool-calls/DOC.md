@@ -115,21 +115,24 @@ can request or choose tool calls, but it should not bypass the harness ledger.
 
 ## DBOS Role
 
-DBOS should power durable execution of tool calls.
+DBOS should power durable execution of agent runs and tool calls through
+Pydantic AI's DBOS integration first.
 
 The desired mental model:
 
 ```text
-LLM / harness requests tool call
-  -> DBOS durable execution boundary
-      -> tool implementation runs
-      -> output is captured
+TUI / CLI starts session work
+  -> Pydantic AI DBOSAgent runs
+      -> agent requests typed Almanac tools
+      -> tool implementation updates ledger/activity state
   -> Almanac ledger records result
 ```
 
 Avoid building a separate complex workflow engine in Almanac unless the simple
-tool-call model stops being enough. DBOS should make tool execution durable and
-recoverable; Almanac should focus on product state and observability.
+agent/tool-call model stops being enough. DBOS should make agent execution
+durable and recoverable; Almanac should focus on product state and observability.
+Side-effecting custom tools may add local DBOS steps when replay safety requires
+it, but those steps should not become a second session engine.
 
 ## Observability Hooks
 
@@ -221,8 +224,10 @@ the reference backend:
 
 - `BaseAlmanacTool` owns name, typed result shape, permission check, execution,
   error normalization, and conversion to a Pydantic AI tool.
-- `AlmanacToolDeps` carries the session context, repositories, worker manager, and
-  event emitter into tool calls.
+- `AlmanacToolDeps` carries lightweight session/project context into DBOS-backed
+  agent calls. Direct tests may inject repositories, but durable agent deps
+  should reopen repositories from `project_id`, `project_dir`, and `repo_path`
+  instead of carrying live connections.
 - Toolsets group related tools and carry tool-specific instructions. The
   agent-facing surface should be explicit and model-shaped: `get_session`,
   hypothesis/experiment CRUD, hypothesis-experiment linking, comment tools, and

@@ -24,7 +24,7 @@ class UpdateHypothesisTool(BaseAlmanacTool[AlmanacToolDeps, UpdateHypothesisResu
         **_kwargs: Any,
     ) -> UpdateHypothesisResult:
         """Update simple hypothesis fields."""
-        hypothesis = ctx.deps.repos.hypotheses.update(
+        hypothesis = ctx.deps.get_repos().hypotheses.update(
             hypothesis_id,
             title=title,
             summary=summary,

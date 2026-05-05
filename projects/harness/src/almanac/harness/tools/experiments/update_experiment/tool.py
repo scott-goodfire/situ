@@ -24,7 +24,7 @@ class UpdateExperimentTool(BaseAlmanacTool[AlmanacToolDeps, UpdateExperimentResu
         **_kwargs: Any,
     ) -> UpdateExperimentResult:
         """Update simple experiment fields."""
-        experiment = ctx.deps.repos.experiments.update(
+        experiment = ctx.deps.get_repos().experiments.update(
             experiment_id,
             title=title,
             summary=summary,

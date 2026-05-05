@@ -20,13 +20,14 @@ class GetObjectiveTool(BaseAlmanacTool[AlmanacToolDeps, GetObjectiveResult]):
         **_kwargs: Any,
     ) -> GetObjectiveResult:
         """Load an objective by ID, or the objective for the current session."""
+        repos = ctx.deps.get_repos()
         resolved_objective_id = objective_id
         if resolved_objective_id is None:
-            session = ctx.deps.repos.sessions.get(ctx.deps.session_id)
+            session = repos.sessions.get(ctx.deps.session_id)
             resolved_objective_id = session.objective_id if session is not None else None
 
         objective = (
-            ctx.deps.repos.objectives.get(resolved_objective_id)
+            repos.objectives.get(resolved_objective_id)
             if resolved_objective_id is not None
             else None
         )

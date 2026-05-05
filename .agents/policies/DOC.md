@@ -26,6 +26,7 @@ or agent/worker flows.
 - [0016-ui-snapshot-artifacts/POLICY.md](./0016-ui-snapshot-artifacts/POLICY.md) - keep UI snapshots fixture-driven, disposable, and comparable across text, ANSI, and PNG artifacts
 - [0017-agent-tool-surface/POLICY.md](./0017-agent-tool-surface/POLICY.md) - keep agent tools explicit, model-shaped, and comment-oriented
 - [0018-headless-interactive-siblings/POLICY.md](./0018-headless-interactive-siblings/POLICY.md) - keep TUI/web and headless automation as sibling surfaces over the same backend
+- [0019-dbos-agent-execution/POLICY.md](./0019-dbos-agent-execution/POLICY.md) - prefer Pydantic AI DBOSAgent over custom agent workflow orchestration
 
 ## Review Style
 

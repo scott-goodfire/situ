@@ -23,12 +23,13 @@ class ListExperimentActivitiesTool(
         **_kwargs: Any,
     ) -> ListExperimentActivitiesResult:
         """List experiment activity by experiment or session."""
+        repos = ctx.deps.get_repos()
         if experiment_id is not None:
-            activities = ctx.deps.repos.experiment_activities.list_for_experiment(
+            activities = repos.experiment_activities.list_for_experiment(
                 experiment_id
             )
         else:
-            activities = ctx.deps.repos.experiment_activities.list_for_session(
+            activities = repos.experiment_activities.list_for_session(
                 session_id or ctx.deps.session_id
             )
 

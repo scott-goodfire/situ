@@ -25,15 +25,16 @@ class CreateHypothesisTool(BaseAlmanacTool[AlmanacToolDeps, CreateHypothesisResu
         **_kwargs: Any,
     ) -> CreateHypothesisResult:
         """Create a hypothesis under an objective."""
+        repos = ctx.deps.get_repos()
         resolved_objective_id = objective_id or _current_objective_id(ctx)
         if resolved_objective_id is None:
             raise ValueError("objective_id is required when there is no current session objective")
 
         resolved_hypothesis_id = hypothesis_id or _next_hypothesis_id(
-            ctx=ctx,
+            repos=repos,
             objective_id=resolved_objective_id,
         )
-        hypothesis = ctx.deps.repos.hypotheses.create(
+        hypothesis = repos.hypotheses.create(
             hypothesis_id=resolved_hypothesis_id,
             objective_id=resolved_objective_id,
             title=title,
@@ -50,14 +51,14 @@ class CreateHypothesisTool(BaseAlmanacTool[AlmanacToolDeps, CreateHypothesisResu
 
 
 def _current_objective_id(ctx: RunContext[AlmanacToolDeps]) -> str | None:
-    session = ctx.deps.repos.sessions.get(ctx.deps.session_id)
+    session = ctx.deps.get_repos().sessions.get(ctx.deps.session_id)
     return session.objective_id if session is not None else None
 
 
 def _next_hypothesis_id(
     *,
-    ctx: RunContext[AlmanacToolDeps],
+    repos: Any,
     objective_id: str,
 ) -> str:
-    count = len(ctx.deps.repos.hypotheses.list_for_objective(objective_id)) + 1
+    count = len(repos.hypotheses.list_for_objective(objective_id)) + 1
     return f"hyp_{objective_id}_agent_{count:03d}"
