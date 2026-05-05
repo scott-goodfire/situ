@@ -1,3 +1,5 @@
+import type { CollectionsBootstrapResult } from "@almanac/protocol";
+
 export type ProjectSessionStatus =
   | "running"
   | "stopped"
@@ -38,4 +40,9 @@ export type ProjectResponse = {
 export type ProjectSessionResponse = {
   project: ProjectSummary | null;
   session: SessionConnection | null;
+};
+
+export type ProjectSnapshotResponse = {
+  project: ProjectSummary | null;
+  snapshot: CollectionsBootstrapResult | null;
 };

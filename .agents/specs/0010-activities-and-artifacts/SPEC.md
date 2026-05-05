@@ -50,6 +50,10 @@ They can include scalar metrics, pass/fail checks, slice-level outputs,
 latency/cost, logs, artifact references, or failures. Do not force every result
 into a single numeric metric.
 
+When a result comes from a mutable workspace, it should carry or reference the
+workspace state that made it interpretable: eval command, branch, commit, dirty
+state, changed paths, and coarse changed-path categories.
+
 Experiment activities can summarize what a result means for the attempted
 change, but repeated benchmark runs, raw stdout/stderr, and reproduction notes
 belong on the evaluation activity trail.
@@ -66,6 +70,10 @@ Examples:
 - `Result shape changed from baseline.`
 - `Eval failed before producing metrics.`
 - `Large score improvement needs reproduction.`
+- `Candidate changed tests/evals, so the passing test count is not directly
+  comparable to baseline.`
+- `Candidate includes dependency changes; environment comparability needs
+  review.`
 
 Concerns replace the standalone warning model in the first slice. They should
 be distinguishable through body text and optional payload metadata rather than a
@@ -135,6 +143,7 @@ They can include:
 - Logs
 - Diffs
 - Patches
+- Git status snapshots
 - Screenshots
 - Trace exports
 - Dataset slices

@@ -27,6 +27,7 @@ or agent/worker flows.
 - [0017-agent-tool-surface/POLICY.md](./0017-agent-tool-surface/POLICY.md) - keep agent tools explicit, model-shaped, and action-specific
 - [0018-headless-interactive-siblings/POLICY.md](./0018-headless-interactive-siblings/POLICY.md) - keep TUI/web and headless automation as sibling surfaces over the same backend
 - [0019-dbos-agent-execution/POLICY.md](./0019-dbos-agent-execution/POLICY.md) - prefer Pydantic AI DBOSAgent over custom agent workflow orchestration
+- [0020-experiment-comparability/POLICY.md](./0020-experiment-comparability/POLICY.md) - make workspace state, eval commands, and changed evaluation surfaces visible before trusting experiment results
 
 ## Review Style
 

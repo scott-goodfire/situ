@@ -21,6 +21,9 @@ interpretation without requiring the user to predeclare every risk.
 - Experiments record suspicious or invalid outcomes as concern comments.
 - Eval failure, missing expected signals, signal shape changes, and measurement
   artifact changes are detectable in the current path when possible.
+- Dirty workspace starts, changed eval/test files, dependency/toolchain
+  changes, generated-file clutter, eval command changes, and test-count/result
+  shape changes are surfaced when detectable.
 - Suspicious results are visible before they can be treated as trusted
   interpretation.
 - Concern reasons are visible in the TUI.
@@ -28,6 +31,8 @@ interpretation without requiring the user to predeclare every risk.
 ## Red Flags
 
 - Accepting the best metric result without checking whether the eval changed.
+- Accepting a passing test result without checking whether the tests,
+  dependencies, interpreter, or workspace state changed.
 - Treating suspicious results as ordinary failures without explanation.
 - Keeping guardrail information only in logs.
 - Requiring the user to enumerate every forbidden behavior before any automated

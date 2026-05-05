@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import subprocess
 from pathlib import Path
 from typing import Any
 
@@ -12,7 +13,7 @@ from pydantic_ai.usage import RunUsage
 from almanac.harness.core.db import Database
 from almanac.harness.core.workers import WorkerManager
 from almanac.harness.repositories import Repositories
-from almanac.harness.tools import build_workspace_toolset
+from almanac.harness.tools import build_research_toolset, build_workspace_toolset
 from almanac.harness.tools.activities import (
     ListEvaluationActivitiesTool,
     ListExperimentActivitiesTool,
@@ -41,7 +42,12 @@ from almanac.harness.tools.hypotheses import (
 from almanac.harness.tools.links import LinkHypothesisExperimentTool
 from almanac.harness.tools.objectives import GetObjectiveTool
 from almanac.harness.tools.sessions import GetSessionTool
+from almanac.harness.tools.workspace_state import InspectWorkspaceStateTool
 from almanac.protocol import ExperimentRunParams, ExperimentRunResult
+
+
+def _git(cwd: Path, *args: str) -> None:
+    subprocess.run(["git", *args], cwd=cwd, check=True, capture_output=True, text=True)
 
 
 @pytest.fixture
@@ -439,6 +445,76 @@ def test_workspace_toolset_uses_repo_path_backend(tmp_path: Path) -> None:
         "execute",
     }
     assert expected_tools.issubset(set(toolset.tools))
+
+
+def test_research_toolset_includes_workspace_state_inspector() -> None:
+    toolset = build_research_toolset()
+
+    assert "inspect_workspace_state" in toolset.tools
+
+
+def test_inspect_workspace_state_classifies_candidate_changes(tmp_path: Path) -> None:
+    _git(tmp_path, "init")
+    _git(tmp_path, "config", "user.email", "almanac@example.com")
+    _git(tmp_path, "config", "user.name", "Almanac")
+    (tmp_path / "micrograd").mkdir()
+    (tmp_path / "test").mkdir()
+    (tmp_path / "micrograd" / "engine.py").write_text(
+        "class Value: pass\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "test" / "test_engine.py").write_text(
+        "def test_ok(): pass\n",
+        encoding="utf-8",
+    )
+    _git(tmp_path, "add", ".")
+    _git(tmp_path, "commit", "-m", "baseline")
+
+    (tmp_path / "micrograd" / "engine.py").write_text(
+        "class Value:\n    def tanh(self): pass\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "test" / "test_engine.py").write_text(
+        "def test_ok(): pass\ndef test_tanh(): pass\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "pyproject.toml").write_text(
+        "[project]\nname = 'demo'\n",
+        encoding="utf-8",
+    )
+    (tmp_path / ".pytest_cache").mkdir()
+    (tmp_path / ".pytest_cache" / "README.md").write_text("cache\n", encoding="utf-8")
+
+    deps = AlmanacToolDeps(session_id="session_0001", repo_path=str(tmp_path))
+
+    inspected = invoke_almanac_tool_sync(
+        tool=InspectWorkspaceStateTool(),
+        deps=deps,
+        eval_command=".venv/bin/python -m pytest",
+    )
+
+    assert inspected.success is True
+    assert inspected.workspace_state is not None
+    assert inspected.workspace_state["dirty"] is True
+    assert inspected.workspace_state["eval_command"] == ".venv/bin/python -m pytest"
+    assert inspected.workspace_state["category_counts"] == {
+        "source": 1,
+        "test_or_eval": 1,
+        "dependency": 1,
+        "generated": 1,
+    }
+    assert (
+        "Candidate changes include tests, evals, benchmarks, or fixtures."
+        in inspected.workspace_state["concerns"]
+    )
+    assert (
+        "Candidate changes include dependency or toolchain files."
+        in inspected.workspace_state["concerns"]
+    )
+    assert (
+        "Candidate changes include generated or cache files."
+        in inspected.workspace_state["concerns"]
+    )
 
 
 async def _call_workspace_execute(

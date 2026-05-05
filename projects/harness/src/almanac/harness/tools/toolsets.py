@@ -36,6 +36,7 @@ from .common import AlmanacToolDeps
 from .links import LinkHypothesisExperimentTool
 from .objectives import GetObjectiveTool
 from .sessions import GetSessionTool
+from .workspace_state import InspectWorkspaceStateTool
 
 RESEARCH_TOOLSET_INSTRUCTIONS = inspect.cleandoc(
     """
@@ -54,6 +55,11 @@ RESEARCH_TOOLSET_INSTRUCTIONS = inspect.cleandoc(
     evidence with an evaluation and evaluation result. Use evaluations for raw
     command evidence, repeated measurement, reproduction notes, and
     suspicious-result concerns. Use experiments for the attempted change.
+
+    Use `inspect_workspace_state` before baseline interpretation and after
+    candidate changes. Record dirty starts, changed tests/evals, dependency
+    changes, generated-file clutter, branch, commit, and eval command when they
+    affect comparability.
 
     To inspect files or run project-native commands, use the workspace console
     tools. Keep Almanac responsible for the ledger and the workspace tools
@@ -80,6 +86,7 @@ def build_research_toolset() -> FunctionToolset[AlmanacToolDeps]:
         instructions=RESEARCH_TOOLSET_INSTRUCTIONS,
         tools=[
             GetSessionTool().as_tool(),
+            InspectWorkspaceStateTool().as_tool(),
             GetObjectiveTool().as_tool(),
             ListHypothesesTool().as_tool(),
             CreateHypothesisTool().as_tool(),

@@ -23,6 +23,8 @@ RESEARCH_AGENT_INSTRUCTIONS = inspect.cleandoc(
     - Use the workspace tools to inspect files and run project-native commands.
       Run ordinary evals/tests/benchmarks with `execute`; do not expect a
       special Almanac eval script.
+    - Use `inspect_workspace_state` before baseline interpretation and after
+      candidate workspace changes. Include the eval command when known.
     - Before proposing candidate changes as comparable, establish baseline
       evidence with an evaluation and an evaluation result.
     - Create or update hypotheses when they clarify the line of investigation.
@@ -42,6 +44,10 @@ RESEARCH_AGENT_INSTRUCTIONS = inspect.cleandoc(
       support it.
     - Treat automated concerns and suspicious results as first-class research
       context.
+    - Treat dirty starts, test/eval changes, dependency changes, generated-file
+      clutter, changed eval commands, changed interpreters, and changed test
+      counts as comparability concerns unless the record explains why they are
+      intended.
     - When the next step is uncertain, say what would make it worth running.
 
     Style:
@@ -142,18 +148,21 @@ def build_session_run_prompt(
         {recent_experiment_activity}
 
         Continue the research from the live session state. Check the session
-        first, then create or update hypotheses only when they make the board
-        clearer. If baseline evaluation evidence is missing, create a baseline
-        evaluation, run the project-native command with the workspace `execute`
-        tool, and record useful plaintext output plus your interpretation as an
-        evaluation result before trying candidate changes.
+        first, then inspect workspace state. Create or update hypotheses only
+        when they make the board clearer. If baseline evaluation evidence is
+        missing, create a baseline evaluation, inspect workspace state with the
+        intended eval command, run the project-native command with the
+        workspace `execute` tool, and record useful plaintext output plus your
+        interpretation as an evaluation result before trying candidate changes.
 
         For concrete candidate attempts, create or update an experiment for the
         attempted change, create or update an evaluation for the measurement,
-        run the project-native command with the workspace `execute` tool, and
-        record useful plaintext output plus your interpretation as an
-        evaluation result. Use experiment comments for what changed and what
-        the evaluation means for that experiment.
+        inspect workspace state before interpreting the candidate, run the
+        project-native command with the workspace `execute` tool, and record
+        useful plaintext output plus workspace-state context and your
+        interpretation as an evaluation result. Use experiment comments for
+        what changed, whether source/tests/evals/dependencies/generated files
+        changed, and what the evaluation means for that experiment.
 
         Stop when the budget is reached, when the next experiment is not
         justified by the record, or when the evidence says the session needs

@@ -1,7 +1,11 @@
 import { DxBadge, DxNotice } from "@almanac/web-ui";
+import type { CollectionsBootstrapResult } from "@almanac/protocol";
 import { useQuery } from "@tanstack/react-query";
 import { Outlet } from "@tanstack/react-router";
-import { fetchProjectSession } from "../../project-discovery/client";
+import {
+  fetchProjectSession,
+  fetchProjectSnapshot,
+} from "../../project-discovery/client";
 import type {
   ProjectSummary,
   SessionConnection,
@@ -22,12 +26,27 @@ export function ProjectMonitor({ projectId }: { projectId: string }) {
     refetchInterval: 1_500,
     retry: false,
   });
+  const snapshotQuery = useQuery({
+    queryKey: ["project-snapshot", projectId],
+    queryFn: () => fetchProjectSnapshot({ projectId }),
+    refetchInterval: 2_000,
+    retry: false,
+  });
   const response = sessionQuery.data;
+  const snapshotResponse = snapshotQuery.data;
   const discoveryError = sessionQuery.error
     ? errorMessage({ error: sessionQuery.error })
     : undefined;
+  const snapshotError = snapshotQuery.error
+    ? errorMessage({ error: snapshotQuery.error })
+    : undefined;
+  const project = response?.project ?? snapshotResponse?.project ?? null;
+  const discoveredError = discoveredProblem({
+    discoveryError,
+    snapshotError,
+  });
 
-  if (sessionQuery.isPending && !response) {
+  if (sessionQuery.isPending && snapshotQuery.isPending && !project) {
     return (
       <EmptyMonitor
         workspace={undefined}
@@ -36,37 +55,56 @@ export function ProjectMonitor({ projectId }: { projectId: string }) {
     );
   }
 
-  if (!response && discoveryError) {
+  if (!response && !snapshotResponse && discoveredError) {
     return (
       <EmptyMonitor
         workspace={undefined}
         connection={{
           kind: "failed",
-          message: discoveryError,
+          message: discoveredError,
         }}
       />
     );
   }
 
-  if (!response?.project) {
+  if (!project) {
     return <UnknownProject projectId={projectId} />;
   }
 
-  if (!response.session) {
+  if (response?.session) {
     return (
-      <ProjectNoActiveHarness
-        project={response.project}
-        discoveryError={discoveryError}
+      <LiveProjectSession
+        key={sessionKey({ session: response.session })}
+        projectId={projectId}
+        session={response.session}
+        discoveryError={discoveredError}
+      />
+    );
+  }
+
+  if (snapshotQuery.isPending && !snapshotResponse) {
+    return (
+      <EmptyMonitor
+        workspace={project.workspace ?? project.project_id}
+        connection={{ kind: "checking" }}
+      />
+    );
+  }
+
+  if (snapshotResponse?.snapshot && snapshotHasRecords(snapshotResponse.snapshot)) {
+    return (
+      <SnapshotProjectSession
+        project={project}
+        snapshot={snapshotResponse.snapshot}
+        discoveryError={discoveredError}
       />
     );
   }
 
   return (
-    <LiveProjectSession
-      key={sessionKey({ session: response.session })}
-      projectId={projectId}
-      session={response.session}
-      discoveryError={discoveryError}
+    <ProjectNoActiveHarness
+      project={project}
+      discoveryError={discoveredError}
     />
   );
 }
@@ -96,6 +134,44 @@ function LiveProjectSession({
     evaluationActivities: liveSession.evaluationActivities,
     artifacts: liveSession.artifacts,
     events: liveSession.events,
+  };
+
+  return (
+    <ProjectWorkspaceProvider data={workspaceData}>
+      <ProjectWorkspaceLayout data={workspaceData} discoveryError={discoveryError}>
+        <Outlet />
+      </ProjectWorkspaceLayout>
+    </ProjectWorkspaceProvider>
+  );
+}
+
+function SnapshotProjectSession({
+  project,
+  snapshot,
+  discoveryError,
+}: {
+  project: ProjectSummary;
+  snapshot: CollectionsBootstrapResult;
+  discoveryError: string | undefined;
+}) {
+  const workspaceData = {
+    projectId: project.project_id,
+    workspace: project.workspace ?? undefined,
+    connection: {
+      kind: "disconnected",
+      message: "Showing latest saved project data. No live session is connected.",
+    } as const,
+    objectives: snapshot.objectives,
+    sessions: snapshot.sessions,
+    hypotheses: snapshot.hypotheses,
+    experiments: snapshot.experiments,
+    evaluations: snapshot.evaluations,
+    hypothesisExperimentLinks: snapshot.hypothesis_experiment_links,
+    hypothesisActivities: snapshot.hypothesis_activities,
+    experimentActivities: snapshot.experiment_activities,
+    evaluationActivities: snapshot.evaluation_activities,
+    artifacts: snapshot.artifacts,
+    events: snapshot.events,
   };
 
   return (
@@ -191,6 +267,32 @@ function EmptyMonitor({
 
 function sessionKey({ session }: { session: SessionConnection }): string {
   return `${session.url}:${session.started_at}`;
+}
+
+function snapshotHasRecords(snapshot: CollectionsBootstrapResult): boolean {
+  return (
+    snapshot.objectives.length > 0 ||
+    snapshot.sessions.length > 0 ||
+    snapshot.hypotheses.length > 0 ||
+    snapshot.experiments.length > 0 ||
+    snapshot.evaluations.length > 0 ||
+    snapshot.hypothesis_experiment_links.length > 0 ||
+    snapshot.hypothesis_activities.length > 0 ||
+    snapshot.experiment_activities.length > 0 ||
+    snapshot.evaluation_activities.length > 0 ||
+    snapshot.artifacts.length > 0 ||
+    snapshot.events.length > 0
+  );
+}
+
+function discoveredProblem({
+  discoveryError,
+  snapshotError,
+}: {
+  discoveryError: string | undefined;
+  snapshotError: string | undefined;
+}): string | undefined {
+  return discoveryError ?? snapshotError;
 }
 
 function errorMessage({ error }: { error: unknown }): string {

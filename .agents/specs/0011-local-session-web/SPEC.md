@@ -96,8 +96,11 @@ For this slice:
 - A project page should poll local discovery state and attach when the session
   becomes healthy, even if the browser page was opened before the session
   server started.
-- If the project is known but no healthy session is active, the page should show
-  the attach-only empty state for that project.
+- If the project is known but no healthy session is active, the page should read
+  the last durable project snapshot from that project's `almanac.sqlite` and
+  render the same project pages as disconnected read-only state.
+- If the project has no healthy session and no durable records yet, the page
+  should show the attach-only empty state for that project.
 
 This gives users one local URL for finding projects without turning the browser
 into the owner of session lifecycle. The browser should receive this metadata
@@ -115,6 +118,9 @@ For this slice:
   built assets and local discovery API.
 - The local host should serve `/api/projects` and
   `/api/projects/<project-id>/session`.
+- The local host should serve `/api/projects/<project-id>/snapshot` as a
+  read-only durable collection snapshot loaded from the per-project SQLite
+  database.
 - The local host should serve `/` as the project home and should use SPA
   fallback for `/projects/<project-id>` and child routes.
 - The local host should bind to `127.0.0.1` by default.
@@ -132,7 +138,8 @@ separate:
 - `mise run web:dev` and `mise run dev:web` run the Vite development server for
   frontend iteration.
 - `mise run web:smoke` builds the browser app, starts the local Hono host, and
-  checks the project home, discovery API, and project-route SPA fallback.
+  checks the project home, discovery API, snapshot API, and project-route SPA
+  fallback.
 
 ## Project Lifecycle Vocabulary
 
@@ -177,6 +184,9 @@ For this slice:
   user is already at the bottom of the table.
 - Concern-like rows should be visually distinguishable without hiding the
   underlying record.
+- Losing the live session connection should not erase the visible project
+  context. The web monitor should keep or reload the latest durable snapshot and
+  mark the connection as disconnected or stopped.
 - Motion should be subtle, only reinforce that new rows arrived, and respect
   reduced-motion preferences.
 - The monitor remains read-only. Table affordances must not imply that the web

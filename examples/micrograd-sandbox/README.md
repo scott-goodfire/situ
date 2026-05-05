@@ -20,6 +20,13 @@ pip install -e .
 cp ~/autoresearch-harness/examples/micrograd-sandbox/almanac_eval.py ./almanac_eval.py
 ```
 
+For autoresearch-style candidate work, prefer an isolated branch instead of
+running directly on `master` or `main`:
+
+```bash
+git checkout -b almanac/micrograd-smoke
+```
+
 Check the eval directly:
 
 ```bash
@@ -32,15 +39,8 @@ ALMANAC_COMPONENTS_JSON='["A","C"]' python almanac_eval.py --json
 ```bash
 cd ~/autoresearch-harness
 mise run start -- ~/sandbox/micrograd-hillclimb \
-  --eval-command "python almanac_eval.py --json" \
   --objective "Find which tiny micrograd training tweaks improve XOR accuracy without suspicious results." \
-  --evaluation-context "Run a deterministic micrograd XOR eval that reports score, accuracy, loss, runtime_ms, and tests_passed as JSON." \
-  --known-signal score \
-  --known-signal accuracy \
-  --known-signal loss \
-  --known-signal runtime_ms \
-  --known-signal tests_passed \
-  --experiment-scope "Compare baseline, individual toy components, combinations, and one intentionally suspicious result."
+  --context "Run /Users/scott-goodfire/sandbox/micrograd-hillclimb/.venv/bin/python almanac_eval.py --json for the deterministic micrograd XOR eval. Keep work on the almanac/micrograd-smoke branch, inspect workspace state before interpreting results, and flag changed tests, evals, dependencies, generated files, or changed test counts as comparability concerns."
 ```
 
 ## Run Almanac From The Sandbox Repo
@@ -50,15 +50,8 @@ After `mise run update` has created the harness virtualenv:
 ```bash
 cd ~/sandbox/micrograd-hillclimb
 ~/autoresearch-harness/.venv/bin/almanac start . \
-  --eval-command "python almanac_eval.py --json" \
   --objective "Find which tiny micrograd training tweaks improve XOR accuracy without suspicious results." \
-  --evaluation-context "Run a deterministic micrograd XOR eval that reports score, accuracy, loss, runtime_ms, and tests_passed as JSON." \
-  --known-signal score \
-  --known-signal accuracy \
-  --known-signal loss \
-  --known-signal runtime_ms \
-  --known-signal tests_passed \
-  --experiment-scope "Compare baseline, individual toy components, combinations, and one intentionally suspicious result."
+  --context "Run .venv/bin/python almanac_eval.py --json for the deterministic micrograd XOR eval. Keep work on an almanac/... branch, inspect workspace state before interpreting results, and flag changed tests, evals, dependencies, generated files, or changed test counts as comparability concerns."
 ```
 
 State is still written outside the sandbox repo under

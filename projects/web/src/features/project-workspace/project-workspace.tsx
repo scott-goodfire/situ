@@ -29,6 +29,10 @@ export function ProjectWorkspaceLayout({
         <DxNotice tone="danger">{data.connection.message}</DxNotice>
       )}
 
+      {data.connection.kind === "disconnected" && (
+        <DxNotice tone="warning">{data.connection.message}</DxNotice>
+      )}
+
       {discoveryError && <DxNotice tone="warning">{discoveryError}</DxNotice>}
 
       {children}

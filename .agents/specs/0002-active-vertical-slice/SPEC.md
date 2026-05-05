@@ -77,6 +77,9 @@ code are launched from the Almanac repository.
 - Internal event timeline
 - Agent-readable status and context
 - Agent-requested experiment execution through a typed harness tool
+- Workspace state inspection around baseline and candidate measurements, so
+  dirty starts, changed eval/test files, dependency changes, generated files,
+  branch, commit, and eval command are visible when interpreting results
 - Pydantic AI `DBOSAgent` as the agent durability boundary
 - Durable restart/resume
 - SQLite source of truth
@@ -88,6 +91,12 @@ and recording comments should have typed tool envelopes. Almanac should persist
 Pydantic AI message history as the durable agent transcript and use
 events/collection upserts for live tool-call observability rather than making a
 separate tool-call table the source of truth.
+
+Candidate experiment evidence should be interpreted with workspace state in
+view. Before treating a result as comparable to baseline, the agent should know
+the starting git state, ending dirty state, eval command, and whether source,
+tests/evals, dependencies, or generated files changed. See
+[0012-experiment-workspace-state/SPEC.md](../0012-experiment-workspace-state/SPEC.md).
 
 ## Deferred
 

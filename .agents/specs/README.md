@@ -16,6 +16,7 @@ Read in this order:
 9. [0009-architecture-intent/SPEC.md](./0009-architecture-intent/SPEC.md)
 10. [0010-activities-and-artifacts/SPEC.md](./0010-activities-and-artifacts/SPEC.md)
 11. [0011-local-session-web/SPEC.md](./0011-local-session-web/SPEC.md)
+12. [0012-experiment-workspace-state/SPEC.md](./0012-experiment-workspace-state/SPEC.md)
 
 ## Product Thesis
 

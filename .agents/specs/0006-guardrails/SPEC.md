@@ -17,6 +17,12 @@ enumerate everything up front:
   ambiguous to support a conclusion.
 - Evaluation or measurement artifacts changed unexpectedly.
 - Sample count or eval scope changed unexpectedly when detectable.
+- Workspace starts dirty without an explicit baseline decision.
+- Candidate changes tests, evals, benchmarks, fixtures, dependency files,
+  toolchain config, or generated/cache files unexpectedly.
+- Candidate uses a different eval command, interpreter, or toolchain than the
+  baseline when detectable.
+- Test count or result shape changes compared with baseline.
 - Result improved suspiciously much without corroborating context.
 
 The first slice should not deterministically parse arbitrary command output
@@ -41,3 +47,8 @@ When this happens:
 
 Metric movement is not enough. The dashboard must distinguish observed results
 from trustworthy interpretation.
+
+Likewise, a passing test command is not enough. Almanac should preserve enough
+workspace-state context to show whether the passing result is comparable to the
+baseline. See
+[0012-experiment-workspace-state/SPEC.md](../0012-experiment-workspace-state/SPEC.md).

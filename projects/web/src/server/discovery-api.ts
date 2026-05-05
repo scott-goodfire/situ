@@ -2,6 +2,20 @@ import { access, readFile, readdir } from "node:fs/promises";
 import { homedir } from "node:os";
 import { basename, resolve } from "node:path";
 import { Hono } from "hono";
+import type {
+  ArtifactRecord,
+  CollectionsBootstrapResult,
+  EventRecord,
+  EvaluationActivityRecord,
+  EvaluationRecord,
+  ExperimentActivityRecord,
+  ExperimentRecord,
+  HypothesisActivityRecord,
+  HypothesisExperimentLinkRecord,
+  HypothesisRecord,
+  ObjectiveRecord,
+  SessionRecord,
+} from "@almanac/protocol";
 import {
   readProjectRegistry,
   upsertProjectRegistryRows,
@@ -12,6 +26,7 @@ import type {
   ProjectListResponse,
   ProjectResponse,
   ProjectSessionResponse,
+  ProjectSnapshotResponse,
   ProjectSessionStatus,
   ProjectSummary,
   SessionConnection,
@@ -60,6 +75,15 @@ type ObjectiveRow = {
   updated_at: string;
 };
 
+type ActivityRow = Record<string, unknown> & {
+  payload_json: string;
+};
+
+type EventRow = Record<string, unknown> & {
+  id: number;
+  payload_json: string;
+};
+
 const PROJECT_ID_PATTERN = /^[a-f0-9]{16}$/;
 
 export function createDiscoveryApi({
@@ -96,6 +120,20 @@ export function createDiscoveryApi({
         : null;
 
     return context.json({ project, session } satisfies ProjectSessionResponse);
+  });
+
+  app.get("/api/projects/:projectId/snapshot", async (context) => {
+    const projectId = context.req.param("projectId");
+    const project = await findProject({ discoveryContext, projectId });
+    if (!project) {
+      return context.json(
+        { project: null, snapshot: null } satisfies ProjectSnapshotResponse,
+      );
+    }
+
+    const snapshot = await readProjectSnapshot({ discoveryContext, projectId });
+
+    return context.json({ project, snapshot } satisfies ProjectSnapshotResponse);
   });
 
   return app;
@@ -277,6 +315,243 @@ async function readProjectMetadata({
   } catch {
     return emptyProjectMetadata({ readStatus: "unreadable" });
   }
+}
+
+async function readProjectSnapshot({
+  discoveryContext,
+  projectId,
+}: {
+  discoveryContext: DiscoveryContext;
+  projectId: string;
+}): Promise<CollectionsBootstrapResult | null> {
+  const path = projectDatabasePath({ discoveryContext, projectId });
+  const exists = await pathExists({ path });
+  if (!exists) {
+    return null;
+  }
+
+  try {
+    const database = await openSqliteDatabase({
+      path,
+      fileMustExist: true,
+      readonly: true,
+    });
+
+    try {
+      const events = readJsonRows<EventRecord, EventRow>({
+        database,
+        sql: `
+          SELECT
+            id,
+            session_id,
+            type,
+            message,
+            payload_json,
+            created_at
+          FROM events
+          ORDER BY id ASC
+        `,
+      });
+
+      return {
+        cursor: events.at(-1)?.id ?? 0,
+        objectives: readRows<ObjectiveRecord>({
+          database,
+          sql: `
+            SELECT
+              id,
+              title,
+              description,
+              status,
+              associated_session_id,
+              created_at,
+              updated_at
+            FROM objectives
+            ORDER BY created_at ASC, id ASC
+          `,
+        }),
+        sessions: readRows<SessionRecord>({
+          database,
+          sql: `
+            SELECT
+              id,
+              objective_id,
+              status,
+              created_at,
+              updated_at
+            FROM sessions
+            ORDER BY created_at ASC, id ASC
+          `,
+        }),
+        hypotheses: readRows<HypothesisRecord>({
+          database,
+          sql: `
+            SELECT
+              id,
+              objective_id,
+              title,
+              summary,
+              status,
+              associated_session_id,
+              created_at,
+              updated_at
+            FROM hypotheses
+            ORDER BY created_at ASC, id ASC
+          `,
+        }),
+        experiments: readRows<ExperimentRecord>({
+          database,
+          sql: `
+            SELECT
+              id,
+              objective_id,
+              status,
+              title,
+              summary,
+              associated_session_id,
+              created_at,
+              updated_at
+            FROM experiments
+            ORDER BY created_at ASC, id ASC
+          `,
+        }),
+        evaluations: readRows<EvaluationRecord>({
+          database,
+          sql: `
+            SELECT
+              id,
+              objective_id,
+              status,
+              title,
+              summary,
+              associated_session_id,
+              associated_experiment_id,
+              created_at,
+              updated_at
+            FROM evaluations
+            ORDER BY created_at ASC, id ASC
+          `,
+        }),
+        hypothesis_experiment_links: readRows<HypothesisExperimentLinkRecord>({
+          database,
+          sql: `
+            SELECT
+              hypothesis_id,
+              experiment_id,
+              created_at
+            FROM hypothesis_experiment_links
+            ORDER BY created_at ASC, hypothesis_id ASC, experiment_id ASC
+          `,
+        }),
+        hypothesis_activities: readJsonRows<HypothesisActivityRecord, ActivityRow>({
+          database,
+          sql: `
+            SELECT
+              id,
+              hypothesis_id,
+              session_id,
+              actor,
+              kind,
+              body,
+              payload_json,
+              created_at
+            FROM hypothesis_activities
+            ORDER BY id ASC
+          `,
+        }),
+        experiment_activities: readJsonRows<ExperimentActivityRecord, ActivityRow>({
+          database,
+          sql: `
+            SELECT
+              id,
+              experiment_id,
+              session_id,
+              actor,
+              kind,
+              body,
+              payload_json,
+              created_at
+            FROM experiment_activities
+            ORDER BY id ASC
+          `,
+        }),
+        evaluation_activities: readJsonRows<EvaluationActivityRecord, ActivityRow>({
+          database,
+          sql: `
+            SELECT
+              id,
+              evaluation_id,
+              session_id,
+              actor,
+              kind,
+              body,
+              payload_json,
+              created_at
+            FROM evaluation_activities
+            ORDER BY id ASC
+          `,
+        }),
+        artifacts: readRows<ArtifactRecord>({
+          database,
+          sql: `
+            SELECT
+              id,
+              objective_id,
+              associated_session_id,
+              associated_entity_kind,
+              associated_entity_id,
+              kind,
+              title,
+              path,
+              media_type,
+              size_bytes,
+              created_at
+            FROM artifacts
+            ORDER BY created_at ASC, id ASC
+          `,
+        }),
+        events,
+      };
+    } finally {
+      database.close();
+    }
+  } catch {
+    return null;
+  }
+}
+
+function readRows<RecordType>({
+  database,
+  sql,
+}: {
+  database: Awaited<ReturnType<typeof openSqliteDatabase>>;
+  sql: string;
+}): RecordType[] {
+  try {
+    return database.all(sql) as RecordType[];
+  } catch (error) {
+    if (isMissingTableError({ error })) {
+      return [];
+    }
+
+    throw error;
+  }
+}
+
+function readJsonRows<RecordType, RowType extends ActivityRow>({
+  database,
+  sql,
+}: {
+  database: Awaited<ReturnType<typeof openSqliteDatabase>>;
+  sql: string;
+}): RecordType[] {
+  return readRows<RowType>({ database, sql }).map((row) => {
+    const { payload_json: payloadJson, ...rest } = row;
+    return {
+      ...rest,
+      payload: JSON.parse(payloadJson),
+    } as RecordType;
+  });
 }
 
 function metadataFromRows({
@@ -643,6 +918,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function isMissingPathError({ error }: { error: unknown }): boolean {
   return error instanceof Error && "code" in error && error.code === "ENOENT";
+}
+
+function isMissingTableError({ error }: { error: unknown }): boolean {
+  return error instanceof Error && error.message.includes("no such table:");
 }
 
 async function pathExists({ path }: { path: string }): Promise<boolean> {

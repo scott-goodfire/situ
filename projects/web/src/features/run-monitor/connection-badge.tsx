@@ -3,6 +3,7 @@ import { DxBadge, type DxBadgeTone } from "@almanac/web-ui";
 export type ConnectionState =
   | { kind: "checking" }
   | { kind: "connected" }
+  | { kind: "disconnected"; message: string }
   | { kind: "missing" }
   | { kind: "failed"; message: string };
 
@@ -26,6 +27,10 @@ function connectionLabel({ state }: { state: ConnectionState }): string {
     return "Error";
   }
 
+  if (state.kind === "disconnected") {
+    return "Disconnected";
+  }
+
   return "No session";
 }
 
@@ -36,6 +41,10 @@ function connectionTone({ state }: { state: ConnectionState }): DxBadgeTone {
 
   if (state.kind === "failed") {
     return "danger";
+  }
+
+  if (state.kind === "disconnected") {
+    return "warning";
   }
 
   return "neutral";
