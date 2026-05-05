@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import shutil
+import signal
 import subprocess
 import sys
 import time
@@ -22,6 +25,7 @@ from .local_session import (
     stop_process,
 )
 from .paths import resolve_app_root, resolve_workspace
+from .project_context import ProjectContext
 
 DEFAULT_MAX_EXPERIMENTS = 6
 
@@ -165,6 +169,44 @@ def headless_wait(args: argparse.Namespace) -> int:
         time.sleep(0.5)
 
 
+def headless_clear(args: argparse.Namespace) -> int:
+    workspace = resolve_existing_workspace(args)
+    if workspace is None:
+        return 1
+
+    live_session = read_live_session(workspace)
+    force = bool(getattr(args, "force", False))
+    context = ProjectContext(repo_root=workspace)
+
+    if live_session is not None and not force:
+        write_json(
+            {
+                "workspace": str(workspace),
+                "project_id": context.project_id,
+                "project_dir": str(context.project_dir),
+                "cleared": False,
+                "reason": "active_harness",
+                "message": "active harness found; stop it first or rerun with --force",
+                "session": live_session,
+            }
+        )
+        return 1
+
+    if live_session is not None:
+        terminate_live_session(session=live_session)
+
+    shutil.rmtree(context.project_dir, ignore_errors=True)
+    write_json(
+        {
+            "workspace": str(workspace),
+            "project_id": context.project_id,
+            "project_dir": str(context.project_dir),
+            "cleared": True,
+        }
+    )
+    return 0
+
+
 def headless_exec(args: argparse.Namespace) -> int:
     app_root = resolve_app_root(Path(__file__))
     if app_root is None:
@@ -259,6 +301,33 @@ def apply_setup_env(env: dict[str, str], args: argparse.Namespace) -> None:
     for key, value in optional_env.items():
         if value:
             env[key] = value
+
+
+def terminate_live_session(*, session: dict[str, str]) -> None:
+    raw_pid = session.get("pid")
+    if raw_pid is None:
+        raise RuntimeError("active harness has no pid; stop it before clearing state")
+
+    pid = int(raw_pid)
+    try:
+        os.kill(pid, signal.SIGTERM)
+    except ProcessLookupError:
+        return
+    deadline = time.monotonic() + 5
+    while time.monotonic() < deadline:
+        if not ping_session(session):
+            return
+        time.sleep(0.1)
+
+    try:
+        os.kill(pid, signal.SIGKILL)
+    except ProcessLookupError:
+        return
+    deadline = time.monotonic() + 2
+    while time.monotonic() < deadline:
+        if not ping_session(session):
+            return
+        time.sleep(0.1)
 
 
 def ensure_setup(

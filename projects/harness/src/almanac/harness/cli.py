@@ -7,6 +7,7 @@ from pathlib import Path
 
 from .headless import (
     apply_setup_env,
+    headless_clear,
     headless_events,
     headless_exec,
     headless_snapshot,
@@ -61,6 +62,15 @@ def main(argv: list[str] | None = None) -> int:
         help="maximum seconds to wait for the session to close",
     )
 
+    clear_parser = subparsers.add_parser("clear", help="clear local Almanac state for a workspace")
+    add_workspace_argument(clear_parser)
+    add_json_argument(clear_parser)
+    clear_parser.add_argument(
+        "--force",
+        action="store_true",
+        help="terminate an active local harness before clearing state",
+    )
+
     web_parser = subparsers.add_parser("web", help="open the attach-only web monitor")
     add_workspace_argument(web_parser)
 
@@ -78,6 +88,8 @@ def main(argv: list[str] | None = None) -> int:
         return headless_events(args)
     if args.command == "wait":
         return headless_wait(args)
+    if args.command == "clear":
+        return headless_clear(args)
     if args.command == "web":
         return web(args)
 

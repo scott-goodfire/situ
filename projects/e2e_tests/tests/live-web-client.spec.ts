@@ -1,6 +1,13 @@
 import { expect, test } from "@playwright/test";
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -31,7 +38,7 @@ type LiveStack = {
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 
-test("web client receives live collection updates from the harness", async ({ page }) => {
+test("web client receives live agent events from a real session", async ({ page }) => {
   const stack = await startLiveStack();
   try {
     await page.goto(stack.webUrl);
@@ -40,33 +47,56 @@ test("web client receives live collection updates from the harness", async ({ pa
     await expect(page.getByText("No session yet")).toBeVisible();
 
     await rpcRequest(stack.session, "setup.complete", {
-      objective: "Improve the tiny evaluator",
-      research_context: "Run local checks and record useful findings.",
+      objective: "Improve the tiny evaluator score",
+      research_context: [
+        "This is a live Almanac E2E smoke test.",
+        "Run exactly one concrete experiment.",
+        "Use the title `Variant A smoke eval` for the experiment.",
+        "Create one hypothesis for variant A.",
+        "Run `python eval.py --variant A` with the workspace execute tool.",
+        "Record the command output and your interpretation as an experiment comment.",
+        "Close the experiment after recording the result.",
+      ].join(" "),
     });
 
     await expect(
-      page.getByText("Improve the tiny evaluator | no session yet"),
+      page.getByText("Improve the tiny evaluator score | no session yet"),
     ).toBeVisible();
     await expect(page.getByText("setup.completed")).toBeVisible();
+
+    await rpcRequest(stack.session, "session.start", {
+      max_experiments: 1,
+    });
+
+    await expect(page.getByText("session.started")).toBeVisible();
+    await expect(page.getByText("Variant A smoke eval")).toBeVisible();
+    await expect(page.getByText("experiment.created")).toBeVisible();
+    await expect(page.getByText("experiment.comment_added")).toBeVisible();
+    await expect(page.getByText("session.completed")).toBeVisible();
+    await expect(
+      page.getByText(/session_0001 \| closed \| hypotheses [1-9]\d* \| experiments [1-9]\d*/),
+    ).toBeVisible();
   } finally {
     await stack.close();
   }
 });
 
 async function startLiveStack(): Promise<LiveStack> {
+  const openaiKey = requireOpenAIKey();
   const root = makeTempRoot();
   const workspace = join(root, "workspace");
   const home = join(root, "home");
   mkdirSync(workspace, { recursive: true });
   mkdirSync(home, { recursive: true });
+  writeTinyEval(workspace);
 
   const env = {
     ...process.env,
     HOME: home,
     ALMANAC_APP_ROOT: REPO_ROOT,
     ALMANAC_WORKSPACE: workspace,
-    ALMANAC_OPENAI_KEY: "test-openai-key",
-    OPENAI_API_KEY: "test-openai-key",
+    ALMANAC_OPENAI_KEY: openaiKey,
+    OPENAI_API_KEY: openaiKey,
   };
 
   const sessionServer = startProcess({
@@ -113,6 +143,43 @@ async function startLiveStack(): Promise<LiveStack> {
     rmSync(root, { recursive: true, force: true });
     throw error;
   }
+}
+
+function requireOpenAIKey(): string {
+  const key = process.env.ALMANAC_OPENAI_KEY ?? process.env.OPENAI_API_KEY;
+  if (!key) {
+    throw new Error(
+      "Real-real E2E requires ALMANAC_OPENAI_KEY or OPENAI_API_KEY; no fake model is used.",
+    );
+  }
+  return key;
+}
+
+function writeTinyEval(workspace: string): void {
+  writeFileSync(
+    join(workspace, "eval.py"),
+    [
+      "import argparse",
+      "import json",
+      "",
+      "parser = argparse.ArgumentParser()",
+      "parser.add_argument('--variant', default='baseline')",
+      "args = parser.parse_args()",
+      "",
+      "scores = {'baseline': 0.52, 'A': 0.74}",
+      "score = scores.get(args.variant, scores['baseline'])",
+      "print(json.dumps({'variant': args.variant, 'score': score, 'passed': True}))",
+    ].join("\n"),
+  );
+  writeFileSync(
+    join(workspace, "README.md"),
+    [
+      "# Tiny Eval Workspace",
+      "",
+      "Run `python eval.py --variant A` to evaluate variant A.",
+      "The command prints JSON with `variant`, `score`, and `passed` fields.",
+    ].join("\n"),
+  );
 }
 
 function startProcess({

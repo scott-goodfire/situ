@@ -46,6 +46,7 @@ mise run protocol:generate
 mise run dev:harness
 mise run dev:tui
 mise run start
+mise run clear -- ~/sandbox/some-repo
 ```
 
 ## Agent Runtime And Observability

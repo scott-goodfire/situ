@@ -1,5 +1,5 @@
 import { useApp } from "ink";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import lodash from "lodash";
@@ -44,6 +44,7 @@ type Status =
 
 export function AlmanacTui() {
   const { exit } = useApp();
+  const exitRef = useRef(exit);
   const collections = useMemo(() => createAlmanacCollections(), []);
   const root = useMemo(() => appRoot(), []);
   const workspace = useMemo(() => workspaceRoot({ root }), [root]);
@@ -96,6 +97,10 @@ export function AlmanacTui() {
     tone: "gray",
     text: "Type /help for commands.",
   });
+
+  useEffect(() => {
+    exitRef.current = exit;
+  }, [exit]);
 
   const objectives = useMemo(
     () => sortByCreated({ records: (objectivesQuery.data ?? []) as ObjectiveRecord[] }),
@@ -165,7 +170,7 @@ export function AlmanacTui() {
       setTimeout(() => {
         unsubscribe();
         client.close();
-        exit();
+        exitRef.current();
       }, 1400);
     };
 
@@ -277,7 +282,7 @@ export function AlmanacTui() {
       unsubscribe();
       client.close();
     };
-  }, [collections, exit, maxExperimentCount, root, workspace]);
+  }, [collections, maxExperimentCount, workspace]);
 
   const activeObjective = lodash.find(
     objectives,
@@ -298,6 +303,10 @@ export function AlmanacTui() {
   });
   const sessionExperimentActivities = activitiesForSession({
     activities: experimentActivities,
+    session: latestSession,
+  });
+  const sessionEvents = eventsForSession({
+    events,
     session: latestSession,
   });
   const activeExperiment = lodash.find(
@@ -326,7 +335,7 @@ export function AlmanacTui() {
       experiments={sessionExperiments}
       hypothesisActivities={sessionHypothesisActivities}
       experimentActivities={sessionExperimentActivities}
-      events={events}
+      events={sessionEvents}
       onCommandChange={({ value }) => {
         setCommandDraft(value);
       }}
@@ -540,6 +549,20 @@ function activitiesForSession<T extends { session_id?: string | null }>({
   }
 
   return lodash.filter(activities, (activity: T) => activity.session_id === session.id);
+}
+
+function eventsForSession({
+  events,
+  session,
+}: {
+  events: EventRecord[];
+  session: SessionRecord | undefined;
+}): EventRecord[] {
+  if (!session) {
+    return [];
+  }
+
+  return lodash.filter(events, (event: EventRecord) => event.session_id === session.id);
 }
 
 function errorMessage({ error }: { error: unknown }): string {

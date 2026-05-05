@@ -9,6 +9,7 @@ import pytest
 
 from almanac.harness import cli, headless
 from almanac.harness.app import HarnessApp
+from almanac.harness.project_context import ProjectContext
 
 
 class FakeAgentRuntime:
@@ -121,6 +122,88 @@ def test_events_json_lines_reads_local_events(
             "type": "event",
         }
     ]
+
+
+def test_clear_removes_local_state_for_workspace(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    project_home = Path.home() / ".almanac"
+    app = HarnessApp(
+        workspace,
+        app_root=Path.cwd(),
+        project_home=project_home,
+        notify=lambda _method, _params: None,
+    )
+    app.record_event("system.ready", "Harness ready")
+    context = ProjectContext(repo_root=workspace, home=project_home)
+
+    code = cli.main(["clear", str(workspace), "--json"])
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+    assert code == 0
+    assert captured.err == ""
+    assert payload["cleared"] is True
+    assert payload["project_id"] == context.project_id
+    assert not context.project_dir.exists()
+
+
+def test_clear_refuses_active_harness_without_force(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    project_home = Path.home() / ".almanac"
+    context = ProjectContext(repo_root=workspace, home=project_home)
+
+    monkeypatch.setattr(
+        headless,
+        "read_live_session",
+        lambda _workspace: {"pid": 123, "url": "http://127.0.0.1:1", "token": "token"},
+    )
+
+    code = cli.main(["clear", str(workspace), "--json"])
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+    assert code == 1
+    assert payload["cleared"] is False
+    assert payload["reason"] == "active_harness"
+    assert context.project_dir.exists()
+
+
+def test_clear_force_terminates_active_harness_then_removes_state(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    project_home = Path.home() / ".almanac"
+    context = ProjectContext(repo_root=workspace, home=project_home)
+    terminated: list[dict[str, Any]] = []
+    session: dict[str, Any] = {"pid": 123, "url": "http://127.0.0.1:1", "token": "token"}
+
+    monkeypatch.setattr(headless, "read_live_session", lambda _workspace: session)
+    monkeypatch.setattr(
+        headless,
+        "terminate_live_session",
+        lambda *, session: terminated.append(session),
+    )
+
+    code = cli.main(["clear", str(workspace), "--json", "--force"])
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+    assert code == 0
+    assert payload["cleared"] is True
+    assert terminated == [session]
+    assert not context.project_dir.exists()
 
 
 def test_exec_uses_shared_rpc_lifecycle_and_prints_final_json(

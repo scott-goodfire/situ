@@ -44,6 +44,10 @@ run = "./commands/tui-snapshots.sh"
 description = "Start the local Almanac TUI"
 run = "./commands/start.sh"
 
+[tasks.clear]
+description = "Clear local Almanac state for a workspace"
+run = "./commands/clear.sh"
+
 [tasks.web]
 description = "Open the attach-only Almanac web monitor"
 run = "./commands/web.sh"

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Any
 
@@ -37,7 +38,7 @@ class AgentRuntime:
         secrets.apply_sdk_environment()
         secrets.require_openai_key()
 
-        self.model_name = DEFAULTS.agent_model
+        self.model_name = os.environ.get("ALMANAC_AGENT_MODEL", DEFAULTS.agent_model)
         self.agent: Agent[AlmanacToolDeps, AgentPlan] = Agent(
             self.model_name,
             deps_type=AlmanacToolDeps,
