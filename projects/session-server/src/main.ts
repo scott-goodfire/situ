@@ -24,7 +24,7 @@ type RpcRequest = {
 
 const appRoot = resolve(process.env.ALMANAC_APP_ROOT ?? repoRootFromImport());
 const workspace = resolve(process.env.ALMANAC_WORKSPACE ?? process.cwd());
-const projectId = projectIdForWorkspace(workspace);
+const projectId = projectIdForWorkspace({ value: workspace });
 const token = randomBytes(24).toString("base64url");
 const command = harnessCommand();
 const harness = StdioJsonRpcClient.spawn({
@@ -38,12 +38,14 @@ const harness = StdioJsonRpcClient.spawn({
 });
 const clients = new Set<ServerResponse>();
 
-harness.onNotification((notification) => {
-  broadcast(notification);
+harness.onNotification({
+  handler: (notification) => {
+    broadcast({ notification });
+  },
 });
 
 const server = createServer((request, response) => {
-  setCorsHeaders(response);
+  setCorsHeaders({ response });
   if (request.method === "OPTIONS") {
     response.writeHead(204);
     response.end();
@@ -104,12 +106,12 @@ server.listen(0, "127.0.0.1", () => {
     url: `http://127.0.0.1:${address.port}`,
     started_at: new Date().toISOString(),
   };
-  writeSessionRecord(record);
+  writeSessionRecord({ record });
   console.error(`Almanac session server listening on ${record.url}`);
 });
 
-process.on("SIGINT", () => shutdown(0));
-process.on("SIGTERM", () => shutdown(0));
+process.on("SIGINT", () => shutdown({ code: 0 }));
+process.on("SIGTERM", () => shutdown({ code: 0 }));
 process.on("exit", () => {
   removeSessionRecord();
 });
@@ -122,7 +124,7 @@ async function handleRpc({
   response: ServerResponse;
 }): Promise<void> {
   try {
-    const body = (await readJson(request)) as RpcRequest;
+    const body = (await readJson({ request })) as RpcRequest;
     if (!body.method) {
       json({
         response,
@@ -146,7 +148,7 @@ async function handleRpc({
       response,
       status: 500,
       payload: {
-        error: { message: errorMessage(error) },
+        error: { message: errorMessage({ error }) },
       },
     });
   }
@@ -171,7 +173,7 @@ function handleEvents({
   });
 }
 
-function broadcast(notification: JsonRpcNotification): void {
+function broadcast({ notification }: { notification: JsonRpcNotification }): void {
   const message = `event: notification\ndata: ${JSON.stringify(notification)}\n\n`;
   for (const client of clients) {
     client.write(message);
@@ -194,7 +196,7 @@ function repoRootFromImport(): string {
   return resolve(here, "../../..");
 }
 
-function projectIdForWorkspace(value: string): string {
+function projectIdForWorkspace({ value }: { value: string }): string {
   return createHash("sha256").update(resolve(value)).digest("hex").slice(0, 16);
 }
 
@@ -211,7 +213,7 @@ function almanacHome(): string {
   return resolve(homedir(), ".almanac");
 }
 
-function writeSessionRecord(record: SessionRecord): void {
+function writeSessionRecord({ record }: { record: SessionRecord }): void {
   const path = sessionPath();
   mkdirSync(dirname(path), { recursive: true });
   writeFileSync(path, `${JSON.stringify(record, null, 2)}\n`);
@@ -221,7 +223,7 @@ function removeSessionRecord(): void {
   rmSync(sessionPath(), { force: true });
 }
 
-function setCorsHeaders(response: ServerResponse): void {
+function setCorsHeaders({ response }: { response: ServerResponse }): void {
   response.setHeader("access-control-allow-origin", "*");
   response.setHeader("access-control-allow-methods", "GET, POST, OPTIONS");
   response.setHeader("access-control-allow-headers", "authorization, content-type");
@@ -235,13 +237,13 @@ function isAuthorized({
   url: URL;
 }): boolean {
   const header = request.headers.authorization ?? "";
-  const bearer = bearerToken(header);
+  const bearer = bearerToken({ header });
   const queryToken = url.searchParams.get("token") ?? "";
 
   return bearer === token || queryToken === token;
 }
 
-function bearerToken(header: string): string {
+function bearerToken({ header }: { header: string }): string {
   if (!header.startsWith("Bearer ")) {
     return "";
   }
@@ -262,10 +264,10 @@ function json({
   response.end(JSON.stringify(payload));
 }
 
-async function readJson(request: IncomingMessage): Promise<unknown> {
+async function readJson({ request }: { request: IncomingMessage }): Promise<unknown> {
   const chunks: Buffer[] = [];
   for await (const chunk of request) {
-    chunks.push(bufferFromChunk(chunk));
+    chunks.push(bufferFromChunk({ chunk }));
   }
 
   const text = Buffer.concat(chunks).toString("utf8");
@@ -276,7 +278,7 @@ async function readJson(request: IncomingMessage): Promise<unknown> {
   return JSON.parse(text);
 }
 
-function bufferFromChunk(chunk: string | Buffer): Buffer {
+function bufferFromChunk({ chunk }: { chunk: string | Buffer }): Buffer {
   if (Buffer.isBuffer(chunk)) {
     return chunk;
   }
@@ -284,7 +286,7 @@ function bufferFromChunk(chunk: string | Buffer): Buffer {
   return Buffer.from(chunk);
 }
 
-function shutdown(code: number): void {
+function shutdown({ code }: { code: number }): void {
   removeSessionRecord();
   harness.close();
   server.close(() => {
@@ -292,7 +294,7 @@ function shutdown(code: number): void {
   });
 }
 
-function errorMessage(error: unknown): string {
+function errorMessage({ error }: { error: unknown }): string {
   if (error instanceof Error) {
     return error.message;
   }

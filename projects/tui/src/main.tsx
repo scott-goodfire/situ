@@ -49,7 +49,7 @@ function appRoot(): string {
   return resolve(process.env.ALMANAC_APP_ROOT ?? repoRootFromImport());
 }
 
-function workspaceRoot(root: string): string {
+function workspaceRoot({ root }: { root: string }): string {
   return resolve(process.env.ALMANAC_WORKSPACE ?? root);
 }
 
@@ -60,7 +60,7 @@ function initialSetup({
   workspace: string;
   root: string;
 }): SetupCompleteParams {
-  const knownSignals = parseSignals(process.env.ALMANAC_KNOWN_SIGNALS);
+  const knownSignals = parseSignals({ value: process.env.ALMANAC_KNOWN_SIGNALS });
   const hasUserSetup =
     Boolean(process.env.ALMANAC_GOAL) ||
     Boolean(process.env.ALMANAC_EVALUATION_CONTEXT) ||
@@ -94,7 +94,7 @@ function initialEvaluationContext(): string {
   return "Capture evidence, signals, warnings, and findings from local experiments.";
 }
 
-function parseSignals(value: string | undefined): string[] {
+function parseSignals({ value }: { value: string | undefined }): string[] {
   if (!value) {
     return [];
   }
@@ -135,21 +135,21 @@ function App() {
   const [status, setStatus] = useState<Status>({ kind: "starting" });
 
   const runs = useMemo(
-    () => sortByCreated((runsQuery.data ?? []) as RunRecord[]),
+    () => sortByCreated({ records: (runsQuery.data ?? []) as RunRecord[] }),
     [runsQuery.data],
   );
   const experiments = useMemo(
-    () => sortByCreated((experimentsQuery.data ?? []) as ExperimentRecord[]),
+    () => sortByCreated({ records: (experimentsQuery.data ?? []) as ExperimentRecord[] }),
     [experimentsQuery.data],
   );
   const events = useMemo(
-    () => sortEvents((eventsQuery.data ?? []) as EventRecord[]),
+    () => sortEvents({ records: (eventsQuery.data ?? []) as EventRecord[] }),
     [eventsQuery.data],
   );
 
   useEffect(() => {
     const root = appRoot();
-    const workspace = workspaceRoot(root);
+    const workspace = workspaceRoot({ root });
     const setupParams = initialSetup({
       workspace,
       root,
@@ -186,7 +186,7 @@ function App() {
       }, 1400);
     };
 
-    const handleRunRecord = (run: RunRecord) => {
+    const handleRunRecord = ({ run }: { run: RunRecord }) => {
       if (!runId || run.id !== runId) {
         return;
       }
@@ -199,29 +199,31 @@ function App() {
       }
     };
 
-    unsubscribe = client.onNotification((notification) => {
-      if (notification.method !== "collections.upserted") {
-        return;
-      }
+    unsubscribe = client.onNotification({
+      handler: (notification) => {
+        if (notification.method !== "collections.upserted") {
+          return;
+        }
 
-      const upsert = notification.params as CollectionUpsertedParams | undefined;
-      if (!upsert) {
-        return;
-      }
+        const upsert = notification.params as CollectionUpsertedParams | undefined;
+        if (!upsert) {
+          return;
+        }
 
-      applyCollectionUpsert({
-        collections,
-        upsert,
-      }).catch((error: unknown) => {
-        setStatus({
-          kind: "failed",
-          message: errorMessage(error),
+        applyCollectionUpsert({
+          collections,
+          upsert,
+        }).catch((error: unknown) => {
+          setStatus({
+            kind: "failed",
+            message: errorMessage({ error }),
+          });
         });
-      });
 
-      if (upsert.collection === "runs") {
-        handleRunRecord(upsert.record as unknown as RunRecord);
-      }
+        if (upsert.collection === "runs") {
+          handleRunRecord({ run: upsert.record as unknown as RunRecord });
+        }
+      },
     });
 
     client
@@ -283,7 +285,7 @@ function App() {
       .catch((error: unknown) => {
         setStatus({
           kind: "failed",
-          message: errorMessage(error),
+          message: errorMessage({ error }),
         });
       });
 
@@ -333,7 +335,7 @@ function App() {
       <Section title="Experiments">
         {runExperiments.length === 0 && <Text dimColor>None yet</Text>}
         {runExperiments.slice(-8).map((experiment) => (
-          <Text key={experiment.id}>{formatExperiment(experiment)}</Text>
+          <Text key={experiment.id}>{formatExperiment({ experiment })}</Text>
         ))}
       </Section>
 
@@ -404,15 +406,15 @@ function experimentsForRun({
   return experiments.filter((experiment) => experiment.run_id === run.id);
 }
 
-function formatExperiment(experiment: ExperimentRecord): string {
-  const state = experimentState(experiment);
+function formatExperiment({ experiment }: { experiment: ExperimentRecord }): string {
+  const state = experimentState({ experiment });
   const components = experiment.components.join("+");
   const note = experiment.suspicious_reason ?? experiment.note;
 
   return `${experiment.id} | ${state} | ${components} | ${note || experiment.intent}`;
 }
 
-function experimentState(experiment: ExperimentRecord): string {
+function experimentState({ experiment }: { experiment: ExperimentRecord }): string {
   if (experiment.suspicious) {
     return "suspicious";
   }
@@ -420,7 +422,7 @@ function experimentState(experiment: ExperimentRecord): string {
   return experiment.status;
 }
 
-function errorMessage(error: unknown): string {
+function errorMessage({ error }: { error: unknown }): string {
   if (error instanceof Error) {
     return error.message;
   }
@@ -428,11 +430,11 @@ function errorMessage(error: unknown): string {
   return String(error);
 }
 
-function sortByCreated<T extends { created_at: string }>(records: T[]): T[] {
+function sortByCreated<T extends { created_at: string }>({ records }: { records: T[] }): T[] {
   return [...records].sort((left, right) => left.created_at.localeCompare(right.created_at));
 }
 
-function sortEvents(records: EventRecord[]): EventRecord[] {
+function sortEvents({ records }: { records: EventRecord[] }): EventRecord[] {
   return [...records].sort((left, right) => left.id - right.id);
 }
 

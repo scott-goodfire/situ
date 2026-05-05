@@ -17,17 +17,27 @@ describe("almanac collections", () => {
     const collections = createAlmanacCollections();
     const bootstrap: CollectionsBootstrapResult = {
       cursor: 2,
-      runs: [runRecord({ id: "run_0001", status: "running" })],
+      runs: [
+        runRecord({
+          overrides: { id: "run_0001", status: "running" },
+        }),
+      ],
       experiments: [
         experimentRecord({
-          id: "exp_run_0001_baseline",
-          run_id: "run_0001",
-          status: "completed",
+          overrides: {
+            id: "exp_run_0001_baseline",
+            run_id: "run_0001",
+            status: "completed",
+          },
         }),
       ],
       events: [
-        eventRecord({ id: 1, type: "run.started" }),
-        eventRecord({ id: 2, type: "experiment.completed" }),
+        eventRecord({
+          overrides: { id: 1, type: "run.started" },
+        }),
+        eventRecord({
+          overrides: { id: 2, type: "experiment.completed" },
+        }),
       ],
     };
 
@@ -52,7 +62,9 @@ describe("almanac collections", () => {
       upsert: upsert({
         collection: "runs",
         key: "run_0001",
-        record: runRecord({ id: "run_0001", status: "running" }),
+        record: runRecord({
+          overrides: { id: "run_0001", status: "running" },
+        }),
       }),
     });
     await applyCollectionUpsert({
@@ -60,7 +72,9 @@ describe("almanac collections", () => {
       upsert: upsert({
         collection: "runs",
         key: "run_0001",
-        record: runRecord({ id: "run_0001", status: "completed" }),
+        record: runRecord({
+          overrides: { id: "run_0001", status: "completed" },
+        }),
       }),
     });
     await applyCollectionUpsert({
@@ -68,7 +82,9 @@ describe("almanac collections", () => {
       upsert: upsert({
         collection: "experiments",
         key: "exp_run_0001_a",
-        record: experimentRecord({ id: "exp_run_0001_a", status: "running" }),
+        record: experimentRecord({
+          overrides: { id: "exp_run_0001_a", status: "running" },
+        }),
       }),
     });
     await applyCollectionUpsert({
@@ -76,7 +92,9 @@ describe("almanac collections", () => {
       upsert: upsert({
         collection: "events",
         key: "3",
-        record: eventRecord({ id: 3, type: "run.completed" }),
+        record: eventRecord({
+          overrides: { id: 3, type: "run.completed" },
+        }),
       }),
     });
 
@@ -104,7 +122,7 @@ function upsert({
   };
 }
 
-function runRecord(overrides: Partial<RunRecord> = {}): RunRecord {
+function runRecord({ overrides = {} }: { overrides?: Partial<RunRecord> }): RunRecord {
   return {
     id: "run_0001",
     status: "running",
@@ -114,7 +132,11 @@ function runRecord(overrides: Partial<RunRecord> = {}): RunRecord {
   };
 }
 
-function experimentRecord(overrides: Partial<ExperimentRecord> = {}): ExperimentRecord {
+function experimentRecord({
+  overrides = {},
+}: {
+  overrides?: Partial<ExperimentRecord>;
+}): ExperimentRecord {
   return {
     id: "exp_run_0001_baseline",
     run_id: "run_0001",
@@ -132,7 +154,7 @@ function experimentRecord(overrides: Partial<ExperimentRecord> = {}): Experiment
   };
 }
 
-function eventRecord(overrides: Partial<EventRecord> = {}): EventRecord {
+function eventRecord({ overrides = {} }: { overrides?: Partial<EventRecord> }): EventRecord {
   return {
     id: 1,
     run_id: "run_0001",

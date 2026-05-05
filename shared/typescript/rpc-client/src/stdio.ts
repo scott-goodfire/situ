@@ -21,21 +21,31 @@ type JsonRpcRequestOptions<TParams> = {
   params?: TParams;
 };
 
+type StdioJsonRpcClientOptions = {
+  child: ChildProcessWithoutNullStreams;
+};
+
 export class StdioJsonRpcClient {
   private nextId = 1;
   private pending = new Map<JsonRpcId, PendingRequest>();
   private notificationHandlers = new Set<NotificationHandler>();
 
-  constructor(private readonly child: ChildProcessWithoutNullStreams) {
+  private readonly child: ChildProcessWithoutNullStreams;
+
+  constructor({ child }: StdioJsonRpcClientOptions) {
+    this.child = child;
+
     const lines = createInterface({ input: child.stdout });
 
     lines.on("line", (line) => {
-      this.handleLine(line);
+      this.handleLine({ line });
     });
 
     child.on("exit", (code, signal) => {
       const reason = processExitReason({ code, signal });
-      this.rejectAll(new Error(`JSON-RPC process exited with ${reason}`));
+      this.rejectAll({
+        error: new Error(`JSON-RPC process exited with ${reason}`),
+      });
     });
   }
 
@@ -50,7 +60,7 @@ export class StdioJsonRpcClient {
       process.stderr.write(chunk);
     });
 
-    return new StdioJsonRpcClient(child);
+    return new StdioJsonRpcClient({ child });
   }
 
   request<TResult, TParams = unknown>({
@@ -82,7 +92,7 @@ export class StdioJsonRpcClient {
     });
   }
 
-  onNotification(handler: NotificationHandler): () => void {
+  onNotification({ handler }: { handler: NotificationHandler }): () => void {
     this.notificationHandlers.add(handler);
     return () => {
       this.notificationHandlers.delete(handler);
@@ -94,12 +104,14 @@ export class StdioJsonRpcClient {
     this.child.kill();
   }
 
-  private handleLine(line: string): void {
+  private handleLine({ line }: { line: string }): void {
     let message: JsonRpcResponse | JsonRpcNotification;
     try {
       message = JSON.parse(line) as JsonRpcResponse | JsonRpcNotification;
     } catch (error) {
-      this.rejectAll(new Error(`invalid JSON-RPC response: ${String(error)}`));
+      this.rejectAll({
+        error: new Error(`invalid JSON-RPC response: ${String(error)}`),
+      });
       return;
     }
 
@@ -127,7 +139,7 @@ export class StdioJsonRpcClient {
     pending.resolve(response.result);
   }
 
-  private rejectAll(error: Error): void {
+  private rejectAll({ error }: { error: Error }): void {
     for (const request of this.pending.values()) {
       request.reject(error);
     }

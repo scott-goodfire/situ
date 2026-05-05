@@ -58,7 +58,7 @@ export class HttpJsonRpcClient {
     return payload.result;
   }
 
-  onNotification(handler: NotificationHandler): () => void {
+  onNotification({ handler }: { handler: NotificationHandler }): () => void {
     this.notificationHandlers.add(handler);
     if (!this.notificationAbort) {
       this.startNotifications();
@@ -90,12 +90,15 @@ export class HttpJsonRpcClient {
     const url = new URL("/events", this.baseUrl);
     url.searchParams.set("token", this.token);
 
-    void this.readEventStream(url, abort.signal).catch((error: unknown) => {
+    void this.readEventStream({
+      url,
+      signal: abort.signal,
+    }).catch((error: unknown) => {
       if (abort.signal.aborted) {
         return;
       }
 
-      const message = errorMessage(error);
+      const message = errorMessage({ error });
 
       for (const handler of this.notificationHandlers) {
         handler({
@@ -106,7 +109,13 @@ export class HttpJsonRpcClient {
     });
   }
 
-  private async readEventStream(url: URL, signal: AbortSignal): Promise<void> {
+  private async readEventStream({
+    url,
+    signal,
+  }: {
+    url: URL;
+    signal: AbortSignal;
+  }): Promise<void> {
     const response = await fetch(url, { signal });
     if (!response.ok || !response.body) {
       throw new Error(`event stream failed with HTTP ${response.status}`);
@@ -127,13 +136,13 @@ export class HttpJsonRpcClient {
       while (splitIndex !== -1) {
         const rawEvent = buffer.slice(0, splitIndex);
         buffer = buffer.slice(splitIndex + 2);
-        this.dispatchRawEvent(rawEvent);
+        this.dispatchRawEvent({ rawEvent });
         splitIndex = buffer.indexOf("\n\n");
       }
     }
   }
 
-  private dispatchRawEvent(rawEvent: string): void {
+  private dispatchRawEvent({ rawEvent }: { rawEvent: string }): void {
     const dataLines = rawEvent
       .split("\n")
       .filter((line) => line.startsWith("data:"))
@@ -149,7 +158,7 @@ export class HttpJsonRpcClient {
   }
 }
 
-function errorMessage(error: unknown): string {
+function errorMessage({ error }: { error: unknown }): string {
   if (error instanceof Error) {
     return error.message;
   }

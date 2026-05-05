@@ -137,17 +137,17 @@ async function upsertRecord<T extends object>({
 
   if (collection.has(key)) {
     const transaction = collection.update(key, (draft) => {
-        Object.assign(draft, record);
-      });
+      Object.assign(draft, record);
+    });
 
-    await persist(transaction);
+    await persist({ transaction });
     return;
   }
 
   const transaction = collection.insert(record);
-  await persist(transaction);
+  await persist({ transaction });
 }
 
-async function persist(transaction: Transaction): Promise<void> {
+async function persist({ transaction }: { transaction: Transaction }): Promise<void> {
   await transaction.isPersisted.promise;
 }

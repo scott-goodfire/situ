@@ -1,7 +1,8 @@
 # AI Evals Strategy
 
 This repo should use AI evals to improve Almanac's prompts, tool-calling
-behavior, observability, and trust checks over time.
+behavior, observability, and trust checks over time. Unlike unit tests, AI evals
+should run real LLM calls against controlled fixture worlds.
 
 The eval layer should stay close to the product thesis:
 
@@ -28,12 +29,18 @@ the suites when the case needs a mocked project, worker, or external system.
 Follow the module organization policy: small ownership folders are preferred
 over broad files like `models.py`, `evaluators.py`, or mixed world/suite files.
 
+The eval/test boundary is defined by
+[../../policies/0014-real-llm-evals/POLICY.md](../../policies/0014-real-llm-evals/POLICY.md):
+tests are deterministic, while AI evals exercise live model behavior.
+
 ## Harness Practices
 
 Follow Pydantic Evals and Logfire defaults where they fit:
 
 - Configure Logfire before eval discovery and task execution.
 - Use `Dataset.evaluate_sync` for the local synchronous runner.
+- Require real model credentials for AI eval execution; missing credentials
+  should fail clearly instead of falling back to scripted behavior.
 - Record numeric counters with `increment_eval_metric`.
 - Record small case-level context with `set_eval_attribute`; avoid large raw
   blobs in attributes.

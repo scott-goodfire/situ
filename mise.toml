@@ -36,6 +36,14 @@ run = "./commands/web.sh"
 description = "Open the attach-only Almanac web monitor"
 run = "./commands/web.sh"
 
+[tasks.storybook]
+description = "Run Storybook for the Almanac web UI"
+run = "./commands/storybook.sh"
+
+[tasks."storybook:build"]
+description = "Build Storybook for the Almanac web UI"
+run = "./commands/storybook-build.sh"
+
 [tasks."dev:harness"]
 description = "Run the Python harness JSON-RPC stdio server"
 run = "./commands/dev-harness.sh"

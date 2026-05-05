@@ -21,6 +21,7 @@ or agent/worker flows.
 - [0011-repository-layer/POLICY.md](./0011-repository-layer/POLICY.md) - keep durable state access repository-owned and record-backed
 - [0012-module-organization/POLICY.md](./0012-module-organization/POLICY.md) - prefer flat entrypoints and nested ownership folders for durable concepts
 - [0013-frontend-code-style/POLICY.md](./0013-frontend-code-style/POLICY.md) - prefer explicit, spacious, kebab-cased frontend code
+- [0014-real-llm-evals/POLICY.md](./0014-real-llm-evals/POLICY.md) - keep tests deterministic and AI evals backed by real model calls
 
 ## Review Style
 
