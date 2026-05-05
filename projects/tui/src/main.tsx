@@ -53,7 +53,13 @@ function workspaceRoot(root: string): string {
   return resolve(process.env.ALMANAC_WORKSPACE ?? root);
 }
 
-function initialSetup(workspace: string, root: string): SetupCompleteParams {
+function initialSetup({
+  workspace,
+  root,
+}: {
+  workspace: string;
+  root: string;
+}): SetupCompleteParams {
   const knownSignals = parseSignals(process.env.ALMANAC_KNOWN_SIGNALS);
   const hasUserSetup =
     Boolean(process.env.ALMANAC_GOAL) ||
@@ -68,16 +74,24 @@ function initialSetup(workspace: string, root: string): SetupCompleteParams {
 
   return {
     goal: process.env.ALMANAC_GOAL ?? `Observe autoresearch experiments in ${workspace}`,
-    evaluation_context:
-      process.env.ALMANAC_EVALUATION_CONTEXT ??
-      (process.env.ALMANAC_EVAL_COMMAND
-        ? `Run ${process.env.ALMANAC_EVAL_COMMAND} and capture its JSON signals.`
-        : "Capture evidence, signals, warnings, and findings from local experiments."),
+    evaluation_context: initialEvaluationContext(),
     known_signals: knownSignals,
     experiment_scope:
       process.env.ALMANAC_EXPERIMENT_SCOPE ??
       "Run the current local worker path and compare evidence across baseline, individual changes, and combinations.",
   };
+}
+
+function initialEvaluationContext(): string {
+  if (process.env.ALMANAC_EVALUATION_CONTEXT) {
+    return process.env.ALMANAC_EVALUATION_CONTEXT;
+  }
+
+  if (process.env.ALMANAC_EVAL_COMMAND) {
+    return `Run ${process.env.ALMANAC_EVAL_COMMAND} and capture its JSON signals.`;
+  }
+
+  return "Capture evidence, signals, warnings, and findings from local experiments.";
 }
 
 function parseSignals(value: string | undefined): string[] {
@@ -92,7 +106,12 @@ function parseSignals(value: string | undefined): string[] {
 
 function maxExperiments(): number {
   const parsed = Number.parseInt(process.env.ALMANAC_MAX_EXPERIMENTS ?? "5", 10);
-  return Number.isFinite(parsed) && parsed >= 0 ? parsed : 5;
+
+  if (Number.isFinite(parsed) && parsed >= 0) {
+    return parsed;
+  }
+
+  return 5;
 }
 
 function App() {
@@ -131,7 +150,10 @@ function App() {
   useEffect(() => {
     const root = appRoot();
     const workspace = workspaceRoot(root);
-    const setupParams = initialSetup(workspace, root);
+    const setupParams = initialSetup({
+      workspace,
+      root,
+    });
     const sessionUrl = process.env.ALMANAC_SESSION_URL;
     const sessionToken = process.env.ALMANAC_SESSION_TOKEN;
 
@@ -143,7 +165,11 @@ function App() {
       return;
     }
 
-    const client = new HttpJsonRpcClient(sessionUrl, sessionToken);
+    const client = new HttpJsonRpcClient({
+      baseUrl: sessionUrl,
+      token: sessionToken,
+    });
+
     let runId: string | undefined;
     let closeScheduled = false;
     let unsubscribe = () => {};
@@ -177,45 +203,67 @@ function App() {
       if (notification.method !== "collections.upserted") {
         return;
       }
+
       const upsert = notification.params as CollectionUpsertedParams | undefined;
       if (!upsert) {
         return;
       }
-      applyCollectionUpsert(collections, upsert).catch((error: unknown) => {
+
+      applyCollectionUpsert({
+        collections,
+        upsert,
+      }).catch((error: unknown) => {
         setStatus({
           kind: "failed",
-          message: error instanceof Error ? error.message : String(error),
+          message: errorMessage(error),
         });
       });
+
       if (upsert.collection === "runs") {
         handleRunRecord(upsert.record as unknown as RunRecord);
       }
     });
 
     client
-      .request<SetupGetResult, SetupGetParams>("setup.get", {})
+      .request<SetupGetResult, SetupGetParams>({
+        method: "setup.get",
+        params: {},
+      })
       .then((setup) => {
         if (setup.configured) {
           return setup;
         }
+
         return client
-          .request<SetupCompleteResult, SetupCompleteParams>("setup.complete", setupParams)
-          .then(() => client.request<SetupGetResult, SetupGetParams>("setup.get", {}));
+          .request<SetupCompleteResult, SetupCompleteParams>({
+            method: "setup.complete",
+            params: setupParams,
+          })
+          .then(() =>
+            client.request<SetupGetResult, SetupGetParams>({
+              method: "setup.get",
+              params: {},
+            }),
+          );
       })
       .then(() =>
-        client.request<CollectionsSubscribeResult, CollectionsSubscribeParams>(
-          "collections.subscribe",
-          {},
-        ),
+        client.request<CollectionsSubscribeResult, CollectionsSubscribeParams>({
+          method: "collections.subscribe",
+          params: {},
+        }),
       )
       .then(() =>
-        client.request<CollectionsBootstrapResult, CollectionsBootstrapParams>(
-          "collections.bootstrap",
-          {},
-        ),
+        client.request<CollectionsBootstrapResult, CollectionsBootstrapParams>({
+          method: "collections.bootstrap",
+          params: {},
+        }),
       )
       .then(async (bootstrap) => {
-        await applyBootstrap(collections, bootstrap);
+        await applyBootstrap({
+          collections,
+          bootstrap,
+        });
+
         const activeRun = bootstrap.runs.find((run) => run.status === "running");
         if (activeRun) {
           runId = activeRun.id;
@@ -223,8 +271,11 @@ function App() {
           return;
         }
 
-        const result = await client.request<RunStartResult, RunStartParams>("run.start", {
-          max_experiments: maxExperiments(),
+        const result = await client.request<RunStartResult, RunStartParams>({
+          method: "run.start",
+          params: {
+            max_experiments: maxExperiments(),
+          },
         });
         runId = result.run_id;
         setStatus({ kind: "running", runId });
@@ -232,7 +283,7 @@ function App() {
       .catch((error: unknown) => {
         setStatus({
           kind: "failed",
-          message: error instanceof Error ? error.message : String(error),
+          message: errorMessage(error),
         });
       });
 
@@ -243,10 +294,19 @@ function App() {
   }, [collections, exit]);
 
   const latestRun = runs.at(-1);
-  const runExperiments = latestRun
-    ? experiments.filter((experiment) => experiment.run_id === latestRun.id)
-    : [];
+  const runExperiments = experimentsForRun({
+    experiments,
+    run: latestRun,
+  });
   const activeExperiment = runExperiments.find((experiment) => experiment.status === "running");
+  const runText = runLabel({
+    run: latestRun,
+    experimentCount: runExperiments.length,
+  });
+  const nowText = nowLabel({
+    activeExperiment,
+    latestRun,
+  });
 
   return (
     <Box flexDirection="column" gap={1}>
@@ -263,17 +323,11 @@ function App() {
       </Box>
 
       <Section title="Run">
-        <Text>{latestRun ? formatRun(latestRun, runExperiments.length) : "No run yet"}</Text>
+        <Text>{runText}</Text>
       </Section>
 
       <Section title="Now">
-        <Text>
-          {activeExperiment
-            ? `${activeExperiment.id} | ${activeExperiment.intent}`
-            : latestRun?.status === "completed"
-              ? "Run completed"
-              : "Waiting for experiment"}
-        </Text>
+        <Text>{nowText}</Text>
       </Section>
 
       <Section title="Experiments">
@@ -304,15 +358,74 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-function formatRun(run: RunRecord, experimentCount: number): string {
+function runLabel({
+  run,
+  experimentCount,
+}: {
+  run: RunRecord | undefined;
+  experimentCount: number;
+}): string {
+  if (!run) {
+    return "No run yet";
+  }
+
   return `${run.id} | ${run.status} | experiments ${experimentCount}`;
 }
 
+function nowLabel({
+  activeExperiment,
+  latestRun,
+}: {
+  activeExperiment: ExperimentRecord | undefined;
+  latestRun: RunRecord | undefined;
+}): string {
+  if (activeExperiment) {
+    return `${activeExperiment.id} | ${activeExperiment.intent}`;
+  }
+
+  if (latestRun?.status === "completed") {
+    return "Run completed";
+  }
+
+  return "Waiting for experiment";
+}
+
+function experimentsForRun({
+  experiments,
+  run,
+}: {
+  experiments: ExperimentRecord[];
+  run: RunRecord | undefined;
+}): ExperimentRecord[] {
+  if (!run) {
+    return [];
+  }
+
+  return experiments.filter((experiment) => experiment.run_id === run.id);
+}
+
 function formatExperiment(experiment: ExperimentRecord): string {
-  const state = experiment.suspicious ? "suspicious" : experiment.status;
+  const state = experimentState(experiment);
   const components = experiment.components.join("+");
   const note = experiment.suspicious_reason ?? experiment.note;
+
   return `${experiment.id} | ${state} | ${components} | ${note || experiment.intent}`;
+}
+
+function experimentState(experiment: ExperimentRecord): string {
+  if (experiment.suspicious) {
+    return "suspicious";
+  }
+
+  return experiment.status;
+}
+
+function errorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return String(error);
 }
 
 function sortByCreated<T extends { created_at: string }>(records: T[]): T[] {

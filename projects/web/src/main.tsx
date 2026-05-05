@@ -67,19 +67,28 @@ function App() {
       return;
     }
 
-    const client = new HttpJsonRpcClient(SESSION_URL, SESSION_TOKEN);
+    const client = new HttpJsonRpcClient({
+      baseUrl: SESSION_URL,
+      token: SESSION_TOKEN,
+    });
+
     const unsubscribe = client.onNotification((notification) => {
       if (notification.method !== "collections.upserted") {
         return;
       }
+
       const upsert = notification.params as CollectionUpsertedParams | undefined;
       if (!upsert) {
         return;
       }
-      applyCollectionUpsert(collections, upsert).catch((error: unknown) => {
+
+      applyCollectionUpsert({
+        collections,
+        upsert,
+      }).catch((error: unknown) => {
         setConnection({
           kind: "failed",
-          message: error instanceof Error ? error.message : String(error),
+          message: errorMessage(error),
         });
       });
     });
@@ -91,33 +100,45 @@ function App() {
           setConnection({ kind: "missing" });
           return undefined;
         }
-        return client.request<CollectionsSubscribeResult, CollectionsSubscribeParams>(
-          "collections.subscribe",
-          {},
-        );
+
+        return client.request<CollectionsSubscribeResult, CollectionsSubscribeParams>({
+          method: "collections.subscribe",
+          params: {},
+        });
       })
       .then((subscribed) => {
         if (!subscribed) {
           return undefined;
         }
-        return client.request<CollectionsBootstrapResult, CollectionsBootstrapParams>(
-          "collections.bootstrap",
-          {},
-        );
+
+        return client.request<CollectionsBootstrapResult, CollectionsBootstrapParams>({
+          method: "collections.bootstrap",
+          params: {},
+        });
       })
       .then((bootstrap) => {
         if (!bootstrap) {
           return;
         }
-        return applyBootstrap(collections, bootstrap);
+
+        return applyBootstrap({
+          collections,
+          bootstrap,
+        });
       })
       .then(() => {
-        setConnection((current) => (current.kind === "checking" ? { kind: "connected" } : current));
+        setConnection((current) => {
+          if (current.kind !== "checking") {
+            return current;
+          }
+
+          return { kind: "connected" };
+        });
       })
       .catch((error: unknown) => {
         setConnection({
           kind: "failed",
-          message: error instanceof Error ? error.message : String(error),
+          message: errorMessage(error),
         });
       });
 
@@ -128,10 +149,19 @@ function App() {
   }, [collections]);
 
   const latestRun = runs.at(-1);
-  const runExperiments = latestRun
-    ? experiments.filter((experiment) => experiment.run_id === latestRun.id)
-    : [];
+  const runExperiments = experimentsForRun({
+    experiments,
+    run: latestRun,
+  });
   const activeExperiment = runExperiments.find((experiment) => experiment.status === "running");
+  const runText = runLabel({
+    run: latestRun,
+    experimentCount: runExperiments.length,
+  });
+  const nowText = nowLabel({
+    activeExperiment,
+    latestRun,
+  });
 
   if (connection.kind === "missing") {
     return <NoSession />;
@@ -151,18 +181,12 @@ function App() {
 
       <section className="band">
         <h2>Run</h2>
-        <p>{latestRun ? formatRun(latestRun, runExperiments.length) : "No run yet"}</p>
+        <p>{runText}</p>
       </section>
 
       <section className="band">
         <h2>Now</h2>
-        <p>
-          {activeExperiment
-            ? `${activeExperiment.id} | ${activeExperiment.intent}`
-            : latestRun?.status === "completed"
-              ? "Run completed"
-              : "Waiting for experiment"}
-        </p>
+        <p>{nowText}</p>
       </section>
 
       <section className="band">
@@ -172,7 +196,7 @@ function App() {
           {runExperiments.slice(-12).map((experiment) => (
             <div className="row" key={experiment.id}>
               <span>{experiment.id}</span>
-              <span>{experiment.suspicious ? "suspicious" : experiment.status}</span>
+              <span>{experimentState(experiment)}</span>
               <span>{experiment.components.join("+")}</span>
               <span>{experiment.suspicious_reason ?? (experiment.note || experiment.intent)}</span>
             </div>
@@ -217,19 +241,87 @@ function NoSession() {
 }
 
 function ConnectionBadge({ state }: { state: ConnectionState }) {
-  const label =
-    state.kind === "connected"
-      ? "Connected"
-      : state.kind === "checking"
-        ? "Connecting"
-        : state.kind === "failed"
-          ? "Error"
-          : "No session";
+  const label = connectionLabel(state);
+
   return <span className={`badge ${state.kind}`}>{label}</span>;
 }
 
-function formatRun(run: RunRecord, experimentCount: number): string {
+function connectionLabel(state: ConnectionState): string {
+  if (state.kind === "connected") {
+    return "Connected";
+  }
+
+  if (state.kind === "checking") {
+    return "Connecting";
+  }
+
+  if (state.kind === "failed") {
+    return "Error";
+  }
+
+  return "No session";
+}
+
+function runLabel({
+  run,
+  experimentCount,
+}: {
+  run: RunRecord | undefined;
+  experimentCount: number;
+}): string {
+  if (!run) {
+    return "No run yet";
+  }
+
   return `${run.id} | ${run.status} | experiments ${experimentCount}`;
+}
+
+function nowLabel({
+  activeExperiment,
+  latestRun,
+}: {
+  activeExperiment: ExperimentRecord | undefined;
+  latestRun: RunRecord | undefined;
+}): string {
+  if (activeExperiment) {
+    return `${activeExperiment.id} | ${activeExperiment.intent}`;
+  }
+
+  if (latestRun?.status === "completed") {
+    return "Run completed";
+  }
+
+  return "Waiting for experiment";
+}
+
+function experimentsForRun({
+  experiments,
+  run,
+}: {
+  experiments: ExperimentRecord[];
+  run: RunRecord | undefined;
+}): ExperimentRecord[] {
+  if (!run) {
+    return [];
+  }
+
+  return experiments.filter((experiment) => experiment.run_id === run.id);
+}
+
+function experimentState(experiment: ExperimentRecord): string {
+  if (experiment.suspicious) {
+    return "suspicious";
+  }
+
+  return experiment.status;
+}
+
+function errorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return String(error);
 }
 
 function sortByCreated<T extends { created_at: string }>(records: T[]): T[] {

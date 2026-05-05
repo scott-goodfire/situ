@@ -5,7 +5,7 @@ import sqlite3
 from datetime import UTC, datetime
 from typing import Any
 
-from .records import (
+from ...records import (
     AgentMessageHistoryRecord,
     EventRecord,
     EvidenceRecord,

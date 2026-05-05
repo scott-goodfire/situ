@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from ..commands import AppendAgentMessageHistory
-from ..records import AgentMessageHistoryRecord
-from ..serialization import agent_message_history_row, json_dumps, json_loads, utc_now
-from .base import BaseRepository
+from ...core.db.serialization import agent_message_history_row, json_dumps, json_loads, utc_now
+from ...records import AgentMessageHistoryRecord
+from ..base import BaseRepository
+from .agent_message_history_commands import AppendAgentMessageHistory
 
 
 class AgentMessageHistoryRepository(BaseRepository):

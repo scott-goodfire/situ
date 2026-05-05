@@ -7,6 +7,7 @@ from pydantic_evals.reporting import EvaluationReport
 
 from evals.harness import BaseAlmanacEvalGroup
 from evals.runner.git import current_git_sha
+from evals.runner.retries import build_retry_config
 
 
 def run_evals(
@@ -14,6 +15,8 @@ def run_evals(
     *,
     case_filter: str | None,
     max_concurrency: int,
+    task_retries: int,
+    evaluator_retries: int,
 ) -> tuple[list[tuple[str, EvaluationReport[Any, Any, Any]]], list[str]]:
     session_id = str(uuid4())[:8]
     git_sha = current_git_sha()
@@ -37,6 +40,8 @@ def run_evals(
                 name=experiment_name,
                 max_concurrency=max_concurrency,
                 progress=False,
+                retry_task=build_retry_config(task_retries),
+                retry_evaluators=build_retry_config(evaluator_retries),
                 metadata={
                     "suite": eval_instance.suite_name,
                     "world": eval_instance.world_name,

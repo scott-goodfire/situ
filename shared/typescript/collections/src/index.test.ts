@@ -31,7 +31,10 @@ describe("almanac collections", () => {
       ],
     };
 
-    await applyBootstrap(collections, bootstrap);
+    await applyBootstrap({
+      collections,
+      bootstrap,
+    });
 
     expect(collections.runs.get("run_0001")?.status).toBe("running");
     expect(collections.experiments.get("exp_run_0001_baseline")?.status).toBe(
@@ -44,26 +47,38 @@ describe("almanac collections", () => {
   test("applies collection upserts as inserts and updates", async () => {
     const collections = createAlmanacCollections();
 
-    await applyCollectionUpsert(
+    await applyCollectionUpsert({
       collections,
-      upsert("runs", "run_0001", runRecord({ id: "run_0001", status: "running" })),
-    );
-    await applyCollectionUpsert(
+      upsert: upsert({
+        collection: "runs",
+        key: "run_0001",
+        record: runRecord({ id: "run_0001", status: "running" }),
+      }),
+    });
+    await applyCollectionUpsert({
       collections,
-      upsert("runs", "run_0001", runRecord({ id: "run_0001", status: "completed" })),
-    );
-    await applyCollectionUpsert(
+      upsert: upsert({
+        collection: "runs",
+        key: "run_0001",
+        record: runRecord({ id: "run_0001", status: "completed" }),
+      }),
+    });
+    await applyCollectionUpsert({
       collections,
-      upsert(
-        "experiments",
-        "exp_run_0001_a",
-        experimentRecord({ id: "exp_run_0001_a", status: "running" }),
-      ),
-    );
-    await applyCollectionUpsert(
+      upsert: upsert({
+        collection: "experiments",
+        key: "exp_run_0001_a",
+        record: experimentRecord({ id: "exp_run_0001_a", status: "running" }),
+      }),
+    });
+    await applyCollectionUpsert({
       collections,
-      upsert("events", "3", eventRecord({ id: 3, type: "run.completed" })),
-    );
+      upsert: upsert({
+        collection: "events",
+        key: "3",
+        record: eventRecord({ id: 3, type: "run.completed" }),
+      }),
+    });
 
     expect(collections.runs.size).toBe(1);
     expect(collections.runs.get("run_0001")?.status).toBe("completed");
@@ -72,11 +87,15 @@ describe("almanac collections", () => {
   });
 });
 
-function upsert(
-  collection: CollectionUpsertedParams["collection"],
-  key: string,
-  record: RunRecord | ExperimentRecord | EventRecord,
-): CollectionUpsertedParams {
+function upsert({
+  collection,
+  key,
+  record,
+}: {
+  collection: CollectionUpsertedParams["collection"];
+  key: string;
+  record: RunRecord | ExperimentRecord | EventRecord;
+}): CollectionUpsertedParams {
   return {
     cursor: 1,
     collection,

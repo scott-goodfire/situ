@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict
 
-from ..database import Database
+from ...core.db import Database
 
 
 class BaseRepository(BaseModel):

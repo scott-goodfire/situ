@@ -28,6 +28,24 @@ the suites when the case needs a mocked project, worker, or external system.
 Follow the module organization policy: small ownership folders are preferred
 over broad files like `models.py`, `evaluators.py`, or mixed world/suite files.
 
+## Harness Practices
+
+Follow Pydantic Evals and Logfire defaults where they fit:
+
+- Configure Logfire before eval discovery and task execution.
+- Use `Dataset.evaluate_sync` for the local synchronous runner.
+- Record numeric counters with `increment_eval_metric`.
+- Record small case-level context with `set_eval_attribute`; avoid large raw
+  blobs in attributes.
+- Prefer deterministic evaluators first.
+- Add span-based evaluators when the behavior depends on tool calls or execution
+  path, so eval assertions match production observability.
+- Use native Pydantic Evals retry knobs for transient LLM/tool failures.
+- Keep `StandardAlmanacJudge` available for semantic checks, but do not make LLM
+  judges the default for mechanical behavior.
+- For Pydantic AI agents, capture tool calls with hook/capability utilities
+  rather than ad hoc wrappers.
+
 ## What To Evaluate
 
 Prefer behavioral evals over schema evals.

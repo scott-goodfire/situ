@@ -5,7 +5,8 @@ from typing import Any
 
 import pytest
 
-from almanac.harness.db import Database, Repositories
+from almanac.harness.core.db import Database
+from almanac.harness.repositories import Repositories
 from almanac.harness.tools.common import AlmanacToolDeps, invoke_almanac_tool_sync
 from almanac.harness.tools.findings import RecordFindingTool
 from almanac.harness.tools.run_context import GetRunContextTool

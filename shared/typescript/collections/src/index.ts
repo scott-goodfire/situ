@@ -20,6 +20,27 @@ export type AlmanacCollections = {
   events: Collection<EventRecord, string>;
 };
 
+type ApplyBootstrapOptions = {
+  collections: AlmanacCollections;
+  bootstrap: CollectionsBootstrapResult;
+};
+
+type ApplyCollectionUpsertOptions = {
+  collections: AlmanacCollections;
+  upsert: CollectionUpsertedParams;
+};
+
+type HydrateCollectionOptions<T extends object> = {
+  collection: Collection<T, string>;
+  records: T[];
+};
+
+type UpsertRecordOptions<T extends object> = {
+  collection: Collection<T, string>;
+  key: string;
+  record: T;
+};
+
 export function createAlmanacCollections(): AlmanacCollections {
   return {
     runs: createCollection(
@@ -43,59 +64,87 @@ export function createAlmanacCollections(): AlmanacCollections {
   };
 }
 
-export async function applyBootstrap(
-  collections: AlmanacCollections,
-  bootstrap: CollectionsBootstrapResult,
-): Promise<void> {
+export async function applyBootstrap({
+  collections,
+  bootstrap,
+}: ApplyBootstrapOptions): Promise<void> {
   await Promise.all([
-    hydrateCollection(collections.runs, bootstrap.runs),
-    hydrateCollection(collections.experiments, bootstrap.experiments),
-    hydrateCollection(collections.events, bootstrap.events),
+    hydrateCollection({
+      collection: collections.runs,
+      records: bootstrap.runs,
+    }),
+    hydrateCollection({
+      collection: collections.experiments,
+      records: bootstrap.experiments,
+    }),
+    hydrateCollection({
+      collection: collections.events,
+      records: bootstrap.events,
+    }),
   ]);
 }
 
-export async function applyCollectionUpsert(
-  collections: AlmanacCollections,
-  upsert: CollectionUpsertedParams,
-): Promise<void> {
+export async function applyCollectionUpsert({
+  collections,
+  upsert,
+}: ApplyCollectionUpsertOptions): Promise<void> {
   if (upsert.collection === "runs") {
-    await upsertRecord(collections.runs, upsert.key, upsert.record as unknown as RunRecord);
+    await upsertRecord({
+      collection: collections.runs,
+      key: upsert.key,
+      record: upsert.record as unknown as RunRecord,
+    });
     return;
   }
 
   if (upsert.collection === "experiments") {
-    await upsertRecord(
-      collections.experiments,
-      upsert.key,
-      upsert.record as unknown as ExperimentRecord,
-    );
+    await upsertRecord({
+      collection: collections.experiments,
+      key: upsert.key,
+      record: upsert.record as unknown as ExperimentRecord,
+    });
     return;
   }
 
-  await upsertRecord(collections.events, upsert.key, upsert.record as unknown as EventRecord);
+  await upsertRecord({
+    collection: collections.events,
+    key: upsert.key,
+    record: upsert.record as unknown as EventRecord,
+  });
 }
 
-async function hydrateCollection<T extends object>(
-  collection: Collection<T, string>,
-  records: T[],
-): Promise<void> {
+async function hydrateCollection<T extends object>({
+  collection,
+  records,
+}: HydrateCollectionOptions<T>): Promise<void> {
   await collection.preload();
+
   for (const record of records) {
-    await upsertRecord(collection, collection.config.getKey(record), record);
+    await upsertRecord({
+      collection,
+      key: collection.config.getKey(record),
+      record,
+    });
   }
 }
 
-async function upsertRecord<T extends object>(
-  collection: Collection<T, string>,
-  key: string,
-  record: T,
-): Promise<void> {
+async function upsertRecord<T extends object>({
+  collection,
+  key,
+  record,
+}: UpsertRecordOptions<T>): Promise<void> {
   await collection.preload();
-  const transaction = collection.has(key)
-    ? collection.update(key, (draft) => {
+
+  if (collection.has(key)) {
+    const transaction = collection.update(key, (draft) => {
         Object.assign(draft, record);
-      })
-    : collection.insert(record);
+      });
+
+    await persist(transaction);
+    return;
+  }
+
+  const transaction = collection.insert(record);
   await persist(transaction);
 }
 

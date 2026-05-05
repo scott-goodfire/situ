@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from ..commands import CreateRun, UpdateRunStatus
-from ..records import RunRecord
-from ..serialization import run_row, utc_now
-from .base import BaseRepository
+from ...core.db.serialization import run_row, utc_now
+from ...records import RunRecord
+from ..base import BaseRepository
+from .runs_commands import CreateRun, UpdateRunStatus
 
 
 class RunsRepository(BaseRepository):

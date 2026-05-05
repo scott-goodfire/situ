@@ -21,6 +21,12 @@ Run one case:
 ./commands/ai-evals.sh --case suspicious
 ```
 
+Retry transient task or evaluator failures:
+
+```bash
+./commands/ai-evals.sh --task-retries 2 --evaluator-retries 1
+```
+
 Emit JSON:
 
 ```bash
@@ -30,13 +36,18 @@ Emit JSON:
 When `ALMANAC_LOGFIRE_TOKEN` is set, eval experiments are sent to Logfire with
 `service_name=almanac-ai-evals`.
 
+Set `ALMANAC_LOGFIRE_EVALS_BASE_URL` to print direct experiment links in the
+terminal and JSON output.
+
 ## Layout
 
 ```text
 evals/
   harness/
+    capture/tool_call_capture/capability.py
     eval_groups/base_almanac_eval_group/eval_group.py
     evaluators/tool_was_called/evaluator.py
+    judges/standard_almanac_judge/judge.py
     logfire/configure_eval_observability/configure.py
     models/almanac_eval_output/model.py
   runner/

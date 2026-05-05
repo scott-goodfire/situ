@@ -2,16 +2,16 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict
 
-from .database import Database
-from .repos.agent_message_history import AgentMessageHistoryRepository
-from .repos.events import EventsRepository
-from .repos.evidence import EvidenceRepository
-from .repos.experiments import ExperimentsRepository
-from .repos.findings import FindingsRepository
-from .repos.project_config import ProjectConfigRepository
-from .repos.runs import RunsRepository
-from .repos.snapshots import SnapshotsRepository
-from .repos.warnings import WarningsRepository
+from ..core.db import Database
+from .agent_message_history import AgentMessageHistoryRepository
+from .events import EventsRepository
+from .evidence import EvidenceRepository
+from .experiments import ExperimentsRepository
+from .findings import FindingsRepository
+from .project_config import ProjectConfigRepository
+from .runs import RunsRepository
+from .snapshots import SnapshotsRepository
+from .warnings import WarningsRepository
 
 
 class Repositories(BaseModel):

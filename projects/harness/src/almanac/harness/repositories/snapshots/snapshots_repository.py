@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from ..serialization import (
+from ...core.db.serialization import (
     config_row,
     event_row,
     evidence_row,
@@ -11,7 +11,7 @@ from ..serialization import (
     run_row,
     warning_row,
 )
-from .base import BaseRepository
+from ..base import BaseRepository
 
 
 class SnapshotsRepository(BaseRepository):

@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from ..commands import AddEvent
-from ..records import EventRecord
-from ..serialization import event_row, json_dumps, utc_now
-from .base import BaseRepository
+from ...core.db.serialization import event_row, json_dumps, utc_now
+from ...records import EventRecord
+from ..base import BaseRepository
+from .events_commands import AddEvent
 
 
 class EventsRepository(BaseRepository):

@@ -9,9 +9,9 @@ from pydantic_ai import Agent
 from pydantic_ai.durable_exec.dbos import DBOSAgent
 from pydantic_ai.models.test import TestModel
 
-from .db import Repositories
 from .dbos_runtime import configure_dbos, launch_dbos
 from .observability import configure_observability, span
+from .repositories import Repositories
 
 
 DEFAULT_OPENAI_MODEL = "openai:gpt-5.5"

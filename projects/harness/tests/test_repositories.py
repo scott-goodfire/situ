@@ -4,8 +4,9 @@ from pathlib import Path
 
 import pytest
 from almanac.protocol import StateSnapshotResult
-from almanac.harness.db import Database, Repositories
-from almanac.harness.db.records import ExperimentRecord, ProjectConfigRecord, RunRecord
+from almanac.harness.core.db import Database
+from almanac.harness.records import ExperimentRecord, ProjectConfigRecord, RunRecord
+from almanac.harness.repositories import Repositories
 
 
 @pytest.fixture

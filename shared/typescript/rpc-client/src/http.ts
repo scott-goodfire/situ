@@ -6,14 +6,26 @@ type RpcResponse<TResult> =
   | { result: TResult; error?: never }
   | { result?: never; error: { message: string } };
 
+type HttpJsonRpcClientOptions = {
+  baseUrl: string;
+  token: string;
+};
+
+type JsonRpcRequestOptions<TParams> = {
+  method: string;
+  params?: TParams;
+};
+
 export class HttpJsonRpcClient {
   private notificationAbort: AbortController | null = null;
   private notificationHandlers = new Set<NotificationHandler>();
+  private readonly baseUrl: string;
+  private readonly token: string;
 
-  constructor(
-    private readonly baseUrl: string,
-    private readonly token: string,
-  ) {}
+  constructor({ baseUrl, token }: HttpJsonRpcClientOptions) {
+    this.baseUrl = baseUrl;
+    this.token = token;
+  }
 
   async health(): Promise<boolean> {
     const response = await fetch(new URL("/health", this.baseUrl), {
@@ -22,7 +34,10 @@ export class HttpJsonRpcClient {
     return response.ok;
   }
 
-  async request<TResult, TParams = unknown>(method: string, params?: TParams): Promise<TResult> {
+  async request<TResult, TParams = unknown>({
+    method,
+    params,
+  }: JsonRpcRequestOptions<TParams>): Promise<TResult> {
     const response = await fetch(new URL("/rpc", this.baseUrl), {
       method: "POST",
       headers: {
@@ -79,10 +94,13 @@ export class HttpJsonRpcClient {
       if (abort.signal.aborted) {
         return;
       }
+
+      const message = errorMessage(error);
+
       for (const handler of this.notificationHandlers) {
         handler({
           method: "client.error",
-          params: { message: error instanceof Error ? error.message : String(error) },
+          params: { message },
         });
       }
     });
@@ -129,4 +147,12 @@ export class HttpJsonRpcClient {
       handler(notification);
     }
   }
+}
+
+function errorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return String(error);
 }

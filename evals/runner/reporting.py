@@ -5,6 +5,7 @@ from typing import Any
 
 from pydantic_evals.reporting import EvaluationReport
 
+from evals.runner.logfire_links import logfire_experiment_url
 from evals.runner.signals import has_report_failures, result_signals
 
 
@@ -18,6 +19,8 @@ def print_summary(
     for experiment_name, report in results:
         print(experiment_name)
         report.print(include_input=verbose, include_output=verbose, include_reasons=True)
+        if url := logfire_experiment_url(experiment_name):
+            print(f"Logfire: {url}")
 
     if failures:
         print("\nFailures:")
@@ -31,11 +34,15 @@ def print_json(results: list[tuple[str, EvaluationReport[Any, Any, Any]]], failu
     experiments: list[dict[str, Any]] = []
     for experiment_name, report in results:
         experiment: dict[str, Any] = {"name": experiment_name, "cases": []}
+        if url := logfire_experiment_url(experiment_name):
+            experiment["logfire_url"] = url
         for case in report.cases:
             experiment["cases"].append(
                 {
                     "name": case.name,
                     "task_duration": round(case.task_duration, 3),
+                    "metrics": dict(case.metrics),
+                    "attributes": dict(case.attributes),
                     "assertions": {
                         name: {"value": result.value, "reason": result.reason}
                         for name, result in case.assertions.items()

@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from ..commands import SetProjectConfig
-from ..records import ProjectConfigRecord
-from ..serialization import config_row, json_dumps, utc_now
-from .base import BaseRepository
+from ...core.db.serialization import config_row, json_dumps, utc_now
+from ...records import ProjectConfigRecord
+from ..base import BaseRepository
+from .project_config_commands import SetProjectConfig
 
 
 class ProjectConfigRepository(BaseRepository):

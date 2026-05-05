@@ -27,9 +27,14 @@ const workspace = resolve(process.env.ALMANAC_WORKSPACE ?? process.cwd());
 const projectId = projectIdForWorkspace(workspace);
 const token = randomBytes(24).toString("base64url");
 const command = harnessCommand();
-const harness = StdioJsonRpcClient.spawn(command.command, command.args, workspace, {
-  ALMANAC_APP_ROOT: appRoot,
-  ALMANAC_WORKSPACE: workspace,
+const harness = StdioJsonRpcClient.spawn({
+  command: command.command,
+  args: command.args,
+  cwd: workspace,
+  env: {
+    ALMANAC_APP_ROOT: appRoot,
+    ALMANAC_WORKSPACE: workspace,
+  },
 });
 const clients = new Set<ServerResponse>();
 
@@ -46,31 +51,43 @@ const server = createServer((request, response) => {
   }
 
   const url = new URL(request.url ?? "/", "http://127.0.0.1");
-  if (!isAuthorized(request, url)) {
-    json(response, 401, { error: { message: "unauthorized" } });
+  if (!isAuthorized({ request, url })) {
+    json({
+      response,
+      status: 401,
+      payload: { error: { message: "unauthorized" } },
+    });
     return;
   }
 
   if (request.method === "GET" && url.pathname === "/health") {
-    json(response, 200, {
-      project_id: projectId,
-      workspace,
-      pid: process.pid,
+    json({
+      response,
+      status: 200,
+      payload: {
+        project_id: projectId,
+        workspace,
+        pid: process.pid,
+      },
     });
     return;
   }
 
   if (request.method === "POST" && url.pathname === "/rpc") {
-    void handleRpc(request, response);
+    void handleRpc({ request, response });
     return;
   }
 
   if (request.method === "GET" && url.pathname === "/events") {
-    handleEvents(request, response);
+    handleEvents({ request, response });
     return;
   }
 
-  json(response, 404, { error: { message: "not found" } });
+  json({
+    response,
+    status: 404,
+    payload: { error: { message: "not found" } },
+  });
 });
 
 server.listen(0, "127.0.0.1", () => {
@@ -97,23 +114,51 @@ process.on("exit", () => {
   removeSessionRecord();
 });
 
-async function handleRpc(request: IncomingMessage, response: ServerResponse): Promise<void> {
+async function handleRpc({
+  request,
+  response,
+}: {
+  request: IncomingMessage;
+  response: ServerResponse;
+}): Promise<void> {
   try {
     const body = (await readJson(request)) as RpcRequest;
     if (!body.method) {
-      json(response, 400, { error: { message: "missing RPC method" } });
+      json({
+        response,
+        status: 400,
+        payload: { error: { message: "missing RPC method" } },
+      });
       return;
     }
-    const result = await harness.request(body.method, body.params ?? {});
-    json(response, 200, { result });
+
+    const result = await harness.request({
+      method: body.method,
+      params: body.params ?? {},
+    });
+    json({
+      response,
+      status: 200,
+      payload: { result },
+    });
   } catch (error) {
-    json(response, 500, {
-      error: { message: error instanceof Error ? error.message : String(error) },
+    json({
+      response,
+      status: 500,
+      payload: {
+        error: { message: errorMessage(error) },
+      },
     });
   }
 }
 
-function handleEvents(request: IncomingMessage, response: ServerResponse): void {
+function handleEvents({
+  request,
+  response,
+}: {
+  request: IncomingMessage;
+  response: ServerResponse;
+}): void {
   response.writeHead(200, {
     "content-type": "text/event-stream",
     "cache-control": "no-cache",
@@ -154,8 +199,16 @@ function projectIdForWorkspace(value: string): string {
 }
 
 function sessionPath(): string {
-  const home = process.env.ALMANAC_HOME ? resolve(process.env.ALMANAC_HOME) : resolve(homedir(), ".almanac");
+  const home = almanacHome();
   return resolve(home, "projects", projectId, "session.json");
+}
+
+function almanacHome(): string {
+  if (process.env.ALMANAC_HOME) {
+    return resolve(process.env.ALMANAC_HOME);
+  }
+
+  return resolve(homedir(), ".almanac");
 }
 
 function writeSessionRecord(record: SessionRecord): void {
@@ -174,14 +227,37 @@ function setCorsHeaders(response: ServerResponse): void {
   response.setHeader("access-control-allow-headers", "authorization, content-type");
 }
 
-function isAuthorized(request: IncomingMessage, url: URL): boolean {
+function isAuthorized({
+  request,
+  url,
+}: {
+  request: IncomingMessage;
+  url: URL;
+}): boolean {
   const header = request.headers.authorization ?? "";
-  const bearer = header.startsWith("Bearer ") ? header.slice("Bearer ".length) : "";
+  const bearer = bearerToken(header);
   const queryToken = url.searchParams.get("token") ?? "";
+
   return bearer === token || queryToken === token;
 }
 
-function json(response: ServerResponse, status: number, payload: unknown): void {
+function bearerToken(header: string): string {
+  if (!header.startsWith("Bearer ")) {
+    return "";
+  }
+
+  return header.slice("Bearer ".length);
+}
+
+function json({
+  response,
+  status,
+  payload,
+}: {
+  response: ServerResponse;
+  status: number;
+  payload: unknown;
+}): void {
   response.writeHead(status, { "content-type": "application/json" });
   response.end(JSON.stringify(payload));
 }
@@ -189,10 +265,23 @@ function json(response: ServerResponse, status: number, payload: unknown): void 
 async function readJson(request: IncomingMessage): Promise<unknown> {
   const chunks: Buffer[] = [];
   for await (const chunk of request) {
-    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    chunks.push(bufferFromChunk(chunk));
   }
+
   const text = Buffer.concat(chunks).toString("utf8");
-  return text.length > 0 ? JSON.parse(text) : {};
+  if (text.length === 0) {
+    return {};
+  }
+
+  return JSON.parse(text);
+}
+
+function bufferFromChunk(chunk: string | Buffer): Buffer {
+  if (Buffer.isBuffer(chunk)) {
+    return chunk;
+  }
+
+  return Buffer.from(chunk);
 }
 
 function shutdown(code: number): void {
@@ -201,4 +290,12 @@ function shutdown(code: number): void {
   server.close(() => {
     process.exit(code);
   });
+}
+
+function errorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return String(error);
 }

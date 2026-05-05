@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from .db import Repositories
+from .repositories import Repositories
 
 
 def update_findings(repos: Repositories, run_id: str) -> None:

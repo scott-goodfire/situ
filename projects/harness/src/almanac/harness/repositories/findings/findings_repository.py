@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from typing import Literal
 
-from ..commands import UpsertFinding
-from ..records import FindingRecord
-from ..serialization import finding_row, json_dumps, utc_now
-from .base import BaseRepository
+from ...core.db.serialization import finding_row, json_dumps, utc_now
+from ...records import FindingRecord
+from ..base import BaseRepository
+from .findings_commands import UpsertFinding
 
 
 class FindingsRepository(BaseRepository):

@@ -9,6 +9,18 @@ type PendingRequest = {
 
 type NotificationHandler = (notification: JsonRpcNotification) => void;
 
+type SpawnClientOptions = {
+  command: string;
+  args: string[];
+  cwd: string;
+  env?: NodeJS.ProcessEnv;
+};
+
+type JsonRpcRequestOptions<TParams> = {
+  method: string;
+  params?: TParams;
+};
+
 export class StdioJsonRpcClient {
   private nextId = 1;
   private pending = new Map<JsonRpcId, PendingRequest>();
@@ -22,17 +34,12 @@ export class StdioJsonRpcClient {
     });
 
     child.on("exit", (code, signal) => {
-      const reason = signal ? `signal ${signal}` : `code ${code ?? "unknown"}`;
+      const reason = processExitReason({ code, signal });
       this.rejectAll(new Error(`JSON-RPC process exited with ${reason}`));
     });
   }
 
-  static spawn(
-    command: string,
-    args: string[],
-    cwd: string,
-    env: NodeJS.ProcessEnv = {},
-  ): StdioJsonRpcClient {
+  static spawn({ command, args, cwd, env = {} }: SpawnClientOptions): StdioJsonRpcClient {
     const child = spawn(command, args, {
       cwd,
       env: { ...process.env, ...env, PYTHONDONTWRITEBYTECODE: "1" },
@@ -46,7 +53,10 @@ export class StdioJsonRpcClient {
     return new StdioJsonRpcClient(child);
   }
 
-  request<TResult, TParams = unknown>(method: string, params?: TParams): Promise<TResult> {
+  request<TResult, TParams = unknown>({
+    method,
+    params,
+  }: JsonRpcRequestOptions<TParams>): Promise<TResult> {
     const id = String(this.nextId++);
     const payload = {
       jsonrpc: "2.0",
@@ -123,4 +133,18 @@ export class StdioJsonRpcClient {
     }
     this.pending.clear();
   }
+}
+
+function processExitReason({
+  code,
+  signal,
+}: {
+  code: number | null;
+  signal: NodeJS.Signals | null;
+}): string {
+  if (signal) {
+    return `signal ${signal}`;
+  }
+
+  return `code ${code ?? "unknown"}`;
 }

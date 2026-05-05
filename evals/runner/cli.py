@@ -23,6 +23,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--json", action="store_true", help="Print machine-readable JSON")
     parser.add_argument("--verbose", action="store_true", help="Print verbose eval inputs/outputs")
     parser.add_argument("--list", action="store_true", help="List discovered eval groups without running them")
+    parser.add_argument("--task-retries", type=int, default=0, help="Retry failed task executions N times")
+    parser.add_argument("--evaluator-retries", type=int, default=0, help="Retry failed evaluators N times")
     args = parser.parse_args(argv)
 
     if not args.verbose:
@@ -43,6 +45,8 @@ def main(argv: list[str] | None = None) -> int:
         eval_classes,
         case_filter=args.case,
         max_concurrency=args.concurrency,
+        task_retries=args.task_retries,
+        evaluator_retries=args.evaluator_retries,
     )
 
     if args.json:

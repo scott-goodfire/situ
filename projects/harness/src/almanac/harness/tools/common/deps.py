@@ -5,8 +5,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from ...db import Repositories
-from ...worker_manager import WorkerManager
+from ...core.workers import WorkerManager
+from ...repositories import Repositories
 
 EventEmitter = Callable[[str, str, str | None, dict[str, Any] | None], dict[str, Any]]
 
