@@ -98,7 +98,9 @@ export async function upsertProjectRegistryRows({
 
     for (const row of rows) {
       const now = new Date().toISOString();
-      const label = row.label ?? projectLabel({ projectId: row.projectId, workspace: row.repoPath });
+      const label =
+        row.label ??
+        projectLabel({ projectId: row.projectId, workspace: row.repoPath });
       database.run(
         `
         INSERT INTO projects

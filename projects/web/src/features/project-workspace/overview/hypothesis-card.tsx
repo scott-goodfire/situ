@@ -12,6 +12,7 @@ import {
   evaluationsForExperiments,
   latestEvaluationActivity,
 } from "../evidence/evaluation-selectors";
+import { AgentPresence } from "../agents/presence/agent-presence";
 import type { ProjectWorkspaceData } from "../types";
 
 export function HypothesisCard({
@@ -87,15 +88,7 @@ function PresenceLine({
   agents: string[];
   experimentCount: number;
 }) {
-  const label = (() => {
-    if (agents.length > 0 && experimentCount > 0) {
-      return `${agentsLabel({ agents })} / ${experimentCountLabel({ count: experimentCount })}`;
-    }
-
-    if (agents.length > 0) {
-      return agentsLabel({ agents });
-    }
-
+  const emptyLabel = (() => {
     if (experimentCount > 0) {
       return experimentCountLabel({ count: experimentCount });
     }
@@ -103,7 +96,13 @@ function PresenceLine({
     return "No active work yet";
   })();
 
-  return <p className="almanac-hypothesis-card__detail">{label}</p>;
+  return (
+    <AgentPresence
+      agentIds={agents}
+      detail={experimentCount > 0 ? experimentCountLabel({ count: experimentCount }) : undefined}
+      emptyLabel={emptyLabel}
+    />
+  );
 }
 
 function EvidenceLine({
@@ -177,18 +176,6 @@ function experimentCountLabel({
   }
 
   return `${count} experiments`;
-}
-
-function agentsLabel({ agents }: { agents: string[] }): string {
-  if (agents.length === 1) {
-    return agents[0] ?? "agent";
-  }
-
-  if (agents.length === 2) {
-    return `${agents[0]} + ${agents[1]}`;
-  }
-
-  return `${agents[0]} + ${agents.length - 1} more`;
 }
 
 function currentExperimentFor({

@@ -1,8 +1,9 @@
 import { DxBadge } from "@almanac/web-ui";
-import filter from "lodash/filter";
-import { ActivityTimeline } from "../shared/activity-timeline";
 import { agentSummaries } from "./agent-summaries";
-import type { ActivityItem, ProjectWorkspaceData } from "../types";
+import { AgentPresence } from "./presence/agent-presence";
+import { AgentTranscript } from "./transcript/agent-transcript";
+import { agentTranscriptItems } from "./transcript/selectors";
+import type { ProjectWorkspaceData } from "../types";
 
 export function AgentDetailPage({
   data,
@@ -22,10 +23,11 @@ export function AgentDetailPage({
     );
   }
 
-  const activities = activitiesForAgent({
+  const transcriptItems = agentTranscriptItems({
     data,
     agentId,
   });
+  const latestItem = transcriptItems.at(-1);
 
   return (
     <>
@@ -35,67 +37,27 @@ export function AgentDetailPage({
             <p className="almanac-object-page__eyebrow">Agent</p>
             <h2>{agent.id}</h2>
           </div>
-          <DxBadge>{activities.length} activities</DxBadge>
+          <DxBadge>{activityCountLabel({ count: transcriptItems.length })}</DxBadge>
         </div>
-        <p className="almanac-object-page__summary">
-          Transcript-style agent views will build on this activity stream.
-        </p>
+        <AgentPresence
+          agentIds={[agent.id]}
+          detail={latestItem ? latestItem.title.toLowerCase() : undefined}
+        />
       </section>
 
-      <ActivityTimeline
-        title="Activity"
-        activities={activities}
-        emptyLabel="No activity for this agent yet"
-      />
+      <AgentTranscript projectId={data.projectId} items={transcriptItems} />
     </>
   );
 }
 
-function activitiesForAgent({
-  data,
-  agentId,
+function activityCountLabel({
+  count,
 }: {
-  data: ProjectWorkspaceData;
-  agentId: string;
-}): ActivityItem[] {
-  const hypothesisActivities = filter(
-    data.hypothesisActivities,
-    (activity) => activity.actor === agentId,
-  ).map((activity) => ({
-    id: `hypothesis-activity-${activity.id}`,
-    actor: activity.actor,
-    body: activity.body,
-    kind: activity.payload?.activity_type
-      ? `hypothesis:${String(activity.payload.activity_type)}`
-      : "hypothesis:comment",
-    createdAt: activity.created_at,
-  }));
+  count: number;
+}): string {
+  if (count === 1) {
+    return "1 activity";
+  }
 
-  const experimentActivities = filter(
-    data.experimentActivities,
-    (activity) => activity.actor === agentId,
-  ).map((activity) => ({
-    id: `experiment-activity-${activity.id}`,
-    actor: activity.actor,
-    body: activity.body,
-    kind: activity.payload?.activity_type
-      ? `experiment:${String(activity.payload.activity_type)}`
-      : "experiment:comment",
-    createdAt: activity.created_at,
-  }));
-
-  const evaluationActivities = filter(
-    data.evaluationActivities,
-    (activity) => activity.actor === agentId,
-  ).map((activity) => ({
-    id: `evaluation-activity-${activity.id}`,
-    actor: activity.actor,
-    body: activity.body,
-    kind: activity.payload?.activity_type
-      ? `evaluation:${String(activity.payload.activity_type)}`
-      : "evaluation:comment",
-    createdAt: activity.created_at,
-  }));
-
-  return [...hypothesisActivities, ...experimentActivities, ...evaluationActivities];
+  return `${count} activities`;
 }

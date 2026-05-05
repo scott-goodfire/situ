@@ -74,7 +74,10 @@ def main(argv: list[str] | None = None) -> int:
         help="terminate an active local harness before clearing state",
     )
 
-    web_parser = subparsers.add_parser("web", help="open the attach-only web monitor")
+    web_parser = subparsers.add_parser(
+        "web",
+        help="serve the local project home and attach-only web monitors",
+    )
     web_parser.add_argument(
         "workspace",
         nargs="?",
@@ -90,6 +93,11 @@ def main(argv: list[str] | None = None) -> int:
         type=int,
         default=0,
         help="port for the local web server; defaults to a free port",
+    )
+    web_parser.add_argument(
+        "--rebuild",
+        action="store_true",
+        help="rebuild the browser app before serving",
     )
 
     args = parser.parse_args(argv)
@@ -186,13 +194,14 @@ def web(args: argparse.Namespace) -> int:
     env.pop("ALMANAC_WORKSPACE", None)
 
     web_root = app_root / "projects" / "web"
-    build = subprocess.run(
-        ["bun", "run", "build"],
-        cwd=web_root,
-        env=env,
-    )
-    if build.returncode != 0:
-        return build.returncode
+    if should_build_web(web_root, rebuild=args.rebuild):
+        build = subprocess.run(
+            ["bun", "run", "build"],
+            cwd=web_root,
+            env=env,
+        )
+        if build.returncode != 0:
+            return build.returncode
 
     return subprocess.run(
         [
@@ -208,6 +217,10 @@ def web(args: argparse.Namespace) -> int:
         cwd=web_root,
         env=env,
     ).returncode
+
+
+def should_build_web(web_root: Path, *, rebuild: bool) -> bool:
+    return rebuild or not (web_root / "dist" / "index.html").is_file()
 
 
 if __name__ == "__main__":

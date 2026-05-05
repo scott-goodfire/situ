@@ -358,7 +358,7 @@ def test_web_launches_project_home_without_workspace(
     monkeypatch.delenv("ALMANAC_WORKSPACE", raising=False)
     monkeypatch.setattr(cli.subprocess, "run", fake_run)
 
-    code = cli.main(["web", str(launch_directory / "missing-workspace")])
+    code = cli.main(["web", str(launch_directory / "missing-workspace"), "--rebuild"])
 
     assert code == 0
     assert len(calls) == 2
@@ -379,6 +379,59 @@ def test_web_launches_project_home_without_workspace(
     )
     assert "ALMANAC_WORKSPACE" not in calls[0]["env"]
     assert "ALMANAC_WORKSPACE" not in calls[1]["env"]
+
+
+def test_web_skips_build_when_dist_exists(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    launch_directory = tmp_path / "not-an-almanac-workspace"
+    launch_directory.mkdir()
+    calls: list[dict[str, Any]] = []
+
+    class Completed:
+        returncode = 0
+
+    def fake_run(
+        command: list[str],
+        *,
+        cwd: Path,
+        env: dict[str, str],
+    ) -> Completed:
+        calls.append({"command": command, "cwd": cwd, "env": env})
+        return Completed()
+
+    monkeypatch.chdir(launch_directory)
+    monkeypatch.setattr(cli, "should_build_web", lambda _root, *, rebuild: False)
+    monkeypatch.setattr(cli.subprocess, "run", fake_run)
+
+    code = cli.main(["web"])
+
+    assert code == 0
+    assert len(calls) == 1
+    assert calls[0]["command"] == [
+        "bun",
+        "run",
+        "serve",
+        "--",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "0",
+    ]
+
+
+def test_should_build_web_detects_missing_build(tmp_path: Path) -> None:
+    web_root = tmp_path / "web"
+    index = web_root / "dist" / "index.html"
+
+    assert cli.should_build_web(web_root, rebuild=False) is True
+
+    index.parent.mkdir(parents=True)
+    index.write_text("<main>Almanac</main>")
+
+    assert cli.should_build_web(web_root, rebuild=False) is False
+    assert cli.should_build_web(web_root, rebuild=True) is True
 
 
 def test_start_upserts_global_project_registry(

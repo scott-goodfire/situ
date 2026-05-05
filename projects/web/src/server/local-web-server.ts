@@ -30,7 +30,9 @@ const server = Bun.serve({
   port: options.port,
 });
 
-console.log(`Almanac web listening on http://${options.host}:${server.port}/`);
+console.log(
+  `Almanac web project home: http://${displayHost({ host: options.host })}:${server.port}/`,
+);
 
 process.on("SIGINT", () => stop({ code: 0 }));
 process.on("SIGTERM", () => stop({ code: 0 }));
@@ -45,7 +47,7 @@ function serverOptionsFromArgs({ args }: { args: string[] }): ServerOptions {
     almanacHome: stringFlag({
       args,
       name: "--almanac-home",
-      fallback: resolve(homedir(), ".almanac"),
+      fallback: defaultAlmanacHome(),
     }),
     distDirectory: stringFlag({
       args,
@@ -63,6 +65,18 @@ function serverOptionsFromArgs({ args }: { args: string[] }): ServerOptions {
       fallback: 0,
     }),
   };
+}
+
+function defaultAlmanacHome(): string {
+  return resolve(homedir(), ".almanac");
+}
+
+function displayHost({ host }: { host: string }): string {
+  if (host === "0.0.0.0") {
+    return "127.0.0.1";
+  }
+
+  return host;
 }
 
 function stringFlag({

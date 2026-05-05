@@ -243,6 +243,188 @@ h1 {
   min-width: 0;
 }
 
+.almanac-agent-presence {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: var(--dx-color-subtle);
+  line-height: 1.45;
+}
+
+.almanac-agent-presence[data-empty="true"] {
+  color: var(--dx-color-muted);
+}
+
+.almanac-agent-presence__avatars {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+}
+
+.almanac-agent-presence__avatar,
+.almanac-agent-presence__overflow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin-left: -6px;
+  border: 1px solid var(--dx-color-border-soft);
+  border-radius: 999px;
+  background: #f6f8fa;
+  color: var(--dx-color-subtle);
+  font-family: var(--dx-font-mono);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.almanac-agent-presence__avatar:first-child {
+  margin-left: 0;
+}
+
+.almanac-agent-presence__label {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.almanac-agent-transcript {
+  max-height: min(560px, calc(100vh - 260px));
+  overflow: auto;
+  padding-right: 2px;
+  scroll-behavior: smooth;
+}
+
+.almanac-agent-transcript__list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.almanac-agent-transcript__row {
+  min-width: 0;
+}
+
+.almanac-agent-transcript__anchor {
+  width: 1px;
+  height: 1px;
+}
+
+.almanac-transcript-item {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 10px;
+  min-width: 0;
+}
+
+.almanac-transcript-item__rail {
+  display: flex;
+  justify-content: center;
+  padding-top: 14px;
+}
+
+.almanac-transcript-item__dot {
+  width: 9px;
+  height: 9px;
+  border: 2px solid var(--dx-color-surface);
+  border-radius: 999px;
+  background: var(--dx-color-muted);
+  box-shadow: 0 0 0 1px var(--dx-color-border);
+}
+
+.almanac-transcript-item[data-tone="warning"] .almanac-transcript-item__dot {
+  background: var(--dx-color-warning);
+  box-shadow: 0 0 0 1px var(--dx-color-warning-border);
+}
+
+.almanac-transcript-item[data-tone="danger"] .almanac-transcript-item__dot {
+  background: var(--dx-color-danger);
+  box-shadow: 0 0 0 1px var(--dx-color-danger-border);
+}
+
+.almanac-transcript-item[data-latest="true"] .almanac-transcript-item__dot {
+  animation: almanac-transcript-pulse 1.8s ease-out infinite;
+}
+
+.almanac-transcript-item__content {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--dx-color-border-soft);
+  border-radius: 8px;
+  background: var(--dx-color-surface);
+}
+
+.almanac-transcript-item[data-tone="warning"] .almanac-transcript-item__content {
+  border-color: var(--dx-color-warning-border);
+  background: var(--dx-color-warning-surface);
+}
+
+.almanac-transcript-item[data-tone="danger"] .almanac-transcript-item__content {
+  border-color: var(--dx-color-danger-border);
+  background: var(--dx-color-danger-surface);
+}
+
+.almanac-transcript-item__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.almanac-transcript-item__header time {
+  flex: 0 0 auto;
+  color: var(--dx-color-muted);
+  font-family: var(--dx-font-mono);
+  font-size: 12px;
+}
+
+.almanac-transcript-item__title {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+  color: var(--dx-color-text);
+  font-weight: 700;
+}
+
+.almanac-transcript-item__preposition {
+  color: var(--dx-color-muted);
+  font-weight: 600;
+}
+
+.almanac-transcript-item__body {
+  color: var(--dx-color-subtle);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.almanac-transcript-item__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--dx-color-muted);
+  font-family: var(--dx-font-mono);
+  font-size: 12px;
+}
+
+@keyframes almanac-transcript-pulse {
+  0% {
+    box-shadow: 0 0 0 1px var(--dx-color-border);
+  }
+
+  70% {
+    box-shadow: 0 0 0 6px transparent;
+  }
+
+  100% {
+    box-shadow: 0 0 0 1px transparent;
+  }
+}
+
 .almanac-evidence-summary {
   display: flex;
   align-items: flex-start;
@@ -374,7 +556,18 @@ h1 {
     flex-direction: column;
   }
 
+  .almanac-transcript-item__header {
+    flex-direction: column;
+    gap: 6px;
+  }
+
   .almanac-floating-notice {
     width: min(100vw - 28px, 1120px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .almanac-transcript-item[data-latest="true"] .almanac-transcript-item__dot {
+    animation: none;
   }
 }

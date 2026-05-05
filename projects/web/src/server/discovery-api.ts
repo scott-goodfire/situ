@@ -22,6 +22,19 @@ type SessionReadResult =
   | { kind: "invalid" }
   | { kind: "missing" };
 
+type ProjectStatusReason =
+  | "session_healthy"
+  | "session_health_failed"
+  | "invalid_session_file"
+  | "workspace_missing"
+  | "project_database_unreadable"
+  | "no_session_file";
+
+type ProjectStatusDetails = {
+  status: ProjectSessionStatus;
+  reason: ProjectStatusReason;
+};
+
 type DiscoveryApiOptions = {
   almanacHome?: string;
 };
@@ -107,6 +120,18 @@ async function listProjects({
     ),
   );
 
+  await syncKnownProjectsToRegistry({ discoveryContext, projects });
+
+  return projects.sort(compareProjects);
+}
+
+async function syncKnownProjectsToRegistry({
+  discoveryContext,
+  projects,
+}: {
+  discoveryContext: DiscoveryContext;
+  projects: ProjectSummary[];
+}): Promise<void> {
   await upsertProjectRegistryRows({
     almanacHome: discoveryContext.almanacHome,
     rows: projects.map((project) => ({
@@ -116,8 +141,6 @@ async function listProjects({
       lastSeenAt: project.last_seen_at,
     })),
   });
-
-  return projects.sort(compareProjects);
 }
 
 async function findProject({
@@ -172,7 +195,7 @@ async function projectSummary({
   const readResult = await readSessionRecord({ discoveryContext, projectId });
   if (readResult.kind === "found") {
     const healthy = await pingSession({ session: readResult.session });
-    const status: ProjectSessionStatus = healthy ? "running" : "unhealthy";
+    const statusDetails = activeSessionStatusDetails({ healthy });
     const sessionWorkspace = readResult.session.workspace || workspace;
 
     return {
@@ -184,10 +207,8 @@ async function projectSummary({
       }),
       workspace: sessionWorkspace,
       objective_title: metadata.objectiveTitle,
-      status,
-      status_reason: healthy
-        ? "Session health check passed"
-        : "Session file exists but the health check failed",
+      status: statusDetails.status,
+      status_reason: statusReasonLabel({ reason: statusDetails.reason }),
       started_at: readResult.session.started_at,
       last_seen_at: latestTimestamp({
         values: [
@@ -201,7 +222,7 @@ async function projectSummary({
   }
 
   const workspaceMissing = workspace ? !(await pathExists({ path: workspace })) : false;
-  const status = projectStatus({
+  const statusDetails = storedProjectStatusDetails({
     metadata,
     readResult,
     workspaceMissing,
@@ -212,8 +233,8 @@ async function projectSummary({
     label,
     workspace,
     objective_title: metadata.objectiveTitle,
-    status,
-    status_reason: projectStatusReason({ status, metadata, readResult }),
+    status: statusDetails.status,
+    status_reason: statusReasonLabel({ reason: statusDetails.reason }),
     started_at: null,
     last_seen_at: lastSeenAt,
     url: null,
@@ -450,7 +471,25 @@ function projectLabel({
   return basename(workspace) || workspace;
 }
 
-function projectStatus({
+function activeSessionStatusDetails({
+  healthy,
+}: {
+  healthy: boolean;
+}): ProjectStatusDetails {
+  if (healthy) {
+    return {
+      status: "running",
+      reason: "session_healthy",
+    };
+  }
+
+  return {
+    status: "unhealthy",
+    reason: "session_health_failed",
+  };
+}
+
+function storedProjectStatusDetails({
   metadata,
   readResult,
   workspaceMissing,
@@ -458,40 +497,56 @@ function projectStatus({
   metadata: ProjectMetadata;
   readResult: SessionReadResult;
   workspaceMissing: boolean;
-}): ProjectSessionStatus {
+}): ProjectStatusDetails {
   if (readResult.kind === "invalid") {
-    return "stale";
+    return {
+      status: "stale",
+      reason: "invalid_session_file",
+    };
   }
 
   if (workspaceMissing) {
-    return "missing_workspace";
+    return {
+      status: "missing_workspace",
+      reason: "workspace_missing",
+    };
   }
 
   if (metadata.readStatus === "unreadable") {
-    return "stale";
+    return {
+      status: "stale",
+      reason: "project_database_unreadable",
+    };
   }
 
-  return "stopped";
+  return {
+    status: "stopped",
+    reason: "no_session_file",
+  };
 }
 
-function projectStatusReason({
-  status,
-  metadata,
-  readResult,
+function statusReasonLabel({
+  reason,
 }: {
-  status: ProjectSessionStatus;
-  metadata: ProjectMetadata;
-  readResult: SessionReadResult;
+  reason: ProjectStatusReason;
 }): string {
-  if (status === "missing_workspace") {
+  if (reason === "session_healthy") {
+    return "Session health check passed";
+  }
+
+  if (reason === "session_health_failed") {
+    return "Session file exists but the health check failed";
+  }
+
+  if (reason === "workspace_missing") {
     return "Workspace path no longer exists";
   }
 
-  if (readResult.kind === "invalid") {
+  if (reason === "invalid_session_file") {
     return "Session file is invalid";
   }
 
-  if (metadata.readStatus === "unreadable") {
+  if (reason === "project_database_unreadable") {
     return "Project database could not be read";
   }
 

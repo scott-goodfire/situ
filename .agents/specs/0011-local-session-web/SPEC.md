@@ -77,10 +77,14 @@ For this slice:
 - The global registry is not the source of truth for research state. It may
   store project id, workspace path, label, discovered time, last seen time, last
   opened time, and archived time.
+- The registry should remain a small project index. It must not accumulate
+  objectives, hypotheses, experiments, artifacts, or other research state.
 - `almanac start` should upsert the global registry for the workspace it is
   starting.
 - `almanac web` may backfill missing registry rows from existing per-project
   directories.
+- Registry backfill should be an explicit sync step derived from discovered
+  project summaries, not an implicit place to add new durable project facts.
 - Persistent project facts such as workspace path, project label, objective, and
   last updated time should prefer each project's `almanac.sqlite`, not extra
   metadata sidecar files. Registry values are fallback/index values.
@@ -106,13 +110,29 @@ The development server and local user server should be separate.
 For this slice:
 
 - Vite remains the development server for frontend development.
-- `almanac web` should build the browser app when needed and then run a local
-  Hono host that serves the built assets and local discovery API.
+- `almanac web` should build the browser app when the built app is missing or a
+  rebuild is explicitly requested, then run a local Hono host that serves the
+  built assets and local discovery API.
 - The local host should serve `/api/projects` and
   `/api/projects/<project-id>/session`.
 - The local host should serve `/` as the project home and should use SPA
   fallback for `/projects/<project-id>` and child routes.
 - The local host should bind to `127.0.0.1` by default.
+- The local host should print the project home URL it is serving, including the
+  actual port when the port was auto-assigned.
+
+## Local Command Surface
+
+The routine web commands should keep development and local user behavior
+separate:
+
+- `mise run web -- [args]` runs `almanac web` and serves the built local Hono
+  host.
+- `mise run web -- --rebuild` forces a browser rebuild before serving.
+- `mise run web:dev` and `mise run dev:web` run the Vite development server for
+  frontend iteration.
+- `mise run web:smoke` builds the browser app, starts the local Hono host, and
+  checks the project home, discovery API, and project-route SPA fallback.
 
 ## Project Lifecycle Vocabulary
 
@@ -213,6 +233,32 @@ or event sections. Internal events belong on the Events page. Evaluations are
 the evidence layer, not the primary workflow object. The evaluations route
 exists as an inspection path for the evidence ledger; it should not displace
 hypotheses from the overview.
+
+## Agent Transcript Views
+
+Agent pages should make agent work legible without becoming a chat product or a
+raw log viewer.
+
+For this slice:
+
+- `/projects/<project-id>/agents` may remain a compact index of agents observed
+  in activity records.
+- `/projects/<project-id>/agents/<agent-id>` should render a transcript-style
+  view over existing hypothesis, experiment, and evaluation activities.
+- Transcript items should use human-readable labels such as "Recorded evidence"
+  or "Updated experiment" instead of exposing raw activity payload names as the
+  primary text.
+- Tool-call-shaped or ledger-update-shaped activity should be visually compact
+  and expandable later, but the default view should emphasize what happened and
+  which objective object it affected.
+- New transcript entries may animate subtly and auto-follow when the user is at
+  the bottom of the transcript. Motion should never become the point of the UI.
+- Agent presence indicators may appear on overview cards and agent pages when
+  they reduce scan cost.
+
+The browser should not introduce a chat composer in this slice. If browser-side
+chat or streaming control becomes part of the product later, it should be added
+as a separate interaction layer over the same session state.
 
 ## Deferred
 
