@@ -24,6 +24,18 @@ run = "./commands/evals-json.sh"
 description = "Run the TypeScript Ink TUI"
 run = "./commands/dev-tui.sh"
 
+[tasks."tui-ui:check"]
+description = "Run typechecks for the Almanac TUI UI package"
+run = "./commands/tui-ui-check.sh"
+
+[tasks."tui:story"]
+description = "Render an Almanac TUI story"
+run = "./commands/tui-story.sh"
+
+[tasks."tui:snapshots"]
+description = "Capture text snapshots for Almanac TUI stories"
+run = "./commands/tui-snapshots.sh"
+
 [tasks.start]
 description = "Start the local Almanac TUI"
 run = "./commands/start.sh"

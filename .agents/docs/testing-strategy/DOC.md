@@ -75,6 +75,28 @@ live Almanac session, because stories use local fixtures rather than RPC/SSE.
 The screenshot command starts Storybook, captures every story with Playwright,
 and writes PNGs under `/tmp/almanac-storybook-screenshots/<timestamp>/`.
 
+## TUI Stories
+
+The Ink TUI has a Storybook-like fixture runner in `@almanac/tui-ui`. Stories
+live next to components as `.stories.tsx` files and render protocol-shaped local
+fixtures, not live RPC state.
+
+Use these when changing TUI layout, component states, or command-footer behavior:
+
+```bash
+./commands/tui-story.sh list
+./commands/tui-story.sh almanac-tui-view/running
+./commands/tui-snapshots.sh
+./commands/tui-snapshots.sh --color
+```
+
+The story command renders one story in the terminal. The snapshot command uses
+`ink-testing-library`, captures every story's last rendered frame, and writes
+text snapshots under `/tmp/almanac-tui-snapshots/<timestamp>/` unless an
+explicit `--out-dir` is passed. Color snapshots preserve ANSI escape codes in
+the `.txt` files for terminal replay; plain snapshots remain the default for
+readable diffs.
+
 ## Protocol Shape
 
 The TUI consumes protocol-shaped dictionaries. If API schemas or repository

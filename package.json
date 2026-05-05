@@ -6,6 +6,7 @@
   "workspaces": [
     "projects/session-server",
     "projects/tui",
+    "projects/tui/packages/*",
     "projects/web",
     "projects/web/packages/*",
     "shared/typescript/*"
