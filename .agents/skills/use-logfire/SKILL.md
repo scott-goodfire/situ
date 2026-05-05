@@ -1,6 +1,6 @@
 ---
 name: use-logfire
-description: "Use when working with Pydantic Logfire from this repo: checking CLI auth, telling the user how to log in, selecting projects, creating read tokens, querying traces, or verifying Almanac eval and harness telemetry."
+description: "Use when working with Pydantic Logfire from this repo: checking CLI auth, telling the user how to log in, selecting projects, creating read tokens, querying traces, or verifying Situ eval and harness telemetry."
 ---
 
 # Use Logfire
@@ -52,7 +52,7 @@ Use the intended project:
 uv run python -m logfire --region us projects use --org <org> <project>
 ```
 
-This repo may have a previously selected Almanac Logfire project; verify the
+This repo may have a previously selected Situ Logfire project; verify the
 active project before assuming it.
 
 ## Token Types
@@ -60,9 +60,9 @@ active project before assuming it.
 There are two common token roles:
 
 - Write/ingestion token: used by the SDK to send spans. In this repo this is
-  usually `ALMANAC_LOGFIRE_TOKEN`.
+  usually `SITU_LOGFIRE_TOKEN`.
 - Read token: used by `LogfireQueryClient` or the query API to read records.
-  Prefer `ALMANAC_LOGFIRE_READ_TOKEN` when available.
+  Prefer `SITU_LOGFIRE_READ_TOKEN` when available.
 
 A write token may not work for query/readback. If readback is needed and no read
 token is available, create one:
@@ -95,12 +95,12 @@ import os
 
 from logfire.query_client import LogfireQueryClient
 
-token = os.environ["ALMANAC_LOGFIRE_READ_TOKEN"]
+token = os.environ["SITU_LOGFIRE_READ_TOKEN"]
 
 sql = """
 SELECT trace_id, span_id, start_timestamp, service_name, message
 FROM records
-WHERE service_name = 'almanac-evals'
+WHERE service_name = 'situ-evals'
   AND start_timestamp >= now() - interval '24 hours'
 ORDER BY start_timestamp DESC
 LIMIT 20
@@ -115,7 +115,7 @@ PY
 Short-lived read-token flow:
 
 ```bash
-tmp=$(mktemp /tmp/almanac-logfire-read-token.XXXXXX)
+tmp=$(mktemp /tmp/situ-logfire-read-token.XXXXXX)
 trap 'rm -f "$tmp"' EXIT
 uv run python -m logfire --region us read-tokens --project <org>/<project> create > "$tmp"
 uv run python - "$tmp" <<'PY'
@@ -137,13 +137,13 @@ PY
 
 ## Verify Eval Runs
 
-For evals, query recent `almanac-evals` records and inspect the root evaluation
+For evals, query recent `situ-evals` records and inspect the root evaluation
 span:
 
 ```sql
 SELECT trace_id, span_id, start_timestamp, service_name, span_name, message, attributes
 FROM records
-WHERE service_name = 'almanac-evals'
+WHERE service_name = 'situ-evals'
   AND start_timestamp >= now() - interval '24 hours'
 ORDER BY start_timestamp DESC
 LIMIT 50
@@ -156,7 +156,7 @@ Root eval spans usually have:
 - `attributes->>'metadata'`
 - `attributes->>'logfire.experiment.metadata'`
 
-Almanac currently disables Logfire SDK scrubbing for demo/debug visibility.
+Situ currently disables Logfire SDK scrubbing for demo/debug visibility.
 Confirm both harness and eval `logfire.configure(...)` calls pass
 `scrubbing=False` before assuming Logfire will preserve full attributes. Do not
 send real user secrets, production credentials, or sensitive payloads while this
@@ -168,7 +168,7 @@ If query access is unavailable, use the UI:
 
 1. Open Logfire in the US region.
 2. Confirm the user is logged in.
-3. Open the `almanac` project.
+3. Open the `situ` project.
 4. Use **Evals: Datasets & Experiments** for eval runs.
 5. Use **Live** or **Explore** for traces and SQL.
 6. Confirm the dataset/run or trace is visible before calling it verified.

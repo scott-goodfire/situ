@@ -76,7 +76,7 @@ function createStoryRouter({
     getParentRoute: () => projectRoute,
     path: "evaluations",
     component: () => (
-      <main className="almanac-shell">
+      <main className="situ-shell">
         <EvaluationsPage data={data} />
       </main>
     ),
@@ -88,7 +88,7 @@ function createStoryRouter({
       const { evaluationId } = evaluationRoute.useParams();
 
       return (
-        <main className="almanac-shell">
+        <main className="situ-shell">
           <EvaluationDetailPage data={data} evaluationId={evaluationId} />
         </main>
       );
@@ -122,7 +122,7 @@ function PlaceholderRoute() {
 function evaluationPageData(): ProjectWorkspaceData {
   return {
     projectId: "support-agent-demo",
-    workspace: "/Users/almanac/sandbox/support-agent",
+    workspace: "/Users/situ/sandbox/support-agent",
     connection: { kind: "connected" },
     objectives: [
       {

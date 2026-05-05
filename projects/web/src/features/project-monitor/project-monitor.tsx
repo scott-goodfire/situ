@@ -1,5 +1,5 @@
-import { DxBadge } from "@almanac/web-ui";
-import type { CollectionsBootstrapResult } from "@almanac/protocol";
+import { DxBadge } from "@situ/web-ui";
+import type { CollectionsBootstrapResult } from "@situ/protocol";
 import { useQuery } from "@tanstack/react-query";
 import { Outlet } from "@tanstack/react-router";
 import {
@@ -11,9 +11,9 @@ import type {
   SessionConnection,
 } from "../../project-discovery/types";
 import {
-  AlmanacMonitor,
+  SituMonitor,
   type ConnectionState,
-} from "../run-monitor/almanac-monitor";
+} from "../run-monitor/situ-monitor";
 import { NoActiveHarness } from "../run-monitor/no-active-harness";
 import { ProjectWorkspaceProvider } from "../project-workspace/context";
 import { ProjectWorkspaceLayout } from "../project-workspace/project-workspace";
@@ -194,15 +194,15 @@ function ProjectNoActiveHarness({
     <>
       <NoActiveHarness workspace={project.workspace ?? project.project_id} />
       {project.status_reason && (
-        <aside className="almanac-floating-notice">
-          <p className="almanac-status" data-tone={statusTone({ status: project.status })}>
+        <aside className="situ-floating-notice">
+          <p className="situ-status" data-tone={statusTone({ status: project.status })}>
             {project.status_reason}
           </p>
         </aside>
       )}
       {discoveryError && (
-        <aside className="almanac-floating-notice">
-          <p className="almanac-status" data-tone="warning">{discoveryError}</p>
+        <aside className="situ-floating-notice">
+          <p className="situ-status" data-tone="warning">{discoveryError}</p>
         </aside>
       )}
     </>
@@ -227,18 +227,18 @@ function statusTone({
 
 function UnknownProject({ projectId }: { projectId: string }) {
   return (
-    <main className="almanac-shell">
-      <header className="almanac-topbar">
+    <main className="situ-shell">
+      <header className="situ-topbar">
         <div>
-          <h1>Almanac</h1>
+          <h1>Situ</h1>
           <p>{projectId}</p>
         </div>
         <DxBadge>No project</DxBadge>
       </header>
 
-      <section className="almanac-empty">
+      <section className="situ-empty">
         <h2>Project not found</h2>
-        <p>No local Almanac project exists with this id.</p>
+        <p>No local Situ project exists with this id.</p>
       </section>
     </main>
   );
@@ -252,7 +252,7 @@ function EmptyMonitor({
   connection: ConnectionState;
 }) {
   return (
-    <AlmanacMonitor
+    <SituMonitor
       workspace={workspace}
       connection={connection}
       objectives={[]}

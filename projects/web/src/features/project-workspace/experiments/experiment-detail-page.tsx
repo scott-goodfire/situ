@@ -1,11 +1,11 @@
-import type { ArtifactRecord, ExperimentRecord, HypothesisRecord } from "@almanac/protocol";
+import type { ArtifactRecord, ExperimentRecord, HypothesisRecord } from "@situ/protocol";
 import {
   DxBadge,
   DxSection,
   DxTable,
   type DxBadgeTone,
   type DxTableColumn,
-} from "@almanac/web-ui";
+} from "@situ/web-ui";
 import { Link } from "@tanstack/react-router";
 import filter from "lodash/filter";
 import { EvaluationActivityList } from "../evidence/evaluation-activity-list";
@@ -32,7 +32,7 @@ export function ExperimentDetailPage({
 
   if (!experiment) {
     return (
-      <section className="almanac-empty">
+      <section className="situ-empty">
         <h2>Experiment not found</h2>
         <p>No experiment exists with id {experimentId}.</p>
       </section>
@@ -59,10 +59,10 @@ export function ExperimentDetailPage({
 
   return (
     <>
-      <section className="almanac-object-page">
-        <div className="almanac-object-page__header">
+      <section className="situ-object-page">
+        <div className="situ-object-page__header">
           <div>
-            <p className="almanac-object-page__eyebrow">{experiment.id}</p>
+            <p className="situ-object-page__eyebrow">{experiment.id}</p>
             <h2>{experiment.title}</h2>
           </div>
           <DxBadge
@@ -74,7 +74,7 @@ export function ExperimentDetailPage({
             {hasConcern ? "concern" : experiment.status}
           </DxBadge>
         </div>
-        <p className="almanac-object-page__summary">{experiment.summary}</p>
+        <p className="situ-object-page__summary">{experiment.summary}</p>
       </section>
 
       <LinkedHypotheses
@@ -150,9 +150,9 @@ function linkedHypothesisColumns({
       header: "Hypothesis",
       width: "34%",
       renderCell: ({ row }) => (
-        <div className="almanac-record-cell">
+        <div className="situ-record-cell">
           <Link
-            className="almanac-record-link"
+            className="situ-record-link"
             to="/projects/$projectId/hypotheses/$hypothesisId"
             params={{
               projectId,
@@ -161,7 +161,7 @@ function linkedHypothesisColumns({
           >
             {row.hypothesis.title}
           </Link>
-          <span className="almanac-record-id">{row.hypothesis.id}</span>
+          <span className="situ-record-id">{row.hypothesis.id}</span>
         </div>
       ),
     },
@@ -186,9 +186,9 @@ function artifactColumns(): Array<DxTableColumn<ArtifactRow>> {
       header: "Artifact",
       width: "30%",
       renderCell: ({ row }) => (
-        <div className="almanac-record-cell">
-          <span className="almanac-record-link">{row.artifact.title}</span>
-          <span className="almanac-record-id">{row.artifact.id}</span>
+        <div className="situ-record-cell">
+          <span className="situ-record-link">{row.artifact.title}</span>
+          <span className="situ-record-id">{row.artifact.id}</span>
         </div>
       ),
     },

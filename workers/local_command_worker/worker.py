@@ -6,14 +6,14 @@ import subprocess
 import sys
 from typing import Any
 
-from almanac.harness.config import DEFAULTS
-from almanac.protocol import (
+from situ.harness.config import DEFAULTS
+from situ.protocol import (
     ExperimentRunParams,
     ExperimentRunResult,
     WorkerInitializeParams,
     WorkerInitializeResult,
 )
-from almanac.protocol.jsonrpc import JsonRpcNotification, JsonRpcRequest, JsonRpcResponse
+from situ.protocol.jsonrpc import JsonRpcNotification, JsonRpcRequest, JsonRpcResponse
 
 
 def write(message: JsonRpcResponse | JsonRpcNotification) -> None:
@@ -39,9 +39,9 @@ def handle(request: JsonRpcRequest) -> dict[str, Any]:
 
 
 def run_eval_command(params: ExperimentRunParams) -> ExperimentRunResult:
-    command = os.environ.get("ALMANAC_EVAL_COMMAND")
+    command = os.environ.get("SITU_EVAL_COMMAND")
     if not command:
-        raise RuntimeError("ALMANAC_EVAL_COMMAND is required for local-command-worker")
+        raise RuntimeError("SITU_EVAL_COMMAND is required for local-command-worker")
 
     notify(
         "worker.progress",
@@ -55,15 +55,15 @@ def run_eval_command(params: ExperimentRunParams) -> ExperimentRunResult:
 
     completed = subprocess.run(
         command,
-        cwd=os.environ.get("ALMANAC_WORKSPACE") or os.getcwd(),
+        cwd=os.environ.get("SITU_WORKSPACE") or os.getcwd(),
         env={
             **os.environ,
-            "ALMANAC_SESSION_ID": params.session_id,
-            "ALMANAC_RUN_ID": params.session_id,
-            "ALMANAC_EXPERIMENT_ID": params.experiment_id,
-            "ALMANAC_COMPONENTS": ",".join(params.components),
-            "ALMANAC_COMPONENTS_JSON": json.dumps(params.components),
-            "ALMANAC_BASED_ON_JSON": json.dumps(params.based_on),
+            "SITU_SESSION_ID": params.session_id,
+            "SITU_RUN_ID": params.session_id,
+            "SITU_EXPERIMENT_ID": params.experiment_id,
+            "SITU_COMPONENTS": ",".join(params.components),
+            "SITU_COMPONENTS_JSON": json.dumps(params.components),
+            "SITU_BASED_ON_JSON": json.dumps(params.based_on),
         },
         shell=True,
         executable="/bin/bash" if os.path.exists("/bin/bash") else None,

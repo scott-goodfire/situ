@@ -1,5 +1,5 @@
 import { Text } from "ink";
-import type { HypothesisRecord } from "@almanac/protocol";
+import type { HypothesisRecord } from "@situ/protocol";
 import { PaneSection } from "../pane-section/pane-section.js";
 
 export function HypothesesSection({

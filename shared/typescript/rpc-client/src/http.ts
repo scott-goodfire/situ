@@ -1,4 +1,4 @@
-import type { JsonRpcNotification } from "@almanac/protocol";
+import type { JsonRpcNotification } from "@situ/protocol";
 
 type NotificationHandler = (notification: JsonRpcNotification) => void;
 

@@ -33,11 +33,11 @@ CREATE TABLE IF NOT EXISTS projects (
 `;
 
 export async function readProjectRegistry({
-  almanacHome,
+  situHome,
 }: {
-  almanacHome: string;
+  situHome: string;
 }): Promise<ProjectRegistryRow[]> {
-  const databasePath = registryDatabasePath({ almanacHome });
+  const databasePath = registryDatabasePath({ situHome });
   const exists = await pathExists({ path: databasePath });
   if (!exists) {
     return [];
@@ -79,17 +79,17 @@ export async function readProjectRegistry({
 }
 
 export async function upsertProjectRegistryRows({
-  almanacHome,
+  situHome,
   rows,
 }: {
-  almanacHome: string;
+  situHome: string;
   rows: ProjectRegistryUpsert[];
 }): Promise<void> {
   if (rows.length === 0) {
     return;
   }
 
-  const databasePath = registryDatabasePath({ almanacHome });
+  const databasePath = registryDatabasePath({ situHome });
   await mkdir(dirname(databasePath), { recursive: true });
   const database = await openSqliteDatabase({ path: databasePath });
 
@@ -129,11 +129,11 @@ export async function upsertProjectRegistryRows({
 }
 
 export function registryDatabasePath({
-  almanacHome,
+  situHome,
 }: {
-  almanacHome: string;
+  situHome: string;
 }): string {
-  return resolve(almanacHome, "almanac.sqlite");
+  return resolve(situHome, "situ.sqlite");
 }
 
 function projectLabel({

@@ -6,7 +6,7 @@ The first runnable slice is a local TypeScript Ink TUI talking JSON-RPC to a
 local session server backed by the Python harness. The harness records sessions,
 session-owned objectives, hypotheses, experiments, evaluations, activities,
 artifacts, and events in local SQLite state under
-`~/.almanac/projects/<project-id>/`.
+`~/.situ/projects/<project-id>/`.
 
 Start here:
 
@@ -75,39 +75,39 @@ The Python harness now initializes:
 - DBOS for durable agent execution state
 - Logfire for Pydantic AI / DBOS / harness traces
 
-The default agent runtime requires an Almanac-scoped OpenAI key. Runtime
+The default agent runtime requires an Situ-scoped OpenAI key. Runtime
 execution should fail loudly if the key is missing rather than falling back to a
 deterministic model.
 
 To send traces to Logfire, set a write token in your shell or local env file:
 
 ```bash
-export ALMANAC_LOGFIRE_TOKEN="..."
+export SITU_LOGFIRE_TOKEN="..."
 ```
 
 To use OpenAI-backed Pydantic AI planning:
 
 ```bash
-export ALMANAC_OPENAI_KEY="..."
+export SITU_OPENAI_KEY="..."
 ```
 
-When `ALMANAC_OPENAI_KEY` is present, Almanac uses its code default model,
+When `SITU_OPENAI_KEY` is present, Situ uses its code default model,
 currently `openai:gpt-5.5`.
 
-DBOS stores its system database beside Almanac project state by default:
+DBOS stores its system database beside Situ project state by default:
 
 ```text
-~/.almanac/projects/<project-id>/dbos.sqlite
+~/.situ/projects/<project-id>/dbos.sqlite
 ```
 
 Non-secret runtime defaults, including model names, Logfire service names, DBOS
 settings, and local state paths, live in typed code config rather than user env
-vars. The intended user-facing env vars are only `ALMANAC_LOGFIRE_TOKEN` and
-`ALMANAC_OPENAI_KEY`.
+vars. The intended user-facing env vars are only `SITU_LOGFIRE_TOKEN` and
+`SITU_OPENAI_KEY`.
 
 ## Evals
 
-Almanac has a small code-first eval layer for prompt, tool-call, and
+Situ has a small code-first eval layer for prompt, tool-call, and
 observability behavior:
 
 ```bash
@@ -117,9 +117,9 @@ mise run evals:json
 ```
 
 The first suite uses a mocked micrograd world with baseline, A/B/C variants, an
-A+C combination, and one suspicious result. Evals require `ALMANAC_OPENAI_KEY`
-for real LLM calls and `ALMANAC_LOGFIRE_TOKEN` so eval executions are sent to Logfire with
-`service_name=almanac-evals`.
+A+C combination, and one suspicious result. Evals require `SITU_OPENAI_KEY`
+for real LLM calls and `SITU_LOGFIRE_TOKEN` so eval executions are sent to Logfire with
+`service_name=situ-evals`.
 
 ## Layout
 

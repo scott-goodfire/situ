@@ -3,7 +3,7 @@ import type {
   HypothesisRecord,
   ObjectiveRecord,
   SessionRecord,
-} from "@almanac/protocol";
+} from "@situ/protocol";
 import filter from "lodash/filter";
 import orderBy from "lodash/orderBy";
 import type { ProjectWorkspaceData } from "../types";

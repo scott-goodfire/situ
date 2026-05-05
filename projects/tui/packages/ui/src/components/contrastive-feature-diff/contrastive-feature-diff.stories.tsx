@@ -1,4 +1,4 @@
-import type { ContrastiveFeatureSet } from "@almanac/chart-model";
+import type { ContrastiveFeatureSet } from "@situ/chart-model";
 import { ContrastiveFeatureDiff } from "./contrastive-feature-diff.js";
 import type { TuiStory } from "../../stories/story-types.js";
 

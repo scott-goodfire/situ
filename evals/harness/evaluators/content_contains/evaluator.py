@@ -5,14 +5,14 @@ from typing import Any
 
 from pydantic_evals.evaluators import EvaluationReason, Evaluator, EvaluatorContext
 
-from evals.harness.models import AlmanacEvalOutput
+from evals.harness.models import SituEvalOutput
 
 
 @dataclass
-class ContentContains(Evaluator[Any, AlmanacEvalOutput, Any]):
+class ContentContains(Evaluator[Any, SituEvalOutput, Any]):
     text: str
 
-    def evaluate(self, ctx: EvaluatorContext[Any, AlmanacEvalOutput, Any]) -> EvaluationReason:
+    def evaluate(self, ctx: EvaluatorContext[Any, SituEvalOutput, Any]) -> EvaluationReason:
         content = ctx.output.content.lower()
         needle = self.text.lower()
         if needle in content:

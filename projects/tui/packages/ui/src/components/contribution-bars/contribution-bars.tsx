@@ -4,7 +4,7 @@ import {
   toneForSignedValue,
   type ChartTone,
   type SignedContribution,
-} from "@almanac/chart-model";
+} from "@situ/chart-model";
 import { Box, Text } from "ink";
 
 export function ContributionBars({

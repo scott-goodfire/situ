@@ -1,4 +1,4 @@
-export { AlmanacTuiView } from "./components/almanac-tui-view/almanac-tui-view.js";
+export { SituTuiView } from "./components/situ-tui-view/situ-tui-view.js";
 export { AppFrame } from "./components/app-frame/app-frame.js";
 export { BucketBars } from "./components/bucket-bars/bucket-bars.js";
 export {

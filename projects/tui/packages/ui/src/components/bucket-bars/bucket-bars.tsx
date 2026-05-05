@@ -2,7 +2,7 @@ import {
   normalizeBuckets,
   type BucketDatum,
   type ChartTone,
-} from "@almanac/chart-model";
+} from "@situ/chart-model";
 import { Box, Text } from "ink";
 
 export function BucketBars({

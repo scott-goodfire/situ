@@ -1,9 +1,9 @@
-# Almanac Evals
+# Situ Evals
 
-This package contains code-first evals for Almanac's agent behavior,
+This package contains code-first evals for Situ's agent behavior,
 tool-calling flow, and observability.
 
-Evals make real model calls. They require `ALMANAC_OPENAI_KEY`; unit tests
+Evals make real model calls. They require `SITU_OPENAI_KEY`; unit tests
 should cover deterministic behavior, while evals cover live model behavior
 against controlled fixture worlds.
 
@@ -50,7 +50,7 @@ Emit JSON:
 ```
 
 Eval experiments are sent to Logfire by default with
-`service_name=almanac-evals`. Set `ALMANAC_LOGFIRE_TOKEN` in the environment
+`service_name=situ-evals`. Set `SITU_LOGFIRE_TOKEN` in the environment
 used to launch evals.
 
 ## Layout
@@ -59,11 +59,11 @@ used to launch evals.
 evals/
   harness/
     capture/tool_call_capture/capability.py
-    eval_groups/base_almanac_eval_group/eval_group.py
+    eval_groups/base_situ_eval_group/eval_group.py
     evaluators/tool_was_called/evaluator.py
-    judges/standard_almanac_judge/judge.py
+    judges/standard_situ_judge/judge.py
     logfire/configure_eval_observability/configure.py
-    models/almanac_eval_output/model.py
+    models/situ_eval_output/model.py
   runner/
     cli.py
     discovery.py
@@ -91,11 +91,11 @@ evals/
           eval_group.py
 ```
 
-The `tools.research-tools` suite uses the actual Almanac research toolset
+The `tools.research-tools` suite uses the actual Situ research toolset
 against temporary SQLite session worlds. Each case asks the model to exercise
 one tool and then checks captured tool calls plus durable session state.
 
-The `agents.research-agent-research-session` suite runs the real Almanac
+The `agents.research-agent-research-session` suite runs the real Situ
 `ResearchAgent` against temporary SQLite session worlds. The first cases are
 happy-path checks for inspecting a session, creating hypotheses, creating
 follow-up experiments, linking them, and leaving durable comments.

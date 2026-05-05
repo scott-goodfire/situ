@@ -191,15 +191,15 @@ function ProjectEventsRoute() {
 
 function NotFoundRoute() {
   return (
-    <main className="almanac-shell">
-      <header className="almanac-topbar">
+    <main className="situ-shell">
+      <header className="situ-topbar">
         <div>
-          <h1>Almanac</h1>
+          <h1>Situ</h1>
           <p>{window.location.pathname}</p>
         </div>
       </header>
 
-      <section className="almanac-empty">
+      <section className="situ-empty">
         <h2>Page not found</h2>
         <p>Open the local project index or a project monitor URL.</p>
       </section>

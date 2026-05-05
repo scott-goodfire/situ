@@ -1,4 +1,4 @@
-import type { SteeringDoseResponse as SteeringDoseResponseData } from "@almanac/chart-model";
+import type { SteeringDoseResponse as SteeringDoseResponseData } from "@situ/chart-model";
 import { SteeringDoseResponse } from "./steering-dose-response.js";
 import type { TuiStory } from "../../stories/story-types.js";
 

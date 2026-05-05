@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import {
   applyBootstrap,
   applyCollectionUpsert,
-  createAlmanacCollections,
+  createSituCollections,
 } from "./index";
 import type {
   CollectionUpsertedParams,
@@ -17,14 +17,14 @@ import type {
   ProjectRecord,
   ResearchContextRecord,
   SessionRecord,
-} from "@almanac/protocol";
+} from "@situ/protocol";
 
 const PROJECT_ID = "project_0001";
 const SESSION_ID = "session_0001";
 
-describe("almanac collections", () => {
+describe("situ collections", () => {
   test("hydrates projects, objectives, research contexts, sessions, activities, and events", async () => {
-    const collections = createAlmanacCollections();
+    const collections = createSituCollections();
     const bootstrap: CollectionsBootstrapResult = {
       cursor: 2,
       projects: [projectRecord({})],
@@ -80,7 +80,7 @@ describe("almanac collections", () => {
   });
 
   test("handles bootstrap payloads from sessions missing newer collections", async () => {
-    const collections = createAlmanacCollections();
+    const collections = createSituCollections();
     const bootstrap = {
       cursor: 1,
       projects: [projectRecord({})],
@@ -106,7 +106,7 @@ describe("almanac collections", () => {
   });
 
   test("applies collection upserts as inserts and updates", async () => {
-    const collections = createAlmanacCollections();
+    const collections = createSituCollections();
 
     await applyCollectionUpsert({
       collections,

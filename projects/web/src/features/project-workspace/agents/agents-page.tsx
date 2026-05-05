@@ -1,4 +1,4 @@
-import { DxSection, DxTable, type DxTableColumn } from "@almanac/web-ui";
+import { DxSection, DxTable, type DxTableColumn } from "@situ/web-ui";
 import { Link } from "@tanstack/react-router";
 import { DateTime } from "luxon";
 import type { AgentSummary, ProjectWorkspaceData } from "../types";
@@ -35,7 +35,7 @@ function agentColumns({
       width: "30%",
       renderCell: ({ row }) => (
         <Link
-          className="almanac-record-link"
+          className="situ-record-link"
           to="/projects/$projectId/agents/$agentId"
           params={{
             projectId,

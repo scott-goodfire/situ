@@ -10,49 +10,49 @@ from pydantic_ai import RunContext
 from pydantic_ai.models.test import TestModel
 from pydantic_ai.usage import RunUsage
 
-from almanac.harness.core.db import Database
-from almanac.harness.core.workers import WorkerManager
-from almanac.harness.repositories import Repositories
-from almanac.harness.tools import build_research_toolset, build_workspace_toolset
-from almanac.harness.tools.activities import (
+from situ.harness.core.db import Database
+from situ.harness.core.workers import WorkerManager
+from situ.harness.repositories import Repositories
+from situ.harness.tools import build_research_toolset, build_workspace_toolset
+from situ.harness.tools.activities import (
     ListEvaluationActivitiesTool,
     ListExperimentActivitiesTool,
     ListHypothesisActivitiesTool,
 )
-from almanac.harness.tools.artifacts import CreateArtifactTool, ListArtifactsTool
-from almanac.harness.tools.comments import AddExperimentCommentTool, AddHypothesisCommentTool
-from almanac.harness.tools.common import AlmanacToolDeps, invoke_almanac_tool_sync
-from almanac.harness.tools.evaluations import (
+from situ.harness.tools.artifacts import CreateArtifactTool, ListArtifactsTool
+from situ.harness.tools.comments import AddExperimentCommentTool, AddHypothesisCommentTool
+from situ.harness.tools.common import SituToolDeps, invoke_situ_tool_sync
+from situ.harness.tools.evaluations import (
     AddEvaluationResultTool,
     CreateEvaluationTool,
     ListEvaluationsTool,
     UpdateEvaluationTool,
 )
-from almanac.harness.tools.experiments import (
+from situ.harness.tools.experiments import (
     CreateExperimentTool,
     ListExperimentsTool,
     RunExperimentTool,
     UpdateExperimentTool,
 )
-from almanac.harness.tools.hypotheses import (
+from situ.harness.tools.hypotheses import (
     CreateHypothesisTool,
     ListHypothesesTool,
     UpdateHypothesisTool,
 )
-from almanac.harness.tools.links import LinkHypothesisExperimentTool
-from almanac.harness.tools.objectives import (
+from situ.harness.tools.links import LinkHypothesisExperimentTool
+from situ.harness.tools.objectives import (
     CreateObjectiveTool,
     GetObjectiveTool,
     UpdateObjectiveTool,
 )
-from almanac.harness.tools.research_contexts import (
+from situ.harness.tools.research_contexts import (
     CreateResearchContextTool,
     GetResearchContextTool,
     UpdateResearchContextTool,
 )
-from almanac.harness.tools.sessions import GetSessionTool
-from almanac.harness.tools.workspace_state import InspectWorkspaceStateTool
-from almanac.protocol import ExperimentRunParams, ExperimentRunResult
+from situ.harness.tools.sessions import GetSessionTool
+from situ.harness.tools.workspace_state import InspectWorkspaceStateTool
+from situ.protocol import ExperimentRunParams, ExperimentRunResult
 
 
 def _git(cwd: Path, *args: str) -> None:
@@ -62,7 +62,7 @@ def _git(cwd: Path, *args: str) -> None:
 @pytest.fixture
 def repos(tmp_path: Path) -> Repositories:
     db = Database(
-        tmp_path / "almanac.sqlite",
+        tmp_path / "situ.sqlite",
         project_id="project_test",
         repo_path="/tmp/project",
     )
@@ -103,9 +103,9 @@ def repos(tmp_path: Path) -> Repositories:
 
 
 def test_get_session_tool_reads_current_session_graph(repos: Repositories) -> None:
-    deps = AlmanacToolDeps(session_id="session_0001", repos=repos)
+    deps = SituToolDeps(session_id="session_0001", repos=repos)
 
-    result = invoke_almanac_tool_sync(tool=GetSessionTool(), deps=deps)
+    result = invoke_situ_tool_sync(tool=GetSessionTool(), deps=deps)
 
     assert result.success is True
     assert result.project is not None
@@ -122,9 +122,9 @@ def test_get_session_tool_reads_current_session_graph(repos: Repositories) -> No
 def test_get_objective_tool_reads_current_session_objective(
     repos: Repositories,
 ) -> None:
-    deps = AlmanacToolDeps(session_id="session_0001", repos=repos)
+    deps = SituToolDeps(session_id="session_0001", repos=repos)
 
-    result = invoke_almanac_tool_sync(tool=GetObjectiveTool(), deps=deps)
+    result = invoke_situ_tool_sync(tool=GetObjectiveTool(), deps=deps)
 
     assert result.success is True
     assert result.objective is not None
@@ -140,15 +140,15 @@ def test_create_objective_tool_is_idempotent(repos: Repositories) -> None:
     fresh = Repositories.create(db)
     project = fresh.project.ensure()
     fresh.sessions.create("session_fresh", project_id=project.id)
-    deps = AlmanacToolDeps(session_id="session_fresh", repos=fresh)
+    deps = SituToolDeps(session_id="session_fresh", repos=fresh)
 
-    first = invoke_almanac_tool_sync(
+    first = invoke_situ_tool_sync(
         tool=CreateObjectiveTool(),
         deps=deps,
         title="First",
         description="First objective",
     )
-    second = invoke_almanac_tool_sync(
+    second = invoke_situ_tool_sync(
         tool=CreateObjectiveTool(),
         deps=deps,
         title="Different",
@@ -172,9 +172,9 @@ def test_research_context_tools_create_get_and_update(repos: Repositories) -> No
     fresh = Repositories.create(db)
     project = fresh.project.ensure()
     fresh.sessions.create("session_rctx", project_id=project.id)
-    deps = AlmanacToolDeps(session_id="session_rctx", repos=fresh)
+    deps = SituToolDeps(session_id="session_rctx", repos=fresh)
 
-    created = invoke_almanac_tool_sync(
+    created = invoke_situ_tool_sync(
         tool=CreateResearchContextTool(),
         deps=deps,
         body="Run eval; expected signals: score.",
@@ -183,7 +183,7 @@ def test_research_context_tools_create_get_and_update(repos: Repositories) -> No
     assert created.research_context is not None
     assert "score" in created.research_context["body"]
 
-    fetched = invoke_almanac_tool_sync(
+    fetched = invoke_situ_tool_sync(
         tool=GetResearchContextTool(),
         deps=deps,
     )
@@ -191,7 +191,7 @@ def test_research_context_tools_create_get_and_update(repos: Repositories) -> No
     assert fetched.research_context is not None
     assert fetched.research_context["id"] == created.research_context["id"]
 
-    updated = invoke_almanac_tool_sync(
+    updated = invoke_situ_tool_sync(
         tool=UpdateResearchContextTool(),
         deps=deps,
         body="Refined: focus on score, ignore latency.",
@@ -204,9 +204,9 @@ def test_research_context_tools_create_get_and_update(repos: Repositories) -> No
 def test_update_objective_tool_updates_session_objective(
     repos: Repositories,
 ) -> None:
-    deps = AlmanacToolDeps(session_id="session_0001", repos=repos)
+    deps = SituToolDeps(session_id="session_0001", repos=repos)
 
-    updated = invoke_almanac_tool_sync(
+    updated = invoke_situ_tool_sync(
         tool=UpdateObjectiveTool(),
         deps=deps,
         title="Improve score safely",
@@ -220,13 +220,13 @@ def test_update_objective_tool_updates_session_objective(
 
 def test_hypothesis_tools_create_update_and_list(repos: Repositories) -> None:
     emitted: list[dict[str, Any]] = []
-    deps = AlmanacToolDeps(
+    deps = SituToolDeps(
         session_id="session_0001",
         repos=repos,
         emit_event=_event_collector(emitted),
     )
 
-    created = invoke_almanac_tool_sync(
+    created = invoke_situ_tool_sync(
         tool=CreateHypothesisTool(),
         deps=deps,
         title="Component C helps",
@@ -237,7 +237,7 @@ def test_hypothesis_tools_create_update_and_list(repos: Repositories) -> None:
     assert created.hypothesis["id"] == "hyp_session_0001_agent_002"
     assert created.hypothesis["status"] == "open"
 
-    updated = invoke_almanac_tool_sync(
+    updated = invoke_situ_tool_sync(
         tool=UpdateHypothesisTool(),
         deps=deps,
         hypothesis_id="hyp_session_0001_agent_002",
@@ -248,7 +248,7 @@ def test_hypothesis_tools_create_update_and_list(repos: Repositories) -> None:
     assert updated.hypothesis is not None
     assert updated.hypothesis["status"] == "active"
 
-    listed = invoke_almanac_tool_sync(
+    listed = invoke_situ_tool_sync(
         tool=ListHypothesesTool(),
         deps=deps,
         status="active",
@@ -266,13 +266,13 @@ def test_hypothesis_tools_create_update_and_list(repos: Repositories) -> None:
 
 def test_experiment_tools_create_update_and_list(repos: Repositories) -> None:
     emitted: list[dict[str, Any]] = []
-    deps = AlmanacToolDeps(
+    deps = SituToolDeps(
         session_id="session_0001",
         repos=repos,
         emit_event=_event_collector(emitted),
     )
 
-    created = invoke_almanac_tool_sync(
+    created = invoke_situ_tool_sync(
         tool=CreateExperimentTool(),
         deps=deps,
         title="Try component C",
@@ -283,7 +283,7 @@ def test_experiment_tools_create_update_and_list(repos: Repositories) -> None:
     assert created.experiment["id"] == "exp_session_0001_agent_002"
     assert created.experiment["status"] == "open"
 
-    updated = invoke_almanac_tool_sync(
+    updated = invoke_situ_tool_sync(
         tool=UpdateExperimentTool(),
         deps=deps,
         experiment_id="exp_session_0001_agent_002",
@@ -294,7 +294,7 @@ def test_experiment_tools_create_update_and_list(repos: Repositories) -> None:
     assert updated.experiment is not None
     assert updated.experiment["status"] == "closed"
 
-    listed = invoke_almanac_tool_sync(tool=ListExperimentsTool(), deps=deps)
+    listed = invoke_situ_tool_sync(tool=ListExperimentsTool(), deps=deps)
     assert listed.success is True
     assert [experiment["id"] for experiment in listed.experiments] == [
         "exp_session_0001_a",
@@ -310,13 +310,13 @@ def test_evaluation_tools_create_update_list_and_add_results(
     repos: Repositories,
 ) -> None:
     emitted: list[dict[str, Any]] = []
-    deps = AlmanacToolDeps(
+    deps = SituToolDeps(
         session_id="session_0001",
         repos=repos,
         emit_event=_event_collector(emitted),
     )
 
-    created = invoke_almanac_tool_sync(
+    created = invoke_situ_tool_sync(
         tool=CreateEvaluationTool(),
         deps=deps,
         title="Baseline project eval",
@@ -327,7 +327,7 @@ def test_evaluation_tools_create_update_list_and_add_results(
     assert created.evaluation["id"] == "eval_session_0001_agent_001"
     assert created.evaluation["status"] == "open"
 
-    result = invoke_almanac_tool_sync(
+    result = invoke_situ_tool_sync(
         tool=AddEvaluationResultTool(),
         deps=deps,
         evaluation_id="eval_session_0001_agent_001",
@@ -339,7 +339,7 @@ def test_evaluation_tools_create_update_list_and_add_results(
     assert result.activity["body"] == "Baseline command passed with score 0.71."
     assert result.activity["payload"]["activity_type"] == "result"
 
-    updated = invoke_almanac_tool_sync(
+    updated = invoke_situ_tool_sync(
         tool=UpdateEvaluationTool(),
         deps=deps,
         evaluation_id="eval_session_0001_agent_001",
@@ -350,8 +350,8 @@ def test_evaluation_tools_create_update_list_and_add_results(
     assert updated.evaluation is not None
     assert updated.evaluation["status"] == "closed"
 
-    listed = invoke_almanac_tool_sync(tool=ListEvaluationsTool(), deps=deps)
-    activities = invoke_almanac_tool_sync(
+    listed = invoke_situ_tool_sync(tool=ListEvaluationsTool(), deps=deps)
+    activities = invoke_situ_tool_sync(
         tool=ListEvaluationActivitiesTool(),
         deps=deps,
         evaluation_id="eval_session_0001_agent_001",
@@ -372,26 +372,26 @@ def test_evaluation_tools_create_update_list_and_add_results(
 def test_work_tools_reject_invalid_statuses_with_agent_readable_errors(
     repos: Repositories,
 ) -> None:
-    deps = AlmanacToolDeps(session_id="session_0001", repos=repos)
+    deps = SituToolDeps(session_id="session_0001", repos=repos)
 
-    experiment_update = invoke_almanac_tool_sync(
+    experiment_update = invoke_situ_tool_sync(
         tool=UpdateExperimentTool(),
         deps=deps,
         experiment_id="exp_session_0001_a",
         status="completed",
     )
-    hypothesis_update = invoke_almanac_tool_sync(
+    hypothesis_update = invoke_situ_tool_sync(
         tool=UpdateHypothesisTool(),
         deps=deps,
         hypothesis_id="hyp_0001",
         status="completed",
     )
-    experiment_list = invoke_almanac_tool_sync(
+    experiment_list = invoke_situ_tool_sync(
         tool=ListExperimentsTool(),
         deps=deps,
         status="completed",
     )
-    evaluation_list = invoke_almanac_tool_sync(
+    evaluation_list = invoke_situ_tool_sync(
         tool=ListEvaluationsTool(),
         deps=deps,
         status="completed",
@@ -417,9 +417,9 @@ def test_work_tools_reject_invalid_statuses_with_agent_readable_errors(
 
 
 def test_link_tool_links_hypothesis_and_experiment(repos: Repositories) -> None:
-    deps = AlmanacToolDeps(session_id="session_0001", repos=repos)
+    deps = SituToolDeps(session_id="session_0001", repos=repos)
 
-    result = invoke_almanac_tool_sync(
+    result = invoke_situ_tool_sync(
         tool=LinkHypothesisExperimentTool(),
         deps=deps,
         hypothesis_id="hyp_0001",
@@ -434,20 +434,20 @@ def test_link_tool_links_hypothesis_and_experiment(repos: Repositories) -> None:
 
 def test_comment_tools_write_activity_records(repos: Repositories) -> None:
     emitted: list[dict[str, Any]] = []
-    deps = AlmanacToolDeps(
+    deps = SituToolDeps(
         session_id="session_0001",
         repos=repos,
         emit_event=_event_collector(emitted),
     )
 
-    hypothesis_comment = invoke_almanac_tool_sync(
+    hypothesis_comment = invoke_situ_tool_sync(
         tool=AddHypothesisCommentTool(),
         deps=deps,
         hypothesis_id="hyp_0001",
         comment="Component A is promising enough to test.",
         payload={"reason": "first pass"},
     )
-    experiment_comment = invoke_almanac_tool_sync(
+    experiment_comment = invoke_situ_tool_sync(
         tool=AddExperimentCommentTool(),
         deps=deps,
         experiment_id="exp_session_0001_a",
@@ -464,12 +464,12 @@ def test_comment_tools_write_activity_records(repos: Repositories) -> None:
     assert experiment_comment.activity["kind"] == "comment"
     assert experiment_comment.activity["body"] == "Component A improved score."
 
-    hypothesis_activities = invoke_almanac_tool_sync(
+    hypothesis_activities = invoke_situ_tool_sync(
         tool=ListHypothesisActivitiesTool(),
         deps=deps,
         hypothesis_id="hyp_0001",
     )
-    experiment_activities = invoke_almanac_tool_sync(
+    experiment_activities = invoke_situ_tool_sync(
         tool=ListExperimentActivitiesTool(),
         deps=deps,
         experiment_id="exp_session_0001_a",
@@ -484,9 +484,9 @@ def test_comment_tools_write_activity_records(repos: Repositories) -> None:
 
 
 def test_artifact_tools_create_and_list_artifacts(repos: Repositories) -> None:
-    deps = AlmanacToolDeps(session_id="session_0001", repos=repos)
+    deps = SituToolDeps(session_id="session_0001", repos=repos)
 
-    created = invoke_almanac_tool_sync(
+    created = invoke_situ_tool_sync(
         tool=CreateArtifactTool(),
         deps=deps,
         kind="json",
@@ -503,7 +503,7 @@ def test_artifact_tools_create_and_list_artifacts(repos: Repositories) -> None:
     assert created.artifact["associated_entity_kind"] == "experiment"
     assert created.artifact["associated_entity_id"] == "exp_session_0001_a"
 
-    listed = invoke_almanac_tool_sync(
+    listed = invoke_situ_tool_sync(
         tool=ListArtifactsTool(),
         deps=deps,
         associated_entity_kind="experiment",
@@ -518,7 +518,7 @@ def test_artifact_tools_create_and_list_artifacts(repos: Repositories) -> None:
 def test_workspace_toolset_uses_repo_path_backend(tmp_path: Path) -> None:
     marker = tmp_path / "marker.txt"
     marker.write_text("workspace marker", encoding="utf-8")
-    deps = AlmanacToolDeps(session_id="session_0001", repo_path=str(tmp_path))
+    deps = SituToolDeps(session_id="session_0001", repo_path=str(tmp_path))
 
     result = deps.backend.execute(
         "pwd && printf '\\n---\\n' && cat marker.txt",
@@ -556,8 +556,8 @@ def test_research_toolset_includes_workspace_state_inspector() -> None:
 
 def test_inspect_workspace_state_classifies_candidate_changes(tmp_path: Path) -> None:
     _git(tmp_path, "init")
-    _git(tmp_path, "config", "user.email", "almanac@example.com")
-    _git(tmp_path, "config", "user.name", "Almanac")
+    _git(tmp_path, "config", "user.email", "situ@example.com")
+    _git(tmp_path, "config", "user.name", "Situ")
     (tmp_path / "micrograd").mkdir()
     (tmp_path / "test").mkdir()
     (tmp_path / "micrograd" / "engine.py").write_text(
@@ -586,9 +586,9 @@ def test_inspect_workspace_state_classifies_candidate_changes(tmp_path: Path) ->
     (tmp_path / ".pytest_cache").mkdir()
     (tmp_path / ".pytest_cache" / "README.md").write_text("cache\n", encoding="utf-8")
 
-    deps = AlmanacToolDeps(session_id="session_0001", repo_path=str(tmp_path))
+    deps = SituToolDeps(session_id="session_0001", repo_path=str(tmp_path))
 
-    inspected = invoke_almanac_tool_sync(
+    inspected = invoke_situ_tool_sync(
         tool=InspectWorkspaceStateTool(),
         deps=deps,
         eval_command=".venv/bin/python -m pytest",
@@ -621,7 +621,7 @@ def test_inspect_workspace_state_classifies_candidate_changes(tmp_path: Path) ->
 async def _call_workspace_execute(
     *,
     toolset: Any,
-    deps: AlmanacToolDeps,
+    deps: SituToolDeps,
 ) -> str:
     ctx = RunContext(
         deps=deps,
@@ -642,14 +642,14 @@ def test_run_experiment_tool_executes_worker_and_records_activity(
     repos: Repositories,
 ) -> None:
     emitted: list[dict[str, Any]] = []
-    deps = AlmanacToolDeps(
+    deps = SituToolDeps(
         session_id="session_0001",
         repos=repos,
         worker_manager=FakeWorkerManager(),
         emit_event=_event_collector(emitted),
     )
 
-    result = invoke_almanac_tool_sync(
+    result = invoke_situ_tool_sync(
         tool=RunExperimentTool(),
         deps=deps,
         title="Try component C",

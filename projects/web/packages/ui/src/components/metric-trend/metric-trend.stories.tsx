@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import type { MetricSeries } from "@almanac/chart-model";
+import type { MetricSeries } from "@situ/chart-model";
 import { MetricTrend } from "./metric-trend";
 
 const scoreSeries = {

@@ -4,8 +4,8 @@ import inspect
 
 from pydantic_ai import Agent
 
-from almanac.harness.tools import build_research_toolset
-from almanac.harness.tools.common import AlmanacToolDeps
+from situ.harness.tools import build_research_toolset
+from situ.harness.tools.common import SituToolDeps
 from evals.harness.capture import ToolCallCaptureCapability
 from evals.harness.llms import eval_model_name
 from evals.worlds.research_session.models import (
@@ -14,10 +14,10 @@ from evals.worlds.research_session.models import (
 )
 from evals.worlds.research_session.world import ResearchSessionWorld, SESSION_ID
 
-RESEARCH_TOOL_AGENT_NAME = "almanac-research-tool-eval-agent"
+RESEARCH_TOOL_AGENT_NAME = "situ-research-tool-eval-agent"
 RESEARCH_TOOL_AGENT_INSTRUCTIONS = inspect.cleandoc(
     """
-    You are helping test Almanac's research tool surface.
+    You are helping test Situ's research tool surface.
 
     Do the requested action directly with the available tools. Use the ledger
     for all session, objective, hypothesis, experiment, activity, and artifact
@@ -31,7 +31,7 @@ def run_research_tool_agent(args: ResearchToolEvalInput) -> ResearchToolEvalOutp
     world = ResearchSessionWorld(seed=args.seed)
     capture = ToolCallCaptureCapability()
     try:
-        deps = AlmanacToolDeps(
+        deps = SituToolDeps(
             session_id=SESSION_ID,
             repos=world.repos,
             emit_event=world.emit_event,
@@ -54,11 +54,11 @@ def run_research_tool_agent(args: ResearchToolEvalInput) -> ResearchToolEvalOutp
 
 def _build_agent(
     capture: ToolCallCaptureCapability,
-) -> Agent[AlmanacToolDeps, str]:
-    return Agent[AlmanacToolDeps, str](
+) -> Agent[SituToolDeps, str]:
+    return Agent[SituToolDeps, str](
         eval_model_name(),
         name=RESEARCH_TOOL_AGENT_NAME,
-        deps_type=AlmanacToolDeps,
+        deps_type=SituToolDeps,
         output_type=str,
         instructions=RESEARCH_TOOL_AGENT_INSTRUCTIONS,
         toolsets=[build_research_toolset()],

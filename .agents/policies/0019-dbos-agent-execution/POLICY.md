@@ -12,8 +12,8 @@ starts long-running or state-mutating agent work.
 
 ## Rule
 
-Use Pydantic AI's `DBOSAgent` as the default durability boundary for Almanac
-agents. Almanac should not build custom DBOS workflow orchestration around an
+Use Pydantic AI's `DBOSAgent` as the default durability boundary for Situ
+agents. Situ should not build custom DBOS workflow orchestration around an
 agent run when the same behavior can live as a Pydantic AI agent with typed
 tools.
 
@@ -32,7 +32,7 @@ reasonably be represented as agent/tool behavior.
 - Pass lightweight context such as `session_id`, `project_id`, `project_dir`,
   and `repo_path`; reopen repositories or workers inside tool execution when
   needed.
-- Prefer explicit Almanac tools over custom workflow steps for agent-visible
+- Prefer explicit Situ tools over custom workflow steps for agent-visible
   behavior: inspect session state, create or update hypotheses and experiments,
   link records, attach artifacts, and add comments.
 - Use DBOS steps around side-effecting custom tool internals when replay safety
@@ -51,12 +51,12 @@ reasonably be represented as agent/tool behavior.
   as DBOS agent deps.
 - Registering agents, workflows, or DBOS-wrapped tools after `launch_dbos()`.
 - Adding a second source of truth for tool calls when Pydantic AI messages and
-  Almanac activities already capture the useful state.
+  Situ activities already capture the useful state.
 
 ## Review Questions
 
 - Is this actually agent behavior, or is it lower-level harness orchestration?
-- Could the behavior be expressed as an Almanac tool called by a `DBOSAgent`?
+- Could the behavior be expressed as an Situ tool called by a `DBOSAgent`?
 - Are the DBOS run inputs small, serializable, and stable across process
   restart?
 - Does the change preserve terminal observability through the ledger and

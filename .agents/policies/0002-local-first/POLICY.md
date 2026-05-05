@@ -11,13 +11,13 @@ State storage, artifacts, exports, project setup, workers, and integrations.
 
 ## Rule
 
-Almanac is private and local by default. It should not write into the researched
+Situ is private and local by default. It should not write into the researched
 repo or send data to hosted services unless the user explicitly opts in.
 
 ## Required Checks
 
 - Default runtime state lives outside the researched repo, under a user-local
-  Almanac directory.
+  Situ directory.
 - Repo writes are explicit exports or user-approved patches.
 - Config, objectives, sessions, hypotheses, experiments, activities, events, and
   minimal artifact references are durable locally.

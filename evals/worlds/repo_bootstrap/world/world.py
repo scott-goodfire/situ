@@ -5,9 +5,9 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any
 
-from almanac.harness.api.sessions import SessionsService
-from almanac.harness.core.db import Database
-from almanac.harness.repositories import Repositories
+from situ.harness.api.sessions import SessionsService
+from situ.harness.core.db import Database
+from situ.harness.repositories import Repositories
 from evals.harness.models import EvalEvent
 from evals.worlds.repo_bootstrap.models import RepoBootstrapSeed
 
@@ -209,7 +209,7 @@ class RepoBootstrapWorld:
 def _build_repos(path: Path, workspace_path: Path) -> Repositories:
     path.mkdir(parents=True)
     db = Database(
-        path / "almanac.sqlite",
+        path / "situ.sqlite",
         project_id="project_repo_bootstrap",
         repo_path=str(workspace_path),
     )

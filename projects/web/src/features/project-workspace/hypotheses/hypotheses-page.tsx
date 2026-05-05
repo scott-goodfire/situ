@@ -1,11 +1,11 @@
-import type { HypothesisRecord } from "@almanac/protocol";
+import type { HypothesisRecord } from "@situ/protocol";
 import {
   DxBadge,
   DxSection,
   DxTable,
   type DxBadgeTone,
   type DxTableColumn,
-} from "@almanac/web-ui";
+} from "@situ/web-ui";
 import { Link } from "@tanstack/react-router";
 import filter from "lodash/filter";
 import { EvidenceSummary } from "../evidence/evidence-summary";
@@ -78,9 +78,9 @@ function hypothesisColumns({
       header: "Hypothesis",
       width: "30%",
       renderCell: ({ row }) => (
-        <div className="almanac-record-cell">
+        <div className="situ-record-cell">
           <Link
-            className="almanac-record-link"
+            className="situ-record-link"
             to="/projects/$projectId/hypotheses/$hypothesisId"
             params={{
               projectId,
@@ -89,7 +89,7 @@ function hypothesisColumns({
           >
             {row.hypothesis.title}
           </Link>
-          <span className="almanac-record-id">{row.hypothesis.id}</span>
+          <span className="situ-record-id">{row.hypothesis.id}</span>
         </div>
       ),
       sortValue: ({ row }) => row.hypothesis.title,

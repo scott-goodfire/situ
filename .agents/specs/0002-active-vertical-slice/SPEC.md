@@ -17,23 +17,23 @@ loop, comment activities, simple automated trust concerns, and one worker path.
 A user runs from the repo they want to observe:
 
 ```bash
-almanac start
+situ start
 ```
 
-or points Almanac at a workspace explicitly:
+or points Situ at a workspace explicitly:
 
 ```bash
-almanac start ~/sandbox/some-project
+situ start ~/sandbox/some-project
 ```
 
-For the current implementation slice, Almanac accepts setup context through
+For the current implementation slice, Situ accepts setup context through
 sparse start/exec inputs and reasonable defaults. The durable inputs are:
 
 - Objective
 - Research context: how progress is judged, what evals/tools/metrics/logs or
   artifacts matter, and what kinds of experiments are in scope
 
-Then Almanac:
+Then Situ:
 
 - Creates local private project state.
 - Starts a new session by default.
@@ -47,10 +47,10 @@ Then Almanac:
   and decisions as activities.
 - Renders a live terminal dashboard.
 
-The Almanac install/dev root and the researched workspace are separate
+The Situ install/dev root and the researched workspace are separate
 concepts. Runtime state, project identity, worker current directory, and trust
 checks are scoped to the researched workspace, even when the TUI and harness
-code are launched from the Almanac repository.
+code are launched from the Situ repository.
 
 ## Current Slice Includes
 
@@ -86,7 +86,7 @@ code are launched from the Almanac repository.
 The agent path should express active behavior through approved harness tools.
 Getting session context, creating hypotheses, creating/running experiments,
 creating evaluations, linking hypotheses and experiments, attaching artifacts,
-and recording comments should have typed tool envelopes. Almanac should persist
+and recording comments should have typed tool envelopes. Situ should persist
 Pydantic AI message history as the durable agent transcript and use
 events/collection upserts for live tool-call observability rather than making a
 separate tool-call table the source of truth.

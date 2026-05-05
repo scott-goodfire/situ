@@ -1,4 +1,4 @@
-import type { ExperimentRecord } from "@almanac/protocol";
+import type { ExperimentRecord } from "@situ/protocol";
 import filter from "lodash/filter";
 import type { ProjectWorkspaceData } from "../types";
 

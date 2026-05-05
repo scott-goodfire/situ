@@ -3,7 +3,7 @@ import { Text } from "ink";
 import type {
   EvaluationActivityRecord,
   EvaluationRecord,
-} from "@almanac/protocol";
+} from "@situ/protocol";
 import { PaneSection } from "../pane-section/pane-section.js";
 import { previewText } from "../text-preview/text-preview.js";
 

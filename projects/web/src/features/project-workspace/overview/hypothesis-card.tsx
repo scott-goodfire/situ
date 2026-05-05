@@ -3,8 +3,8 @@ import type {
   EvaluationRecord,
   ExperimentRecord,
   HypothesisRecord,
-} from "@almanac/protocol";
-import { DxBadge, type DxBadgeTone } from "@almanac/web-ui";
+} from "@situ/protocol";
+import { DxBadge, type DxBadgeTone } from "@situ/web-ui";
 import { Link } from "@tanstack/react-router";
 import {
   evidenceState,
@@ -43,11 +43,11 @@ export function HypothesisCard({
   });
 
   return (
-    <article className="almanac-hypothesis-card">
-      <header className="almanac-hypothesis-card__header">
-        <div className="almanac-record-cell">
+    <article className="situ-hypothesis-card">
+      <header className="situ-hypothesis-card__header">
+        <div className="situ-record-cell">
           <Link
-            className="almanac-record-link"
+            className="situ-record-link"
             to="/projects/$projectId/hypotheses/$hypothesisId"
             params={{
               projectId: data.projectId,
@@ -56,14 +56,14 @@ export function HypothesisCard({
           >
             {hypothesis.title}
           </Link>
-          <span className="almanac-record-id">{hypothesis.id}</span>
+          <span className="situ-record-id">{hypothesis.id}</span>
         </div>
         <DxBadge tone={statusTone({ status: hypothesis.status })}>
           {hypothesis.status}
         </DxBadge>
       </header>
 
-      <p className="almanac-hypothesis-card__summary">{hypothesis.summary}</p>
+      <p className="situ-hypothesis-card__summary">{hypothesis.summary}</p>
 
       <PresenceLine
         agents={agents}
@@ -135,7 +135,7 @@ function EvidenceLine({
     return `Evidence: ${latestActivity?.body ?? "result recorded"}`;
   })();
 
-  return <p className="almanac-hypothesis-card__evidence">{label}</p>;
+  return <p className="situ-hypothesis-card__evidence">{label}</p>;
 }
 
 function CurrentExperiment({
@@ -150,10 +150,10 @@ function CurrentExperiment({
   }
 
   return (
-    <div className="almanac-hypothesis-card__experiment">
+    <div className="situ-hypothesis-card__experiment">
       <span className="dx-mono">{experiment.status}</span>
       <Link
-        className="almanac-record-link"
+        className="situ-record-link"
         to="/projects/$projectId/experiments/$experimentId"
         params={{
           projectId,

@@ -13,10 +13,10 @@ export function ProjectWorkspaceLayout({
   children: ReactNode;
 }) {
   return (
-    <main className="almanac-shell">
-      <header className="almanac-topbar">
+    <main className="situ-shell">
+      <header className="situ-topbar">
         <div>
-          <h1>Almanac</h1>
+          <h1>Situ</h1>
           <p>{data.workspace ?? "Local workspace"}</p>
         </div>
         <ConnectionBadge state={data.connection} />
@@ -25,15 +25,15 @@ export function ProjectWorkspaceLayout({
       <ProjectNav projectId={data.projectId} />
 
       {data.connection.kind === "failed" && (
-        <p className="almanac-status" data-tone="danger">{data.connection.message}</p>
+        <p className="situ-status" data-tone="danger">{data.connection.message}</p>
       )}
 
       {data.connection.kind === "disconnected" && (
-        <p className="almanac-status" data-tone="warning">{data.connection.message}</p>
+        <p className="situ-status" data-tone="warning">{data.connection.message}</p>
       )}
 
       {discoveryError && (
-        <p className="almanac-status" data-tone="warning">{discoveryError}</p>
+        <p className="situ-status" data-tone="warning">{discoveryError}</p>
       )}
 
       {children}
@@ -47,9 +47,9 @@ function ProjectNav({
   projectId: string;
 }) {
   return (
-    <nav className="almanac-project-nav" aria-label="Project sections">
+    <nav className="situ-project-nav" aria-label="Project sections">
       <Link
-        className="almanac-project-nav__link"
+        className="situ-project-nav__link"
         to="/projects/$projectId"
         params={{ projectId }}
         activeOptions={{ exact: true }}
@@ -59,7 +59,7 @@ function ProjectNav({
         Overview
       </Link>
       <Link
-        className="almanac-project-nav__link"
+        className="situ-project-nav__link"
         to="/projects/$projectId/hypotheses"
         params={{ projectId }}
         activeProps={{ "data-active": "true" }}
@@ -68,7 +68,7 @@ function ProjectNav({
         Hypotheses
       </Link>
       <Link
-        className="almanac-project-nav__link"
+        className="situ-project-nav__link"
         to="/projects/$projectId/experiments"
         params={{ projectId }}
         activeProps={{ "data-active": "true" }}
@@ -77,7 +77,7 @@ function ProjectNav({
         Experiments
       </Link>
       <Link
-        className="almanac-project-nav__link"
+        className="situ-project-nav__link"
         to="/projects/$projectId/evaluations"
         params={{ projectId }}
         activeProps={{ "data-active": "true" }}
@@ -86,7 +86,7 @@ function ProjectNav({
         Evaluations
       </Link>
       <Link
-        className="almanac-project-nav__link"
+        className="situ-project-nav__link"
         to="/projects/$projectId/agents"
         params={{ projectId }}
         activeProps={{ "data-active": "true" }}
@@ -95,7 +95,7 @@ function ProjectNav({
         Agents
       </Link>
       <Link
-        className="almanac-project-nav__link"
+        className="situ-project-nav__link"
         to="/projects/$projectId/events"
         params={{ projectId }}
         activeProps={{ "data-active": "true" }}

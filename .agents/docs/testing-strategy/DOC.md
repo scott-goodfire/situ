@@ -50,14 +50,14 @@ When workspace command execution behavior changes, also run an external
 workspace smoke:
 
 ```bash
-tmp=$(mktemp -d /private/tmp/almanac-ext.XXXXXX)
+tmp=$(mktemp -d /private/tmp/situ-ext.XXXXXX)
 ./commands/start.sh "$tmp" \
   --objective "Exercise the external workspace eval path." \
   --context "Run make eval from the repo root. It prints score and tests_passed." \
   --max-experiments 1
 ```
 
-Runtime state is written under `~/.almanac/projects/<project-id>/`. Tests that
+Runtime state is written under `~/.situ/projects/<project-id>/`. Tests that
 need isolated state should pass temporary paths to constructors instead of
 setting user env vars.
 
@@ -74,13 +74,13 @@ empty/error states, or visual treatment:
 ```
 
 The build command is the non-interactive verification. It should pass without a
-live Almanac session, because stories use local fixtures rather than RPC/SSE.
+live Situ session, because stories use local fixtures rather than RPC/SSE.
 The screenshot command starts Storybook, captures every story with Playwright,
-and writes PNGs under `/tmp/almanac-storybook-screenshots/<timestamp>/`.
+and writes PNGs under `/tmp/situ-storybook-screenshots/<timestamp>/`.
 
 ## TUI Stories
 
-The Ink TUI has a Storybook-like fixture runner in `@almanac/tui-ui`. Stories
+The Ink TUI has a Storybook-like fixture runner in `@situ/tui-ui`. Stories
 live next to components as `.stories.tsx` files and render protocol-shaped local
 fixtures, not live RPC state.
 
@@ -88,7 +88,7 @@ Use these when changing TUI layout, component states, or command-footer behavior
 
 ```bash
 ./commands/tui-story.sh list
-./commands/tui-story.sh almanac-tui-view/running
+./commands/tui-story.sh situ-tui-view/running
 ./commands/tui-snapshots.sh
 ./commands/tui-snapshots.sh --color
 ./commands/tui-snapshots.sh --png
@@ -96,7 +96,7 @@ Use these when changing TUI layout, component states, or command-footer behavior
 
 The story command renders one story in the terminal. The snapshot command uses
 `ink-testing-library`, captures every story's last rendered frame, and writes
-text snapshots under `/tmp/almanac-tui-snapshots/<timestamp>/` unless an
+text snapshots under `/tmp/situ-tui-snapshots/<timestamp>/` unless an
 explicit `--out-dir` is passed. Color snapshots preserve ANSI escape codes in
 the `.txt` files for terminal replay; plain snapshots remain the default for
 readable diffs. PNG snapshots are derived from the same ANSI frame and write a
@@ -136,7 +136,7 @@ The eval runner is opt-in because it makes real model calls:
 `--list` should work without model or Logfire credentials. Executing eval cases
 requires the eval secrets described in
 [evals-strategy](../evals-strategy/DOC.md). The research-tool suite uses
-temporary SQLite session worlds and the real Almanac research toolset, so it is
+temporary SQLite session worlds and the real Situ research toolset, so it is
 the right smoke when changing Pydantic AI tools, toolsets, or tool-call capture.
 
 ## What To Add Next

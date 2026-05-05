@@ -13,27 +13,27 @@ export function TranscriptItem({
 }) {
   return (
     <article
-      className="almanac-transcript-item"
+      className="situ-transcript-item"
       data-tone={item.tone}
       data-latest={isLatest}
     >
-      <div className="almanac-transcript-item__rail" aria-hidden="true">
-        <span className="almanac-transcript-item__dot" />
+      <div className="situ-transcript-item__rail" aria-hidden="true">
+        <span className="situ-transcript-item__dot" />
       </div>
 
-      <div className="almanac-transcript-item__content">
-        <header className="almanac-transcript-item__header">
-          <div className="almanac-transcript-item__title">
+      <div className="situ-transcript-item__content">
+        <header className="situ-transcript-item__header">
+          <div className="situ-transcript-item__title">
             <span>{item.title}</span>
-            <span className="almanac-transcript-item__preposition">on</span>
+            <span className="situ-transcript-item__preposition">on</span>
             <EntityLink item={item} projectId={projectId} />
           </div>
           <time dateTime={item.createdAt}>{formatTime({ value: item.createdAt })}</time>
         </header>
 
-        <p className="almanac-transcript-item__body">{item.body}</p>
+        <p className="situ-transcript-item__body">{item.body}</p>
 
-        <footer className="almanac-transcript-item__meta">
+        <footer className="situ-transcript-item__meta">
           <span>{item.entity.kind}</span>
           <span>{item.activityType}</span>
         </footer>
@@ -52,7 +52,7 @@ function EntityLink({
   if (item.entity.kind === "hypothesis") {
     return (
       <Link
-        className="almanac-record-link"
+        className="situ-record-link"
         to="/projects/$projectId/hypotheses/$hypothesisId"
         params={{
           projectId,
@@ -67,7 +67,7 @@ function EntityLink({
   if (item.entity.kind === "experiment") {
     return (
       <Link
-        className="almanac-record-link"
+        className="situ-record-link"
         to="/projects/$projectId/experiments/$experimentId"
         params={{
           projectId,
@@ -81,7 +81,7 @@ function EntityLink({
 
   return (
     <Link
-      className="almanac-record-link"
+      className="situ-record-link"
       to="/projects/$projectId/evaluations/$evaluationId"
       params={{
         projectId,

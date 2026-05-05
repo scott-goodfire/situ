@@ -1,5 +1,5 @@
 import { Text } from "ink";
-import type { SessionStartParams } from "@almanac/protocol";
+import type { SessionStartParams } from "@situ/protocol";
 import { AppFrame } from "../app-frame/app-frame.js";
 import {
   ChoicePrompt,

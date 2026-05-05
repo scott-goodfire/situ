@@ -1,7 +1,7 @@
 import {
   metricSeriesFromSteeringDoseResponse,
   type SteeringDoseResponse as SteeringDoseResponseData,
-} from "@almanac/chart-model";
+} from "@situ/chart-model";
 import { classNames } from "../../utils/class-names";
 import { MetricTrend } from "../metric-trend/metric-trend";
 

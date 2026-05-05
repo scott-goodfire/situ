@@ -4,10 +4,10 @@ from typing import Any
 
 from pydantic import Field
 
-from evals.harness.models import AlmanacEvalOutput
+from evals.harness.models import SituEvalOutput
 
 
-class ResearchToolEvalOutput(AlmanacEvalOutput):
+class ResearchToolEvalOutput(SituEvalOutput):
     session_graph: dict[str, Any] = Field(default_factory=dict)
 
 

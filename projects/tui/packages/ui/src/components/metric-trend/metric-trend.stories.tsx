@@ -1,4 +1,4 @@
-import type { MetricSeries } from "@almanac/chart-model";
+import type { MetricSeries } from "@situ/chart-model";
 import { MetricTrend } from "./metric-trend.js";
 import type { TuiStory } from "../../stories/story-types.js";
 

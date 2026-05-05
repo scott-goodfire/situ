@@ -2,7 +2,7 @@
 
 ## Thesis
 
-Almanac is a local-first terminal observability layer for autoresearch sessions.
+Situ is a local-first terminal observability layer for autoresearch sessions.
 
 It helps humans and agents see the live state of a research loop: the objective,
 which hypotheses are being explored, which experiments are running, what
@@ -11,7 +11,7 @@ appears to be learning.
 
 Short form:
 
-> Almanac makes an autoresearch loop legible while it runs.
+> Situ makes an autoresearch loop legible while it runs.
 
 ## Why It Exists
 
@@ -26,11 +26,11 @@ they are fragile:
 - They often lose durable memory of what was tried and why a result was trusted
   or excluded.
 
-Almanac exists to make these loops safer and more useful.
+Situ exists to make these loops safer and more useful.
 
 ## Positioning
 
-Almanac is not primarily another coding agent.
+Situ is not primarily another coding agent.
 
 Agents and workers do the work:
 
@@ -40,7 +40,7 @@ Agents and workers do the work:
 - Shell scripts
 - Custom evaluation tools
 
-Almanac supervises the loop by tracking:
+Situ supervises the loop by tracking:
 
 - Objective
 - Evaluation context
@@ -56,7 +56,7 @@ Almanac supervises the loop by tracking:
 A user should be able to watch an autoresearch loop in a terminal and understand
 what is happening without reading raw logs.
 
-That means Almanac must make the work:
+That means Situ must make the work:
 
 - Observable
 - Reviewable enough for the current session
@@ -65,7 +65,7 @@ That means Almanac must make the work:
 
 ## Non-Goals
 
-Almanac should not become:
+Situ should not become:
 
 - A generic chat app
 - A replacement coding agent

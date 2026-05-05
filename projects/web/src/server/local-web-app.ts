@@ -4,16 +4,16 @@ import { Hono } from "hono";
 import { createDiscoveryApi } from "./discovery-api";
 
 export type LocalWebAppOptions = {
-  almanacHome?: string;
+  situHome?: string;
   distDirectory: string;
 };
 
 export function createLocalWebApp({
-  almanacHome,
+  situHome,
   distDirectory,
 }: LocalWebAppOptions): Hono {
   const app = new Hono();
-  const api = createDiscoveryApi({ almanacHome });
+  const api = createDiscoveryApi({ situHome });
   const distRoot = resolve(distDirectory);
 
   app.route("/", api);
@@ -49,7 +49,7 @@ export function createLocalWebApp({
       path: resolve(distRoot, "index.html"),
     });
     if (!indexResponse) {
-      return context.text("Almanac web build not found", 500);
+      return context.text("Situ web build not found", 500);
     }
 
     return new Response(indexResponse.body, {

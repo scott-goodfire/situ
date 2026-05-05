@@ -1,5 +1,5 @@
 import { Text } from "ink";
-import type { ExperimentRecord, SessionRecord } from "@almanac/protocol";
+import type { ExperimentRecord, SessionRecord } from "@situ/protocol";
 import { PaneSection } from "../pane-section/pane-section.js";
 
 export function NowSection({

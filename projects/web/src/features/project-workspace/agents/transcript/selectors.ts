@@ -5,7 +5,7 @@ import type {
   ExperimentRecord,
   HypothesisActivityRecord,
   HypothesisRecord,
-} from "@almanac/protocol";
+} from "@situ/protocol";
 import filter from "lodash/filter";
 import keyBy from "lodash/keyBy";
 import orderBy from "lodash/orderBy";

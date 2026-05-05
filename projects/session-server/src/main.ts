@@ -4,8 +4,8 @@ import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { StdioJsonRpcClient } from "@almanac/rpc-client/stdio";
-import type { JsonRpcNotification } from "@almanac/protocol";
+import { StdioJsonRpcClient } from "@situ/rpc-client/stdio";
+import type { JsonRpcNotification } from "@situ/protocol";
 
 type SessionRecord = {
   project_id: string;
@@ -22,8 +22,8 @@ type RpcRequest = {
   params?: Record<string, unknown>;
 };
 
-const appRoot = resolve(process.env.ALMANAC_APP_ROOT ?? repoRootFromImport());
-const workspace = resolve(process.env.ALMANAC_WORKSPACE ?? process.cwd());
+const appRoot = resolve(process.env.SITU_APP_ROOT ?? repoRootFromImport());
+const workspace = resolve(process.env.SITU_WORKSPACE ?? process.cwd());
 const projectId = projectIdForWorkspace({ value: workspace });
 const token = randomBytes(24).toString("base64url");
 const command = harnessCommand();
@@ -33,8 +33,8 @@ const harness = StdioJsonRpcClient.spawn({
   cwd: workspace,
   env: {
     ...process.env,
-    ALMANAC_APP_ROOT: appRoot,
-    ALMANAC_WORKSPACE: workspace,
+    SITU_APP_ROOT: appRoot,
+    SITU_WORKSPACE: workspace,
   },
 });
 const clients = new Set<ServerResponse>();
@@ -108,7 +108,7 @@ server.listen(0, "127.0.0.1", () => {
     started_at: new Date().toISOString(),
   };
   writeSessionRecord({ record });
-  console.error(`Almanac session server listening on ${record.url}`);
+  console.error(`Situ session server listening on ${record.url}`);
 });
 
 process.on("SIGINT", () => shutdown({ code: 0 }));
@@ -182,13 +182,13 @@ function broadcast({ notification }: { notification: JsonRpcNotification }): voi
 }
 
 function harnessCommand(): { command: string; args: string[] } {
-  const localHarness = resolve(appRoot, ".venv/bin/almanac-harness-stdio");
+  const localHarness = resolve(appRoot, ".venv/bin/situ-harness-stdio");
   if (existsSync(localHarness)) {
     return { command: localHarness, args: [] };
   }
   return {
     command: "uv",
-    args: ["run", "--package", "almanac-harness", "almanac-harness-stdio"],
+    args: ["run", "--package", "situ-harness", "situ-harness-stdio"],
   };
 }
 
@@ -202,12 +202,12 @@ function projectIdForWorkspace({ value }: { value: string }): string {
 }
 
 function sessionPath(): string {
-  const home = almanacHome();
+  const home = situHome();
   return resolve(home, "projects", projectId, "session.json");
 }
 
-function almanacHome(): string {
-  return resolve(homedir(), ".almanac");
+function situHome(): string {
+  return resolve(homedir(), ".situ");
 }
 
 function writeSessionRecord({ record }: { record: SessionRecord }): void {

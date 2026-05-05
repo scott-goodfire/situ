@@ -1,13 +1,13 @@
 ---
 name: run-and-verify-evals
-description: Use when running Almanac eval suites, checking eval pass/fail output, or verifying that eval runs reached Logfire through the UI or a Logfire read token.
+description: Use when running Situ eval suites, checking eval pass/fail output, or verifying that eval runs reached Logfire through the UI or a Logfire read token.
 ---
 
 # Run And Verify Evals
 
 ## Overview
 
-Use this skill for Almanac eval execution and verification. Evals make real LLM
+Use this skill for Situ eval execution and verification. Evals make real LLM
 calls and should be treated separately from deterministic pytest checks.
 
 Do not print secrets. If you need to inspect env, check only whether required
@@ -30,8 +30,8 @@ git status --short
 
 3. Required execution credentials:
 
-- `ALMANAC_OPENAI_KEY` for model calls.
-- `ALMANAC_LOGFIRE_TOKEN` for sending eval traces to Logfire.
+- `SITU_OPENAI_KEY` for model calls.
+- `SITU_LOGFIRE_TOKEN` for sending eval traces to Logfire.
 
 Eval discovery and `--list` should work without credentials. Executing cases
 should fail clearly if credentials are missing.
@@ -105,11 +105,11 @@ Preferred UI path:
    present.
 
 Programmatic path requires a read token. A write token such as
-`ALMANAC_LOGFIRE_TOKEN` is for ingestion and may not be accepted by the query
+`SITU_LOGFIRE_TOKEN` is for ingestion and may not be accepted by the query
 client. If a read token is available, keep it separate, for example:
 
 ```bash
-export ALMANAC_LOGFIRE_READ_TOKEN=...
+export SITU_LOGFIRE_READ_TOKEN=...
 ```
 
 Then query recent records:
@@ -122,12 +122,12 @@ from datetime import datetime, timedelta, timezone
 from logfire.query_client import LogfireQueryClient
 
 experiment = "tools.research-tools-<git-sha>-<session-id>"
-token = os.environ["ALMANAC_LOGFIRE_READ_TOKEN"]
+token = os.environ["SITU_LOGFIRE_READ_TOKEN"]
 
 sql = f"""
 SELECT trace_id, span_id, start_timestamp, service_name, message
 FROM records
-WHERE service_name = 'almanac-evals'
+WHERE service_name = 'situ-evals'
   AND start_timestamp >= now() - interval '2 hours'
   AND message LIKE '%{experiment}%'
 ORDER BY start_timestamp DESC
@@ -146,7 +146,7 @@ If this query returns no rows, broaden the search:
 ```sql
 SELECT trace_id, span_id, start_timestamp, service_name, message
 FROM records
-WHERE service_name = 'almanac-evals'
+WHERE service_name = 'situ-evals'
   AND start_timestamp >= now() - interval '2 hours'
 ORDER BY start_timestamp DESC
 LIMIT 20

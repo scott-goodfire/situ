@@ -1,2 +1,2 @@
-"""Concrete Almanac eval suites."""
+"""Concrete Situ eval suites."""
 

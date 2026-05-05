@@ -1,9 +1,9 @@
 # Agent-Facing Context
 
-Almanac should be useful to agents as well as humans.
+Situ should be useful to agents as well as humans.
 
 Agents should not have to infer durable research state from an ever-growing chat
-transcript. Almanac should expose compact, current, machine-readable context.
+transcript. Situ should expose compact, current, machine-readable context.
 
 ## Agent Questions
 
@@ -27,17 +27,17 @@ The exact interface can evolve, but the slim headless surface should start with
 commands that agents can run without a TTY:
 
 ```bash
-almanac exec --objective "..." --context "..." --json
-almanac status --json
-almanac snapshot --json
-almanac events --json
-almanac wait --json
-almanac clear --json
+situ exec --objective "..." --context "..." --json
+situ status --json
+situ snapshot --json
+situ events --json
+situ wait --json
+situ clear --json
 ```
 
 `exec` may start and own a temporary local session. `status`, `snapshot`,
 `events`, and `wait` should attach to existing local state or a live local
-session instead of rendering the TUI. `clear` should remove the local Almanac
+session instead of rendering the TUI. `clear` should remove the local Situ
 state for one workspace so humans and agents can retry setup from a clean
 project context. If a live local harness is active, `clear` should refuse by
 default and require an explicit force option before terminating it.
@@ -58,7 +58,7 @@ Keep the first setup flags sparse:
   matter, what output means, and what should be treated as invalid.
 
 Do not split first-slice setup into `--eval`, `--signals`, or repeated signal
-flags. Almanac should preserve ambiguous project context and structure it over
+flags. Situ should preserve ambiguous project context and structure it over
 time.
 
 Defer richer guidance, proposal-context commands, and broad object-specific
@@ -98,7 +98,7 @@ such as `ls`, `read_file`, `write_file`, `edit_file`, `glob`, `grep`, and
 `execute`. Agents use those tools to inspect the project and run native
 commands described in `--context`.
 
-Command output should be preserved as plaintext evidence. Almanac should not
+Command output should be preserved as plaintext evidence. Situ should not
 deterministically parse arbitrary stdout into metrics or signals in the tool
 layer. If output matters, the agent records the raw text or an LLM-written
 interpretation through `add_evaluation_result`, linked back to the experiment
@@ -108,7 +108,7 @@ benchmark log.
 
 ## Product Rule
 
-Almanac owns durable research context. Agent prompts can be creative, but they
+Situ owns durable research context. Agent prompts can be creative, but they
 should not be the only place where the research contract lives.
 
 Agents should treat only the selected session as current truth. Older sessions

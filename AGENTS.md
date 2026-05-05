@@ -16,13 +16,13 @@ Start with:
 
 The key product thesis:
 
-> Almanac is a local-first terminal observability layer for autoresearch
+> Situ is a local-first terminal observability layer for autoresearch
 > sessions. It helps humans and agents see the objective, active hypotheses,
 > experiments, typed activities, artifacts, and internal events while the loop
 > runs.
 
 Do not treat this as a generic chat app, coding agent, ML experiment tracker,
-or Linear clone. Almanac should supervise sessions, track hypotheses and
+or Linear clone. Situ should supervise sessions, track hypotheses and
 experiments, record typed activities, preserve artifacts, enforce automated
 trust checks as concern activities, and make the live session understandable
 from the terminal.
@@ -32,7 +32,7 @@ from the terminal.
 For product-significant changes, update the relevant spec before implementing.
 For code changes, check the applicable policies in `.agents/policies/`.
 
-Use [.agents/skills/almanac-spec-policy-maintenance/SKILL.md](./.agents/skills/almanac-spec-policy-maintenance/SKILL.md)
+Use [.agents/skills/situ-spec-policy-maintenance/SKILL.md](./.agents/skills/situ-spec-policy-maintenance/SKILL.md)
 when adding, changing, or linting specs and policies.
 
 Use [.agents/skills/curate-meta-layer/SKILL.md](./.agents/skills/curate-meta-layer/SKILL.md)
@@ -44,14 +44,14 @@ when inspecting web UI with Playwright, capturing Storybook screenshots, or
 using the Playwright MCP server for browser-driven review.
 
 Use [.agents/skills/run-and-verify-evals/SKILL.md](./.agents/skills/run-and-verify-evals/SKILL.md)
-when running Almanac eval suites and verifying their local and Logfire results.
+when running Situ eval suites and verifying their local and Logfire results.
 
 Use [.agents/skills/use-logfire/SKILL.md](./.agents/skills/use-logfire/SKILL.md)
 when checking Logfire CLI auth, telling the user how to log in, selecting
 projects, creating read tokens, querying traces, or verifying telemetry.
 
 Routine command surface should eventually live in `mise.toml`, with reusable
-scripts in `commands/`, following the pattern from the reference Almanac
+scripts in `commands/`, following the pattern from the reference Situ
 prototype.
 
 ## Python Package Layout
@@ -59,25 +59,25 @@ prototype.
 The Python code uses a deliberately nested layout:
 
 ```text
-projects/harness/src/almanac/harness/
-shared/python/protocol/src/almanac/protocol/
+projects/harness/src/situ/harness/
+shared/python/protocol/src/situ/protocol/
 ```
 
-`almanac` is a [PEP 420 namespace package](https://peps.python.org/pep-0420/),
+`situ` is a [PEP 420 namespace package](https://peps.python.org/pep-0420/),
 not a regular package. It is shared across multiple installable distributions
 so that imports read as siblings under one top-level name:
 
 ```python
-from almanac.harness.tools import ...   # from almanac-harness
-from almanac.protocol      import ...   # from almanac-protocol
+from situ.harness.tools import ...   # from situ-harness
+from situ.protocol      import ...   # from situ-protocol
 ```
 
 The inner `harness/` (and `protocol/`) directories are what make each
 distribution importable; the `[tool.setuptools.packages.find]` block in
 `projects/harness/pyproject.toml` sets `namespaces = true` to enable this.
 
-**Do not flatten `src/almanac/harness/` to `src/almanac/`.** Two workspace
-packages cannot both claim `src/almanac/` as a regular package — Python would
+**Do not flatten `src/situ/harness/` to `src/situ/`.** Two workspace
+packages cannot both claim `src/situ/` as a regular package — Python would
 see conflicting definitions at install time. The nesting is the price of
-cross-package namespace sharing, and it is intentional. Future `almanac.*`
-packages (e.g. `almanac.cli`, `almanac.worker`) can slot in the same way.
+cross-package namespace sharing, and it is intentional. Future `situ.*`
+packages (e.g. `situ.cli`, `situ.worker`) can slot in the same way.

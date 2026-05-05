@@ -1,23 +1,23 @@
-import { DxBadge } from "@almanac/web-ui";
+import { DxBadge } from "@situ/web-ui";
 
 export function NoActiveHarness({ workspace }: { workspace: string | undefined }) {
   return (
-    <main className="almanac-shell">
-      <header className="almanac-topbar">
+    <main className="situ-shell">
+      <header className="situ-topbar">
         <div>
-          <h1>Almanac</h1>
+          <h1>Situ</h1>
           <p>{workspace ?? "Local workspace"}</p>
         </div>
         <DxBadge>No session</DxBadge>
       </header>
 
-      <section className="almanac-empty">
-        <h2>No active Almanac harness found</h2>
+      <section className="situ-empty">
+        <h2>No active Situ harness found</h2>
         <p>Start a session from a terminal, then reopen this web monitor.</p>
-        <pre className="almanac-command">almanac start</pre>
+        <pre className="situ-command">situ start</pre>
       </section>
 
-      <p className="almanac-status">No harness is started by the web monitor.</p>
+      <p className="situ-status">No harness is started by the web monitor.</p>
     </main>
   );
 }

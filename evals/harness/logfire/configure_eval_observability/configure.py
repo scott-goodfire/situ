@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logfire
 
-from almanac.harness.config import DEFAULTS, AlmanacSecrets
+from situ.harness.config import DEFAULTS, SituSecrets
 
 _CONFIGURED = False
 
@@ -12,7 +12,7 @@ def configure_eval_observability() -> None:
     if _CONFIGURED:
         return
 
-    secrets = AlmanacSecrets()
+    secrets = SituSecrets()
     secrets.require_logfire_token()
     secrets.apply_sdk_environment()
 

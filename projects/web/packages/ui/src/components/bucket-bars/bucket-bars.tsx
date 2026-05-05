@@ -1,7 +1,7 @@
 import {
   type BucketDatum,
   type ChartTone,
-} from "@almanac/chart-model";
+} from "@situ/chart-model";
 import {
   Bar,
   BarChart,

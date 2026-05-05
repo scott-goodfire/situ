@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from almanac.harness.agents import ResearchAgent, ResearchAgentContext
-from almanac.harness.tools.common import AlmanacToolDeps
+from situ.harness.agents import ResearchAgent, ResearchAgentContext
+from situ.harness.tools.common import SituToolDeps
 from evals.harness.capture import ToolCallCaptureCapability
 from evals.harness.llms import eval_model_name
 from evals.worlds.repo_bootstrap.models import (
@@ -15,7 +15,7 @@ def run_repo_bootstrap_agent(args: RepoBootstrapEvalInput) -> RepoBootstrapEvalO
     world = RepoBootstrapWorld(seed=args.seed)
     capture = ToolCallCaptureCapability()
     try:
-        deps = AlmanacToolDeps(
+        deps = SituToolDeps(
             session_id=SESSION_ID,
             repo_path=str(world.workspace_path),
             repos=world.repos,

@@ -1,4 +1,4 @@
-import { DxSection } from "@almanac/web-ui";
+import { DxSection } from "@situ/web-ui";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useMemo, useRef } from "react";
 import { TranscriptItem } from "./transcript-item";
@@ -34,15 +34,15 @@ export function AgentTranscript({
   return (
     <DxSection title="Transcript">
       <div
-        className="almanac-agent-transcript"
+        className="situ-agent-transcript"
         ref={autoScroll.scrollRef}
         onScroll={autoScroll.handleScroll}
       >
-        <ol className="almanac-agent-transcript__list">
+        <ol className="situ-agent-transcript__list">
           <AnimatePresence initial={false}>
             {items.map((item, index) => (
               <motion.li
-                className="almanac-agent-transcript__row"
+                className="situ-agent-transcript__row"
                 key={item.id}
                 layout={shouldAnimate}
                 initial={shouldAnimate ? { opacity: 0, y: 6 } : false}
@@ -60,7 +60,7 @@ export function AgentTranscript({
           </AnimatePresence>
         </ol>
         <div
-          className="almanac-agent-transcript__anchor"
+          className="situ-agent-transcript__anchor"
           ref={autoScroll.anchorRef}
         />
       </div>

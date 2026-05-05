@@ -5,7 +5,7 @@ import {
   type HeatmapMatrix,
   type NormalizedHeatmapCell,
   type NormalizedHeatmapMatrix,
-} from "@almanac/chart-model";
+} from "@situ/chart-model";
 import { Box, Text } from "ink";
 
 const HEATMAP_STEPS = ["░", "▒", "▓", "█"];

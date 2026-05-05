@@ -1,5 +1,5 @@
 import { Text } from "ink";
-import type { ObjectiveRecord, SessionRecord } from "@almanac/protocol";
+import type { ObjectiveRecord, SessionRecord } from "@situ/protocol";
 import { AppFrame } from "../app-frame/app-frame.js";
 import {
   ChoicePrompt,

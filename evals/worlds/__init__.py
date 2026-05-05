@@ -1,2 +1,2 @@
-"""Fixture-backed research worlds for Almanac evals."""
+"""Fixture-backed research worlds for Situ evals."""
 

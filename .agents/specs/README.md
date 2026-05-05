@@ -1,4 +1,4 @@
-# Almanac Product Specs
+# Situ Product Specs
 
 These specs are the product contract for this repo. They should guide design,
 implementation, review, and future agent work.
@@ -20,7 +20,7 @@ Read in this order:
 
 ## Product Thesis
 
-Autoresearch makes agents willing to try many experiments. Almanac makes a
+Autoresearch makes agents willing to try many experiments. Situ makes a
 running session observable from the terminal.
 
 The product should answer:

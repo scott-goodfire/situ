@@ -5,13 +5,13 @@ from uuid import uuid4
 
 from pydantic_evals.reporting import EvaluationReport
 
-from evals.harness import BaseAlmanacEvalGroup
+from evals.harness import BaseSituEvalGroup
 from evals.runner.git import current_git_sha
 from evals.runner.retries import build_retry_config
 
 
 def run_evals(
-    eval_classes: list[tuple[str, type[BaseAlmanacEvalGroup[Any, Any]]]],
+    eval_classes: list[tuple[str, type[BaseSituEvalGroup[Any, Any]]]],
     *,
     case_filter: str | None,
     max_concurrency: int,
@@ -24,7 +24,7 @@ def run_evals(
     failures: list[str] = []
 
     for name, eval_class in eval_classes:
-        eval_instance: BaseAlmanacEvalGroup[Any, Any] | None = None
+        eval_instance: BaseSituEvalGroup[Any, Any] | None = None
         try:
             eval_instance = eval_class()
             dataset = eval_instance.dataset()

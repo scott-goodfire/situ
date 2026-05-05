@@ -18,6 +18,6 @@ export const Default: Story = {
 
 export const Short: Story = {
   args: {
-    command: "almanac start",
+    command: "situ start",
   },
 };

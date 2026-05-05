@@ -14,7 +14,7 @@ def print_summary(
     *,
     verbose: bool,
 ) -> None:
-    print("\n--- Almanac Eval Summary ---\n")
+    print("\n--- Situ Eval Summary ---\n")
     for experiment_name, report in results:
         print(experiment_name)
         report.print(include_input=verbose, include_output=verbose, include_reasons=True)
@@ -71,7 +71,7 @@ def print_json(results: list[tuple[str, EvaluationReport[Any, Any, Any]]], failu
     signals = result_signals(results, failures)
     passed_cases = int(signals["case_count"]) - int(signals["failed_cases"])
     output: dict[str, Any] = {
-        "summary": f"Almanac evals passed {passed_cases}/{signals['case_count']} cases.",
+        "summary": f"Situ evals passed {passed_cases}/{signals['case_count']} cases.",
         "status": "completed" if signals["failed_cases"] == 0 else "failed",
         "signals": signals,
         "raw": {"experiments": experiments, "failures": failures},

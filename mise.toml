@@ -13,15 +13,15 @@ description = "Run Python syntax checks and TypeScript typechecks"
 run = "./commands/check.sh"
 
 [tasks.evals]
-description = "Run Almanac eval suites"
+description = "Run Situ eval suites"
 run = "./commands/evals.sh"
 
 [tasks.e2e]
-description = "Run live Almanac Playwright smoke tests"
+description = "Run live Situ Playwright smoke tests"
 run = "./commands/e2e-tests.sh"
 
 [tasks."evals:json"]
-description = "Run Almanac eval suites and print JSON"
+description = "Run Situ eval suites and print JSON"
 run = "./commands/evals-json.sh"
 
 [tasks."dev:tui"]
@@ -29,63 +29,63 @@ description = "Run the TypeScript Ink TUI"
 run = "./commands/dev-tui.sh"
 
 [tasks."tui-ui:check"]
-description = "Run typechecks for the Almanac TUI UI package"
+description = "Run typechecks for the Situ TUI UI package"
 run = "./commands/tui-ui-check.sh"
 
 [tasks."tui:story"]
-description = "Render an Almanac TUI story"
+description = "Render an Situ TUI story"
 run = "./commands/tui-story.sh"
 
 [tasks."tui:snapshots"]
-description = "Capture text snapshots for Almanac TUI stories"
+description = "Capture text snapshots for Situ TUI stories"
 run = "./commands/tui-snapshots.sh"
 
 [tasks.start]
-description = "Start the local Almanac TUI"
+description = "Start the local Situ TUI"
 run = "./commands/start.sh"
 
 [tasks.resume]
-description = "Resume an existing Almanac session in the TUI"
+description = "Resume an existing Situ session in the TUI"
 run = "./commands/resume.sh"
 
 [tasks.attach]
-description = "Attach the TUI to a running Almanac harness"
+description = "Attach the TUI to a running Situ harness"
 run = "./commands/attach.sh"
 
 [tasks.sessions]
-description = "List local Almanac sessions as JSON"
+description = "List local Situ sessions as JSON"
 run = "./commands/sessions.sh"
 
 [tasks.clear]
-description = "Clear local Almanac state for a workspace"
+description = "Clear local Situ state for a workspace"
 run = "./commands/clear.sh"
 
 [tasks.web]
-description = "Serve the local Almanac project home and attach-only monitors"
+description = "Serve the local Situ project home and attach-only monitors"
 run = "./commands/web.sh"
 
 [tasks."dev:web"]
-description = "Run the Almanac web Vite development server"
+description = "Run the Situ web Vite development server"
 run = "./commands/web-dev.sh"
 
 [tasks."web:dev"]
-description = "Run the Almanac web Vite development server"
+description = "Run the Situ web Vite development server"
 run = "./commands/web-dev.sh"
 
 [tasks."web:smoke"]
-description = "Build and smoke-test the local Almanac web host"
+description = "Build and smoke-test the local Situ web host"
 run = "./commands/web-smoke.sh"
 
 [tasks."web-ui:check"]
-description = "Run typechecks for the Almanac web UI package"
+description = "Run typechecks for the Situ web UI package"
 run = "./commands/web-ui-check.sh"
 
 [tasks.storybook]
-description = "Run Storybook for the Almanac web UI"
+description = "Run Storybook for the Situ web UI"
 run = "./commands/storybook.sh"
 
 [tasks."storybook:build"]
-description = "Build Storybook for the Almanac web UI"
+description = "Build Storybook for the Situ web UI"
 run = "./commands/storybook-build.sh"
 
 [tasks."storybook:screenshots"]

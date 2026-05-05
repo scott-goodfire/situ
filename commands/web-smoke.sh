@@ -5,7 +5,7 @@ REPO_ROOT=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 WEB_ROOT="$REPO_ROOT/projects/web"
 HOST="127.0.0.1"
 PORT=""
-LOG_FILE=$(mktemp "${TMPDIR:-/tmp}/almanac-web-smoke.XXXXXX.log")
+LOG_FILE=$(mktemp "${TMPDIR:-/tmp}/situ-web-smoke.XXXXXX.log")
 SERVER_PID=""
 
 cleanup() {
@@ -33,12 +33,12 @@ for _ in {1..80}; do
     && curl -fsS "http://$HOST:$PORT/api/projects" >/dev/null 2>&1 \
     && curl -fsS "http://$HOST:$PORT/api/projects/0123456789abcdef/snapshot" >/dev/null 2>&1 \
     && curl -fsS "http://$HOST:$PORT/projects/0123456789abcdef" >/dev/null 2>&1; then
-    echo "Almanac web smoke passed at http://$HOST:$PORT/"
+    echo "Situ web smoke passed at http://$HOST:$PORT/"
     exit 0
   fi
 
   if ! kill -0 "$SERVER_PID" >/dev/null 2>&1; then
-    echo "Almanac web smoke server exited early:" >&2
+    echo "Situ web smoke server exited early:" >&2
     sed -n '1,120p' "$LOG_FILE" >&2
     exit 1
   fi
@@ -46,6 +46,6 @@ for _ in {1..80}; do
   sleep 0.25
 done
 
-echo "Almanac web smoke timed out waiting for the local web host" >&2
+echo "Situ web smoke timed out waiting for the local web host" >&2
 sed -n '1,120p' "$LOG_FILE" >&2
 exit 1

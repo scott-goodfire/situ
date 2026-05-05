@@ -1,4 +1,4 @@
-import { DxSection } from "@almanac/web-ui";
+import { DxSection } from "@situ/web-ui";
 import { DateTime } from "luxon";
 import orderBy from "lodash/orderBy";
 import type { ActivityItem } from "../types";
@@ -23,10 +23,10 @@ export function ActivityTimeline({
       {sortedActivities.length === 0 && <p className="dx-muted">{emptyLabel}</p>}
 
       {sortedActivities.length > 0 && (
-        <ol className="almanac-activity-list">
+        <ol className="situ-activity-list">
           {sortedActivities.map((activity) => (
-            <li className="almanac-activity-item" key={activity.id}>
-              <div className="almanac-activity-item__meta">
+            <li className="situ-activity-item" key={activity.id}>
+              <div className="situ-activity-item__meta">
                 <span>{activity.actor}</span>
                 <span>{activity.kind}</span>
                 <span>{formatTime({ value: activity.createdAt })}</span>

@@ -1,7 +1,7 @@
 import {
   signedContributionsFromContrastiveFeatures,
   type ContrastiveFeatureSet,
-} from "@almanac/chart-model";
+} from "@situ/chart-model";
 import { Box, Text } from "ink";
 import { ContributionBars } from "../contribution-bars/contribution-bars.js";
 

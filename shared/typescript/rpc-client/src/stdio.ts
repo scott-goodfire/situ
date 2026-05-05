@@ -1,6 +1,6 @@
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { createInterface } from "node:readline";
-import type { JsonRpcId, JsonRpcNotification, JsonRpcResponse } from "@almanac/protocol";
+import type { JsonRpcId, JsonRpcNotification, JsonRpcResponse } from "@situ/protocol";
 
 type PendingRequest = {
   resolve: (value: unknown) => void;

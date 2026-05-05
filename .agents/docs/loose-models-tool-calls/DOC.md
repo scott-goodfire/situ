@@ -1,6 +1,6 @@
 # Loose Models, Tool Calls, And Hooks
 
-This doc captures a design preference for Almanac's agent-facing architecture.
+This doc captures a design preference for Situ's agent-facing architecture.
 It is not a product surface by itself. It should guide future implementation
 when adding proposal generation, worker orchestration, DBOS workflows, and
 observability.
@@ -9,7 +9,7 @@ observability.
 
 Prefer loose semantic content with small typed envelopes.
 
-Almanac should avoid over-modeling the agent's reasoning into many rigid fields
+Situ should avoid over-modeling the agent's reasoning into many rigid fields
 too early. LLMs are good at interpreting ambiguous research context, generating
 natural-language plans, and adapting to messy user/project inputs. The durable
 system should preserve that flexibility instead of forcing every concept into a
@@ -55,7 +55,7 @@ class ExperimentProposal(BaseModel):
 ```
 
 That can be useful later if implementation pressure proves those fields are
-stable. For now it is too specific. It assumes Almanac already knows the right
+stable. For now it is too specific. It assumes Situ already knows the right
 axes of decomposition.
 
 Prefer a looser shape:
@@ -123,14 +123,14 @@ The desired mental model:
 ```text
 TUI / CLI starts session work
   -> Pydantic AI DBOSAgent runs
-      -> agent requests typed Almanac tools
+      -> agent requests typed Situ tools
       -> tool implementation updates ledger/activity state
-  -> Almanac ledger records result
+  -> Situ ledger records result
 ```
 
-Avoid building a separate complex workflow engine in Almanac unless the simple
+Avoid building a separate complex workflow engine in Situ unless the simple
 agent/tool-call model stops being enough. DBOS should make agent execution
-durable and recoverable; Almanac should focus on product state and observability.
+durable and recoverable; Situ should focus on product state and observability.
 Side-effecting custom tools may add local DBOS steps when replay safety requires
 it, but those steps should not become a second session engine.
 
@@ -154,7 +154,7 @@ after_artifact_attached
 
 Hooks can emit:
 
-- Almanac events
+- Situ events
 - Logfire spans
 - TUI notifications
 - Debug artifacts
@@ -219,9 +219,9 @@ more tool-call-shaped behavior, and hook-driven observability.
 The first code layer should mirror the lightweight Pydantic AI patterns used in
 the reference backend:
 
-- `BaseAlmanacTool` owns name, typed result shape, permission check, execution,
+- `BaseSituTool` owns name, typed result shape, permission check, execution,
   error normalization, and conversion to a Pydantic AI tool.
-- `AlmanacToolDeps` carries lightweight session/project context into DBOS-backed
+- `SituToolDeps` carries lightweight session/project context into DBOS-backed
   agent calls. Direct tests may inject repositories, but durable agent deps
   should reopen repositories from `project_id`, `project_dir`, and `repo_path`
   instead of carrying live connections.
@@ -236,10 +236,10 @@ the reference backend:
   becomes too awkward.
 
 The session loop should now be agent/tool-shaped: the agent inspects session
-state, creates or updates experiments in the Almanac ledger, runs
+state, creates or updates experiments in the Situ ledger, runs
 project-native commands through the workspace console tools, and records
 plaintext command evidence plus interpretation as experiment activity.
 
-Almanac should not hide command execution behind deterministic stdout parsers.
+Situ should not hide command execution behind deterministic stdout parsers.
 The worker is the Pydantic agent using its bash/filesystem toolkit; the ledger
 is the durable observability layer around that work.

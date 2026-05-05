@@ -1,10 +1,10 @@
-import type { EventRecord } from "@almanac/protocol";
+import type { EventRecord } from "@situ/protocol";
 import {
   DxSection,
   DxTable,
   type DxTableColumn,
   type DxTableRowTone,
-} from "@almanac/web-ui";
+} from "@situ/web-ui";
 
 const eventColumns: Array<DxTableColumn<EventRecord>> = [
   {

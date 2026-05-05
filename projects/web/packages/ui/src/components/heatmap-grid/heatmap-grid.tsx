@@ -4,7 +4,7 @@ import {
   normalizeHeatmapMatrix,
   type HeatmapMatrix,
   type NormalizedHeatmapCell,
-} from "@almanac/chart-model";
+} from "@situ/chart-model";
 import { classNames } from "../../utils/class-names";
 
 export function HeatmapGrid({

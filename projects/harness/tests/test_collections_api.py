@@ -4,12 +4,12 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from almanac.protocol import (
+from situ.protocol import (
     CollectionUpsertedParams,
     CollectionsBootstrapResult,
     CollectionsSubscribeResult,
 )
-from almanac.harness.app import HarnessApp
+from situ.harness.app import HarnessApp
 
 
 class FakeAgentRuntime:
@@ -28,7 +28,7 @@ class FakeAgentRuntime:
 
 @pytest.fixture
 def app(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> HarnessApp:
-    monkeypatch.setattr("almanac.harness.app.AgentRuntime", FakeAgentRuntime)
+    monkeypatch.setattr("situ.harness.app.AgentRuntime", FakeAgentRuntime)
     workspace = tmp_path / "workspace"
     workspace.mkdir()
     return HarnessApp(
@@ -127,7 +127,7 @@ def test_collections_subscribe_emits_event_upserts(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr("almanac.harness.app.AgentRuntime", FakeAgentRuntime)
+    monkeypatch.setattr("situ.harness.app.AgentRuntime", FakeAgentRuntime)
     workspace = tmp_path / "workspace"
     workspace.mkdir()
     notifications: list[tuple[str, dict[str, Any]]] = []

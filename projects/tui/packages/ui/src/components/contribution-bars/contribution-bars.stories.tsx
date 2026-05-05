@@ -1,4 +1,4 @@
-import type { SignedContribution } from "@almanac/chart-model";
+import type { SignedContribution } from "@situ/chart-model";
 import { ContributionBars } from "./contribution-bars.js";
 import type { TuiStory } from "../../stories/story-types.js";
 

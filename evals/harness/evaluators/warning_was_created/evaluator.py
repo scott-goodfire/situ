@@ -6,14 +6,14 @@ from typing import Any
 from pydantic_evals.evaluators import EvaluationReason, Evaluator, EvaluatorContext
 
 from evals.harness.evaluators.helpers import warnings
-from evals.harness.models import AlmanacEvalOutput
+from evals.harness.models import SituEvalOutput
 
 
 @dataclass
-class WarningWasCreated(Evaluator[Any, AlmanacEvalOutput, Any]):
+class WarningWasCreated(Evaluator[Any, SituEvalOutput, Any]):
     kind: str
 
-    def evaluate(self, ctx: EvaluatorContext[Any, AlmanacEvalOutput, Any]) -> EvaluationReason:
+    def evaluate(self, ctx: EvaluatorContext[Any, SituEvalOutput, Any]) -> EvaluationReason:
         kinds = [warning.kind for warning in warnings(ctx.output)]
         if self.kind in kinds:
             return EvaluationReason(value=True, reason=f"Warning created: {self.kind}")

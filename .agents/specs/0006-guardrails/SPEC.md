@@ -3,7 +3,7 @@
 In the first slice, "guardrails" means automated trust checks.
 
 They protect interpretation activities from obvious invalidity. The user should
-not have to manually enumerate every forbidden behavior before Almanac can
+not have to manually enumerate every forbidden behavior before Situ can
 notice suspicious results.
 
 ## Current Trust Checks
@@ -48,7 +48,7 @@ When this happens:
 Metric movement is not enough. The dashboard must distinguish observed results
 from trustworthy interpretation.
 
-Likewise, a passing test command is not enough. Almanac should preserve enough
+Likewise, a passing test command is not enough. Situ should preserve enough
 workspace-state context to show whether the passing result is comparable to the
 baseline. See
 [0012-experiment-workspace-state/SPEC.md](../0012-experiment-workspace-state/SPEC.md).

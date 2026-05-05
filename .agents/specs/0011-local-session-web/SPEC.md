@@ -1,18 +1,18 @@
 # Local Session And Web Attach
 
-This spec defines the boundary that lets a terminal-started Almanac session be
+This spec defines the boundary that lets a terminal-started Situ session be
 monitored from a web UI without the web command secretly starting work.
 
 ## Purpose
 
-Almanac should support this flow:
+Situ should support this flow:
 
 ```text
-almanac start
-  starts a fresh Almanac session
+situ start
+  starts a fresh Situ session
   opens the TUI
 
-almanac web
+situ web
   serves the local project home and attach-only project monitors
 ```
 
@@ -27,7 +27,7 @@ The session server owns:
 - JSON-RPC stdio communication with the harness.
 - A localhost HTTP endpoint for client RPC calls.
 - A localhost event stream for harness notifications.
-- A local session file under the Almanac project directory.
+- A local session file under the Situ project directory.
 
 The TUI and web UI are clients. They should not read SQLite directly, own
 workers, or spawn the Python harness themselves.
@@ -38,17 +38,17 @@ The web command must not create work.
 
 For this slice:
 
-- `almanac start` may start a local session server, but interactive research
+- `situ start` may start a local session server, but interactive research
   work should wait for the TUI Start selection before `session.start` is called.
-- `almanac resume` may continue an existing Almanac session explicitly.
-- `almanac attach` may connect the TUI to an already-running local session
+- `situ resume` may continue an existing Situ session explicitly.
+- `situ attach` may connect the TUI to an already-running local session
   server without creating work.
-- `almanac web` may start the local web host and serve the built browser app.
-- `almanac web` should serve the local project home and should not require the
-  current working directory to be an Almanac workspace.
-- `almanac web` must not start a session server.
-- `almanac web` must not start a Python harness.
-- `almanac web` must not call `session.start`.
+- `situ web` may start the local web host and serve the built browser app.
+- `situ web` should serve the local project home and should not require the
+  current working directory to be an Situ workspace.
+- `situ web` must not start a session server.
+- `situ web` must not start a Python harness.
+- `situ web` must not call `session.start`.
 - If no live session is found, the web UI should show a clear empty state.
 
 This avoids hidden side effects when a user only wants to monitor.
@@ -58,7 +58,7 @@ This avoids hidden side effects when a user only wants to monitor.
 The session server should write a small local session file:
 
 ```text
-~/.almanac/projects/<project-id>/session.json
+~/.situ/projects/<project-id>/session.json
 ```
 
 The file should identify the workspace, localhost port, process id, and a local
@@ -74,8 +74,8 @@ The web surface should have a small local home page at `/`.
 
 For this slice:
 
-- `/` lists known local Almanac projects discovered from local Almanac state.
-- A small global registry at `~/.almanac/almanac.sqlite` may index known
+- `/` lists known local Situ projects discovered from local Situ state.
+- A small global registry at `~/.situ/situ.sqlite` may index known
   projects so `/` can remain fast and dependable across many project
   directories.
 - The global registry is not the source of truth for research state. It may
@@ -83,14 +83,14 @@ For this slice:
   opened time, and archived time.
 - The registry should remain a small project index. It must not accumulate
   objectives, hypotheses, experiments, artifacts, or other research state.
-- `almanac start` should upsert the global registry for the workspace it is
+- `situ start` should upsert the global registry for the workspace it is
   starting.
-- `almanac web` may backfill missing registry rows from existing per-project
+- `situ web` may backfill missing registry rows from existing per-project
   directories.
 - Registry backfill should be an explicit sync step derived from discovered
   project summaries, not an implicit place to add new durable project facts.
 - Persistent project facts such as workspace path, project label, objective, and
-  last updated time should prefer each project's `almanac.sqlite`, not extra
+  last updated time should prefer each project's `situ.sqlite`, not extra
   metadata sidecar files. Registry values are fallback/index values.
 - The list should identify which projects have a healthy active local session
   when that can be determined from the session file and health check.
@@ -101,7 +101,7 @@ For this slice:
   becomes healthy, even if the browser page was opened before the session
   server started.
 - If the project is known but no healthy session is active, the page should read
-  the last durable project snapshot from that project's `almanac.sqlite` and
+  the last durable project snapshot from that project's `situ.sqlite` and
   render the same project pages as disconnected read-only state.
 - If the project has no healthy session and no durable records yet, the page
   should show the attach-only empty state for that project.
@@ -117,7 +117,7 @@ The development server and local user server should be separate.
 For this slice:
 
 - Vite remains the development server for frontend development.
-- `almanac web` should build the browser app when the built app is missing or a
+- `situ web` should build the browser app when the built app is missing or a
   rebuild is explicitly requested, then run a local Hono host that serves the
   built assets and local discovery API.
 - The local host should serve `/api/projects` and
@@ -136,7 +136,7 @@ For this slice:
 The routine web commands should keep development and local user behavior
 separate:
 
-- `mise run web -- [args]` runs `almanac web` and serves the built local Hono
+- `mise run web -- [args]` runs `situ web` and serves the built local Hono
   host.
 - `mise run web -- --rebuild` forces a browser rebuild before serving.
 - `mise run web:dev` and `mise run dev:web` run the Vite development server for

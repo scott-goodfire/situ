@@ -1,3 +1,3 @@
-from evals.harness.eval_groups.base_almanac_eval_group import BaseAlmanacEvalGroup
+from evals.harness.eval_groups.base_situ_eval_group import BaseSituEvalGroup
 
-__all__ = ["BaseAlmanacEvalGroup"]
+__all__ = ["BaseSituEvalGroup"]

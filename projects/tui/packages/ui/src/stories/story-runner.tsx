@@ -2,7 +2,7 @@ import { Box, render, Text } from "ink";
 import { allStories, findStory, storyListText } from "./catalog.js";
 import type { TuiStory } from "./story-types.js";
 
-const DEFAULT_STORY_ID = "almanac-tui-view/running";
+const DEFAULT_STORY_ID = "situ-tui-view/running";
 
 function main() {
   const storyId = requestedStoryId({ args: process.argv.slice(2) });

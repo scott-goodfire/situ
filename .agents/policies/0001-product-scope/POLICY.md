@@ -11,7 +11,7 @@ All product, UX, architecture, and implementation changes.
 
 ## Rule
 
-Almanac is a local-first terminal observability layer for autoresearch sessions.
+Situ is a local-first terminal observability layer for autoresearch sessions.
 It is not a generic coding agent, chat app, Linear clone, or broad experiment
 tracker.
 

@@ -21,7 +21,7 @@ const STOPPED_PROJECT_ID = "abcdef0123456789";
 const UNKNOWN_PROJECT_ID = "ffffffffffffffff";
 
 describe("discovery api", () => {
-  test("returns an empty project list when local Almanac state is missing", async () => {
+  test("returns an empty project list when local Situ state is missing", async () => {
     await withTemporaryHome(async ({ home }) => {
       const app = createTestDiscoveryApi({ home });
       const response = await app.request("/api/projects");
@@ -57,9 +57,9 @@ describe("discovery api", () => {
     });
   });
 
-  test("reads stopped project metadata from almanac sqlite", async () => {
+  test("reads stopped project metadata from situ sqlite", async () => {
     await withTemporaryHome(async ({ home }) => {
-      const workspace = join(home, "stopped-almanac-workspace");
+      const workspace = join(home, "stopped-situ-workspace");
       mkdirSync(workspace);
       writeProjectDatabase({
         home,
@@ -77,7 +77,7 @@ describe("discovery api", () => {
       expect(payload.projects).toEqual([
         {
           project_id: STOPPED_PROJECT_ID,
-          label: "stopped-almanac-workspace",
+          label: "stopped-situ-workspace",
           workspace,
           objective_title: "Improve stopped project score",
           status: "stopped",
@@ -129,7 +129,7 @@ describe("discovery api", () => {
       const response = await app.request("/api/projects");
       expect(response.status).toBe(200);
 
-      const database = new Database(join(home, ".almanac", "almanac.sqlite"), {
+      const database = new Database(join(home, ".situ", "situ.sqlite"), {
         readonly: true,
       });
       try {
@@ -158,7 +158,7 @@ describe("discovery api", () => {
           projectId: RUNNING_PROJECT_ID,
           session: {
             project_id: RUNNING_PROJECT_ID,
-            workspace: "/tmp/almanac-running-workspace",
+            workspace: "/tmp/situ-running-workspace",
             pid: 12345,
             port: healthServer.port,
             token,
@@ -180,7 +180,7 @@ describe("discovery api", () => {
         expect(projectsPayload.projects[0]?.status_reason).toBe(
           "Session health check passed",
         );
-        expect(projectsPayload.projects[0]?.label).toBe("almanac-running-workspace");
+        expect(projectsPayload.projects[0]?.label).toBe("situ-running-workspace");
         expect(projectsPayload.projects[0]?.last_seen_at).toBe(
           "2026-05-05T00:00:00.000Z",
         );
@@ -275,7 +275,7 @@ describe("discovery api", () => {
 async function withTemporaryHome(
   run: ({ home }: { home: string }) => Promise<void>,
 ): Promise<void> {
-  const home = mkdtempSync(join(tmpdir(), "almanac-web-test-home-"));
+  const home = mkdtempSync(join(tmpdir(), "situ-web-test-home-"));
 
   try {
     await run({ home });
@@ -297,8 +297,8 @@ function writeRegistryDatabase({
   label: string;
   lastSeenAt: string;
 }): void {
-  const databasePath = join(home, ".almanac", "almanac.sqlite");
-  mkdirSync(join(home, ".almanac"), { recursive: true });
+  const databasePath = join(home, ".situ", "situ.sqlite");
+  mkdirSync(join(home, ".situ"), { recursive: true });
   const database = new Database(databasePath);
 
   try {
@@ -327,7 +327,7 @@ function writeRegistryDatabase({
 
 function createTestDiscoveryApi({ home }: { home: string }) {
   return createDiscoveryApi({
-    almanacHome: join(home, ".almanac"),
+    situHome: join(home, ".situ"),
   });
 }
 
@@ -338,7 +338,7 @@ function makeProjectDirectory({
   home: string;
   projectId: string;
 }): string {
-  const projectDirectory = join(home, ".almanac", "projects", projectId);
+  const projectDirectory = join(home, ".situ", "projects", projectId);
   mkdirSync(projectDirectory, { recursive: true });
   return projectDirectory;
 }
@@ -370,7 +370,7 @@ function writeProjectDatabase({
   updatedAt: string;
 }): void {
   const projectDirectory = makeProjectDirectory({ home, projectId });
-  const database = new Database(join(projectDirectory, "almanac.sqlite"));
+  const database = new Database(join(projectDirectory, "situ.sqlite"));
 
   try {
     database.run(`
@@ -439,7 +439,7 @@ function writeProjectSnapshotDatabase({
   repoPath: string;
 }): void {
   const projectDirectory = makeProjectDirectory({ home, projectId });
-  const database = new Database(join(projectDirectory, "almanac.sqlite"));
+  const database = new Database(join(projectDirectory, "situ.sqlite"));
 
   try {
     database.run(`

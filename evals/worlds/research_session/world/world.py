@@ -4,9 +4,9 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any
 
-from almanac.harness.api.sessions import SessionsService
-from almanac.harness.core.db import Database
-from almanac.harness.repositories import Repositories
+from situ.harness.api.sessions import SessionsService
+from situ.harness.core.db import Database
+from situ.harness.repositories import Repositories
 from evals.harness.models import EvalEvent
 from evals.worlds.research_session.models import ResearchSessionSeed
 
@@ -92,9 +92,9 @@ class ResearchSessionWorld:
 
 def _build_repos(path: Path) -> Repositories:
     db = Database(
-        path / "almanac.sqlite",
+        path / "situ.sqlite",
         project_id="project_eval",
-        repo_path="/tmp/almanac-eval-project",
+        repo_path="/tmp/situ-eval-project",
     )
     repos = Repositories.create(db)
     project = repos.project.ensure()

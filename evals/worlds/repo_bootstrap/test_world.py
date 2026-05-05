@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from almanac.harness.tools.common import AlmanacToolDeps
+from situ.harness.tools.common import SituToolDeps
 from evals.worlds.repo_bootstrap import (
     BASELINE_EVALUATION_ID,
     RepoBootstrapWorld,
@@ -11,7 +11,7 @@ from evals.worlds.repo_bootstrap import (
 def test_repo_bootstrap_world_runs_native_measurement() -> None:
     world = RepoBootstrapWorld(seed="empty_repo")
     try:
-        deps = AlmanacToolDeps(
+        deps = SituToolDeps(
             session_id=SESSION_ID,
             repo_path=str(world.workspace_path),
             repos=world.repos,

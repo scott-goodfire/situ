@@ -1,4 +1,4 @@
-import type { TokenFeatureMatrix as TokenFeatureMatrixData } from "@almanac/chart-model";
+import type { TokenFeatureMatrix as TokenFeatureMatrixData } from "@situ/chart-model";
 import { TokenFeatureMatrix } from "./token-feature-matrix.js";
 import type { TuiStory } from "../../stories/story-types.js";
 

@@ -1,11 +1,11 @@
-import type { ExperimentRecord, HypothesisRecord } from "@almanac/protocol";
+import type { ExperimentRecord, HypothesisRecord } from "@situ/protocol";
 import {
   DxBadge,
   DxSection,
   DxTable,
   type DxBadgeTone,
   type DxTableColumn,
-} from "@almanac/web-ui";
+} from "@situ/web-ui";
 import { Link } from "@tanstack/react-router";
 import filter from "lodash/filter";
 import { EvidenceSummary } from "../evidence/evidence-summary";
@@ -32,7 +32,7 @@ export function HypothesisDetailPage({
 
   if (!hypothesis) {
     return (
-      <section className="almanac-empty">
+      <section className="situ-empty">
         <h2>Hypothesis not found</h2>
         <p>No hypothesis exists with id {hypothesisId}.</p>
       </section>
@@ -50,17 +50,17 @@ export function HypothesisDetailPage({
 
   return (
     <>
-      <section className="almanac-object-page">
-        <div className="almanac-object-page__header">
+      <section className="situ-object-page">
+        <div className="situ-object-page__header">
           <div>
-            <p className="almanac-object-page__eyebrow">{hypothesis.id}</p>
+            <p className="situ-object-page__eyebrow">{hypothesis.id}</p>
             <h2>{hypothesis.title}</h2>
           </div>
           <DxBadge tone={statusTone({ status: hypothesis.status })}>
             {hypothesis.status}
           </DxBadge>
         </div>
-        <p className="almanac-object-page__summary">{hypothesis.summary}</p>
+        <p className="situ-object-page__summary">{hypothesis.summary}</p>
       </section>
 
       <LinkedExperiments
@@ -116,9 +116,9 @@ function linkedExperimentColumns({
       header: "Experiment",
       width: "34%",
       renderCell: ({ row }) => (
-        <div className="almanac-record-cell">
+        <div className="situ-record-cell">
           <Link
-            className="almanac-record-link"
+            className="situ-record-link"
             to="/projects/$projectId/experiments/$experimentId"
             params={{
               projectId,
@@ -127,7 +127,7 @@ function linkedExperimentColumns({
           >
             {row.experiment.title}
           </Link>
-          <span className="almanac-record-id">{row.experiment.id}</span>
+          <span className="situ-record-id">{row.experiment.id}</span>
         </div>
       ),
     },

@@ -1,4 +1,4 @@
-import type { HeatmapMatrix } from "@almanac/chart-model";
+import type { HeatmapMatrix } from "@situ/chart-model";
 import { HeatmapGrid } from "./heatmap-grid.js";
 import type { TuiStory } from "../../stories/story-types.js";
 

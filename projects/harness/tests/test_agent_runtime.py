@@ -5,15 +5,15 @@ from pathlib import Path
 import pytest
 from pydantic_ai.durable_exec.dbos import DBOSAgent
 
-from almanac.harness.agent_runtime import AgentRuntime
-from almanac.harness.agents.research.agent import RESEARCH_AGENT_NAME
+from situ.harness.agent_runtime import AgentRuntime
+from situ.harness.agents.research.agent import RESEARCH_AGENT_NAME
 
 
 def test_agent_runtime_wraps_research_agent_with_dbos_agent(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setenv("ALMANAC_OPENAI_KEY", "test-openai-key")
+    monkeypatch.setenv("SITU_OPENAI_KEY", "test-openai-key")
 
     runtime = AgentRuntime(tmp_path)
 

@@ -3,4 +3,4 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT"
-uv run --package almanac-harness almanac sessions "$@"
+uv run --package situ-harness situ sessions "$@"

@@ -5,12 +5,12 @@ final implementation details.
 
 ## Local First
 
-Almanac should feel like a local agent tool:
+Situ should feel like a local agent tool:
 
 - The current repo is the workspace being researched.
-- Almanac state is private by default.
+- Situ state is private by default.
 - State should live under the user's home directory, for example
-  `~/.almanac/projects/<project-id>/`.
+  `~/.situ/projects/<project-id>/`.
 - Nothing should be written to the researched repo unless the user explicitly
   exports or publishes it.
 
@@ -21,7 +21,7 @@ For the first slice, avoid repo writes entirely unless explicitly requested.
 
 ## Runtime Boundary
 
-Almanac observes and supervises the local loop. Workers do the concrete
+Situ observes and supervises the local loop. Workers do the concrete
 experiment work.
 
 ```text
@@ -90,12 +90,12 @@ For the current slice:
 - Pydantic AI may inspect compact, typed session context.
 - DBOS should wrap agent execution through Pydantic AI `DBOSAgent`.
 - Logfire may observe harness, DBOS, and Pydantic AI spans.
-- The agent may request experiment execution through typed Almanac tools.
+- The agent may request experiment execution through typed Situ tools.
 - The harness still owns objective/session identity, worker execution,
   automated trust concerns, activities, artifacts, events, and persisted
   message history.
 
-This keeps creativity in the agent layer while preserving Almanac as the
+This keeps creativity in the agent layer while preserving Situ as the
 control plane.
 
 ## Reference Prototype

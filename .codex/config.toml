@@ -1,4 +1,4 @@
-# Repo-local MCP reference for agents working on Almanac.
+# Repo-local MCP reference for agents working on Situ.
 #
 # Codex CLI normally reads ~/.codex/config.toml. If this project-local config is
 # not loaded by your client, copy this stanza into ~/.codex/config.toml or run:
@@ -12,5 +12,5 @@ args = [
   "--headless",
   "--isolated",
   "--output-dir",
-  "/tmp/almanac-playwright-mcp",
+  "/tmp/situ-playwright-mcp",
 ]

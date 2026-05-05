@@ -45,7 +45,7 @@ function HeaderBanner({
 }) {
   return (
     <PaneSection
-      title="Almanac"
+      title="Situ"
       chrome="box"
       tone="accent"
       width={width}

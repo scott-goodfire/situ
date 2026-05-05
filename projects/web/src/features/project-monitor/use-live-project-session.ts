@@ -2,9 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import {
   applyBootstrap,
   applyCollectionUpsert,
-  createAlmanacCollections,
-} from "@almanac/collections";
-import { HttpJsonRpcClient } from "@almanac/rpc-client/http";
+  createSituCollections,
+} from "@situ/collections";
+import { HttpJsonRpcClient } from "@situ/rpc-client/http";
 import { useLiveQuery } from "@tanstack/react-db";
 import orderBy from "lodash/orderBy";
 import { DateTime } from "luxon";
@@ -25,9 +25,9 @@ import type {
   HypothesisRecord,
   ObjectiveRecord,
   SessionRecord,
-} from "@almanac/protocol";
+} from "@situ/protocol";
 import type { SessionConnection } from "../../project-discovery/types";
-import type { ConnectionState } from "../run-monitor/almanac-monitor";
+import type { ConnectionState } from "../run-monitor/situ-monitor";
 
 export type LiveProjectSessionState = {
   connection: ConnectionState;
@@ -49,7 +49,7 @@ export function useLiveProjectSession({
 }: {
   session: SessionConnection;
 }): LiveProjectSessionState {
-  const collections = useMemo(() => createAlmanacCollections(), []);
+  const collections = useMemo(() => createSituCollections(), []);
   const objectivesQuery = useLiveQuery(
     (query) =>
       query.from({ objective: collections.objectives }).select(({ objective }) => objective),

@@ -20,14 +20,14 @@ API services own multi-table composition; orchestration code owns session flow.
 ## Required Checks
 
 - New durable state has a clear repository owner under
-  `projects/harness/src/almanac/harness/repositories/<concept>/`.
+  `projects/harness/src/situ/harness/repositories/<concept>/`.
 - Repository implementation files use the explicit naming pattern
   `repository.py`, for example `repositories/experiments/repository.py`.
 - Repository classes inherit from `BaseRepository`, which owns the shared
   `BaseModel` + `db: Database` pattern.
 - SQL execution goes through `Database`; runtime code outside `core/db/` should
   not open SQLite connections directly.
-- DB infrastructure lives under `projects/harness/src/almanac/harness/core/db/`.
+- DB infrastructure lives under `projects/harness/src/situ/harness/core/db/`.
   Schema changes live in `core/db/migrations.py`; JSON encoding and row
   decoding live in `core/db/serialization.py` unless there is a clear reason to
   keep them local.
@@ -35,7 +35,7 @@ API services own multi-table composition; orchestration code owns session flow.
   local `command.py`, when a method benefits from Pydantic validation before
   writing.
 - Repository methods should return typed Pydantic records from
-  `projects/harness/src/almanac/harness/records/<singular_concept>/record.py`,
+  `projects/harness/src/situ/harness/records/<singular_concept>/record.py`,
   not loose `dict[str, Any]`, for durable state objects.
 - API services under `harness/api/<surface>/service.py` may compose multiple
   repositories and convert DB records to protocol-shaped schemas at the TUI/RPC

@@ -1,4 +1,4 @@
-import { DxBadge, type DxBadgeTone } from "@almanac/web-ui";
+import { DxBadge, type DxBadgeTone } from "@situ/web-ui";
 
 export type ConnectionState =
   | { kind: "checking" }

@@ -1,4 +1,4 @@
-import { DxBadge } from "@almanac/web-ui";
+import { DxBadge } from "@situ/web-ui";
 import { agentSummaries } from "./agent-summaries";
 import { AgentPresence } from "./presence/agent-presence";
 import { AgentTranscript } from "./transcript/agent-transcript";
@@ -16,7 +16,7 @@ export function AgentDetailPage({
 
   if (!agent) {
     return (
-      <section className="almanac-empty">
+      <section className="situ-empty">
         <h2>Agent not found</h2>
         <p>No activity exists for agent {agentId}.</p>
       </section>
@@ -31,10 +31,10 @@ export function AgentDetailPage({
 
   return (
     <>
-      <section className="almanac-object-page">
-        <div className="almanac-object-page__header">
+      <section className="situ-object-page">
+        <div className="situ-object-page__header">
           <div>
-            <p className="almanac-object-page__eyebrow">Agent</p>
+            <p className="situ-object-page__eyebrow">Agent</p>
             <h2>{agent.id}</h2>
           </div>
           <DxBadge>{activityCountLabel({ count: transcriptItems.length })}</DxBadge>

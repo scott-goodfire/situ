@@ -1,3 +1,3 @@
-from evals.harness.judges.standard_almanac_judge import StandardAlmanacJudge
+from evals.harness.judges.standard_situ_judge import StandardSituJudge
 
-__all__ = ["StandardAlmanacJudge"]
+__all__ = ["StandardSituJudge"]

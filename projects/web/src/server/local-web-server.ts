@@ -4,7 +4,7 @@ import { resolve } from "node:path";
 import { createLocalWebApp } from "./local-web-app";
 
 type ServerOptions = {
-  almanacHome: string;
+  situHome: string;
   distDirectory: string;
   host: string;
   port: number;
@@ -14,13 +14,13 @@ const options = serverOptionsFromArgs({ args: Bun.argv.slice(2) });
 
 if (!existsSync(resolve(options.distDirectory, "index.html"))) {
   console.error(
-    `Almanac web build not found at ${options.distDirectory}; run bun run build first.`,
+    `Situ web build not found at ${options.distDirectory}; run bun run build first.`,
   );
   process.exit(1);
 }
 
 const app = createLocalWebApp({
-  almanacHome: options.almanacHome,
+  situHome: options.situHome,
   distDirectory: options.distDirectory,
 });
 
@@ -31,7 +31,7 @@ const server = Bun.serve({
 });
 
 console.log(
-  `Almanac web project home: http://${displayHost({ host: options.host })}:${server.port}/`,
+  `Situ web project home: http://${displayHost({ host: options.host })}:${server.port}/`,
 );
 
 process.on("SIGINT", () => stop({ code: 0 }));
@@ -44,10 +44,10 @@ function stop({ code }: { code: number }): void {
 
 function serverOptionsFromArgs({ args }: { args: string[] }): ServerOptions {
   return {
-    almanacHome: stringFlag({
+    situHome: stringFlag({
       args,
-      name: "--almanac-home",
-      fallback: defaultAlmanacHome(),
+      name: "--situ-home",
+      fallback: defaultSituHome(),
     }),
     distDirectory: stringFlag({
       args,
@@ -67,8 +67,8 @@ function serverOptionsFromArgs({ args }: { args: string[] }): ServerOptions {
   };
 }
 
-function defaultAlmanacHome(): string {
-  return resolve(homedir(), ".almanac");
+function defaultSituHome(): string {
+  return resolve(homedir(), ".situ");
 }
 
 function displayHost({ host }: { host: string }): string {

@@ -6,14 +6,14 @@ from typing import Any
 from pydantic_evals.evaluators import EvaluationReason, Evaluator, EvaluatorContext
 
 from evals.harness.evaluators.helpers import findings
-from evals.harness.models import AlmanacEvalOutput
+from evals.harness.models import SituEvalOutput
 
 
 @dataclass
-class FindingContains(Evaluator[Any, AlmanacEvalOutput, Any]):
+class FindingContains(Evaluator[Any, SituEvalOutput, Any]):
     text: str
 
-    def evaluate(self, ctx: EvaluatorContext[Any, AlmanacEvalOutput, Any]) -> EvaluationReason:
+    def evaluate(self, ctx: EvaluatorContext[Any, SituEvalOutput, Any]) -> EvaluationReason:
         needle = self.text.lower()
         contents = [finding.content for finding in findings(ctx.output)]
         for content in contents:

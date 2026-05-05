@@ -1,5 +1,5 @@
 {
-  "name": "@almanac/e2e-tests",
+  "name": "@situ/e2e-tests",
   "version": "0.0.1",
   "private": true,
   "type": "module",

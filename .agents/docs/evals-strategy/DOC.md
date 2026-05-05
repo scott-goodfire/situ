@@ -1,13 +1,13 @@
 # Evals Strategy
 
-This repo should use evals to improve Almanac's prompts, tool-calling behavior,
+This repo should use evals to improve Situ's prompts, tool-calling behavior,
 observability, and trust checks over time. Unlike unit tests, evals should run
 real LLM calls against controlled fixture worlds.
 
 The eval layer should stay close to the product thesis:
 
 ```text
-Can Almanac help a human or agent understand what is happening in an
+Can Situ help a human or agent understand what is happening in an
 autoresearch session and whether the activity is trustworthy?
 ```
 
@@ -51,8 +51,8 @@ Follow Pydantic Evals and Logfire defaults where they fit:
   should not require model or Logfire credentials.
 - Send eval runs to Logfire by default; eval commands should not require a
   per-run send-mode override.
-- Load only eval secrets from user environment: `ALMANAC_OPENAI_KEY` for the
-  model call and `ALMANAC_LOGFIRE_TOKEN` for Logfire export.
+- Load only eval secrets from user environment: `SITU_OPENAI_KEY` for the
+  model call and `SITU_LOGFIRE_TOKEN` for Logfire export.
 - Keep model names, service names, environments, retry defaults, and timeouts
   in typed code config unless they become real product settings.
 - Use `Dataset.evaluate_sync` for the local synchronous runner.
@@ -65,7 +65,7 @@ Follow Pydantic Evals and Logfire defaults where they fit:
 - Add span-based evaluators when the behavior depends on tool calls or execution
   path, so eval assertions match production observability.
 - Use native Pydantic Evals retry knobs for transient LLM/tool failures.
-- Keep `StandardAlmanacJudge` available for semantic checks, but do not make LLM
+- Keep `StandardSituJudge` available for semantic checks, but do not make LLM
   judges the default for mechanical behavior.
 - Do not force model settings that the configured model rejects; prefer model
   defaults unless an eval has proven it needs a supported override.
@@ -90,25 +90,25 @@ Good first targets:
 - Suspicious wins are not treated as accepted progress.
 - Interpretations are grounded in recorded activities and artifacts.
 - Tool calls happen in a sensible order.
-- Logfire spans and Almanac events expose the execution path.
+- Logfire spans and Situ events expose the execution path.
 
 Avoid evals that only check whether a rigid proposal object has the right
-fields. Almanac's agent-facing layer should keep semantics loose and text-rich,
+fields. Situ's agent-facing layer should keep semantics loose and text-rich,
 while typed envelopes preserve execution and observability guarantees.
 
 ## Worlds
 
-A world is a fixture-backed simulation of the thing Almanac is researching.
+A world is a fixture-backed simulation of the thing Situ is researching.
 
 Initial worlds:
 
 - `research_session`: temporary SQLite session worlds seeded with objective,
   session, hypothesis, experiment, activity, and artifact state. This world
-  exercises the actual Almanac research toolset through Pydantic AI for both
+  exercises the actual Situ research toolset through Pydantic AI for both
   focused tool affordance evals and full-agent `ResearchAgent` evals.
 - `repo_bootstrap`: a temporary local fixture repo shaped like a tiny
   autoresearch project. This world exercises the real `ResearchAgent` with both
-  Almanac ledger tools and workspace tools, checking whether it can infer the
+  Situ ledger tools and workspace tools, checking whether it can infer the
   native measurement loop, establish baseline evaluation evidence, run bounded
   candidate measurements, and avoid modifying setup/evaluation-surface code.
 

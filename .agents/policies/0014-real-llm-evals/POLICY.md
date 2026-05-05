@@ -8,7 +8,7 @@ status: active
 ## Applies To
 
 AI eval suites under `evals/`, test suites under `projects/*/tests`, and any
-new command or CI workflow that runs Almanac checks.
+new command or CI workflow that runs Situ checks.
 
 ## Rule
 

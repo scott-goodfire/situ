@@ -1,11 +1,11 @@
-import type { ExperimentActivityRecord, ExperimentRecord } from "@almanac/protocol";
+import type { ExperimentActivityRecord, ExperimentRecord } from "@situ/protocol";
 import {
   DxBadge,
   DxSection,
   DxTable,
   type DxBadgeTone,
   type DxTableColumn,
-} from "@almanac/web-ui";
+} from "@situ/web-ui";
 import { Link } from "@tanstack/react-router";
 import filter from "lodash/filter";
 import { EvidenceSummary } from "../evidence/evidence-summary";
@@ -80,9 +80,9 @@ function experimentColumns({
       header: "Experiment",
       width: "30%",
       renderCell: ({ row }) => (
-        <div className="almanac-record-cell">
+        <div className="situ-record-cell">
           <Link
-            className="almanac-record-link"
+            className="situ-record-link"
             to="/projects/$projectId/experiments/$experimentId"
             params={{
               projectId,
@@ -91,7 +91,7 @@ function experimentColumns({
           >
             {row.experiment.title}
           </Link>
-          <span className="almanac-record-id">{row.experiment.id}</span>
+          <span className="situ-record-id">{row.experiment.id}</span>
         </div>
       ),
       sortValue: ({ row }) => row.experiment.title,

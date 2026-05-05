@@ -1,4 +1,4 @@
-import type { BucketDatum } from "@almanac/chart-model";
+import type { BucketDatum } from "@situ/chart-model";
 import { BucketBars } from "./bucket-bars.js";
 import type { TuiStory } from "../../stories/story-types.js";
 

@@ -6,7 +6,7 @@ from pydantic_evals import Case, set_eval_attribute
 from pydantic_evals.dataset import increment_eval_metric
 from pydantic_evals.evaluators import Evaluator
 
-from evals.harness import BaseAlmanacEvalGroup
+from evals.harness import BaseSituEvalGroup
 from evals.suites.tools.research_tools.cases import research_tool_cases
 from evals.worlds.research_session import (
     ResearchToolEvalInput,
@@ -16,7 +16,7 @@ from evals.worlds.research_session import (
 
 
 class ResearchToolsEvalGroup(
-    BaseAlmanacEvalGroup[ResearchToolEvalInput, ResearchToolEvalOutput]
+    BaseSituEvalGroup[ResearchToolEvalInput, ResearchToolEvalOutput]
 ):
     suite_name: ClassVar[str] = "tools"
     world_name: ClassVar[str] = "research_tools"

@@ -25,7 +25,7 @@ The project is the workspace boundary and owns sessions. Sessions own every
 ledger entity inside them: hypotheses, experiments, evaluations, artifacts,
 activities, and the session's objective and research context records. Every
 ledger row carries the `session_id` it was created under, no nullable session
-columns. Starting Almanac creates a fresh session by default; resuming an
+columns. Starting Situ creates a fresh session by default; resuming an
 existing session must be explicit. There is no stored "active session" pointer
 on the project; the most-recently-updated session is derived on demand.
 
@@ -65,7 +65,7 @@ The main unit of autoresearch work.
 A session belongs to one project (required `project_id` FK) and owns one
 objective record, one research context record, lifecycle status, agent
 message history, hypotheses, experiments, evaluations, activities, artifacts,
-and events. Each new `almanac start` creates a new session. `almanac resume`
+and events. Each new `situ start` creates a new session. `situ resume`
 is the explicit action for continuing the same session id. There is no stored
 "active session" pointer on the project; lookups for "the latest session"
 sort by `updated_at` on demand.

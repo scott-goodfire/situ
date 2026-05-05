@@ -71,7 +71,7 @@ Use the spec/policy maintenance skill after changing specs, policies, docs, or
 skills:
 
 ```text
-.agents/skills/almanac-spec-policy-maintenance/SKILL.md
+.agents/skills/situ-spec-policy-maintenance/SKILL.md
 ```
 
 Linting is intentionally LLM-driven. The skill asks the agent to review
@@ -97,7 +97,7 @@ Use the Playwright Storybook screenshots skill when reviewing the web UI:
 It captures fixture-driven Storybook screenshots into `/tmp` and documents the
 Playwright MCP setup for interactive browser inspection.
 
-Use the run-and-verify evals skill when running live Almanac eval suites and
+Use the run-and-verify evals skill when running live Situ eval suites and
 checking Logfire:
 
 ```text

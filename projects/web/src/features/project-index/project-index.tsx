@@ -1,4 +1,4 @@
-import { DxBadge, DxTable, type DxTableColumn } from "@almanac/web-ui";
+import { DxBadge, DxTable, type DxTableColumn } from "@situ/web-ui";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { DateTime } from "luxon";
@@ -22,34 +22,34 @@ export function ProjectIndex() {
     : undefined;
 
   return (
-    <main className="almanac-shell">
-      <header className="almanac-topbar">
+    <main className="situ-shell">
+      <header className="situ-topbar">
         <div>
-          <h1>Local Almanac Projects</h1>
+          <h1>Local Situ Projects</h1>
           <p>Attach-only monitors for projects found on this machine.</p>
         </div>
         <DxBadge>{projects.length} projects</DxBadge>
       </header>
 
-      {error && <p className="almanac-status" data-tone="danger">{error}</p>}
+      {error && <p className="situ-status" data-tone="danger">{error}</p>}
 
       {projectsQuery.isPending && projects.length === 0 && (
-        <section className="almanac-empty">
-          <h2>Checking local Almanac state</h2>
-          <p>Looking for projects under local Almanac storage.</p>
+        <section className="situ-empty">
+          <h2>Checking local Situ state</h2>
+          <p>Looking for projects under local Situ storage.</p>
         </section>
       )}
 
       {!projectsQuery.isPending && projects.length === 0 && (
-        <section className="almanac-empty">
-          <h2>No local Almanac projects found</h2>
+        <section className="situ-empty">
+          <h2>No local Situ projects found</h2>
           <p>Start a terminal session, then refresh this page.</p>
-          <pre className="almanac-command">almanac start</pre>
+          <pre className="situ-command">situ start</pre>
         </section>
       )}
 
       {projects.length > 0 && (
-        <section className="almanac-project-index">
+        <section className="situ-project-index">
           <DxTable
             columns={columns}
             rows={projects}
@@ -72,15 +72,15 @@ function projectColumns(): Array<DxTableColumn<ProjectSummary>> {
       header: "Project",
       width: "28%",
       renderCell: ({ row }) => (
-        <div className="almanac-project-cell">
+        <div className="situ-project-cell">
           <Link
-            className="almanac-project-link"
+            className="situ-project-link"
             params={{ projectId: row.project_id }}
             to="/projects/$projectId"
           >
             {row.label}
           </Link>
-          <span className="almanac-project-id">{row.project_id}</span>
+          <span className="situ-project-id">{row.project_id}</span>
         </div>
       ),
       sortValue: ({ row }) => row.label,
@@ -90,7 +90,7 @@ function projectColumns(): Array<DxTableColumn<ProjectSummary>> {
       header: "Status",
       width: "120px",
       renderCell: ({ row }) => (
-        <div className="almanac-project-status">
+        <div className="situ-project-status">
           <ProjectStatusBadge status={row.status} />
           {row.status_reason && <span>{row.status_reason}</span>}
         </div>
@@ -101,7 +101,7 @@ function projectColumns(): Array<DxTableColumn<ProjectSummary>> {
       id: "workspace",
       header: "Workspace",
       renderCell: ({ row }) => (
-        <span className="almanac-project-path">
+        <span className="situ-project-path">
           {row.workspace ?? "Not configured yet"}
         </span>
       ),
@@ -111,7 +111,7 @@ function projectColumns(): Array<DxTableColumn<ProjectSummary>> {
       id: "objective",
       header: "Objective",
       renderCell: ({ row }) => (
-        <span className="almanac-project-path">
+        <span className="situ-project-path">
           {row.objective_title ?? "No objective yet"}
         </span>
       ),
@@ -132,7 +132,7 @@ function projectColumns(): Array<DxTableColumn<ProjectSummary>> {
       width: "92px",
       renderCell: ({ row }) => (
         <Link
-          className="almanac-link-button"
+          className="situ-link-button"
           params={{ projectId: row.project_id }}
           to="/projects/$projectId"
         >

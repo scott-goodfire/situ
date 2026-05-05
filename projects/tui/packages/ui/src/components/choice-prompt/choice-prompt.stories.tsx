@@ -67,7 +67,7 @@ export const stories = [
     name: "compact",
     render: () => (
       <ChoicePromptStory
-        title="What should Almanac do next?"
+        title="What should Situ do next?"
         options={compactOptions}
       />
     ),

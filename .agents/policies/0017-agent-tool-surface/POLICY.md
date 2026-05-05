@@ -8,11 +8,11 @@ status: active
 ## Applies To
 
 Pydantic AI tools, toolsets, agent deps, agent-facing APIs, and code that lets
-agents read or mutate Almanac research state.
+agents read or mutate Situ research state.
 
 ## Rule
 
-Almanac ledger tools should feel like explicit operations over Almanac product
+Situ ledger tools should feel like explicit operations over Situ product
 models and familiar research actions. Prefer concrete, inspectable tools such
 as `get_session`, `create_hypothesis`, `update_experiment`,
 `add_experiment_comment`, and `add_evaluation_result` over abstract tools that
@@ -21,7 +21,7 @@ ask the model to choose internal ontology details.
 Workspace tools are separate. It is acceptable to use a maintained Pydantic AI
 console/filesystem toolset for ordinary coding-agent operations such as
 `read_file`, `grep`, `glob`, `edit_file`, and `execute`, provided those tools
-are backed by the current workspace root and do not write directly to Almanac's
+are backed by the current workspace root and do not write directly to Situ's
 research ledger.
 
 The durable storage model can remain general. For example,
@@ -33,9 +33,9 @@ should not have to call a generic activity writer to record benchmark evidence.
 
 ## Required Checks
 
-- Put each durable Almanac ledger tool in its own ownership folder:
+- Put each durable Situ ledger tool in its own ownership folder:
   `tools/<domain>/<tool_name>/{tool.py,models.py,__init__.py}`.
-- Build Almanac ledger tools by subclassing `BaseAlmanacTool` and exposing
+- Build Situ ledger tools by subclassing `BaseSituTool` and exposing
   `.as_tool()` through a `FunctionToolset`.
 - Prefer maintained package toolsets over hand-rolled wrappers for generic
   workspace operations such as shell execution, file reads, file edits, glob,

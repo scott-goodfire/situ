@@ -1,6 +1,6 @@
 import lodash from "lodash";
 import { Text } from "ink";
-import type { ExperimentActivityRecord, ExperimentRecord } from "@almanac/protocol";
+import type { ExperimentActivityRecord, ExperimentRecord } from "@situ/protocol";
 import { PaneSection } from "../pane-section/pane-section.js";
 import { previewText } from "../text-preview/text-preview.js";
 

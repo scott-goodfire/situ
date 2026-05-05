@@ -6,15 +6,15 @@ from typing import Any
 from pydantic_evals.evaluators import EvaluationReason, Evaluator, EvaluatorContext
 
 from evals.harness.evaluators.helpers import tool_calls
-from evals.harness.models import AlmanacEvalOutput
+from evals.harness.models import SituEvalOutput
 
 
 @dataclass
-class ToolCallOrder(Evaluator[Any, AlmanacEvalOutput, Any]):
+class ToolCallOrder(Evaluator[Any, SituEvalOutput, Any]):
     before: str
     after: str
 
-    def evaluate(self, ctx: EvaluatorContext[Any, AlmanacEvalOutput, Any]) -> EvaluationReason:
+    def evaluate(self, ctx: EvaluatorContext[Any, SituEvalOutput, Any]) -> EvaluationReason:
         names = [call.tool_name for call in tool_calls(ctx.output)]
         try:
             before_idx = names.index(self.before)

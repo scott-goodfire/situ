@@ -1,4 +1,4 @@
-import type { ExperimentActivityRecord, ExperimentRecord } from "@almanac/protocol";
+import type { ExperimentActivityRecord, ExperimentRecord } from "@situ/protocol";
 import {
   DxBadge,
   DxSection,
@@ -6,7 +6,7 @@ import {
   type DxBadgeTone,
   type DxTableColumn,
   type DxTableRowTone,
-} from "@almanac/web-ui";
+} from "@situ/web-ui";
 import filter from "lodash/filter";
 
 type ExperimentRow = {

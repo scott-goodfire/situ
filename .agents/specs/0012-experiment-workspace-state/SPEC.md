@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Almanac should not treat an experiment result as self-explanatory command
+Situ should not treat an experiment result as self-explanatory command
 output. A result is only interpretable when the workspace state around it is
 visible.
 
@@ -53,13 +53,13 @@ risks visible and to guide human review.
 
 ## Run Branch Strategy
 
-Almanac should prefer isolated experiment branches over mutating the user's
+Situ should prefer isolated experiment branches over mutating the user's
 mainline branch.
 
 Suggested branch shape:
 
 ```text
-almanac/<session-or-run-id>
+situ/<session-or-run-id>
 ```
 
 Using git in this way is experiment bookkeeping, not a claim that a candidate is
@@ -82,7 +82,7 @@ An experiment result is more trustworthy when:
   setup or toolchain behavior.
 - It leaves generated files out of the research diff.
 
-A result can still be useful when these rules are violated, but Almanac should
+A result can still be useful when these rules are violated, but Situ should
 surface the violation as a concern rather than silently treating the result as
 comparable.
 
@@ -105,5 +105,5 @@ comparable.
 
 ## Product Rule
 
-Almanac should not only show that tests passed. It should show which workspace
+Situ should not only show that tests passed. It should show which workspace
 state made them pass and whether that state is comparable to the baseline.

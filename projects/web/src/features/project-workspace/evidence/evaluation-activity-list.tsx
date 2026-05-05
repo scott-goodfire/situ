@@ -1,14 +1,14 @@
 import type {
   EvaluationActivityRecord,
   EvaluationRecord,
-} from "@almanac/protocol";
+} from "@situ/protocol";
 import {
   DxBadge,
   DxSection,
   DxTable,
   type DxTableColumn,
   type DxTableRowTone,
-} from "@almanac/web-ui";
+} from "@situ/web-ui";
 import { Link } from "@tanstack/react-router";
 import { DateTime } from "luxon";
 import {
@@ -73,9 +73,9 @@ function evaluationColumns({
       header: "Evaluation",
       width: "28%",
       renderCell: ({ row }) => (
-        <div className="almanac-record-cell">
+        <div className="situ-record-cell">
           <Link
-            className="almanac-record-link"
+            className="situ-record-link"
             to="/projects/$projectId/evaluations/$evaluationId"
             params={{
               projectId,
@@ -84,7 +84,7 @@ function evaluationColumns({
           >
             {row.evaluation.title}
           </Link>
-          <span className="almanac-record-id">{row.evaluation.id}</span>
+          <span className="situ-record-id">{row.evaluation.id}</span>
         </div>
       ),
       sortValue: ({ row }) => row.evaluation.title,
@@ -123,7 +123,7 @@ function latestEvidence({ row }: { row: EvaluationRow }) {
   }
 
   return (
-    <div className="almanac-evaluation-latest">
+    <div className="situ-evaluation-latest">
       <span className="dx-mono">{activityLabel({ activity: latestActivity })}</span>
       <span>{latestActivity.body}</span>
     </div>

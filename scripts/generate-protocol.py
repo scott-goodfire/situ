@@ -8,7 +8,7 @@ from typing import Any, Literal, get_args, get_origin
 
 from pydantic import BaseModel
 
-from almanac.protocol import (
+from situ.protocol import (
     ArtifactRecord,
     CollectionUpsertedParams,
     CollectionsBootstrapParams,

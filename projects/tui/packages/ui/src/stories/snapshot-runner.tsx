@@ -93,7 +93,7 @@ function snapshotOptions({
   const timestamp = DateTime.now().toFormat("yyyy-LL-dd-HHmmss");
 
   return {
-    outDir: join(tmpdir(), "almanac-tui-snapshots", timestamp),
+    outDir: join(tmpdir(), "situ-tui-snapshots", timestamp),
     color,
     png,
   };

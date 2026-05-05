@@ -32,7 +32,7 @@ const sidebar = (
     header={
       <div style={{ display: "grid", gap: 2 }}>
         <span style={{ fontSize: 13, fontWeight: 500, color: "var(--foreground)" }}>
-          Almanac
+          Situ
         </span>
         <span style={{ fontSize: 11, color: "var(--muted-foreground-tertiary)" }}>
           ~/work/research

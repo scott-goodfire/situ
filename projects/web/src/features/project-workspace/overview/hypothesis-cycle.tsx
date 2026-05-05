@@ -1,5 +1,5 @@
-import type { HypothesisRecord } from "@almanac/protocol";
-import { DxSection } from "@almanac/web-ui";
+import type { HypothesisRecord } from "@situ/protocol";
+import { DxSection } from "@situ/web-ui";
 import filter from "lodash/filter";
 import { HypothesisCard } from "./hypothesis-card";
 import { experimentsForHypothesis } from "../shared/relationship-selectors";
@@ -32,7 +32,7 @@ export function HypothesisCycle({
       )}
 
       {hypotheses.length > 0 && (
-        <div className="almanac-cycle-grid">
+        <div className="situ-cycle-grid">
           <HypothesisLane
             data={data}
             title="Backlog"
@@ -69,7 +69,7 @@ function HypothesisLane({
   emptyLabel: string;
 }) {
   return (
-    <section className="almanac-cycle-lane">
+    <section className="situ-cycle-lane">
       <h3>{title}</h3>
 
       {hypotheses.length === 0 && <p className="dx-muted">{emptyLabel}</p>}

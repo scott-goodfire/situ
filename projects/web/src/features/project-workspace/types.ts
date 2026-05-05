@@ -10,7 +10,7 @@ import type {
   HypothesisRecord,
   ObjectiveRecord,
   SessionRecord,
-} from "@almanac/protocol";
+} from "@situ/protocol";
 import type { ConnectionState } from "../run-monitor/connection-badge";
 
 export type ProjectWorkspaceData = {

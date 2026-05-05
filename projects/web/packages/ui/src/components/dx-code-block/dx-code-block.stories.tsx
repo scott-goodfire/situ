@@ -30,9 +30,9 @@ export const Diff: Story = {
 export const Plain: Story = {
   args: {
     lines: [
-      { text: "almanac start" },
-      { text: "almanac status" },
-      { text: "almanac stop" },
+      { text: "situ start" },
+      { text: "situ status" },
+      { text: "situ stop" },
     ],
   },
 };

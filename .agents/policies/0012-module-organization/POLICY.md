@@ -7,154 +7,233 @@ status: active
 
 ## Applies To
 
-New modules, meaningful refactors, eval suites, harness runtime packages,
-repositories, tools, workers, and agent-facing architecture.
+New modules, refactors, eval suites, harness runtime packages, repositories,
+tools, workers, and agent-facing architecture across the codebase.
 
 ## Rule
 
-Prefer small files with clear ownership folders. A future agent should be able
-to find the class, tool, evaluator, repository, or scenario it needs without
-parsing a broad mixed-concern module.
-
-Use flatter files for process entrypoints and thin application surfaces. Use
-nested ownership folders for durable concepts that future agents will extend.
-
-The default durable-concept style is:
+Every concept gets its own directory, even if it currently contains a single
+file. The directory establishes the contract: this is its own thing, with room
+to grow. Future contributors (humans and agents) should always be adding to a
+directory, never deciding whether to promote a `.py` to a directory.
 
 ```text
-domain/
-  concept_name/
-    record.py
-    repository.py
-    command.py
-    schemas.py
-    service.py
+<category>/<concept>/<role>.py
 ```
 
-Examples:
+- `<category>` — `records`, `repositories`, `tools`, `cli`, `core`, `agents`, `api`, ...
+- `<concept>` — the entity, command, or subsystem (`objective`, `start`, `notifications`)
+- `<role>.py` — what kind of code lives here (`record.py`, `repository.py`, `command.py`, `tool.py`, `models.py`, `registry.py`, `manager.py`, `runtime.py`, `configure.py`, ...)
 
-```text
-repositories/sessions/repository.py
-records/session/record.py
-api/sessions/schemas.py
-api/sessions/service.py
-tools/experiments/create_experiment/tool.py
-evaluators/tool_result_contains/evaluator.py
-worlds/research_session/agents/research_agent/agent.py
-```
+`__init__.py` is the public surface of every concept directory. External
+callers import from the directory; the leaf file is an implementation detail.
+This means renaming or splitting leaf files never breaks callers.
 
-The preferred Python harness shape is:
+## Why this shape
 
-```text
-projects/harness/src/almanac/harness/
-  app.py
-  cli.py
-  stdio.py
-  core/
-    db/
-      database.py
-      migrations.py
-      serialization.py
-    trust/
-      checks.py
-    workers/
-      manager.py
-  api/
-    collections/
-      schemas.py
-      service.py
-    current_state/
-      schemas.py
-      service.py
-    sessions/
-      schemas.py
-      service.py
-  repositories/
-    experiments/
-      repository.py
-      command.py
-    experiment_activities/
-      repository.py
-      command.py
-  records/
-    experiment/
-      record.py
-    experiment_activity/
-      record.py
-```
+- **Consistent navigation.** Every concept looks the same. There is no "is this
+  big enough yet to be a folder?" decision.
+- **Predictable extension.** When a concept grows, you add a file alongside the
+  existing one — no migration, no rename of callers.
+- **Stable imports.** Callers go through `__init__.py`. Internal restructuring
+  is a non-event for the rest of the codebase.
+- **Co-location.** A concept's tests, fixtures, models, and implementation can
+  sit together when it makes sense.
 
-`core/` is for cross-cutting harness infrastructure. Product-state concepts
-should not disappear into `core/`; they should live in `api/`,
-`repositories/`, `records/`, `tools/`, `agents/`, or another product-facing
-domain folder.
+The trade-off is more directories. Accepted.
 
 ## Required Checks
 
-- Prefer one primary class, tool, evaluator, repository, or scenario per file.
-- Use folders to name ownership boundaries, not only file names.
-- Keep `__init__.py` files as small export surfaces; do not hide substantial
-  implementation there.
+- One concept per directory. The directory name is the concept; the file name
+  is the role.
+- One primary class, function group, or artifact per leaf file.
+- Use **role-named leaf files**: `record.py`, `repository.py`, `command.py`,
+  `tool.py`, `models.py`, `schemas.py`, `service.py`, `registry.py`,
+  `manager.py`, `runtime.py`, `configure.py`, `evaluator.py`, `case.py`,
+  `scenario.py`, `runner.py`, etc. Never `module.py`. Never the directory name
+  repeated (no `paths/paths.py`).
+- `__init__.py` files are small re-export surfaces. Substantial implementation
+  does not live in `__init__.py` unless the concept is genuinely a single
+  module (rare).
+- Shared helpers within a category live in `_shared/<role>.py`. The leading
+  underscore is a Python privacy convention (PEP 8): `from pkg import *`
+  skips underscore-prefixed names, and linters/IDEs treat them as
+  implementation detail. Major libraries follow the same pattern with
+  different nouns: `pip/_internal/`, `pip/_vendor/`, `numpy/_core/`,
+  `pandas/_libs/`. We use `_shared/` because the directory's purpose is
+  helpers shared between sibling concepts at this level — that reads more
+  intuitively than `_internal/` in our application layout. Group helpers by
+  purpose (`_shared/rpc.py`, `_shared/output.py`) rather than dumping
+  everything into one file.
 - Split broad `models.py`, `records.py`, `repositories.py`, `utils.py`,
-  `helpers.py`, or `evaluators.py` files once they contain multiple durable
-  concepts.
-- Put shared helper functions next to the concepts they support. If a helper is
-  used by many siblings, put it in a clearly named local support file.
-- Keep suite/case files thin. Test or eval cases should read as declarations of
-  behavior, not as the place where the world simulation or runner logic lives.
-- Inside a named ownership folder, prefer generic filenames like
-  `record.py`, `repository.py`, `command.py`, `schemas.py`, `service.py`,
-  `tool.py`, `evaluator.py`, `case.py`, `scenario.py`, or `runner.py`.
-- Put API/application composition under
-  `harness/api/<surface>/{schemas.py,service.py}`.
-- Use API services for request/response composition, multi-repository reads,
-  and application operations that are not table-owned persistence.
-- Put repositories under `harness/repositories/<concept>/repository.py`.
-- Repository concepts are usually plural collection names, like `experiments`
-  or `experiment_activities`.
-- Put persistence record models under
-  `harness/records/<singular_concept>/record.py`.
-- Record concepts are usually singular entity names, like `experiment` or
-  `experiment_activity`.
-- Put DB plumbing, trust checks, and worker infrastructure under
-  `harness/core/db/`, `harness/core/trust/`, and `harness/core/workers/`.
-- Keep thin entrypoints like `app.py`, `cli.py`, and `stdio.py` flat at the
-  harness package root unless they become broad enough to need a folder.
-- Keep thin TypeScript application entrypoints like `main.tsx` flat inside the
-  owning project when the project has no durable domain concepts yet.
-- Avoid premature framework abstraction. Add folders because they clarify
-  ownership, not because every tiny function needs a package.
+  `helpers.py`, or `evaluators.py` files immediately when they cross concept
+  boundaries.
+
+## Canonical layouts
+
+### Records (durable state shape)
+```text
+records/
+  objective/
+    __init__.py        # re-exports ObjectiveRecord, ObjectiveStatus, parse_objective_status
+    record.py          # the Pydantic model + status enum + status parser
+```
+
+### Repositories (durable state CRUD)
+```text
+repositories/
+  objectives/
+    __init__.py        # re-exports ObjectivesRepository
+    repository.py      # CRUD methods using Database
+    command.py         # input Pydantic models with extra="forbid"
+```
+
+### API services (read-side composition)
+```text
+api/
+  sessions/
+    __init__.py
+    service.py         # SessionsService — composes multiple repositories
+    schemas.py         # response Pydantic models
+```
+
+### Tools (agent-callable actions)
+```text
+tools/
+  objectives/
+    create_objective/
+      __init__.py
+      tool.py          # subclass of BaseSituTool with execute_sync
+      models.py        # return type extending SituToolReturn
+```
+
+Group tools by entity (`objectives/`, `hypotheses/`); cross-cutting tools get
+their own group (`comments/`, `links/`, `workspace_state/`). Register all
+tools in `tools/toolsets.py`.
+
+### Agents
+```text
+agents/
+  research/
+    __init__.py
+    agent.py           # name, output type, Agent instance
+    prompt.py          # *_INSTRUCTIONS constant + build_*_prompt builders
+```
+
+### CLI / headless commands
+```text
+cli/
+  commands/
+    __init__.py        # re-exports main
+    main.py            # argparse setup + dispatch table
+    _shared/
+      arguments.py
+      tui.py
+    start/
+      __init__.py
+      command.py       # the start handler function
+    web/
+      __init__.py
+      command.py
+  headless/
+    __init__.py
+    _shared/
+      rpc.py
+      output.py
+      snapshot.py
+      timing.py
+      workspace.py
+    status/
+      __init__.py
+      command.py       # the status handler function
+    exec/
+      __init__.py
+      command.py
+```
+
+### Core (cross-cutting harness infrastructure)
+```text
+core/
+  db/                  # multi-file subsystem
+    database.py
+    migrations.py
+    serialization.py
+    project_registry.py
+  notifications/
+    __init__.py
+    registry.py        # project-scoped notification fan-out
+  paths/
+    __init__.py
+    resolve.py         # resolve_app_root, resolve_workspace
+  project_context/
+    __init__.py
+    context.py         # ProjectContext class
+  observability/
+    __init__.py
+    configure.py       # Logfire setup + span helper
+  trust/
+    __init__.py
+    checks.py
+  workers/
+    __init__.py
+    manager.py
+  dbos/
+    __init__.py
+    runtime.py
+```
+
+`core/` is for cross-cutting harness infrastructure. Product-state concepts do
+not live in `core/`; they live in `api/`, `repositories/`, `records/`,
+`tools/`, `agents/`, or another product-facing domain folder.
+
+### Harness package root
+
+The harness package keeps a small set of files at its root: the running
+service (`app.py`, `agent_runtime.py`, `stdio.py`) and the package wiring
+(`__init__.py`, `__main__.py`). Everything else lives inside a category
+directory.
+
+```text
+projects/harness/src/situ/harness/
+  __init__.py
+  __main__.py
+  stdio.py             # JSON-RPC stdio loop
+  app.py               # HarnessApp dispatcher
+  agent_runtime.py     # Pydantic AI + DBOS wrapper
+  cli/
+  core/
+  records/
+  repositories/
+  api/
+  tools/
+  agents/
+  config/
+```
 
 ## Acceptable Exceptions
 
-- A very small script-like entry point can stay in one file.
-- Closely coupled private helper functions may live with the only class that
-  uses them.
 - Generated code can follow the generator's layout.
-- Temporary experimental code may stay compact until it becomes durable.
-- Existing legacy modules can be migrated incrementally. New durable code
-  should follow the target shape unless it is part of a scoped compatibility
-  bridge.
+- Migrations from legacy code may proceed incrementally. New durable code
+  must follow this layout.
 
 ## Red Flags
 
-- A file mixes orchestration, data models, persistence, evaluation logic, and
-  rendering.
-- A file has several unrelated classes that future changes will likely touch
-  independently.
-- A catch-all `models.py`, `records.py`, `repositories.py`, or `utils.py`
-  becomes the default dumping ground.
-- New concepts are added to a broad file only because importing from an existing
-  module is convenient.
-- Folder names do not explain ownership boundaries.
-- Repository, record, worker, trust, or DB code is added to the old flat layout
-  when a target ownership folder would be clearer.
-- A multi-table current-state composition is named a repository or snapshot
-  when it should be an API service/schema.
+- A new concept added as a single `.py` file at the root of a category instead
+  of in its own directory.
+- A leaf file named `module.py`, or named the same as its parent directory
+  (`paths/paths.py`).
+- Substantial implementation in `__init__.py`. `__init__.py` should re-export.
+- A catch-all `utils.py`, `helpers.py`, `models.py`, or `shared.py` accumulating
+  unrelated functions.
+- Imports reaching past `__init__.py` into a leaf file when the public
+  re-export would suffice.
+- A multi-table current-state composition modeled as a repository when it
+  should be an API service.
 
 ## Review Questions
 
-- Can a future agent find the relevant concept from the path alone?
-- Does the file have one obvious reason to change?
-- Would adding the next related concept make this file feel crowded?
-- Is the extra folder improving clarity, or just adding ceremony?
-- Are imports still straightforward after splitting?
+- Does every concept have its own directory?
+- Is the leaf file named after its role, not after its directory?
+- Does `__init__.py` cleanly describe the public surface?
+- Can a future contributor add a sibling concept by copying an existing
+  directory's shape?

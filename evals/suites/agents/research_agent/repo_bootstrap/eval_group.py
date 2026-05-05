@@ -6,7 +6,7 @@ from pydantic_evals import Case, set_eval_attribute
 from pydantic_evals.dataset import increment_eval_metric
 from pydantic_evals.evaluators import Evaluator
 
-from evals.harness import BaseAlmanacEvalGroup
+from evals.harness import BaseSituEvalGroup
 from evals.suites.agents.research_agent.repo_bootstrap.cases import (
     repo_bootstrap_cases,
 )
@@ -18,7 +18,7 @@ from evals.worlds.repo_bootstrap import (
 
 
 class ResearchAgentRepoBootstrapEvalGroup(
-    BaseAlmanacEvalGroup[RepoBootstrapEvalInput, RepoBootstrapEvalOutput]
+    BaseSituEvalGroup[RepoBootstrapEvalInput, RepoBootstrapEvalOutput]
 ):
     suite_name: ClassVar[str] = "agents"
     world_name: ClassVar[str] = "research_agent_repo_bootstrap"

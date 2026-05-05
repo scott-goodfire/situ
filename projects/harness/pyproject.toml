@@ -1,9 +1,9 @@
 [project]
-name = "almanac-harness"
+name = "situ-harness"
 version = "0.0.1"
 requires-python = ">=3.13"
 dependencies = [
-  "almanac-protocol",
+  "situ-protocol",
   "dbos>=2.19.0",
   "logfire>=4.32.1",
   "pydantic-ai-backend[console]>=0.2.5",
@@ -12,11 +12,11 @@ dependencies = [
 ]
 
 [project.scripts]
-almanac = "almanac.harness.cli:main"
-almanac-harness-stdio = "almanac.harness.stdio:main"
+situ = "situ.harness.cli:main"
+situ-harness-stdio = "situ.harness.stdio:main"
 
 [tool.uv.sources]
-almanac-protocol = { workspace = true }
+situ-protocol = { workspace = true }
 
 [build-system]
 requires = ["setuptools>=68"]
@@ -24,5 +24,5 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["almanac*"]
+include = ["situ*"]
 namespaces = true

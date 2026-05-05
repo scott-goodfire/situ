@@ -23,7 +23,7 @@ current-state composition for rendering.
 The first useful screen should look conceptually like:
 
 ```text
-Almanac
+Situ
 
 Objective
   Improve support-agent resolution rate without increasing hallucinations
@@ -61,14 +61,14 @@ Timeline
 The TUI should feel like a terminal-native session surface, not a boxed
 dashboard embedded inside the terminal.
 
-Use a compact framed banner for the initial Almanac identity, workspace, and
+Use a compact framed banner for the initial Situ identity, workspace, and
 session status at the top of the screen. The live observability body beneath it
 should be unframed: sections may use headings, spacing, and compact separators,
 but the full terminal surface should not be wrapped in a persistent outer box.
 
 ## Start, Resume, And Attach
 
-`almanac start` starts a fresh session by default, even when older local
+`situ start` starts a fresh session by default, even when older local
 sessions exist for the same project.
 
 Interactive `start` should show a compact preflight picker before any research
@@ -81,10 +81,10 @@ Selecting Start calls `session.start` and moves into the live dashboard.
 Selecting Exit closes the TUI without starting an agent run. This keeps opening
 the product surface distinct from beginning a long-running autoresearch loop.
 
-`almanac resume` explicitly resumes an existing session id, defaulting to the
+`situ resume` explicitly resumes an existing session id, defaulting to the
 latest local session when the user does not provide one.
 
-`almanac attach` connects the TUI to an already-running harness process. It
+`situ attach` connects the TUI to an already-running harness process. It
 must not start a harness process, start a new session, or resume a closed
 session.
 
@@ -94,7 +94,7 @@ continuity must come from an explicit command.
 ## Command Surface
 
 The running observability view should not show an always-on free-text prompt.
-Almanac is supervising a live research session, not hosting a chat conversation.
+Situ is supervising a live research session, not hosting a chat conversation.
 
 The default running screen should be read-only except for explicit terminal
 controls. Use a compact footer for common keys such as help, commands, and quit.

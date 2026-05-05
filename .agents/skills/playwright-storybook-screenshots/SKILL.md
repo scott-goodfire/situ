@@ -1,6 +1,6 @@
 ---
 name: playwright-storybook-screenshots
-description: Use when inspecting Almanac web UI with Playwright, capturing Storybook screenshots, verifying visual states, or using the Playwright MCP server for browser-driven UI review.
+description: Use when inspecting Situ web UI with Playwright, capturing Storybook screenshots, verifying visual states, or using the Playwright MCP server for browser-driven UI review.
 ---
 
 # Playwright Storybook Screenshots
@@ -8,7 +8,7 @@ description: Use when inspecting Almanac web UI with Playwright, capturing Story
 ## When To Use
 
 Use this skill for browser UI review, Storybook visual checks, screenshot
-capture, and Playwright MCP-driven inspection of the Almanac web UI.
+capture, and Playwright MCP-driven inspection of the Situ web UI.
 
 Prefer fixture-driven Storybook screenshots for repeatable component review. Use
 the MCP browser when interactive inspection is needed.
@@ -25,7 +25,7 @@ The command starts Storybook, reads `index.json`, captures every story with
 Playwright Chromium, and writes PNGs under:
 
 ```text
-/tmp/almanac-storybook-screenshots/<timestamp>/<component>/<story>.png
+/tmp/situ-storybook-screenshots/<timestamp>/<component>/<story>.png
 ```
 
 It also writes `stories.json` in the screenshot root so the captured story list
@@ -34,7 +34,7 @@ is reviewable.
 Useful options:
 
 ```bash
-mise run storybook:screenshots -- --out-dir /tmp/almanac-shot-pass
+mise run storybook:screenshots -- --out-dir /tmp/situ-shot-pass
 mise run storybook:screenshots -- --port 6010
 mise run storybook:screenshots -- --base-url http://127.0.0.1:6006 --no-start
 ```
@@ -57,7 +57,7 @@ for visual changes; run the deterministic screenshot command before finishing.
 
 ## Review Expectations
 
-- Storybook stories should not require a live Almanac session.
+- Storybook stories should not require a live Situ session.
 - Screenshots should cover empty, loading, connected, failed, running,
   completed, and suspicious states when those states change.
 - Put generated screenshots under `/tmp`, not in the repo.

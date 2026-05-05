@@ -1,5 +1,5 @@
 import { Text } from "ink";
-import type { EventRecord } from "@almanac/protocol";
+import type { EventRecord } from "@situ/protocol";
 import { PaneSection } from "../pane-section/pane-section.js";
 import { previewText } from "../text-preview/text-preview.js";
 

@@ -3,10 +3,10 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from almanac.harness.api.current_state import CurrentStateService
-from almanac.harness.api.sessions import SessionsService
-from almanac.harness.core.db import Database
-from almanac.harness.records import (
+from situ.harness.api.current_state import CurrentStateService
+from situ.harness.api.sessions import SessionsService
+from situ.harness.core.db import Database
+from situ.harness.records import (
     EvaluationRecord,
     ExperimentRecord,
     HypothesisRecord,
@@ -15,13 +15,13 @@ from almanac.harness.records import (
     ResearchContextRecord,
     SessionRecord,
 )
-from almanac.harness.repositories import Repositories
+from situ.harness.repositories import Repositories
 
 
 @pytest.fixture
 def repos(tmp_path: Path) -> Repositories:
     db = Database(
-        tmp_path / "almanac.sqlite",
+        tmp_path / "situ.sqlite",
         project_id="project_test",
         repo_path="/tmp/project",
     )
@@ -285,7 +285,7 @@ def test_core_repositories_reject_invalid_statuses(repos: Repositories) -> None:
 def test_experiments_repository_accepts_work_status_enum(
     repos: Repositories,
 ) -> None:
-    from almanac.harness.records import WorkStatus
+    from situ.harness.records import WorkStatus
 
     create_hypothesis(repos)
     experiment = repos.experiments.create(
@@ -439,7 +439,7 @@ def test_agent_message_history_repository_appends_and_reconstructs(
 
     first = repos.agent_message_history.append_session_messages(
         session_id="session_0001",
-        agent_name="almanac-research-planner",
+        agent_name="situ-research-planner",
         messages_json=(
             b'[{"kind":"request","run_id":"pydantic_run_1",'
             b'"conversation_id":"conversation_1"}]'
@@ -447,7 +447,7 @@ def test_agent_message_history_repository_appends_and_reconstructs(
     )
     second = repos.agent_message_history.append_session_messages(
         session_id="session_0001",
-        agent_name="almanac-research-planner",
+        agent_name="situ-research-planner",
         messages_json='[{"kind":"response","run_id":"pydantic_run_1","conversation_id":"conversation_1"}]',
     )
 
@@ -457,7 +457,7 @@ def test_agent_message_history_repository_appends_and_reconstructs(
     assert second.id == 2
     assert repos.agent_message_history.get_message_history(
         "session_0001",
-        agent_name="almanac-research-planner",
+        agent_name="situ-research-planner",
     ) == [
         {"kind": "request", "run_id": "pydantic_run_1", "conversation_id": "conversation_1"},
         {"kind": "response", "run_id": "pydantic_run_1", "conversation_id": "conversation_1"},

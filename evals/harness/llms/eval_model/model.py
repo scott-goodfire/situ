@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from almanac.harness.config import DEFAULTS, AlmanacSecrets
+from situ.harness.config import DEFAULTS, SituSecrets
 
 
 def eval_model_name() -> str:
@@ -9,6 +9,6 @@ def eval_model_name() -> str:
 
 
 def ensure_eval_model_credentials() -> None:
-    secrets = AlmanacSecrets()
+    secrets = SituSecrets()
     secrets.require_openai_key()
     secrets.apply_sdk_environment()

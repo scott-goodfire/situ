@@ -1,5 +1,5 @@
-import type { EventRecord } from "@almanac/protocol";
-import { DxSection, DxTable, type DxTableColumn, type DxTableRowTone } from "@almanac/web-ui";
+import type { EventRecord } from "@situ/protocol";
+import { DxSection, DxTable, type DxTableColumn, type DxTableRowTone } from "@situ/web-ui";
 import { DateTime } from "luxon";
 import type { ProjectWorkspaceData } from "../types";
 

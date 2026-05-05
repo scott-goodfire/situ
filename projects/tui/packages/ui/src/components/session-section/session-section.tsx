@@ -3,7 +3,7 @@ import type {
   ObjectiveRecord,
   ResearchContextRecord,
   SessionRecord,
-} from "@almanac/protocol";
+} from "@situ/protocol";
 import { PaneSection } from "../pane-section/pane-section.js";
 
 export function SessionSection({

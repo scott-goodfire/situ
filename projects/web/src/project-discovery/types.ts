@@ -1,4 +1,4 @@
-import type { CollectionsBootstrapResult } from "@almanac/protocol";
+import type { CollectionsBootstrapResult } from "@situ/protocol";
 
 export type ProjectSessionStatus =
   | "running"

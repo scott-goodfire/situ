@@ -3,14 +3,14 @@ import { defineConfig, type Plugin } from "vite";
 import { createDiscoveryApi } from "./src/server/discovery-api";
 
 export default defineConfig({
-  plugins: [almanacDiscoveryApi()],
+  plugins: [situDiscoveryApi()],
 });
 
-function almanacDiscoveryApi(): Plugin {
+function situDiscoveryApi(): Plugin {
   const api = createDiscoveryApi();
 
   return {
-    name: "almanac-discovery-api",
+    name: "situ-discovery-api",
     configureServer(server) {
       server.middlewares.use((request, response, next) => {
         if (!isApiRequest({ request })) {

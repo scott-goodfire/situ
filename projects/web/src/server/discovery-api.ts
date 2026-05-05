@@ -17,7 +17,7 @@ import type {
   ProjectRecord,
   ResearchContextRecord,
   SessionRecord,
-} from "@almanac/protocol";
+} from "@situ/protocol";
 import {
   readProjectRegistry,
   upsertProjectRegistryRows,
@@ -53,11 +53,11 @@ type ProjectStatusDetails = {
 };
 
 type DiscoveryApiOptions = {
-  almanacHome?: string;
+  situHome?: string;
 };
 
 type DiscoveryContext = {
-  almanacHome: string;
+  situHome: string;
 };
 
 type ProjectMetadata = {
@@ -89,11 +89,11 @@ type EventRow = Record<string, unknown> & {
 const PROJECT_ID_PATTERN = /^[a-f0-9]{16}$/;
 
 export function createDiscoveryApi({
-  almanacHome = defaultAlmanacHome(),
+  situHome = defaultSituHome(),
 }: DiscoveryApiOptions = {}): Hono {
   const app = new Hono();
   const discoveryContext: DiscoveryContext = {
-    almanacHome,
+    situHome,
   };
 
   app.get("/api/projects", async (context) => {
@@ -147,7 +147,7 @@ async function listProjects({
   discoveryContext: DiscoveryContext;
 }): Promise<ProjectSummary[]> {
   const registryRows = await readProjectRegistry({
-    almanacHome: discoveryContext.almanacHome,
+    situHome: discoveryContext.situHome,
   });
   const projectIds = await listProjectIds({ discoveryContext, registryRows });
   const projects = await Promise.all(
@@ -173,7 +173,7 @@ async function syncKnownProjectsToRegistry({
   projects: ProjectSummary[];
 }): Promise<void> {
   await upsertProjectRegistryRows({
-    almanacHome: discoveryContext.almanacHome,
+    situHome: discoveryContext.situHome,
     rows: projects.map((project) => ({
       projectId: project.project_id,
       repoPath: project.workspace,
@@ -195,7 +195,7 @@ async function findProject({
   }
 
   const registryRows = await readProjectRegistry({
-    almanacHome: discoveryContext.almanacHome,
+    situHome: discoveryContext.situHome,
   });
   const projectIds = await listProjectIds({ discoveryContext, registryRows });
   if (!projectIds.includes(projectId)) {
@@ -914,7 +914,7 @@ function projectsDirectory({
 }: {
   discoveryContext: DiscoveryContext;
 }): string {
-  return resolve(discoveryContext.almanacHome, "projects");
+  return resolve(discoveryContext.situHome, "projects");
 }
 
 function sessionPath({
@@ -934,11 +934,11 @@ function projectDatabasePath({
   discoveryContext: DiscoveryContext;
   projectId: string;
 }): string {
-  return resolve(projectsDirectory({ discoveryContext }), projectId, "almanac.sqlite");
+  return resolve(projectsDirectory({ discoveryContext }), projectId, "situ.sqlite");
 }
 
-function defaultAlmanacHome(): string {
-  return resolve(homedir(), ".almanac");
+function defaultSituHome(): string {
+  return resolve(homedir(), ".situ");
 }
 
 function emptyProjectMetadata({

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import type { SignedContribution } from "@almanac/chart-model";
+import type { SignedContribution } from "@situ/chart-model";
 import { ContributionBars } from "./contribution-bars";
 
 const contributions = [

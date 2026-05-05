@@ -21,7 +21,7 @@ export const Row: Story = {
   args: { value: "" },
   render: () => (
     <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, width: 720 }}>
-      <DxStatBlock value="64%" caption="Fortune 500 companies using Almanac" />
+      <DxStatBlock value="64%" caption="Fortune 500 companies using Situ" />
       <DxStatBlock value="50,000+" caption="Sessions tracked this month" />
       <DxStatBlock value="100M+" caption="Events recorded" />
     </div>

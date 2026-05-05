@@ -16,7 +16,7 @@ _NOISY_LOGGERS = ["httpx", "httpcore", "openai", "logfire", "pydantic_ai"]
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Run Almanac evals.")
+    parser = argparse.ArgumentParser(description="Run Situ evals.")
     parser.add_argument("path", nargs="?", default="evals/suites", help="Eval file or directory to run")
     parser.add_argument("--case", default=None, help="Run cases whose name contains this text")
     parser.add_argument("--concurrency", type=int, default=DEFAULT_MAX_CONCURRENCY)

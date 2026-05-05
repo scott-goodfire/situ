@@ -1,4 +1,4 @@
 import { render } from "ink";
-import { AlmanacTui } from "./app/almanac-tui/almanac-tui.js";
+import { SituTui } from "./app/situ-tui/situ-tui.js";
 
-render(<AlmanacTui />);
+render(<SituTui />);

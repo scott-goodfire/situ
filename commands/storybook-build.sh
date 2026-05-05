@@ -4,4 +4,4 @@ set -euo pipefail
 REPO_ROOT=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 cd "$REPO_ROOT"
 
-bun --filter @almanac/web storybook:build "$@"
+bun --filter @situ/web storybook:build "$@"

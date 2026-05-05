@@ -20,11 +20,11 @@ import type {
   ProjectRecord,
   ResearchContextRecord,
   SessionRecord,
-} from "@almanac/protocol";
+} from "@situ/protocol";
 
-export type AlmanacCollectionName = CollectionUpsertedParams["collection"];
+export type SituCollectionName = CollectionUpsertedParams["collection"];
 
-export type AlmanacCollections = {
+export type SituCollections = {
   projects: Collection<ProjectRecord, string>;
   objectives: Collection<ObjectiveRecord, string>;
   researchContexts: Collection<ResearchContextRecord, string>;
@@ -41,12 +41,12 @@ export type AlmanacCollections = {
 };
 
 type ApplyBootstrapOptions = {
-  collections: AlmanacCollections;
+  collections: SituCollections;
   bootstrap: CollectionsBootstrapResult;
 };
 
 type ApplyCollectionUpsertOptions = {
-  collections: AlmanacCollections;
+  collections: SituCollections;
   upsert: CollectionUpsertedParams;
 };
 
@@ -61,83 +61,83 @@ type UpsertRecordOptions<T extends object> = {
   record: T;
 };
 
-export function createAlmanacCollections(): AlmanacCollections {
+export function createSituCollections(): SituCollections {
   return {
     projects: createCollection(
       localOnlyCollectionOptions<ProjectRecord, string>({
-        id: "almanac-projects",
+        id: "situ-projects",
         getKey: (project) => project.id,
       }),
     ),
     objectives: createCollection(
       localOnlyCollectionOptions<ObjectiveRecord, string>({
-        id: "almanac-objectives",
+        id: "situ-objectives",
         getKey: (objective) => objective.id,
       }),
     ),
     researchContexts: createCollection(
       localOnlyCollectionOptions<ResearchContextRecord, string>({
-        id: "almanac-research-contexts",
+        id: "situ-research-contexts",
         getKey: (researchContext) => researchContext.id,
       }),
     ),
     sessions: createCollection(
       localOnlyCollectionOptions<SessionRecord, string>({
-        id: "almanac-sessions",
+        id: "situ-sessions",
         getKey: (session) => session.id,
       }),
     ),
     hypotheses: createCollection(
       localOnlyCollectionOptions<HypothesisRecord, string>({
-        id: "almanac-hypotheses",
+        id: "situ-hypotheses",
         getKey: (hypothesis) => hypothesis.id,
       }),
     ),
     experiments: createCollection(
       localOnlyCollectionOptions<ExperimentRecord, string>({
-        id: "almanac-experiments",
+        id: "situ-experiments",
         getKey: (experiment) => experiment.id,
       }),
     ),
     evaluations: createCollection(
       localOnlyCollectionOptions<EvaluationRecord, string>({
-        id: "almanac-evaluations",
+        id: "situ-evaluations",
         getKey: (evaluation) => evaluation.id,
       }),
     ),
     hypothesisExperimentLinks: createCollection(
       localOnlyCollectionOptions<HypothesisExperimentLinkRecord, string>({
-        id: "almanac-hypothesis-experiment-links",
+        id: "situ-hypothesis-experiment-links",
         getKey: (link) => `${link.hypothesis_id}:${link.experiment_id}`,
       }),
     ),
     hypothesisActivities: createCollection(
       localOnlyCollectionOptions<HypothesisActivityRecord, string>({
-        id: "almanac-hypothesis-activities",
+        id: "situ-hypothesis-activities",
         getKey: (activity) => String(activity.id),
       }),
     ),
     experimentActivities: createCollection(
       localOnlyCollectionOptions<ExperimentActivityRecord, string>({
-        id: "almanac-experiment-activities",
+        id: "situ-experiment-activities",
         getKey: (activity) => String(activity.id),
       }),
     ),
     evaluationActivities: createCollection(
       localOnlyCollectionOptions<EvaluationActivityRecord, string>({
-        id: "almanac-evaluation-activities",
+        id: "situ-evaluation-activities",
         getKey: (activity) => String(activity.id),
       }),
     ),
     artifacts: createCollection(
       localOnlyCollectionOptions<ArtifactRecord, string>({
-        id: "almanac-artifacts",
+        id: "situ-artifacts",
         getKey: (artifact) => artifact.id,
       }),
     ),
     events: createCollection(
       localOnlyCollectionOptions<EventRecord, string>({
-        id: "almanac-events",
+        id: "situ-events",
         getKey: (event) => String(event.id),
       }),
     ),

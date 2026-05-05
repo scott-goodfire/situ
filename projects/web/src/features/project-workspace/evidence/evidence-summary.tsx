@@ -1,8 +1,8 @@
 import type {
   EvaluationActivityRecord,
   EvaluationRecord,
-} from "@almanac/protocol";
-import { DxBadge } from "@almanac/web-ui";
+} from "@situ/protocol";
+import { DxBadge } from "@situ/web-ui";
 import {
   evidenceLabel,
   evidenceState,
@@ -31,9 +31,9 @@ export function EvidenceSummary({
   });
 
   return (
-    <div className="almanac-evidence-summary">
+    <div className="situ-evidence-summary">
       <DxBadge tone={evidenceTone({ state })}>{label}</DxBadge>
-      <span className="almanac-evidence-summary__text">
+      <span className="situ-evidence-summary__text">
         {latestActivity?.body ?? missingLabel}
       </span>
     </div>

@@ -3,10 +3,10 @@ import type {
   EvaluationRecord,
   ExperimentRecord,
   SessionRecord,
-} from "@almanac/protocol";
+} from "@situ/protocol";
 import filter from "lodash/filter";
 import orderBy from "lodash/orderBy";
-import type { DxBadgeTone, DxTableRowTone } from "@almanac/web-ui";
+import type { DxBadgeTone, DxTableRowTone } from "@situ/web-ui";
 import type { ProjectWorkspaceData } from "../types";
 
 export type EvidenceState = "missing" | "waiting" | "present" | "concern";

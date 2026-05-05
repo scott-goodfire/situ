@@ -23,11 +23,11 @@ screen scraping.
 
 ## Required Checks
 
-- Keep `almanac start` human-first. It may launch the local session server and
+- Keep `situ start` human-first. It may launch the local session server and
   TUI, but should not be the only way to run the session lifecycle.
-- Add agent/CI flows as explicit headless commands such as `almanac exec`,
-  `almanac status --json`, `almanac snapshot --json`,
-  `almanac events --json`, and `almanac wait --json`.
+- Add agent/CI flows as explicit headless commands such as `situ exec`,
+  `situ status --json`, `situ snapshot --json`,
+  `situ events --json`, and `situ wait --json`.
 - Headless commands must work without a TTY. They must not render Ink, depend on
   raw mode, require interactive prompts, or rely on cursor-control output.
 - Headless commands should talk to the same session server, JSON-RPC methods,
@@ -44,7 +44,7 @@ screen scraping.
 - Provide explicit automation controls instead of hidden interactive defaults:
   workspace, output format, max experiments, timeout, ephemeral/local state,
   config loading, and final summary output path.
-- Preserve local/private defaults. Headless mode may create local Almanac state,
+- Preserve local/private defaults. Headless mode may create local Situ state,
   but should not write to the observed repo unless the user explicitly asks.
 - Define predictable exit codes for success, failed session, bad configuration,
   timeout, and interrupted execution.

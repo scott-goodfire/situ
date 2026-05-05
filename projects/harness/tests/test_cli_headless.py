@@ -8,9 +8,9 @@ from typing import Any
 
 import pytest
 
-from almanac.harness.app import HarnessApp
-from almanac.harness.cli import commands as cli, headless
-from almanac.harness.core.project_context import ProjectContext
+from situ.harness.app import HarnessApp
+from situ.harness.cli import commands as cli, headless
+from situ.harness.core.project_context import ProjectContext
 
 
 class FakeAgentRuntime:
@@ -37,7 +37,7 @@ def isolated_home(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
 
 @pytest.fixture(autouse=True)
 def fake_agent_runtime(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr("almanac.harness.app.AgentRuntime", FakeAgentRuntime)
+    monkeypatch.setattr("situ.harness.app.AgentRuntime", FakeAgentRuntime)
 
 
 def test_status_json_reports_no_active_harness(
@@ -64,7 +64,7 @@ def test_snapshot_json_reads_local_state_without_live_session(
 ) -> None:
     workspace = tmp_path / "workspace"
     workspace.mkdir()
-    project_home = Path.home() / ".almanac"
+    project_home = Path.home() / ".situ"
     app = HarnessApp(
         workspace,
         app_root=Path.cwd(),
@@ -90,7 +90,7 @@ def test_events_json_lines_reads_local_events(
 ) -> None:
     workspace = tmp_path / "workspace"
     workspace.mkdir()
-    project_home = Path.home() / ".almanac"
+    project_home = Path.home() / ".situ"
     app = HarnessApp(
         workspace,
         app_root=Path.cwd(),
@@ -126,7 +126,7 @@ def test_clear_removes_local_state_for_workspace(
 ) -> None:
     workspace = tmp_path / "workspace"
     workspace.mkdir()
-    project_home = Path.home() / ".almanac"
+    project_home = Path.home() / ".situ"
     app = HarnessApp(
         workspace,
         app_root=Path.cwd(),
@@ -154,12 +154,11 @@ def test_clear_refuses_active_harness_without_force(
 ) -> None:
     workspace = tmp_path / "workspace"
     workspace.mkdir()
-    project_home = Path.home() / ".almanac"
+    project_home = Path.home() / ".situ"
     context = ProjectContext(repo_root=workspace, home=project_home)
 
     monkeypatch.setattr(
-        headless,
-        "read_live_session",
+        "situ.harness.cli.headless.clear.command.read_live_session",
         lambda _workspace: {"pid": 123, "url": "http://127.0.0.1:1", "token": "token"},
     )
 
@@ -180,15 +179,17 @@ def test_clear_force_terminates_active_harness_then_removes_state(
 ) -> None:
     workspace = tmp_path / "workspace"
     workspace.mkdir()
-    project_home = Path.home() / ".almanac"
+    project_home = Path.home() / ".situ"
     context = ProjectContext(repo_root=workspace, home=project_home)
     terminated: list[dict[str, Any]] = []
     session: dict[str, Any] = {"pid": 123, "url": "http://127.0.0.1:1", "token": "token"}
 
-    monkeypatch.setattr(headless, "read_live_session", lambda _workspace: session)
     monkeypatch.setattr(
-        headless,
-        "terminate_live_session",
+        "situ.harness.cli.headless.clear.command.read_live_session",
+        lambda _workspace: session,
+    )
+    monkeypatch.setattr(
+        "situ.harness.cli.headless.clear.command.terminate_live_session",
         lambda *, session: terminated.append(session),
     )
 
@@ -219,8 +220,8 @@ def test_exec_uses_shared_rpc_lifecycle_and_prints_final_json(
         quiet: bool,
     ) -> tuple[Any, dict[str, str]]:
         assert quiet is True
-        assert env["ALMANAC_MAX_EXPERIMENTS"] == "2"
-        assert env["ALMANAC_WORKSPACE"] == str(workspace)
+        assert env["SITU_MAX_EXPERIMENTS"] == "2"
+        assert env["SITU_WORKSPACE"] == str(workspace)
         return object(), {"url": "http://127.0.0.1:1", "token": "token"}
 
     def fake_stop_process(_process: Any) -> None:
@@ -256,9 +257,18 @@ def test_exec_uses_shared_rpc_lifecycle_and_prints_final_json(
             }
         raise AssertionError(f"unexpected RPC method {method}")
 
-    monkeypatch.setattr(headless, "start_session_server", fake_start_session_server)
-    monkeypatch.setattr(headless, "stop_process", fake_stop_process)
-    monkeypatch.setattr(headless, "rpc_request", fake_rpc_request)
+    monkeypatch.setattr(
+        "situ.harness.cli.headless.exec.command.start_session_server",
+        fake_start_session_server,
+    )
+    monkeypatch.setattr(
+        "situ.harness.cli.headless.exec.command.stop_process",
+        fake_stop_process,
+    )
+    monkeypatch.setattr(
+        "situ.harness.cli.headless.exec.command.rpc_request",
+        fake_rpc_request,
+    )
 
     code = cli.main(
         [
@@ -310,7 +320,9 @@ def test_session_start_params_keeps_context_vague_and_signal_oriented() -> None:
         ),
     )
 
-    params = headless.session_start_params(
+    from situ.harness.cli.headless._shared.workspace import session_start_params
+
+    params = session_start_params(
         args=args,
         workspace=Path("/tmp/project"),
     )
@@ -330,7 +342,7 @@ def test_web_launches_project_home_without_workspace(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    launch_directory = tmp_path / "not-an-almanac-workspace"
+    launch_directory = tmp_path / "not-an-situ-workspace"
     launch_directory.mkdir()
     calls: list[dict[str, Any]] = []
 
@@ -347,8 +359,8 @@ def test_web_launches_project_home_without_workspace(
         return Completed()
 
     monkeypatch.chdir(launch_directory)
-    monkeypatch.delenv("ALMANAC_WORKSPACE", raising=False)
-    monkeypatch.setattr(cli.subprocess, "run", fake_run)
+    monkeypatch.delenv("SITU_WORKSPACE", raising=False)
+    monkeypatch.setattr("situ.harness.cli.commands.web.command.subprocess.run", fake_run)
 
     code = cli.main(["web", str(launch_directory / "missing-workspace"), "--rebuild"])
 
@@ -365,19 +377,19 @@ def test_web_launches_project_home_without_workspace(
         "--port",
         "0",
     ]
-    assert "ALMANAC_APP_ROOT" in calls[0]["env"]
+    assert "SITU_APP_ROOT" in calls[0]["env"]
     assert calls[0]["cwd"] == (
-        Path(calls[0]["env"]["ALMANAC_APP_ROOT"]) / "projects" / "web"
+        Path(calls[0]["env"]["SITU_APP_ROOT"]) / "projects" / "web"
     )
-    assert "ALMANAC_WORKSPACE" not in calls[0]["env"]
-    assert "ALMANAC_WORKSPACE" not in calls[1]["env"]
+    assert "SITU_WORKSPACE" not in calls[0]["env"]
+    assert "SITU_WORKSPACE" not in calls[1]["env"]
 
 
 def test_web_skips_build_when_dist_exists(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    launch_directory = tmp_path / "not-an-almanac-workspace"
+    launch_directory = tmp_path / "not-an-situ-workspace"
     launch_directory.mkdir()
     calls: list[dict[str, Any]] = []
 
@@ -394,8 +406,11 @@ def test_web_skips_build_when_dist_exists(
         return Completed()
 
     monkeypatch.chdir(launch_directory)
-    monkeypatch.setattr(cli, "should_build_web", lambda _root, *, rebuild: False)
-    monkeypatch.setattr(cli.subprocess, "run", fake_run)
+    monkeypatch.setattr(
+        "situ.harness.cli.commands.web.command.should_build_web",
+        lambda _root, *, rebuild: False,
+    )
+    monkeypatch.setattr("situ.harness.cli.commands.web.command.subprocess.run", fake_run)
 
     code = cli.main(["web"])
 
@@ -414,16 +429,18 @@ def test_web_skips_build_when_dist_exists(
 
 
 def test_should_build_web_detects_missing_build(tmp_path: Path) -> None:
+    from situ.harness.cli.commands.web.command import should_build_web
+
     web_root = tmp_path / "web"
     index = web_root / "dist" / "index.html"
 
-    assert cli.should_build_web(web_root, rebuild=False) is True
+    assert should_build_web(web_root, rebuild=False) is True
 
     index.parent.mkdir(parents=True)
-    index.write_text("<main>Almanac</main>")
+    index.write_text("<main>Situ</main>")
 
-    assert cli.should_build_web(web_root, rebuild=False) is False
-    assert cli.should_build_web(web_root, rebuild=True) is True
+    assert should_build_web(web_root, rebuild=False) is False
+    assert should_build_web(web_root, rebuild=True) is True
 
 
 def test_start_upserts_global_project_registry(
@@ -453,16 +470,25 @@ def test_start_upserts_global_project_registry(
         calls.append({"command": command, "cwd": cwd, "env": env})
         return Completed()
 
-    monkeypatch.setattr(cli, "start_session_server", fake_start_session_server)
-    monkeypatch.setattr(cli, "stop_process", lambda _process: None)
-    monkeypatch.setattr(cli.subprocess, "run", fake_run)
+    monkeypatch.setattr(
+        "situ.harness.cli.commands._shared.tui.start_session_server",
+        fake_start_session_server,
+    )
+    monkeypatch.setattr(
+        "situ.harness.cli.commands._shared.tui.stop_process",
+        lambda _process: None,
+    )
+    monkeypatch.setattr(
+        "situ.harness.cli.commands._shared.tui.subprocess.run",
+        fake_run,
+    )
 
     code = cli.main(["start", str(workspace)])
 
     assert code == 0
     assert len(calls) == 1
 
-    registry_path = Path.home() / ".almanac" / "almanac.sqlite"
+    registry_path = Path.home() / ".situ" / "situ.sqlite"
     connection = sqlite3.connect(registry_path)
     try:
         row = connection.execute(

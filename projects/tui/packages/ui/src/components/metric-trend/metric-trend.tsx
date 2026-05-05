@@ -6,7 +6,7 @@ import {
   toneForTrend,
   type ChartTone,
   type MetricSeries,
-} from "@almanac/chart-model";
+} from "@situ/chart-model";
 import { Box, Text } from "ink";
 
 const SPARKLINE_STEPS = ["▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"];

@@ -19,7 +19,7 @@ kept close to the render path a user actually sees.
 ## Required Checks
 
 - Keep story snapshots fixture-driven. Snapshot commands should not require a
-  live Almanac session, RPC server, or external workspace.
+  live Situ session, RPC server, or external workspace.
 - Write generated artifacts under `/tmp` by default unless the caller passes an
   explicit output directory.
 - Do not commit generated snapshots or PNGs unless the change intentionally adds

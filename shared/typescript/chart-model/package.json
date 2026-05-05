@@ -1,5 +1,5 @@
 {
-  "name": "@almanac/chart-model",
+  "name": "@situ/chart-model",
   "version": "0.0.1",
   "private": true,
   "type": "module",

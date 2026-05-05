@@ -4,14 +4,14 @@ from pathlib import Path
 
 import pytest
 
-from almanac.harness.core.workers import WorkerManager
+from situ.harness.core.workers import WorkerManager
 
 
 def test_worker_manager_requires_explicit_worker(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.delenv("ALMANAC_EVAL_COMMAND", raising=False)
+    monkeypatch.delenv("SITU_EVAL_COMMAND", raising=False)
 
     manager = WorkerManager(tmp_path, app_root=tmp_path)
 

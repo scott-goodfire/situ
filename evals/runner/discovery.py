@@ -6,13 +6,13 @@ from importlib import util
 from pathlib import Path
 from typing import Any
 
-from evals.harness import BaseAlmanacEvalGroup
+from evals.harness import BaseSituEvalGroup
 
 
-def collect_eval_classes(path: Path) -> list[tuple[str, type[BaseAlmanacEvalGroup[Any, Any]]]]:
+def collect_eval_classes(path: Path) -> list[tuple[str, type[BaseSituEvalGroup[Any, Any]]]]:
     repo_root = Path.cwd().resolve()
     files = [path] if path.is_file() else sorted(path.rglob("*.py"))
-    eval_classes: list[tuple[str, type[BaseAlmanacEvalGroup[Any, Any]]]] = []
+    eval_classes: list[tuple[str, type[BaseSituEvalGroup[Any, Any]]]] = []
     skip_parts = {"__pycache__", "harness", "worlds"}
 
     for file in files:
@@ -32,8 +32,8 @@ def collect_eval_classes(path: Path) -> list[tuple[str, type[BaseAlmanacEvalGrou
             for obj_name, obj in inspect.getmembers(module):
                 if (
                     inspect.isclass(obj)
-                    and issubclass(obj, BaseAlmanacEvalGroup)
-                    and obj is not BaseAlmanacEvalGroup
+                    and issubclass(obj, BaseSituEvalGroup)
+                    and obj is not BaseSituEvalGroup
                     and not inspect.isabstract(obj)
                 ):
                     eval_classes.append((obj_name, obj))

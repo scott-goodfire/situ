@@ -13,7 +13,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
-    heading: "Try Almanac.",
+    heading: "Try Situ.",
     description: "Run a session from your terminal to see live agent activity.",
     action: <DxButton variant="primary">Download for macOS</DxButton>,
   },

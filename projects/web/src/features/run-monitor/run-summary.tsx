@@ -1,5 +1,5 @@
-import type { ObjectiveRecord, SessionRecord } from "@almanac/protocol";
-import { DxSection } from "@almanac/web-ui";
+import type { ObjectiveRecord, SessionRecord } from "@situ/protocol";
+import { DxSection } from "@situ/web-ui";
 
 export function RunSummary({
   objective,

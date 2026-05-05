@@ -42,7 +42,7 @@ test("web client receives live agent events from a real session", async ({ page 
   const stack = await startLiveStack();
   try {
     await page.goto(stack.webUrl);
-    await expect(page.getByText("Local Almanac Projects")).toBeVisible();
+    await expect(page.getByText("Local Situ Projects")).toBeVisible();
     await expect(page.getByText(stack.session.project_id)).toBeVisible();
 
     await page.goto(`${stack.webUrl}/projects/${stack.session.project_id}`);
@@ -53,7 +53,7 @@ test("web client receives live agent events from a real session", async ({ page 
     await rpcRequest(stack.session, "session.start", {
       objective: "Improve the tiny evaluator score",
       research_context: [
-        "This is a live Almanac E2E smoke test.",
+        "This is a live Situ E2E smoke test.",
         "Run exactly one concrete experiment.",
         "Use the title `Variant A smoke eval` for the experiment.",
         "Create one hypothesis for variant A.",
@@ -79,7 +79,7 @@ test("web client receives live agent events from a real session", async ({ page 
       path: screenshotPath,
       contentType: "image/png",
     });
-    console.log(`Almanac E2E final screenshot: ${screenshotPath}`);
+    console.log(`Situ E2E final screenshot: ${screenshotPath}`);
   } finally {
     await stack.close();
   }
@@ -97,9 +97,9 @@ async function startLiveStack(): Promise<LiveStack> {
   const env = {
     ...process.env,
     HOME: home,
-    ALMANAC_APP_ROOT: REPO_ROOT,
-    ALMANAC_WORKSPACE: workspace,
-    ALMANAC_OPENAI_KEY: openaiKey,
+    SITU_APP_ROOT: REPO_ROOT,
+    SITU_WORKSPACE: workspace,
+    SITU_OPENAI_KEY: openaiKey,
     OPENAI_API_KEY: openaiKey,
   };
 
@@ -145,10 +145,10 @@ async function startLiveStack(): Promise<LiveStack> {
 }
 
 function requireOpenAIKey(): string {
-  const key = process.env.ALMANAC_OPENAI_KEY ?? process.env.OPENAI_API_KEY;
+  const key = process.env.SITU_OPENAI_KEY ?? process.env.OPENAI_API_KEY;
   if (!key) {
     throw new Error(
-      "Real-real E2E requires ALMANAC_OPENAI_KEY or OPENAI_API_KEY; no fake model is used.",
+      "Real-real E2E requires SITU_OPENAI_KEY or OPENAI_API_KEY; no fake model is used.",
     );
   }
   return key;
@@ -223,7 +223,7 @@ async function waitForSession({
 }): Promise<SessionRecord> {
   const sessionPath = join(
     home,
-    ".almanac",
+    ".situ",
     "projects",
     projectIdForWorkspace(workspace),
     "session.json",
@@ -326,13 +326,13 @@ function projectIdForWorkspace(workspace: string): string {
 }
 
 function makeTempRoot(): string {
-  return mkdtempSync(join(tmpdir(), "almanac-e2e-"));
+  return mkdtempSync(join(tmpdir(), "situ-e2e-"));
 }
 
 function finalScreenshotPath(): string {
   const root =
-    process.env.ALMANAC_E2E_SCREENSHOT_DIR ??
-    join(tmpdir(), "almanac-e2e-screenshots", timestampSlug());
+    process.env.SITU_E2E_SCREENSHOT_DIR ??
+    join(tmpdir(), "situ-e2e-screenshots", timestampSlug());
   mkdirSync(root, { recursive: true });
   return join(root, "live-web-client-final.png");
 }

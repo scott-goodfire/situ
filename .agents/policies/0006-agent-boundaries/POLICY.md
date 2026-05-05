@@ -11,7 +11,7 @@ Workers, agent integrations, CLI/API, protocol design, and orchestration.
 
 ## Rule
 
-Almanac supervises the session. Agents and workers perform concrete work.
+Situ supervises the session. Agents and workers perform concrete work.
 
 ## Required Checks
 
@@ -23,7 +23,7 @@ Almanac supervises the session. Agents and workers perform concrete work.
 - Agent-readable context is compact and durable, not inferred from chat logs.
 - The product does not depend on one agent provider.
 - Creativity stays in the worker/proposer layer; objective/session identity and
-  activity persistence stay in Almanac.
+  activity persistence stay in Situ.
 
 ## Red Flags
 

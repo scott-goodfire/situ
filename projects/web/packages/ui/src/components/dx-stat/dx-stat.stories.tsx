@@ -1,18 +1,28 @@
-import type { Meta, StoryObj } from "@storybook/react";
+import type { Meta, StoryObj } from "@storybook/react-vite";
 import { DxStat } from "./dx-stat";
 
-const meta = {
+const meta: Meta<typeof DxStat> = {
   title: "UI/Dx Stat",
   component: DxStat,
-} satisfies Meta<typeof DxStat>;
+  argTypes: {
+    tone: {
+      control: { type: "select" },
+      options: ["neutral", "added", "removed"],
+    },
+  },
+  args: {
+    tone: "added",
+    children: "+20",
+  },
+};
 
 export default meta;
 
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<typeof DxStat>;
 
 export const Added: Story = { args: { tone: "added", children: "+20" } };
-
 export const Removed: Story = { args: { tone: "removed", children: "−3" } };
+export const Neutral: Story = { args: { tone: "neutral", children: "12" } };
 
 export const Diff: Story = {
   args: { children: "" },

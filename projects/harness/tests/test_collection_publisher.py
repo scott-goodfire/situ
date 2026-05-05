@@ -4,12 +4,12 @@ from uuid import uuid4
 
 import pytest
 
-from almanac.harness.api.collections import collection_route_for_record, publish_record_upsert
-from almanac.harness.core.notifications import (
+from situ.harness.api.collections import collection_route_for_record, publish_record_upsert
+from situ.harness.core.notifications import (
     register_project_notifications,
     set_project_collections_subscribed,
 )
-from almanac.harness.records import (
+from situ.harness.records import (
     ArtifactRecord,
     EventRecord,
     EvaluationActivityRecord,

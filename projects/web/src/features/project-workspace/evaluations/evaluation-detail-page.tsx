@@ -3,14 +3,14 @@ import type {
   EvaluationActivityRecord,
   EvaluationRecord,
   ExperimentRecord,
-} from "@almanac/protocol";
+} from "@situ/protocol";
 import {
   DxBadge,
   DxSection,
   DxTable,
   type DxBadgeTone,
   type DxTableColumn,
-} from "@almanac/web-ui";
+} from "@situ/web-ui";
 import { Link } from "@tanstack/react-router";
 import filter from "lodash/filter";
 import {
@@ -37,7 +37,7 @@ export function EvaluationDetailPage({
 
   if (!evaluation) {
     return (
-      <section className="almanac-empty">
+      <section className="situ-empty">
         <h2>Evaluation not found</h2>
         <p>No evaluation exists with id {evaluationId}.</p>
       </section>
@@ -63,10 +63,10 @@ export function EvaluationDetailPage({
 
   return (
     <>
-      <section className="almanac-object-page">
-        <div className="almanac-object-page__header">
+      <section className="situ-object-page">
+        <div className="situ-object-page__header">
           <div>
-            <p className="almanac-object-page__eyebrow">{evaluation.id}</p>
+            <p className="situ-object-page__eyebrow">{evaluation.id}</p>
             <h2>{evaluation.title}</h2>
           </div>
           <DxBadge
@@ -78,7 +78,7 @@ export function EvaluationDetailPage({
             {hasConcern ? "concern" : evaluation.status}
           </DxBadge>
         </div>
-        <p className="almanac-object-page__summary">
+        <p className="situ-object-page__summary">
           {latestActivity?.body ?? evaluation.summary}
         </p>
       </section>
@@ -106,9 +106,9 @@ function EvaluationSource({
   if (experiment) {
     return (
       <DxSection title="Source">
-        <div className="almanac-record-cell">
+        <div className="situ-record-cell">
           <Link
-            className="almanac-record-link"
+            className="situ-record-link"
             to="/projects/$projectId/experiments/$experimentId"
             params={{
               projectId,
@@ -117,7 +117,7 @@ function EvaluationSource({
           >
             {experiment.title}
           </Link>
-          <span className="almanac-record-id">{experiment.id}</span>
+          <span className="situ-record-id">{experiment.id}</span>
         </div>
       </DxSection>
     );
@@ -125,9 +125,9 @@ function EvaluationSource({
 
   return (
     <DxSection title="Source">
-      <div className="almanac-record-cell">
+      <div className="situ-record-cell">
         <span>Baseline evidence</span>
-        <span className="almanac-record-id">{evaluation.session_id}</span>
+        <span className="situ-record-id">{evaluation.session_id}</span>
       </div>
     </DxSection>
   );
@@ -156,9 +156,9 @@ const artifactColumns: Array<DxTableColumn<ArtifactRow>> = [
     header: "Artifact",
     width: "30%",
     renderCell: ({ row }) => (
-      <div className="almanac-record-cell">
-        <span className="almanac-record-link">{row.artifact.title}</span>
-        <span className="almanac-record-id">{row.artifact.id}</span>
+      <div className="situ-record-cell">
+        <span className="situ-record-link">{row.artifact.title}</span>
+        <span className="situ-record-id">{row.artifact.id}</span>
       </div>
     ),
   },

@@ -6,9 +6,9 @@ import type {
   ObjectiveRecord,
   ResearchContextRecord,
   SessionRecord,
-} from "@almanac/protocol";
+} from "@situ/protocol";
 
-export const storyWorkspace = "/Users/almanac/sandbox/support-agent";
+export const storyWorkspace = "/Users/situ/sandbox/support-agent";
 export const storyProjectId = "project_0001";
 export const storySessionId = "session_0001";
 

@@ -1,5 +1,5 @@
-import type { ExperimentRecord, SessionRecord } from "@almanac/protocol";
-import { DxSection } from "@almanac/web-ui";
+import type { ExperimentRecord, SessionRecord } from "@situ/protocol";
+import { DxSection } from "@situ/web-ui";
 
 export function NowPanel({
   activeExperiment,

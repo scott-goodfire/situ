@@ -1,6 +1,6 @@
 import lodash from "lodash";
 import { stories as activitySectionStories } from "../components/activity-section/activity-section.stories.js";
-import { stories as almanacTuiViewStories } from "../components/almanac-tui-view/almanac-tui-view.stories.js";
+import { stories as situTuiViewStories } from "../components/situ-tui-view/situ-tui-view.stories.js";
 import { stories as appFrameStories } from "../components/app-frame/app-frame.stories.js";
 import { stories as bucketBarsStories } from "../components/bucket-bars/bucket-bars.stories.js";
 import { stories as choicePromptStories } from "../components/choice-prompt/choice-prompt.stories.js";
@@ -24,7 +24,7 @@ import { stories as tokenFeatureMatrixStories } from "../components/token-featur
 import type { TuiStory } from "./story-types.js";
 
 export const allStories: TuiStory[] = [
-  ...almanacTuiViewStories,
+  ...situTuiViewStories,
   ...appFrameStories,
   ...bucketBarsStories,
   ...choicePromptStories,

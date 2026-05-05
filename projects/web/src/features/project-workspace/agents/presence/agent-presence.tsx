@@ -17,24 +17,24 @@ export function AgentPresence({
 
   return (
     <div
-      className="almanac-agent-presence"
+      className="situ-agent-presence"
       data-empty={agentIds.length === 0}
     >
       {visibleAgentIds.length > 0 && (
-        <div className="almanac-agent-presence__avatars" aria-hidden="true">
+        <div className="situ-agent-presence__avatars" aria-hidden="true">
           {visibleAgentIds.map((agentId) => (
-            <span className="almanac-agent-presence__avatar" key={agentId}>
+            <span className="situ-agent-presence__avatar" key={agentId}>
               {agentInitials({ agentId })}
             </span>
           ))}
           {overflowCount > 0 && (
-            <span className="almanac-agent-presence__overflow">
+            <span className="situ-agent-presence__overflow">
               +{overflowCount}
             </span>
           )}
         </div>
       )}
-      <span className="almanac-agent-presence__label">{label}</span>
+      <span className="situ-agent-presence__label">{label}</span>
     </div>
   );
 }

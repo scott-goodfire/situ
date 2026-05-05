@@ -1,1 +1,1 @@
-"""Code-first evals for Almanac."""
+"""Code-first evals for Situ."""

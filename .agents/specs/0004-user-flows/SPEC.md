@@ -3,7 +3,7 @@
 ## Default Start
 
 ```text
-User runs `almanac start`
+User runs `situ start`
   |
   |-- Existing local project context?
   |     |-- yes -> open TUI preflight
@@ -31,14 +31,14 @@ The first implementation should keep setup as sparse plaintext inputs:
   dashboards, logs, or artifacts matter, and what kinds of experiments are in
   scope
 
-The setup should accept ambiguous plaintext. Almanac can preserve it as
+The setup should accept ambiguous plaintext. Situ can preserve it as
 session research context and structure it into hypotheses, experiments,
 activities, and artifacts over time.
 
 The headless setup shape should match the product nouns:
 
 ```bash
-almanac exec . \
+situ exec . \
   --objective "Improve the target behavior without breaking correctness." \
   --context "Run make eval from the repo root. It prints score, accuracy, loss, runtime_ms, and tests_passed. Higher score and accuracy are better; lower loss and runtime are better. Failed checks invalidate the result."
 ```
@@ -47,14 +47,14 @@ almanac exec . \
 which outputs matter, how to read ordinary command output, and what should be
 considered suspicious.
 
-After setup input is resolved, Almanac should create a new session with its own
+After setup input is resolved, Situ should create a new session with its own
 objective and research context only after the user confirms the preflight prompt,
 then render the TUI dashboard.
 
 ## Resume Flow
 
 ```text
-User runs `almanac resume`
+User runs `situ resume`
   |
   |-- latest session for this project exists?
   |     |-- yes -> resume that session id
@@ -68,7 +68,7 @@ Starting from prior findings in a new session should be a separate future
 ## Attach Flow
 
 ```text
-User runs `almanac attach`
+User runs `situ attach`
   |
   |-- healthy local session server exists?
   |     |-- yes -> open TUI against the active live process
