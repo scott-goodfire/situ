@@ -28,15 +28,18 @@ experiment work.
 TypeScript Ink TUI
   -> local session server over HTTP/SSE
       -> Python harness over JSON-RPC stdio
-          -> objective
-          -> session ledger
-          -> hypotheses
-          -> experiments
-          -> hypothesis/experiment links
-          -> activities
-          -> artifacts
-          -> internal events
-          -> worker execution
+          -> project (workspace boundary, owns sessions)
+          -> session (project_id required, owns the ledger)
+              -> objective         (1:1 sibling record)
+              -> research context  (1:1 sibling record)
+              -> hypotheses        (session_id required)
+              -> experiments       (session_id required)
+              -> evaluations       (session_id required)
+              -> hypothesis/experiment links
+              -> activities        (parent-scoped, no session_id)
+              -> artifacts         (session_id required)
+              -> internal events
+              -> worker execution
 ```
 
 The system should keep these responsibilities distinct:
@@ -45,9 +48,10 @@ The system should keep these responsibilities distinct:
 - Web UI: attach-only monitoring over an existing local session
 - Session server: harness subprocess ownership, HTTP RPC, event streaming, and
   local session discovery
-- Harness: session lifecycle, session objective/context, durable state, internal events,
-  hypotheses, experiments, links, activities, artifacts, and automated trust
-  concerns
+- Harness: project/session lifecycle, durable state, internal events,
+  hypotheses, experiments, evaluations, links, activities, artifacts, and
+  automated trust concerns. Objective and research context are
+  agent-populated session-owned records, not session columns.
 - Workers: concrete experiments, code changes, eval runs, analysis
 - Protocol/API: stable boundary between clients, harness, and workers
 
@@ -123,12 +127,11 @@ terminal UI      ---------->  TypeScript     ---------->  local harness runtime
 
 Start with a narrow, durable core:
 
-- Local project context
-- Session ledger with objective and research context
-- Hypotheses
-- Experiments
-- Activities
-- Artifact references
+- Local project (workspace boundary, owns sessions)
+- Session ledger with session-owned objective and research context records
+- Hypotheses, experiments, evaluations (all session-required)
+- Activities (parent-scoped)
+- Artifact references (session-required)
 - Internal event log
 - TypeScript Ink TUI
 

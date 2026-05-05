@@ -11,20 +11,18 @@ class EvaluationsRepository(BaseRepository):
         self,
         *,
         evaluation_id: str,
-        objective_id: str,
+        session_id: str,
         title: str,
         summary: str,
-        associated_session_id: str | None = None,
         associated_experiment_id: str | None = None,
         status: WorkStatus | str = WorkStatus.OPEN,
     ) -> EvaluationRecord:
         checked_status = parse_work_status(status=status, noun="evaluation")
         command = CreateEvaluation(
             evaluation_id=evaluation_id,
-            objective_id=objective_id,
+            session_id=session_id,
             title=title,
             summary=summary,
-            associated_session_id=associated_session_id,
             associated_experiment_id=associated_experiment_id,
             status=checked_status,
         )
@@ -32,17 +30,16 @@ class EvaluationsRepository(BaseRepository):
         self.db.execute(
             """
             INSERT INTO evaluations
-              (id, objective_id, status, title, summary, associated_session_id,
+              (id, session_id, status, title, summary,
                associated_experiment_id, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 command.evaluation_id,
-                command.objective_id,
+                command.session_id,
                 command.status.value,
                 command.title,
                 command.summary,
-                command.associated_session_id,
                 command.associated_experiment_id,
                 now,
                 now,
@@ -60,7 +57,6 @@ class EvaluationsRepository(BaseRepository):
         title: str | None = None,
         summary: str | None = None,
         status: WorkStatus | str | None = None,
-        associated_session_id: str | None = None,
         associated_experiment_id: str | None = None,
     ) -> EvaluationRecord | None:
         checked_status = (
@@ -73,7 +69,6 @@ class EvaluationsRepository(BaseRepository):
             title=title,
             summary=summary,
             status=checked_status,
-            associated_session_id=associated_session_id,
             associated_experiment_id=associated_experiment_id,
         )
         current = self.get_by_id(command.evaluation_id)
@@ -86,7 +81,6 @@ class EvaluationsRepository(BaseRepository):
             SET title = ?,
                 summary = ?,
                 status = ?,
-                associated_session_id = ?,
                 associated_experiment_id = ?,
                 updated_at = ?
             WHERE id = ?
@@ -95,9 +89,6 @@ class EvaluationsRepository(BaseRepository):
                 command.title if command.title is not None else current.title,
                 command.summary if command.summary is not None else current.summary,
                 command.status.value if command.status is not None else current.status.value,
-                command.associated_session_id
-                if command.associated_session_id is not None
-                else current.associated_session_id,
                 command.associated_experiment_id
                 if command.associated_experiment_id is not None
                 else current.associated_experiment_id,
@@ -120,22 +111,13 @@ class EvaluationsRepository(BaseRepository):
             for row in self.db.fetchall("SELECT * FROM evaluations ORDER BY created_at")
         ]
 
-    def list_for_objective(self, objective_id: str) -> list[EvaluationRecord]:
-        return [
-            evaluation_row(row)
-            for row in self.db.fetchall(
-                "SELECT * FROM evaluations WHERE objective_id = ? ORDER BY created_at",
-                (objective_id,),
-            )
-        ]
-
     def list_for_session(self, session_id: str) -> list[EvaluationRecord]:
         return [
             evaluation_row(row)
             for row in self.db.fetchall(
                 """
                 SELECT * FROM evaluations
-                WHERE associated_session_id = ?
+                WHERE session_id = ?
                 ORDER BY created_at
                 """,
                 (session_id,),

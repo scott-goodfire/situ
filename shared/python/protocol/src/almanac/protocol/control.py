@@ -13,7 +13,8 @@ from .events import (
     HypothesisExperimentLinkRecord,
     HypothesisRecord,
     ObjectiveRecord,
-    ProjectConfigRecord,
+    ProjectRecord,
+    ResearchContextRecord,
     SessionRecord,
 )
 
@@ -39,23 +40,23 @@ class SetupGetResult(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     configured: bool
-    config: ProjectConfigRecord | None = None
+    project: ProjectRecord | None = None
 
 
 class SetupCompleteParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    research_context: str
-
 
 class SetupCompleteResult(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    config: ProjectConfigRecord
+    project: ProjectRecord
 
 
 CollectionName = Literal[
+    "projects",
     "objectives",
+    "research_contexts",
     "sessions",
     "hypotheses",
     "experiments",
@@ -77,7 +78,9 @@ class CollectionsBootstrapResult(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     cursor: int
+    projects: list[ProjectRecord]
     objectives: list[ObjectiveRecord]
+    research_contexts: list[ResearchContextRecord]
     sessions: list[SessionRecord]
     hypotheses: list[HypothesisRecord]
     experiments: list[ExperimentRecord]

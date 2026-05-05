@@ -17,7 +17,6 @@ class RunExperimentPayload(BaseModel):
     title: str
     summary: str
     experiment_id: str | None = None
-    objective_id: str | None = None
     hypothesis_ids: list[str] = Field(default_factory=list)
     components: list[str] = Field(default_factory=list)
     based_on: list[str] = Field(default_factory=list)
@@ -35,7 +34,6 @@ class RunExperimentTool(BaseAlmanacTool[AlmanacToolDeps, RunExperimentResult]):
         title: str,
         summary: str,
         experiment_id: str | None = None,
-        objective_id: str | None = None,
         hypothesis_ids: list[str] | None = None,
         components: list[str] | None = None,
         based_on: list[str] | None = None,
@@ -46,7 +44,6 @@ class RunExperimentTool(BaseAlmanacTool[AlmanacToolDeps, RunExperimentResult]):
             title=title,
             summary=summary,
             experiment_id=experiment_id,
-            objective_id=objective_id,
             hypothesis_ids=hypothesis_ids or [],
             components=components or [],
             based_on=based_on or [],
@@ -79,19 +76,15 @@ def _run_experiment_impl(
     if session is None:
         raise ValueError(f"session not found: {deps.session_id}")
 
-    objective_id = payload.objective_id or session.objective_id
-    experiment_id = payload.experiment_id or _next_experiment_id(
-        deps=deps,
-    )
+    experiment_id = payload.experiment_id or _next_experiment_id(deps=deps)
 
     experiment = repos.experiments.get(experiment_id)
     if experiment is None:
         experiment = repos.experiments.create(
             experiment_id=experiment_id,
-            objective_id=objective_id,
+            session_id=deps.session_id,
             title=payload.title,
             summary=payload.summary,
-            associated_session_id=deps.session_id,
             status="open",
         )
         event = deps.record_event(
@@ -136,7 +129,6 @@ def _run_experiment_impl(
     worker_result = deps.get_worker_manager().run_experiment(
         ExperimentRunParams(
             session_id=deps.session_id,
-            objective_id=objective_id,
             experiment_id=experiment_id,
             title=payload.title,
             summary=payload.summary,
@@ -226,7 +218,6 @@ def _record_experiment_activity(
 ) -> None:
     activity = deps.get_repos().experiment_activities.add(
         experiment_id=experiment_id,
-        session_id=deps.session_id,
         actor=actor,
         kind="comment",
         body=body,
@@ -250,7 +241,6 @@ def _record_hypothesis_activity(
 ) -> None:
     activity = deps.get_repos().hypothesis_activities.add(
         hypothesis_id=hypothesis_id,
-        session_id=deps.session_id,
         actor=actor,
         kind="comment",
         body=body,

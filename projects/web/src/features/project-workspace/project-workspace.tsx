@@ -1,5 +1,4 @@
 import { Link } from "@tanstack/react-router";
-import { DxNotice } from "@almanac/web-ui";
 import type { ReactNode } from "react";
 import { ConnectionBadge } from "../run-monitor/connection-badge";
 import type { ProjectWorkspaceData } from "./types";
@@ -26,14 +25,16 @@ export function ProjectWorkspaceLayout({
       <ProjectNav projectId={data.projectId} />
 
       {data.connection.kind === "failed" && (
-        <DxNotice tone="danger">{data.connection.message}</DxNotice>
+        <p className="almanac-status" data-tone="danger">{data.connection.message}</p>
       )}
 
       {data.connection.kind === "disconnected" && (
-        <DxNotice tone="warning">{data.connection.message}</DxNotice>
+        <p className="almanac-status" data-tone="warning">{data.connection.message}</p>
       )}
 
-      {discoveryError && <DxNotice tone="warning">{discoveryError}</DxNotice>}
+      {discoveryError && (
+        <p className="almanac-status" data-tone="warning">{discoveryError}</p>
+      )}
 
       {children}
     </main>

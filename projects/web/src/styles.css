@@ -590,6 +590,25 @@ h1 {
   margin: -16px auto 32px;
 }
 
+.almanac-status {
+  margin-top: 12px;
+  padding: 0 0 0 10px;
+  border-left: 2px solid var(--border-02);
+  color: var(--muted-foreground);
+  font-size: var(--text-product-lg);
+  line-height: var(--leading-product-base);
+}
+
+.almanac-status[data-tone="warning"] {
+  border-left-color: var(--warning-strong);
+  color: var(--warning-strong);
+}
+
+.almanac-status[data-tone="danger"] {
+  border-left-color: var(--danger-strong);
+  color: var(--danger-strong);
+}
+
 @media (max-width: 760px) {
   .almanac-shell {
     width: min(100vw - 16px, 1280px);

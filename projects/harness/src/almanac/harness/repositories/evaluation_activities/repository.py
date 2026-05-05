@@ -16,7 +16,6 @@ class EvaluationActivitiesRepository(BaseRepository):
         actor: str,
         kind: str,
         body: str,
-        session_id: str | None = None,
         payload: dict[str, Any] | None = None,
     ) -> EvaluationActivityRecord:
         command = AddEvaluationActivity(
@@ -24,18 +23,16 @@ class EvaluationActivitiesRepository(BaseRepository):
             actor=actor,
             kind=kind,
             body=body,
-            session_id=session_id,
             payload=payload or {},
         )
         cursor = self.db.execute(
             """
             INSERT INTO evaluation_activities
-              (evaluation_id, session_id, actor, kind, body, payload_json, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+              (evaluation_id, actor, kind, body, payload_json, created_at)
+            VALUES (?, ?, ?, ?, ?, ?)
             """,
             (
                 command.evaluation_id,
-                command.session_id,
                 command.actor,
                 command.kind,
                 command.body,
@@ -70,14 +67,5 @@ class EvaluationActivitiesRepository(BaseRepository):
             for row in self.db.fetchall(
                 "SELECT * FROM evaluation_activities WHERE evaluation_id = ? ORDER BY id",
                 (evaluation_id,),
-            )
-        ]
-
-    def list_for_session(self, session_id: str) -> list[EvaluationActivityRecord]:
-        return [
-            evaluation_activity_row(row)
-            for row in self.db.fetchall(
-                "SELECT * FROM evaluation_activities WHERE session_id = ? ORDER BY id",
-                (session_id,),
             )
         ]

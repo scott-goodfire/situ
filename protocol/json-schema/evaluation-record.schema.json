@@ -16,8 +16,8 @@
       "title": "Id",
       "type": "string"
     },
-    "objective_id": {
-      "title": "Objective Id",
+    "session_id": {
+      "title": "Session Id",
       "type": "string"
     },
     "status": {
@@ -30,18 +30,6 @@
     "summary": {
       "title": "Summary",
       "type": "string"
-    },
-    "associated_session_id": {
-      "anyOf": [
-        {
-          "type": "string"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "default": null,
-      "title": "Associated Session Id"
     },
     "associated_experiment_id": {
       "anyOf": [
@@ -66,7 +54,7 @@
   },
   "required": [
     "id",
-    "objective_id",
+    "session_id",
     "status",
     "title",
     "summary",

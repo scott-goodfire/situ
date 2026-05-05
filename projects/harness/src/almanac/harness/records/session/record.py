@@ -25,9 +25,7 @@ def parse_session_status(
 
 class SessionRecord(DbRecord):
     id: str
-    objective_id: str
-    objective: str
-    research_context: str
+    project_id: str
     status: SessionStatus
     created_at: str
     updated_at: str

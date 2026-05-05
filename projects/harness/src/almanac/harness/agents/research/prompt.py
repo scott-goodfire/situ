@@ -13,6 +13,14 @@ RESEARCH_AGENT_INSTRUCTIONS = inspect.cleandoc(
     experiments have been tried, what the evidence says, and what should happen
     next.
 
+    Session kickoff:
+    - On the first turn of a session, populate the session's objective and
+      research context records from the free-text setup input. Call
+      `create_objective` (1:1 with the session) and `create_research_context`
+      (1:1 with the session). Both tools are idempotent: they return the
+      existing record if already populated, so it is safe to call them at the
+      start of every turn.
+
     How you work:
     - Start from the current session state before making claims.
     - Treat objectives, hypotheses, experiments, activities, and artifacts as
@@ -86,22 +94,34 @@ def build_research_agent_user_prompt(
 
 def build_proposal_round_prompt(
     *,
-    config: dict[str, Any],
-    objective: dict[str, Any],
+    setup_objective: str,
+    setup_research_context: str,
     current_state: dict[str, Any],
 ) -> str:
+    objective = current_state.get("objective") or {}
+    research_context = current_state.get("research_context") or {}
+    objective_title = objective.get("title", "") or setup_objective
+    objective_description = objective.get("description", "") or setup_objective
+    research_context_body = research_context.get("body", "") or setup_research_context
     recent_hypothesis_activity = current_state.get("hypothesis_activities", [])[-5:]
     recent_experiment_activity = current_state.get("experiment_activities", [])[-5:]
     return inspect.cleandoc(
         f"""
-        Objective
-        {objective.get("title", "")}
+        Setup inputs (free-text from the user)
+        Objective: {setup_objective}
+        Research context: {setup_research_context}
+
+        On the first turn, persist these into the session by calling
+        `create_objective` and `create_research_context`. Both are idempotent.
+
+        Objective (record)
+        {objective_title}
 
         Objective details
-        {objective.get("description", "")}
+        {objective_description}
 
-        Research context
-        {config.get("research_context", "")}
+        Research context (record)
+        {research_context_body}
 
         Recent hypothesis activity
         {recent_hypothesis_activity}
@@ -120,28 +140,35 @@ def build_proposal_round_prompt(
 
 def build_session_run_prompt(
     *,
-    config: dict[str, Any],
-    objective: dict[str, Any],
+    setup_objective: str,
+    setup_research_context: str,
     current_state: dict[str, Any],
     max_experiments: int,
 ) -> str:
-    session = current_state.get("session") or {}
-    session_research_context = session.get("research_context") or config.get(
-        "research_context",
-        "",
-    )
+    objective = current_state.get("objective") or {}
+    research_context = current_state.get("research_context") or {}
+    objective_title = objective.get("title", "") or setup_objective
+    objective_description = objective.get("description", "") or setup_objective
+    research_context_body = research_context.get("body", "") or setup_research_context
     recent_hypothesis_activity = current_state.get("hypothesis_activities", [])[-8:]
     recent_experiment_activity = current_state.get("experiment_activities", [])[-8:]
     return inspect.cleandoc(
         f"""
-        Objective
-        {objective.get("title", "")}
+        Setup inputs (free-text from the user)
+        Objective: {setup_objective}
+        Research context: {setup_research_context}
+
+        On the first turn, persist these into the session by calling
+        `create_objective` and `create_research_context`. Both are idempotent.
+
+        Objective (record)
+        {objective_title}
 
         Objective details
-        {objective.get("description", "")}
+        {objective_description}
 
-        Research context
-        {session_research_context}
+        Research context (record)
+        {research_context_body}
 
         Budget for this pass
         Run at most {max_experiments} experiments.

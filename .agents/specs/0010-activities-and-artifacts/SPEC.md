@@ -28,14 +28,17 @@ First-slice activity shape:
 
 ```text
 id
-target_id
-session_id?
+target_id        (NOT NULL, hypothesis_id / experiment_id / evaluation_id per table)
 actor
 kind: comment
 body
 payload_json
 created_at
 ```
+
+Activities do not carry a `session_id` column. The session is reached through
+the parent (hypothesis, experiment, or evaluation), which is itself
+session-required.
 
 The body should be useful to humans. The payload can carry structured details
 for agents and views, such as `activity_type: result` or `activity_type:
@@ -100,11 +103,10 @@ First-slice evaluation shape:
 
 ```text
 id
-objective_id
+session_id                 (NOT NULL, FK -> sessions)
 title
 summary
 status: open | active | closed
-associated_session_id?
 associated_experiment_id?
 created_at
 updated_at
@@ -114,8 +116,7 @@ First-slice evaluation activity shape:
 
 ```text
 id
-evaluation_id
-session_id?
+evaluation_id              (NOT NULL, FK -> evaluations)
 actor
 kind: comment
 body
@@ -157,8 +158,7 @@ First-slice artifact shape:
 
 ```text
 id
-objective_id
-associated_session_id?
+session_id              (NOT NULL, FK -> sessions)
 associated_entity_kind
 associated_entity_id
 kind
@@ -169,9 +169,10 @@ size_bytes?
 created_at
 ```
 
-Use the generic associated entity fields instead of a widening set of nullable
-foreign keys. This keeps the record understandable without forcing the first
-slice to predict every artifact attachment target.
+Artifacts always belong to a session. Use the generic associated entity
+fields instead of a widening set of nullable foreign keys. This keeps the
+record understandable without forcing the first slice to predict every
+artifact attachment target.
 
 ## Product Rule
 

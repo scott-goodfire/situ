@@ -18,18 +18,6 @@
       "title": "Experiment Id",
       "type": "string"
     },
-    "session_id": {
-      "anyOf": [
-        {
-          "type": "string"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "default": null,
-      "title": "Session Id"
-    },
     "actor": {
       "title": "Actor",
       "type": "string"

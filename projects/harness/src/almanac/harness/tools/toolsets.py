@@ -34,7 +34,16 @@ from .hypotheses import (
 )
 from .common import AlmanacToolDeps
 from .links import LinkHypothesisExperimentTool
-from .objectives import GetObjectiveTool
+from .objectives import (
+    CreateObjectiveTool,
+    GetObjectiveTool,
+    UpdateObjectiveTool,
+)
+from .research_contexts import (
+    CreateResearchContextTool,
+    GetResearchContextTool,
+    UpdateResearchContextTool,
+)
 from .sessions import GetSessionTool
 from .workspace_state import InspectWorkspaceStateTool
 
@@ -42,8 +51,14 @@ RESEARCH_TOOLSET_INSTRUCTIONS = inspect.cleandoc(
     """
     This toolset is the Almanac research ledger.
 
-    Start with `get_session` when you need the current board: objective,
-    hypotheses, experiments, evaluations, activities, artifacts, and events.
+    On session kickoff your first responsibility is to record the session's
+    objective and research context from the free-text setup input. Call
+    `create_objective` and `create_research_context` once at the start of
+    the session; they are 1:1 with the session and will be ignored if
+    already populated.
+
+    Use `get_session` when you need the current board: hypotheses,
+    experiments, evaluations, activities, artifacts, and events.
     Use the hypothesis, experiment, and evaluation tools to keep the research
     structure clear.
 
@@ -87,7 +102,12 @@ def build_research_toolset() -> FunctionToolset[AlmanacToolDeps]:
         tools=[
             GetSessionTool().as_tool(),
             InspectWorkspaceStateTool().as_tool(),
+            CreateObjectiveTool().as_tool(),
+            UpdateObjectiveTool().as_tool(),
             GetObjectiveTool().as_tool(),
+            CreateResearchContextTool().as_tool(),
+            UpdateResearchContextTool().as_tool(),
+            GetResearchContextTool().as_tool(),
             ListHypothesesTool().as_tool(),
             CreateHypothesisTool().as_tool(),
             UpdateHypothesisTool().as_tool(),

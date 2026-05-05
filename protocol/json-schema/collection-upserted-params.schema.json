@@ -7,7 +7,9 @@
     },
     "collection": {
       "enum": [
+        "projects",
         "objectives",
+        "research_contexts",
         "sessions",
         "hypotheses",
         "experiments",

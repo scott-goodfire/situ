@@ -29,7 +29,6 @@ class AddEvaluationResultTool(
         result_payload = {"activity_type": "result", **(payload or {})}
         activity = ctx.deps.get_repos().evaluation_activities.add(
             evaluation_id=evaluation_id,
-            session_id=ctx.deps.session_id,
             actor=actor,
             kind="comment",
             body=result,

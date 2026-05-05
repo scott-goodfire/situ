@@ -11,7 +11,6 @@ from ..hypothesis_activity import ActivityKind
 class ExperimentActivityRecord(DbRecord):
     id: int
     experiment_id: str
-    session_id: str | None = None
     actor: str
     kind: ActivityKind
     body: str

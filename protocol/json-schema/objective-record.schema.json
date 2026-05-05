@@ -15,6 +15,10 @@
       "title": "Id",
       "type": "string"
     },
+    "session_id": {
+      "title": "Session Id",
+      "type": "string"
+    },
     "title": {
       "title": "Title",
       "type": "string"
@@ -25,18 +29,6 @@
     },
     "status": {
       "$ref": "#/$defs/ObjectiveStatus"
-    },
-    "associated_session_id": {
-      "anyOf": [
-        {
-          "type": "string"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "default": null,
-      "title": "Associated Session Id"
     },
     "created_at": {
       "title": "Created At",
@@ -49,6 +41,7 @@
   },
   "required": [
     "id",
+    "session_id",
     "title",
     "description",
     "status",

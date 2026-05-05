@@ -20,31 +20,26 @@ class CreateHypothesisTool(BaseAlmanacTool[AlmanacToolDeps, CreateHypothesisResu
         ctx: RunContext[AlmanacToolDeps],
         title: str,
         summary: str,
-        objective_id: str | None = None,
         hypothesis_id: str | None = None,
         status: WorkStatus = WorkStatus.OPEN,
         **_kwargs: Any,
     ) -> CreateHypothesisResult:
-        """Create a hypothesis under an objective.
+        """Create a hypothesis under the current session.
 
         `status` must be `open`, `active`, or `closed`.
         """
         repos = ctx.deps.get_repos()
-        resolved_objective_id = objective_id or _current_objective_id(ctx)
-        if resolved_objective_id is None:
-            raise ValueError("objective_id is required when there is no current session objective")
-
+        session_id = ctx.deps.session_id
         resolved_hypothesis_id = hypothesis_id or _next_hypothesis_id(
             repos=repos,
-            session_id=ctx.deps.session_id,
+            session_id=session_id,
         )
         hypothesis = repos.hypotheses.create(
             hypothesis_id=resolved_hypothesis_id,
-            objective_id=resolved_objective_id,
+            session_id=session_id,
             title=title,
             summary=summary,
             status=status,
-            associated_session_id=ctx.deps.session_id,
         )
         event = ctx.deps.record_event(
             "hypothesis.created",
@@ -53,11 +48,6 @@ class CreateHypothesisTool(BaseAlmanacTool[AlmanacToolDeps, CreateHypothesisResu
         )
         ctx.deps.publish_record(hypothesis, event=event)
         return CreateHypothesisResult(success=True, hypothesis=hypothesis.model_dump())
-
-
-def _current_objective_id(ctx: RunContext[AlmanacToolDeps]) -> str | None:
-    session = ctx.deps.get_repos().sessions.get(ctx.deps.session_id)
-    return session.objective_id if session is not None else None
 
 
 def _next_hypothesis_id(

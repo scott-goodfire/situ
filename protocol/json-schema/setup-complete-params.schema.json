@@ -1,14 +1,6 @@
 {
   "additionalProperties": false,
-  "properties": {
-    "research_context": {
-      "title": "Research Context",
-      "type": "string"
-    }
-  },
-  "required": [
-    "research_context"
-  ],
+  "properties": {},
   "title": "SetupCompleteParams",
   "type": "object"
 }

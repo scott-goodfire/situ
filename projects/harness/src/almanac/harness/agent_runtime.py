@@ -56,24 +56,25 @@ class AgentRuntime:
     def plan_session(
         self,
         *,
-        config: dict[str, Any],
-        objective: dict[str, Any],
+        project: dict[str, Any],
+        setup_objective: str,
+        setup_research_context: str,
         current_state: dict[str, Any],
         session_id: str | None = None,
         repos: Repositories | None = None,
     ) -> AgentPlan:
-        prompt = self._prompt(
-            config=config,
-            objective=objective,
+        prompt = build_proposal_round_prompt(
+            setup_objective=setup_objective,
+            setup_research_context=setup_research_context,
             current_state=current_state,
         )
         message_history = None
         conversation_id = None
         tool_deps = AlmanacToolDeps(
             session_id=session_id or "session_unscoped",
-            project_id=config.get("id"),
+            project_id=project.get("id"),
             project_dir=self.project_dir,
-            repo_path=config.get("repo_path"),
+            repo_path=project.get("repo_path"),
         )
         if session_id is not None and repos is not None:
             stored_messages = repos.agent_message_history.get_message_history(
@@ -90,8 +91,8 @@ class AgentRuntime:
 
         with span(
             "almanac.agent.plan",
-            workspace=config.get("repo_path", ""),
-            objective=objective.get("title", ""),
+            workspace=project.get("repo_path", ""),
+            objective=setup_objective,
         ):
             result = self.dbos_agent.run_sync(
                 prompt,
@@ -112,17 +113,18 @@ class AgentRuntime:
     def run_session(
         self,
         *,
-        config: dict[str, Any],
-        objective: dict[str, Any],
+        project: dict[str, Any],
+        setup_objective: str,
+        setup_research_context: str,
         current_state: dict[str, Any],
         session_id: str,
         max_experiments: int,
         app_root: Path | None = None,
         repos: Repositories | None = None,
     ) -> AgentPlan:
-        prompt = self._session_prompt(
-            config=config,
-            objective=objective,
+        prompt = build_session_run_prompt(
+            setup_objective=setup_objective,
+            setup_research_context=setup_research_context,
             current_state=current_state,
             max_experiments=max_experiments,
         )
@@ -130,9 +132,9 @@ class AgentRuntime:
         conversation_id = None
         tool_deps = AlmanacToolDeps(
             session_id=session_id,
-            project_id=config.get("id"),
+            project_id=project.get("id"),
             project_dir=self.project_dir,
-            repo_path=config.get("repo_path"),
+            repo_path=project.get("repo_path"),
             app_root=app_root,
         )
         if repos is not None:
@@ -150,8 +152,8 @@ class AgentRuntime:
 
         with span(
             "almanac.agent.session",
-            workspace=config.get("repo_path", ""),
-            objective=objective.get("title", ""),
+            workspace=project.get("repo_path", ""),
+            objective=setup_objective,
             session_id=session_id,
         ):
             result = self.dbos_agent.run_sync(
@@ -169,34 +171,6 @@ class AgentRuntime:
                 conversation_id=getattr(result, "conversation_id", None),
             )
         return result.output
-
-    def _prompt(
-        self,
-        *,
-        config: dict[str, Any],
-        objective: dict[str, Any],
-        current_state: dict[str, Any],
-    ) -> str:
-        return build_proposal_round_prompt(
-            config=config,
-            objective=objective,
-            current_state=current_state,
-        )
-
-    def _session_prompt(
-        self,
-        *,
-        config: dict[str, Any],
-        objective: dict[str, Any],
-        current_state: dict[str, Any],
-        max_experiments: int,
-    ) -> str:
-        return build_session_run_prompt(
-            config=config,
-            objective=objective,
-            current_state=current_state,
-            max_experiments=max_experiments,
-        )
 
 
 def get_agent_runtime(project_dir: Path) -> AgentRuntime:

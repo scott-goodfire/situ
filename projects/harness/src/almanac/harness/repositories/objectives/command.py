@@ -6,10 +6,10 @@ from ..base.command import RepositoryCommand
 
 class CreateObjective(RepositoryCommand):
     objective_id: str
+    session_id: str
     title: str
     description: str
     status: ObjectiveStatus = ObjectiveStatus.ACTIVE
-    associated_session_id: str | None = None
 
 
 class UpdateObjective(RepositoryCommand):
@@ -17,4 +17,3 @@ class UpdateObjective(RepositoryCommand):
     title: str | None = None
     description: str | None = None
     status: ObjectiveStatus | None = None
-    associated_session_id: str | None = None

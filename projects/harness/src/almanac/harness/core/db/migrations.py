@@ -4,64 +4,65 @@ import sqlite3
 
 
 SCHEMA_SQL = """
-CREATE TABLE IF NOT EXISTS project_config (
+CREATE TABLE IF NOT EXISTS projects (
   id TEXT PRIMARY KEY,
   repo_path TEXT NOT NULL,
-  research_context TEXT NOT NULL,
-  associated_session_id TEXT,
-  created_at TEXT NOT NULL,
-  updated_at TEXT NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS objectives (
-  id TEXT PRIMARY KEY,
-  title TEXT NOT NULL,
-  description TEXT NOT NULL,
-  status TEXT NOT NULL,
-  associated_session_id TEXT REFERENCES sessions(id),
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS sessions (
   id TEXT PRIMARY KEY,
-  objective_id TEXT NOT NULL REFERENCES objectives(id),
-  objective TEXT NOT NULL,
-  research_context TEXT NOT NULL,
+  project_id TEXT NOT NULL REFERENCES projects(id),
   status TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS objectives (
+  id TEXT PRIMARY KEY,
+  session_id TEXT NOT NULL UNIQUE REFERENCES sessions(id),
+  title TEXT NOT NULL,
+  description TEXT NOT NULL,
+  status TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS research_contexts (
+  id TEXT PRIMARY KEY,
+  session_id TEXT NOT NULL UNIQUE REFERENCES sessions(id),
+  body TEXT NOT NULL,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS hypotheses (
   id TEXT PRIMARY KEY,
-  objective_id TEXT NOT NULL REFERENCES objectives(id),
+  session_id TEXT NOT NULL REFERENCES sessions(id),
   title TEXT NOT NULL,
   summary TEXT NOT NULL,
   status TEXT NOT NULL,
-  associated_session_id TEXT REFERENCES sessions(id),
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS experiments (
   id TEXT PRIMARY KEY,
-  objective_id TEXT NOT NULL REFERENCES objectives(id),
+  session_id TEXT NOT NULL REFERENCES sessions(id),
   status TEXT NOT NULL,
   title TEXT NOT NULL,
   summary TEXT NOT NULL,
-  associated_session_id TEXT REFERENCES sessions(id),
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS evaluations (
   id TEXT PRIMARY KEY,
-  objective_id TEXT NOT NULL REFERENCES objectives(id),
+  session_id TEXT NOT NULL REFERENCES sessions(id),
   status TEXT NOT NULL,
   title TEXT NOT NULL,
   summary TEXT NOT NULL,
-  associated_session_id TEXT REFERENCES sessions(id),
   associated_experiment_id TEXT REFERENCES experiments(id),
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
@@ -77,7 +78,6 @@ CREATE TABLE IF NOT EXISTS hypothesis_experiment_links (
 CREATE TABLE IF NOT EXISTS hypothesis_activities (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   hypothesis_id TEXT NOT NULL REFERENCES hypotheses(id),
-  session_id TEXT REFERENCES sessions(id),
   actor TEXT NOT NULL,
   kind TEXT NOT NULL,
   body TEXT NOT NULL,
@@ -88,7 +88,6 @@ CREATE TABLE IF NOT EXISTS hypothesis_activities (
 CREATE TABLE IF NOT EXISTS experiment_activities (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   experiment_id TEXT NOT NULL REFERENCES experiments(id),
-  session_id TEXT REFERENCES sessions(id),
   actor TEXT NOT NULL,
   kind TEXT NOT NULL,
   body TEXT NOT NULL,
@@ -99,7 +98,6 @@ CREATE TABLE IF NOT EXISTS experiment_activities (
 CREATE TABLE IF NOT EXISTS evaluation_activities (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   evaluation_id TEXT NOT NULL REFERENCES evaluations(id),
-  session_id TEXT REFERENCES sessions(id),
   actor TEXT NOT NULL,
   kind TEXT NOT NULL,
   body TEXT NOT NULL,
@@ -109,8 +107,7 @@ CREATE TABLE IF NOT EXISTS evaluation_activities (
 
 CREATE TABLE IF NOT EXISTS artifacts (
   id TEXT PRIMARY KEY,
-  objective_id TEXT NOT NULL REFERENCES objectives(id),
-  associated_session_id TEXT REFERENCES sessions(id),
+  session_id TEXT NOT NULL REFERENCES sessions(id),
   associated_entity_kind TEXT NOT NULL,
   associated_entity_id TEXT NOT NULL,
   kind TEXT NOT NULL,
@@ -155,8 +152,10 @@ def reset_stale_schema(connection: sqlite3.Connection) -> None:
     connection.execute("PRAGMA foreign_keys = OFF")
     for table in (
         "project_config",
-        "objectives",
+        "projects",
         "sessions",
+        "objectives",
+        "research_contexts",
         "hypotheses",
         "experiments",
         "evaluations",
@@ -173,21 +172,32 @@ def reset_stale_schema(connection: sqlite3.Connection) -> None:
 
 
 def has_stale_schema(connection: sqlite3.Connection) -> bool:
-    if not table_exists(connection, "project_config"):
+    if table_exists(connection, "project_config"):
+        return True
+
+    if not table_exists(connection, "projects"):
         return False
 
-    project_config_columns = table_columns(connection, "project_config")
     session_columns = table_columns(connection, "sessions")
-    experiment_columns = table_columns(connection, "experiments")
-    activity_columns = table_columns(connection, "experiment_activities")
+    if "project_id" not in session_columns:
+        return True
 
-    return (
-        "research_context" not in project_config_columns
-        or "objective" not in session_columns
-        or "research_context" not in session_columns
-        or "associated_session_id" not in experiment_columns
-        or has_non_comment_activity_kinds(connection, activity_columns)
-    )
+    if not table_exists(connection, "research_contexts"):
+        return True
+
+    objective_columns = table_columns(connection, "objectives")
+    if "session_id" not in objective_columns:
+        return True
+
+    hypothesis_columns = table_columns(connection, "hypotheses")
+    if "session_id" not in hypothesis_columns or "objective_id" in hypothesis_columns:
+        return True
+
+    activity_columns = table_columns(connection, "experiment_activities")
+    if "session_id" in activity_columns:
+        return True
+
+    return False
 
 
 def table_exists(connection: sqlite3.Connection, table: str) -> bool:
@@ -202,19 +212,3 @@ def table_columns(connection: sqlite3.Connection, table: str) -> set[str]:
     if not table_exists(connection, table):
         return set()
     return {row[1] for row in connection.execute(f"PRAGMA table_info({table})")}
-
-
-def has_non_comment_activity_kinds(
-    connection: sqlite3.Connection,
-    columns: set[str],
-) -> bool:
-    if "kind" not in columns:
-        return False
-    row = connection.execute(
-        """
-        SELECT 1 FROM experiment_activities
-        WHERE kind != 'comment'
-        LIMIT 1
-        """
-    ).fetchone()
-    return row is not None

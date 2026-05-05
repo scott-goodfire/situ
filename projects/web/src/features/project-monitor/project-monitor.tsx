@@ -1,4 +1,4 @@
-import { DxBadge, DxNotice } from "@almanac/web-ui";
+import { DxBadge } from "@almanac/web-ui";
 import type { CollectionsBootstrapResult } from "@almanac/protocol";
 import { useQuery } from "@tanstack/react-query";
 import { Outlet } from "@tanstack/react-router";
@@ -195,25 +195,25 @@ function ProjectNoActiveHarness({
       <NoActiveHarness workspace={project.workspace ?? project.project_id} />
       {project.status_reason && (
         <aside className="almanac-floating-notice">
-          <DxNotice tone={noticeTone({ status: project.status })}>
+          <p className="almanac-status" data-tone={statusTone({ status: project.status })}>
             {project.status_reason}
-          </DxNotice>
+          </p>
         </aside>
       )}
       {discoveryError && (
         <aside className="almanac-floating-notice">
-          <DxNotice tone="warning">{discoveryError}</DxNotice>
+          <p className="almanac-status" data-tone="warning">{discoveryError}</p>
         </aside>
       )}
     </>
   );
 }
 
-function noticeTone({
+function statusTone({
   status,
 }: {
   status: ProjectSummary["status"];
-}): "info" | "warning" | "danger" {
+}): "warning" | "danger" | undefined {
   if (status === "unhealthy" || status === "stale") {
     return "danger";
   }
@@ -222,7 +222,7 @@ function noticeTone({
     return "warning";
   }
 
-  return "info";
+  return undefined;
 }
 
 function UnknownProject({ projectId }: { projectId: string }) {

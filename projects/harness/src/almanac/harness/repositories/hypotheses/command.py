@@ -6,11 +6,10 @@ from ..base.command import RepositoryCommand
 
 class CreateHypothesis(RepositoryCommand):
     hypothesis_id: str
-    objective_id: str
+    session_id: str
     title: str
     summary: str
     status: WorkStatus = WorkStatus.OPEN
-    associated_session_id: str | None = None
 
 
 class UpdateHypothesis(RepositoryCommand):
@@ -18,4 +17,3 @@ class UpdateHypothesis(RepositoryCommand):
     title: str | None = None
     summary: str | None = None
     status: WorkStatus | None = None
-    associated_session_id: str | None = None

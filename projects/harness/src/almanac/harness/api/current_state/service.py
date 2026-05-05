@@ -13,8 +13,9 @@ class CurrentStateService(BaseModel):
 
     def get(self) -> CurrentStateSchema:
         return CurrentStateSchema(
-            config=self.repos.project_config.get(),
+            project=self.repos.project.get(),
             objectives=self.repos.objectives.list_all(),
+            research_contexts=self.repos.research_contexts.list_all(),
             sessions=self.repos.sessions.list_all(),
             hypotheses=self.repos.hypotheses.list_all(),
             experiments=self.repos.experiments.list_all(),

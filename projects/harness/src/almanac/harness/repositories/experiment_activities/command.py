@@ -12,5 +12,4 @@ class AddExperimentActivity(RepositoryCommand):
     actor: str
     kind: str
     body: str
-    session_id: str | None = None
     payload: dict[str, Any] = Field(default_factory=dict)

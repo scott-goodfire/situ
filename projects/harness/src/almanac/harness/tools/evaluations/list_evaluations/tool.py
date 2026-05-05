@@ -18,12 +18,11 @@ class ListEvaluationsTool(BaseAlmanacTool[AlmanacToolDeps, ListEvaluationsResult
         *,
         ctx: RunContext[AlmanacToolDeps],
         session_id: str | None = None,
-        objective_id: str | None = None,
         experiment_id: str | None = None,
         status: WorkStatus | None = None,
         **_kwargs: Any,
     ) -> ListEvaluationsResult:
-        """List evaluations by session, objective, or associated experiment."""
+        """List evaluations by session or associated experiment."""
         checked_status = (
             parse_work_status(status=status, noun="evaluation")
             if status is not None
@@ -32,12 +31,10 @@ class ListEvaluationsTool(BaseAlmanacTool[AlmanacToolDeps, ListEvaluationsResult
         repos = ctx.deps.get_repos()
         if experiment_id is not None:
             evaluations = repos.evaluations.list_for_experiment(experiment_id)
-        elif session_id is not None:
-            evaluations = repos.evaluations.list_for_session(session_id)
-        elif objective_id is not None:
-            evaluations = repos.evaluations.list_for_objective(objective_id)
         else:
-            evaluations = repos.evaluations.list_for_session(ctx.deps.session_id)
+            evaluations = repos.evaluations.list_for_session(
+                session_id or ctx.deps.session_id
+            )
 
         if checked_status is not None:
             evaluations = [

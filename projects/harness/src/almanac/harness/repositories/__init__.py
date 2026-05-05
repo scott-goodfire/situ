@@ -10,8 +10,9 @@ from .hypotheses import HypothesesRepository
 from .hypothesis_activities import HypothesisActivitiesRepository
 from .hypothesis_experiment_links import HypothesisExperimentLinksRepository
 from .objectives import ObjectivesRepository
-from .project_config import ProjectConfigRepository
+from .project import ProjectRepository
 from .repositories import Repositories
+from .research_contexts import ResearchContextsRepository
 from .sessions import SessionsRepository
 
 __all__ = [
@@ -27,7 +28,8 @@ __all__ = [
     "HypothesisActivitiesRepository",
     "HypothesisExperimentLinksRepository",
     "ObjectivesRepository",
-    "ProjectConfigRepository",
+    "ProjectRepository",
     "Repositories",
+    "ResearchContextsRepository",
     "SessionsRepository",
 ]

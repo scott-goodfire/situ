@@ -9,7 +9,8 @@ from .hypothesis import HypothesisRecord
 from .hypothesis_activity import ActivityKind, HypothesisActivityRecord
 from .hypothesis_experiment_link import HypothesisExperimentLinkRecord
 from .objective import ObjectiveRecord, ObjectiveStatus, parse_objective_status
-from .project_config import ProjectConfigRecord
+from .project import ProjectRecord
+from .research_context import ResearchContextRecord
 from .session import SessionRecord, SessionStatus, parse_session_status
 
 __all__ = [
@@ -26,7 +27,8 @@ __all__ = [
     "HypothesisRecord",
     "ObjectiveRecord",
     "ObjectiveStatus",
-    "ProjectConfigRecord",
+    "ProjectRecord",
+    "ResearchContextRecord",
     "SessionRecord",
     "SessionStatus",
     "WorkStatus",

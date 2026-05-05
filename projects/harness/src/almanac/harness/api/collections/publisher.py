@@ -15,6 +15,8 @@ from ...records import (
     HypothesisExperimentLinkRecord,
     HypothesisRecord,
     ObjectiveRecord,
+    ProjectRecord,
+    ResearchContextRecord,
     SessionRecord,
 )
 from ...records.base import DbRecord
@@ -38,7 +40,9 @@ def _hypothesis_experiment_link_key(record: DbRecord) -> str:
 
 
 COLLECTION_ROUTES: dict[type[DbRecord], CollectionRoute] = {
+    ProjectRecord: CollectionRoute("projects", _record_id),
     ObjectiveRecord: CollectionRoute("objectives", _record_id),
+    ResearchContextRecord: CollectionRoute("research_contexts", _record_id),
     SessionRecord: CollectionRoute("sessions", _record_id),
     HypothesisRecord: CollectionRoute("hypotheses", _record_id),
     ExperimentRecord: CollectionRoute("experiments", _record_id),

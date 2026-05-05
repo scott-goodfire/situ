@@ -13,7 +13,8 @@ from ...records import (
     HypothesisExperimentLinkRecord,
     HypothesisRecord,
     ObjectiveRecord,
-    ProjectConfigRecord,
+    ProjectRecord,
+    ResearchContextRecord,
     SessionRecord,
 )
 
@@ -21,8 +22,9 @@ from ...records import (
 class CurrentStateSchema(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    config: ProjectConfigRecord | None
+    project: ProjectRecord | None
     objectives: list[ObjectiveRecord]
+    research_contexts: list[ResearchContextRecord]
     sessions: list[SessionRecord]
     hypotheses: list[HypothesisRecord]
     experiments: list[ExperimentRecord]

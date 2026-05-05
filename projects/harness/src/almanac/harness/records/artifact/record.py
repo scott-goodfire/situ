@@ -5,8 +5,7 @@ from ..base import DbRecord
 
 class ArtifactRecord(DbRecord):
     id: str
-    objective_id: str
-    associated_session_id: str | None = None
+    session_id: str
     associated_entity_kind: str
     associated_entity_id: str
     kind: str

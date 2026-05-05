@@ -6,10 +6,9 @@ from ..experiment.record import WorkStatus
 
 class HypothesisRecord(DbRecord):
     id: str
-    objective_id: str
+    session_id: str
     title: str
     summary: str
     status: WorkStatus
-    associated_session_id: str | None = None
     created_at: str
     updated_at: str

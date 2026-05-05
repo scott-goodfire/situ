@@ -15,16 +15,8 @@
       "title": "Id",
       "type": "string"
     },
-    "objective_id": {
-      "title": "Objective Id",
-      "type": "string"
-    },
-    "objective": {
-      "title": "Objective",
-      "type": "string"
-    },
-    "research_context": {
-      "title": "Research Context",
+    "project_id": {
+      "title": "Project Id",
       "type": "string"
     },
     "status": {
@@ -41,9 +33,7 @@
   },
   "required": [
     "id",
-    "objective_id",
-    "objective",
-    "research_context",
+    "project_id",
     "status",
     "created_at",
     "updated_at"

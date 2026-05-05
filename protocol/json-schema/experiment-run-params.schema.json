@@ -5,10 +5,6 @@
       "title": "Session Id",
       "type": "string"
     },
-    "objective_id": {
-      "title": "Objective Id",
-      "type": "string"
-    },
     "experiment_id": {
       "title": "Experiment Id",
       "type": "string"
@@ -38,7 +34,6 @@
   },
   "required": [
     "session_id",
-    "objective_id",
     "experiment_id",
     "title",
     "summary"

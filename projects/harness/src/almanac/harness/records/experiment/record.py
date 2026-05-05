@@ -29,10 +29,9 @@ def parse_work_status(
 
 class ExperimentRecord(DbRecord):
     id: str
-    objective_id: str
+    session_id: str
     status: WorkStatus
     title: str
     summary: str
-    associated_session_id: str | None = None
     created_at: str
     updated_at: str

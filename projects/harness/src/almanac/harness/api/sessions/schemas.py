@@ -13,7 +13,8 @@ from ...records import (
     HypothesisExperimentLinkRecord,
     HypothesisRecord,
     ObjectiveRecord,
-    ProjectConfigRecord,
+    ProjectRecord,
+    ResearchContextRecord,
     SessionRecord,
 )
 
@@ -28,9 +29,10 @@ class NextSessionIdSchema(BaseModel):
 class SessionGraphSchema(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    config: ProjectConfigRecord | None = None
+    project: ProjectRecord | None = None
     session: SessionRecord | None = None
     objective: ObjectiveRecord | None = None
+    research_context: ResearchContextRecord | None = None
     hypotheses: list[HypothesisRecord]
     experiments: list[ExperimentRecord]
     evaluations: list[EvaluationRecord]

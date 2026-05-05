@@ -9,22 +9,6 @@
       "title": "Repo Path",
       "type": "string"
     },
-    "research_context": {
-      "title": "Research Context",
-      "type": "string"
-    },
-    "associated_session_id": {
-      "anyOf": [
-        {
-          "type": "string"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "default": null,
-      "title": "Associated Session Id"
-    },
     "created_at": {
       "title": "Created At",
       "type": "string"
@@ -37,10 +21,9 @@
   "required": [
     "id",
     "repo_path",
-    "research_context",
     "created_at",
     "updated_at"
   ],
-  "title": "ProjectConfigRecord",
+  "title": "ProjectRecord",
   "type": "object"
 }

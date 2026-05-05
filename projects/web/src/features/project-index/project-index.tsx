@@ -1,4 +1,4 @@
-import { DxBadge, DxNotice, DxTable, type DxTableColumn } from "@almanac/web-ui";
+import { DxBadge, DxTable, type DxTableColumn } from "@almanac/web-ui";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { DateTime } from "luxon";
@@ -31,7 +31,7 @@ export function ProjectIndex() {
         <DxBadge>{projects.length} projects</DxBadge>
       </header>
 
-      {error && <DxNotice tone="danger">{error}</DxNotice>}
+      {error && <p className="almanac-status" data-tone="danger">{error}</p>}
 
       {projectsQuery.isPending && projects.length === 0 && (
         <section className="almanac-empty">

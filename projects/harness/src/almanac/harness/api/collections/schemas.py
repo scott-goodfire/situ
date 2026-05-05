@@ -13,6 +13,8 @@ from ...records import (
     HypothesisExperimentLinkRecord,
     HypothesisRecord,
     ObjectiveRecord,
+    ProjectRecord,
+    ResearchContextRecord,
     SessionRecord,
 )
 
@@ -21,7 +23,9 @@ class CollectionsBootstrapSchema(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     cursor: int
+    projects: list[ProjectRecord]
     objectives: list[ObjectiveRecord]
+    research_contexts: list[ResearchContextRecord]
     sessions: list[SessionRecord]
     hypotheses: list[HypothesisRecord]
     experiments: list[ExperimentRecord]

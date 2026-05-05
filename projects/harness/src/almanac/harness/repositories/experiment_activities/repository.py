@@ -16,7 +16,6 @@ class ExperimentActivitiesRepository(BaseRepository):
         actor: str,
         kind: str,
         body: str,
-        session_id: str | None = None,
         payload: dict[str, Any] | None = None,
     ) -> ExperimentActivityRecord:
         command = AddExperimentActivity(
@@ -24,18 +23,16 @@ class ExperimentActivitiesRepository(BaseRepository):
             actor=actor,
             kind=kind,
             body=body,
-            session_id=session_id,
             payload=payload or {},
         )
         cursor = self.db.execute(
             """
             INSERT INTO experiment_activities
-              (experiment_id, session_id, actor, kind, body, payload_json, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+              (experiment_id, actor, kind, body, payload_json, created_at)
+            VALUES (?, ?, ?, ?, ?, ?)
             """,
             (
                 command.experiment_id,
-                command.session_id,
                 command.actor,
                 command.kind,
                 command.body,
@@ -67,14 +64,5 @@ class ExperimentActivitiesRepository(BaseRepository):
             for row in self.db.fetchall(
                 "SELECT * FROM experiment_activities WHERE experiment_id = ? ORDER BY id",
                 (experiment_id,),
-            )
-        ]
-
-    def list_for_session(self, session_id: str) -> list[ExperimentActivityRecord]:
-        return [
-            experiment_activity_row(row)
-            for row in self.db.fetchall(
-                "SELECT * FROM experiment_activities WHERE session_id = ? ORDER BY id",
-                (session_id,),
             )
         ]

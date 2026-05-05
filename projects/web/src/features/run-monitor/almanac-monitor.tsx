@@ -6,7 +6,6 @@ import type {
   ObjectiveRecord,
   SessionRecord,
 } from "@almanac/protocol";
-import { DxNotice } from "@almanac/web-ui";
 import filter from "lodash/filter";
 import { ConnectionBadge, type ConnectionState } from "./connection-badge";
 import { EventTimeline } from "./event-timeline";
@@ -68,7 +67,7 @@ export function AlmanacMonitor({
       </header>
 
       {connection.kind === "failed" && (
-        <DxNotice tone="danger">{connection.message}</DxNotice>
+        <p className="almanac-status" data-tone="danger">{connection.message}</p>
       )}
 
       <RunSummary

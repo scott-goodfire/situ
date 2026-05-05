@@ -6,9 +6,7 @@ from ..base.command import RepositoryCommand
 
 class CreateSession(RepositoryCommand):
     session_id: str
-    objective_id: str
-    objective: str
-    research_context: str
+    project_id: str
 
 
 class UpdateSessionStatus(RepositoryCommand):

@@ -1,4 +1,4 @@
-import { DxBadge, DxNotice } from "@almanac/web-ui";
+import { DxBadge } from "@almanac/web-ui";
 
 export function NoActiveHarness({ workspace }: { workspace: string | undefined }) {
   return (
@@ -17,7 +17,7 @@ export function NoActiveHarness({ workspace }: { workspace: string | undefined }
         <pre className="almanac-command">almanac start</pre>
       </section>
 
-      <DxNotice>No harness is started by the web monitor.</DxNotice>
+      <p className="almanac-status">No harness is started by the web monitor.</p>
     </main>
   );
 }

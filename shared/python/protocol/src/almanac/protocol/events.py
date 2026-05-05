@@ -24,13 +24,11 @@ class ActivityKind(StrEnum):
     COMMENT = "comment"
 
 
-class ProjectConfigRecord(BaseModel):
+class ProjectRecord(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     id: str
     repo_path: str
-    research_context: str
-    associated_session_id: str | None = None
     created_at: str
     updated_at: str
 
@@ -39,10 +37,20 @@ class ObjectiveRecord(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     id: str
+    session_id: str
     title: str
     description: str
     status: ObjectiveStatus
-    associated_session_id: str | None = None
+    created_at: str
+    updated_at: str
+
+
+class ResearchContextRecord(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: str
+    session_id: str
+    body: str
     created_at: str
     updated_at: str
 
@@ -51,9 +59,7 @@ class SessionRecord(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     id: str
-    objective_id: str
-    objective: str
-    research_context: str
+    project_id: str
     status: SessionStatus
     created_at: str
     updated_at: str
@@ -63,11 +69,10 @@ class HypothesisRecord(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     id: str
-    objective_id: str
+    session_id: str
     title: str
     summary: str
     status: WorkStatus
-    associated_session_id: str | None = None
     created_at: str
     updated_at: str
 
@@ -76,11 +81,10 @@ class ExperimentRecord(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     id: str
-    objective_id: str
+    session_id: str
     status: WorkStatus
     title: str
     summary: str
-    associated_session_id: str | None = None
     created_at: str
     updated_at: str
 
@@ -89,11 +93,10 @@ class EvaluationRecord(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     id: str
-    objective_id: str
+    session_id: str
     status: WorkStatus
     title: str
     summary: str
-    associated_session_id: str | None = None
     associated_experiment_id: str | None = None
     created_at: str
     updated_at: str
@@ -112,7 +115,6 @@ class HypothesisActivityRecord(BaseModel):
 
     id: int
     hypothesis_id: str
-    session_id: str | None = None
     actor: str
     kind: ActivityKind
     body: str
@@ -125,7 +127,6 @@ class ExperimentActivityRecord(BaseModel):
 
     id: int
     experiment_id: str
-    session_id: str | None = None
     actor: str
     kind: ActivityKind
     body: str
@@ -138,7 +139,6 @@ class EvaluationActivityRecord(BaseModel):
 
     id: int
     evaluation_id: str
-    session_id: str | None = None
     actor: str
     kind: ActivityKind
     body: str
@@ -150,8 +150,7 @@ class ArtifactRecord(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     id: str
-    objective_id: str
-    associated_session_id: str | None = None
+    session_id: str
     associated_entity_kind: str
     associated_entity_id: str
     kind: str

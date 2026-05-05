@@ -5,21 +5,9 @@
       "title": "Id",
       "type": "string"
     },
-    "objective_id": {
-      "title": "Objective Id",
+    "session_id": {
+      "title": "Session Id",
       "type": "string"
-    },
-    "associated_session_id": {
-      "anyOf": [
-        {
-          "type": "string"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "default": null,
-      "title": "Associated Session Id"
     },
     "associated_entity_kind": {
       "title": "Associated Entity Kind",
@@ -72,7 +60,7 @@
   },
   "required": [
     "id",
-    "objective_id",
+    "session_id",
     "associated_entity_kind",
     "associated_entity_id",
     "kind",

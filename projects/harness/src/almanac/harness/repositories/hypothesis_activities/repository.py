@@ -16,7 +16,6 @@ class HypothesisActivitiesRepository(BaseRepository):
         actor: str,
         kind: str,
         body: str,
-        session_id: str | None = None,
         payload: dict[str, Any] | None = None,
     ) -> HypothesisActivityRecord:
         command = AddHypothesisActivity(
@@ -24,18 +23,16 @@ class HypothesisActivitiesRepository(BaseRepository):
             actor=actor,
             kind=kind,
             body=body,
-            session_id=session_id,
             payload=payload or {},
         )
         cursor = self.db.execute(
             """
             INSERT INTO hypothesis_activities
-              (hypothesis_id, session_id, actor, kind, body, payload_json, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+              (hypothesis_id, actor, kind, body, payload_json, created_at)
+            VALUES (?, ?, ?, ?, ?, ?)
             """,
             (
                 command.hypothesis_id,
-                command.session_id,
                 command.actor,
                 command.kind,
                 command.body,
@@ -67,14 +64,5 @@ class HypothesisActivitiesRepository(BaseRepository):
             for row in self.db.fetchall(
                 "SELECT * FROM hypothesis_activities WHERE hypothesis_id = ? ORDER BY id",
                 (hypothesis_id,),
-            )
-        ]
-
-    def list_for_session(self, session_id: str) -> list[HypothesisActivityRecord]:
-        return [
-            hypothesis_activity_row(row)
-            for row in self.db.fetchall(
-                "SELECT * FROM hypothesis_activities WHERE session_id = ? ORDER BY id",
-                (session_id,),
             )
         ]

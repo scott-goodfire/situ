@@ -28,7 +28,6 @@ class AddHypothesisCommentTool(
         """Add a human-readable comment to a hypothesis activity trail."""
         activity = ctx.deps.get_repos().hypothesis_activities.add(
             hypothesis_id=hypothesis_id,
-            session_id=ctx.deps.session_id,
             actor=actor,
             kind="comment",
             body=comment,

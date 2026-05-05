@@ -11,28 +11,22 @@ class SessionsRepository(BaseRepository):
         self,
         session_id: str,
         *,
-        objective_id: str,
-        objective: str,
-        research_context: str,
+        project_id: str,
     ) -> SessionRecord:
         command = CreateSession(
             session_id=session_id,
-            objective_id=objective_id,
-            objective=objective,
-            research_context=research_context,
+            project_id=project_id,
         )
         now = utc_now()
         self.db.execute(
             """
             INSERT INTO sessions
-              (id, objective_id, objective, research_context, status, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+              (id, project_id, status, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?)
             """,
             (
                 command.session_id,
-                command.objective_id,
-                command.objective,
-                command.research_context,
+                command.project_id,
                 SessionStatus.ACTIVE.value,
                 now,
                 now,
@@ -71,15 +65,17 @@ class SessionsRepository(BaseRepository):
             for row in self.db.fetchall("SELECT * FROM sessions ORDER BY created_at")
         ]
 
-    def list_for_objective(self, objective_id: str) -> list[SessionRecord]:
+    def list_for_project(self, project_id: str) -> list[SessionRecord]:
         return [
             session_row(row)
             for row in self.db.fetchall(
-                "SELECT * FROM sessions WHERE objective_id = ? ORDER BY created_at",
-                (objective_id,),
+                "SELECT * FROM sessions WHERE project_id = ? ORDER BY created_at",
+                (project_id,),
             )
         ]
 
     def latest(self) -> SessionRecord | None:
-        row = self.db.fetchone("SELECT * FROM sessions ORDER BY created_at DESC LIMIT 1")
+        row = self.db.fetchone(
+            "SELECT * FROM sessions ORDER BY updated_at DESC LIMIT 1"
+        )
         return session_row(row) if row else None

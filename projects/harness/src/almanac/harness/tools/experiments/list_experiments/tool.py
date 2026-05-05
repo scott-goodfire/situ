@@ -18,23 +18,18 @@ class ListExperimentsTool(BaseAlmanacTool[AlmanacToolDeps, ListExperimentsResult
         *,
         ctx: RunContext[AlmanacToolDeps],
         session_id: str | None = None,
-        objective_id: str | None = None,
         status: WorkStatus | None = None,
         **_kwargs: Any,
     ) -> ListExperimentsResult:
-        """List experiments by session or objective, defaulting to the current session."""
+        """List experiments for a session, defaulting to the current session."""
         checked_status = (
             parse_work_status(status=status, noun="experiment")
             if status is not None
             else None
         )
         repos = ctx.deps.get_repos()
-        if session_id is not None:
-            experiments = repos.experiments.list_for_session(session_id)
-        elif objective_id is not None:
-            experiments = repos.experiments.list_for_objective(objective_id)
-        else:
-            experiments = repos.experiments.list_for_session(ctx.deps.session_id)
+        target_session_id = session_id or ctx.deps.session_id
+        experiments = repos.experiments.list_for_session(target_session_id)
 
         if checked_status is not None:
             experiments = [

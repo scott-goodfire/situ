@@ -11,40 +11,36 @@ class ArtifactsRepository(BaseRepository):
         self,
         *,
         artifact_id: str,
-        objective_id: str,
+        session_id: str,
         kind: str,
         title: str,
         path: str,
         associated_entity_kind: str,
         associated_entity_id: str,
-        associated_session_id: str | None = None,
         media_type: str | None = None,
         size_bytes: int | None = None,
     ) -> ArtifactRecord:
         command = CreateArtifact(
             artifact_id=artifact_id,
-            objective_id=objective_id,
+            session_id=session_id,
             kind=kind,
             title=title,
             path=path,
             associated_entity_kind=associated_entity_kind,
             associated_entity_id=associated_entity_id,
-            associated_session_id=associated_session_id,
             media_type=media_type,
             size_bytes=size_bytes,
         )
         self.db.execute(
             """
             INSERT INTO artifacts
-              (id, objective_id, associated_session_id, associated_entity_kind,
-               associated_entity_id, kind, title, path, media_type, size_bytes,
-               created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+              (id, session_id, associated_entity_kind, associated_entity_id,
+               kind, title, path, media_type, size_bytes, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 command.artifact_id,
-                command.objective_id,
-                command.associated_session_id,
+                command.session_id,
                 command.associated_entity_kind,
                 command.associated_entity_id,
                 command.kind,
@@ -91,15 +87,7 @@ class ArtifactsRepository(BaseRepository):
         return [
             artifact_row(row)
             for row in self.db.fetchall(
-                """
-                SELECT * FROM artifacts
-                WHERE associated_session_id = ?
-                   OR (
-                     associated_entity_kind = 'session'
-                     AND associated_entity_id = ?
-                   )
-                ORDER BY created_at
-                """,
-                (session_id, session_id),
+                "SELECT * FROM artifacts WHERE session_id = ? ORDER BY created_at",
+                (session_id,),
             )
         ]

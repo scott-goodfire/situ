@@ -7,36 +7,40 @@ small and let activities carry nuance.
 
 ```text
 Project
-  `-- Sessions
-        |-- Objective text
-        |-- Research context
-        |-- Hypotheses
+  `-- Sessions (project_id required)
+        |-- Objective       (1:1, session-owned record)
+        |-- ResearchContext (1:1, session-owned record)
+        |-- Hypotheses                  (session_id required)
         |     `-- HypothesisActivity
-        |-- Experiments
+        |-- Experiments                 (session_id required)
         |     `-- ExperimentActivity
-        |-- Evaluations
+        |-- Evaluations                 (session_id required)
         |     `-- EvaluationActivity
         |-- HypothesisExperimentLinks
-        |-- Artifacts
+        |-- Artifacts                   (session_id required)
         `-- Events
 ```
 
-The project is the workspace boundary. The session is the primary product
-object. Starting Almanac creates a fresh session by default; resuming an
-existing session must be explicit.
+The project is the workspace boundary and owns sessions. Sessions own every
+ledger entity inside them: hypotheses, experiments, evaluations, artifacts,
+activities, and the session's objective and research context records. Every
+ledger row carries the `session_id` it was created under, no nullable session
+columns. Starting Almanac creates a fresh session by default; resuming an
+existing session must be explicit. There is no stored "active session" pointer
+on the project; the most-recently-updated session is derived on demand.
 
 ## Objective
 
 The session north star. It defines what this session is trying to improve or
 understand.
 
-A first objective needs title/description plus lightweight research context:
-how progress is judged, what signals or artifacts matter, and what kinds of
-experiments are in scope.
+A first objective needs title/description.
 
-Objectives are owned by sessions in the first slice. A project may have many
-sessions with similar objectives, but each session owns its own objective text
-and ledger.
+Objectives are sibling records to sessions, with a required `session_id` FK
+(unique per session in the first slice). The agent populates the session's
+objective on session kickoff via the `create_objective` tool, reading the
+free-text setup input. A project may have many sessions with similar
+objectives, but each session owns its own objective record and ledger.
 
 ## Research Context
 
@@ -46,18 +50,25 @@ It can include commands, tools, dashboards, metrics, eval suites, logs, cluster
 jobs, notebooks, or human review criteria. Do not require the user to reduce
 this to one command or one metric during onboarding.
 
-Keep this as one LLM-friendly field in the first slice. Do not split it into
-separate required fields for eval commands, known signals, metric names, and
-experiment scope until the product proves those boundaries are stable.
+Research context is its own session-owned record (1:1 with sessions, required
+`session_id` FK), not a column on the session row. The agent populates it via
+`create_research_context` on session kickoff, reading the free-text setup
+input. Keep the body as one LLM-friendly text field in the first slice. Do not
+split it into separate required fields for eval commands, known signals,
+metric names, and experiment scope until the product proves those boundaries
+are stable.
 
 ## Session
 
 The main unit of autoresearch work.
 
-A session has an objective, research context, lifecycle status, agent message
-history, hypotheses, experiments, evaluations, activities, artifacts, and
-events. Each new `almanac start` creates a new session. `almanac resume` is the
-explicit action for continuing the same session id.
+A session belongs to one project (required `project_id` FK) and owns one
+objective record, one research context record, lifecycle status, agent
+message history, hypotheses, experiments, evaluations, activities, artifacts,
+and events. Each new `almanac start` creates a new session. `almanac resume`
+is the explicit action for continuing the same session id. There is no stored
+"active session" pointer on the project; lookups for "the latest session"
+sort by `updated_at` on demand.
 
 ## Hypothesis
 
@@ -67,10 +78,10 @@ Hypotheses should be lightweight and status-light. A hypothesis can be open,
 active, or closed. Whether it is promising, weakened, suspicious, or mostly
 supported should be explained through activities rather than status explosion.
 
-Hypotheses are owned by the session that created them. Prior-session
-hypotheses may be used as reference material later, but they should not appear
-as current-session state unless explicitly copied or summarized into the new
-session.
+Hypotheses are required to belong to a session (`session_id` FK, NOT NULL).
+Prior-session hypotheses may be used as reference material later, but they
+should not appear as current-session state unless explicitly copied or
+summarized into the new session.
 
 ## Experiment
 
@@ -80,7 +91,7 @@ Experiments should also be status-light: open, active, or closed. Details such
 as failure, suspiciousness, reproduction, or interpretation should be expressed
 as experiment activities.
 
-Experiments are owned by a session.
+Experiments are required to belong to a session (`session_id` FK, NOT NULL).
 
 Do not add `Variant` as a first-class model yet. Use experiment summaries,
 activity bodies, artifacts, and links to express baseline + A, baseline + B,
@@ -100,10 +111,11 @@ stdout/stderr, observed signals, interpretations, concerns, and reproduction
 notes should be recorded as evaluation activities rather than columns on the
 evaluation itself.
 
-Evaluations are owned by a session and may optionally point at the experiment
-they measure. A baseline evaluation usually has no associated experiment. A
-candidate or reproduction evaluation usually points at the experiment it
-measures.
+Evaluations are required to belong to a session (`session_id` FK, NOT NULL)
+and may optionally point at the experiment they measure
+(`associated_experiment_id`, nullable). A baseline evaluation usually has no
+associated experiment. A candidate or reproduction evaluation usually points
+at the experiment it measures.
 
 Before a session treats candidate experiments as comparable, it should establish
 at least one baseline evaluation activity with evidence. This is a product rule,
@@ -125,6 +137,10 @@ Activities are timeline entries attached to hypotheses, experiments, or
 evaluations. They replace standalone evidence, finding, warning, and decision
 models in the first slice.
 
+Activities reach a session through their parent (the hypothesis, experiment,
+or evaluation), which is itself session-required. Activity rows do not carry
+their own `session_id` column.
+
 The first slice uses only `comment` as the activity kind. Results, concerns,
 interpretations, plans, and decisions are written as comments. Structured
 payloads may label those comments for views or agents when useful, but the
@@ -144,12 +160,13 @@ Artifacts are file-like or bulky outputs that activities reference: raw eval
 JSON, logs, diffs, patches, screenshots, traces, samples, or reproduction
 bundles. Activities explain what happened; artifacts preserve the thing.
 
-Artifacts attach through a generic association:
+Artifacts always belong to a session (`session_id` FK, NOT NULL) and attach
+to a specific entity within that session through a generic association:
 
 ```text
+session_id              (required)
 associated_entity_kind
 associated_entity_id
-associated_session_id?
 ```
 
 This keeps artifact storage simple while still allowing artifacts to attach to a

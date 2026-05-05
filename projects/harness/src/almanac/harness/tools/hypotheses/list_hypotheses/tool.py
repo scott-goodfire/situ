@@ -18,7 +18,6 @@ class ListHypothesesTool(BaseAlmanacTool[AlmanacToolDeps, ListHypothesesResult])
         *,
         ctx: RunContext[AlmanacToolDeps],
         session_id: str | None = None,
-        objective_id: str | None = None,
         status: WorkStatus | None = None,
         **_kwargs: Any,
     ) -> ListHypothesesResult:
@@ -29,12 +28,8 @@ class ListHypothesesTool(BaseAlmanacTool[AlmanacToolDeps, ListHypothesesResult])
             else None
         )
         repos = ctx.deps.get_repos()
-        if session_id is not None:
-            hypotheses = repos.hypotheses.list_for_session(session_id)
-        elif objective_id is not None:
-            hypotheses = repos.hypotheses.list_for_objective(objective_id)
-        else:
-            hypotheses = repos.hypotheses.list_for_session(ctx.deps.session_id)
+        target_session_id = session_id or ctx.deps.session_id
+        hypotheses = repos.hypotheses.list_for_session(target_session_id)
         if checked_status is not None:
             hypotheses = [
                 hypothesis

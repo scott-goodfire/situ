@@ -14,21 +14,9 @@
           "title": "Id",
           "type": "string"
         },
-        "objective_id": {
-          "title": "Objective Id",
+        "session_id": {
+          "title": "Session Id",
           "type": "string"
-        },
-        "associated_session_id": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Associated Session Id"
         },
         "associated_entity_kind": {
           "title": "Associated Entity Kind",
@@ -81,7 +69,7 @@
       },
       "required": [
         "id",
-        "objective_id",
+        "session_id",
         "associated_entity_kind",
         "associated_entity_id",
         "kind",
@@ -102,18 +90,6 @@
         "evaluation_id": {
           "title": "Evaluation Id",
           "type": "string"
-        },
-        "session_id": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Session Id"
         },
         "actor": {
           "title": "Actor",
@@ -154,8 +130,8 @@
           "title": "Id",
           "type": "string"
         },
-        "objective_id": {
-          "title": "Objective Id",
+        "session_id": {
+          "title": "Session Id",
           "type": "string"
         },
         "status": {
@@ -168,18 +144,6 @@
         "summary": {
           "title": "Summary",
           "type": "string"
-        },
-        "associated_session_id": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Associated Session Id"
         },
         "associated_experiment_id": {
           "anyOf": [
@@ -204,7 +168,7 @@
       },
       "required": [
         "id",
-        "objective_id",
+        "session_id",
         "status",
         "title",
         "summary",
@@ -271,18 +235,6 @@
           "title": "Experiment Id",
           "type": "string"
         },
-        "session_id": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Session Id"
-        },
         "actor": {
           "title": "Actor",
           "type": "string"
@@ -322,8 +274,8 @@
           "title": "Id",
           "type": "string"
         },
-        "objective_id": {
-          "title": "Objective Id",
+        "session_id": {
+          "title": "Session Id",
           "type": "string"
         },
         "status": {
@@ -337,18 +289,6 @@
           "title": "Summary",
           "type": "string"
         },
-        "associated_session_id": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Associated Session Id"
-        },
         "created_at": {
           "title": "Created At",
           "type": "string"
@@ -360,7 +300,7 @@
       },
       "required": [
         "id",
-        "objective_id",
+        "session_id",
         "status",
         "title",
         "summary",
@@ -380,18 +320,6 @@
         "hypothesis_id": {
           "title": "Hypothesis Id",
           "type": "string"
-        },
-        "session_id": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Session Id"
         },
         "actor": {
           "title": "Actor",
@@ -456,8 +384,8 @@
           "title": "Id",
           "type": "string"
         },
-        "objective_id": {
-          "title": "Objective Id",
+        "session_id": {
+          "title": "Session Id",
           "type": "string"
         },
         "title": {
@@ -471,18 +399,6 @@
         "status": {
           "$ref": "#/$defs/WorkStatus"
         },
-        "associated_session_id": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Associated Session Id"
-        },
         "created_at": {
           "title": "Created At",
           "type": "string"
@@ -494,7 +410,7 @@
       },
       "required": [
         "id",
-        "objective_id",
+        "session_id",
         "title",
         "summary",
         "status",
@@ -511,6 +427,10 @@
           "title": "Id",
           "type": "string"
         },
+        "session_id": {
+          "title": "Session Id",
+          "type": "string"
+        },
         "title": {
           "title": "Title",
           "type": "string"
@@ -521,18 +441,6 @@
         },
         "status": {
           "$ref": "#/$defs/ObjectiveStatus"
-        },
-        "associated_session_id": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Associated Session Id"
         },
         "created_at": {
           "title": "Created At",
@@ -545,6 +453,7 @@
       },
       "required": [
         "id",
+        "session_id",
         "title",
         "description",
         "status",
@@ -562,6 +471,69 @@
       "title": "ObjectiveStatus",
       "type": "string"
     },
+    "ProjectRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "repo_path": {
+          "title": "Repo Path",
+          "type": "string"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        },
+        "updated_at": {
+          "title": "Updated At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "repo_path",
+        "created_at",
+        "updated_at"
+      ],
+      "title": "ProjectRecord",
+      "type": "object"
+    },
+    "ResearchContextRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "session_id": {
+          "title": "Session Id",
+          "type": "string"
+        },
+        "body": {
+          "title": "Body",
+          "type": "string"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        },
+        "updated_at": {
+          "title": "Updated At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "session_id",
+        "body",
+        "created_at",
+        "updated_at"
+      ],
+      "title": "ResearchContextRecord",
+      "type": "object"
+    },
     "SessionRecord": {
       "additionalProperties": false,
       "properties": {
@@ -569,16 +541,8 @@
           "title": "Id",
           "type": "string"
         },
-        "objective_id": {
-          "title": "Objective Id",
-          "type": "string"
-        },
-        "objective": {
-          "title": "Objective",
-          "type": "string"
-        },
-        "research_context": {
-          "title": "Research Context",
+        "project_id": {
+          "title": "Project Id",
           "type": "string"
         },
         "status": {
@@ -595,9 +559,7 @@
       },
       "required": [
         "id",
-        "objective_id",
-        "objective",
-        "research_context",
+        "project_id",
         "status",
         "created_at",
         "updated_at"
@@ -629,11 +591,25 @@
       "title": "Cursor",
       "type": "integer"
     },
+    "projects": {
+      "items": {
+        "$ref": "#/$defs/ProjectRecord"
+      },
+      "title": "Projects",
+      "type": "array"
+    },
     "objectives": {
       "items": {
         "$ref": "#/$defs/ObjectiveRecord"
       },
       "title": "Objectives",
+      "type": "array"
+    },
+    "research_contexts": {
+      "items": {
+        "$ref": "#/$defs/ResearchContextRecord"
+      },
+      "title": "Research Contexts",
       "type": "array"
     },
     "sessions": {
@@ -709,7 +685,9 @@
   },
   "required": [
     "cursor",
+    "projects",
     "objectives",
+    "research_contexts",
     "sessions",
     "hypotheses",
     "experiments",

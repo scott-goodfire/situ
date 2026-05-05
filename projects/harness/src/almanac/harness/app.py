@@ -68,6 +68,7 @@ class HarnessApp:
         register_project_notifications(self.context.project_id, notify)
         self.subscribed = False
         self.collection_subscribed = False
+        self._session_setup: dict[str, dict[str, str]] = {}
 
     def handle(self, method: str, params: dict[str, Any] | None) -> dict[str, Any]:
         handlers = {
@@ -92,25 +93,21 @@ class HarnessApp:
 
     def setup_get(self, params: dict[str, Any]) -> dict[str, Any]:
         SetupGetParams.model_validate(params)
-        config = self.repos.project_config.get()
+        project = self.repos.project.get()
         return SetupGetResult(
-            configured=config is not None,
-            config=config.model_dump() if config is not None else None,
+            configured=project is not None,
+            project=project.model_dump() if project is not None else None,
         ).model_dump()
 
     def setup_complete(self, params: dict[str, Any]) -> dict[str, Any]:
-        setup = SetupCompleteParams.model_validate(params)
-        config = self.repos.project_config.set(
-            research_context=setup.research_context,
-        )
+        SetupCompleteParams.model_validate(params)
+        project = self.repos.project.ensure()
         self.record_event(
             "setup.completed",
             "Configured project context",
-            payload={
-                "research_context": config.research_context,
-            },
+            payload={"project_id": project.id},
         )
-        return SetupCompleteResult(config=config.model_dump()).model_dump()
+        return SetupCompleteResult(project=project.model_dump()).model_dump()
 
     def collections_bootstrap(self, params: dict[str, Any]) -> dict[str, Any]:
         CollectionsBootstrapParams.model_validate(params)
@@ -139,40 +136,26 @@ class HarnessApp:
 
     def session_start(self, params: dict[str, Any]) -> dict[str, Any]:
         start = SessionStartParams.model_validate(params)
-        config = self.repos.project_config.get()
-        if config is None:
-            config = self.repos.project_config.set(
-                research_context=start.research_context,
-            )
+        project = self.repos.project.ensure()
 
         session_id = self.sessions_api.next_session_id().session_id
-        objective_id = f"objective_{session_id}"
-        objective = self.repos.objectives.create(
-            objective_id=objective_id,
-            title=start.objective,
-            description=start.objective,
-            associated_session_id=None,
-        )
         session = self.repos.sessions.create(
             session_id,
-            objective_id=objective.id,
-            objective=start.objective,
-            research_context=start.research_context,
+            project_id=project.id,
         )
-        objective = self.repos.objectives.update(
-            objective.id,
-            associated_session_id=session.id,
-        ) or objective
+        self._session_setup[session_id] = {
+            "objective": start.objective,
+            "research_context": start.research_context,
+        }
         event = self.record_event(
             "session.started",
             f"Started {session_id}",
             session_id=session_id,
             payload={
-                "objective_id": objective.id,
-                "objective": session.objective,
+                "objective": start.objective,
+                "research_context": start.research_context,
             },
         )
-        self.publish_record(objective, cursor=event.id)
         self.publish_record(session, cursor=event.id)
 
         self._start_session_thread(
@@ -195,6 +178,12 @@ class HarnessApp:
             session_id=resume.session_id,
         )
         self.publish_record(session, cursor=event.id)
+
+        self._session_setup.setdefault(
+            resume.session_id,
+            self._setup_from_records(resume.session_id),
+        )
+
         self._start_session_thread(
             session_id=resume.session_id,
             max_experiments=resume.max_experiments,
@@ -244,18 +233,20 @@ class HarnessApp:
 
     def _execute_session(self, session_id: str, max_experiments: int) -> None:
         try:
-            config = self.repos.project_config.get()
+            project = self.repos.project.get()
             session = self.repos.sessions.get(session_id)
-            if config is None or session is None:
+            if project is None or session is None:
                 raise RuntimeError("missing project setup")
-            objective = self.repos.objectives.get(session.objective_id)
-            if objective is None:
-                raise RuntimeError(f"missing session objective: {session.objective_id}")
 
-            with span("almanac.session.execute", session_id=session_id, workspace=config.repo_path):
+            setup = self._session_setup.get(session_id) or self._setup_from_records(
+                session_id
+            )
+
+            with span("almanac.session.execute", session_id=session_id, workspace=project.repo_path):
                 result = self._get_agent_runtime().run_session(
-                    config=config.model_dump(),
-                    objective=objective.model_dump(),
+                    project=project.model_dump(),
+                    setup_objective=setup.get("objective", ""),
+                    setup_research_context=setup.get("research_context", ""),
                     current_state=self.sessions_api.get_session(session_id).model_dump(),
                     session_id=session_id,
                     max_experiments=max_experiments,
@@ -287,6 +278,14 @@ class HarnessApp:
             )
             if session is not None:
                 self.publish_record(session, cursor=event.id)
+
+    def _setup_from_records(self, session_id: str) -> dict[str, str]:
+        objective = self.repos.objectives.get_for_session(session_id)
+        research_context = self.repos.research_contexts.get_for_session(session_id)
+        return {
+            "objective": objective.title if objective is not None else "",
+            "research_context": research_context.body if research_context is not None else "",
+        }
 
     def _get_agent_runtime(self) -> AgentRuntime:
         if self._agent_runtime is None:

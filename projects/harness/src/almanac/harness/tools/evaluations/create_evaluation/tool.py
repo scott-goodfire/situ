@@ -20,8 +20,6 @@ class CreateEvaluationTool(BaseAlmanacTool[AlmanacToolDeps, CreateEvaluationResu
         ctx: RunContext[AlmanacToolDeps],
         title: str,
         summary: str,
-        objective_id: str | None = None,
-        session_id: str | None = None,
         evaluation_id: str | None = None,
         associated_experiment_id: str | None = None,
         status: WorkStatus = WorkStatus.OPEN,
@@ -32,24 +30,16 @@ class CreateEvaluationTool(BaseAlmanacTool[AlmanacToolDeps, CreateEvaluationResu
         `status` must be `open`, `active`, or `closed`.
         """
         repos = ctx.deps.get_repos()
-        resolved_session_id = session_id or ctx.deps.session_id
-        resolved_objective_id = objective_id or _current_objective_id(
-            repos=repos,
-            session_id=resolved_session_id,
-        )
-        if resolved_objective_id is None:
-            raise ValueError("objective_id is required when there is no current session objective")
-
+        session_id = ctx.deps.session_id
         resolved_evaluation_id = evaluation_id or _next_evaluation_id(
             repos=repos,
-            session_id=resolved_session_id,
+            session_id=session_id,
         )
         evaluation = repos.evaluations.create(
             evaluation_id=resolved_evaluation_id,
-            objective_id=resolved_objective_id,
+            session_id=session_id,
             title=title,
             summary=summary,
-            associated_session_id=resolved_session_id,
             associated_experiment_id=associated_experiment_id,
             status=status,
         )
@@ -60,15 +50,6 @@ class CreateEvaluationTool(BaseAlmanacTool[AlmanacToolDeps, CreateEvaluationResu
         )
         ctx.deps.publish_record(evaluation, event=event)
         return CreateEvaluationResult(success=True, evaluation=evaluation.model_dump())
-
-
-def _current_objective_id(
-    *,
-    repos: Any,
-    session_id: str,
-) -> str | None:
-    session = repos.sessions.get(session_id)
-    return session.objective_id if session is not None else None
 
 
 def _next_evaluation_id(

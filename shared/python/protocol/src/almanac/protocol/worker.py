@@ -20,7 +20,6 @@ class ExperimentRunParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     session_id: str
-    objective_id: str
     experiment_id: str
     title: str
     summary: str
