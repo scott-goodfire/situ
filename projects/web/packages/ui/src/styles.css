@@ -244,6 +244,30 @@
   min-height: 96px;
 }
 
+.dx-contrastive-feature-diff,
+.dx-steering-dose-response {
+  display: grid;
+  gap: 10px;
+}
+
+.dx-contrastive-feature-diff__header {
+  display: grid;
+  gap: 2px;
+}
+
+.dx-contrastive-feature-diff__title,
+.dx-steering-dose-response__title {
+  color: var(--dx-color-text);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.dx-contrastive-feature-diff__legend {
+  color: var(--dx-color-muted);
+  font-family: var(--dx-font-mono);
+  font-size: 12px;
+}
+
 .dx-heatmap-grid {
   display: grid;
   gap: 10px;

@@ -13,5 +13,6 @@ class ObjectiveRecord(DbRecord):
     title: str
     description: str
     status: ObjectiveStatus
+    associated_session_id: str | None = None
     created_at: str
     updated_at: str

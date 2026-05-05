@@ -7,7 +7,7 @@ from pydantic import Field
 from ..base import DbRecord
 
 
-ActivityKind = Literal["comment", "update", "result", "concern", "decision"]
+ActivityKind = Literal["comment"]
 
 
 class HypothesisActivityRecord(DbRecord):

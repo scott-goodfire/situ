@@ -8,7 +8,7 @@ class CreateExperiment(RepositoryCommand):
     objective_id: str
     title: str
     summary: str
-    created_in_session_id: str | None = None
+    associated_session_id: str | None = None
     status: str = "open"
 
 
@@ -17,3 +17,4 @@ class UpdateExperiment(RepositoryCommand):
     title: str | None = None
     summary: str | None = None
     status: str | None = None
+    associated_session_id: str | None = None

@@ -68,6 +68,25 @@ If no local context exists, the TUI should run a slim setup flow:
 Avoid advanced setup screens for autonomy, budgets, directions, or guidance in
 the first slice.
 
+## Observability Visualizations
+
+Charts should start as compact observability components that explain what a
+session is learning. They should be useful in both the TUI and attach-only web
+surface, with shared TypeScript chart models underneath.
+
+For interpretability-heavy work, the first durable chart vocabulary is:
+
+- Token-feature activation matrices: which features fired on which tokens.
+- Steering dose-response curves: how behavior changes as steering strength
+  changes.
+- Contrastive feature differences: which features distinguish one dataset or
+  behavior slice from another.
+- Patching and attribution heatmaps: where interventions changed the outcome.
+- Contribution bars: which components or features contributed most.
+
+These components should stay small, data-first, and story-backed. Do not turn
+them into a full feature browser until the session data model needs that.
+
 ## Product Rule
 
 The TUI is the product surface and the observability output for now. Keep it

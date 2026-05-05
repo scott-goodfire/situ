@@ -34,7 +34,9 @@ and concerns correctly?
   scripted task behavior.
 - Use fixture worlds to control the environment, not to pre-script the agent's
   choices.
-- Make evals fail clearly when required model credentials are missing.
+- Make eval execution fail clearly when required model credentials are missing.
+- Eval discovery and listing may run without model or Logfire credentials, but
+  executing cases must require the relevant secrets.
 - Keep deterministic assertions in tests when no LLM judgment is needed.
 - Prefer deterministic evaluators around live LLM runs before adding LLM judges.
 - Use LLM judges only for semantic quality checks that deterministic assertions

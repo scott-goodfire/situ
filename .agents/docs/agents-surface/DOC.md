@@ -96,3 +96,13 @@ Use the Playwright Storybook screenshots skill when reviewing the web UI:
 
 It captures fixture-driven Storybook screenshots into `/tmp` and documents the
 Playwright MCP setup for interactive browser inspection.
+
+Use the run-and-verify evals skill when running live Almanac eval suites and
+checking Logfire:
+
+```text
+.agents/skills/run-and-verify-evals/SKILL.md
+```
+
+It documents local eval commands, required credentials, and the distinction
+between Logfire write tokens and read-token/UI verification.

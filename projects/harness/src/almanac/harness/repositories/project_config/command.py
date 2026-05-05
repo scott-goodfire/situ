@@ -1,11 +1,8 @@
 from __future__ import annotations
 
-from pydantic import Field
-
 from ..base.command import RepositoryCommand
 
 
 class SetProjectConfig(RepositoryCommand):
-    evaluation_context: str
-    known_signals: list[str] = Field(default_factory=list)
-    experiment_scope: str
+    research_context: str
+    associated_session_id: str | None = None

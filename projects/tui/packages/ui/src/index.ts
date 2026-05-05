@@ -11,6 +11,7 @@ export {
   type CommandMessage,
 } from "./components/command-input/command-input.js";
 export { ActivitySection } from "./components/activity-section/activity-section.js";
+export { ContrastiveFeatureDiff } from "./components/contrastive-feature-diff/contrastive-feature-diff.js";
 export { ContributionBars } from "./components/contribution-bars/contribution-bars.js";
 export { ExperimentsSection } from "./components/experiments-section/experiments-section.js";
 export { HeatmapGrid } from "./components/heatmap-grid/heatmap-grid.js";
@@ -18,5 +19,7 @@ export { HypothesesSection } from "./components/hypotheses-section/hypotheses-se
 export { MetricTrend } from "./components/metric-trend/metric-trend.js";
 export { NowSection } from "./components/now-section/now-section.js";
 export { SessionSection } from "./components/session-section/session-section.js";
+export { SteeringDoseResponse } from "./components/steering-dose-response/steering-dose-response.js";
 export { Section } from "./components/section/section.js";
 export { TimelineSection } from "./components/timeline-section/timeline-section.js";
+export { TokenFeatureMatrix } from "./components/token-feature-matrix/token-feature-matrix.js";

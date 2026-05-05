@@ -11,8 +11,8 @@ Run:
 ./commands/check.sh
 ```
 
-This performs Python syntax checks, regenerates protocol artifacts, and runs the
-TypeScript typechecks.
+This performs Python syntax checks, runs the Python pytest suite, regenerates
+protocol artifacts, and runs the TypeScript typechecks and package tests.
 
 ## Repository Layer
 
@@ -116,16 +116,33 @@ ObjectiveRecord
 SessionRecord
 HypothesisRecord
 ExperimentRecord
+HypothesisExperimentLinkRecord
 HypothesisActivityRecord
 ExperimentActivityRecord
+ArtifactRecord
 EventRecord
 ```
+
+## Agent Tool Evals
+
+The eval runner is opt-in because it makes real model calls:
+
+```bash
+./commands/evals.sh --list
+./commands/evals.sh evals/suites/tool_use/research_tools/eval_group.py
+```
+
+`--list` should work without model or Logfire credentials. Executing eval cases
+requires the eval secrets described in
+[evals-strategy](../evals-strategy/DOC.md). The research-tool suite uses
+temporary SQLite session worlds and the real Almanac research toolset, so it is
+the right smoke when changing Pydantic AI tools, toolsets, or tool-call capture.
 
 ## What To Add Next
 
 The next durable test improvements should be:
 
-- A small Python repository test script or pytest suite using temp SQLite.
-- A protocol validation check for `CurrentStateService(repos=repos).get()`.
 - A non-interactive smoke test that runs the harness without rendering the TUI.
 - A regression test for suspicious result concern activities.
+- A deterministic test for `SessionsService(repos=repos).get_session(...)`
+  across multiple sessions once cross-session links become possible.

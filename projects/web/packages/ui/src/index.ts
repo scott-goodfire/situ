@@ -1,4 +1,5 @@
 export { BucketBars } from "./components/bucket-bars/bucket-bars";
+export { ContrastiveFeatureDiff } from "./components/contrastive-feature-diff/contrastive-feature-diff";
 export { ContributionBars } from "./components/contribution-bars/contribution-bars";
 export { DxBadge, type DxBadgeTone } from "./components/dx-badge/dx-badge";
 export { DxButton, type DxButtonProps } from "./components/dx-button/dx-button";
@@ -8,3 +9,5 @@ export { DxTable, type DxTableColumn } from "./components/dx-table/dx-table";
 export { DxTextField, type DxTextFieldProps } from "./components/dx-text-field/dx-text-field";
 export { HeatmapGrid } from "./components/heatmap-grid/heatmap-grid";
 export { MetricTrend } from "./components/metric-trend/metric-trend";
+export { SteeringDoseResponse } from "./components/steering-dose-response/steering-dose-response";
+export { TokenFeatureMatrix } from "./components/token-feature-matrix/token-feature-matrix";

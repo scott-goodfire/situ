@@ -8,7 +8,7 @@ import type {
   SessionRecord,
 } from "@almanac/protocol";
 
-export const storyWorkspace = "/Users/scott-goodfire/sandbox/support-agent";
+export const storyWorkspace = "/Users/almanac/sandbox/support-agent";
 export const maxExperimentCount = 5;
 
 export const activeObjective = objectiveRecord({});

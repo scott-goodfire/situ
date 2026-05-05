@@ -166,7 +166,7 @@ The first durable records should look more like envelopes than taxonomies:
 
 ```text
 Objective
-  id, title, description, status
+  id, title, description, status, associated_session_id?
 
 Session
   id, objective_id, status
@@ -178,16 +178,22 @@ AgentMessageHistory
   id, session_id, agent_name, pydantic_run_id?, conversation_id?, messages_json
 
 Hypothesis
-  id, objective_id, title, summary, status
+  id, objective_id, title, summary, status, associated_session_id?
 
 Experiment
-  id, objective_id, title, summary, status
+  id, objective_id, title, summary, status, associated_session_id?
 
 Activity
-  id, target_id, session_id?, actor, kind, body, payload
+  id, target_id, session_id?, actor, kind=comment, body, payload
 
 Artifact
-  id, objective_id, experiment_id?, activity_id?, kind, path
+  id, objective_id, associated_session_id?, associated_entity_kind, associated_entity_id, kind, path
+
+ProjectConfig
+  id, repo_path, research_context, associated_session_id?
+
+HypothesisExperimentLink
+  hypothesis_id, experiment_id
 ```
 
 The exact implementation can differ, but the principle should hold: keep the

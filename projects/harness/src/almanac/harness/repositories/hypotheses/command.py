@@ -9,6 +9,7 @@ class CreateHypothesis(RepositoryCommand):
     title: str
     summary: str
     status: str = "open"
+    associated_session_id: str | None = None
 
 
 class UpdateHypothesis(RepositoryCommand):
@@ -16,3 +17,4 @@ class UpdateHypothesis(RepositoryCommand):
     title: str | None = None
     summary: str | None = None
     status: str | None = None
+    associated_session_id: str | None = None

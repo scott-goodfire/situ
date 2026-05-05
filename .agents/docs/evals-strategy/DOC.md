@@ -37,7 +37,8 @@ tests are deterministic, while evals exercise live model behavior.
 
 Follow Pydantic Evals and Logfire defaults where they fit:
 
-- Configure Logfire before eval discovery and task execution.
+- Configure Logfire before eval task execution. Eval discovery and `--list`
+  should not require model or Logfire credentials.
 - Send eval runs to Logfire by default; eval commands should not require a
   per-run send-mode override.
 - Load only eval secrets from user environment: `ALMANAC_OPENAI_KEY` for the
@@ -70,6 +71,9 @@ Good first targets:
 - The planner starts with baseline result activity.
 - The planner explores simple variants before over-committing.
 - The planner combines promising hypothesis/experiment activity.
+- The research-tool agent reads compact session context with `get_session`.
+- The research-tool agent uses explicit model-shaped tools for hypotheses,
+  experiments, links, comments, activities, and artifacts.
 - Suspicious wins are not treated as accepted progress.
 - Interpretations are grounded in recorded activities and artifacts.
 - Tool calls happen in a sensible order.
@@ -83,10 +87,13 @@ while typed envelopes preserve execution and observability guarantees.
 
 A world is a fixture-backed simulation of the thing Almanac is researching.
 
-Initial world:
+Initial worlds:
 
 - `micrograd`: baseline, variants, combinations, and suspicious results based
   on the existing micrograd sandbox.
+- `research_session`: temporary SQLite session worlds seeded with objective,
+  session, hypothesis, experiment, activity, and artifact state. This world
+  exercises the actual Almanac research toolset through Pydantic AI.
 
 Future worlds can include `toy_autoresearch` for even faster synthetic local
 smoke tests. Worlds may be fully mocked at first. Later, they can call real

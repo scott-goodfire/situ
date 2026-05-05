@@ -6,11 +6,9 @@ from ..base import DbRecord
 class ArtifactRecord(DbRecord):
     id: str
     objective_id: str
-    session_id: str | None = None
-    hypothesis_id: str | None = None
-    experiment_id: str | None = None
-    hypothesis_activity_id: int | None = None
-    experiment_activity_id: int | None = None
+    associated_session_id: str | None = None
+    associated_entity_kind: str
+    associated_entity_id: str
     kind: str
     title: str
     path: str

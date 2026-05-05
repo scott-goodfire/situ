@@ -14,6 +14,6 @@ class ExperimentRecord(DbRecord):
     status: WorkStatus
     title: str
     summary: str
-    created_in_session_id: str | None = None
+    associated_session_id: str | None = None
     created_at: str
     updated_at: str

@@ -95,6 +95,69 @@ export type NormalizedSignedContribution = SignedContribution & {
   magnitudeRatio: number;
 };
 
+export type TokenFeatureToken = {
+  id: string;
+  label: string;
+  position?: number;
+};
+
+export type TokenFeature = {
+  id: string;
+  label: string;
+  group?: string;
+};
+
+export type TokenFeatureActivation = {
+  id: string;
+  tokenId: string;
+  featureId: string;
+  value: number;
+  label?: string;
+};
+
+export type TokenFeatureMatrix = {
+  id: string;
+  label: string;
+  tokens: TokenFeatureToken[];
+  features: TokenFeature[];
+  activations: TokenFeatureActivation[];
+  valueLabel?: string;
+};
+
+export type SteeringDosePoint = {
+  id: string;
+  label: string;
+  strength: number;
+  value: number;
+  tone?: ChartTone;
+};
+
+export type SteeringDoseResponse = {
+  id: string;
+  label: string;
+  metricLabel: string;
+  direction: MetricDirection;
+  points: SteeringDosePoint[];
+  unit?: string;
+  precision?: number;
+};
+
+export type ContrastiveFeatureDifference = {
+  id: string;
+  label: string;
+  value: number;
+  featureId?: string;
+  group?: string;
+};
+
+export type ContrastiveFeatureSet = {
+  id: string;
+  label: string;
+  leftLabel: string;
+  rightLabel: string;
+  differences: ContrastiveFeatureDifference[];
+};
+
 export function summarizeMetricSeries({
   series,
 }: {
@@ -240,6 +303,66 @@ export function normalizeSignedContributions({
       value: contribution.value,
       maxMagnitude,
     }),
+  }));
+}
+
+export function heatmapFromTokenFeatureMatrix({
+  matrix,
+}: {
+  matrix: TokenFeatureMatrix;
+}): HeatmapMatrix {
+  return {
+    id: matrix.id,
+    label: matrix.label,
+    valueLabel: matrix.valueLabel,
+    rows: matrix.features.map((feature) => ({
+      id: feature.id,
+      label: feature.label,
+    })),
+    columns: matrix.tokens.map((token) => ({
+      id: token.id,
+      label: token.label,
+    })),
+    cells: matrix.activations.map((activation) => ({
+      id: activation.id,
+      rowId: activation.featureId,
+      columnId: activation.tokenId,
+      value: activation.value,
+      label: activation.label,
+    })),
+  };
+}
+
+export function metricSeriesFromSteeringDoseResponse({
+  response,
+}: {
+  response: SteeringDoseResponse;
+}): MetricSeries {
+  return {
+    id: response.id,
+    label: response.metricLabel,
+    direction: response.direction,
+    unit: response.unit,
+    precision: response.precision,
+    points: response.points.map((point) => ({
+      id: point.id,
+      label: point.label,
+      value: point.value,
+      tone: point.tone,
+    })),
+  };
+}
+
+export function signedContributionsFromContrastiveFeatures({
+  featureSet,
+}: {
+  featureSet: ContrastiveFeatureSet;
+}): SignedContribution[] {
+  return featureSet.differences.map((difference) => ({
+    id: difference.id,
+    label: difference.label,
+    value: difference.value,
+    group: difference.group,
   }));
 }
 

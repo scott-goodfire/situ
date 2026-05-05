@@ -1,15 +1,21 @@
 import { expect, test } from "bun:test";
 import {
   formatMetricDelta,
+  heatmapFromTokenFeatureMatrix,
   heatmapCellFor,
+  metricSeriesFromSteeringDoseResponse,
   normalizeBuckets,
   normalizeHeatmapMatrix,
   normalizeMetricSeries,
   normalizeSignedContributions,
+  signedContributionsFromContrastiveFeatures,
   summarizeMetricSeries,
+  type ContrastiveFeatureSet,
   type HeatmapMatrix,
   type MetricSeries,
   type SignedContribution,
+  type SteeringDoseResponse,
+  type TokenFeatureMatrix,
 } from "./index.js";
 
 const scoreSeries = {
@@ -158,5 +164,115 @@ test("sorts signed contributions by magnitude", () => {
   expect(normalized.map((contribution) => contribution.magnitudeRatio)).toEqual([
     1,
     0.3333333333333333,
+  ]);
+});
+
+test("converts token-feature activations to heatmap cells", () => {
+  const matrix = {
+    id: "token-features",
+    label: "Token features",
+    tokens: [
+      {
+        id: "tok-0",
+        label: "Hello",
+      },
+      {
+        id: "tok-1",
+        label: "world",
+      },
+    ],
+    features: [
+      {
+        id: "feat-1",
+        label: "Greeting",
+      },
+    ],
+    activations: [
+      {
+        id: "feat-1-tok-0",
+        featureId: "feat-1",
+        tokenId: "tok-0",
+        value: 0.72,
+      },
+    ],
+  } satisfies TokenFeatureMatrix;
+
+  const heatmap = heatmapFromTokenFeatureMatrix({ matrix });
+
+  expect(heatmap.rows.map((row) => row.id)).toEqual(["feat-1"]);
+  expect(heatmap.columns.map((column) => column.id)).toEqual(["tok-0", "tok-1"]);
+  expect(heatmap.cells[0]).toMatchObject({
+    rowId: "feat-1",
+    columnId: "tok-0",
+    value: 0.72,
+  });
+});
+
+test("converts steering dose response to metric series", () => {
+  const response = {
+    id: "concise",
+    label: "Conciseness steering",
+    metricLabel: "Mean response length",
+    direction: "down",
+    unit: " tokens",
+    points: [
+      {
+        id: "zero",
+        label: "0.0",
+        strength: 0,
+        value: 180,
+      },
+      {
+        id: "half",
+        label: "0.5",
+        strength: 0.5,
+        value: 124,
+      },
+    ],
+  } satisfies SteeringDoseResponse;
+
+  const series = metricSeriesFromSteeringDoseResponse({ response });
+  const summary = summarizeMetricSeries({ series });
+
+  expect(series.label).toBe("Mean response length");
+  expect(summary.trend).toBe("improved");
+  expect(summary.delta).toBe(-56);
+});
+
+test("converts contrastive features to signed contributions", () => {
+  const featureSet = {
+    id: "formal-vs-casual",
+    label: "Formal vs casual",
+    leftLabel: "formal",
+    rightLabel: "casual",
+    differences: [
+      {
+        id: "feature-1",
+        label: "Legal boilerplate",
+        value: 0.66,
+      },
+      {
+        id: "feature-2",
+        label: "Emoji-heavy tone",
+        value: -0.42,
+      },
+    ],
+  } satisfies ContrastiveFeatureSet;
+
+  const contributions = signedContributionsFromContrastiveFeatures({ featureSet });
+
+  expect(contributions).toEqual([
+    {
+      id: "feature-1",
+      label: "Legal boilerplate",
+      value: 0.66,
+      group: undefined,
+    },
+    {
+      id: "feature-2",
+      label: "Emoji-heavy tone",
+      value: -0.42,
+      group: undefined,
+    },
   ]);
 });

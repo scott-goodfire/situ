@@ -43,6 +43,9 @@ Use [.agents/skills/playwright-storybook-screenshots/SKILL.md](./.agents/skills/
 when inspecting web UI with Playwright, capturing Storybook screenshots, or
 using the Playwright MCP server for browser-driven review.
 
+Use [.agents/skills/run-and-verify-evals/SKILL.md](./.agents/skills/run-and-verify-evals/SKILL.md)
+when running Almanac eval suites and verifying their local and Logfire results.
+
 Routine command surface should eventually live in `mise.toml`, with reusable
 scripts in `commands/`, following the pattern from the reference Almanac
 prototype.

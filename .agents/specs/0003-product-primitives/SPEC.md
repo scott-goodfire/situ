@@ -26,13 +26,21 @@ A first objective needs title/description plus lightweight evaluation context:
 how progress is judged, what signals or artifacts matter, and what kinds of
 experiments are in scope.
 
-## Evaluation Context
+Objectives may carry an optional `associated_session_id` as provenance when
+they are created or revised during a session. This is not ownership; objectives
+remain durable across sessions.
+
+## Research Context
 
 A plain-language description of how progress is judged.
 
 It can include commands, tools, dashboards, metrics, eval suites, logs, cluster
 jobs, notebooks, or human review criteria. Do not require the user to reduce
 this to one command or one metric during onboarding.
+
+Keep this as one LLM-friendly field in the first slice. Do not split it into
+separate required fields for eval commands, known signals, metric names, and
+experiment scope until the product proves those boundaries are stable.
 
 ## Session
 
@@ -50,6 +58,10 @@ Hypotheses should be lightweight and status-light. A hypothesis can be open,
 active, or closed. Whether it is promising, weakened, suspicious, or mostly
 supported should be explained through activities rather than status explosion.
 
+Hypotheses may carry an optional `associated_session_id` to show which session
+introduced or last contextualized them. They should still be considered part of
+the objective, not owned by a single session.
+
 ## Experiment
 
 One concrete attempt: a change, probe, eval run, analysis, or test.
@@ -57,6 +69,10 @@ One concrete attempt: a change, probe, eval run, analysis, or test.
 Experiments should also be status-light: open, active, or closed. Details such
 as failure, suspiciousness, reproduction, or interpretation should be expressed
 as experiment activities.
+
+Experiments may carry an optional `associated_session_id` for the session that
+introduced them. This supports session filtering without making sessions the
+main product object.
 
 Do not add `Variant` as a first-class model yet. Use experiment summaries,
 activity bodies, artifacts, and links to express baseline + A, baseline + B,
@@ -67,24 +83,21 @@ A + C, or partial-C style combinations.
 A lightweight many-to-many link between hypotheses and experiments.
 
 One experiment may test multiple hypotheses, and one hypothesis may require many
-experiments. Keep the first link shape simple: the linked IDs and an optional
-note are enough.
+experiments. Keep the first link shape simple: the linked IDs and created time
+are enough. Put explanation in hypothesis or experiment activities.
 
 ## Activity
 
 The main collaboration primitive.
 
-Activities are typed timeline entries attached to hypotheses or experiments.
-They replace standalone evidence, finding, warning, and decision models in the
-first slice.
+Activities are timeline entries attached to hypotheses or experiments. They
+replace standalone evidence, finding, warning, and decision models in the first
+slice.
 
-First activity kinds:
-
-- `comment`
-- `update`
-- `result`
-- `concern`
-- `decision`
+The first slice uses only `comment` as the activity kind. Results, concerns,
+interpretations, plans, and decisions are written as comments. Structured
+payloads may label those comments for views or agents when useful, but the
+human-readable body is the source of truth.
 
 The activity body should remain human-readable. Structured payloads can hold
 metrics, eval outputs, artifact IDs, or machine-readable details when useful.
@@ -96,6 +109,17 @@ A receipt produced by the loop.
 Artifacts are file-like or bulky outputs that activities reference: raw eval
 JSON, logs, diffs, patches, screenshots, traces, samples, or reproduction
 bundles. Activities explain what happened; artifacts preserve the thing.
+
+Artifacts attach through a generic association:
+
+```text
+associated_entity_kind
+associated_entity_id
+associated_session_id?
+```
+
+This keeps artifact storage simple while still allowing artifacts to attach to a
+session, objective, hypothesis, experiment, or activity.
 
 ## Event
 

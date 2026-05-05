@@ -12,5 +12,4 @@ class AgentMessageHistoryRecord(DbRecord):
     pydantic_run_id: str | None = None
     conversation_id: str | None = None
     messages: list[dict[str, Any]]
-    message_count: int
     created_at: str
