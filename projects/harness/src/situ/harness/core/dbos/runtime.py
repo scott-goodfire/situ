@@ -36,6 +36,13 @@ def launch_dbos() -> None:
     _LAUNCHED = True
 
 
+def reset_dbos_for_tests() -> None:
+    global _CONFIGURED, _LAUNCHED
+    DBOS.destroy(workflow_completion_timeout_sec=0)
+    _CONFIGURED = False
+    _LAUNCHED = False
+
+
 def sqlite_url(path: Path) -> str:
     return f"sqlite:///{path.resolve().as_posix()}"
 
