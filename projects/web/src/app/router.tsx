@@ -10,6 +10,8 @@ import { ProjectIndex } from "../features/project-index/project-index";
 import { ProjectMonitor } from "../features/project-monitor/project-monitor";
 import { AgentDetailPage } from "../features/project-workspace/agents/agent-detail-page";
 import { AgentsPage } from "../features/project-workspace/agents/agents-page";
+import { AnalysisDetailPage } from "../features/project-workspace/analyses/analysis-detail-page";
+import { AnalysesPage } from "../features/project-workspace/analyses/analyses-page";
 import { useProjectWorkspaceData } from "../features/project-workspace/context";
 import { EventsPage } from "../features/project-workspace/events/events-page";
 import { EvaluationDetailPage } from "../features/project-workspace/evaluations/evaluation-detail-page";
@@ -19,6 +21,8 @@ import { ExperimentsPage } from "../features/project-workspace/experiments/exper
 import { HypothesisDetailPage } from "../features/project-workspace/hypotheses/hypothesis-detail-page";
 import { HypothesesPage } from "../features/project-workspace/hypotheses/hypotheses-page";
 import { OverviewPage } from "../features/project-workspace/overview/overview-page";
+import { TaskDetailPage } from "../features/project-workspace/tasks/task-detail-page";
+import { TasksPage } from "../features/project-workspace/tasks/tasks-page";
 
 const rootRoute = createRootRoute({
   component: RootLayout,
@@ -97,6 +101,30 @@ const projectEventsRoute = createRoute({
   component: ProjectEventsRoute,
 });
 
+const projectAnalysesRoute = createRoute({
+  getParentRoute: () => projectRoute,
+  path: "analyses",
+  component: ProjectAnalysesRoute,
+});
+
+const projectAnalysisRoute = createRoute({
+  getParentRoute: () => projectRoute,
+  path: "analyses/$analysisId",
+  component: ProjectAnalysisRoute,
+});
+
+const projectTasksRoute = createRoute({
+  getParentRoute: () => projectRoute,
+  path: "tasks",
+  component: ProjectTasksRoute,
+});
+
+const projectTaskRoute = createRoute({
+  getParentRoute: () => projectRoute,
+  path: "tasks/$taskId",
+  component: ProjectTaskRoute,
+});
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   projectRoute.addChildren([
@@ -110,6 +138,10 @@ const routeTree = rootRoute.addChildren([
     projectAgentsRoute,
     projectAgentRoute,
     projectEventsRoute,
+    projectAnalysesRoute,
+    projectAnalysisRoute,
+    projectTasksRoute,
+    projectTaskRoute,
   ]),
 ]);
 
@@ -189,6 +221,32 @@ function ProjectEventsRoute() {
   const data = useProjectWorkspaceData();
 
   return <EventsPage data={data} />;
+}
+
+function ProjectAnalysesRoute() {
+  const data = useProjectWorkspaceData();
+
+  return <AnalysesPage data={data} />;
+}
+
+function ProjectAnalysisRoute() {
+  const data = useProjectWorkspaceData();
+  const { analysisId } = projectAnalysisRoute.useParams();
+
+  return <AnalysisDetailPage data={data} analysisId={analysisId} />;
+}
+
+function ProjectTasksRoute() {
+  const data = useProjectWorkspaceData();
+
+  return <TasksPage data={data} />;
+}
+
+function ProjectTaskRoute() {
+  const data = useProjectWorkspaceData();
+  const { taskId } = projectTaskRoute.useParams();
+
+  return <TaskDetailPage data={data} taskId={taskId} />;
 }
 
 function NotFoundRoute() {

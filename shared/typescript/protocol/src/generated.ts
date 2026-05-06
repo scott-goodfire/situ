@@ -89,6 +89,20 @@ export interface EvaluationRecord {
   updated_at: string;
 }
 
+export interface AnalysisRecord {
+  id: string;
+  project_id: string;
+  created_in_session_id?: string | null;
+  created_by_agent_id?: string | null;
+  status: "open" | "active" | "closed";
+  title: string;
+  summary: string;
+  content: string;
+  supersedes_analysis_id?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface HypothesisExperimentLinkRecord {
   hypothesis_id: string;
   experiment_id: string;
@@ -142,7 +156,7 @@ export interface TaskDependencyRecord {
 export interface TaskEntityLinkRecord {
   project_id: string;
   task_id: string;
-  entity_kind: "hypothesis" | "experiment" | "evaluation" | "artifact" | "hypothesis_activity" | "experiment_activity" | "evaluation_activity" | "task_activity" | "event";
+  entity_kind: "analysis" | "hypothesis" | "experiment" | "evaluation" | "artifact" | "analysis_activity" | "hypothesis_activity" | "experiment_activity" | "evaluation_activity" | "task_activity" | "event";
   entity_id: string;
   relationship: string;
   created_at: string;
@@ -154,6 +168,17 @@ export interface TaskActivityRecord {
   task_id: string;
   created_in_session_id?: string | null;
   actor_agent_id?: string | null;
+  actor: string;
+  kind: "comment";
+  body: string;
+  payload?: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface AnalysisActivityRecord {
+  id: number;
+  analysis_id: string;
+  created_in_session_id?: string | null;
   actor: string;
   kind: "comment";
   body: string;
@@ -188,7 +213,7 @@ export interface EvaluationActivityRecord {
   evaluation_id: string;
   created_in_session_id?: string | null;
   actor: string;
-  kind: "comment";
+  kind: "result";
   body: string;
   payload?: Record<string, unknown>;
   created_at: string;
@@ -253,12 +278,14 @@ export interface CollectionsBootstrapResult {
   hypotheses: HypothesisRecord[];
   experiments: ExperimentRecord[];
   evaluations: EvaluationRecord[];
+  analyses?: AnalysisRecord[];
   hypothesis_experiment_links: HypothesisExperimentLinkRecord[];
   agents?: AgentRecord[];
   tasks?: TaskRecord[];
   task_dependencies?: TaskDependencyRecord[];
   task_entity_links?: TaskEntityLinkRecord[];
   task_activities?: TaskActivityRecord[];
+  analysis_activities?: AnalysisActivityRecord[];
   hypothesis_activities: HypothesisActivityRecord[];
   experiment_activities: ExperimentActivityRecord[];
   evaluation_activities: EvaluationActivityRecord[];
@@ -276,7 +303,7 @@ export interface CollectionsSubscribeResult {
 
 export interface CollectionUpsertedParams {
   cursor: number;
-  collection: "workspaces" | "projects" | "sessions" | "hypotheses" | "experiments" | "evaluations" | "hypothesis_experiment_links" | "agents" | "tasks" | "task_dependencies" | "task_entity_links" | "task_activities" | "hypothesis_activities" | "experiment_activities" | "evaluation_activities" | "artifacts" | "events";
+  collection: "workspaces" | "projects" | "sessions" | "hypotheses" | "experiments" | "evaluations" | "analyses" | "hypothesis_experiment_links" | "agents" | "tasks" | "task_dependencies" | "task_entity_links" | "task_activities" | "analysis_activities" | "hypothesis_activities" | "experiment_activities" | "evaluation_activities" | "artifacts" | "events";
   key: string;
   record: Record<string, unknown>;
 }

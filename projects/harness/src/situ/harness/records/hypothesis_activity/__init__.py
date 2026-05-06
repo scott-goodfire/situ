@@ -1,3 +1,3 @@
-from .record import ActivityKind, HypothesisActivityRecord
+from .record import HypothesisActivityKind, HypothesisActivityRecord
 
-__all__ = ["ActivityKind", "HypothesisActivityRecord"]
+__all__ = ["HypothesisActivityKind", "HypothesisActivityRecord"]

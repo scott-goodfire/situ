@@ -8,7 +8,7 @@ from pydantic import Field
 from ..base import DbRecord
 
 
-class ActivityKind(StrEnum):
+class HypothesisActivityKind(StrEnum):
     COMMENT = "comment"
 
 
@@ -17,7 +17,7 @@ class HypothesisActivityRecord(DbRecord):
     hypothesis_id: str
     created_in_session_id: str | None = None
     actor: str
-    kind: ActivityKind
+    kind: HypothesisActivityKind
     body: str
     payload: dict[str, Any] = Field(default_factory=dict)
     created_at: str

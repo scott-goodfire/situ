@@ -1,5 +1,7 @@
 from .agents import AgentsRepository
 from .agent_message_history import AgentMessageHistoryRepository
+from .analyses import AnalysesRepository
+from .analysis_activities import AnalysisActivitiesRepository
 from .artifacts import ArtifactsRepository
 from .base import BaseRepository
 from .events import EventsRepository
@@ -22,6 +24,8 @@ from .workspaces import WorkspacesRepository
 __all__ = [
     "AgentsRepository",
     "AgentMessageHistoryRepository",
+    "AnalysesRepository",
+    "AnalysisActivitiesRepository",
     "ArtifactsRepository",
     "BaseRepository",
     "EventsRepository",

@@ -5,6 +5,8 @@ from pydantic import BaseModel, ConfigDict
 from ..core.db import Database
 from .agents import AgentsRepository
 from .agent_message_history import AgentMessageHistoryRepository
+from .analyses import AnalysesRepository
+from .analysis_activities import AnalysisActivitiesRepository
 from .artifacts import ArtifactsRepository
 from .events import EventsRepository
 from .evaluation_activities import EvaluationActivitiesRepository
@@ -34,6 +36,8 @@ class Repositories(BaseModel):
     task_dependencies: TaskDependenciesRepository
     task_entity_links: TaskEntityLinksRepository
     task_activities: TaskActivitiesRepository
+    analyses: AnalysesRepository
+    analysis_activities: AnalysisActivitiesRepository
     hypotheses: HypothesesRepository
     experiments: ExperimentsRepository
     evaluations: EvaluationsRepository
@@ -56,6 +60,8 @@ class Repositories(BaseModel):
             task_dependencies=TaskDependenciesRepository(db=db),
             task_entity_links=TaskEntityLinksRepository(db=db),
             task_activities=TaskActivitiesRepository(db=db),
+            analyses=AnalysesRepository(db=db),
+            analysis_activities=AnalysisActivitiesRepository(db=db),
             hypotheses=HypothesesRepository(db=db),
             experiments=ExperimentsRepository(db=db),
             evaluations=EvaluationsRepository(db=db),

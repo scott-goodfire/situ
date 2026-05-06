@@ -12,7 +12,11 @@ from evals.worlds.research_session.models import (
     ResearchToolEvalInput,
     ResearchToolEvalOutput,
 )
-from evals.worlds.research_session.world import ResearchSessionWorld, SESSION_ID
+from evals.worlds.research_session.world import (
+    SCIENTIST_AGENT_ID,
+    SESSION_ID,
+    ResearchSessionWorld,
+)
 
 RESEARCH_TOOL_AGENT_NAME = "situ-research-tool-eval-agent"
 RESEARCH_TOOL_AGENT_INSTRUCTIONS = inspect.cleandoc(
@@ -33,7 +37,9 @@ def run_research_tool_agent(args: ResearchToolEvalInput) -> ResearchToolEvalOutp
     try:
         deps = SituToolDeps(
             session_id=SESSION_ID,
+            agent_id=SCIENTIST_AGENT_ID if args.seed != "projectless" else None,
             repos=world.repos,
+            repo_path=str(world.repo_path),
             emit_event=world.emit_event,
         )
         agent = _build_agent(capture)

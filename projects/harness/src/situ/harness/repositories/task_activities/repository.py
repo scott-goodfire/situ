@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from ...core.db.serialization import json_dumps, json_loads, utc_now
-from ...records import TaskActivityRecord
+from ...records import TaskActivityKind, TaskActivityRecord
 from ..base import BaseRepository
 from .command import AddTaskActivity
 
@@ -30,7 +30,7 @@ class TaskActivitiesRepository(BaseRepository):
         project_id: str,
         task_id: str,
         actor: str,
-        kind: str,
+        kind: TaskActivityKind | str,
         body: str,
         created_in_session_id: str | None = None,
         actor_agent_id: str | None = None,

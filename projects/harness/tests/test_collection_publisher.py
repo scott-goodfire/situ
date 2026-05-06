@@ -11,6 +11,8 @@ from situ.harness.core.notifications import (
 )
 from situ.harness.records import (
     AgentRecord,
+    AnalysisActivityRecord,
+    AnalysisRecord,
     ArtifactRecord,
     EventRecord,
     EvaluationActivityRecord,
@@ -42,6 +44,7 @@ def test_collection_routes_cover_publishable_records() -> None:
         (hypothesis_record(), "hypotheses", "hyp_0001"),
         (experiment_record(), "experiments", "exp_0001"),
         (evaluation_record(), "evaluations", "eval_0001"),
+        (analysis_record(), "analyses", "analysis_0001"),
         (
             HypothesisExperimentLinkRecord(
                 hypothesis_id="hyp_0001",
@@ -64,6 +67,7 @@ def test_collection_routes_cover_publishable_records() -> None:
             "task_0001:evaluation:eval_0001:created",
         ),
         (task_activity_record(), "task_activities", "5"),
+        (analysis_activity_record(), "analysis_activities", "6"),
         (hypothesis_activity_record(), "hypothesis_activities", "1"),
         (experiment_activity_record(), "experiment_activities", "2"),
         (evaluation_activity_record(), "evaluation_activities", "4"),
@@ -259,6 +263,35 @@ def evaluation_record() -> EvaluationRecord:
     )
 
 
+def analysis_record() -> AnalysisRecord:
+    return AnalysisRecord(
+        id="analysis_0001",
+        project_id="project_0001",
+        created_in_session_id="session_0001",
+        created_by_agent_id="agent_0001",
+        status="active",
+        title="Codebase map",
+        summary="Mapped the main backend primitives.",
+        content="The backend stores project-owned research records.",
+        supersedes_analysis_id=None,
+        created_at="now",
+        updated_at="now",
+    )
+
+
+def analysis_activity_record() -> AnalysisActivityRecord:
+    return AnalysisActivityRecord(
+        id=6,
+        analysis_id="analysis_0001",
+        created_in_session_id="session_0001",
+        actor="agent",
+        kind="comment",
+        body="This note should feed hypothesis generation.",
+        payload={},
+        created_at="now",
+    )
+
+
 def hypothesis_activity_record() -> HypothesisActivityRecord:
     return HypothesisActivityRecord(
         id=1,
@@ -291,7 +324,7 @@ def evaluation_activity_record() -> EvaluationActivityRecord:
         evaluation_id="eval_0001",
         created_in_session_id="session_0001",
         actor="agent",
-        kind="comment",
+        kind="result",
         body="Baseline result.",
         payload={"activity_type": "result"},
         created_at="now",

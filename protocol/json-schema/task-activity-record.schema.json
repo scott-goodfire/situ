@@ -1,10 +1,10 @@
 {
   "$defs": {
-    "ActivityKind": {
+    "TaskActivityKind": {
       "enum": [
         "comment"
       ],
-      "title": "ActivityKind",
+      "title": "TaskActivityKind",
       "type": "string"
     }
   },
@@ -51,7 +51,7 @@
       "type": "string"
     },
     "kind": {
-      "$ref": "#/$defs/ActivityKind"
+      "$ref": "#/$defs/TaskActivityKind"
     },
     "body": {
       "title": "Body",

@@ -15,6 +15,8 @@ from situ.harness.api.current_state.schemas import CurrentStateSchema
 from situ.harness.api.sessions.schemas import SessionGraphSchema
 from situ.harness.records import (
     AgentRecord,
+    AnalysisActivityRecord,
+    AnalysisRecord,
     ArtifactRecord,
     EventRecord,
     EvaluationActivityRecord,
@@ -49,6 +51,7 @@ PUBLISHABLE_RECORDS: dict[str, tuple[type[DbRecord], type]] = {
     "hypotheses": (HypothesisRecord, protocol.HypothesisRecord),
     "experiments": (ExperimentRecord, protocol.ExperimentRecord),
     "evaluations": (EvaluationRecord, protocol.EvaluationRecord),
+    "analyses": (AnalysisRecord, protocol.AnalysisRecord),
     "hypothesis_experiment_links": (
         HypothesisExperimentLinkRecord,
         protocol.HypothesisExperimentLinkRecord,
@@ -58,6 +61,10 @@ PUBLISHABLE_RECORDS: dict[str, tuple[type[DbRecord], type]] = {
     "task_dependencies": (TaskDependencyRecord, protocol.TaskDependencyRecord),
     "task_entity_links": (TaskEntityLinkRecord, protocol.TaskEntityLinkRecord),
     "task_activities": (TaskActivityRecord, protocol.TaskActivityRecord),
+    "analysis_activities": (
+        AnalysisActivityRecord,
+        protocol.AnalysisActivityRecord,
+    ),
     "hypothesis_activities": (
         HypothesisActivityRecord,
         protocol.HypothesisActivityRecord,
@@ -81,12 +88,14 @@ TS_COLLECTION_FIELDS = {
     "hypotheses": "hypotheses",
     "experiments": "experiments",
     "evaluations": "evaluations",
+    "analyses": "analyses",
     "hypothesis_experiment_links": "hypothesisExperimentLinks",
     "agents": "agents",
     "tasks": "tasks",
     "task_dependencies": "taskDependencies",
     "task_entity_links": "taskEntityLinks",
     "task_activities": "taskActivities",
+    "analysis_activities": "analysisActivities",
     "hypothesis_activities": "hypothesisActivities",
     "experiment_activities": "experimentActivities",
     "evaluation_activities": "evaluationActivities",

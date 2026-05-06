@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from ...core.db.serialization import json_dumps, json_loads, utc_now
-from ...records import HypothesisActivityRecord
+from ...records import HypothesisActivityKind, HypothesisActivityRecord
 from ..base import BaseRepository
 from .command import AddHypothesisActivity
 
@@ -27,7 +27,7 @@ class HypothesisActivitiesRepository(BaseRepository):
         *,
         hypothesis_id: str,
         actor: str,
-        kind: str,
+        kind: HypothesisActivityKind | str,
         body: str,
         payload: dict[str, Any] | None = None,
         created_in_session_id: str | None = None,

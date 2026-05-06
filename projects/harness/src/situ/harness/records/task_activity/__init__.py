@@ -1,3 +1,3 @@
-from .record import TaskActivityRecord
+from .record import TaskActivityKind, TaskActivityRecord
 
-__all__ = ["TaskActivityRecord"]
+__all__ = ["TaskActivityKind", "TaskActivityRecord"]

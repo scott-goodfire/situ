@@ -4,6 +4,8 @@ from pydantic import BaseModel, ConfigDict
 
 from ...records import (
     AgentRecord,
+    AnalysisActivityRecord,
+    AnalysisRecord,
     ArtifactRecord,
     EventRecord,
     EvaluationActivityRecord,
@@ -38,6 +40,8 @@ class CurrentStateSchema(BaseModel):
     task_dependencies: list[TaskDependencyRecord]
     task_entity_links: list[TaskEntityLinkRecord]
     task_activities: list[TaskActivityRecord]
+    analyses: list[AnalysisRecord]
+    analysis_activities: list[AnalysisActivityRecord]
     hypothesis_activities: list[HypothesisActivityRecord]
     experiment_activities: list[ExperimentActivityRecord]
     evaluation_activities: list[EvaluationActivityRecord]

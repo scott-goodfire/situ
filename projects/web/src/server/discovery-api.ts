@@ -13,9 +13,7 @@ import type {
   HypothesisActivityRecord,
   HypothesisExperimentLinkRecord,
   HypothesisRecord,
-  ObjectiveRecord,
   ProjectRecord,
-  ResearchContextRecord,
   SessionRecord,
 } from "@situ/protocol";
 import {
@@ -68,12 +66,9 @@ type ProjectMetadata = {
 };
 
 type ProjectRow = {
-  repo_path: string;
-  updated_at: string;
-};
-
-type ObjectiveRow = {
-  title: string;
+  title: string | null;
+  workspace_id: string;
+  objective: string | null;
   updated_at: string;
 };
 
@@ -304,15 +299,18 @@ async function readProjectMetadata({
     try {
       const project = readMaybeRow<ProjectRow>({
         database,
-        sql: "SELECT repo_path, updated_at FROM projects WHERE id = ? LIMIT 1",
+        sql: "SELECT title, workspace_id, objective, updated_at FROM projects WHERE id = ? LIMIT 1",
         params: [projectId],
       });
-      const objective = readMaybeRow<ObjectiveRow>({
-        database,
-        sql: "SELECT title, updated_at FROM objectives ORDER BY updated_at DESC LIMIT 1",
-      });
+      const workspace = project
+        ? readMaybeRow<{ repo_path: string }>({
+            database,
+            sql: "SELECT repo_path FROM workspaces WHERE id = ? LIMIT 1",
+            params: [project.workspace_id],
+          })
+        : null;
 
-      return metadataFromRows({ project, objective });
+      return metadataFromRows({ project, workspaceRepoPath: workspace?.repo_path ?? null });
     } finally {
       database.close();
     }
@@ -347,7 +345,8 @@ async function readProjectSnapshot({
         sql: `
           SELECT
             id,
-            session_id,
+            associated_project_id,
+            associated_session_id,
             type,
             message,
             payload_json,
@@ -364,38 +363,14 @@ async function readProjectSnapshot({
           sql: `
             SELECT
               id,
-              repo_path,
-              created_at,
-              updated_at
-            FROM projects
-            ORDER BY created_at ASC, id ASC
-          `,
-        }),
-        objectives: readRows<ObjectiveRecord>({
-          database,
-          sql: `
-            SELECT
-              id,
-              session_id,
+              workspace_id,
               title,
-              description,
+              objective,
+              research_context,
               status,
               created_at,
               updated_at
-            FROM objectives
-            ORDER BY created_at ASC, id ASC
-          `,
-        }),
-        research_contexts: readRows<ResearchContextRecord>({
-          database,
-          sql: `
-            SELECT
-              id,
-              session_id,
-              body,
-              created_at,
-              updated_at
-            FROM research_contexts
+            FROM projects
             ORDER BY created_at ASC, id ASC
           `,
         }),
@@ -404,6 +379,7 @@ async function readProjectSnapshot({
           sql: `
             SELECT
               id,
+              workspace_id,
               project_id,
               status,
               created_at,
@@ -417,7 +393,8 @@ async function readProjectSnapshot({
           sql: `
             SELECT
               id,
-              session_id,
+              project_id,
+              created_in_session_id,
               title,
               summary,
               status,
@@ -432,7 +409,8 @@ async function readProjectSnapshot({
           sql: `
             SELECT
               id,
-              session_id,
+              project_id,
+              created_in_session_id,
               status,
               title,
               summary,
@@ -447,7 +425,8 @@ async function readProjectSnapshot({
           sql: `
             SELECT
               id,
-              session_id,
+              project_id,
+              created_in_session_id,
               status,
               title,
               summary,
@@ -519,7 +498,8 @@ async function readProjectSnapshot({
           sql: `
             SELECT
               id,
-              session_id,
+              project_id,
+              created_in_session_id,
               associated_entity_kind,
               associated_entity_id,
               kind,
@@ -598,18 +578,16 @@ function readJsonRows<RecordType, RowType extends ActivityRow>({
 
 function metadataFromRows({
   project,
-  objective,
+  workspaceRepoPath,
 }: {
   project: ProjectRow | null;
-  objective: ObjectiveRow | null;
+  workspaceRepoPath: string | null;
 }): ProjectMetadata {
   return {
-    repoPath: project?.repo_path ?? null,
-    objectiveTitle: objective?.title ?? null,
+    repoPath: workspaceRepoPath,
+    objectiveTitle: project?.title ?? project?.objective ?? null,
     readStatus: "found",
-    updatedAt: latestTimestamp({
-      values: [project?.updated_at ?? null, objective?.updated_at ?? null],
-    }),
+    updatedAt: project?.updated_at ?? null,
   };
 }
 

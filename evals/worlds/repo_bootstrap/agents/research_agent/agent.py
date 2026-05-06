@@ -8,7 +8,11 @@ from evals.worlds.repo_bootstrap.models import (
     RepoBootstrapEvalInput,
     RepoBootstrapEvalOutput,
 )
-from evals.worlds.repo_bootstrap.world import RepoBootstrapWorld, SESSION_ID
+from evals.worlds.repo_bootstrap.world import (
+    SCIENTIST_AGENT_ID,
+    SESSION_ID,
+    RepoBootstrapWorld,
+)
 
 
 def run_repo_bootstrap_agent(args: RepoBootstrapEvalInput) -> RepoBootstrapEvalOutput:
@@ -17,6 +21,7 @@ def run_repo_bootstrap_agent(args: RepoBootstrapEvalInput) -> RepoBootstrapEvalO
     try:
         deps = SituToolDeps(
             session_id=SESSION_ID,
+            agent_id=SCIENTIST_AGENT_ID,
             repo_path=str(world.workspace_path),
             repos=world.repos,
             emit_event=world.emit_event,

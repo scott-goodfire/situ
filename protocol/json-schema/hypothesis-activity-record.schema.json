@@ -1,10 +1,10 @@
 {
   "$defs": {
-    "ActivityKind": {
+    "HypothesisActivityKind": {
       "enum": [
         "comment"
       ],
-      "title": "ActivityKind",
+      "title": "HypothesisActivityKind",
       "type": "string"
     }
   },
@@ -35,7 +35,7 @@
       "type": "string"
     },
     "kind": {
-      "$ref": "#/$defs/ActivityKind"
+      "$ref": "#/$defs/HypothesisActivityKind"
     },
     "body": {
       "title": "Body",

@@ -7,12 +7,15 @@ from pydantic_ai import FunctionToolset
 from pydantic_ai_backends import create_console_toolset
 
 from .activities import (
+    ListAnalysisActivitiesTool,
     ListEvaluationActivitiesTool,
     ListExperimentActivitiesTool,
     ListHypothesisActivitiesTool,
 )
 from .artifacts import CreateArtifactTool, ListArtifactsTool
+from .analyses import CreateAnalysisTool, ListAnalysesTool, UpdateAnalysisTool
 from .comments import (
+    AddAnalysisCommentTool,
     AddExperimentCommentTool,
     AddHypothesisCommentTool,
 )
@@ -57,9 +60,10 @@ RESEARCH_TOOLSET_INSTRUCTIONS = inspect.cleandoc(
     context needs refinement.
 
     Use `get_session` when you need the current board: hypotheses,
-    experiments, evaluations, activities, artifacts, and events.
-    Use the hypothesis, experiment, and evaluation tools to keep the research
-    structure clear.
+    analyses, experiments, evaluations, activities, artifacts, and events.
+    Use analysis tools for codebase/domain understanding before it becomes a
+    hypothesis. Use the hypothesis, experiment, and evaluation tools to keep
+    the research structure clear.
 
     Use task tools for coordination: inspect the task board, file focused work,
     claim eligible work, leave task comments, update task status, and link
@@ -126,6 +130,9 @@ def build_research_toolset() -> FunctionToolset[SituToolDeps]:
             AddTaskCommentTool().as_tool(),
             LinkTaskEntityTool().as_tool(),
             InspectWorkspaceStateTool().as_tool(),
+            ListAnalysesTool().as_tool(),
+            CreateAnalysisTool().as_tool(),
+            UpdateAnalysisTool().as_tool(),
             ListHypothesesTool().as_tool(),
             CreateHypothesisTool().as_tool(),
             UpdateHypothesisTool().as_tool(),
@@ -137,9 +144,11 @@ def build_research_toolset() -> FunctionToolset[SituToolDeps]:
             CreateEvaluationTool().as_tool(),
             UpdateEvaluationTool().as_tool(),
             LinkHypothesisExperimentTool().as_tool(),
+            AddAnalysisCommentTool().as_tool(),
             AddHypothesisCommentTool().as_tool(),
             AddExperimentCommentTool().as_tool(),
             AddEvaluationResultTool().as_tool(),
+            ListAnalysisActivitiesTool().as_tool(),
             ListHypothesisActivitiesTool().as_tool(),
             ListExperimentActivitiesTool().as_tool(),
             ListEvaluationActivitiesTool().as_tool(),

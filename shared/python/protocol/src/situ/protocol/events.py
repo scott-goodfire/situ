@@ -20,8 +20,24 @@ class WorkStatus(StrEnum):
     CLOSED = "closed"
 
 
-class ActivityKind(StrEnum):
+class HypothesisActivityKind(StrEnum):
     COMMENT = "comment"
+
+
+class ExperimentActivityKind(StrEnum):
+    COMMENT = "comment"
+
+
+class AnalysisActivityKind(StrEnum):
+    COMMENT = "comment"
+
+
+class TaskActivityKind(StrEnum):
+    COMMENT = "comment"
+
+
+class EvaluationActivityKind(StrEnum):
+    RESULT = "result"
 
 
 class AgentKind(StrEnum):
@@ -66,10 +82,12 @@ class TaskSourceKind(StrEnum):
 
 
 class TaskEntityKind(StrEnum):
+    ANALYSIS = "analysis"
     HYPOTHESIS = "hypothesis"
     EXPERIMENT = "experiment"
     EVALUATION = "evaluation"
     ARTIFACT = "artifact"
+    ANALYSIS_ACTIVITY = "analysis_activity"
     HYPOTHESIS_ACTIVITY = "hypothesis_activity"
     EXPERIMENT_ACTIVITY = "experiment_activity"
     EVALUATION_ACTIVITY = "evaluation_activity"
@@ -146,6 +164,22 @@ class EvaluationRecord(BaseModel):
     title: str
     summary: str
     associated_experiment_id: str | None = None
+    created_at: str
+    updated_at: str
+
+
+class AnalysisRecord(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: str
+    project_id: str
+    created_in_session_id: str | None = None
+    created_by_agent_id: str | None = None
+    status: WorkStatus
+    title: str
+    summary: str
+    content: str
+    supersedes_analysis_id: str | None = None
     created_at: str
     updated_at: str
 
@@ -228,7 +262,20 @@ class TaskActivityRecord(BaseModel):
     created_in_session_id: str | None = None
     actor_agent_id: str | None = None
     actor: str
-    kind: ActivityKind
+    kind: TaskActivityKind
+    body: str
+    payload: dict[str, Any] = Field(default_factory=dict)
+    created_at: str
+
+
+class AnalysisActivityRecord(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: int
+    analysis_id: str
+    created_in_session_id: str | None = None
+    actor: str
+    kind: AnalysisActivityKind
     body: str
     payload: dict[str, Any] = Field(default_factory=dict)
     created_at: str
@@ -241,7 +288,7 @@ class HypothesisActivityRecord(BaseModel):
     hypothesis_id: str
     created_in_session_id: str | None = None
     actor: str
-    kind: ActivityKind
+    kind: HypothesisActivityKind
     body: str
     payload: dict[str, Any] = Field(default_factory=dict)
     created_at: str
@@ -254,7 +301,7 @@ class ExperimentActivityRecord(BaseModel):
     experiment_id: str
     created_in_session_id: str | None = None
     actor: str
-    kind: ActivityKind
+    kind: ExperimentActivityKind
     body: str
     payload: dict[str, Any] = Field(default_factory=dict)
     created_at: str
@@ -267,7 +314,7 @@ class EvaluationActivityRecord(BaseModel):
     evaluation_id: str
     created_in_session_id: str | None = None
     actor: str
-    kind: ActivityKind
+    kind: EvaluationActivityKind
     body: str
     payload: dict[str, Any] = Field(default_factory=dict)
     created_at: str

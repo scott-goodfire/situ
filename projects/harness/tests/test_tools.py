@@ -15,12 +15,22 @@ from situ.harness.core.workers import WorkerManager
 from situ.harness.repositories import Repositories
 from situ.harness.tools import build_research_toolset, build_workspace_toolset
 from situ.harness.tools.activities import (
+    ListAnalysisActivitiesTool,
     ListEvaluationActivitiesTool,
     ListExperimentActivitiesTool,
     ListHypothesisActivitiesTool,
 )
+from situ.harness.tools.analyses import (
+    CreateAnalysisTool,
+    ListAnalysesTool,
+    UpdateAnalysisTool,
+)
 from situ.harness.tools.artifacts import CreateArtifactTool, ListArtifactsTool
-from situ.harness.tools.comments import AddExperimentCommentTool, AddHypothesisCommentTool
+from situ.harness.tools.comments import (
+    AddAnalysisCommentTool,
+    AddExperimentCommentTool,
+    AddHypothesisCommentTool,
+)
 from situ.harness.tools.common import SituToolDeps, invoke_situ_tool_sync
 from situ.harness.tools.evaluations import (
     AddEvaluationResultTool,
@@ -246,6 +256,76 @@ def test_create_project_tool_creates_and_attaches_project(repos: Repositories) -
     assert "Refined" in updated.project["research_context"]
 
 
+def test_analysis_tools_create_update_list_and_comment(
+    repos: Repositories,
+) -> None:
+    emitted: list[dict[str, Any]] = []
+    deps = SituToolDeps(
+        session_id="session_0001",
+        repos=repos,
+        emit_event=_event_collector(emitted),
+    )
+
+    created = invoke_situ_tool_sync(
+        tool=CreateAnalysisTool(),
+        deps=deps,
+        title="Codebase map",
+        summary="Mapped the backend primitives.",
+        content="The main knobs are records, repositories, tools, and protocol schemas.",
+    )
+    assert created.success is True
+    assert created.analysis is not None
+    assert created.analysis["id"] == "analysis_project_0001_agent_001"
+    assert created.analysis["project_id"] == "project_0001"
+    assert created.analysis["created_in_session_id"] == "session_0001"
+    assert created.analysis["status"] == "open"
+
+    comment = invoke_situ_tool_sync(
+        tool=AddAnalysisCommentTool(),
+        deps=deps,
+        analysis_id="analysis_project_0001_agent_001",
+        comment="This map is ready to feed hypothesis generation.",
+        payload={"source": "first pass"},
+    )
+    assert comment.success is True
+    assert comment.activity is not None
+    assert comment.activity["kind"] == "comment"
+    assert comment.activity["created_in_session_id"] == "session_0001"
+    assert comment.activity["payload"] == {"source": "first pass"}
+
+    updated = invoke_situ_tool_sync(
+        tool=UpdateAnalysisTool(),
+        deps=deps,
+        analysis_id="analysis_project_0001_agent_001",
+        status="active",
+        summary="Synthesized backend map into candidate work.",
+    )
+    assert updated.success is True
+    assert updated.analysis is not None
+    assert updated.analysis["status"] == "active"
+
+    listed = invoke_situ_tool_sync(
+        tool=ListAnalysesTool(),
+        deps=deps,
+        status="active",
+    )
+    activities = invoke_situ_tool_sync(
+        tool=ListAnalysisActivitiesTool(),
+        deps=deps,
+        analysis_id="analysis_project_0001_agent_001",
+    )
+
+    assert [analysis["id"] for analysis in listed.analyses] == [
+        "analysis_project_0001_agent_001"
+    ]
+    assert [activity["id"] for activity in activities.activities] == [1]
+    assert [event["type"] for event in emitted] == [
+        "analysis.created",
+        "analysis.comment_added",
+        "analysis.updated",
+    ]
+
+
 def test_hypothesis_tools_create_update_and_list(repos: Repositories) -> None:
     emitted: list[dict[str, Any]] = []
     deps = SituToolDeps(
@@ -370,6 +450,7 @@ def test_evaluation_tools_create_update_list_and_add_results(
     )
     assert result.success is True
     assert result.activity is not None
+    assert result.activity["kind"] == "result"
     assert result.activity["body"] == "Baseline command passed with score 0.71."
     assert result.activity["payload"]["activity_type"] == "result"
 
@@ -430,6 +511,11 @@ def test_work_tools_reject_invalid_statuses_with_agent_readable_errors(
         deps=deps,
         status="completed",
     )
+    analysis_list = invoke_situ_tool_sync(
+        tool=ListAnalysesTool(),
+        deps=deps,
+        status="completed",
+    )
 
     assert experiment_update.success is False
     assert experiment_update.error is not None
@@ -448,6 +534,10 @@ def test_work_tools_reject_invalid_statuses_with_agent_readable_errors(
     assert evaluation_list.success is False
     assert evaluation_list.error is not None
     assert "invalid evaluation status: 'completed'" in evaluation_list.error.message
+
+    assert analysis_list.success is False
+    assert analysis_list.error is not None
+    assert "invalid analysis status: 'completed'" in analysis_list.error.message
 
 
 def test_link_tool_links_hypothesis_and_experiment(repos: Repositories) -> None:

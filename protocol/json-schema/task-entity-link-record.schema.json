@@ -2,10 +2,12 @@
   "$defs": {
     "TaskEntityKind": {
       "enum": [
+        "analysis",
         "hypothesis",
         "experiment",
         "evaluation",
         "artifact",
+        "analysis_activity",
         "hypothesis_activity",
         "experiment_activity",
         "evaluation_activity",

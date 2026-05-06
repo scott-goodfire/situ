@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+from enum import StrEnum
 from typing import Any
 
 from pydantic import Field
 
 from ..base import DbRecord
-from ..hypothesis_activity.record import ActivityKind
+
+
+class TaskActivityKind(StrEnum):
+    COMMENT = "comment"
 
 
 class TaskActivityRecord(DbRecord):
@@ -15,7 +19,7 @@ class TaskActivityRecord(DbRecord):
     created_in_session_id: str | None = None
     actor_agent_id: str | None = None
     actor: str
-    kind: ActivityKind
+    kind: TaskActivityKind
     body: str
     payload: dict[str, Any] = Field(default_factory=dict)
     created_at: str

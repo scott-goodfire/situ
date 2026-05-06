@@ -65,6 +65,20 @@ CREATE TABLE IF NOT EXISTS evaluations (
   updated_at TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS analyses (
+  id TEXT PRIMARY KEY,
+  project_id TEXT NOT NULL REFERENCES projects(id),
+  created_in_session_id TEXT REFERENCES sessions(id),
+  created_by_agent_id TEXT REFERENCES agents(id),
+  status TEXT NOT NULL,
+  title TEXT NOT NULL,
+  summary TEXT NOT NULL,
+  content TEXT NOT NULL,
+  supersedes_analysis_id TEXT REFERENCES analyses(id),
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS hypothesis_experiment_links (
   hypothesis_id TEXT NOT NULL REFERENCES hypotheses(id),
   experiment_id TEXT NOT NULL REFERENCES experiments(id),
@@ -133,6 +147,17 @@ CREATE TABLE IF NOT EXISTS task_activities (
   task_id TEXT NOT NULL REFERENCES tasks(id),
   created_in_session_id TEXT REFERENCES sessions(id),
   actor_agent_id TEXT REFERENCES agents(id),
+  actor TEXT NOT NULL,
+  kind TEXT NOT NULL,
+  body TEXT NOT NULL,
+  payload_json TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS analysis_activities (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  analysis_id TEXT NOT NULL REFERENCES analyses(id),
+  created_in_session_id TEXT REFERENCES sessions(id),
   actor TEXT NOT NULL,
   kind TEXT NOT NULL,
   body TEXT NOT NULL,
@@ -233,12 +258,14 @@ def reset_stale_schema(connection: sqlite3.Connection) -> None:
         "hypotheses",
         "experiments",
         "evaluations",
+        "analyses",
         "hypothesis_experiment_links",
         "agents",
         "tasks",
         "task_dependencies",
         "task_entity_links",
         "task_activities",
+        "analysis_activities",
         "hypothesis_activities",
         "experiment_activities",
         "evaluation_activities",
@@ -285,6 +312,20 @@ def has_stale_schema(connection: sqlite3.Connection) -> bool:
 
     evaluation_columns = table_columns(connection, "evaluations")
     if "project_id" not in evaluation_columns or "session_id" in evaluation_columns:
+        return True
+
+    analysis_columns = table_columns(connection, "analyses")
+    if (
+        "project_id" not in analysis_columns
+        or "session_id" in analysis_columns
+        or "created_in_session_id" not in analysis_columns
+        or "kind" in analysis_columns
+        or "content" not in analysis_columns
+        or "supersedes_analysis_id" not in analysis_columns
+    ):
+        return True
+
+    if not table_exists(connection, "analysis_activities"):
         return True
 
     artifact_columns = table_columns(connection, "artifacts")
@@ -344,7 +385,10 @@ def has_stale_schema(connection: sqlite3.Connection) -> bool:
 
 
 def upgrade_schema(connection: sqlite3.Connection) -> None:
-    return
+    if table_exists(connection, "evaluation_activities"):
+        connection.execute(
+            "UPDATE evaluation_activities SET kind = 'result' WHERE kind = 'comment'"
+        )
 
 
 def table_exists(connection: sqlite3.Connection, table: str) -> bool:

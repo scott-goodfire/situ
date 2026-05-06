@@ -145,21 +145,20 @@ function agentPageData(): ProjectWorkspaceData {
     projectId: "support-agent-demo",
     workspace: "/Users/situ/sandbox/support-agent",
     connection: { kind: "connected" },
-    objectives: [
-      {
-        id: "obj_session_0001",
-        session_id: "session_0001",
-        title: "Improve support-agent resolution",
-        description:
-          "Improve billing and cancellation outcomes without making latency worse.",
-        status: "active",
-        created_at: "2026-01-01T00:00:00Z",
-        updated_at: "2026-01-01T00:00:00Z",
-      },
-    ],
+    project: {
+      id: "support-agent-demo",
+      workspace_id: "workspace_demo",
+      title: "Improve support-agent resolution",
+      objective: "Improve billing and cancellation outcomes without making latency worse.",
+      research_context: "",
+      status: "active",
+      created_at: "2026-01-01T00:00:00Z",
+      updated_at: "2026-01-01T00:00:00Z",
+    },
     sessions: [
       {
         id: "session_0001",
+        workspace_id: "workspace_demo",
         project_id: "support-agent-demo",
         status: "active",
         created_at: "2026-01-01T00:00:00Z",
@@ -169,7 +168,7 @@ function agentPageData(): ProjectWorkspaceData {
     hypotheses: [
       {
         id: "hyp_0001",
-        session_id: "session_0001",
+        project_id: "support-agent-demo",
         title: "Retrieval filtering helps cancellation tickets",
         summary: "Drop weak snippets before tool calls.",
         status: "active",
@@ -180,7 +179,7 @@ function agentPageData(): ProjectWorkspaceData {
     experiments: [
       {
         id: "exp_0002",
-        session_id: "session_0001",
+        project_id: "support-agent-demo",
         status: "active",
         title: "Try retrieval filtering",
         summary: "Filter snippets below the confidence floor on cancellation tickets.",
@@ -191,7 +190,7 @@ function agentPageData(): ProjectWorkspaceData {
     evaluations: [
       {
         id: "eval_0002",
-        session_id: "session_0001",
+        project_id: "support-agent-demo",
         status: "active",
         title: "Retrieval filtering candidate",
         summary: "Candidate measurement for exp_0002.",
@@ -200,6 +199,13 @@ function agentPageData(): ProjectWorkspaceData {
         updated_at: "2026-01-01T00:09:00Z",
       },
     ],
+    analyses: [],
+    agents: [],
+    tasks: [],
+    taskDependencies: [],
+    taskEntityLinks: [],
+    taskActivities: [],
+    analysisActivities: [],
     hypothesisExperimentLinks: [
       {
         hypothesis_id: "hyp_0001",
@@ -243,7 +249,7 @@ function agentPageData(): ProjectWorkspaceData {
         id: 1,
         evaluation_id: "eval_0002",
         actor: "research-agent",
-        kind: "comment",
+        kind: "result",
         body: "Candidate: resolution_rate 64.8%, latency 1910ms. Needs reproduction before treating as accepted.",
         payload: { activity_type: "result" },
         created_at: "2026-01-01T00:08:00Z",
@@ -252,7 +258,7 @@ function agentPageData(): ProjectWorkspaceData {
         id: 2,
         evaluation_id: "eval_0002",
         actor: "research-agent",
-        kind: "comment",
+        kind: "result",
         body: "Concern: the best result is not reproduced yet.",
         payload: { activity_type: "concern" },
         created_at: "2026-01-01T00:09:00Z",

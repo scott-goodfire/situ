@@ -10,6 +10,10 @@ status: active
 TypeScript, TSX, CSS, and frontend-adjacent shared code used by the TUI, web UI,
 collection layer, local session client, and future browser surfaces.
 
+> Folder layout (per-entity selector layer, `__shared__/` convention, test
+> colocation) lives in `0012-module-organization` under "Frontend layout".
+> This policy covers naming, rendering, and code-style choices.
+
 ## Rule
 
 Prefer code that is easy for a future agent or human to scan, change, and review.

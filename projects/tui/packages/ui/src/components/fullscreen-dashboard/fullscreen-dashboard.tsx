@@ -1160,7 +1160,7 @@ function glyphForTask({ task }: { task: DashboardTask }): string {
     return "!";
   }
 
-  if (task.tone === "warning") {
+  if (task.kind === "concern") {
     return "!";
   }
 

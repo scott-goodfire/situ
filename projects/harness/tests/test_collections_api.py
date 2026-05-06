@@ -78,6 +78,15 @@ def test_collections_bootstrap_returns_research_objects_and_events(
         title="Baseline project eval",
         summary="Run the baseline project evaluation.",
     )
+    analysis = app.repos.analyses.create(
+        analysis_id="analysis_0001",
+        project_id=project.id,
+        created_in_session_id=session.id,
+        title="Codebase map",
+        summary="Mapped the backend primitives.",
+        content="Records and repositories define the backend data model.",
+        status="active",
+    )
     activity = app.repos.experiment_activities.add(
         experiment_id="exp_session_0001_baseline",
         created_in_session_id=session.id,
@@ -86,11 +95,18 @@ def test_collections_bootstrap_returns_research_objects_and_events(
         body="Baseline result recorded.",
         payload={"activity_type": "result"},
     )
+    analysis_activity = app.repos.analysis_activities.add(
+        analysis_id=analysis.id,
+        created_in_session_id=session.id,
+        actor="agent",
+        kind="comment",
+        body="Codebase map ready.",
+    )
     evaluation_activity = app.repos.evaluation_activities.add(
         evaluation_id=evaluation.id,
         created_in_session_id=session.id,
         actor="agent",
-        kind="comment",
+        kind="result",
         body="Baseline result recorded.",
         payload={"activity_type": "result"},
     )
@@ -114,7 +130,11 @@ def test_collections_bootstrap_returns_research_objects_and_events(
     assert [item.id for item in bootstrap.evaluations] == [
         "eval_session_0001_baseline"
     ]
+    assert [item.id for item in bootstrap.analyses] == ["analysis_0001"]
     assert [item.id for item in bootstrap.experiment_activities] == [activity.id]
+    assert [item.id for item in bootstrap.analysis_activities] == [
+        analysis_activity.id
+    ]
     assert [item.id for item in bootstrap.evaluation_activities] == [
         evaluation_activity.id
     ]

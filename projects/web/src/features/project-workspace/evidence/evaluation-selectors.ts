@@ -2,7 +2,6 @@ import type {
   EvaluationActivityRecord,
   EvaluationRecord,
   ExperimentRecord,
-  SessionRecord,
 } from "@situ/protocol";
 import filter from "lodash/filter";
 import orderBy from "lodash/orderBy";
@@ -10,24 +9,6 @@ import type { DxBadgeTone, DxTableRowTone } from "@situ/web-ui";
 import type { ProjectWorkspaceData } from "../types";
 
 export type EvidenceState = "missing" | "waiting" | "present" | "concern";
-
-export function baselineEvaluations({
-  data,
-  session,
-}: {
-  data: ProjectWorkspaceData;
-  session: SessionRecord | undefined;
-}): EvaluationRecord[] {
-  if (!session) {
-    return [];
-  }
-
-  return filter(
-    data.evaluations,
-    (evaluation) =>
-      evaluation.session_id === session.id && !evaluation.associated_experiment_id,
-  );
-}
 
 export function evaluationsForExperiment({
   data,
@@ -85,20 +66,6 @@ export function evaluationActivitiesForEvaluations({
   return filter(data.evaluationActivities, (activity) =>
     evaluationIds.has(activity.evaluation_id),
   );
-}
-
-export function recentEvaluationActivities({
-  data,
-  limit,
-}: {
-  data: ProjectWorkspaceData;
-  limit: number;
-}): EvaluationActivityRecord[] {
-  return orderBy(
-    data.evaluationActivities,
-    [(activity) => activity.created_at, (activity) => activity.id],
-    ["desc", "desc"],
-  ).slice(0, limit);
 }
 
 export function latestEvaluationActivity({
@@ -189,30 +156,6 @@ export function evidenceLabel({
   }
 
   return `${evaluationCount} evaluations`;
-}
-
-export function evaluationForActivity({
-  data,
-  activity,
-}: {
-  data: ProjectWorkspaceData;
-  activity: EvaluationActivityRecord;
-}): EvaluationRecord | undefined {
-  return data.evaluations.find(
-    (evaluation) => evaluation.id === activity.evaluation_id,
-  );
-}
-
-export function sessionLabel({
-  session,
-}: {
-  session: SessionRecord | undefined;
-}): string {
-  if (!session) {
-    return "No session";
-  }
-
-  return `${session.id} / ${session.status}`;
 }
 
 export function activityLabel({

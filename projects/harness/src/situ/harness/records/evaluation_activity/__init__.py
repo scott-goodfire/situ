@@ -1,3 +1,11 @@
-from .record import EvaluationActivityRecord
+from .record import (
+    EvaluationActivityKind,
+    EvaluationActivityRecord,
+    parse_evaluation_activity_kind,
+)
 
-__all__ = ["EvaluationActivityRecord"]
+__all__ = [
+    "EvaluationActivityKind",
+    "EvaluationActivityRecord",
+    "parse_evaluation_activity_kind",
+]

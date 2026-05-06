@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import subprocess
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any
@@ -10,12 +11,14 @@ from situ.harness.repositories import Repositories
 from evals.harness.models import EvalEvent
 from evals.worlds.research_session.models import ResearchSessionSeed
 
-OBJECTIVE_ID = "objective_eval_0001"
-RESEARCH_CONTEXT_ID = "rctx_eval_0001"
+WORKSPACE_ID = "workspace_eval"
+PROJECT_ID = "project_eval"
 SESSION_ID = "session_eval_0001"
+SCIENTIST_AGENT_ID = f"agent_{PROJECT_ID}_scientist"
 HYPOTHESIS_ID = "hyp_eval_component_a"
 EXPERIMENT_ID = "exp_eval_component_a"
 ARTIFACT_ID = "artifact_eval_raw_output"
+ANALYSIS_ID = "analysis_eval_codebase_map"
 BASELINE_EXPERIMENT_ID = "exp_eval_baseline"
 COMPONENT_A_EXPERIMENT_ID = "exp_eval_component_a"
 COMPONENT_C_EXPERIMENT_ID = "exp_eval_component_c"
@@ -31,7 +34,15 @@ class ResearchSessionWorld:
     def __init__(self, *, seed: ResearchSessionSeed) -> None:
         self._tmp = TemporaryDirectory()
         self.path = Path(self._tmp.name)
-        self.repos = _build_repos(self.path)
+        self.repo_path = self.path / "workspace"
+        self.repo_path.mkdir()
+        if seed == "with_dirty_workspace":
+            _seed_dirty_workspace(self.repo_path)
+        self.repos = _build_repos(
+            self.path,
+            repo_path=self.repo_path,
+            attach_project=seed != "projectless",
+        )
         self.events: list[EvalEvent] = []
         _seed(self.repos, seed)
 
@@ -42,19 +53,26 @@ class ResearchSessionWorld:
         self,
         event_type: str,
         message: str,
-        session_id: str | None,
+        associated_project_id: str | None,
+        associated_session_id: str | None,
         payload: dict[str, Any] | None,
     ) -> dict[str, Any]:
         record = self.repos.events.add(
             event_type=event_type,
             message=message,
-            session_id=session_id,
+            associated_project_id=associated_project_id,
+            associated_session_id=associated_session_id,
             payload=payload or {},
         )
         event = EvalEvent(
             event_type=event_type,
             message=message,
-            payload={"id": record.id, "session_id": session_id, **(payload or {})},
+            payload={
+                "id": record.id,
+                "associated_project_id": associated_project_id,
+                "associated_session_id": associated_session_id,
+                **(payload or {}),
+            },
         )
         self.events.append(event)
         return record.model_dump()
@@ -62,14 +80,24 @@ class ResearchSessionWorld:
     def session_graph(self) -> dict[str, Any]:
         graph = SessionsService(repos=self.repos).get_session(SESSION_ID)
         return {
+            "workspace": graph.workspace.model_dump() if graph.workspace is not None else None,
             "project": graph.project.model_dump() if graph.project is not None else None,
             "session": graph.session.model_dump() if graph.session is not None else None,
-            "objective": graph.objective.model_dump() if graph.objective is not None else None,
-            "research_context": (
-                graph.research_context.model_dump()
-                if graph.research_context is not None
-                else None
-            ),
+            "agents": [item.model_dump() for item in graph.agents],
+            "tasks": [item.model_dump() for item in graph.tasks],
+            "task_dependencies": [
+                item.model_dump() for item in graph.task_dependencies
+            ],
+            "task_entity_links": [
+                item.model_dump() for item in graph.task_entity_links
+            ],
+            "task_activities": [
+                item.model_dump() for item in graph.task_activities
+            ],
+            "analyses": [item.model_dump() for item in graph.analyses],
+            "analysis_activities": [
+                item.model_dump() for item in graph.analysis_activities
+            ],
             "hypotheses": [item.model_dump() for item in graph.hypotheses],
             "experiments": [item.model_dump() for item in graph.experiments],
             "evaluations": [item.model_dump() for item in graph.evaluations],
@@ -90,34 +118,49 @@ class ResearchSessionWorld:
         }
 
 
-def _build_repos(path: Path) -> Repositories:
+def _build_repos(
+    path: Path,
+    *,
+    repo_path: Path,
+    attach_project: bool,
+) -> Repositories:
     db = Database(
         path / "situ.sqlite",
-        project_id="project_eval",
-        repo_path="/tmp/situ-eval-project",
+        workspace_id=WORKSPACE_ID,
+        repo_path=str(repo_path),
     )
     repos = Repositories.create(db)
-    project = repos.project.ensure()
-    repos.sessions.create(SESSION_ID, project_id=project.id)
-    repos.objectives.create(
-        objective_id=OBJECTIVE_ID,
-        session_id=SESSION_ID,
-        title="Improve validation score",
-        description="Improve validation score without worsening latency.",
-    )
-    repos.research_contexts.create(
-        research_context_id=RESEARCH_CONTEXT_ID,
-        session_id=SESSION_ID,
-        body=RESEARCH_CONTEXT_BODY,
-    )
+    workspace = repos.workspaces.ensure()
+    project_id = None
+    if attach_project:
+        project = repos.projects.create(
+            project_id=PROJECT_ID,
+            workspace_id=workspace.id,
+            title="Improve validation score",
+            objective="Improve validation score without worsening latency.",
+            research_context=RESEARCH_CONTEXT_BODY,
+        )
+        project_id = project.id
+    repos.sessions.create(SESSION_ID, workspace_id=workspace.id, project_id=project_id)
+    if project_id is not None:
+        repos.agents.ensure_session_agent(
+            session_id=SESSION_ID,
+            kind="scientist",
+            display_name="Scientist",
+            model_name="eval:model",
+        )
     return repos
 
 
 def _seed(repos: Repositories, seed: ResearchSessionSeed) -> None:
+    if seed == "projectless":
+        return
+
     if seed in {"needs_baseline", "with_baseline_result", "with_promising_results"}:
         repos.hypotheses.create(
             hypothesis_id=HYPOTHESIS_ID,
-            session_id=SESSION_ID,
+            project_id=PROJECT_ID,
+            created_in_session_id=SESSION_ID,
             title="Component changes can improve score",
             summary="Compare baseline, individual components, and simple combinations.",
             status="active",
@@ -179,7 +222,8 @@ def _seed(repos: Repositories, seed: ResearchSessionSeed) -> None:
     }:
         repos.hypotheses.create(
             hypothesis_id=HYPOTHESIS_ID,
-            session_id=SESSION_ID,
+            project_id=PROJECT_ID,
+            created_in_session_id=SESSION_ID,
             title="Component A helps",
             summary="Component A may improve validation score.",
             status="active",
@@ -188,7 +232,8 @@ def _seed(repos: Repositories, seed: ResearchSessionSeed) -> None:
     if seed in {"with_experiment", "with_link", "with_comments", "with_artifact"}:
         repos.experiments.create(
             experiment_id=EXPERIMENT_ID,
-            session_id=SESSION_ID,
+            project_id=PROJECT_ID,
+            created_in_session_id=SESSION_ID,
             title="Try component A",
             summary="Run baseline plus component A.",
             status="open",
@@ -217,7 +262,8 @@ def _seed(repos: Repositories, seed: ResearchSessionSeed) -> None:
     if seed == "with_artifact":
         repos.artifacts.create(
             artifact_id=ARTIFACT_ID,
-            session_id=SESSION_ID,
+            project_id=PROJECT_ID,
+            created_in_session_id=SESSION_ID,
             associated_entity_kind="experiment",
             associated_entity_id=EXPERIMENT_ID,
             kind="json",
@@ -239,10 +285,35 @@ def _create_experiment_with_result(
 ) -> None:
     repos.experiments.create(
         experiment_id=experiment_id,
-        session_id=SESSION_ID,
+        project_id=PROJECT_ID,
+        created_in_session_id=SESSION_ID,
         title=title,
         summary=summary,
         status="closed",
+    )
+    evaluation_id = f"eval_{experiment_id}"
+    repos.evaluations.create(
+        evaluation_id=evaluation_id,
+        project_id=PROJECT_ID,
+        created_in_session_id=SESSION_ID,
+        title=f"{title} evaluation",
+        summary=f"Measurement evidence for {title}.",
+        associated_experiment_id=experiment_id,
+        status="closed",
+    )
+    repos.evaluation_activities.add(
+        evaluation_id=evaluation_id,
+        created_in_session_id=SESSION_ID,
+        actor="worker",
+        kind="result",
+        body=result_body,
+        payload={
+            "signals": [
+                {"key": key, "value": value}
+                for key, value in signals.items()
+            ],
+            "raw": {"shape": "standard"},
+        },
     )
     repos.experiment_activities.add(
         experiment_id=experiment_id,
@@ -257,4 +328,38 @@ def _create_experiment_with_result(
             ],
             "raw": {"shape": "standard"},
         },
+    )
+
+
+def _seed_dirty_workspace(repo_path: Path) -> None:
+    _git(repo_path, "init")
+    _git(repo_path, "config", "user.email", "situ@example.com")
+    _git(repo_path, "config", "user.name", "Situ")
+    (repo_path / "train.py").write_text("COMPONENT = 'baseline'\n", encoding="utf-8")
+    (repo_path / "tests").mkdir()
+    (repo_path / "tests" / "test_train.py").write_text(
+        "def test_train(): pass\n",
+        encoding="utf-8",
+    )
+    _git(repo_path, "add", ".")
+    _git(repo_path, "commit", "-m", "baseline")
+
+    (repo_path / "train.py").write_text("COMPONENT = 'component_a'\n", encoding="utf-8")
+    (repo_path / "tests" / "test_train.py").write_text(
+        "def test_train(): pass\ndef test_component_a(): pass\n",
+        encoding="utf-8",
+    )
+    (repo_path / "pyproject.toml").write_text(
+        "[project]\nname = 'situ-eval-world'\n",
+        encoding="utf-8",
+    )
+
+
+def _git(repo_path: Path, *args: str) -> None:
+    subprocess.run(
+        ["git", *args],
+        cwd=repo_path,
+        check=True,
+        capture_output=True,
+        text=True,
     )

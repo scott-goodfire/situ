@@ -6,6 +6,8 @@ import {
 } from "./index";
 import type {
   AgentRecord,
+  AnalysisActivityRecord,
+  AnalysisRecord,
   CollectionUpsertedParams,
   CollectionsBootstrapResult,
   EventRecord,
@@ -38,6 +40,7 @@ describe("situ collections", () => {
       hypotheses: [hypothesisRecord({})],
       experiments: [experimentRecord({})],
       evaluations: [evaluationRecord({})],
+      analyses: [analysisRecord({})],
       hypothesis_experiment_links: [
         {
           hypothesis_id: "hyp_0001",
@@ -50,6 +53,7 @@ describe("situ collections", () => {
       task_dependencies: [taskDependencyRecord({})],
       task_entity_links: [taskEntityLinkRecord({})],
       task_activities: [taskActivityRecord({})],
+      analysis_activities: [analysisActivityRecord({})],
       hypothesis_activities: [],
       experiment_activities: [experimentActivityRecord({})],
       evaluation_activities: [evaluationActivityRecord({})],
@@ -82,6 +86,7 @@ describe("situ collections", () => {
     expect(collections.evaluations.get("eval_session_0001_baseline")?.status).toBe(
       "closed",
     );
+    expect(collections.analyses.get("analysis_0001")?.status).toBe("open");
     expect(collections.agents.get("agent_project_0001_scientist")?.kind).toBe(
       "scientist",
     );
@@ -93,8 +98,9 @@ describe("situ collections", () => {
       "eval_session_0001_baseline",
     );
     expect(collections.taskActivities.get("1")?.task_id).toBe("task_project_0001_001");
+    expect(collections.analysisActivities.get("1")?.kind).toBe("comment");
     expect(collections.experimentActivities.get("1")?.kind).toBe("comment");
-    expect(collections.evaluationActivities.get("1")?.kind).toBe("comment");
+    expect(collections.evaluationActivities.get("1")?.kind).toBe("result");
     expect(collections.events.get("1")?.type).toBe("session.started");
     expect(collections.events.get("2")?.type).toBe("experiment.completed");
   });
@@ -122,6 +128,8 @@ describe("situ collections", () => {
     expect(collections.projects.get(PROJECT_ID)?.objective).toBe("Improve score.");
     expect(collections.workspaces.size).toBe(0);
     expect(collections.evaluations.size).toBe(0);
+    expect(collections.analyses.size).toBe(0);
+    expect(collections.analysisActivities.size).toBe(0);
     expect(collections.evaluationActivities.size).toBe(0);
   });
 
@@ -183,6 +191,16 @@ describe("situ collections", () => {
     await applyCollectionUpsert({
       collections,
       upsert: upsert({
+        collection: "analyses",
+        key: "analysis_0001",
+        record: analysisRecord({
+          overrides: { id: "analysis_0001", status: "active" },
+        }),
+      }),
+    });
+    await applyCollectionUpsert({
+      collections,
+      upsert: upsert({
         collection: "agents",
         key: "agent_project_0001_scientist",
         record: agentRecord({}),
@@ -230,6 +248,19 @@ describe("situ collections", () => {
         }),
       }),
     });
+    await applyCollectionUpsert({
+      collections,
+      upsert: upsert({
+        collection: "analysis_activities",
+        key: "5",
+        record: analysisActivityRecord({
+          overrides: {
+            id: 5,
+            payload: { source: "first pass" },
+          },
+        }),
+      }),
+    });
 
     expect(collections.workspaces.get(WORKSPACE_ID)?.repo_path).toBe("/tmp/repo");
     expect(collections.projects.get(PROJECT_ID)?.research_context).toBe(
@@ -239,11 +270,13 @@ describe("situ collections", () => {
     expect(collections.sessions.get(SESSION_ID)?.status).toBe("closed");
     expect(collections.experiments.get("exp_session_0001_a")?.status).toBe("active");
     expect(collections.evaluations.get("eval_session_0001_a")?.status).toBe("active");
+    expect(collections.analyses.get("analysis_0001")?.status).toBe("active");
     expect(collections.agents.get("agent_project_0001_scientist")?.status).toBe("idle");
     expect(collections.tasks.get("task_project_0001_001")?.priority).toBe("high");
     expect(collections.taskActivities.get("1")?.actor_agent_id).toBe(
       "agent_project_0001_scientist",
     );
+    expect(collections.analysisActivities.get("5")?.payload.source).toBe("first pass");
     expect(collections.experimentActivities.get("3")?.kind).toBe("comment");
     expect(collections.experimentActivities.get("3")?.payload.activity_type).toBe(
       "concern",
@@ -268,11 +301,13 @@ function upsert({
     | HypothesisRecord
     | ExperimentRecord
     | EvaluationRecord
+    | AnalysisRecord
     | AgentRecord
     | TaskRecord
     | TaskDependencyRecord
     | TaskEntityLinkRecord
     | TaskActivityRecord
+    | AnalysisActivityRecord
     | ExperimentActivityRecord
     | EvaluationActivityRecord
     | EventRecord;
@@ -382,6 +417,27 @@ function evaluationRecord({
     title: "Baseline project eval",
     summary: "Baseline toy evaluation.",
     associated_experiment_id: undefined,
+    created_at: "2026-01-01T00:00:01Z",
+    updated_at: "2026-01-01T00:00:01Z",
+    ...overrides,
+  };
+}
+
+function analysisRecord({
+  overrides = {},
+}: {
+  overrides?: Partial<AnalysisRecord>;
+}): AnalysisRecord {
+  return {
+    id: "analysis_0001",
+    project_id: PROJECT_ID,
+    created_in_session_id: SESSION_ID,
+    created_by_agent_id: "agent_project_0001_scientist",
+    status: "open",
+    title: "Codebase map",
+    summary: "Mapped the main backend primitives.",
+    content: "Records and repositories define the durable research ledger.",
+    supersedes_analysis_id: undefined,
     created_at: "2026-01-01T00:00:01Z",
     updated_at: "2026-01-01T00:00:01Z",
     ...overrides,
@@ -507,6 +563,24 @@ function experimentActivityRecord({
   };
 }
 
+function analysisActivityRecord({
+  overrides = {},
+}: {
+  overrides?: Partial<AnalysisActivityRecord>;
+}): AnalysisActivityRecord {
+  return {
+    id: 1,
+    analysis_id: "analysis_0001",
+    created_in_session_id: SESSION_ID,
+    actor: "agent",
+    kind: "comment",
+    body: "This note should feed hypothesis generation.",
+    payload: { source: "first pass" },
+    created_at: "2026-01-01T00:00:02Z",
+    ...overrides,
+  };
+}
+
 function evaluationActivityRecord({
   overrides = {},
 }: {
@@ -517,7 +591,7 @@ function evaluationActivityRecord({
     evaluation_id: "eval_session_0001_baseline",
     created_in_session_id: SESSION_ID,
     actor: "agent",
-    kind: "comment",
+    kind: "result",
     body: "Baseline result recorded.",
     payload: { activity_type: "result", signals: [{ key: "score", value: 0.71 }] },
     created_at: "2026-01-01T00:00:02Z",

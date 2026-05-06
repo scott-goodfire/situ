@@ -6,6 +6,8 @@ from typing import Callable
 from ...core.notifications import emit_collection_upsert
 from ...records import (
     AgentRecord,
+    AnalysisActivityRecord,
+    AnalysisRecord,
     ArtifactRecord,
     EventRecord,
     EvaluationActivityRecord,
@@ -73,6 +75,8 @@ COLLECTION_ROUTES: dict[type[DbRecord], CollectionRoute] = {
     TaskDependencyRecord: CollectionRoute("task_dependencies", _task_dependency_key),
     TaskEntityLinkRecord: CollectionRoute("task_entity_links", _task_entity_link_key),
     TaskActivityRecord: CollectionRoute("task_activities", _record_id),
+    AnalysisRecord: CollectionRoute("analyses", _record_id),
+    AnalysisActivityRecord: CollectionRoute("analysis_activities", _record_id),
     HypothesisActivityRecord: CollectionRoute("hypothesis_activities", _record_id),
     ExperimentActivityRecord: CollectionRoute("experiment_activities", _record_id),
     EvaluationActivityRecord: CollectionRoute("evaluation_activities", _record_id),

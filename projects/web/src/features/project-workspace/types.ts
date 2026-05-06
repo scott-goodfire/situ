@@ -1,4 +1,7 @@
 import type {
+  AgentRecord,
+  AnalysisActivityRecord,
+  AnalysisRecord,
   ArtifactRecord,
   EventRecord,
   EvaluationActivityRecord,
@@ -8,8 +11,12 @@ import type {
   HypothesisActivityRecord,
   HypothesisExperimentLinkRecord,
   HypothesisRecord,
-  ObjectiveRecord,
+  ProjectRecord,
   SessionRecord,
+  TaskActivityRecord,
+  TaskDependencyRecord,
+  TaskEntityLinkRecord,
+  TaskRecord,
 } from "@situ/protocol";
 import type { ConnectionState } from "../run-monitor/connection-badge";
 
@@ -17,11 +24,18 @@ export type ProjectWorkspaceData = {
   projectId: string;
   workspace: string | undefined;
   connection: ConnectionState;
-  objectives: ObjectiveRecord[];
+  project: ProjectRecord | undefined;
   sessions: SessionRecord[];
   hypotheses: HypothesisRecord[];
   experiments: ExperimentRecord[];
   evaluations: EvaluationRecord[];
+  analyses: AnalysisRecord[];
+  agents: AgentRecord[];
+  tasks: TaskRecord[];
+  taskDependencies: TaskDependencyRecord[];
+  taskEntityLinks: TaskEntityLinkRecord[];
+  taskActivities: TaskActivityRecord[];
+  analysisActivities: AnalysisActivityRecord[];
   hypothesisExperimentLinks: HypothesisExperimentLinkRecord[];
   hypothesisActivities: HypothesisActivityRecord[];
   experimentActivities: ExperimentActivityRecord[];
@@ -36,12 +50,4 @@ export type ActivityItem = {
   body: string;
   kind: string;
   createdAt: string;
-};
-
-export type AgentSummary = {
-  id: string;
-  latestActivityAt: string | null;
-  hypothesisActivityCount: number;
-  experimentActivityCount: number;
-  evaluationActivityCount: number;
 };

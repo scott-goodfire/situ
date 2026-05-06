@@ -4,6 +4,7 @@ from pydantic_evals import Case
 
 from evals.harness.evaluators import (
     EventWasEmitted,
+    ToolArgsContain,
     ToolResultContains,
     ToolWasCalled,
 )
@@ -16,7 +17,7 @@ from evals.worlds.research_session import (
     ARTIFACT_ID,
     EXPERIMENT_ID,
     HYPOTHESIS_ID,
-    OBJECTIVE_ID,
+    PROJECT_ID,
     SESSION_ID,
     ResearchToolEvalInput,
     ResearchToolEvalOutput,
@@ -44,21 +45,50 @@ def research_tool_cases() -> list[Case[ResearchToolEvalInput, ResearchToolEvalOu
             ),
         ),
         Case(
-            name="get_objective_reads_current_objective",
+            name="get_project_reads_current_project",
             inputs=ResearchToolEvalInput(
-                case_id="get_objective_reads_current_objective",
+                case_id="get_project_reads_current_project",
                 seed="basic",
                 prompt=(
-                    "Please load the current objective with get_objective and "
-                    "state the title."
+                    "Please load the current project with get_project and state "
+                    "the title and objective."
                 ),
             ),
             metadata={"requires_real_llm": True},
             evaluators=(
-                ToolWasCalled("get_objective"),
-                ToolSucceeded("get_objective"),
-                ToolResultContains("get_objective", OBJECTIVE_ID),
-                ToolResultContains("get_objective", "Improve validation score"),
+                ToolWasCalled("get_project"),
+                ToolSucceeded("get_project"),
+                ToolResultContains("get_project", PROJECT_ID),
+                ToolResultContains("get_project", "Improve validation score"),
+            ),
+        ),
+        Case(
+            name="project_setup_and_update_flow",
+            inputs=ResearchToolEvalInput(
+                case_id="project_setup_and_update_flow",
+                seed="projectless",
+                prompt=(
+                    "This session has no project yet. Create a project with "
+                    "create_project using title 'Repo quality lift', objective "
+                    "'Improve retrieval quality', and research_context "
+                    "'Use score and latency_ms.' Then update that project with "
+                    "update_project so the research_context becomes "
+                    "'Refined research context: compare score and latency_ms.' "
+                    "Finally call get_project and state the project title."
+                ),
+            ),
+            metadata={"requires_real_llm": True},
+            evaluators=(
+                ToolWasCalled("create_project"),
+                ToolSucceeded("create_project"),
+                ToolWasCalled("update_project"),
+                ToolSucceeded("update_project"),
+                ToolWasCalled("get_project"),
+                ToolSucceeded("get_project"),
+                ToolResultContains("get_project", "Repo quality lift"),
+                SessionGraphContains("Refined research context"),
+                EventWasEmitted("project.created"),
+                EventWasEmitted("project.updated"),
             ),
         ),
         Case(
@@ -67,7 +97,7 @@ def research_tool_cases() -> list[Case[ResearchToolEvalInput, ResearchToolEvalOu
                 case_id="list_hypotheses_reads_existing_hypothesis",
                 seed="with_hypothesis",
                 prompt=(
-                    "Please pull the current objective's hypotheses with "
+                    "Please pull the current project's hypotheses with "
                     "list_hypotheses, then state the id and title you found."
                 ),
             ),
@@ -76,6 +106,41 @@ def research_tool_cases() -> list[Case[ResearchToolEvalInput, ResearchToolEvalOu
                 ToolWasCalled("list_hypotheses"),
                 ToolSucceeded("list_hypotheses"),
                 ToolResultContains("list_hypotheses", HYPOTHESIS_ID),
+            ),
+        ),
+        Case(
+            name="analysis_creation_comment_and_readback",
+            inputs=ResearchToolEvalInput(
+                case_id="analysis_creation_comment_and_readback",
+                seed="basic",
+                prompt=(
+                    "Create an analysis with create_analysis titled 'Codebase "
+                    "map for evals', summary 'Mapped the current eval knobs.', "
+                    "and content 'The main knobs are score, latency_ms, and "
+                    "tests_passed.' Add an analysis comment that says "
+                    "'Use this map before forming hypotheses.' Then call "
+                    "list_analyses and list_analysis_activities to read both "
+                    "records back."
+                ),
+            ),
+            metadata={"requires_real_llm": True},
+            evaluators=(
+                ToolWasCalled("create_analysis"),
+                ToolSucceeded("create_analysis"),
+                ToolWasCalled("add_analysis_comment"),
+                ToolSucceeded("add_analysis_comment"),
+                ToolWasCalled("list_analyses"),
+                ToolSucceeded("list_analyses"),
+                ToolWasCalled("list_analysis_activities"),
+                ToolSucceeded("list_analysis_activities"),
+                ToolResultContains("list_analyses", "Codebase map for evals"),
+                ToolResultContains(
+                    "list_analysis_activities",
+                    "Use this map before forming hypotheses",
+                ),
+                SessionGraphContains("Mapped the current eval knobs"),
+                EventWasEmitted("analysis.created"),
+                EventWasEmitted("analysis.comment_added"),
             ),
         ),
         Case(
@@ -119,6 +184,53 @@ def research_tool_cases() -> list[Case[ResearchToolEvalInput, ResearchToolEvalOu
             ),
         ),
         Case(
+            name="task_board_coordination_flow",
+            inputs=ResearchToolEvalInput(
+                case_id="task_board_coordination_flow",
+                seed="with_hypothesis",
+                prompt=(
+                    "Coordinate work with tasks. First create a baseline task "
+                    "with create_task: title 'Establish baseline eval', content "
+                    "'Run baseline and record evidence.', kind 'baseline', "
+                    "priority 'high'. Then create a dependent hypothesize task "
+                    "with title 'Generate follow-up hypotheses', content "
+                    "'Generate hypotheses after baseline evidence exists.', "
+                    "kind 'hypothesize', priority 'normal', blocked by the "
+                    "baseline task id. Call get_task_board. Claim the baseline "
+                    "task with claim_task, mark that claimed task done with "
+                    "update_task and result_summary 'Baseline evidence ready.', "
+                    "then claim the next task. Add a task comment to the "
+                    "second claimed task saying 'claimed after baseline'. Link "
+                    f"that second task to hypothesis {HYPOTHESIS_ID} with "
+                    "link_task_entity using entity_kind 'hypothesis' and "
+                    "relationship 'referenced'."
+                ),
+            ),
+            metadata={"requires_real_llm": True},
+            evaluators=(
+                ToolWasCalled("create_task"),
+                ToolSucceeded("create_task"),
+                ToolWasCalled("get_task_board"),
+                ToolSucceeded("get_task_board"),
+                ToolWasCalled("claim_task"),
+                ToolSucceeded("claim_task"),
+                ToolWasCalled("update_task"),
+                ToolSucceeded("update_task"),
+                ToolWasCalled("add_task_comment"),
+                ToolSucceeded("add_task_comment"),
+                ToolWasCalled("link_task_entity"),
+                ToolSucceeded("link_task_entity"),
+                SessionGraphContains("Establish baseline eval"),
+                SessionGraphContains("Generate follow-up hypotheses"),
+                SessionGraphContains("claimed after baseline"),
+                SessionGraphContains(HYPOTHESIS_ID),
+                EventWasEmitted("task.created"),
+                EventWasEmitted("task.done"),
+                EventWasEmitted("task.comment_added"),
+                EventWasEmitted("task.entity_linked"),
+            ),
+        ),
+        Case(
             name="list_experiments_reads_existing_experiment",
             inputs=ResearchToolEvalInput(
                 case_id="list_experiments_reads_existing_experiment",
@@ -134,6 +246,34 @@ def research_tool_cases() -> list[Case[ResearchToolEvalInput, ResearchToolEvalOu
                 ToolWasCalled("list_experiments"),
                 ToolSucceeded("list_experiments"),
                 ToolResultContains("list_experiments", EXPERIMENT_ID),
+            ),
+        ),
+        Case(
+            name="evaluation_result_kind_is_result",
+            inputs=ResearchToolEvalInput(
+                case_id="evaluation_result_kind_is_result",
+                seed="basic",
+                prompt=(
+                    "Create an evaluation with create_evaluation titled "
+                    "'Baseline command output' and summary 'Record baseline "
+                    "score output.' Add an evaluation result with "
+                    "add_evaluation_result using result 'score=0.730 latency=120'. "
+                    "Then call list_evaluation_activities for that evaluation "
+                    "and report the activity kind."
+                ),
+            ),
+            metadata={"requires_real_llm": True},
+            evaluators=(
+                ToolWasCalled("create_evaluation"),
+                ToolSucceeded("create_evaluation"),
+                ToolWasCalled("add_evaluation_result"),
+                ToolSucceeded("add_evaluation_result"),
+                ToolWasCalled("list_evaluation_activities"),
+                ToolSucceeded("list_evaluation_activities"),
+                ToolResultContains("list_evaluation_activities", '"kind": "result"'),
+                SessionGraphContains("score=0.730"),
+                EventWasEmitted("evaluation.created"),
+                EventWasEmitted("evaluation.result_added"),
             ),
         ),
         Case(
@@ -154,6 +294,31 @@ def research_tool_cases() -> list[Case[ResearchToolEvalInput, ResearchToolEvalOu
                 ToolResultContains("create_experiment", "Try cache-key normalization"),
                 SessionGraphContains("Try cache-key normalization"),
                 EventWasEmitted("experiment.created"),
+            ),
+        ),
+        Case(
+            name="workspace_state_inspection_reports_dirty_eval_surface",
+            inputs=ResearchToolEvalInput(
+                case_id="workspace_state_inspection_reports_dirty_eval_surface",
+                seed="with_dirty_workspace",
+                prompt=(
+                    "Inspect the workspace state with inspect_workspace_state "
+                    "using eval_command 'python train.py'. State whether the "
+                    "workspace is dirty and name any changed-file categories."
+                ),
+            ),
+            metadata={"requires_real_llm": True},
+            evaluators=(
+                ToolWasCalled("inspect_workspace_state"),
+                ToolSucceeded("inspect_workspace_state"),
+                ToolArgsContain("inspect_workspace_state", "python train.py"),
+                ToolResultContains("inspect_workspace_state", '"dirty": true'),
+                ToolResultContains("inspect_workspace_state", "test_or_eval"),
+                ToolResultContains("inspect_workspace_state", "dependency"),
+                ToolResultContains(
+                    "inspect_workspace_state",
+                    "Workspace has uncommitted changes",
+                ),
             ),
         ),
         Case(

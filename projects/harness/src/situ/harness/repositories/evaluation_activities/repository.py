@@ -3,7 +3,11 @@ from __future__ import annotations
 from typing import Any
 
 from ...core.db.serialization import json_dumps, json_loads, utc_now
-from ...records import EvaluationActivityRecord
+from ...records import (
+    EvaluationActivityKind,
+    EvaluationActivityRecord,
+    parse_evaluation_activity_kind,
+)
 from ..base import BaseRepository
 from .command import AddEvaluationActivity
 
@@ -27,7 +31,7 @@ class EvaluationActivitiesRepository(BaseRepository):
         *,
         evaluation_id: str,
         actor: str,
-        kind: str,
+        kind: EvaluationActivityKind | str = EvaluationActivityKind.RESULT,
         body: str,
         payload: dict[str, Any] | None = None,
         created_in_session_id: str | None = None,
@@ -36,7 +40,7 @@ class EvaluationActivitiesRepository(BaseRepository):
             evaluation_id=evaluation_id,
             created_in_session_id=created_in_session_id,
             actor=actor,
-            kind=kind,
+            kind=parse_evaluation_activity_kind(kind),
             body=body,
             payload=payload or {},
         )
@@ -51,7 +55,7 @@ class EvaluationActivitiesRepository(BaseRepository):
                 command.evaluation_id,
                 command.created_in_session_id,
                 command.actor,
-                command.kind,
+                command.kind.value,
                 command.body,
                 json_dumps(command.payload),
                 utc_now(),

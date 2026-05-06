@@ -14,6 +14,8 @@ Workspace
   |     |     |-- TaskDependencies
   |     |     |-- TaskEntityLinks
   |     |     `-- TaskActivity
+  |     |-- Analyses                    (project_id required)
+  |     |     `-- AnalysisActivity
   |     |-- Hypotheses                  (project_id required)
   |     |     `-- HypothesisActivity
   |     |-- Experiments                 (project_id required)
@@ -35,10 +37,10 @@ session is valid while setup or triage is still incomplete.
 
 Projects own the durable research ledger and coordination state: agents, agent
 message history, tasks, task dependencies, task entity links, task activities,
-hypotheses, experiments, evaluations, research activities, hypothesis-
-experiment links, and artifacts. Those records carry `project_id`, not
-`session_id`. When useful for provenance, project-owned records may also carry
-fields such as `created_in_session_id`, `claimed_in_session_id`, or
+analyses, hypotheses, experiments, evaluations, research activities,
+hypothesis-experiment links, and artifacts. Those records carry `project_id`,
+not `session_id`. When useful for provenance, project-owned records may also
+carry fields such as `created_in_session_id`, `claimed_in_session_id`, or
 `completed_in_session_id`, but the session is not their owner.
 
 Sessions own lifecycle and runtime attachment state. Starting Situ creates a
@@ -70,9 +72,10 @@ user to reduce this to one command or one metric during onboarding.
 
 A session may have no project when it first starts. Once the setup is known,
 the manager or user can create or attach a project. Multiple sessions may attach
-to the same project over time. Hypotheses, experiments, evaluations, research
-activities, and artifacts created while that session is attached to a project
-belong to the project, with optional `created_in_session_id` provenance.
+to the same project over time. Analyses, hypotheses, experiments, evaluations,
+research activities, and artifacts created while that session is attached to a
+project belong to the project, with optional `created_in_session_id`
+provenance.
 
 ## Session
 
@@ -88,6 +91,26 @@ the workspace; lookups for "the latest session" sort by `updated_at` on demand.
 Agent, task, and research records may point back to the session that created,
 claimed, completed, or otherwise observed them. Those fields are provenance and
 should not be used as ownership boundaries.
+
+## Analysis
+
+Durable project understanding before, between, and around hypotheses.
+
+Analyses capture what the agent or user has learned about the codebase, domain,
+prior art, constraints, opportunities, or open questions. They are not
+necessarily claims to test and should not be forced into hypotheses too early.
+The expected flow is that discovery and synthesis tasks produce analyses, the
+manager and scientist read them, and only the ideas that become testable
+improvement directions are pulled into hypotheses.
+
+Analyses should be status-light: open, active, or closed. If one analysis
+replaces another, link it with `supersedes_analysis_id` and explain the
+relationship in an analysis activity rather than adding a broad versioning
+system.
+
+Analyses are required to belong to a project (`project_id` FK, NOT NULL). If a
+session created the analysis, store that provenance as `created_in_session_id`.
+If an agent created it, store `created_by_agent_id` when available.
 
 ## Hypothesis
 
@@ -154,25 +177,28 @@ are enough. Put explanation in hypothesis or experiment activities.
 
 The main collaboration primitive.
 
-Activities are timeline entries attached to hypotheses, experiments, or
-evaluations. They replace standalone evidence, finding, warning, and decision
-models in the first slice.
+Activities are timeline entries attached to analyses, hypotheses, experiments,
+or evaluations. They replace standalone evidence, finding, warning, and
+decision models in the first slice.
 
-Activities reach a project through their parent (the hypothesis, experiment,
-or evaluation), which is itself project-required. Activity rows do not carry
-their own `session_id` column. If a session created the activity, store that
-provenance as `created_in_session_id`.
+Activities reach a project through their parent (the analysis, hypothesis,
+experiment, or evaluation), which is itself project-required. Activity rows do
+not carry their own `session_id` column. If a session created the activity,
+store that provenance as `created_in_session_id`.
 
-The first slice uses only `comment` as the activity kind. Results, concerns,
-interpretations, plans, and decisions are written as comments. Structured
-payloads may label those comments for views or agents when useful, but the
-human-readable body is the source of truth.
+Analysis, hypothesis, experiment, and task activities use `comment` as the
+activity kind. Evaluation activities use `result` as the activity kind because
+their purpose is measurement evidence. Results, concerns, interpretations,
+plans, and decisions still live in human-readable activity bodies, with
+structured payloads available for views or agents when useful.
 
 The activity body should remain human-readable. Structured payloads can hold
 metrics, eval outputs, artifact IDs, or machine-readable details when useful.
 Raw benchmark or command evidence should normally be attached to an evaluation
-activity, with experiment activities reserved for what changed, why it was
-tried, and how the result affects the experiment.
+result activity, with experiment activities reserved for what changed, why it
+was tried, and how the result affects the experiment. Analysis activities should
+explain refinements, caveats, source notes, or why an analysis is superseded;
+they should not become a replacement for hypotheses or evaluations.
 
 ## Artifact
 

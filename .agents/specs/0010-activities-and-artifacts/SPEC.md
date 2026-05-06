@@ -103,7 +103,8 @@ First-slice evaluation shape:
 
 ```text
 id
-session_id                 (NOT NULL, FK -> sessions)
+project_id                 (NOT NULL, FK -> projects)
+created_in_session_id?
 title
 summary
 status: open | active | closed
@@ -117,8 +118,9 @@ First-slice evaluation activity shape:
 ```text
 id
 evaluation_id              (NOT NULL, FK -> evaluations)
+created_in_session_id?
 actor
-kind: comment
+kind: result
 body
 payload_json
 created_at

@@ -12,7 +12,8 @@ Product copy, domain models, APIs, UI labels, reports, and documentation.
 ## Rule
 
 Use the current product nouns consistently: Workspace, Project, Session, Agent,
-Task, Hypothesis, Experiment, Evaluation, Activity, Artifact, and Event.
+Task, Analysis, Hypothesis, Experiment, Evaluation, Activity, Artifact, and
+Event.
 
 ## Required Checks
 
@@ -28,7 +29,7 @@ Task, Hypothesis, Experiment, Evaluation, Activity, Artifact, and Event.
   association, not the durable research or coordination ledger. There is no
   stored "active session" pointer; the most-recently-updated session is derived
   on demand.
-- Hypotheses, experiments, evaluations, their research activities, and
+- Analyses, hypotheses, experiments, evaluations, their research activities, and
   artifacts are project-required (`project_id` is NOT NULL on each durable
   research record that needs direct project ownership). They may carry optional
   `created_in_session_id` provenance, but session is not their owner.
@@ -39,18 +40,27 @@ Task, Hypothesis, Experiment, Evaluation, Activity, Artifact, and Event.
 - Agent message history, task dependencies, task entity links, and task
   activities are project-owned coordination records. Session fields on those
   records are provenance, not ownership.
+- Analyses capture durable project understanding from codebase inspection,
+  prior-art research, synthesis, constraints, opportunities, or open questions.
+  They are not forced into hypotheses until they become testable improvement
+  directions.
 - Hypotheses are lightweight research threads with minimal status.
 - Experiments are concrete attempts and may link to many hypotheses.
 - Evaluations are lightweight measurement threads for baseline, candidate,
   reproduction, sanity, and blocked setup evidence. They may optionally
   reference the experiment they measure.
-- Activities carry results, concerns, comments, decisions, and interpretations.
-  Research activities reach a project through their parent and do not carry a
-  `session_id` column.
+- Activities carry results, concerns, comments, decisions, source notes, and
+  interpretations. Research activities reach a project through their parent and
+  do not carry a `session_id` column.
 - Evaluation activities carry raw measurement evidence, repeated runs,
   reproduction notes, and concern-like observations.
 - Task activities carry coordination notes, claim context, user steering, and
   completion/failure context.
+- Each entity that has activities owns its own `<Entity>ActivityKind` enum
+  (`HypothesisActivityKind`, `ExperimentActivityKind`, `EvaluationActivityKind`,
+  `AnalysisActivityKind`, `TaskActivityKind`). There is no shared `ActivityKind`
+  enum across entities — each kind vocabulary evolves independently with its
+  entity.
 - Artifacts preserve inspectable receipts and always belong to a project.
 - Events power internal runtime, project, and session timelines. They use
   optional `associated_project_id` and `associated_session_id` fields rather
@@ -61,6 +71,8 @@ Task, Hypothesis, Experiment, Evaluation, Activity, Artifact, and Event.
 
 ## Red Flags
 
+- A shared `ActivityKind` enum used across multiple entity activity records.
+  Each entity's activity has its own kind enum.
 - User-facing terms like world model, belief graph, trajectory engine, or
   execution substrate.
 - Experiments shown as an undifferentiated event stream.

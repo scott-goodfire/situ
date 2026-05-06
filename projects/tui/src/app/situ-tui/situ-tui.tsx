@@ -11,6 +11,7 @@ import {
 } from "@situ/collections";
 import { HttpJsonRpcClient } from "@situ/rpc-client/http";
 import type {
+  AgentRecord,
   CollectionUpsertedParams,
   CollectionsBootstrapParams,
   CollectionsBootstrapResult,
@@ -23,13 +24,14 @@ import type {
   ExperimentRecord,
   HypothesisActivityRecord,
   HypothesisRecord,
-  ObjectiveRecord,
-  ResearchContextRecord,
+  ProjectRecord,
   SessionRecord,
   SessionResumeParams,
   SessionResumeResult,
   SessionStartParams,
   SessionStartResult,
+  TaskActivityRecord,
+  TaskRecord,
 } from "@situ/protocol";
 import { useLiveQuery } from "@tanstack/react-db";
 import {
@@ -66,16 +68,9 @@ export function SituTui() {
   );
   const clientRef = useRef<HttpJsonRpcClient | undefined>(undefined);
   const trackedSessionIdRef = useRef<string | undefined>(undefined);
-  const objectivesQuery = useLiveQuery(
+  const projectsQuery = useLiveQuery(
     (query) =>
-      query.from({ objective: collections.objectives }).select(({ objective }) => objective),
-    [collections],
-  );
-  const researchContextsQuery = useLiveQuery(
-    (query) =>
-      query
-        .from({ researchContext: collections.researchContexts })
-        .select(({ researchContext }) => researchContext),
+      query.from({ project: collections.projects }).select(({ project }) => project),
     [collections],
   );
   const sessionsQuery = useLiveQuery(
@@ -102,6 +97,22 @@ export function SituTui() {
       query
         .from({ evaluation: collections.evaluations })
         .select(({ evaluation }) => evaluation),
+    [collections],
+  );
+  const agentsQuery = useLiveQuery(
+    (query) =>
+      query.from({ agent: collections.agents }).select(({ agent }) => agent),
+    [collections],
+  );
+  const tasksQuery = useLiveQuery(
+    (query) => query.from({ task: collections.tasks }).select(({ task }) => task),
+    [collections],
+  );
+  const taskActivitiesQuery = useLiveQuery(
+    (query) =>
+      query
+        .from({ activity: collections.taskActivities })
+        .select(({ activity }) => activity),
     [collections],
   );
   const hypothesisActivitiesQuery = useLiveQuery(
@@ -138,16 +149,9 @@ export function SituTui() {
     exitRef.current = exit;
   }, [exit]);
 
-  const objectives = useMemo(
-    () => sortByCreated({ records: (objectivesQuery.data ?? []) as ObjectiveRecord[] }),
-    [objectivesQuery.data],
-  );
-  const researchContexts = useMemo(
-    () =>
-      sortByCreated({
-        records: (researchContextsQuery.data ?? []) as ResearchContextRecord[],
-      }),
-    [researchContextsQuery.data],
+  const projects = useMemo(
+    () => sortByCreated({ records: (projectsQuery.data ?? []) as ProjectRecord[] }),
+    [projectsQuery.data],
   );
   const sessions = useMemo(
     () => sortByCreated({ records: (sessionsQuery.data ?? []) as SessionRecord[] }),
@@ -164,6 +168,21 @@ export function SituTui() {
   const evaluations = useMemo(
     () => sortByCreated({ records: (evaluationsQuery.data ?? []) as EvaluationRecord[] }),
     [evaluationsQuery.data],
+  );
+  const agents = useMemo(
+    () => sortByCreated({ records: (agentsQuery.data ?? []) as AgentRecord[] }),
+    [agentsQuery.data],
+  );
+  const tasks = useMemo(
+    () => sortByCreated({ records: (tasksQuery.data ?? []) as TaskRecord[] }),
+    [tasksQuery.data],
+  );
+  const taskActivities = useMemo(
+    () =>
+      sortByCreated({
+        records: (taskActivitiesQuery.data ?? []) as TaskActivityRecord[],
+      }),
+    [taskActivitiesQuery.data],
   );
   const hypothesisActivities = useMemo(
     () =>
@@ -334,54 +353,57 @@ export function SituTui() {
     sessions,
     status,
   });
-  const activeObjective =
-    objectiveForSession({
-      objectives,
+  const activeProject =
+    projectForSession({
+      projects,
       session: latestSession,
-    }) ?? objectives.at(-1);
-  const activeResearchContext = researchContextForSession({
-    researchContexts,
-    session: latestSession,
+    }) ?? latestActiveProject({ projects });
+  const activeProjectId = latestSession?.project_id ?? activeProject?.id;
+  const projectAgents = agentsForProject({
+    agents,
+    projectId: activeProjectId,
   });
-  const sessionExperiments = experimentsForSession({
+  const projectTasks = tasksForProject({
+    tasks,
+    projectId: activeProjectId,
+  });
+  const projectTaskActivities = taskActivitiesForProject({
+    activities: taskActivities,
+    projectId: activeProjectId,
+  });
+  const projectExperiments = experimentsForProject({
     experiments,
-    session: latestSession,
+    projectId: activeProjectId,
   });
-  const sessionHypotheses = hypothesesForSession({
+  const projectHypotheses = hypothesesForProject({
     hypotheses,
-    session: latestSession,
+    projectId: activeProjectId,
   });
-  const sessionHypothesisActivities = hypothesisActivitiesForSession({
+  const projectHypothesisActivities = hypothesisActivitiesForProject({
     activities: hypothesisActivities,
-    hypotheses,
-    session: latestSession,
+    hypotheses: projectHypotheses,
   });
-  const sessionExperimentActivities = experimentActivitiesForSession({
+  const projectExperimentActivities = experimentActivitiesForProject({
     activities: experimentActivities,
-    experiments,
-    session: latestSession,
+    experiments: projectExperiments,
   });
-  const sessionEvaluations = evaluationsForSession({
+  const projectEvaluations = evaluationsForProject({
     evaluations,
-    session: latestSession,
+    projectId: activeProjectId,
   });
-  const sessionEvaluationActivities = evaluationActivitiesForSession({
+  const projectEvaluationActivities = evaluationActivitiesForProject({
     activities: evaluationActivities,
-    evaluations: sessionEvaluations,
-    session: latestSession,
+    evaluations: projectEvaluations,
   });
-  const sessionEvents = eventsForSession({
+  const projectEvents = eventsForProject({
     events,
+    projectId: activeProjectId,
     session: latestSession,
   });
-  const activeExperiment = lodash.find(
-    sessionExperiments,
-    (experiment: ExperimentRecord) => experiment.status === "active",
-  );
   const statusLine = statusSummary({
     status,
     session: latestSession,
-    experimentCount: sessionExperiments.length,
+    experimentCount: projectExperiments.length,
     maxExperiments: maxExperimentCount,
   });
   const handleStartSession = () => {
@@ -433,26 +455,27 @@ export function SituTui() {
       workspace={workspace}
       statusLine={statusLine}
       dashboardMessage={dashboardMessage}
-      objective={activeObjective}
-      researchContext={activeResearchContext}
+      project={activeProject}
       session={latestSession}
-      experimentCount={sessionExperiments.length}
+      agents={projectAgents}
+      tasks={projectTasks}
+      experimentCount={projectExperiments.length}
       maxExperiments={maxExperimentCount}
-      activeExperiment={activeExperiment}
-      hypotheses={sessionHypotheses}
-      experiments={sessionExperiments}
-      evaluations={sessionEvaluations}
-      hypothesisActivities={sessionHypothesisActivities}
-      experimentActivities={sessionExperimentActivities}
-      evaluationActivities={sessionEvaluationActivities}
-      events={sessionEvents}
+      hypotheses={projectHypotheses}
+      experiments={projectExperiments}
+      evaluations={projectEvaluations}
+      taskActivities={projectTaskActivities}
+      hypothesisActivities={projectHypothesisActivities}
+      experimentActivities={projectExperimentActivities}
+      evaluationActivities={projectEvaluationActivities}
+      events={projectEvents}
       onDashboardCommand={({ command }) => {
         handleDashboardCommand({
           command,
           exit,
           status,
           session: latestSession,
-          experimentCount: sessionExperiments.length,
+          experimentCount: projectExperiments.length,
           maxExperiments: maxExperimentCount,
           setDashboardMessage,
         });
@@ -682,176 +705,204 @@ function latestSessionRecord({
   return sortByCreated({ records: sessions }).at(-1);
 }
 
-function objectiveForSession({
-  objectives,
+function projectForSession({
+  projects,
   session,
 }: {
-  objectives: ObjectiveRecord[];
+  projects: ProjectRecord[];
   session: SessionRecord | undefined;
-}): ObjectiveRecord | undefined {
-  if (!session) {
+}): ProjectRecord | undefined {
+  if (!session?.project_id) {
     return undefined;
   }
 
   return lodash.find(
-    objectives,
-    (objective: ObjectiveRecord) => objective.session_id === session.id,
+    projects,
+    (project: ProjectRecord) => project.id === session.project_id,
   );
 }
 
-function researchContextForSession({
-  researchContexts,
-  session,
+function latestActiveProject({
+  projects,
 }: {
-  researchContexts: ResearchContextRecord[];
-  session: SessionRecord | undefined;
-}): ResearchContextRecord | undefined {
-  if (!session) {
-    return undefined;
+  projects: ProjectRecord[];
+}): ProjectRecord | undefined {
+  const activeProjects = lodash.filter(
+    projects,
+    (project: ProjectRecord) => project.status === "active",
+  );
+
+  return sortByCreated({ records: activeProjects }).at(-1) ?? projects.at(-1);
+}
+
+function agentsForProject({
+  agents,
+  projectId,
+}: {
+  agents: AgentRecord[];
+  projectId: string | undefined;
+}): AgentRecord[] {
+  if (!projectId) {
+    return [];
   }
 
-  return lodash.find(
-    researchContexts,
-    (researchContext: ResearchContextRecord) =>
-      researchContext.session_id === session.id,
+  return lodash.filter(
+    agents,
+    (agent: AgentRecord) => agent.project_id === projectId,
   );
 }
 
-function experimentsForSession({
+function tasksForProject({
+  tasks,
+  projectId,
+}: {
+  tasks: TaskRecord[];
+  projectId: string | undefined;
+}): TaskRecord[] {
+  if (!projectId) {
+    return [];
+  }
+
+  return lodash.orderBy(
+    lodash.filter(tasks, (task: TaskRecord) => task.project_id === projectId),
+    [
+      (task: TaskRecord) => task.available_at,
+      (task: TaskRecord) => task.created_at,
+      (task: TaskRecord) => task.id,
+    ],
+    ["asc", "asc", "asc"],
+  );
+}
+
+function taskActivitiesForProject({
+  activities,
+  projectId,
+}: {
+  activities: TaskActivityRecord[];
+  projectId: string | undefined;
+}): TaskActivityRecord[] {
+  if (!projectId) {
+    return [];
+  }
+
+  return lodash.filter(
+    activities,
+    (activity: TaskActivityRecord) => activity.project_id === projectId,
+  );
+}
+
+function experimentsForProject({
   experiments,
-  session,
+  projectId,
 }: {
   experiments: ExperimentRecord[];
-  session: SessionRecord | undefined;
+  projectId: string | undefined;
 }): ExperimentRecord[] {
-  if (!session) {
+  if (!projectId) {
     return [];
   }
 
   return lodash.filter(
     experiments,
-    (experiment: ExperimentRecord) => experiment.session_id === session.id,
+    (experiment: ExperimentRecord) => experiment.project_id === projectId,
   );
 }
 
-function evaluationsForSession({
+function evaluationsForProject({
   evaluations,
-  session,
+  projectId,
 }: {
   evaluations: EvaluationRecord[];
-  session: SessionRecord | undefined;
+  projectId: string | undefined;
 }): EvaluationRecord[] {
-  if (!session) {
+  if (!projectId) {
     return [];
   }
 
   return lodash.filter(
     evaluations,
-    (evaluation: EvaluationRecord) => evaluation.session_id === session.id,
+    (evaluation: EvaluationRecord) => evaluation.project_id === projectId,
   );
 }
 
-function hypothesesForSession({
+function hypothesesForProject({
   hypotheses,
-  session,
+  projectId,
 }: {
   hypotheses: HypothesisRecord[];
-  session: SessionRecord | undefined;
+  projectId: string | undefined;
 }): HypothesisRecord[] {
-  if (!session) {
+  if (!projectId) {
     return [];
   }
 
   return lodash.filter(
     hypotheses,
-    (hypothesis: HypothesisRecord) => hypothesis.session_id === session.id,
+    (hypothesis: HypothesisRecord) => hypothesis.project_id === projectId,
   );
 }
 
-function hypothesisActivitiesForSession({
+function hypothesisActivitiesForProject({
   activities,
   hypotheses,
-  session,
 }: {
   activities: HypothesisActivityRecord[];
   hypotheses: HypothesisRecord[];
-  session: SessionRecord | undefined;
 }): HypothesisActivityRecord[] {
-  if (!session) {
-    return [];
-  }
-
-  const hypothesisIds = new Set(
-    hypotheses
-      .filter((hypothesis) => hypothesis.session_id === session.id)
-      .map((hypothesis) => hypothesis.id),
-  );
+  const hypothesisIds = new Set(hypotheses.map((hypothesis) => hypothesis.id));
 
   return lodash.filter(activities, (activity: HypothesisActivityRecord) =>
     hypothesisIds.has(activity.hypothesis_id),
   );
 }
 
-function experimentActivitiesForSession({
+function experimentActivitiesForProject({
   activities,
   experiments,
-  session,
 }: {
   activities: ExperimentActivityRecord[];
   experiments: ExperimentRecord[];
-  session: SessionRecord | undefined;
 }): ExperimentActivityRecord[] {
-  if (!session) {
-    return [];
-  }
-
-  const experimentIds = new Set(
-    experiments
-      .filter((experiment) => experiment.session_id === session.id)
-      .map((experiment) => experiment.id),
-  );
+  const experimentIds = new Set(experiments.map((experiment) => experiment.id));
 
   return lodash.filter(activities, (activity: ExperimentActivityRecord) =>
     experimentIds.has(activity.experiment_id),
   );
 }
 
-function evaluationActivitiesForSession({
+function evaluationActivitiesForProject({
   activities,
   evaluations,
-  session,
 }: {
   activities: EvaluationActivityRecord[];
   evaluations: EvaluationRecord[];
-  session: SessionRecord | undefined;
 }): EvaluationActivityRecord[] {
-  if (!session) {
-    return [];
-  }
-
-  const evaluationIds = new Set(
-    evaluations
-      .filter((evaluation) => evaluation.session_id === session.id)
-      .map((evaluation) => evaluation.id),
-  );
+  const evaluationIds = new Set(evaluations.map((evaluation) => evaluation.id));
 
   return lodash.filter(activities, (activity: EvaluationActivityRecord) =>
     evaluationIds.has(activity.evaluation_id),
   );
 }
 
-function eventsForSession({
+function eventsForProject({
   events,
+  projectId,
   session,
 }: {
   events: EventRecord[];
+  projectId: string | undefined;
   session: SessionRecord | undefined;
 }): EventRecord[] {
-  if (!session) {
+  if (!projectId && !session) {
     return [];
   }
 
-  return lodash.filter(events, (event: EventRecord) => event.session_id === session.id);
+  return lodash.filter(
+    events,
+    (event: EventRecord) =>
+      (projectId !== undefined && event.associated_project_id === projectId) ||
+      (session !== undefined && event.associated_session_id === session.id),
+  );
 }
 
 function errorMessage({ error }: { error: unknown }): string {
@@ -871,7 +922,14 @@ function sortByCreated<T extends { created_at: string }>({ records }: { records:
 }
 
 function sortEvents({ records }: { records: EventRecord[] }): EventRecord[] {
-  return lodash.orderBy(records, [(record: EventRecord) => record.id], ["asc"]);
+  return lodash.orderBy(
+    records,
+    [
+      (record: EventRecord) => timestampMillis({ isoTimestamp: record.created_at }),
+      (record: EventRecord) => record.id,
+    ],
+    ["asc", "asc"],
+  );
 }
 
 function timestampMillis({ isoTimestamp }: { isoTimestamp: string }): number {

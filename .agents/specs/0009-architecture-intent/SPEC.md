@@ -33,6 +33,7 @@ TypeScript Ink TUI
               -> objective         (project field)
               -> research context  (project field)
               -> agents and tasks  (project-owned, session provenance)
+              -> analyses          (project_id required)
               -> hypotheses        (project_id required)
               -> experiments       (project_id required)
               -> evaluations       (project_id required)
@@ -51,7 +52,7 @@ The system should keep these responsibilities distinct:
 - Session server: harness subprocess ownership, HTTP RPC, event streaming, and
   local session discovery
 - Harness: workspace/project/session lifecycle, durable state, internal events,
-  agents, tasks, hypotheses, experiments, evaluations, links, activities,
+  agents, tasks, analyses, hypotheses, experiments, evaluations, links, activities,
   artifacts, and automated trust concerns. Objective and research context are
   fields on Project.
 - Workers: concrete experiments, code changes, eval runs, analysis
@@ -69,9 +70,15 @@ For the first collection-backed slice, the sync surface is:
 - Sessions
 - Agents
 - Tasks
+- Task dependencies
+- Task entity links
+- Task activities
+- Analyses
+- Analysis activities
 - Hypotheses
 - Experiments
 - Evaluations
+- Hypothesis/experiment links
 - Hypothesis activities
 - Experiment activities
 - Evaluation activities
@@ -139,7 +146,7 @@ Start with a narrow, durable core:
 - Workspace as the folder boundary
 - Project ledger with objective and research context fields
 - Sessions as execution/provenance windows attached to zero or one project
-- Project-owned agents, tasks, hypotheses, experiments, and evaluations
+- Project-owned agents, tasks, analyses, hypotheses, experiments, and evaluations
 - Activities (parent-scoped)
 - Artifact references (project-required)
 - Internal event log with optional project/session associations

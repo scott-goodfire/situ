@@ -6,10 +6,12 @@ from ..base import DbRecord
 
 
 class TaskEntityKind(StrEnum):
+    ANALYSIS = "analysis"
     HYPOTHESIS = "hypothesis"
     EXPERIMENT = "experiment"
     EVALUATION = "evaluation"
     ARTIFACT = "artifact"
+    ANALYSIS_ACTIVITY = "analysis_activity"
     HYPOTHESIS_ACTIVITY = "hypothesis_activity"
     EXPERIMENT_ACTIVITY = "experiment_activity"
     EVALUATION_ACTIVITY = "evaluation_activity"

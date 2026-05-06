@@ -1,12 +1,5 @@
 {
   "$defs": {
-    "ActivityKind": {
-      "enum": [
-        "comment"
-      ],
-      "title": "ActivityKind",
-      "type": "string"
-    },
     "AgentKind": {
       "enum": [
         "manager",
@@ -89,6 +82,152 @@
       ],
       "title": "AgentStatus",
       "type": "string"
+    },
+    "AnalysisActivityKind": {
+      "enum": [
+        "comment"
+      ],
+      "title": "AnalysisActivityKind",
+      "type": "string"
+    },
+    "AnalysisActivityRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "integer"
+        },
+        "analysis_id": {
+          "title": "Analysis Id",
+          "type": "string"
+        },
+        "created_in_session_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Created In Session Id"
+        },
+        "actor": {
+          "title": "Actor",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/AnalysisActivityKind"
+        },
+        "body": {
+          "title": "Body",
+          "type": "string"
+        },
+        "payload": {
+          "additionalProperties": true,
+          "title": "Payload",
+          "type": "object"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "analysis_id",
+        "actor",
+        "kind",
+        "body",
+        "created_at"
+      ],
+      "title": "AnalysisActivityRecord",
+      "type": "object"
+    },
+    "AnalysisRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "created_in_session_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Created In Session Id"
+        },
+        "created_by_agent_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Created By Agent Id"
+        },
+        "status": {
+          "$ref": "#/$defs/WorkStatus"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "summary": {
+          "title": "Summary",
+          "type": "string"
+        },
+        "content": {
+          "title": "Content",
+          "type": "string"
+        },
+        "supersedes_analysis_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Supersedes Analysis Id"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        },
+        "updated_at": {
+          "title": "Updated At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "project_id",
+        "status",
+        "title",
+        "summary",
+        "content",
+        "created_at",
+        "updated_at"
+      ],
+      "title": "AnalysisRecord",
+      "type": "object"
     },
     "ArtifactRecord": {
       "additionalProperties": false,
@@ -175,6 +314,13 @@
       "title": "ArtifactRecord",
       "type": "object"
     },
+    "EvaluationActivityKind": {
+      "enum": [
+        "result"
+      ],
+      "title": "EvaluationActivityKind",
+      "type": "string"
+    },
     "EvaluationActivityRecord": {
       "additionalProperties": false,
       "properties": {
@@ -203,7 +349,7 @@
           "type": "string"
         },
         "kind": {
-          "$ref": "#/$defs/ActivityKind"
+          "$ref": "#/$defs/EvaluationActivityKind"
         },
         "body": {
           "title": "Body",
@@ -355,6 +501,13 @@
       "title": "EventRecord",
       "type": "object"
     },
+    "ExperimentActivityKind": {
+      "enum": [
+        "comment"
+      ],
+      "title": "ExperimentActivityKind",
+      "type": "string"
+    },
     "ExperimentActivityRecord": {
       "additionalProperties": false,
       "properties": {
@@ -383,7 +536,7 @@
           "type": "string"
         },
         "kind": {
-          "$ref": "#/$defs/ActivityKind"
+          "$ref": "#/$defs/ExperimentActivityKind"
         },
         "body": {
           "title": "Body",
@@ -465,6 +618,13 @@
       "title": "ExperimentRecord",
       "type": "object"
     },
+    "HypothesisActivityKind": {
+      "enum": [
+        "comment"
+      ],
+      "title": "HypothesisActivityKind",
+      "type": "string"
+    },
     "HypothesisActivityRecord": {
       "additionalProperties": false,
       "properties": {
@@ -493,7 +653,7 @@
           "type": "string"
         },
         "kind": {
-          "$ref": "#/$defs/ActivityKind"
+          "$ref": "#/$defs/HypothesisActivityKind"
         },
         "body": {
           "title": "Body",
@@ -708,6 +868,13 @@
       "title": "SessionStatus",
       "type": "string"
     },
+    "TaskActivityKind": {
+      "enum": [
+        "comment"
+      ],
+      "title": "TaskActivityKind",
+      "type": "string"
+    },
     "TaskActivityRecord": {
       "additionalProperties": false,
       "properties": {
@@ -752,7 +919,7 @@
           "type": "string"
         },
         "kind": {
-          "$ref": "#/$defs/ActivityKind"
+          "$ref": "#/$defs/TaskActivityKind"
         },
         "body": {
           "title": "Body",
@@ -811,10 +978,12 @@
     },
     "TaskEntityKind": {
       "enum": [
+        "analysis",
         "hypothesis",
         "experiment",
         "evaluation",
         "artifact",
+        "analysis_activity",
         "hypothesis_activity",
         "experiment_activity",
         "evaluation_activity",
@@ -1176,6 +1345,13 @@
       "title": "Evaluations",
       "type": "array"
     },
+    "analyses": {
+      "items": {
+        "$ref": "#/$defs/AnalysisRecord"
+      },
+      "title": "Analyses",
+      "type": "array"
+    },
     "hypothesis_experiment_links": {
       "items": {
         "$ref": "#/$defs/HypothesisExperimentLinkRecord"
@@ -1216,6 +1392,13 @@
         "$ref": "#/$defs/TaskActivityRecord"
       },
       "title": "Task Activities",
+      "type": "array"
+    },
+    "analysis_activities": {
+      "items": {
+        "$ref": "#/$defs/AnalysisActivityRecord"
+      },
+      "title": "Analysis Activities",
       "type": "array"
     },
     "hypothesis_activities": {

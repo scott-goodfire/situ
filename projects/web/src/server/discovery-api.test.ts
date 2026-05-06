@@ -219,7 +219,7 @@ describe("discovery api", () => {
       expect(response.status).toBe(200);
       expect(payload.project?.status).toBe("stopped");
       expect(payload.snapshot?.cursor).toBe(1);
-      expect(payload.snapshot?.objectives[0]?.title).toBe("Improve snapshot score");
+      expect(payload.snapshot?.projects?.[0]?.title).toBe("Improve snapshot score");
       expect(payload.snapshot?.sessions[0]?.id).toBe("session_0001");
       expect(payload.snapshot?.hypotheses[0]?.id).toBe("hyp_0001");
       expect(payload.snapshot?.experiments[0]?.id).toBe("exp_0001");

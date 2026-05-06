@@ -21,8 +21,9 @@ class GetSessionTool(BaseSituTool[SituToolDeps, GetSessionResult]):
         **_kwargs: Any,
     ) -> GetSessionResult:
         """
-        Load a session and its related workspace, project, hypotheses,
-        experiments, evaluations, links, activities, artifacts, and events.
+        Load a session and its related workspace, project, analyses,
+        hypotheses, experiments, evaluations, links, activities, artifacts,
+        and events.
         """
         graph = SessionsService(repos=ctx.deps.get_repos()).get_session(
             session_id or ctx.deps.session_id
@@ -45,6 +46,10 @@ class GetSessionTool(BaseSituTool[SituToolDeps, GetSessionResult]):
             ],
             task_entity_links=[link.model_dump() for link in graph.task_entity_links],
             task_activities=[activity.model_dump() for activity in graph.task_activities],
+            analyses=[analysis.model_dump() for analysis in graph.analyses],
+            analysis_activities=[
+                activity.model_dump() for activity in graph.analysis_activities
+            ],
             hypothesis_activities=[
                 activity.model_dump() for activity in graph.hypothesis_activities
             ],

@@ -8,11 +8,13 @@ from evals.harness.models import EvalModel
 
 ResearchSessionSeed = Literal[
     "basic",
+    "projectless",
     "with_hypothesis",
     "with_experiment",
     "with_link",
     "with_comments",
     "with_artifact",
+    "with_dirty_workspace",
     "needs_baseline",
     "with_baseline_result",
     "with_promising_results",

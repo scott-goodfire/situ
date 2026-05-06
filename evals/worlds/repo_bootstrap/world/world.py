@@ -11,9 +11,10 @@ from situ.harness.repositories import Repositories
 from evals.harness.models import EvalEvent
 from evals.worlds.repo_bootstrap.models import RepoBootstrapSeed
 
-OBJECTIVE_ID = "objective_repo_bootstrap_0001"
-RESEARCH_CONTEXT_ID = "rctx_repo_bootstrap_0001"
+WORKSPACE_ID = "workspace_repo_bootstrap"
+PROJECT_ID = "project_repo_bootstrap"
 SESSION_ID = "session_repo_bootstrap_0001"
+SCIENTIST_AGENT_ID = f"agent_{PROJECT_ID}_scientist"
 HYPOTHESIS_ID = "hyp_repo_bootstrap_train_variants"
 BASELINE_EVALUATION_ID = "eval_repo_bootstrap_baseline"
 
@@ -137,19 +138,26 @@ class RepoBootstrapWorld:
         self,
         event_type: str,
         message: str,
-        session_id: str | None,
+        associated_project_id: str | None,
+        associated_session_id: str | None,
         payload: dict[str, Any] | None,
     ) -> dict[str, Any]:
         record = self.repos.events.add(
             event_type=event_type,
             message=message,
-            session_id=session_id,
+            associated_project_id=associated_project_id,
+            associated_session_id=associated_session_id,
             payload=payload or {},
         )
         event = EvalEvent(
             event_type=event_type,
             message=message,
-            payload={"id": record.id, "session_id": session_id, **(payload or {})},
+            payload={
+                "id": record.id,
+                "associated_project_id": associated_project_id,
+                "associated_session_id": associated_session_id,
+                **(payload or {}),
+            },
         )
         self.events.append(event)
         return record.model_dump()
@@ -157,14 +165,24 @@ class RepoBootstrapWorld:
     def session_graph(self) -> dict[str, Any]:
         graph = SessionsService(repos=self.repos).get_session(SESSION_ID)
         return {
+            "workspace": graph.workspace.model_dump() if graph.workspace is not None else None,
             "project": graph.project.model_dump() if graph.project is not None else None,
             "session": graph.session.model_dump() if graph.session is not None else None,
-            "objective": graph.objective.model_dump() if graph.objective is not None else None,
-            "research_context": (
-                graph.research_context.model_dump()
-                if graph.research_context is not None
-                else None
-            ),
+            "agents": [item.model_dump() for item in graph.agents],
+            "tasks": [item.model_dump() for item in graph.tasks],
+            "task_dependencies": [
+                item.model_dump() for item in graph.task_dependencies
+            ],
+            "task_entity_links": [
+                item.model_dump() for item in graph.task_entity_links
+            ],
+            "task_activities": [
+                item.model_dump() for item in graph.task_activities
+            ],
+            "analyses": [item.model_dump() for item in graph.analyses],
+            "analysis_activities": [
+                item.model_dump() for item in graph.analysis_activities
+            ],
             "hypotheses": [item.model_dump() for item in graph.hypotheses],
             "experiments": [item.model_dump() for item in graph.experiments],
             "evaluations": [item.model_dump() for item in graph.evaluations],
@@ -210,25 +228,27 @@ def _build_repos(path: Path, workspace_path: Path) -> Repositories:
     path.mkdir(parents=True)
     db = Database(
         path / "situ.sqlite",
-        project_id="project_repo_bootstrap",
+        workspace_id=WORKSPACE_ID,
         repo_path=str(workspace_path),
     )
     repos = Repositories.create(db)
-    project = repos.project.ensure()
-    repos.sessions.create(SESSION_ID, project_id=project.id)
-    repos.objectives.create(
-        objective_id=OBJECTIVE_ID,
-        session_id=SESSION_ID,
+    workspace = repos.workspaces.ensure()
+    project = repos.projects.create(
+        project_id=PROJECT_ID,
+        workspace_id=workspace.id,
         title="Improve validation bits per byte",
-        description=(
+        objective=(
             "Find trustworthy training variants that lower val_bpb without "
             "invalidating the measurement surface."
         ),
+        research_context=RESEARCH_CONTEXT_BODY,
     )
-    repos.research_contexts.create(
-        research_context_id=RESEARCH_CONTEXT_ID,
+    repos.sessions.create(SESSION_ID, workspace_id=workspace.id, project_id=project.id)
+    repos.agents.ensure_session_agent(
         session_id=SESSION_ID,
-        body=RESEARCH_CONTEXT_BODY,
+        kind="scientist",
+        display_name="Scientist",
+        model_name="eval:model",
     )
     return repos
 
@@ -237,22 +257,25 @@ def _seed(repos: Repositories, seed: RepoBootstrapSeed) -> None:
     if seed == "with_baseline_result":
         repos.hypotheses.create(
             hypothesis_id=HYPOTHESIS_ID,
-            session_id=SESSION_ID,
+            project_id=PROJECT_ID,
+            created_in_session_id=SESSION_ID,
             title="Train.py variants can improve val_bpb",
             summary="Try narrow train.py variants and compare against baseline.",
             status="active",
         )
         repos.evaluations.create(
             evaluation_id=BASELINE_EVALUATION_ID,
-            session_id=SESSION_ID,
+            project_id=PROJECT_ID,
+            created_in_session_id=SESSION_ID,
             title="Baseline train.py measurement",
             summary="Run the project-native baseline measurement before variants.",
             status="closed",
         )
         repos.evaluation_activities.add(
             evaluation_id=BASELINE_EVALUATION_ID,
+            created_in_session_id=SESSION_ID,
             actor="worker",
-            kind="comment",
+            kind="result",
             body=(
                 "Baseline command: `python train.py`\n\n"
                 "```text\n"
@@ -264,5 +287,5 @@ def _seed(repos: Repositories, seed: RepoBootstrapSeed) -> None:
                 "Interpretation: baseline evidence is available; lower "
                 "val_bpb is better."
             ),
-            payload={"activity_type": "result"},
+            payload={},
         )

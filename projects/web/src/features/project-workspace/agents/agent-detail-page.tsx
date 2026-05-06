@@ -1,6 +1,5 @@
 import { DxBadge, DxEmptyState } from "@situ/web-ui";
 import * as s from "../../../styles.css";
-import { agentSummaries } from "./agent-summaries";
 import { AgentPresence } from "./presence/agent-presence";
 import { AgentTranscript } from "./transcript/agent-transcript";
 import { agentTranscriptItems } from "./transcript/selectors";
@@ -13,13 +12,13 @@ export function AgentDetailPage({
   data: ProjectWorkspaceData;
   agentId: string;
 }) {
-  const agent = agentSummaries({ data }).find((summary) => summary.id === agentId);
+  const agent = data.agents.find((record) => record.id === agentId);
 
   if (!agent) {
     return (
       <DxEmptyState
         heading="Agent not found"
-        description={`No activity exists for agent ${agentId}.`}
+        description={`No agent exists with id ${agentId}.`}
       />
     );
   }
@@ -35,14 +34,19 @@ export function AgentDetailPage({
       <section className={s.objectPage}>
         <div className={s.objectPageHeader}>
           <div>
-            <p className={s.objectPageEyebrow}>Agent</p>
-            <h2>{agent.id}</h2>
+            <p className={s.objectPageEyebrow}>{agent.kind} · {agent.id}</p>
+            <h2>{agent.display_name}</h2>
           </div>
-          <DxBadge>{activityCountLabel({ count: transcriptItems.length })}</DxBadge>
+          <DxBadge tone={agent.status === "active" ? "success" : "neutral"}>
+            {agent.status}
+          </DxBadge>
         </div>
+        {agent.model_name && (
+          <p className={s.objectPageSummary}>Model: {agent.model_name}</p>
+        )}
         <AgentPresence
           agentIds={[agent.id]}
-          detail={latestItem ? latestItem.title.toLowerCase() : undefined}
+          detail={latestItem ? latestItem.title.toLowerCase() : activityCountLabel({ count: transcriptItems.length })}
         />
       </section>
 

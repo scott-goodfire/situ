@@ -20,6 +20,8 @@ class GetSessionResult(SituToolReturn):
     task_dependencies: list[dict[str, Any]] = Field(default_factory=list)
     task_entity_links: list[dict[str, Any]] = Field(default_factory=list)
     task_activities: list[dict[str, Any]] = Field(default_factory=list)
+    analyses: list[dict[str, Any]] = Field(default_factory=list)
+    analysis_activities: list[dict[str, Any]] = Field(default_factory=list)
     hypothesis_activities: list[dict[str, Any]] = Field(default_factory=list)
     experiment_activities: list[dict[str, Any]] = Field(default_factory=list)
     evaluation_activities: list[dict[str, Any]] = Field(default_factory=list)

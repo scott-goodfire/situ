@@ -152,7 +152,9 @@ function sourceCell({
   return (
     <div className={s.recordCell}>
       <span>Baseline</span>
-      <span className={s.recordId}>{row.evaluation.session_id}</span>
+      {row.evaluation.created_in_session_id && (
+        <span className={s.recordId}>{row.evaluation.created_in_session_id}</span>
+      )}
     </div>
   );
 }

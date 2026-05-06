@@ -87,10 +87,11 @@ Agent-facing write tools should stay close to the product models:
 `create_hypothesis`, `update_hypothesis`, `create_experiment`,
 `update_experiment`, `create_evaluation`, `update_evaluation`,
 `link_hypothesis_experiment`, `add_hypothesis_comment`,
-`add_experiment_comment`, and `add_evaluation_result`. Comments and evaluation
-results are stored as `kind="comment"` activities internally, with optional
-payload metadata when a view or agent needs to distinguish results, concerns,
-plans, raw evidence, or interpretations.
+`add_experiment_comment`, and `add_evaluation_result`. Analysis, hypothesis,
+experiment, and task collaboration is stored as `kind="comment"` activities.
+Evaluation evidence is stored as `kind="result"` activities, with optional
+payload metadata when a view or agent needs structured metrics, raw evidence,
+or interpretation details.
 
 Workspace interaction should come from a separate console toolset backed by the
 current repo path. The first slice should expose ordinary coding-agent tools

@@ -31,7 +31,7 @@ class AddEvaluationResultTool(
             evaluation_id=evaluation_id,
             created_in_session_id=ctx.deps.session_id,
             actor=actor,
-            kind="comment",
+            kind="result",
             body=result,
             payload=result_payload,
         )

@@ -9,6 +9,9 @@ import { useLiveQuery } from "@tanstack/react-db";
 import orderBy from "lodash/orderBy";
 import { DateTime } from "luxon";
 import type {
+  AgentRecord,
+  AnalysisActivityRecord,
+  AnalysisRecord,
   CollectionUpsertedParams,
   CollectionsBootstrapParams,
   CollectionsBootstrapResult,
@@ -23,19 +26,30 @@ import type {
   HypothesisActivityRecord,
   HypothesisExperimentLinkRecord,
   HypothesisRecord,
-  ObjectiveRecord,
+  ProjectRecord,
   SessionRecord,
+  TaskActivityRecord,
+  TaskDependencyRecord,
+  TaskEntityLinkRecord,
+  TaskRecord,
 } from "@situ/protocol";
 import type { SessionConnection } from "../../project-discovery/types";
 import type { ConnectionState } from "../run-monitor/connection-badge";
 
 export type LiveProjectSessionState = {
   connection: ConnectionState;
-  objectives: ObjectiveRecord[];
+  projects: ProjectRecord[];
   sessions: SessionRecord[];
   hypotheses: HypothesisRecord[];
   experiments: ExperimentRecord[];
   evaluations: EvaluationRecord[];
+  analyses: AnalysisRecord[];
+  agents: AgentRecord[];
+  tasks: TaskRecord[];
+  taskDependencies: TaskDependencyRecord[];
+  taskEntityLinks: TaskEntityLinkRecord[];
+  taskActivities: TaskActivityRecord[];
+  analysisActivities: AnalysisActivityRecord[];
   hypothesisExperimentLinks: HypothesisExperimentLinkRecord[];
   hypothesisActivities: HypothesisActivityRecord[];
   experimentActivities: ExperimentActivityRecord[];
@@ -50,9 +64,9 @@ export function useLiveProjectSession({
   session: SessionConnection;
 }): LiveProjectSessionState {
   const collections = useMemo(() => createSituCollections(), []);
-  const objectivesQuery = useLiveQuery(
+  const projectsQuery = useLiveQuery(
     (query) =>
-      query.from({ objective: collections.objectives }).select(({ objective }) => objective),
+      query.from({ project: collections.projects }).select(({ project }) => project),
     [collections],
   );
   const sessionsQuery = useLiveQuery(
@@ -79,6 +93,49 @@ export function useLiveProjectSession({
       query
         .from({ evaluation: collections.evaluations })
         .select(({ evaluation }) => evaluation),
+    [collections],
+  );
+  const analysesQuery = useLiveQuery(
+    (query) =>
+      query
+        .from({ analysis: collections.analyses })
+        .select(({ analysis }) => analysis),
+    [collections],
+  );
+  const agentsQuery = useLiveQuery(
+    (query) => query.from({ agent: collections.agents }).select(({ agent }) => agent),
+    [collections],
+  );
+  const tasksQuery = useLiveQuery(
+    (query) => query.from({ task: collections.tasks }).select(({ task }) => task),
+    [collections],
+  );
+  const taskDependenciesQuery = useLiveQuery(
+    (query) =>
+      query
+        .from({ dependency: collections.taskDependencies })
+        .select(({ dependency }) => dependency),
+    [collections],
+  );
+  const taskEntityLinksQuery = useLiveQuery(
+    (query) =>
+      query
+        .from({ link: collections.taskEntityLinks })
+        .select(({ link }) => link),
+    [collections],
+  );
+  const taskActivitiesQuery = useLiveQuery(
+    (query) =>
+      query
+        .from({ activity: collections.taskActivities })
+        .select(({ activity }) => activity),
+    [collections],
+  );
+  const analysisActivitiesQuery = useLiveQuery(
+    (query) =>
+      query
+        .from({ activity: collections.analysisActivities })
+        .select(({ activity }) => activity),
     [collections],
   );
   const hypothesisExperimentLinksQuery = useLiveQuery(
@@ -120,9 +177,9 @@ export function useLiveProjectSession({
   );
   const [connection, setConnection] = useState<ConnectionState>({ kind: "checking" });
 
-  const objectives = useMemo(
-    () => sortByCreated({ records: (objectivesQuery.data ?? []) as ObjectiveRecord[] }),
-    [objectivesQuery.data],
+  const projects = useMemo(
+    () => sortByCreated({ records: (projectsQuery.data ?? []) as ProjectRecord[] }),
+    [projectsQuery.data],
   );
   const sessions = useMemo(
     () => sortByCreated({ records: (sessionsQuery.data ?? []) as SessionRecord[] }),
@@ -139,6 +196,40 @@ export function useLiveProjectSession({
   const evaluations = useMemo(
     () => sortByCreated({ records: (evaluationsQuery.data ?? []) as EvaluationRecord[] }),
     [evaluationsQuery.data],
+  );
+  const analyses = useMemo(
+    () => sortByCreated({ records: (analysesQuery.data ?? []) as AnalysisRecord[] }),
+    [analysesQuery.data],
+  );
+  const agents = useMemo(
+    () => sortByCreated({ records: (agentsQuery.data ?? []) as AgentRecord[] }),
+    [agentsQuery.data],
+  );
+  const tasks = useMemo(
+    () => sortByCreated({ records: (tasksQuery.data ?? []) as TaskRecord[] }),
+    [tasksQuery.data],
+  );
+  const taskDependencies = useMemo(
+    () => (taskDependenciesQuery.data ?? []) as TaskDependencyRecord[],
+    [taskDependenciesQuery.data],
+  );
+  const taskEntityLinks = useMemo(
+    () => (taskEntityLinksQuery.data ?? []) as TaskEntityLinkRecord[],
+    [taskEntityLinksQuery.data],
+  );
+  const taskActivities = useMemo(
+    () =>
+      sortByCreated({
+        records: (taskActivitiesQuery.data ?? []) as TaskActivityRecord[],
+      }),
+    [taskActivitiesQuery.data],
+  );
+  const analysisActivities = useMemo(
+    () =>
+      sortByCreated({
+        records: (analysisActivitiesQuery.data ?? []) as AnalysisActivityRecord[],
+      }),
+    [analysisActivitiesQuery.data],
   );
   const hypothesisExperimentLinks = useMemo(
     () =>
@@ -295,11 +386,18 @@ export function useLiveProjectSession({
 
   return {
     connection,
-    objectives,
+    projects,
     sessions,
     hypotheses,
     experiments,
     evaluations,
+    analyses,
+    agents,
+    tasks,
+    taskDependencies,
+    taskEntityLinks,
+    taskActivities,
+    analysisActivities,
     hypothesisExperimentLinks,
     hypothesisActivities,
     experimentActivities,

@@ -4,6 +4,8 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from .events import (
     AgentRecord,
+    AnalysisActivityRecord,
+    AnalysisRecord,
     ArtifactRecord,
     EventRecord,
     EvaluationActivityRecord,
@@ -64,12 +66,14 @@ CollectionName = Literal[
     "hypotheses",
     "experiments",
     "evaluations",
+    "analyses",
     "hypothesis_experiment_links",
     "agents",
     "tasks",
     "task_dependencies",
     "task_entity_links",
     "task_activities",
+    "analysis_activities",
     "hypothesis_activities",
     "experiment_activities",
     "evaluation_activities",
@@ -92,12 +96,14 @@ class CollectionsBootstrapResult(BaseModel):
     hypotheses: list[HypothesisRecord]
     experiments: list[ExperimentRecord]
     evaluations: list[EvaluationRecord]
+    analyses: list[AnalysisRecord] = Field(default_factory=list)
     hypothesis_experiment_links: list[HypothesisExperimentLinkRecord]
     agents: list[AgentRecord] = Field(default_factory=list)
     tasks: list[TaskRecord] = Field(default_factory=list)
     task_dependencies: list[TaskDependencyRecord] = Field(default_factory=list)
     task_entity_links: list[TaskEntityLinkRecord] = Field(default_factory=list)
     task_activities: list[TaskActivityRecord] = Field(default_factory=list)
+    analysis_activities: list[AnalysisActivityRecord] = Field(default_factory=list)
     hypothesis_activities: list[HypothesisActivityRecord]
     experiment_activities: list[ExperimentActivityRecord]
     evaluation_activities: list[EvaluationActivityRecord]

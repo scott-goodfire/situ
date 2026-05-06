@@ -10,6 +10,8 @@ from pydantic import BaseModel
 
 from situ.protocol import (
     AgentRecord,
+    AnalysisActivityRecord,
+    AnalysisRecord,
     ArtifactRecord,
     CollectionUpsertedParams,
     CollectionsBootstrapParams,
@@ -71,12 +73,14 @@ MODELS: list[type[BaseModel]] = [
     HypothesisRecord,
     ExperimentRecord,
     EvaluationRecord,
+    AnalysisRecord,
     HypothesisExperimentLinkRecord,
     AgentRecord,
     TaskRecord,
     TaskDependencyRecord,
     TaskEntityLinkRecord,
     TaskActivityRecord,
+    AnalysisActivityRecord,
     HypothesisActivityRecord,
     ExperimentActivityRecord,
     EvaluationActivityRecord,

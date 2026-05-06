@@ -8,6 +8,8 @@ import { Link, useMatchRoute } from "@tanstack/react-router";
 import {
   Activity,
   Beaker,
+  BookOpen,
+  CheckSquare,
   FileText,
   FlaskConical,
   ListChecks,
@@ -90,6 +92,12 @@ function ProjectNavSection({ projectId }: { projectId: string }) {
         render={<Link to="/projects/$projectId" params={params} />}
       />
       <DxSidebarItem
+        icon={<BookOpen size={14} />}
+        label="Analyses"
+        active={matchRoute({ to: "/projects/$projectId/analyses", params, fuzzy: true }) !== false}
+        render={<Link to="/projects/$projectId/analyses" params={params} />}
+      />
+      <DxSidebarItem
         icon={<Beaker size={14} />}
         label="Hypotheses"
         active={matchRoute({ to: "/projects/$projectId/hypotheses", params, fuzzy: true }) !== false}
@@ -106,6 +114,12 @@ function ProjectNavSection({ projectId }: { projectId: string }) {
         label="Evaluations"
         active={matchRoute({ to: "/projects/$projectId/evaluations", params, fuzzy: true }) !== false}
         render={<Link to="/projects/$projectId/evaluations" params={params} />}
+      />
+      <DxSidebarItem
+        icon={<CheckSquare size={14} />}
+        label="Tasks"
+        active={matchRoute({ to: "/projects/$projectId/tasks", params, fuzzy: true }) !== false}
+        render={<Link to="/projects/$projectId/tasks" params={params} />}
       />
       <DxSidebarItem
         icon={<Users size={14} />}

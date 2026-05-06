@@ -130,7 +130,9 @@ function EvaluationSource({
     <DxSection title="Source">
       <div className={s.recordCell}>
         <span>Baseline evidence</span>
-        <span className={s.recordId}>{evaluation.session_id}</span>
+        {evaluation.created_in_session_id && (
+          <span className={s.recordId}>{evaluation.created_in_session_id}</span>
+        )}
       </div>
     </DxSection>
   );

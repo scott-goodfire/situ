@@ -1,3 +1,7 @@
+from .list_analysis_activities import (
+    ListAnalysisActivitiesResult,
+    ListAnalysisActivitiesTool,
+)
 from .list_evaluation_activities import (
     ListEvaluationActivitiesResult,
     ListEvaluationActivitiesTool,
@@ -12,6 +16,8 @@ from .list_hypothesis_activities import (
 )
 
 __all__ = [
+    "ListAnalysisActivitiesResult",
+    "ListAnalysisActivitiesTool",
     "ListEvaluationActivitiesResult",
     "ListEvaluationActivitiesTool",
     "ListExperimentActivitiesResult",

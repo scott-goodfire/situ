@@ -8,7 +8,11 @@ from evals.worlds.research_session.models import (
     ResearchAgentEvalInput,
     ResearchAgentEvalOutput,
 )
-from evals.worlds.research_session.world import ResearchSessionWorld, SESSION_ID
+from evals.worlds.research_session.world import (
+    SCIENTIST_AGENT_ID,
+    SESSION_ID,
+    ResearchSessionWorld,
+)
 
 
 def run_research_agent(args: ResearchAgentEvalInput) -> ResearchAgentEvalOutput:
@@ -17,7 +21,9 @@ def run_research_agent(args: ResearchAgentEvalInput) -> ResearchAgentEvalOutput:
     try:
         deps = SituToolDeps(
             session_id=SESSION_ID,
+            agent_id=SCIENTIST_AGENT_ID,
             repos=world.repos,
+            repo_path=str(world.repo_path),
             emit_event=world.emit_event,
         )
         agent = ResearchAgent(

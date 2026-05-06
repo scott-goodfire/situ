@@ -210,6 +210,99 @@ projects/harness/src/situ/harness/
   config/
 ```
 
+## Frontend layout
+
+The frontend follows the same "every concept gets its own directory" spirit as
+the harness, with three TypeScript-specific conventions.
+
+### Selector layer (read-side composition, mirrors `repositories/`)
+
+Selector functions — filters, sorts, joins, and derivations over the
+TanStack-DB collections — live at the top of the web app, parallel to `app/`,
+`features/`, and `server/`. One folder per entity, mirroring the backend's
+`repositories/<entity>/` layout.
+
+```text
+projects/web/src/selectors/
+  hypotheses/
+    index.ts             # re-exports the public surface
+    query.ts             # read-side filters and derivations (e.g. hypothesesForProject)
+    relationships.ts     # cross-entity joins (e.g. experimentsForHypothesis)
+  experiments/
+    index.ts
+    query.ts
+    relationships.ts
+  evaluations/
+    index.ts
+    query.ts             # evidenceState, latestEvaluationActivity, etc.
+    relationships.ts     # evaluationsForExperiment, evaluationsForExperiments
+  ...
+```
+
+When mutations show up later, add `command.ts` next to `query.ts` for the
+write-side helpers — same shape as the backend's `repository.py` + `command.py`
+split.
+
+Selectors are **not** scoped inside features. Anything filtering or deriving
+data from collections belongs here. A feature page imports from
+`@/selectors/<entity>` and renders.
+
+### `__shared__/` for sibling-only helpers
+
+Helpers shared between siblings at a layer go in `__shared__/`. Double
+underscores on both sides — distinct from the harness's `_shared/` (which
+exists for PEP 8 underscore-privacy semantics that don't apply in TypeScript).
+The visual `__shared__` is unambiguous as "internal to this layer's parent."
+
+```text
+projects/web/src/features/project-workspace/
+  __shared__/
+    activity-timeline.tsx     # used by multiple sibling features
+    relationship-selectors.ts (legacy — relocate to src/selectors/)
+  hypotheses/
+  experiments/
+  evaluations/
+```
+
+Anything in `__shared__/` is internal: outside the parent directory must not
+import from it. If a `__shared__/` helper grows external consumers, promote it
+to the appropriate top-level directory (typically `selectors/` for data
+helpers, or `app/` for chrome).
+
+### Tests colocated
+
+TypeScript tests live next to their implementation: `<name>.test.ts(x)` in the
+same directory as `<name>.ts(x)`. No top-level `tests/` directory on the
+frontend. (The Python harness keeps its package-root `tests/` — explicit
+per-language divergence.)
+
+```text
+projects/web/src/server/
+  discovery-api.ts
+  discovery-api.test.ts        # next to its implementation
+  local-web-app.ts
+  local-web-app.test.ts
+```
+
+### Web project root
+
+```text
+projects/web/
+  src/
+    main.tsx
+    global.css.ts
+    styles.css.ts
+    app/                # routing + AppShell + global providers
+    features/           # user-facing concerns (project-index, project-workspace, ...)
+    selectors/          # per-entity read-side composition
+    server/             # Vite dev-server discovery API + tests colocated
+    project-discovery/  # client-side types + fetcher for the discovery API
+  packages/
+    design-tokens/      # CSS variable definitions
+    ui/                 # Dx primitives (vars + 35 components)
+    app-ui/             # Situ-branded views composed from Dx
+```
+
 ## Acceptable Exceptions
 
 - Generated code can follow the generator's layout.
@@ -229,6 +322,15 @@ projects/harness/src/situ/harness/
   re-export would suffice.
 - A multi-table current-state composition modeled as a repository when it
   should be an API service.
+- Frontend selectors scattered inside feature page folders
+  (`features/<feature>/selectors.ts`, inline filters in render functions)
+  instead of `src/selectors/<entity>/`.
+- A frontend folder named `shared/` (no underscores) or `_shared/` (single
+  underscore) instead of `__shared__/`.
+- A top-level `tests/` directory on the frontend. TypeScript tests colocate
+  with their implementation.
+- A catch-all `utils.ts` or `helpers.ts` on the frontend accumulating
+  unrelated functions — split by purpose into role-named files.
 
 ## Review Questions
 

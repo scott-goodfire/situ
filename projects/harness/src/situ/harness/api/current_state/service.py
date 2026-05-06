@@ -25,6 +25,8 @@ class CurrentStateService(BaseModel):
             task_dependencies=self.repos.task_dependencies.list_all(),
             task_entity_links=self.repos.task_entity_links.list_all(),
             task_activities=self.repos.task_activities.list_all(),
+            analyses=self.repos.analyses.list_all(),
+            analysis_activities=self.repos.analysis_activities.list_all(),
             hypothesis_activities=self.repos.hypothesis_activities.list_all(),
             experiment_activities=self.repos.experiment_activities.list_all(),
             evaluation_activities=self.repos.evaluation_activities.list_all(),

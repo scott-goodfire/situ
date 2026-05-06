@@ -416,12 +416,6 @@ export const evidenceSummaryText = style({
   overflowWrap: "anywhere",
 });
 
-export const evidenceCell = style({
-  display: "grid",
-  gap: 3,
-  minWidth: 0,
-});
-
 export const evaluationLatest = style({
   display: "grid",
   gap: 3,

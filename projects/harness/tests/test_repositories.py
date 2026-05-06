@@ -7,6 +7,7 @@ from situ.harness.api.current_state import CurrentStateService
 from situ.harness.api.sessions import SessionsService
 from situ.harness.core.db import Database
 from situ.harness.records import (
+    AnalysisRecord,
     EvaluationRecord,
     ExperimentRecord,
     HypothesisRecord,
@@ -109,6 +110,24 @@ def create_evaluation(repos: Repositories) -> EvaluationRecord:
         created_in_session_id=session.id,
         title="Baseline project eval",
         summary="Run the baseline project evaluation.",
+    )
+
+
+def create_analysis(repos: Repositories) -> AnalysisRecord:
+    project = create_project(repos)
+    session = create_session(repos)
+    existing = repos.analyses.get("analysis_0001")
+    if existing is not None:
+        return existing
+    return repos.analyses.create(
+        analysis_id="analysis_0001",
+        project_id=project.id,
+        created_in_session_id=session.id,
+        created_by_agent_id=None,
+        title="Codebase map",
+        summary="Mapped the backend primitives.",
+        content="Project-owned records represent durable research state.",
+        status="active",
     )
 
 
@@ -266,6 +285,45 @@ def test_evaluations_repository_create_update_get_and_list(repos: Repositories) 
     ]
 
 
+def test_analyses_repository_create_update_get_and_list(repos: Repositories) -> None:
+    analysis = create_analysis(repos)
+
+    assert analysis.id == "analysis_0001"
+    assert analysis.project_id == "project_0001"
+    assert analysis.created_in_session_id == "session_0001"
+    assert analysis.created_by_agent_id is None
+    assert analysis.status == "active"
+    assert "backend primitives" in analysis.summary
+
+    updated = repos.analyses.update(
+        "analysis_0001",
+        status="closed",
+        summary="Synthesized codebase map into design constraints.",
+        content="The main knobs are repository records, tools, and protocol schemas.",
+    )
+    assert updated is not None
+    assert updated.status == "closed"
+    assert "design constraints" in updated.summary
+    assert repos.analyses.get("analysis_0001") == updated
+    assert [item.id for item in repos.analyses.list_for_project("project_0001")] == [
+        "analysis_0001"
+    ]
+    assert [item.id for item in repos.analyses.list_for_session("session_0001")] == [
+        "analysis_0001"
+    ]
+
+    superseding = repos.analyses.create(
+        analysis_id="analysis_0002",
+        project_id="project_0001",
+        created_in_session_id="session_0001",
+        title="Updated codebase map",
+        summary="Second pass replaced the first map.",
+        content="This note supersedes the initial map.",
+        supersedes_analysis_id="analysis_0001",
+    )
+    assert superseding.supersedes_analysis_id == "analysis_0001"
+
+
 def test_work_repositories_reject_invalid_agent_statuses(
     repos: Repositories,
 ) -> None:
@@ -300,6 +358,17 @@ def test_work_repositories_reject_invalid_agent_statuses(
             created_in_session_id="session_0001",
             title="Bad evaluation",
             summary="This should fail.",
+            status="running",
+        )
+
+    with pytest.raises(ValueError, match="invalid analysis status"):
+        repos.analyses.create(
+            analysis_id="analysis_bad_status",
+            project_id="project_0001",
+            created_in_session_id="session_0001",
+            title="Bad analysis",
+            summary="This should fail.",
+            content="Bad status.",
             status="running",
         )
 
@@ -417,7 +486,7 @@ def test_evaluation_activities_repository_add_and_list(repos: Repositories) -> N
         evaluation_id="eval_session_0001_baseline",
         created_in_session_id="session_0001",
         actor="agent",
-        kind="comment",
+        kind="result",
         body="Baseline result recorded.",
         payload={
             "activity_type": "result",
@@ -427,11 +496,40 @@ def test_evaluation_activities_repository_add_and_list(repos: Repositories) -> N
 
     assert activity.id == 1
     assert activity.created_in_session_id == "session_0001"
-    assert activity.kind == "comment"
+    assert activity.kind == "result"
     assert repos.evaluation_activities.list_for_evaluation(
         "eval_session_0001_baseline"
     ) == [activity]
     assert repos.evaluation_activities.list_for_project("project_0001") == [activity]
+
+    with pytest.raises(ValueError, match="invalid evaluation activity kind"):
+        repos.evaluation_activities.add(
+            evaluation_id="eval_session_0001_baseline",
+            created_in_session_id="session_0001",
+            actor="agent",
+            kind="comment",
+            body="Evaluation discussion belongs in a result body for now.",
+        )
+
+
+def test_analysis_activities_repository_add_and_list(repos: Repositories) -> None:
+    create_analysis(repos)
+
+    activity = repos.analysis_activities.add(
+        analysis_id="analysis_0001",
+        created_in_session_id="session_0001",
+        actor="agent",
+        kind="comment",
+        body="This map is ready for hypothesis generation.",
+        payload={"source": "initial scan"},
+    )
+
+    assert activity.id == 1
+    assert activity.created_in_session_id == "session_0001"
+    assert activity.kind == "comment"
+    assert activity.payload == {"source": "initial scan"}
+    assert repos.analysis_activities.list_for_analysis("analysis_0001") == [activity]
+    assert repos.analysis_activities.list_for_project("project_0001") == [activity]
 
 
 def test_artifacts_repository_create_and_list(repos: Repositories) -> None:
@@ -538,6 +636,7 @@ def test_agent_message_history_repository_appends_and_reconstructs(
 
 def test_current_state_api_composes_protocol_shaped_state(repos: Repositories) -> None:
     create_experiment(repos)
+    analysis = create_analysis(repos)
     repos.hypothesis_experiment_links.create(
         hypothesis_id="hyp_0001",
         experiment_id="exp_session_0001_a",
@@ -552,6 +651,13 @@ def test_current_state_api_composes_protocol_shaped_state(repos: Repositories) -
             "signals": [{"key": "score", "value": 0.73}],
         },
     )
+    repos.analysis_activities.add(
+        analysis_id=analysis.id,
+        created_in_session_id="session_0001",
+        actor="agent",
+        kind="comment",
+        body="Mapped the codebase.",
+    )
     repos.evaluations.create(
         evaluation_id="eval_session_0001_baseline",
         project_id="project_0001",
@@ -563,7 +669,7 @@ def test_current_state_api_composes_protocol_shaped_state(repos: Repositories) -
         evaluation_id="eval_session_0001_baseline",
         created_in_session_id="session_0001",
         actor="agent",
-        kind="comment",
+        kind="result",
         body="Baseline result recorded.",
         payload={"activity_type": "result"},
     )
@@ -586,17 +692,22 @@ def test_current_state_api_composes_protocol_shaped_state(repos: Repositories) -
     assert [evaluation.id for evaluation in current_state.evaluations] == [
         "eval_session_0001_baseline"
     ]
+    assert [analysis.id for analysis in current_state.analyses] == ["analysis_0001"]
+    assert [activity.kind for activity in current_state.analysis_activities] == [
+        "comment"
+    ]
     assert [activity.kind for activity in current_state.experiment_activities] == [
         "comment"
     ]
     assert [activity.kind for activity in current_state.evaluation_activities] == [
-        "comment"
+        "result"
     ]
     assert [event.type for event in current_state.events] == ["experiment.completed"]
 
 
 def test_sessions_api_composes_session_graph(repos: Repositories) -> None:
     create_experiment(repos)
+    analysis = create_analysis(repos)
     repos.hypothesis_experiment_links.create(
         hypothesis_id="hyp_0001",
         experiment_id="exp_session_0001_a",
@@ -606,6 +717,13 @@ def test_sessions_api_composes_session_graph(repos: Repositories) -> None:
         actor="agent",
         kind="comment",
         body="A is active.",
+    )
+    repos.analysis_activities.add(
+        analysis_id=analysis.id,
+        created_in_session_id="session_0001",
+        actor="agent",
+        kind="comment",
+        body="Mapped the codebase.",
     )
     repos.experiment_activities.add(
         experiment_id="exp_session_0001_a",
@@ -624,7 +742,7 @@ def test_sessions_api_composes_session_graph(repos: Repositories) -> None:
         evaluation_id="eval_session_0001_baseline",
         created_in_session_id="session_0001",
         actor="agent",
-        kind="comment",
+        kind="result",
         body="Baseline result recorded.",
     )
 
@@ -643,9 +761,11 @@ def test_sessions_api_composes_session_graph(repos: Repositories) -> None:
     assert [evaluation.id for evaluation in graph.evaluations] == [
         "eval_session_0001_baseline"
     ]
+    assert [analysis.id for analysis in graph.analyses] == ["analysis_0001"]
+    assert [activity.kind for activity in graph.analysis_activities] == ["comment"]
     assert [activity.kind for activity in graph.experiment_activities] == [
         "comment"
     ]
     assert [activity.kind for activity in graph.evaluation_activities] == [
-        "comment"
+        "result"
     ]

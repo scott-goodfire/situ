@@ -6,6 +6,8 @@ import {
 } from "@tanstack/db";
 import type {
   AgentRecord,
+  AnalysisActivityRecord,
+  AnalysisRecord,
   ArtifactRecord,
   CollectionUpsertedParams,
   CollectionsBootstrapResult,
@@ -35,12 +37,14 @@ export type SituCollections = {
   hypotheses: Collection<HypothesisRecord, string>;
   experiments: Collection<ExperimentRecord, string>;
   evaluations: Collection<EvaluationRecord, string>;
+  analyses: Collection<AnalysisRecord, string>;
   hypothesisExperimentLinks: Collection<HypothesisExperimentLinkRecord, string>;
   agents: Collection<AgentRecord, string>;
   tasks: Collection<TaskRecord, string>;
   taskDependencies: Collection<TaskDependencyRecord, string>;
   taskEntityLinks: Collection<TaskEntityLinkRecord, string>;
   taskActivities: Collection<TaskActivityRecord, string>;
+  analysisActivities: Collection<AnalysisActivityRecord, string>;
   hypothesisActivities: Collection<HypothesisActivityRecord, string>;
   experimentActivities: Collection<ExperimentActivityRecord, string>;
   evaluationActivities: Collection<EvaluationActivityRecord, string>;
@@ -107,6 +111,12 @@ export function createSituCollections(): SituCollections {
         getKey: (evaluation) => evaluation.id,
       }),
     ),
+    analyses: createCollection(
+      localOnlyCollectionOptions<AnalysisRecord, string>({
+        id: "situ-analyses",
+        getKey: (analysis) => analysis.id,
+      }),
+    ),
     hypothesisExperimentLinks: createCollection(
       localOnlyCollectionOptions<HypothesisExperimentLinkRecord, string>({
         id: "situ-hypothesis-experiment-links",
@@ -142,6 +152,12 @@ export function createSituCollections(): SituCollections {
     taskActivities: createCollection(
       localOnlyCollectionOptions<TaskActivityRecord, string>({
         id: "situ-task-activities",
+        getKey: (activity) => String(activity.id),
+      }),
+    ),
+    analysisActivities: createCollection(
+      localOnlyCollectionOptions<AnalysisActivityRecord, string>({
+        id: "situ-analysis-activities",
         getKey: (activity) => String(activity.id),
       }),
     ),
@@ -208,6 +224,10 @@ export async function applyBootstrap({
       records: bootstrap.evaluations ?? [],
     }),
     hydrateCollection({
+      collection: collections.analyses,
+      records: bootstrap.analyses ?? [],
+    }),
+    hydrateCollection({
       collection: collections.hypothesisExperimentLinks,
       records: bootstrap.hypothesis_experiment_links ?? [],
     }),
@@ -230,6 +250,10 @@ export async function applyBootstrap({
     hydrateCollection({
       collection: collections.taskActivities,
       records: bootstrap.task_activities ?? [],
+    }),
+    hydrateCollection({
+      collection: collections.analysisActivities,
+      records: bootstrap.analysis_activities ?? [],
     }),
     hydrateCollection({
       collection: collections.hypothesisActivities,
@@ -312,6 +336,15 @@ export async function applyCollectionUpsert({
     return;
   }
 
+  if (upsert.collection === "analyses") {
+    await upsertRecord({
+      collection: collections.analyses,
+      key: upsert.key,
+      record: upsert.record as unknown as AnalysisRecord,
+    });
+    return;
+  }
+
   if (upsert.collection === "hypothesis_experiment_links") {
     await upsertRecord({
       collection: collections.hypothesisExperimentLinks,
@@ -362,6 +395,15 @@ export async function applyCollectionUpsert({
       collection: collections.taskActivities,
       key: upsert.key,
       record: upsert.record as unknown as TaskActivityRecord,
+    });
+    return;
+  }
+
+  if (upsert.collection === "analysis_activities") {
+    await upsertRecord({
+      collection: collections.analysisActivities,
+      key: upsert.key,
+      record: upsert.record as unknown as AnalysisActivityRecord,
     });
     return;
   }

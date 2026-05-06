@@ -113,11 +113,18 @@ function LiveProjectSession({
     projectId,
     workspace: session.workspace,
     connection: liveSession.connection,
-    objectives: liveSession.objectives,
+    project: liveSession.projects.find((record) => record.id === projectId),
     sessions: liveSession.sessions,
     hypotheses: liveSession.hypotheses,
     experiments: liveSession.experiments,
     evaluations: liveSession.evaluations,
+    analyses: liveSession.analyses,
+    agents: liveSession.agents,
+    tasks: liveSession.tasks,
+    taskDependencies: liveSession.taskDependencies,
+    taskEntityLinks: liveSession.taskEntityLinks,
+    taskActivities: liveSession.taskActivities,
+    analysisActivities: liveSession.analysisActivities,
     hypothesisExperimentLinks: liveSession.hypothesisExperimentLinks,
     hypothesisActivities: liveSession.hypothesisActivities,
     experimentActivities: liveSession.experimentActivities,
@@ -151,11 +158,18 @@ function SnapshotProjectSession({
       kind: "disconnected",
       message: "Showing latest saved project data. No live session is connected.",
     } as const,
-    objectives: snapshot.objectives,
+    project: snapshot.projects?.find((record) => record.id === project.project_id),
     sessions: snapshot.sessions,
     hypotheses: snapshot.hypotheses,
     experiments: snapshot.experiments,
     evaluations: snapshot.evaluations,
+    analyses: snapshot.analyses ?? [],
+    agents: snapshot.agents ?? [],
+    tasks: snapshot.tasks ?? [],
+    taskDependencies: snapshot.task_dependencies ?? [],
+    taskEntityLinks: snapshot.task_entity_links ?? [],
+    taskActivities: snapshot.task_activities ?? [],
+    analysisActivities: snapshot.analysis_activities ?? [],
     hypothesisExperimentLinks: snapshot.hypothesis_experiment_links,
     hypothesisActivities: snapshot.hypothesis_activities,
     experimentActivities: snapshot.experiment_activities,
@@ -268,11 +282,13 @@ function sessionKey({ session }: { session: SessionConnection }): string {
 
 function snapshotHasRecords(snapshot: CollectionsBootstrapResult): boolean {
   return (
-    snapshot.objectives.length > 0 ||
+    (snapshot.projects?.length ?? 0) > 0 ||
     snapshot.sessions.length > 0 ||
     snapshot.hypotheses.length > 0 ||
     snapshot.experiments.length > 0 ||
     snapshot.evaluations.length > 0 ||
+    (snapshot.analyses?.length ?? 0) > 0 ||
+    (snapshot.tasks?.length ?? 0) > 0 ||
     snapshot.hypothesis_experiment_links.length > 0 ||
     snapshot.hypothesis_activities.length > 0 ||
     snapshot.experiment_activities.length > 0 ||
