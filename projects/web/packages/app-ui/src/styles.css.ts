@@ -177,3 +177,95 @@ export const harnessActionStack = style({
   gap: 12,
   alignItems: "center",
 });
+
+// ---------------------------------------------------------------------------
+// Overview page
+// ---------------------------------------------------------------------------
+
+export const overviewHeader = style({
+  display: "grid",
+  gap: 4,
+});
+
+export const overviewEyebrow = style({
+  fontSize: vars.text.productSm,
+  fontWeight: 500,
+  letterSpacing: "0.04em",
+  textTransform: "uppercase",
+  color: vars.color.mutedForeground,
+});
+
+export const overviewLanes = style({
+  display: "grid",
+  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+  gap: 14,
+});
+
+export const overviewLane = style({
+  display: "grid",
+  alignContent: "start",
+  gap: 8,
+  minWidth: 0,
+});
+
+export const overviewLaneTitle = style({
+  margin: 0,
+  color: vars.color.mutedForeground,
+  fontSize: vars.text.productSm,
+  fontWeight: 500,
+  letterSpacing: "0.04em",
+  textTransform: "uppercase",
+});
+
+export const overviewLaneEmpty = style({
+  margin: 0,
+  color: vars.color.mutedForegroundTertiary,
+  fontSize: vars.text.productLg,
+});
+
+export const cardStack = style({
+  display: "grid",
+  gap: 10,
+});
+
+export const cardHeader = style({
+  display: "flex",
+  alignItems: "flex-start",
+  justifyContent: "space-between",
+  gap: 10,
+});
+
+export const cardTitleStack = style({
+  display: "grid",
+  gap: 2,
+  minWidth: 0,
+});
+
+export const cardTitle = style({
+  fontSize: vars.text.productLg,
+  fontWeight: 500,
+});
+
+export const cardSummary = style({
+  margin: 0,
+  color: vars.color.mutedForeground,
+  fontSize: vars.text.productLg,
+  lineHeight: vars.leading.productBase,
+});
+
+export const cardAgents = style({
+  color: vars.color.mutedForeground,
+  fontSize: vars.text.productLg,
+});
+
+export const cardFooter = style({
+  display: "flex",
+  alignItems: "baseline",
+  gap: 8,
+  flexWrap: "wrap",
+});
+
+export const cardLabel = style({
+  fontSize: vars.text.productLg,
+  fontWeight: 500,
+});

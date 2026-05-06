@@ -1,6 +1,6 @@
 import { ReconnectSessionPrompt } from "./reconnect-session-prompt.js";
 import {
-  activeObjective,
+  activeProject,
   maxExperimentCount,
   runningExperiments,
   runningSession,
@@ -22,7 +22,7 @@ function ReconnectSessionPromptStory() {
     <ReconnectSessionPrompt
       workspace={storyWorkspace}
       session={runningSession}
-      objective={activeObjective}
+      project={activeProject}
       experimentCount={runningExperiments.length}
       maxExperiments={maxExperimentCount}
       onReconnect={() => {}}

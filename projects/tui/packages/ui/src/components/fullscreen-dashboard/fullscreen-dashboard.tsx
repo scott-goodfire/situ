@@ -1,15 +1,18 @@
 import lodash from "lodash";
 import { Text } from "ink";
 import type {
+  AgentRecord,
+  EventRecord,
   EvaluationActivityRecord,
   EvaluationRecord,
   ExperimentActivityRecord,
   ExperimentRecord,
   HypothesisActivityRecord,
   HypothesisRecord,
-  ObjectiveRecord,
-  ResearchContextRecord,
+  ProjectRecord,
   SessionRecord,
+  TaskActivityRecord,
+  TaskRecord,
 } from "@situ/protocol";
 import {
   DashboardControls,
@@ -33,11 +36,12 @@ import { useTerminalSize, type TerminalSize } from "./use-terminal-size.js";
 
 export type DashboardTaskStatus = "todo" | "in-progress" | "done";
 export type DashboardTaskKind =
+  | "task"
   | "experiment"
   | "hypothesis"
   | "evaluation"
   | "concern";
-export type DashboardTaskTone = "default" | "warning" | "success";
+export type DashboardTaskTone = "default" | "warning" | "success" | "danger";
 
 export type DashboardTask = {
   id: string;
@@ -51,34 +55,40 @@ export function FullscreenDashboard({
   workspace,
   statusLine,
   dashboardMessage,
-  objective,
-  researchContext,
+  project,
   session,
+  agents,
+  tasks,
   experimentCount,
   maxExperiments,
   hypotheses,
   experiments,
   evaluations,
+  taskActivities,
   hypothesisActivities,
   experimentActivities,
   evaluationActivities,
+  events,
   onDashboardCommand,
   terminalSize,
 }: {
   workspace: string;
   statusLine: string;
   dashboardMessage: DashboardControlMessage | undefined;
-  objective: ObjectiveRecord | undefined;
-  researchContext?: ResearchContextRecord | undefined;
+  project: ProjectRecord | undefined;
   session: SessionRecord | undefined;
+  agents: AgentRecord[];
+  tasks: TaskRecord[];
   experimentCount: number;
   maxExperiments: number;
   hypotheses: HypothesisRecord[];
   experiments: ExperimentRecord[];
   evaluations: EvaluationRecord[];
+  taskActivities: TaskActivityRecord[];
   hypothesisActivities: HypothesisActivityRecord[];
   experimentActivities: ExperimentActivityRecord[];
   evaluationActivities: EvaluationActivityRecord[];
+  events: EventRecord[];
   onDashboardCommand: ({ command }: { command: DashboardCommand }) => void;
   terminalSize?: TerminalSize;
 }) {
@@ -100,11 +110,14 @@ export function FullscreenDashboard({
   }
 
   const concerns = concernCount({
+    taskActivities,
     hypothesisActivities,
     experimentActivities,
     evaluationActivities,
   });
-  const tasks = buildDashboardTasks({
+  const dashboardTasks = buildDashboardTasks({
+    tasks,
+    agents,
     hypotheses,
     experiments,
     evaluations,
@@ -112,10 +125,28 @@ export function FullscreenDashboard({
     evaluationActivities,
   });
   const activityRows = buildActivityRows({
+    tasks,
+    hypotheses,
     experiments,
+    evaluations,
+    taskActivities,
+    hypothesisActivities,
     experimentActivities,
+    evaluationActivities,
+    events,
     maxRows: layout.activityRows,
     width: layout.contentWidth,
+  });
+  const lastActivityLabel = lastActivitySummary({
+    taskActivities,
+    hypothesisActivities,
+    experimentActivities,
+    evaluationActivities,
+    events,
+  });
+  const resultSparkline = sparklineForResultActivities({
+    experimentActivities,
+    evaluationActivities,
   });
   const headerLabel = dashboardHeaderLabel({
     workspace,
@@ -146,9 +177,9 @@ export function FullscreenDashboard({
           width={layout.contentWidth}
           workspace={workspace}
           statusLine={statusLine}
-          objective={objective}
-          researchContext={researchContext}
+          project={project}
           session={session}
+          lastActivityLabel={lastActivityLabel}
         />
       </DashboardFrameSection>
 
@@ -164,6 +195,7 @@ export function FullscreenDashboard({
           hypothesisCount={hypotheses.length}
           evaluationCount={evaluations.length}
           concernCount={concerns}
+          resultSparkline={resultSparkline}
         />
       </DashboardFrameSection>
 
@@ -173,7 +205,7 @@ export function FullscreenDashboard({
         height={layout.taskBoardHeight}
       >
         <TaskBoard
-          tasks={tasks}
+          tasks={dashboardTasks}
           height={layout.taskBoardHeight}
           columnWidths={layout.taskColumnWidths}
           maxRowsPerColumn={layout.taskRowsPerColumn}
@@ -199,27 +231,28 @@ function DashboardHeader({
   width,
   workspace,
   statusLine,
-  objective,
-  researchContext,
+  project,
   session,
+  lastActivityLabel,
 }: {
   width: number;
   workspace: string;
   statusLine: string;
-  objective: ObjectiveRecord | undefined;
-  researchContext: ResearchContextRecord | undefined;
+  project: ProjectRecord | undefined;
   session: SessionRecord | undefined;
+  lastActivityLabel: string | undefined;
 }) {
-  const objectiveTitle = objective?.title ?? "No active objective";
-  const contextLabel = researchContext?.body ?? "No research context";
+  const objectiveTitle = project?.objective ?? "No active objective";
+  const contextLabel = project?.research_context ?? "No research context";
   const sessionState = session ? `${session.status} session` : "no session";
   const sessionContext = session ? statusLine : "Waiting for a session";
+  const activitySuffix = lastActivityLabel ? ` · ${lastActivityLabel}` : "";
   const statusContext = previewText({
     value: `${workspace} · ${sessionContext} · ${contextLabel}`,
     maxCharacters: Math.max(24, width),
   });
   const activeLine = previewText({
-    value: `${sessionState} · ${objectiveTitle} · ${statusLine}`,
+    value: `${sessionState} · ${objectiveTitle}${activitySuffix}`,
     maxCharacters: Math.max(24, width),
   });
 
@@ -238,6 +271,7 @@ function DashboardStats({
   hypothesisCount,
   evaluationCount,
   concernCount,
+  resultSparkline,
 }: {
   width: number;
   experimentCount: number;
@@ -245,19 +279,176 @@ function DashboardStats({
   hypothesisCount: number;
   evaluationCount: number;
   concernCount: number;
+  resultSparkline: string | undefined;
 }) {
-  const stats = [
-    `experiments ${experimentCount}/${maxExperiments}`,
+  const concernLabel = `concerns ${concernCount}`;
+  const baseStats = [
+    `experiments ${experimentCount}/${maxExperiments} ${experimentBudgetBar({
+      current: experimentCount,
+      total: maxExperiments,
+    })}`,
     `hypotheses ${hypothesisCount}`,
     `evaluations ${evaluationCount}`,
-    `concerns ${concernCount}`,
-  ].join("   ");
+    resultSparkline ? `trend ${resultSparkline}` : undefined,
+  ].filter((stat) => stat !== undefined);
+  const baseLabel = baseStats.join("   ");
+  const baseWidth = Math.max(0, width - concernLabel.length - 3);
+  const fittedBaseLabel = previewText({
+    value: baseLabel,
+    maxCharacters: baseWidth,
+  });
+  const fittedConcernLabel = previewText({
+    value: concernLabel,
+    maxCharacters: Math.max(1, width - fittedBaseLabel.length - 3),
+  });
+  const fittedLine = [fittedBaseLabel, fittedConcernLabel]
+    .filter(Boolean)
+    .join("   ");
+
+  if (fittedLine.length > width) {
+    return (
+      <LayoutBox width={width}>
+        <Text color={concernCount > 0 ? "yellow" : undefined}>
+          {previewText({
+            value: `${baseLabel}   ${concernLabel}`,
+            maxCharacters: width,
+          })}
+        </Text>
+      </LayoutBox>
+    );
+  }
 
   return (
     <LayoutBox width={width}>
-      <Text>{previewText({ value: stats, maxCharacters: width })}</Text>
+      <Text>
+        {fittedBaseLabel}
+        {fittedBaseLabel ? "   " : ""}
+        <Text
+          color={concernCount > 0 ? "yellow" : undefined}
+          bold={concernCount > 0}
+        >
+          {fittedConcernLabel}
+        </Text>
+      </Text>
     </LayoutBox>
   );
+}
+
+function experimentBudgetBar({
+  current,
+  total,
+}: {
+  current: number;
+  total: number;
+}): string {
+  const barWidth = 6;
+
+  if (total <= 0) {
+    return "[------]";
+  }
+
+  const filledWidth = Math.max(
+    0,
+    Math.min(barWidth, Math.round((current / total) * barWidth)),
+  );
+
+  return `[${"#".repeat(filledWidth)}${"-".repeat(barWidth - filledWidth)}]`;
+}
+
+function sparklineForResultActivities({
+  experimentActivities,
+  evaluationActivities,
+}: {
+  experimentActivities: ExperimentActivityRecord[];
+  evaluationActivities: EvaluationActivityRecord[];
+}): string | undefined {
+  const values = lodash
+    .orderBy(
+      [...experimentActivities, ...evaluationActivities],
+      [(activity) => timestampMillis({ isoTimestamp: activity.created_at })],
+      ["asc"],
+    )
+    .map((activity) => numericResultValue({ payload: activity.payload }))
+    .filter((value) => value !== undefined)
+    .slice(-8);
+
+  if (values.length < 2) {
+    return undefined;
+  }
+
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const ticks = "▁▂▃▄▅▆▇█";
+
+  if (min === max) {
+    return ticks[0].repeat(values.length);
+  }
+
+  return values
+    .map((value) => {
+      const index = Math.round(((value - min) / (max - min)) * (ticks.length - 1));
+      return ticks[index];
+    })
+    .join("");
+}
+
+function numericResultValue({
+  payload,
+}: {
+  payload: Record<string, unknown> | undefined;
+}): number | undefined {
+  if (!payload || payload.activity_type !== "result") {
+    return undefined;
+  }
+
+  const signals = payload.signals;
+  if (Array.isArray(signals)) {
+    for (const signal of signals) {
+      const value = numericSignalValue({ signal });
+      if (value !== undefined) {
+        return value;
+      }
+    }
+  }
+
+  for (const key of ["score", "accuracy", "resolution_rate", "pass_rate"]) {
+    const value = payload[key];
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return value;
+    }
+  }
+
+  return undefined;
+}
+
+function numericSignalValue({ signal }: { signal: unknown }): number | undefined {
+  if (!isRecord(signal)) {
+    return undefined;
+  }
+
+  const key = signal.key;
+  const name = signal.name;
+  if (
+    key !== "score" &&
+    name !== "score" &&
+    key !== "accuracy" &&
+    name !== "accuracy" &&
+    key !== "resolution_rate" &&
+    name !== "resolution_rate"
+  ) {
+    return undefined;
+  }
+
+  const value = signal.value;
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+
+  return undefined;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function TaskBoard({
@@ -387,7 +578,7 @@ function ActivityFeed({
 
   return (
     <LayoutBox width={width} height={height}>
-      {rows.length === 0 && <Text dimColor>No experiment activity yet</Text>}
+      {rows.length === 0 && <Text dimColor>No activity yet</Text>}
       {rows.map((row) => (
         <Text key={row.id} color={row.tone}>
           {fitActivityRow({ row, width })}
@@ -480,18 +671,42 @@ type ActivityFeedRow = {
 };
 
 function buildDashboardTasks({
+  tasks,
+  agents,
   hypotheses,
   experiments,
   evaluations,
   experimentActivities,
   evaluationActivities,
 }: {
+  tasks: TaskRecord[];
+  agents: AgentRecord[];
   hypotheses: HypothesisRecord[];
   experiments: ExperimentRecord[];
   evaluations: EvaluationRecord[];
   experimentActivities: ExperimentActivityRecord[];
   evaluationActivities: EvaluationActivityRecord[];
 }): DashboardTask[] {
+  if (tasks.length > 0) {
+    const agentsById = lodash.keyBy(agents, "id");
+    const taskRows = tasks.map((task) =>
+      taskFromTaskRecord({
+        task,
+        agent: task.assignee_id ? agentsById[task.assignee_id] : undefined,
+      }),
+    );
+
+    return lodash.orderBy(
+      taskRows,
+      [
+        (task) => sortRankForTask({ task }),
+        (task) => priorityRankForDashboardTask({ task }),
+        (task) => task.title,
+      ],
+      ["asc", "asc", "asc"],
+    );
+  }
+
   const experimentTasks = experiments.map((experiment) =>
     taskFromExperiment({ experiment, experimentActivities }),
   );
@@ -512,6 +727,72 @@ function buildDashboardTasks({
     [(task) => sortRankForTask({ task }), (task) => task.title],
     ["asc", "asc"],
   );
+}
+
+function taskFromTaskRecord({
+  task,
+  agent,
+}: {
+  task: TaskRecord;
+  agent: AgentRecord | undefined;
+}): DashboardTask {
+  const assigneePrefix = agent ? `${agent.display_name}: ` : "";
+
+  return {
+    id: `task:${task.id}`,
+    title: `${assigneePrefix}${task.title}`,
+    status: statusForTaskRecord({ status: task.status }),
+    kind: "task",
+    tone: toneForTaskRecord({ task }),
+  };
+}
+
+function statusForTaskRecord({
+  status,
+}: {
+  status: TaskRecord["status"];
+}): DashboardTaskStatus {
+  if (status === "in_progress") {
+    return "in-progress";
+  }
+
+  if (status === "done" || status === "abandoned" || status === "failed") {
+    return "done";
+  }
+
+  return "todo";
+}
+
+function toneForTaskRecord({
+  task,
+}: {
+  task: TaskRecord;
+}): DashboardTaskTone | undefined {
+  if (task.status === "failed" || task.status === "abandoned") {
+    return "danger";
+  }
+
+  if (task.priority === "urgent" || task.priority === "high") {
+    return "warning";
+  }
+
+  if (task.status === "done") {
+    return "success";
+  }
+
+  return undefined;
+}
+
+function priorityRankForDashboardTask({ task }: { task: DashboardTask }): number {
+  if (task.tone === "danger") {
+    return 0;
+  }
+
+  if (task.tone === "warning") {
+    return 1;
+  }
+
+  return 2;
 }
 
 function taskFromExperiment({
@@ -577,42 +858,140 @@ function statusForRecord({
 }
 
 function buildActivityRows({
+  tasks,
+  hypotheses,
   experiments,
+  evaluations,
+  taskActivities,
+  hypothesisActivities,
   experimentActivities,
+  evaluationActivities,
+  events,
   maxRows,
   width,
 }: {
+  tasks: TaskRecord[];
+  hypotheses: HypothesisRecord[];
   experiments: ExperimentRecord[];
+  evaluations: EvaluationRecord[];
+  taskActivities: TaskActivityRecord[];
+  hypothesisActivities: HypothesisActivityRecord[];
   experimentActivities: ExperimentActivityRecord[];
+  evaluationActivities: EvaluationActivityRecord[];
+  events: EventRecord[];
   maxRows: number;
   width: number;
 }): ActivityFeedRow[] {
+  const tasksById = lodash.keyBy(tasks, "id");
+  const hypothesesById = lodash.keyBy(hypotheses, "id");
   const experimentsById = lodash.keyBy(experiments, "id");
-  const sortedActivities = lodash
+  const evaluationsById = lodash.keyBy(evaluations, "id");
+  const rows = [
+    ...taskActivities.map((activity) =>
+      activityRow({
+        id: `task-activity:${activity.id}`,
+        label: "task",
+        body: activityBody({
+          parentTitle: tasksById[activity.task_id]?.title,
+          body: activity.body,
+        }),
+        tone: activityTone({ payload: activity.payload }),
+        createdAt: activity.created_at,
+      }),
+    ),
+    ...hypothesisActivities.map((activity) =>
+      activityRow({
+        id: `hypothesis-activity:${activity.id}`,
+        label: activityLabel({ payload: activity.payload }),
+        body: activityBody({
+          parentTitle: hypothesesById[activity.hypothesis_id]?.title,
+          body: activity.body,
+        }),
+        tone: activityTone({ payload: activity.payload }),
+        createdAt: activity.created_at,
+      }),
+    ),
+    ...experimentActivities.map((activity) =>
+      activityRow({
+        id: `experiment-activity:${activity.id}`,
+        label: activityLabel({ payload: activity.payload }),
+        body: activityBody({
+          parentTitle: experimentsById[activity.experiment_id]?.title,
+          body: activity.body,
+        }),
+        tone: activityTone({ payload: activity.payload }),
+        createdAt: activity.created_at,
+      }),
+    ),
+    ...evaluationActivities.map((activity) =>
+      activityRow({
+        id: `evaluation-activity:${activity.id}`,
+        label: activityLabel({ payload: activity.payload }),
+        body: activityBody({
+          parentTitle: evaluationsById[activity.evaluation_id]?.title,
+          body: activity.body,
+        }),
+        tone: activityTone({ payload: activity.payload }),
+        createdAt: activity.created_at,
+      }),
+    ),
+    ...events.map((event) =>
+      activityRow({
+        id: `event:${event.id}`,
+        label: "event",
+        body: event.message,
+        tone: eventTone({ event }),
+        createdAt: event.created_at,
+      }),
+    ),
+  ];
+
+  return lodash
     .orderBy(
-      experimentActivities,
-      [(activity) => activity.created_at, (activity) => activity.id],
+      rows,
+      [(row) => timestampMillis({ isoTimestamp: row.createdAt }), (row) => row.id],
       ["asc", "asc"],
     )
-    .slice(-maxRows);
-
-  return sortedActivities.map((activity) => {
-    const experiment = experimentsById[activity.experiment_id];
-    const label = activityLabel({ activity });
-    const body = experiment
-      ? `${experiment.title}: ${activity.body}`
-      : activity.body;
-
-    return {
-      id: `experiment-activity:${activity.id}`,
-      label,
+    .slice(-maxRows)
+    .map((row) => ({
+      id: row.id,
+      label: row.label,
       body: previewText({
-        value: body,
+        value: row.body,
         maxCharacters: Math.max(12, width - 12),
       }),
-      tone: activityTone({ activity }),
-    };
-  });
+      tone: row.tone,
+    }));
+}
+
+type RawActivityFeedRow = ActivityFeedRow & {
+  createdAt: string;
+};
+
+function activityRow({
+  id,
+  label,
+  body,
+  tone,
+  createdAt,
+}: RawActivityFeedRow): RawActivityFeedRow {
+  return {
+    id,
+    label,
+    body,
+    tone,
+    createdAt,
+  };
+}
+
+function activityBody({
+  parentTitle,
+  body,
+}: {
+  parentTitle: string | undefined;
+  body: string;
+}): string {
+  return parentTitle ? `${parentTitle}: ${body}` : body;
 }
 
 function fitActivityRow({
@@ -629,15 +1008,18 @@ function fitActivityRow({
 }
 
 function concernCount({
+  taskActivities,
   hypothesisActivities,
   experimentActivities,
   evaluationActivities,
 }: {
+  taskActivities: TaskActivityRecord[];
   hypothesisActivities: HypothesisActivityRecord[];
   experimentActivities: ExperimentActivityRecord[];
   evaluationActivities: EvaluationActivityRecord[];
 }): number {
   return [
+    ...taskActivities,
     ...hypothesisActivities,
     ...experimentActivities,
     ...evaluationActivities,
@@ -673,11 +1055,11 @@ function hasEvaluationConcern({
 }
 
 function activityLabel({
-  activity,
+  payload,
 }: {
-  activity: ExperimentActivityRecord;
+  payload: Record<string, unknown> | undefined;
 }): string {
-  const activityType = activity.payload?.activity_type;
+  const activityType = payload?.activity_type;
 
   if (activityType === "concern") {
     return "concern";
@@ -691,11 +1073,11 @@ function activityLabel({
 }
 
 function activityTone({
-  activity,
+  payload,
 }: {
-  activity: ExperimentActivityRecord;
+  payload: Record<string, unknown> | undefined;
 }): "gray" | "cyan" | "yellow" | "red" {
-  const activityType = activity.payload?.activity_type;
+  const activityType = payload?.activity_type;
 
   if (activityType === "concern") {
     return "yellow";
@@ -708,7 +1090,76 @@ function activityTone({
   return "gray";
 }
 
+function eventTone({ event }: { event: EventRecord }): "gray" | "cyan" | "yellow" | "red" {
+  if (event.type.includes("failed") || event.type.includes("error")) {
+    return "red";
+  }
+
+  if (event.type.includes("concern")) {
+    return "yellow";
+  }
+
+  if (event.type.includes("started")) {
+    return "cyan";
+  }
+
+  return "gray";
+}
+
+function lastActivitySummary({
+  taskActivities,
+  hypothesisActivities,
+  experimentActivities,
+  evaluationActivities,
+  events,
+}: {
+  taskActivities: TaskActivityRecord[];
+  hypothesisActivities: HypothesisActivityRecord[];
+  experimentActivities: ExperimentActivityRecord[];
+  evaluationActivities: EvaluationActivityRecord[];
+  events: EventRecord[];
+}): string | undefined {
+  const latest = lodash
+    .orderBy(
+      [
+        ...taskActivities.map((activity) => ({
+          kind: "task",
+          createdAt: activity.created_at,
+        })),
+        ...hypothesisActivities.map((activity) => ({
+          kind: "hypothesis",
+          createdAt: activity.created_at,
+        })),
+        ...experimentActivities.map((activity) => ({
+          kind: activityLabel({ payload: activity.payload }),
+          createdAt: activity.created_at,
+        })),
+        ...evaluationActivities.map((activity) => ({
+          kind: activityLabel({ payload: activity.payload }),
+          createdAt: activity.created_at,
+        })),
+        ...events.map((event) => ({
+          kind: "event",
+          createdAt: event.created_at,
+        })),
+      ],
+      [(entry) => timestampMillis({ isoTimestamp: entry.createdAt })],
+      ["desc"],
+    )
+    .at(0);
+
+  if (!latest) {
+    return undefined;
+  }
+
+  return `last ${latest.kind} ${timeLabel({ isoTimestamp: latest.createdAt })}`;
+}
+
 function glyphForTask({ task }: { task: DashboardTask }): string {
+  if (task.tone === "danger") {
+    return "!";
+  }
+
   if (task.tone === "warning") {
     return "!";
   }
@@ -728,7 +1179,11 @@ function colorForTask({
   task,
 }: {
   task: DashboardTask;
-}): "gray" | "cyan" | "yellow" | "green" {
+}): "gray" | "cyan" | "yellow" | "green" | "red" {
+  if (task.tone === "danger") {
+    return "red";
+  }
+
   if (task.tone === "warning") {
     return "yellow";
   }
@@ -776,4 +1231,23 @@ function fitRow({
   }
 
   return `${value.slice(0, width - 1)}…`;
+}
+
+function timeLabel({ isoTimestamp }: { isoTimestamp: string }): string {
+  const date = new Date(isoTimestamp);
+  if (Number.isNaN(date.getTime())) {
+    return isoTimestamp;
+  }
+
+  return `${date.toISOString().slice(11, 19)}Z`;
+}
+
+function timestampMillis({ isoTimestamp }: { isoTimestamp: string }): number {
+  const timestamp = Date.parse(isoTimestamp);
+
+  if (Number.isNaN(timestamp)) {
+    return 0;
+  }
+
+  return timestamp;
 }

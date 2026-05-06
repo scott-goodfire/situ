@@ -13,10 +13,17 @@ bootstraps collection-shaped state, and renders the observability surface.
 It should not own the Python harness subprocess, read SQLite directly, or run
 workers directly.
 
-For the first collection-backed slice, the TUI should render sessions,
-hypotheses, experiments, hypothesis activities, experiment activities, and
-events from the shared TypeScript collection layer. It should not request broad
-current-state composition for rendering.
+For the first collection-backed slice, the TUI should render projects,
+sessions, agents, tasks, hypotheses, experiments, evaluations, typed
+activities, artifacts when useful, and events from the shared TypeScript
+collection layer. It should not request broad current-state composition for
+rendering.
+
+Project records are the source of truth for the active objective and research
+context on the live dashboard. Session records identify the active run and link
+the TUI to the current project, but project-owned records should remain visible
+when they are relevant to that project rather than disappearing only because a
+single session disconnected or closed.
 
 ## First Screen
 
@@ -56,12 +63,18 @@ The task board should be grouped into todo, in-progress, and done columns with
 vertical dividers between columns. The columns should resize with the terminal
 and truncate each task title independently.
 
-The task board should prefer plain-language task titles over IDs. Rows should
-look like terminal-native work items, for example `○ Run cancellation eval`,
-`● Test retrieval filter`, and `✓ Record baseline eval`. IDs and metadata may
-be secondary or hidden on the main screen. Until durable tasks are fully wired,
-the TUI may derive task-like rows from existing hypotheses, experiments,
-evaluations, and concern activities.
+The task board should prefer durable task records and plain-language task
+titles over IDs. Rows should look like terminal-native work items, for example
+`○ Run cancellation eval`, `● Test retrieval filter`, and `✓ Record baseline
+eval`. IDs and metadata may be secondary or hidden on the main screen. Until
+durable tasks are fully wired, the TUI may derive task-like rows from existing
+hypotheses, experiments, evaluations, and concern activities as a fallback.
+
+The header and counts strip should make live progress legible without turning
+the dashboard into a chart wall. Compact visuals such as an experiment budget
+bar, concern emphasis, last-activity age, and tiny sparklines are appropriate
+only when they are computed from recorded project/session data. Do not show
+decorative or fabricated trends.
 
 When the terminal is too small to render the dashboard legibly, show a compact
 "please expand terminal" state with the current terminal size and the minimum

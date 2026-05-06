@@ -7,15 +7,17 @@ import type {
 } from "../dashboard-controls/dashboard-controls.js";
 import {
   activeHypothesis,
-  activeObjective,
-  activeResearchContext,
+  activeProject,
   maxExperimentCount,
+  runningAgents,
   runningEvaluationActivities,
   runningEvaluations,
   runningExperimentActivities,
   runningExperiments,
   runningHypothesisActivities,
   runningSession,
+  runningTaskActivities,
+  runningTasks,
   storyWorkspace,
 } from "../../fixtures/story-data.js";
 import type { TuiStory } from "../../stories/story-types.js";
@@ -69,17 +71,20 @@ function StoryFullscreenDashboard({
       workspace={storyWorkspace}
       statusLine={statusLine}
       dashboardMessage={message}
-      objective={activeObjective}
-      researchContext={activeResearchContext}
+      project={activeProject}
       session={runningSession}
+      agents={runningAgents}
+      tasks={runningTasks}
       experimentCount={runningExperiments.length}
       maxExperiments={maxExperimentCount}
       hypotheses={[activeHypothesis]}
       experiments={runningExperiments}
       evaluations={runningEvaluations}
+      taskActivities={runningTaskActivities}
       hypothesisActivities={runningHypothesisActivities}
       experimentActivities={runningExperimentActivities}
       evaluationActivities={runningEvaluationActivities}
+      events={[]}
       terminalSize={terminalSize}
       onDashboardCommand={({ command }) => {
         handleStoryDashboardCommand({

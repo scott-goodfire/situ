@@ -1,4 +1,5 @@
 import type {
+  AgentRecord,
   EventRecord,
   EvaluationActivityRecord,
   EvaluationRecord,
@@ -6,9 +7,10 @@ import type {
   ExperimentRecord,
   HypothesisActivityRecord,
   HypothesisRecord,
-  ObjectiveRecord,
-  ResearchContextRecord,
+  ProjectRecord,
   SessionRecord,
+  TaskActivityRecord,
+  TaskRecord,
 } from "@situ/protocol";
 import {
   type DashboardCommand,
@@ -20,15 +22,16 @@ export function SituTuiView({
   workspace,
   statusLine,
   dashboardMessage,
-  objective,
-  researchContext,
+  project,
   session,
+  agents,
+  tasks,
   experimentCount,
   maxExperiments,
-  activeExperiment,
   hypotheses,
   experiments,
   evaluations,
+  taskActivities,
   hypothesisActivities,
   experimentActivities,
   evaluationActivities,
@@ -38,15 +41,16 @@ export function SituTuiView({
   workspace: string;
   statusLine: string;
   dashboardMessage: DashboardControlMessage | undefined;
-  objective: ObjectiveRecord | undefined;
-  researchContext?: ResearchContextRecord | undefined;
+  project: ProjectRecord | undefined;
   session: SessionRecord | undefined;
+  agents: AgentRecord[];
+  tasks: TaskRecord[];
   experimentCount: number;
   maxExperiments: number;
-  activeExperiment: ExperimentRecord | undefined;
   hypotheses: HypothesisRecord[];
   experiments: ExperimentRecord[];
   evaluations: EvaluationRecord[];
+  taskActivities: TaskActivityRecord[];
   hypothesisActivities: HypothesisActivityRecord[];
   experimentActivities: ExperimentActivityRecord[];
   evaluationActivities: EvaluationActivityRecord[];
@@ -58,17 +62,20 @@ export function SituTuiView({
       workspace={workspace}
       statusLine={statusLine}
       dashboardMessage={dashboardMessage}
-      objective={objective}
-      researchContext={researchContext}
+      project={project}
       session={session}
+      agents={agents}
+      tasks={tasks}
       experimentCount={experimentCount}
       maxExperiments={maxExperiments}
       hypotheses={hypotheses}
       experiments={experiments}
       evaluations={evaluations}
+      taskActivities={taskActivities}
       hypothesisActivities={hypothesisActivities}
       experimentActivities={experimentActivities}
       evaluationActivities={evaluationActivities}
+      events={events}
       onDashboardCommand={onDashboardCommand}
     />
   );

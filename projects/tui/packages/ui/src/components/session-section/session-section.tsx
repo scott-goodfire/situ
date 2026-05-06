@@ -1,20 +1,14 @@
 import { Text } from "ink";
-import type {
-  ObjectiveRecord,
-  ResearchContextRecord,
-  SessionRecord,
-} from "@situ/protocol";
+import type { ProjectRecord, SessionRecord } from "@situ/protocol";
 import { PaneSection } from "../pane-section/pane-section.js";
 
 export function SessionSection({
-  objective,
-  researchContext,
+  project,
   session,
   experimentCount,
   maxExperiments,
 }: {
-  objective: ObjectiveRecord | undefined;
-  researchContext?: ResearchContextRecord | undefined;
+  project: ProjectRecord | undefined;
   session: SessionRecord | undefined;
   experimentCount: number;
   maxExperiments: number;
@@ -23,8 +17,7 @@ export function SessionSection({
     <PaneSection title="Session">
       <Text>
         {sessionLabel({
-          objective,
-          researchContext,
+          project,
           session,
           experimentCount,
           maxExperiments,
@@ -35,23 +28,23 @@ export function SessionSection({
 }
 
 function sessionLabel({
-  objective,
-  researchContext,
+  project,
   session,
   experimentCount,
   maxExperiments,
 }: {
-  objective: ObjectiveRecord | undefined;
-  researchContext: ResearchContextRecord | undefined;
+  project: ProjectRecord | undefined;
   session: SessionRecord | undefined;
   experimentCount: number;
   maxExperiments: number;
 }): string {
   if (!session) {
-    return objective ? `${objective.title} | no session yet` : "No session yet";
+    return project ? `${project.title} | no session yet` : "No session yet";
   }
 
-  const objectiveLabel = objective?.title ?? "(no objective)";
-  const contextSuffix = researchContext?.body ? ` | ${researchContext.body}` : "";
+  const objectiveLabel = project?.objective ?? "(no objective)";
+  const contextSuffix = project?.research_context
+    ? ` | ${project.research_context}`
+    : "";
   return `${session.id} | ${session.status} | ${objectiveLabel} | experiments ${experimentCount}/${maxExperiments}${contextSuffix}`;
 }

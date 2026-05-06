@@ -5,6 +5,7 @@ import type {
   SessionRecord,
 } from "@situ/protocol";
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { vars } from "@situ/web-ui";
 import { RunMonitorView } from "./run-monitor-view";
 import { SituShell } from "../../shell/situ-shell";
 
@@ -14,7 +15,7 @@ const meta: Meta<typeof RunMonitorView> = {
   parameters: { layout: "fullscreen" },
   decorators: [
     (Story) => (
-      <div style={{ height: "100vh", padding: 16, background: "var(--stage)" }}>
+      <div style={{ height: "100vh", padding: 16, background: vars.color.stage }}>
         <Story />
       </div>
     ),

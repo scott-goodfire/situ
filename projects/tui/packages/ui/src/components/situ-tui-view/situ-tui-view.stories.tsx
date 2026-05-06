@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useApp } from "ink";
 import type {
+  AgentRecord,
   EventRecord,
   EvaluationActivityRecord,
   EvaluationRecord,
@@ -8,9 +9,10 @@ import type {
   ExperimentRecord,
   HypothesisActivityRecord,
   HypothesisRecord,
-  ObjectiveRecord,
-  ResearchContextRecord,
+  ProjectRecord,
   SessionRecord,
+  TaskActivityRecord,
+  TaskRecord,
 } from "@situ/protocol";
 import { SituTuiView } from "./situ-tui-view.js";
 import type {
@@ -20,13 +22,15 @@ import type {
 import {
   acceptedExperiment,
   activeHypothesis,
-  activeObjective,
-  activeResearchContext,
+  activeProject,
   completedEvents,
   completedEvaluations,
   completedExperiments,
   completedSession,
+  completedTaskActivities,
+  completedTasks,
   maxExperimentCount,
+  runningAgents,
   runningEvaluationActivities,
   runningEvaluations,
   runningEvents,
@@ -35,6 +39,8 @@ import {
   runningExperiments,
   runningHypothesisActivities,
   runningSession,
+  runningTaskActivities,
+  runningTasks,
   storyWorkspace,
   suspiciousEvaluationActivities,
   suspiciousEvaluations,
@@ -42,6 +48,8 @@ import {
   suspiciousExperiment,
   suspiciousExperimentActivities,
   suspiciousExperiments,
+  suspiciousTaskActivities,
+  suspiciousTasks,
 } from "../../fixtures/story-data.js";
 import type { TuiStory } from "../../stories/story-types.js";
 
@@ -53,14 +61,15 @@ export const stories = [
     render: () => (
       <StorySituTuiView
         statusLine="Connecting to local session..."
-        objective={activeObjective}
-        researchContext={activeResearchContext}
+        project={activeProject}
         session={undefined}
+        agents={[]}
+        tasks={[]}
         experimentCount={0}
-        activeExperiment={undefined}
         hypotheses={[]}
         experiments={[]}
         evaluations={[]}
+        taskActivities={[]}
         hypothesisActivities={[]}
         experimentActivities={[]}
         evaluationActivities={[]}
@@ -75,14 +84,15 @@ export const stories = [
     render: () => (
       <StorySituTuiView
         statusLine="session_0001 | active | experiments 3/5"
-        objective={activeObjective}
-        researchContext={activeResearchContext}
+        project={activeProject}
         session={runningSession}
+        agents={runningAgents}
+        tasks={runningTasks}
         experimentCount={runningExperiments.length}
-        activeExperiment={runningExperiment}
         hypotheses={[activeHypothesis]}
         experiments={runningExperiments}
         evaluations={runningEvaluations}
+        taskActivities={runningTaskActivities}
         hypothesisActivities={runningHypothesisActivities}
         experimentActivities={runningExperimentActivities}
         evaluationActivities={runningEvaluationActivities}
@@ -97,14 +107,15 @@ export const stories = [
     render: () => (
       <StorySituTuiView
         statusLine="session_0001 | active | experiments 3/5"
-        objective={activeObjective}
-        researchContext={activeResearchContext}
+        project={activeProject}
         session={runningSession}
+        agents={runningAgents}
+        tasks={suspiciousTasks}
         experimentCount={suspiciousExperiments.length}
-        activeExperiment={undefined}
         hypotheses={[activeHypothesis]}
         experiments={suspiciousExperiments}
         evaluations={suspiciousEvaluations}
+        taskActivities={suspiciousTaskActivities}
         hypothesisActivities={runningHypothesisActivities}
         experimentActivities={suspiciousExperimentActivities}
         evaluationActivities={suspiciousEvaluationActivities}
@@ -119,14 +130,15 @@ export const stories = [
     render: () => (
       <StorySituTuiView
         statusLine="session_0001 | closed | experiments 2/5"
-        objective={activeObjective}
-        researchContext={activeResearchContext}
+        project={activeProject}
         session={completedSession}
+        agents={runningAgents}
+        tasks={completedTasks}
         experimentCount={completedExperiments.length}
-        activeExperiment={undefined}
         hypotheses={[activeHypothesis]}
         experiments={completedExperiments}
         evaluations={completedEvaluations}
+        taskActivities={completedTaskActivities}
         hypothesisActivities={runningHypothesisActivities}
         experimentActivities={runningExperimentActivities}
         evaluationActivities={runningEvaluationActivities}
@@ -141,14 +153,15 @@ export const stories = [
     render: () => (
       <StorySituTuiView
         statusLine="Session session_0001 failed"
-        objective={activeObjective}
-        researchContext={activeResearchContext}
+        project={activeProject}
         session={runningSession}
+        agents={runningAgents}
+        tasks={suspiciousTasks}
         experimentCount={suspiciousExperiments.length}
-        activeExperiment={suspiciousExperiment}
         hypotheses={[activeHypothesis]}
         experiments={[acceptedExperiment, suspiciousExperiment]}
         evaluations={suspiciousEvaluations}
+        taskActivities={suspiciousTaskActivities}
         hypothesisActivities={runningHypothesisActivities}
         experimentActivities={suspiciousExperimentActivities}
         evaluationActivities={suspiciousEvaluationActivities}
@@ -160,14 +173,15 @@ export const stories = [
 
 type StorySituTuiViewProps = {
   statusLine: string;
-  objective: ObjectiveRecord | undefined;
-  researchContext?: ResearchContextRecord | undefined;
+  project: ProjectRecord | undefined;
   session: SessionRecord | undefined;
+  agents: AgentRecord[];
+  tasks: TaskRecord[];
   experimentCount: number;
-  activeExperiment: ExperimentRecord | undefined;
   hypotheses: HypothesisRecord[];
   experiments: ExperimentRecord[];
   evaluations: EvaluationRecord[];
+  taskActivities: TaskActivityRecord[];
   hypothesisActivities: HypothesisActivityRecord[];
   experimentActivities: ExperimentActivityRecord[];
   evaluationActivities: EvaluationActivityRecord[];
@@ -176,14 +190,15 @@ type StorySituTuiViewProps = {
 
 function StorySituTuiView({
   statusLine,
-  objective,
-  researchContext,
+  project,
   session,
+  agents,
+  tasks,
   experimentCount,
-  activeExperiment,
   hypotheses,
   experiments,
   evaluations,
+  taskActivities,
   hypothesisActivities,
   experimentActivities,
   evaluationActivities,
@@ -199,15 +214,16 @@ function StorySituTuiView({
       workspace={storyWorkspace}
       statusLine={statusLine}
       dashboardMessage={message}
-      objective={objective}
-      researchContext={researchContext}
+      project={project}
       session={session}
+      agents={agents}
+      tasks={tasks}
       experimentCount={experimentCount}
       maxExperiments={maxExperimentCount}
-      activeExperiment={activeExperiment}
       hypotheses={hypotheses}
       experiments={experiments}
       evaluations={evaluations}
+      taskActivities={taskActivities}
       hypothesisActivities={hypothesisActivities}
       experimentActivities={experimentActivities}
       evaluationActivities={evaluationActivities}

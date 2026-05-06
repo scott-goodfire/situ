@@ -1,5 +1,5 @@
 import { Text } from "ink";
-import type { ObjectiveRecord, SessionRecord } from "@situ/protocol";
+import type { ProjectRecord, SessionRecord } from "@situ/protocol";
 import { AppFrame } from "../app-frame/app-frame.js";
 import {
   ChoicePrompt,
@@ -23,7 +23,7 @@ const reconnectOptions = [
 export function ReconnectSessionPrompt({
   workspace,
   session,
-  objective,
+  project,
   experimentCount,
   maxExperiments,
   onReconnect,
@@ -31,7 +31,7 @@ export function ReconnectSessionPrompt({
 }: {
   workspace: string;
   session: SessionRecord;
-  objective: ObjectiveRecord | undefined;
+  project: ProjectRecord | undefined;
   experimentCount: number;
   maxExperiments: number;
   onReconnect: () => void;
@@ -47,7 +47,7 @@ export function ReconnectSessionPrompt({
         title="Reconnect to active session?"
         message={reconnectMessage({
           session,
-          objective,
+          project,
           experimentCount,
           maxExperiments,
         })}
@@ -67,16 +67,16 @@ export function ReconnectSessionPrompt({
 
 function reconnectMessage({
   session,
-  objective,
+  project,
   experimentCount,
   maxExperiments,
 }: {
   session: SessionRecord;
-  objective: ObjectiveRecord | undefined;
+  project: ProjectRecord | undefined;
   experimentCount: number;
   maxExperiments: number;
 }): string {
-  const objectiveLabel = objective?.title ?? "(no objective)";
+  const objectiveLabel = project?.objective ?? "(no objective)";
 
   return `${session.id} is active for ${objectiveLabel}. Experiments ${experimentCount}/${maxExperiments}.`;
 }

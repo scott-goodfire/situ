@@ -8,6 +8,7 @@ import {
   ListChecks,
   Users,
 } from "lucide-react";
+import { vars } from "../../theme.css";
 import { DxAppFrame } from "./dx-app-frame";
 import {
   DxSidebar,
@@ -31,16 +32,16 @@ const sidebar = (
   <DxSidebar
     header={
       <div style={{ display: "grid", gap: 2 }}>
-        <span style={{ fontSize: 13, fontWeight: 500, color: "var(--foreground)" }}>
+        <span style={{ fontSize: 13, fontWeight: 500, color: vars.color.foreground }}>
           Situ
         </span>
-        <span style={{ fontSize: 11, color: "var(--muted-foreground-tertiary)" }}>
+        <span style={{ fontSize: 11, color: vars.color.mutedForegroundTertiary }}>
           ~/work/research
         </span>
       </div>
     }
     footer={
-      <span style={{ fontSize: 11, color: "var(--muted-foreground-tertiary)" }}>
+      <span style={{ fontSize: 11, color: vars.color.mutedForegroundTertiary }}>
         v0.0.1 · SOC 2
       </span>
     }
@@ -85,11 +86,11 @@ export const Default: Story = {
         <h2 style={{ fontSize: 22, fontWeight: 500, letterSpacing: "-0.012em", margin: 0 }}>
           Overview
         </h2>
-        <p style={{ color: "var(--muted-foreground)", lineHeight: 1.55, margin: 0 }}>
+        <p style={{ color: vars.color.mutedForeground, lineHeight: 1.55, margin: 0 }}>
           Twelve hypotheses across three experiments. The retrieval-filter cycle is
           live; prompt-decomposition was closed yesterday after evidence saturated.
         </p>
-        <p style={{ color: "var(--muted-foreground-tertiary)", fontSize: 13, margin: 0 }}>
+        <p style={{ color: vars.color.mutedForegroundTertiary, fontSize: 13, margin: 0 }}>
           Last sync 4s ago · 1 agent + 2 workers active
         </p>
       </div>
@@ -113,7 +114,7 @@ export const Bare: Story = {
         </DxSidebarSection>
       </DxSidebar>
     ),
-    children: <p style={{ color: "var(--muted-foreground)" }}>No top bar.</p>,
+    children: <p style={{ color: vars.color.mutedForeground }}>No top bar.</p>,
   },
   render: (args) => (
     <div style={{ width: "100%", height: 600 }}>
