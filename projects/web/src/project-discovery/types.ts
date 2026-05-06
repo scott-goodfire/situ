@@ -1,5 +1,3 @@
-import type { CollectionsBootstrapResult } from "@situ/protocol";
-
 export type ProjectSessionStatus =
   | "running"
   | "stopped"
@@ -40,9 +38,4 @@ export type ProjectResponse = {
 export type ProjectSessionResponse = {
   project: ProjectSummary | null;
   session: SessionConnection | null;
-};
-
-export type ProjectSnapshotResponse = {
-  project: ProjectSummary | null;
-  snapshot: CollectionsBootstrapResult | null;
 };

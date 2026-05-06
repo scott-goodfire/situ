@@ -50,6 +50,14 @@ Use [.agents/skills/use-logfire/SKILL.md](./.agents/skills/use-logfire/SKILL.md)
 when checking Logfire CLI auth, telling the user how to log in, selecting
 projects, creating read tokens, querying traces, or verifying telemetry.
 
+Use [.agents/skills/query-logfire/SKILL.md](./.agents/skills/query-logfire/SKILL.md)
+when read-token access is available and the task is to query Situ harness or
+eval trace records.
+
+Use [.agents/skills/review-situ-run/SKILL.md](./.agents/skills/review-situ-run/SKILL.md)
+when reviewing a completed or active Situ run from a workspace path, session
+id, local ledger, code diff, and Logfire traces.
+
 Routine command surface should eventually live in `mise.toml`, with reusable
 scripts in `commands/`, following the pattern from the reference Situ
 prototype.

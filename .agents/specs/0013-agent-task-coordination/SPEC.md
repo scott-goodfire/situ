@@ -112,6 +112,17 @@ runtime may close only after a small no-progress guardrail such as three
 consecutive planning cycles with no runnable Scientist task, after the
 experiment budget is reached, after user stop, or after a fatal failure.
 
+Project/session close is an explicit tool-mediated handshake, not a normal
+project update. A Manager that wants to end a project before the experiment
+budget is exhausted should first call a close-request tool. The tool returns a
+short-lived confirmation code and an agent-readable warning to try to keep
+going unless the Manager is confident no useful next work exists. Only a
+second close-confirmation tool call with that code, during the same active
+planning task, may mark the project closed. Direct project updates must not be
+able to bypass this handshake. Once a project is confirmed closed, the runtime
+should close the active session immediately instead of burning additional
+planning passes.
+
 ## TUI Shape
 
 The TUI should be able to show a compact board grouped by task status:
@@ -142,3 +153,5 @@ we learn?"
 - Task-to-ledger output links are explicit records.
 - Task activities remain plain-language first and do not hide research
   evidence that belongs on hypothesis, experiment, or evaluation activities.
+- Early project/session close requires the explicit request/confirm tool
+  handshake, with an agent-readable warning on the request step.

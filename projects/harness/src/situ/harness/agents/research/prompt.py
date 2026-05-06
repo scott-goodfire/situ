@@ -91,6 +91,10 @@ MANAGER_AGENT_INSTRUCTIONS = inspect.cleandoc(
     - Leave task comments only when they clarify planning or handoff context.
     - Do not run workspace commands, run experiments, or write hypotheses
       yourself; create tasks for the Scientist to do that work.
+    - Do not close a project with `update_project`. If you think no useful
+      next Scientist work remains, call `request_project_close`, reconsider
+      its warning, and only call `confirm_project_close` with the returned code
+      if closing is still clearly warranted.
 
     Style:
     - Be direct, concise, and specific.
@@ -180,7 +184,10 @@ def build_proposal_round_prompt(
         If there is no baseline evaluation evidence, file a `baseline` task
         before candidate hypotheses get more specific. If baseline evidence
         exists, keep planning the next useful Scientist task; do not treat
-        "baseline is done" as session completion.
+        "baseline is done" as session completion. If you believe the project
+        should end, use `request_project_close` first; only call
+        `confirm_project_close` after reconsidering whether another useful
+        Scientist task can be filed.
         """
     )
 

@@ -35,7 +35,7 @@ from situ.harness.records import (
     WorkspaceRecord,
 )
 from situ.harness.records.base import DbRecord
-from situ.harness.tools import build_research_toolset
+from situ.harness.tools import build_manager_toolset, build_research_toolset
 from situ.harness.tools.common import BaseSituTool, SituToolReturn
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -167,7 +167,14 @@ def test_situ_tool_folders_match_toolset_registration() -> None:
 
         tool_classes[tool_class.name] = tool_class
 
-    assert set(build_research_toolset().tools) == set(tool_classes)
+    registered_tools = set(build_research_toolset().tools) | set(
+        build_manager_toolset().tools
+    )
+    assert registered_tools == set(tool_classes)
+    assert "request_project_close" not in build_research_toolset().tools
+    assert "confirm_project_close" not in build_research_toolset().tools
+    assert "request_project_close" in build_manager_toolset().tools
+    assert "confirm_project_close" in build_manager_toolset().tools
 
 
 def _typescript_collection_fields() -> set[str]:

@@ -4,7 +4,7 @@ from typing import Any
 
 from pydantic_ai import RunContext
 
-from ....records import ProjectStatus
+from ....records import ProjectStatus, parse_project_status
 from ...common import BaseSituTool, SituToolDeps
 from .models import UpdateProjectResult
 
@@ -33,6 +33,17 @@ class UpdateProjectTool(BaseSituTool[SituToolDeps, UpdateProjectResult]):
             resolved_project_id = session.project_id if session is not None else None
         if resolved_project_id is None:
             raise ValueError("project_id is required when the session has no project")
+        if status is not None and parse_project_status(status) == ProjectStatus.CLOSED:
+            return self._failure(
+                code="project_close_requires_confirmation",
+                message=(
+                    "Project close must use the close handshake. Call "
+                    "`request_project_close` first. It will return a "
+                    "confirmation code and remind you to keep going unless no "
+                    "useful next work exists. If you are still sure after that, "
+                    "call `confirm_project_close` with the returned code."
+                ),
+            )
         project = repos.projects.update(
             resolved_project_id,
             title=title,

@@ -125,73 +125,182 @@ export const recordId = style({
 });
 
 // ---------------------------------------------------------------------------
-// Cycle grid (overview lanes)
+// Overview dashboard (mirrors TUI fullscreen-dashboard)
 // ---------------------------------------------------------------------------
 
-export const cycleGrid = style({
+export const dashboardSection = style({
+  display: "grid",
+  gap: 8,
+  paddingTop: 14,
+  paddingBottom: 14,
+  borderBottom: `1px solid ${vars.color.border02}`,
+  ":last-child": { borderBottom: 0 },
+});
+
+export const dashboardSectionLabel = style({
+  color: vars.color.mutedForegroundTertiary,
+  fontFamily: vars.font.mono,
+  fontSize: vars.text.productSm,
+  letterSpacing: vars.tracking.productSm,
+  textTransform: "uppercase",
+});
+
+export const dashboardHeaderTitle = style({
+  margin: 0,
+  color: vars.color.foreground,
+  fontSize: vars.text.displayMd,
+  fontWeight: 500,
+  letterSpacing: vars.tracking.display,
+});
+
+export const dashboardHeaderActive = style({
+  color: vars.color.foreground,
+  fontSize: vars.text.body,
+  lineHeight: vars.leading.body,
+});
+
+export const dashboardHeaderContext = style({
+  color: vars.color.mutedForeground,
+  fontFamily: vars.font.mono,
+  fontSize: vars.text.productSm,
+  letterSpacing: vars.tracking.productSm,
+});
+
+export const dashboardCounts = style({
+  display: "flex",
+  flexWrap: "wrap",
+  gap: 24,
+  alignItems: "baseline",
+  color: vars.color.foreground,
+  fontFamily: vars.font.mono,
+  fontSize: vars.text.productLg,
+});
+
+export const dashboardCount = style({
+  display: "inline-flex",
+  gap: 6,
+  alignItems: "baseline",
+});
+
+export const dashboardCountLabel = style({
+  color: vars.color.mutedForeground,
+});
+
+export const dashboardCountConcern = style({
+  color: vars.color.warningStrong,
+  fontWeight: 600,
+});
+
+export const dashboardCountBudgetBar = style({
+  marginLeft: 4,
+  color: vars.color.mutedForegroundTertiary,
+});
+
+export const taskBoard = style({
   display: "grid",
   gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-  gap: 14,
+  gap: 18,
   "@media": {
     "(max-width: 760px)": { gridTemplateColumns: "1fr" },
   },
 });
 
-export const cycleLane = style({
+export const taskColumn = style({
   display: "grid",
   alignContent: "start",
-  gap: 8,
+  gap: 6,
   minWidth: 0,
 });
 
-globalStyle(`${cycleLane} h3`, {
+export const taskColumnTitle = style({
   margin: 0,
   color: vars.color.mutedForeground,
+  fontFamily: vars.font.mono,
   fontSize: vars.text.productSm,
-  fontWeight: 500,
-  letterSpacing: "0.04em",
+  fontWeight: 600,
+  letterSpacing: "0.06em",
   textTransform: "uppercase",
 });
 
-// ---------------------------------------------------------------------------
-// Hypothesis card
-// ---------------------------------------------------------------------------
-
-export const hypothesisCard = style({
-  display: "grid",
-  gap: 10,
-  minWidth: 0,
-  padding: "12px 14px",
-  border: `1px solid ${vars.color.border01_5}`,
-  borderRadius: vars.radius.md,
-  background: vars.color.card01Hex,
+export const taskColumnEmpty = style({
+  color: vars.color.mutedForegroundTertiary,
+  fontStyle: "italic",
 });
 
-export const hypothesisCardHeader = style({
-  display: "flex",
-  alignItems: "flex-start",
-  justifyContent: "space-between",
-  gap: 10,
-});
-
-export const hypothesisCardSummary = style({
-  color: vars.color.mutedForeground,
-  fontSize: vars.text.productLg,
-  lineHeight: vars.leading.productBase,
-});
-
-export const hypothesisCardEvidence = style({
-  color: vars.color.mutedForeground,
-  fontSize: vars.text.productLg,
-  lineHeight: vars.leading.productBase,
-  overflowWrap: "anywhere",
-});
-
-export const hypothesisCardExperiment = style({
+export const taskRow = style({
   display: "flex",
   alignItems: "baseline",
   gap: 8,
   minWidth: 0,
+  color: vars.color.foreground,
+  fontSize: vars.text.productLg,
+  lineHeight: vars.leading.productBase,
+  selectors: {
+    '&[data-tone="info"]': { color: vars.color.foreground },
+    '&[data-tone="success"]': { color: vars.color.successStrong },
+    '&[data-tone="warning"]': { color: vars.color.warningStrong },
+    '&[data-tone="danger"]': { color: vars.color.dangerStrong },
+  },
+});
+
+export const taskRowGlyph = style({
+  flexShrink: 0,
+  width: 14,
+  textAlign: "center",
+  fontFamily: vars.font.mono,
+});
+
+export const taskRowTitle = style({
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+});
+
+export const dashboardActivityList = style({
+  display: "grid",
+  gap: 4,
+  margin: 0,
+  padding: 0,
+  listStyle: "none",
+});
+
+export const dashboardActivityRow = style({
+  display: "grid",
+  gridTemplateColumns: "84px 1fr",
+  gap: 12,
+  alignItems: "baseline",
+  minWidth: 0,
+  fontSize: vars.text.productLg,
+  lineHeight: vars.leading.productBase,
+});
+
+export const dashboardActivityLabel = style({
+  color: vars.color.mutedForeground,
+  fontFamily: vars.font.mono,
+  fontSize: vars.text.productSm,
+  letterSpacing: vars.tracking.productSm,
+  textTransform: "lowercase",
+  selectors: {
+    '&[data-tone="info"]': { color: vars.color.foreground },
+    '&[data-tone="warning"]': { color: vars.color.warningStrong },
+    '&[data-tone="danger"]': { color: vars.color.dangerStrong },
+  },
+});
+
+export const dashboardActivityBody = style({
+  color: vars.color.foreground,
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+  selectors: {
+    '&[data-tone="warning"]': { color: vars.color.warningStrong },
+    '&[data-tone="danger"]': { color: vars.color.dangerStrong },
+  },
+});
+
+export const dashboardEmpty = style({
+  color: vars.color.mutedForegroundTertiary,
+  fontStyle: "italic",
 });
 
 // ---------------------------------------------------------------------------

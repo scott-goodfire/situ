@@ -50,7 +50,13 @@ from situ.harness.tools.hypotheses import (
     UpdateHypothesisTool,
 )
 from situ.harness.tools.links import LinkHypothesisExperimentTool
-from situ.harness.tools.projects import CreateProjectTool, GetProjectTool, UpdateProjectTool
+from situ.harness.tools.projects import (
+    ConfirmProjectCloseTool,
+    CreateProjectTool,
+    GetProjectTool,
+    RequestProjectCloseTool,
+    UpdateProjectTool,
+)
 from situ.harness.tools.sessions import GetSessionTool
 from situ.harness.tools.tasks import (
     AddTaskCommentTool,
@@ -254,6 +260,92 @@ def test_create_project_tool_creates_and_attaches_project(repos: Repositories) -
     assert updated.success is True
     assert updated.project is not None
     assert "Refined" in updated.project["research_context"]
+
+
+def test_project_close_requires_request_and_confirmation(
+    repos: Repositories,
+) -> None:
+    emitted: list[dict[str, Any]] = []
+    manager = repos.agents.ensure_project_agent(
+        project_id="project_0001",
+        created_in_session_id="session_0001",
+        kind="manager",
+        display_name="Manager",
+    )
+    plan = repos.tasks.create(
+        task_id="task_plan_0001",
+        project_id="project_0001",
+        created_in_session_id="session_0001",
+        title="Plan close",
+        content="Decide whether to close.",
+        kind="plan",
+        priority="high",
+        source_kind="manager",
+    )
+    repos.tasks.claim(
+        task_id=plan.id,
+        agent_id=manager.id,
+        eligible_kinds=["plan"],
+        claimed_in_session_id="session_0001",
+    )
+    deps = SituToolDeps(
+        session_id="session_0001",
+        agent_id=manager.id,
+        repos=repos,
+        emit_event=_event_collector(emitted),
+    )
+
+    direct_close = invoke_situ_tool_sync(
+        tool=UpdateProjectTool(),
+        deps=deps,
+        status="closed",
+    )
+    assert direct_close.success is False
+    assert direct_close.error is not None
+    assert direct_close.error.code == "project_close_requires_confirmation"
+    assert "request_project_close" in direct_close.error.message
+    assert repos.projects.get("project_0001").status == "active"
+
+    request = invoke_situ_tool_sync(
+        tool=RequestProjectCloseTool(),
+        deps=deps,
+        reason="Current best is sufficient.",
+        evidence_summary="Two accepted experiments improved the target metric.",
+        remaining_work_assessment="No obvious bounded next task remains.",
+    )
+    assert request.success is True
+    assert request.confirmation_required is True
+    assert request.confirmation_code is not None
+    assert repos.projects.get("project_0001").status == "active"
+
+    bad_confirm = invoke_situ_tool_sync(
+        tool=ConfirmProjectCloseTool(),
+        deps=deps,
+        confirmation_code="close_project_wrong",
+        final_summary="Close anyway.",
+    )
+    assert bad_confirm.success is False
+    assert bad_confirm.error is not None
+    assert bad_confirm.error.code == "project_close_confirmation_not_found"
+
+    confirm = invoke_situ_tool_sync(
+        tool=ConfirmProjectCloseTool(),
+        deps=deps,
+        confirmation_code=request.confirmation_code,
+        final_summary="Confirmed after reconsidering next work.",
+    )
+    assert confirm.success is True
+    assert confirm.project is not None
+    assert confirm.project["status"] == "closed"
+    assert [event["type"] for event in emitted] == [
+        "project.close_confirmation_required",
+        "project.closed",
+    ]
+    activities = repos.task_activities.list_for_task(plan.id)
+    assert [activity.payload["activity_type"] for activity in activities] == [
+        "project_close_requested",
+        "project_close_confirmed",
+    ]
 
 
 def test_analysis_tools_create_update_list_and_comment(

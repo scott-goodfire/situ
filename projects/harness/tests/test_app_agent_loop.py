@@ -67,6 +67,32 @@ def test_session_loop_retries_manager_before_no_progress_close(
     )
 
 
+def test_session_loop_closes_immediately_when_project_is_closed_by_manager(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    app, session_id, project_id = _app_with_initial_plan(tmp_path)
+    runtime = CloseProjectRuntime()
+    monkeypatch.setattr("situ.harness.app.AgentRuntime", lambda _project_dir: runtime)
+
+    app._execute_session(session_id, max_experiments=10)
+
+    session = app.repos.sessions.get(session_id)
+    tasks = app.repos.tasks.list_for_session(session_id)
+
+    assert session is not None
+    assert session.status == "closed"
+    assert runtime.plan_calls == 1
+    assert runtime.scientist_calls == 0
+    assert [task.kind for task in tasks] == [TaskKind.PLAN]
+    assert any(
+        event.type == "session.completed"
+        and "manager confirmation" in event.message.lower()
+        and event.associated_project_id == project_id
+        for event in app.repos.events.list_for_session(session_id)
+    )
+
+
 class BaselineThenExperimentRuntime:
     def __init__(self) -> None:
         self.plan_calls = 0
@@ -149,6 +175,25 @@ class NoProgressRuntime:
     def plan_session(self, **_kwargs: Any) -> ResearchAgentOutput:
         self.plan_calls += 1
         return ResearchAgentOutput(summary="no runnable task filed")
+
+    def run_session(self, **_kwargs: Any) -> ResearchAgentOutput:
+        self.scientist_calls += 1
+        return ResearchAgentOutput(summary="should not run")
+
+
+class CloseProjectRuntime:
+    def __init__(self) -> None:
+        self.plan_calls = 0
+        self.scientist_calls = 0
+
+    def plan_session(self, **kwargs: Any) -> ResearchAgentOutput:
+        self.plan_calls += 1
+        repos = kwargs["repos"]
+        session_id = kwargs["session_id"]
+        project_id = repos.sessions.get(session_id).project_id
+        assert project_id is not None
+        repos.projects.update(project_id, status="closed")
+        return ResearchAgentOutput(summary="confirmed close")
 
     def run_session(self, **_kwargs: Any) -> ResearchAgentOutput:
         self.scientist_calls += 1

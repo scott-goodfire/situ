@@ -116,3 +116,18 @@ trace data, or explaining how the user should log in:
 
 It keeps Logfire auth, project selection, token handling, query, and UI
 verification steps in one place.
+
+Use the Logfire query skill when read-token access is already available and the
+task is to query trace records for Situ harness or eval runs:
+
+```text
+.agents/skills/query-logfire/SKILL.md
+```
+
+Use the run-review skill when autopsying a completed or active Situ run from a
+TUI screenshot, workspace path, session id, local ledger, workspace diff, and
+Logfire traces:
+
+```text
+.agents/skills/review-situ-run/SKILL.md
+```

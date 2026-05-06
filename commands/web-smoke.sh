@@ -31,7 +31,7 @@ for _ in {1..80}; do
   if [[ -n "$PORT" ]] \
     && curl -fsS "http://$HOST:$PORT/" >/dev/null 2>&1 \
     && curl -fsS "http://$HOST:$PORT/api/projects" >/dev/null 2>&1 \
-    && curl -fsS "http://$HOST:$PORT/api/projects/0123456789abcdef/snapshot" >/dev/null 2>&1 \
+    && curl -fsS "http://$HOST:$PORT/api/projects/0123456789abcdef/session" >/dev/null 2>&1 \
     && curl -fsS "http://$HOST:$PORT/projects/0123456789abcdef" >/dev/null 2>&1; then
     echo "Situ web smoke passed at http://$HOST:$PORT/"
     exit 0

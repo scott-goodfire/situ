@@ -2,7 +2,6 @@ import type {
   ProjectListResponse,
   ProjectResponse,
   ProjectSessionResponse,
-  ProjectSnapshotResponse,
 } from "./types";
 
 export async function fetchProjects(): Promise<ProjectListResponse> {
@@ -29,17 +28,6 @@ export async function fetchProjectSession({
 }): Promise<ProjectSessionResponse> {
   return readJson<ProjectSessionResponse>({
     path: `/api/projects/${encodeURIComponent(projectId)}/session`,
-    allowNotFound: true,
-  });
-}
-
-export async function fetchProjectSnapshot({
-  projectId,
-}: {
-  projectId: string;
-}): Promise<ProjectSnapshotResponse> {
-  return readJson<ProjectSnapshotResponse>({
-    path: `/api/projects/${encodeURIComponent(projectId)}/snapshot`,
     allowNotFound: true,
   });
 }

@@ -38,7 +38,13 @@ from .hypotheses import (
 )
 from .common import SituToolDeps
 from .links import LinkHypothesisExperimentTool
-from .projects import CreateProjectTool, GetProjectTool, UpdateProjectTool
+from .projects import (
+    ConfirmProjectCloseTool,
+    CreateProjectTool,
+    GetProjectTool,
+    RequestProjectCloseTool,
+    UpdateProjectTool,
+)
 from .sessions import GetSessionTool
 from .tasks import (
     AddTaskCommentTool,
@@ -98,6 +104,12 @@ MANAGER_TOOLSET_INSTRUCTIONS = inspect.cleandoc(
     tasks; add coordination comments; and update the current planning task. Do
     not use the manager pass to run experiments or write research outputs
     directly; file scientist tasks for that work.
+
+    To end a project, use the explicit close handshake. First call
+    `request_project_close`, read its warning, and try to keep going unless you
+    are confident no useful Scientist task remains. Only if closing is still
+    warranted should you call `confirm_project_close` with the returned code.
+    Do not try to close a project with `update_project`.
     """
 )
 
@@ -167,6 +179,8 @@ def build_manager_toolset() -> FunctionToolset[SituToolDeps]:
             GetProjectTool().as_tool(),
             CreateProjectTool().as_tool(),
             UpdateProjectTool().as_tool(),
+            RequestProjectCloseTool().as_tool(),
+            ConfirmProjectCloseTool().as_tool(),
             GetTaskBoardTool().as_tool(),
             CreateTaskTool().as_tool(),
             ClaimTaskTool().as_tool(),

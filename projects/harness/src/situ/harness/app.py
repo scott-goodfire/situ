@@ -41,6 +41,7 @@ from .records import (
     AgentKind,
     AgentStatus,
     EventRecord,
+    ProjectStatus,
     SessionStatus,
     TaskKind,
     TaskRecord,
@@ -475,6 +476,12 @@ class HarnessApp:
                     session = self.repos.sessions.get(session_id)
                     if session is None or session.status == SessionStatus.CLOSED:
                         return
+                    if (
+                        session.project_id is not None
+                        and self._project_is_closed(session.project_id)
+                    ):
+                        completion_summary = "Project is closed."
+                        break
 
                     completed_experiments = self._experiment_count(session_id)
                     remaining_experiments = max(
@@ -527,6 +534,11 @@ class HarnessApp:
                             result_summary=manager_result.summary,
                         )
                         active_task = None
+                        if self._project_is_closed(manager_task.project_id):
+                            completion_summary = (
+                                "Project was closed by Manager confirmation."
+                            )
+                            break
 
                     scientist_task = self._claim_next_task(
                         session_id=session_id,
@@ -636,6 +648,10 @@ class HarnessApp:
 
     def _experiment_count(self, session_id: str) -> int:
         return len(self.repos.experiments.list_for_session(session_id))
+
+    def _project_is_closed(self, project_id: str) -> bool:
+        project = self.repos.projects.get(project_id)
+        return project is not None and project.status == ProjectStatus.CLOSED
 
     def _close_session(
         self,
