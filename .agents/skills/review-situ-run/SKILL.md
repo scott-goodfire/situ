@@ -29,9 +29,15 @@ id from it before asking follow-up questions.
 
 ## Locate The Ledger
 
-Situ stores per-workspace state under `~/.situ/projects/<workspace_id>/`.
-`workspace_id` is the first 16 hex characters of the SHA256 hash of the
-resolved workspace path.
+Situ stores product state in the canonical SQLite ledger:
+
+```bash
+sqlite3 ~/.situ/situ.sqlite '.tables'
+```
+
+Per-workspace runtime state still lives under
+`~/.situ/projects/<workspace_id>/`. `workspace_id` is the first 16 hex
+characters of the SHA256 hash of the resolved workspace path.
 
 ```bash
 uv run python - <<'PY'
@@ -48,11 +54,12 @@ Then check:
 
 ```bash
 ls -la ~/.situ/projects/<workspace_id>
-sqlite3 ~/.situ/projects/<workspace_id>/situ.sqlite '.tables'
+ls -la ~/.situ/projects/<workspace_id>/dbos.sqlite 2>/dev/null || true
 ```
 
 If the DB is intermittently locked by a live TUI or harness, use
-`sqlite3 -cmd '.timeout 5000' ...` and retry read-only queries.
+`sqlite3 -cmd '.timeout 5000' ~/.situ/situ.sqlite ...` and retry read-only
+queries.
 
 ## Findings Scratchpad
 

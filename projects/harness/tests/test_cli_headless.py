@@ -147,6 +147,14 @@ def test_clear_removes_local_state_for_workspace(
     assert payload["cleared"] is True
     assert payload["project_id"] == context.project_id
     assert not context.project_dir.exists()
+    connection = sqlite3.connect(context.database_path)
+    try:
+        workspace_count = connection.execute("SELECT count(*) FROM workspaces").fetchone()[0]
+        event_count = connection.execute("SELECT count(*) FROM events").fetchone()[0]
+    finally:
+        connection.close()
+    assert workspace_count == 0
+    assert event_count == 0
 
 
 def test_clear_refuses_active_harness_without_force(
@@ -447,7 +455,7 @@ def test_should_build_web_detects_missing_build(tmp_path: Path) -> None:
     assert should_build_web(web_root, rebuild=True) is True
 
 
-def test_start_upserts_global_project_registry(
+def test_start_uses_existing_app_server(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -457,13 +465,6 @@ def test_start_upserts_global_project_registry(
 
     class Completed:
         returncode = 0
-
-    def fake_start_session_server(
-        app_root: Path,
-        workspace: Path,
-        env: dict[str, str],
-    ) -> tuple[Any, dict[str, str]]:
-        return object(), {"url": "http://127.0.0.1:1", "token": "token"}
 
     def fake_run(
         command: list[str],
@@ -475,12 +476,8 @@ def test_start_upserts_global_project_registry(
         return Completed()
 
     monkeypatch.setattr(
-        "situ.harness.cli.commands._shared.tui.start_session_server",
-        fake_start_session_server,
-    )
-    monkeypatch.setattr(
-        "situ.harness.cli.commands._shared.tui.stop_process",
-        lambda _process: None,
+        "situ.harness.cli.commands._shared.tui.read_live_app",
+        lambda: {"url": "http://127.0.0.1:1", "token": "token"},
     )
     monkeypatch.setattr(
         "situ.harness.cli.commands._shared.tui.subprocess.run",
@@ -491,15 +488,6 @@ def test_start_upserts_global_project_registry(
 
     assert code == 0
     assert len(calls) == 1
-
-    registry_path = Path.home() / ".situ" / "situ.sqlite"
-    connection = sqlite3.connect(registry_path)
-    try:
-        row = connection.execute(
-            "SELECT repo_path, label, archived_at FROM projects WHERE project_id = ?",
-            (ProjectContext(workspace).project_id,),
-        ).fetchone()
-    finally:
-        connection.close()
-
-    assert row == (str(workspace), "workspace", None)
+    assert calls[0]["env"]["SITU_APP_URL"] == "http://127.0.0.1:1"
+    assert calls[0]["env"]["SITU_APP_TOKEN"] == "token"
+    assert calls[0]["env"]["SITU_WORKSPACE"] == str(workspace)

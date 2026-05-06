@@ -17,7 +17,14 @@ def rpc_request(
     *,
     timeout: float = 10,
 ) -> dict[str, Any]:
-    body = json.dumps({"method": method, "params": params or {}}).encode("utf-8")
+    body = json.dumps(
+        {
+            "method": method,
+            "params": params or {},
+            "workspace": session.get("workspace"),
+            "project_id": session.get("project_id"),
+        }
+    ).encode("utf-8")
     request = urllib.request.Request(
         f"{session['url']}/rpc",
         data=body,
@@ -47,7 +54,13 @@ def rpc_request(
 
 
 def open_event_stream(session: dict[str, str]) -> Any:
-    query = urllib.parse.urlencode({"token": session["token"]})
+    query = urllib.parse.urlencode(
+        {
+            "token": session["token"],
+            "workspace": session.get("workspace", ""),
+            "project_id": session.get("project_id", ""),
+        }
+    )
     request = urllib.request.Request(
         f"{session['url']}/events?{query}",
         headers={"Authorization": f"Bearer {session['token']}"},

@@ -212,13 +212,14 @@ export function SituTui() {
 
   useEffect(() => {
     const mode = sessionMode();
-    const sessionUrl = process.env.SITU_SESSION_URL;
-    const sessionToken = process.env.SITU_SESSION_TOKEN;
+    const sessionUrl = process.env.SITU_APP_URL ?? process.env.SITU_SESSION_URL;
+    const sessionToken = process.env.SITU_APP_TOKEN ?? process.env.SITU_SESSION_TOKEN;
+    const projectId = process.env.SITU_PROJECT_ID;
 
     if (!sessionUrl || !sessionToken) {
       setStatus({
         kind: "failed",
-        message: "No local Situ session found. Start one with situ start.",
+        message: "No local Situ app found. Start one with situ app.",
       });
       return;
     }
@@ -226,6 +227,8 @@ export function SituTui() {
     const client = new HttpJsonRpcClient({
       baseUrl: sessionUrl,
       token: sessionToken,
+      workspace,
+      projectId,
     });
     clientRef.current = client;
     trackedSessionIdRef.current = undefined;
@@ -331,7 +334,13 @@ export function SituTui() {
           return;
         }
 
-        setStatus({ kind: "ready" });
+        setStatus({ kind: "launching" });
+        const result = await client.request<SessionStartResult, SessionStartParams>({
+          method: "session.start",
+          params: sessionStartParams,
+        });
+        trackedSessionIdRef.current = result.session_id;
+        setStatus({ kind: "running", sessionId: result.session_id });
       })
       .catch((error: unknown) => {
         setStatus({
@@ -612,7 +621,7 @@ function statusSummary({
   maxExperiments: number;
 }): string {
   if (status.kind === "starting") {
-    return "Connecting to local session...";
+    return "Connecting to local app...";
   }
 
   if (status.kind === "ready") {

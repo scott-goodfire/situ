@@ -47,7 +47,7 @@ describe("discovery api", () => {
           workspace: null,
           objective_title: null,
           status: "stopped",
-          status_reason: "No active session file found",
+          status_reason: "No active session found",
           started_at: null,
           last_seen_at: null,
           url: null,
@@ -60,7 +60,7 @@ describe("discovery api", () => {
     await withTemporaryHome(async ({ home }) => {
       const workspace = join(home, "stopped-situ-workspace");
       mkdirSync(workspace);
-      writeProjectDatabase({
+      writeProductDatabase({
         home,
         projectId: STOPPED_PROJECT_ID,
         repoPath: workspace,
@@ -80,7 +80,7 @@ describe("discovery api", () => {
           workspace,
           objective_title: "Improve stopped project score",
           status: "stopped",
-          status_reason: "No active session file found",
+          status_reason: "No active session found",
           started_at: null,
           last_seen_at: "2026-05-05T01:00:00.000Z",
           url: null,
@@ -117,32 +117,6 @@ describe("discovery api", () => {
           url: null,
         },
       ]);
-    });
-  });
-
-  test("backfills the registry from existing project directories", async () => {
-    await withTemporaryHome(async ({ home }) => {
-      makeProjectDirectory({ home, projectId: STOPPED_PROJECT_ID });
-
-      const app = createTestDiscoveryApi({ home });
-      const response = await app.request("/api/projects");
-      expect(response.status).toBe(200);
-
-      const database = new Database(join(home, ".situ", "situ.sqlite"), {
-        readonly: true,
-      });
-      try {
-        const row = database
-          .query("SELECT project_id, label FROM projects WHERE project_id = ?")
-          .get(STOPPED_PROJECT_ID) as { project_id: string; label: string } | null;
-
-        expect(row).toEqual({
-          project_id: STOPPED_PROJECT_ID,
-          label: STOPPED_PROJECT_ID,
-        });
-      } finally {
-        database.close();
-      }
     });
   });
 
@@ -298,7 +272,7 @@ function writeSessionRecord({
   writeFileSync(join(projectDirectory, "session.json"), `${JSON.stringify(session)}\n`);
 }
 
-function writeProjectDatabase({
+function writeProductDatabase({
   home,
   projectId,
   repoPath,
@@ -311,8 +285,8 @@ function writeProjectDatabase({
   objectiveTitle: string;
   updatedAt: string;
 }): void {
-  const projectDirectory = makeProjectDirectory({ home, projectId });
-  const database = new Database(join(projectDirectory, "situ.sqlite"));
+  mkdirSync(join(home, ".situ"), { recursive: true });
+  const database = new Database(join(home, ".situ", "situ.sqlite"));
 
   try {
     database.run(`
@@ -335,6 +309,16 @@ function writeProjectDatabase({
         updated_at TEXT NOT NULL
       )
     `);
+    database.run(`
+      CREATE TABLE sessions (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT NOT NULL,
+        project_id TEXT,
+        status TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    `);
     database
       .query(
         "INSERT INTO workspaces (id, repo_path, created_at, updated_at) VALUES (?, ?, ?, ?)",
@@ -349,7 +333,7 @@ function writeProjectDatabase({
       `,
       )
       .run(
-        `project_${projectId}_001`,
+        projectId,
         projectId,
         objectiveTitle,
         objectiveTitle,

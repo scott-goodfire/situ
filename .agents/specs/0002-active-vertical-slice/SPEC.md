@@ -18,13 +18,15 @@ concerns, and one worker path.
 A user runs from the repo they want to observe:
 
 ```bash
-situ start
+situ app
+situ tui
 ```
 
 or points Situ at a workspace explicitly:
 
 ```bash
-situ start ~/sandbox/some-project
+situ app
+situ tui ~/sandbox/some-project
 ```
 
 For the current implementation slice, Situ accepts setup context through
@@ -36,7 +38,7 @@ sparse start/exec inputs and reasonable defaults. The durable inputs are:
 
 Then Situ:
 
-- Creates local private project state.
+- Creates local private project state in the canonical app database.
 - Starts a new session by default.
 - Stores the objective and research context on the attached project.
 - Starts a DBOS-backed Pydantic AI agent.
@@ -56,7 +58,7 @@ code are launched from the Situ repository.
 
 ## Current Slice Includes
 
-- One-command start
+- One app server plus one TUI command
 - Explicit workspace argument for sandbox/project testing
 - Sparse session setup inputs through objective/context
 - Local/private project context
@@ -87,7 +89,7 @@ code are launched from the Situ repository.
   branch, commit, and eval command are visible when interpreting results
 - Pydantic AI `DBOSAgent` as the agent durability boundary
 - Durable restart/resume
-- SQLite source of truth
+- `~/.situ/situ.sqlite` as the product SQLite source of truth
 
 The agent path should express active behavior through approved harness tools.
 Getting project/session context, creating analyses, creating hypotheses,

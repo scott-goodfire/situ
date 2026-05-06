@@ -16,15 +16,40 @@ from ._shared.arguments import (
     add_setup_arguments,
     add_workspace_argument,
 )
+from .app.command import run as app_run
 from .attach.command import run as attach_run
 from .resume.command import run as resume_run
 from .start.command import run as start_run
+from .tui.command import LATEST_SENTINEL, run as tui_run
 from .web.command import run as web_run
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="situ")
     subparsers = parser.add_subparsers(dest="command", required=True)
+
+    app_parser = subparsers.add_parser("app", help="run the local Situ app server")
+    app_parser.add_argument(
+        "--force",
+        action="store_true",
+        help="start a new app server even when a healthy app record exists",
+    )
+
+    tui_parser = subparsers.add_parser("tui", help="open the TUI over the local app")
+    add_workspace_argument(tui_parser)
+    add_setup_arguments(tui_parser)
+    tui_mode = tui_parser.add_mutually_exclusive_group()
+    tui_mode.add_argument(
+        "--resume",
+        nargs="?",
+        const=LATEST_SENTINEL,
+        help="resume an existing session id; defaults to the latest local session for the workspace",
+    )
+    tui_mode.add_argument(
+        "--attach",
+        action="store_true",
+        help="attach without starting or resuming a session",
+    )
 
     start_parser = subparsers.add_parser("start", help="start the local TUI")
     add_workspace_argument(start_parser)
@@ -122,6 +147,10 @@ def main(argv: list[str] | None = None) -> int:
 
     args = parser.parse_args(argv)
 
+    if args.command == "app":
+        return app_run(args)
+    if args.command == "tui":
+        return tui_run(args)
     if args.command == "start":
         return start_run(args)
     if args.command == "resume":

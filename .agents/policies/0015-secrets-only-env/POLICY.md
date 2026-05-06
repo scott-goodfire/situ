@@ -39,7 +39,7 @@ prefer Situ-scoped names.
 - Keep `.env.example` limited to user-facing secrets.
 - Keep tests isolated through constructor parameters, temporary paths, or
   fixtures rather than user env overrides.
-- Treat process handoff env vars between CLI, TUI, session server, and workers
+- Treat process handoff env vars between CLI, TUI, app server, and workers
   as internal implementation details; do not document them as user config.
 - When introducing a new SDK that requires a provider env var, map from an
   Situ-scoped secret at the integration boundary.

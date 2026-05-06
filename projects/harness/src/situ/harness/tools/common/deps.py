@@ -28,6 +28,7 @@ class SituToolDeps(BaseModel):
     workspace_id: str | None = None
     project_id: str | None = None
     project_dir: Path | None = None
+    database_path: Path | None = None
     repo_path: str | None = None
     app_root: Path | None = None
     repos: Repositories | None = Field(default=None, exclude=True)
@@ -63,7 +64,7 @@ class SituToolDeps(BaseModel):
             raise RuntimeError("tool deps require repos or workspace_id/project_dir/repo_path")
 
         self._opened_db = Database(
-            self.project_dir / "situ.sqlite",
+            self.database_path or self.project_dir / "situ.sqlite",
             workspace_id=resolved_workspace_id,
             repo_path=self.repo_path,
         )

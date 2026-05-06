@@ -6,13 +6,20 @@ import sys
 from pathlib import Path
 
 from ..._shared import apply_session_env
-from ....core.db.project_registry import upsert_project_registry
 from ....core.paths import resolve_app_root, resolve_workspace
 from ....core.project_context import ProjectContext
-from ...local_session import base_env, read_live_session, start_session_server, stop_process
+from ...local_session import base_env, read_live_app
 
 
 def launch_managed_tui(
+    *,
+    args: argparse.Namespace,
+    mode: str,
+) -> int:
+    return launch_app_tui(args=args, mode=mode)
+
+
+def launch_app_tui(
     *,
     args: argparse.Namespace,
     mode: str,
@@ -27,32 +34,23 @@ def launch_managed_tui(
         print(f"workspace does not exist or is not a directory: {workspace}", file=sys.stderr)
         return 1
 
-    if read_live_session(workspace) is not None:
-        print(
-            "active Situ harness found for this workspace; use situ attach or stop it first",
-            file=sys.stderr,
-        )
+    app = read_live_app()
+    if app is None:
+        print("no active Situ app found; run situ app in another terminal", file=sys.stderr)
         return 1
 
     context = ProjectContext(workspace)
-    upsert_project_registry(
-        situ_home=context.home,
-        project_id=context.project_id,
-        repo_path=context.repo_root,
-    )
 
     env = base_env(app_root, workspace)
     apply_session_env(env, args)
     env["SITU_SESSION_MODE"] = mode
+    env["SITU_PROJECT_ID"] = context.project_id
+    env["SITU_APP_URL"] = app["url"]
+    env["SITU_APP_TOKEN"] = app["token"]
+    env["SITU_SESSION_URL"] = app["url"]
+    env["SITU_SESSION_TOKEN"] = app["token"]
 
-    session_process, session = start_session_server(app_root, workspace, env)
-    env["SITU_SESSION_URL"] = session["url"]
-    env["SITU_SESSION_TOKEN"] = session["token"]
-
-    try:
-        return run_tui(app_root=app_root, env=env)
-    finally:
-        stop_process(session_process)
+    return run_tui(app_root=app_root, env=env)
 
 
 def run_tui(

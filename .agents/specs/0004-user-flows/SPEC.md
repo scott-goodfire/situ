@@ -1,26 +1,25 @@
 # User Flows
 
-## Default Start
+## Default App And TUI Start
 
 ```text
-User runs `situ start`
+User runs `situ app`
+  |
+  `-- app server starts and waits without creating a session
+
+User runs `situ tui`
   |
   |-- Existing local project context?
-  |     |-- yes -> open TUI preflight
-  |     `-- no  -> use supplied objective/context or sparse defaults, then open TUI preflight
-  |
-  |-- User chooses Start session?
-  |     |-- yes -> create a fresh session with objective/context
-  |     `-- no  -> exit without starting research work
+  |     |-- yes -> create a fresh session by default
+  |     `-- no  -> use supplied objective/context or sparse defaults, then create a fresh session
   |
   `-- TUI renders live session observability
 ```
 
-The default flow should be one command, not a pile of advanced subcommands.
-It should not implicitly resume old research state.
-Interactive `start` should not auto-run agent work on launch. It may start the
-local session server, but `session.start` should wait for the user's explicit
-Start selection.
+The default runtime flow is two terminals: one app process for all sessions and
+one TUI client for the selected workspace. The TUI should not implicitly resume
+old research state. Compatibility commands may keep `situ start` as an alias,
+but the primary surface is `situ app` plus `situ tui`.
 
 ## Setup Inputs
 
@@ -48,13 +47,12 @@ which outputs matter, how to read ordinary command output, and what should be
 considered suspicious.
 
 After setup input is resolved, Situ should create a new session with its own
-objective and research context only after the user confirms the preflight prompt,
-then render the TUI dashboard.
+objective and research context, then render the TUI dashboard.
 
 ## Resume Flow
 
 ```text
-User runs `situ resume`
+User runs `situ tui --resume <session-id>`
   |
   |-- latest session for this project exists?
   |     |-- yes -> resume that session id
@@ -68,9 +66,9 @@ Starting from prior findings in a new session should be a separate future
 ## Attach Flow
 
 ```text
-User runs `situ attach`
+User runs `situ tui --attach`
   |
-  |-- healthy local session server exists?
+  |-- healthy local app and active session exist?
   |     |-- yes -> open TUI against the active live process
   |     `-- no  -> show "no active session found"
 ```

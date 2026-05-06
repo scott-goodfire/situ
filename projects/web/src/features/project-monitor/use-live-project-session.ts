@@ -274,6 +274,8 @@ export function useLiveProjectSession({
     const client = new HttpJsonRpcClient({
       baseUrl: session.url,
       token: session.token,
+      workspace: session.workspace,
+      projectId: session.project_id,
     });
 
     const unsubscribe = client.onNotification({

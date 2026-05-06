@@ -9,8 +9,10 @@ Situ should feel like a local agent tool:
 
 - The current repo is the workspace being researched.
 - Situ state is private by default.
-- State should live under the user's home directory, for example
-  `~/.situ/projects/<project-id>/`.
+- Canonical product state should live in one local database under the user's
+  home directory, `~/.situ/situ.sqlite`.
+- Project-scoped runtime state should live under the user's home directory, for
+  example `~/.situ/projects/<project-id>/`.
 - Nothing should be written to the researched repo unless the user explicitly
   exports or publishes it.
 
@@ -25,11 +27,11 @@ Situ observes and supervises the local loop. Workers do the concrete
 experiment work.
 
 ```text
-TypeScript Ink TUI
-  -> local session server over HTTP/SSE
-      -> Python harness over JSON-RPC stdio
+TypeScript Ink TUI / Web / Headless clients
+  -> local Situ app server over HTTP/SSE
+      -> project-scoped Python harness runtime
           -> workspace (folder boundary)
-          -> project (research effort, owns the ledger and coordination)
+          -> project (research effort, owns product records and coordination)
               -> objective         (project field)
               -> research context  (project field)
               -> agents and tasks  (project-owned, session provenance)
@@ -47,16 +49,24 @@ TypeScript Ink TUI
 
 The system should keep these responsibilities distinct:
 
-- TUI: presentation, slim setup, collection-backed rendering, event display
-- Web UI: attach-only monitoring over an existing local session
-- Session server: harness subprocess ownership, HTTP RPC, event streaming, and
-  local session discovery
+- TUI: presentation, slim setup, collection-backed rendering, event display,
+  and explicit start/resume/attach session intent
+- Web UI: attach-only monitoring and local project/session discovery
+- Local app server: global app lifecycle, canonical database access, project
+  runtime routing, HTTP RPC, and event streaming
 - Harness: workspace/project/session lifecycle, durable state, internal events,
   agents, tasks, analyses, hypotheses, experiments, evaluations, links, activities,
   artifacts, and automated trust concerns. Objective and research context are
   fields on Project.
 - Workers: concrete experiments, code changes, eval runs, analysis
-- Protocol/API: stable boundary between clients, harness, and workers
+- Protocol/API: stable boundary between clients, the app server, harness
+  runtimes, and workers
+
+The app server is not a session. It should be possible to run one app server
+for all local Situ workspaces, then start or resume sessions from clients.
+Product state should converge in the canonical database described by
+[0014-local-app-runtime](../0014-local-app-runtime/SPEC.md), while DBOS runtime
+state remains project-scoped until there is a deliberate global DBOS design.
 
 ## Collection Sync Boundary
 
@@ -135,8 +145,8 @@ It should stay close to that structure for the first implementation:
 
 ```text
 projects/tui                  projects/harness
-TypeScript + Ink   HTTP/SSE   session server   JSON-RPC   Python
-terminal UI      ---------->  TypeScript     ---------->  local harness runtime
+TypeScript + Ink   HTTP/SSE   local app server   JSON-RPC   Python
+terminal UI      ---------->  TypeScript       ---------->  project harness runtime
 ```
 
 ## Implementation Bias

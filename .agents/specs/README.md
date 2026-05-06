@@ -18,6 +18,7 @@ Read in this order:
 11. [0011-local-session-web/SPEC.md](./0011-local-session-web/SPEC.md)
 12. [0012-experiment-workspace-state/SPEC.md](./0012-experiment-workspace-state/SPEC.md)
 13. [0013-agent-task-coordination/SPEC.md](./0013-agent-task-coordination/SPEC.md)
+14. [0014-local-app-runtime/SPEC.md](./0014-local-app-runtime/SPEC.md)
 
 ## Product Thesis
 
@@ -32,8 +33,8 @@ The product should answer:
 
 The first slice should be intentionally slim. Live guidance, final reports,
 broad health scoring, directions, and standalone decision/finding/warning
-models are deferred until the terminal loop is useful. The first web surface is
-attach-only observability over an already-running local session.
+models are deferred until the terminal loop is useful. The local app runtime is
+the control plane for terminal and web observability surfaces.
 
 ## Spec Discipline
 

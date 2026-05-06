@@ -7,14 +7,14 @@ status: active
 
 ## Applies To
 
-The TypeScript Ink TUI, attach-only web monitor, Python CLI, local session
-server, JSON-RPC client/server code, collection layer, and any future commands
+The TypeScript Ink TUI, attach-only web monitor, Python CLI, local app server,
+JSON-RPC client/server code, collection layer, and any future commands
 intended for agents, scripts, CI, or automation.
 
 ## Rule
 
 Human-facing interactive surfaces and agent-facing headless surfaces should be
-siblings over the same session backend, not wrappers around each other.
+siblings over the same app/session backend, not wrappers around each other.
 
 The TUI and web monitor should make a live research session understandable to a
 human. Headless commands should make the same session state and lifecycle
@@ -23,14 +23,14 @@ screen scraping.
 
 ## Required Checks
 
-- Keep `situ start` human-first. It may launch the local session server and
-  TUI, but should not be the only way to run the session lifecycle.
+- Keep `situ tui` human-first. It connects to `situ app` and should not be the
+  only way to run the session lifecycle.
 - Add agent/CI flows as explicit headless commands such as `situ exec`,
   `situ status --json`, `situ snapshot --json`,
   `situ events --json`, and `situ wait --json`.
 - Headless commands must work without a TTY. They must not render Ink, depend on
   raw mode, require interactive prompts, or rely on cursor-control output.
-- Headless commands should talk to the same session server, JSON-RPC methods,
+- Headless commands should talk to the same app server, JSON-RPC methods,
   collection bootstrap, and event stream that the TUI/web surfaces use.
 - Do not duplicate research-loop behavior in a separate automation-only code
   path. Shared lifecycle logic belongs below the surfaces.

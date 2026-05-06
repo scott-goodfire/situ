@@ -42,18 +42,20 @@ export function DashboardFrameSection({
     <>
       {label && <FrameDivider kind="middle" label={label} width={width} />}
       <Box
-        borderStyle="single"
-        borderTop={false}
-        borderBottom={false}
-        borderLeft
-        borderRight
-        borderColor="gray"
-        flexDirection="column"
+        flexDirection="row"
         height={height}
-        paddingX={1}
         width={width}
       >
-        {children}
+        <VerticalFrameBorder height={height} />
+        <Box
+          flexDirection="column"
+          height={height}
+          paddingX={1}
+          width={Math.max(0, width - 2)}
+        >
+          {children}
+        </Box>
+        <VerticalFrameBorder height={height} />
       </Box>
     </>
   );
@@ -89,14 +91,28 @@ function FrameDivider({
   width: number;
   tone?: DashboardFrameTone;
 }) {
+  const line = frameDividerLine({
+    kind,
+    label,
+    width,
+  });
+
+  if (tone && tone !== "gray") {
+    return <Text color={tone}>{line}</Text>;
+  }
+
+  return <Text dimColor>{line}</Text>;
+}
+
+function VerticalFrameBorder({ height }: { height: number }) {
   return (
-    <Text color={tone ?? "gray"}>
-      {frameDividerLine({
-        kind,
-        label,
-        width,
-      })}
-    </Text>
+    <Box flexDirection="column" height={height} width={1}>
+      {Array.from({ length: Math.max(0, height) }, (_, index) => (
+        <Text key={index} dimColor>
+          │
+        </Text>
+      ))}
+    </Box>
   );
 }
 

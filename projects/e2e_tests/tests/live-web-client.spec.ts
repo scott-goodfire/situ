@@ -4,6 +4,7 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
+  realpathSync,
   readFileSync,
   rmSync,
   writeFileSync,
@@ -272,7 +273,12 @@ async function rpcRequest(
       authorization: `Bearer ${session.token}`,
       "content-type": "application/json",
     },
-    body: JSON.stringify({ method, params }),
+    body: JSON.stringify({
+      method,
+      params,
+      workspace: session.workspace,
+      project_id: session.project_id,
+    }),
   });
   const payload = (await response.json()) as {
     result?: Record<string, unknown>;
@@ -322,7 +328,10 @@ async function stopProcess(child: ChildProcess): Promise<void> {
 }
 
 function projectIdForWorkspace(workspace: string): string {
-  return createHash("sha256").update(resolve(workspace)).digest("hex").slice(0, 16);
+  return createHash("sha256")
+    .update(realpathSync(resolve(workspace)))
+    .digest("hex")
+    .slice(0, 16);
 }
 
 function makeTempRoot(): string {

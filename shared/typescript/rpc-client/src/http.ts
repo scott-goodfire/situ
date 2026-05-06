@@ -9,6 +9,8 @@ type RpcResponse<TResult> =
 type HttpJsonRpcClientOptions = {
   baseUrl: string;
   token: string;
+  workspace?: string;
+  projectId?: string;
 };
 
 type JsonRpcRequestOptions<TParams> = {
@@ -21,14 +23,20 @@ export class HttpJsonRpcClient {
   private notificationHandlers = new Set<NotificationHandler>();
   private readonly baseUrl: string;
   private readonly token: string;
+  private readonly workspace: string | undefined;
+  private readonly projectId: string | undefined;
 
-  constructor({ baseUrl, token }: HttpJsonRpcClientOptions) {
+  constructor({ baseUrl, token, workspace, projectId }: HttpJsonRpcClientOptions) {
     this.baseUrl = baseUrl;
     this.token = token;
+    this.workspace = workspace;
+    this.projectId = projectId;
   }
 
   async health(): Promise<boolean> {
-    const response = await fetch(new URL("/health", this.baseUrl), {
+    const url = new URL("/health", this.baseUrl);
+    this.applyScopeQuery({ url });
+    const response = await fetch(url, {
       headers: this.authHeaders(),
     });
     return response.ok;
@@ -44,7 +52,12 @@ export class HttpJsonRpcClient {
         ...this.authHeaders(),
         "content-type": "application/json",
       },
-      body: JSON.stringify({ method, params }),
+      body: JSON.stringify({
+        method,
+        params,
+        workspace: this.workspace,
+        project_id: this.projectId,
+      }),
     });
 
     if (!response.ok) {
@@ -83,12 +96,22 @@ export class HttpJsonRpcClient {
     return { authorization: `Bearer ${this.token}` };
   }
 
+  private applyScopeQuery({ url }: { url: URL }): void {
+    if (this.workspace) {
+      url.searchParams.set("workspace", this.workspace);
+    }
+    if (this.projectId) {
+      url.searchParams.set("project_id", this.projectId);
+    }
+  }
+
   private startNotifications(): void {
     const abort = new AbortController();
     this.notificationAbort = abort;
 
     const url = new URL("/events", this.baseUrl);
     url.searchParams.set("token", this.token);
+    this.applyScopeQuery({ url });
 
     void this.readEventStream({
       url,

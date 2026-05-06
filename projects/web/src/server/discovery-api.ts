@@ -2,12 +2,7 @@ import { access, readFile, readdir } from "node:fs/promises";
 import { homedir } from "node:os";
 import { basename, resolve } from "node:path";
 import { Hono } from "hono";
-import {
-  readProjectRegistry,
-  upsertProjectRegistryRows,
-  type ProjectRegistryRow,
-} from "./project-registry";
-import { openSqliteDatabase } from "./sqlite";
+import { openSqliteDatabase, type SqliteDatabase } from "./sqlite";
 import type {
   ProjectListResponse,
   ProjectResponse,
@@ -17,24 +12,6 @@ import type {
   SessionConnection,
 } from "../project-discovery/types";
 
-type SessionReadResult =
-  | { kind: "found"; session: SessionConnection }
-  | { kind: "invalid" }
-  | { kind: "missing" };
-
-type ProjectStatusReason =
-  | "session_healthy"
-  | "session_health_failed"
-  | "invalid_session_file"
-  | "workspace_missing"
-  | "project_database_unreadable"
-  | "no_session_file";
-
-type ProjectStatusDetails = {
-  status: ProjectSessionStatus;
-  reason: ProjectStatusReason;
-};
-
 type DiscoveryApiOptions = {
   situHome?: string;
 };
@@ -43,21 +20,62 @@ type DiscoveryContext = {
   situHome: string;
 };
 
+type AppRecord = {
+  pid: number;
+  port: number;
+  token: string;
+  url: string;
+  started_at: string;
+};
+
+type SessionReadResult =
+  | { kind: "found"; session: SessionConnection }
+  | { kind: "invalid" }
+  | { kind: "missing" };
+
+type ProjectStatusReason =
+  | "app_healthy"
+  | "session_healthy"
+  | "session_health_failed"
+  | "invalid_session_file"
+  | "workspace_missing"
+  | "project_database_unreadable"
+  | "no_active_session";
+
+type ProjectStatusDetails = {
+  status: ProjectSessionStatus;
+  reason: ProjectStatusReason;
+};
+
 type ProjectMetadata = {
+  projectId: string;
+  workspaceId: string | null;
   repoPath: string | null;
   objectiveTitle: string | null;
-  readStatus: "found" | "missing" | "unreadable";
   updatedAt: string | null;
+  activeSessionStartedAt: string | null;
+  readStatus: "found" | "missing" | "unreadable";
 };
 
-type ProjectRow = {
-  title: string | null;
+type ProductProjectRow = {
+  project_id: string;
   workspace_id: string;
+  title: string | null;
   objective: string | null;
-  updated_at: string;
+  project_updated_at: string | null;
+  repo_path: string | null;
+  active_session_created_at: string | null;
 };
 
-const PROJECT_ID_PATTERN = /^[a-f0-9]{16}$/;
+type LegacyRegistryRow = {
+  project_id: string;
+  repo_path: string | null;
+  label: string | null;
+  last_seen_at: string | null;
+  last_opened_at: string | null;
+};
+
+const PROJECT_ID_PATTERN = /^(?:[a-f0-9]{16}|project_[a-f0-9]{16}_\d{3})$/;
 
 export function createDiscoveryApi({
   situHome = defaultSituHome(),
@@ -89,7 +107,7 @@ export function createDiscoveryApi({
 
     const session =
       project.status === "running"
-        ? await readRunningSession({ discoveryContext, projectId })
+        ? await readRunningSession({ discoveryContext, project })
         : null;
 
     return context.json({ project, session } satisfies ProjectSessionResponse);
@@ -103,41 +121,26 @@ async function listProjects({
 }: {
   discoveryContext: DiscoveryContext;
 }): Promise<ProjectSummary[]> {
-  const registryRows = await readProjectRegistry({
-    situHome: discoveryContext.situHome,
-  });
-  const projectIds = await listProjectIds({ discoveryContext, registryRows });
+  const metadata = await readProductProjectMetadata({ discoveryContext });
+  const projectIds = new Set(metadata.map((project) => project.projectId));
+  const legacyProjectIds = await listLegacyProjectIds({ discoveryContext });
+  for (const projectId of legacyProjectIds) {
+    projectIds.add(projectId);
+  }
+
   const projects = await Promise.all(
-    projectIds.map((projectId) =>
+    Array.from(projectIds).map(async (projectId) =>
       projectSummary({
         discoveryContext,
         projectId,
-        registryRow: registryRows.find((row) => row.project_id === projectId) ?? null,
+        metadata:
+          metadata.find((project) => project.projectId === projectId) ??
+          (await readLegacyProjectMetadata({ discoveryContext, projectId })),
       }),
     ),
   );
 
-  await syncKnownProjectsToRegistry({ discoveryContext, projects });
-
   return projects.sort(compareProjects);
-}
-
-async function syncKnownProjectsToRegistry({
-  discoveryContext,
-  projects,
-}: {
-  discoveryContext: DiscoveryContext;
-  projects: ProjectSummary[];
-}): Promise<void> {
-  await upsertProjectRegistryRows({
-    situHome: discoveryContext.situHome,
-    rows: projects.map((project) => ({
-      projectId: project.project_id,
-      repoPath: project.workspace,
-      label: project.label,
-      lastSeenAt: project.last_seen_at,
-    })),
-  });
 }
 
 async function findProject({
@@ -151,74 +154,79 @@ async function findProject({
     return null;
   }
 
-  const registryRows = await readProjectRegistry({
-    situHome: discoveryContext.situHome,
-  });
-  const projectIds = await listProjectIds({ discoveryContext, registryRows });
-  if (!projectIds.includes(projectId)) {
-    return null;
+  const metadata =
+    (await readProductProjectMetadata({ discoveryContext })).find(
+      (project) => project.projectId === projectId,
+    ) ?? (await readLegacyProjectMetadata({ discoveryContext, projectId }));
+  if (metadata.readStatus === "missing") {
+    const legacyProjectIds = await listLegacyProjectIds({ discoveryContext });
+    if (!legacyProjectIds.includes(projectId)) {
+      return null;
+    }
   }
 
   return projectSummary({
     discoveryContext,
     projectId,
-    registryRow: registryRows.find((row) => row.project_id === projectId) ?? null,
+    metadata,
   });
 }
 
 async function projectSummary({
   discoveryContext,
   projectId,
-  registryRow,
+  metadata,
 }: {
   discoveryContext: DiscoveryContext;
   projectId: string;
-  registryRow: ProjectRegistryRow | null;
+  metadata: ProjectMetadata;
 }): Promise<ProjectSummary> {
-  const metadata = await readProjectMetadata({ discoveryContext, projectId });
-  const workspace = metadata.repoPath ?? registryRow?.repo_path ?? null;
-  const label = projectLabel({
-    projectId,
-    workspace,
-    registryLabel: registryRow?.label ?? null,
-  });
-  const lastSeenAt = latestTimestamp({
-    values: [
-      metadata.updatedAt,
-      registryRow?.last_seen_at ?? null,
-      registryRow?.last_opened_at ?? null,
-    ],
-  });
   const readResult = await readSessionRecord({ discoveryContext, projectId });
   if (readResult.kind === "found") {
     const healthy = await pingSession({ session: readResult.session });
-    const statusDetails = activeSessionStatusDetails({ healthy });
-    const sessionWorkspace = readResult.session.workspace || workspace;
+    const statusDetails = runningStatusDetails({ healthy, source: "session" });
+    const workspace = readResult.session.workspace || metadata.repoPath;
 
     return {
       project_id: projectId,
-      label: projectLabel({
-        projectId,
-        workspace: sessionWorkspace,
-        registryLabel: registryRow?.label ?? null,
-      }),
-      workspace: sessionWorkspace,
+      label: projectLabel({ projectId, workspace }),
+      workspace,
       objective_title: metadata.objectiveTitle,
       status: statusDetails.status,
       status_reason: statusReasonLabel({ reason: statusDetails.reason }),
       started_at: readResult.session.started_at,
       last_seen_at: latestTimestamp({
-        values: [
-          readResult.session.started_at,
-          metadata.updatedAt,
-          registryRow?.last_seen_at ?? null,
-        ],
+        values: [readResult.session.started_at, metadata.updatedAt],
       }),
       url: healthy ? readResult.session.url : null,
     };
   }
 
-  const workspaceMissing = workspace ? !(await pathExists({ path: workspace })) : false;
+  const app = await readLiveApp({ discoveryContext });
+  const appCanServeProject =
+    app !== null &&
+    metadata.repoPath !== null &&
+    metadata.activeSessionStartedAt !== null;
+  if (appCanServeProject && metadata.readStatus === "found") {
+    const statusDetails = runningStatusDetails({ healthy: true, source: "app" });
+    return {
+      project_id: projectId,
+      label: projectLabel({ projectId, workspace: metadata.repoPath }),
+      workspace: metadata.repoPath,
+      objective_title: metadata.objectiveTitle,
+      status: statusDetails.status,
+      status_reason: statusReasonLabel({ reason: statusDetails.reason }),
+      started_at: metadata.activeSessionStartedAt ?? app.started_at,
+      last_seen_at: latestTimestamp({
+        values: [metadata.activeSessionStartedAt, metadata.updatedAt, app.started_at],
+      }),
+      url: app.url,
+    };
+  }
+
+  const workspaceMissing = metadata.repoPath
+    ? !(await pathExists({ path: metadata.repoPath }))
+    : false;
   const statusDetails = storedProjectStatusDetails({
     metadata,
     readResult,
@@ -227,28 +235,58 @@ async function projectSummary({
 
   return {
     project_id: projectId,
-    label,
-    workspace,
+    label: projectLabel({ projectId, workspace: metadata.repoPath }),
+    workspace: metadata.repoPath,
     objective_title: metadata.objectiveTitle,
     status: statusDetails.status,
     status_reason: statusReasonLabel({ reason: statusDetails.reason }),
     started_at: null,
-    last_seen_at: lastSeenAt,
+    last_seen_at: metadata.updatedAt,
     url: null,
   };
 }
 
-async function readProjectMetadata({
+async function readRunningSession({
   discoveryContext,
-  projectId,
+  project,
 }: {
   discoveryContext: DiscoveryContext;
-  projectId: string;
-}): Promise<ProjectMetadata> {
-  const path = projectDatabasePath({ discoveryContext, projectId });
+  project: ProjectSummary;
+}): Promise<SessionConnection | null> {
+  const readResult = await readSessionRecord({
+    discoveryContext,
+    projectId: project.project_id,
+  });
+  if (readResult.kind === "found") {
+    const healthy = await pingSession({ session: readResult.session });
+    return healthy ? readResult.session : null;
+  }
+
+  const app = await readLiveApp({ discoveryContext });
+  if (!app || !project.workspace) {
+    return null;
+  }
+
+  return {
+    project_id: project.project_id,
+    workspace: project.workspace,
+    pid: app.pid,
+    port: app.port,
+    token: app.token,
+    url: app.url,
+    started_at: project.started_at ?? app.started_at,
+  };
+}
+
+async function readProductProjectMetadata({
+  discoveryContext,
+}: {
+  discoveryContext: DiscoveryContext;
+}): Promise<ProjectMetadata[]> {
+  const path = productDatabasePath({ discoveryContext });
   const exists = await pathExists({ path });
   if (!exists) {
-    return emptyProjectMetadata({ readStatus: "missing" });
+    return [];
   }
 
   try {
@@ -257,12 +295,70 @@ async function readProjectMetadata({
       fileMustExist: true,
       readonly: true,
     });
-
     try {
-      const project = readMaybeRow<ProjectRow>({
+      if (!isProductDatabase({ database })) {
+        return legacyRegistryRows({ database }).map(metadataFromLegacyRegistryRow);
+      }
+
+      return (
+        database.all(`
+          SELECT
+            p.id AS project_id,
+            p.workspace_id AS workspace_id,
+            p.title AS title,
+            p.objective AS objective,
+            p.updated_at AS project_updated_at,
+            w.repo_path AS repo_path,
+            (
+              SELECT s.created_at
+              FROM sessions s
+              WHERE s.project_id = p.id AND s.status = 'active'
+              ORDER BY s.updated_at DESC
+              LIMIT 1
+            ) AS active_session_created_at
+          FROM projects p
+          LEFT JOIN workspaces w ON w.id = p.workspace_id
+          ORDER BY p.updated_at DESC, p.created_at DESC, p.id DESC
+        `) as ProductProjectRow[]
+      ).map(metadataFromProductRow);
+    } finally {
+      database.close();
+    }
+  } catch {
+    return [];
+  }
+}
+
+async function readLegacyProjectMetadata({
+  discoveryContext,
+  projectId,
+}: {
+  discoveryContext: DiscoveryContext;
+  projectId: string;
+}): Promise<ProjectMetadata> {
+  const path = legacyProjectDatabasePath({ discoveryContext, projectId });
+  const exists = await pathExists({ path });
+  if (!exists) {
+    return emptyProjectMetadata({ projectId, readStatus: "missing" });
+  }
+
+  try {
+    const database = await openSqliteDatabase({
+      path,
+      fileMustExist: true,
+      readonly: true,
+    });
+    try {
+      const project = readMaybeRow<{
+        id: string;
+        workspace_id: string;
+        title: string | null;
+        objective: string | null;
+        updated_at: string | null;
+      }>({
         database,
         sql: `
-          SELECT title, workspace_id, objective, updated_at
+          SELECT id, workspace_id, title, objective, updated_at
           FROM projects
           WHERE workspace_id = ? OR id = ?
           ORDER BY updated_at DESC, id DESC
@@ -278,13 +374,51 @@ async function readProjectMetadata({
           })
         : null;
 
-      return metadataFromRows({ project, workspaceRepoPath: workspace?.repo_path ?? null });
+      if (!project) {
+        return emptyProjectMetadata({ projectId, readStatus: "missing" });
+      }
+
+      return {
+        projectId,
+        workspaceId: project.workspace_id,
+        repoPath: workspace?.repo_path ?? null,
+        objectiveTitle: project.title ?? project.objective ?? null,
+        updatedAt: project.updated_at ?? null,
+        activeSessionStartedAt: null,
+        readStatus: "found",
+      };
     } finally {
       database.close();
     }
   } catch {
-    return emptyProjectMetadata({ readStatus: "unreadable" });
+    return emptyProjectMetadata({ projectId, readStatus: "unreadable" });
   }
+}
+
+function metadataFromProductRow(row: ProductProjectRow): ProjectMetadata {
+  return {
+    projectId: row.project_id,
+    workspaceId: row.workspace_id,
+    repoPath: row.repo_path,
+    objectiveTitle: row.title ?? row.objective,
+    updatedAt: row.project_updated_at,
+    activeSessionStartedAt: row.active_session_created_at,
+    readStatus: "found",
+  };
+}
+
+function metadataFromLegacyRegistryRow(row: LegacyRegistryRow): ProjectMetadata {
+  return {
+    projectId: row.project_id,
+    workspaceId: row.project_id,
+    repoPath: row.repo_path,
+    objectiveTitle: null,
+    updatedAt: latestTimestamp({
+      values: [row.last_seen_at, row.last_opened_at],
+    }),
+    activeSessionStartedAt: null,
+    readStatus: "found",
+  };
 }
 
 function readMaybeRow<RowType>({
@@ -292,7 +426,7 @@ function readMaybeRow<RowType>({
   sql,
   params = [],
 }: {
-  database: Awaited<ReturnType<typeof openSqliteDatabase>>;
+  database: SqliteDatabase;
   sql: string;
   params?: unknown[];
 }): RowType | null {
@@ -307,50 +441,12 @@ function readMaybeRow<RowType>({
   }
 }
 
-function metadataFromRows({
-  project,
-  workspaceRepoPath,
-}: {
-  project: ProjectRow | null;
-  workspaceRepoPath: string | null;
-}): ProjectMetadata {
-  return {
-    repoPath: workspaceRepoPath,
-    objectiveTitle: project?.title ?? project?.objective ?? null,
-    readStatus: "found",
-    updatedAt: project?.updated_at ?? null,
-  };
-}
-
-async function readRunningSession({
+async function listLegacyProjectIds({
   discoveryContext,
-  projectId,
 }: {
   discoveryContext: DiscoveryContext;
-  projectId: string;
-}): Promise<SessionConnection | null> {
-  const readResult = await readSessionRecord({ discoveryContext, projectId });
-  if (readResult.kind !== "found") {
-    return null;
-  }
-
-  const healthy = await pingSession({ session: readResult.session });
-  if (!healthy) {
-    return null;
-  }
-
-  return readResult.session;
-}
-
-async function listProjectIds({
-  discoveryContext,
-  registryRows,
-}: {
-  discoveryContext: DiscoveryContext;
-  registryRows: ProjectRegistryRow[];
 }): Promise<string[]> {
-  const projectIds = new Set(registryRows.map((row) => row.project_id));
-
+  const projectIds = new Set<string>();
   try {
     const entries = await readdir(projectsDirectory({ discoveryContext }), {
       withFileTypes: true,
@@ -361,13 +457,63 @@ async function listProjectIds({
       .filter((name) => isProjectId({ value: name }))) {
       projectIds.add(projectId);
     }
-
-    return Array.from(projectIds);
   } catch (error) {
-    if (isMissingPathError({ error })) {
-      return Array.from(projectIds);
+    if (!isMissingPathError({ error })) {
+      throw error;
     }
+  }
 
+  for (const row of await readLegacyRegistryMetadata({ discoveryContext })) {
+    if (isProjectId({ value: row.projectId })) {
+      projectIds.add(row.projectId);
+    }
+  }
+
+  return Array.from(projectIds);
+}
+
+async function readLegacyRegistryMetadata({
+  discoveryContext,
+}: {
+  discoveryContext: DiscoveryContext;
+}): Promise<ProjectMetadata[]> {
+  const path = productDatabasePath({ discoveryContext });
+  const exists = await pathExists({ path });
+  if (!exists) {
+    return [];
+  }
+
+  try {
+    const database = await openSqliteDatabase({
+      path,
+      readonly: true,
+      fileMustExist: true,
+    });
+    try {
+      if (isProductDatabase({ database })) {
+        return [];
+      }
+      return legacyRegistryRows({ database }).map(metadataFromLegacyRegistryRow);
+    } finally {
+      database.close();
+    }
+  } catch {
+    return [];
+  }
+}
+
+function legacyRegistryRows({ database }: { database: SqliteDatabase }): LegacyRegistryRow[] {
+  try {
+    return database.all(`
+      SELECT project_id, repo_path, label, last_seen_at, last_opened_at
+      FROM projects
+      WHERE archived_at IS NULL
+      ORDER BY COALESCE(last_seen_at, last_opened_at, discovered_at) DESC
+    `) as LegacyRegistryRow[];
+  } catch (error) {
+    if (isMissingTableError({ error })) {
+      return [];
+    }
     throw error;
   }
 }
@@ -442,10 +588,67 @@ function sessionConnectionFromUnknown({
   };
 }
 
+async function readLiveApp({
+  discoveryContext,
+}: {
+  discoveryContext: DiscoveryContext;
+}): Promise<AppRecord | null> {
+  try {
+    const raw = await readFile(appPath({ discoveryContext }), "utf-8");
+    const parsed = JSON.parse(raw) as unknown;
+    const app = appRecordFromUnknown({ value: parsed });
+    if (!app) {
+      return null;
+    }
+    return (await pingApp({ app })) ? app : null;
+  } catch {
+    return null;
+  }
+}
+
+function appRecordFromUnknown({ value }: { value: unknown }): AppRecord | null {
+  if (!isRecord(value)) {
+    return null;
+  }
+  if (
+    typeof value.pid !== "number" ||
+    typeof value.port !== "number" ||
+    typeof value.token !== "string" ||
+    typeof value.url !== "string" ||
+    typeof value.started_at !== "string"
+  ) {
+    return null;
+  }
+  if (!isLocalSessionUrl({ value: value.url })) {
+    return null;
+  }
+  return {
+    pid: value.pid,
+    port: value.port,
+    token: value.token,
+    url: value.url,
+    started_at: value.started_at,
+  };
+}
+
 async function pingSession({
   session,
 }: {
   session: SessionConnection;
+}): Promise<boolean> {
+  return pingLocalUrl({ url: session.url, token: session.token });
+}
+
+async function pingApp({ app }: { app: AppRecord }): Promise<boolean> {
+  return pingLocalUrl({ url: app.url, token: app.token });
+}
+
+async function pingLocalUrl({
+  url,
+  token,
+}: {
+  url: string;
+  token: string;
 }): Promise<boolean> {
   const abort = new AbortController();
   const timeout = setTimeout(() => {
@@ -453,9 +656,9 @@ async function pingSession({
   }, 800);
 
   try {
-    const response = await fetch(new URL("/health", session.url), {
+    const response = await fetch(new URL("/health", url), {
       headers: {
-        authorization: `Bearer ${session.token}`,
+        authorization: `Bearer ${token}`,
       },
       signal: abort.signal,
     });
@@ -465,6 +668,21 @@ async function pingSession({
     return false;
   } finally {
     clearTimeout(timeout);
+  }
+}
+
+function isProductDatabase({ database }: { database: SqliteDatabase }): boolean {
+  try {
+    const row = database.get("PRAGMA table_info(projects)") as
+      | { name: string }[]
+      | unknown;
+    const rows = Array.isArray(row) ? row : database.all("PRAGMA table_info(projects)");
+    return rows.some(
+      (column) =>
+        isRecord(column) && column.name === "workspace_id",
+    );
+  } catch {
+    return false;
   }
 }
 
@@ -484,28 +702,28 @@ function isLocalSessionUrl({ value }: { value: string }): boolean {
 function projectLabel({
   projectId,
   workspace,
-  registryLabel,
 }: {
   projectId: string;
   workspace: string | null;
-  registryLabel?: string | null;
 }): string {
   if (!workspace) {
-    return registryLabel ?? projectId;
+    return projectId;
   }
 
   return basename(workspace) || workspace;
 }
 
-function activeSessionStatusDetails({
+function runningStatusDetails({
   healthy,
+  source,
 }: {
   healthy: boolean;
+  source: "app" | "session";
 }): ProjectStatusDetails {
   if (healthy) {
     return {
       status: "running",
-      reason: "session_healthy",
+      reason: source === "app" ? "app_healthy" : "session_healthy",
     };
   }
 
@@ -547,7 +765,7 @@ function storedProjectStatusDetails({
 
   return {
     status: "stopped",
-    reason: "no_session_file",
+    reason: "no_active_session",
   };
 }
 
@@ -556,12 +774,16 @@ function statusReasonLabel({
 }: {
   reason: ProjectStatusReason;
 }): string {
+  if (reason === "app_healthy") {
+    return "App health check passed";
+  }
+
   if (reason === "session_healthy") {
     return "Session health check passed";
   }
 
   if (reason === "session_health_failed") {
-    return "Session file exists but the health check failed";
+    return "Session or app health check failed";
   }
 
   if (reason === "workspace_missing") {
@@ -576,7 +798,7 @@ function statusReasonLabel({
     return "Project database could not be read";
   }
 
-  return "No active session file found";
+  return "No active session found";
 }
 
 function latestTimestamp({ values }: { values: Array<string | null> }): string | null {
@@ -593,6 +815,12 @@ function compareProjects(left: ProjectSummary, right: ProjectSummary): number {
     statusRank({ status: left.status }) - statusRank({ status: right.status });
   if (statusComparison !== 0) {
     return statusComparison;
+  }
+
+  const leftSeen = left.last_seen_at ?? "";
+  const rightSeen = right.last_seen_at ?? "";
+  if (leftSeen !== rightSeen) {
+    return rightSeen.localeCompare(leftSeen);
   }
 
   return left.label.localeCompare(right.label);
@@ -626,6 +854,24 @@ function projectsDirectory({
   return resolve(discoveryContext.situHome, "projects");
 }
 
+function productDatabasePath({
+  discoveryContext,
+}: {
+  discoveryContext: DiscoveryContext;
+}): string {
+  return resolve(discoveryContext.situHome, "situ.sqlite");
+}
+
+function legacyProjectDatabasePath({
+  discoveryContext,
+  projectId,
+}: {
+  discoveryContext: DiscoveryContext;
+  projectId: string;
+}): string {
+  return resolve(projectsDirectory({ discoveryContext }), projectId, "situ.sqlite");
+}
+
 function sessionPath({
   discoveryContext,
   projectId,
@@ -636,14 +882,12 @@ function sessionPath({
   return resolve(projectsDirectory({ discoveryContext }), projectId, "session.json");
 }
 
-function projectDatabasePath({
+function appPath({
   discoveryContext,
-  projectId,
 }: {
   discoveryContext: DiscoveryContext;
-  projectId: string;
 }): string {
-  return resolve(projectsDirectory({ discoveryContext }), projectId, "situ.sqlite");
+  return resolve(discoveryContext.situHome, "app.json");
 }
 
 function defaultSituHome(): string {
@@ -651,15 +895,20 @@ function defaultSituHome(): string {
 }
 
 function emptyProjectMetadata({
+  projectId,
   readStatus,
 }: {
+  projectId: string;
   readStatus: ProjectMetadata["readStatus"];
 }): ProjectMetadata {
   return {
+    projectId,
+    workspaceId: null,
     repoPath: null,
     objectiveTitle: null,
-    readStatus,
     updatedAt: null,
+    activeSessionStartedAt: null,
+    readStatus,
   };
 }
 

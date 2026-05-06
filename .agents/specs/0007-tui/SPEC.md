@@ -2,16 +2,17 @@
 
 The first product surface is a TypeScript Ink terminal UI.
 
-The web surface is attach-only in the local session slice; it monitors an
-already-running session and does not replace the TUI.
+The web surface is attach-only in the local app runtime; it monitors app-owned
+project/session state and does not replace the TUI.
 
 ## Role
 
-The TUI attaches to the local session server, subscribes to live events,
-bootstraps collection-shaped state, and renders the observability surface.
+The TUI attaches to the local Situ app server, scopes itself to one workspace,
+subscribes to live events, bootstraps collection-shaped state, and renders the
+observability surface.
 
-It should not own the Python harness subprocess, read SQLite directly, or run
-workers directly.
+It should not own the app server, own the Python harness subprocess, read SQLite
+directly, or run workers directly.
 
 For the first collection-backed slice, the TUI should render projects,
 sessions, agents, tasks, hypotheses, experiments, evaluations, typed
@@ -82,11 +83,15 @@ required size. The warning state should still allow the normal quit control.
 
 ## Start, Resume, And Attach
 
-`situ start` starts a fresh session by default, even when older local
-sessions exist for the same project.
+`situ tui` starts a fresh session by default, even when older local sessions
+exist for the same project.
 
-Interactive `start` should show a compact preflight picker before any research
-work begins. The first picker should offer:
+The app server must already be running. Opening the TUI must not start or stop
+the app server.
+
+Interactive `tui` may show a compact preflight picker before any research work
+begins, but the default command intent is a new session. The first picker, when
+present, should offer:
 
 - Start session
 - Exit
@@ -100,12 +105,13 @@ Selecting Start calls `session.start` and moves into the live dashboard.
 Selecting Exit closes the TUI without starting an agent run. This keeps opening
 the product surface distinct from beginning a long-running autoresearch loop.
 
-`situ resume` explicitly resumes an existing session id, defaulting to the
-latest local session when the user does not provide one.
+`situ tui --resume <session-id>` explicitly resumes an existing session id.
+Compatibility commands may offer `situ resume`, defaulting to the latest local
+session for the workspace when the user does not provide one.
 
-`situ attach` connects the TUI to an already-running harness process. It
-must not start a harness process, start a new session, or resume a closed
-session.
+`situ tui --attach` connects the TUI to an already-running project runtime and
+active session. It must not start an app server, start a new session, or resume
+a closed session.
 
 The TUI should not silently reconnect to or resume old research state. Session
 continuity must come from an explicit command.

@@ -68,7 +68,7 @@ class HarnessApp:
     ) -> None:
         self.context = ProjectContext(workspace_root, home=project_home)
         self.db = Database(
-            self.context.project_dir / "situ.sqlite",
+            self.context.database_path,
             workspace_id=self.context.workspace_id,
             repo_path=str(self.context.repo_root),
         )
@@ -126,7 +126,7 @@ class HarnessApp:
 
     def collections_bootstrap(self, params: dict[str, Any]) -> dict[str, Any]:
         CollectionsBootstrapParams.model_validate(params)
-        bootstrap = self.collections_api.bootstrap()
+        bootstrap = self.collections_api.bootstrap(workspace_id=self.context.workspace_id)
         return CollectionsBootstrapResult.model_validate(bootstrap.model_dump()).model_dump()
 
     def collections_subscribe(self, params: dict[str, Any]) -> dict[str, Any]:
@@ -135,7 +135,9 @@ class HarnessApp:
         set_project_collections_subscribed(self.context.project_id, True)
         return CollectionsSubscribeResult(
             subscribed=True,
-            cursor=self.collections_api.current_cursor(),
+            cursor=self.collections_api.current_cursor(
+                workspace_id=self.context.workspace_id
+            ),
         ).model_dump()
 
     def events_subscribe(self, params: dict[str, Any]) -> dict[str, Any]:
@@ -144,7 +146,28 @@ class HarnessApp:
         set_project_events_subscribed(self.context.project_id, True)
         replayed = 0
         if subscribe.replay_existing:
+            project_ids = {
+                project.id
+                for project in self.repos.projects.list_for_workspace(
+                    self.context.workspace_id
+                )
+            }
+            session_ids = {
+                session.id
+                for session in self.repos.sessions.list_for_workspace(
+                    self.context.workspace_id
+                )
+            }
             for event in self.repos.events.list_all():
+                if (
+                    event.associated_project_id not in project_ids
+                    and event.associated_session_id not in session_ids
+                    and (
+                        event.associated_project_id is not None
+                        or event.associated_session_id is not None
+                    )
+                ):
+                    continue
                 self.notify("event.appended", {"event": event.model_dump()})
                 replayed += 1
         return EventsSubscribeResult(subscribed=True, replayed=replayed).model_dump()
@@ -417,7 +440,9 @@ class HarnessApp:
                 if updated_agent is not None:
                     self.publish_record(
                         updated_agent,
-                        cursor=self.collections_api.current_cursor(),
+                        cursor=self.collections_api.current_cursor(
+                            workspace_id=self.context.workspace_id
+                        ),
                     )
             return
         updated_task = self.repos.tasks.update(

@@ -30,8 +30,9 @@ MANAGER_AGENT_NAME = "situ-manager-agent"
 
 
 class AgentRuntime:
-    def __init__(self, project_dir: Path) -> None:
+    def __init__(self, project_dir: Path, *, database_path: Path | None = None) -> None:
         self.project_dir = project_dir
+        self.database_path = database_path or project_dir.parent.parent / "situ.sqlite"
         configure_observability(project_dir)
         configure_dbos(project_dir)
 
@@ -116,6 +117,7 @@ class AgentRuntime:
             workspace_id=workspace.get("id"),
             project_id=project_id,
             project_dir=self.project_dir,
+            database_path=self.database_path,
             repo_path=workspace.get("repo_path"),
         )
 
@@ -188,6 +190,7 @@ class AgentRuntime:
             workspace_id=workspace.get("id"),
             project_id=project_id,
             project_dir=self.project_dir,
+            database_path=self.database_path,
             repo_path=workspace.get("repo_path"),
             app_root=app_root,
         )
@@ -229,10 +232,14 @@ class AgentRuntime:
         return result.output
 
 
-def get_agent_runtime(project_dir: Path) -> AgentRuntime:
+def get_agent_runtime(
+    project_dir: Path,
+    *,
+    database_path: Path | None = None,
+) -> AgentRuntime:
     key = project_dir.resolve()
     runtime = _RUNTIMES.get(key)
     if runtime is None:
-        runtime = AgentRuntime(project_dir)
+        runtime = AgentRuntime(project_dir, database_path=database_path)
         _RUNTIMES[key] = runtime
     return runtime
