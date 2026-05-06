@@ -8,9 +8,18 @@ import {
   createRouter,
 } from "@tanstack/react-router";
 import { useMemo } from "react";
+import { AppShell, type AppShellProject } from "../../../app/app-shell";
 import type { ProjectWorkspaceData } from "../types";
 import { AgentDetailPage } from "./agent-detail-page";
 import { AgentsPage } from "./agents-page";
+
+function storyAppShellProject({ data }: { data: ProjectWorkspaceData }): AppShellProject {
+  return {
+    projectId: data.projectId,
+    workspace: data.workspace,
+    connection: data.connection,
+  };
+}
 
 const meta = {
   title: "Features/Project Workspace/Agents",
@@ -76,9 +85,9 @@ function createStoryRouter({
     getParentRoute: () => projectRoute,
     path: "agents",
     component: () => (
-      <main className="situ-shell">
+      <AppShell project={storyAppShellProject({ data })}>
         <AgentsPage data={data} />
-      </main>
+      </AppShell>
     ),
   });
   const agentRoute = createRoute({
@@ -88,9 +97,9 @@ function createStoryRouter({
       const { agentId } = agentRoute.useParams();
 
       return (
-        <main className="situ-shell">
+        <AppShell project={storyAppShellProject({ data })}>
           <AgentDetailPage data={data} agentId={agentId} />
-        </main>
+        </AppShell>
       );
     },
   });

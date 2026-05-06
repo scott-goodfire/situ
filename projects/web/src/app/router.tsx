@@ -4,6 +4,8 @@ import {
   createRoute,
   createRouter,
 } from "@tanstack/react-router";
+import { DxEmptyState } from "@situ/web-ui";
+import { AppShell } from "./app-shell";
 import { ProjectIndex } from "../features/project-index/project-index";
 import { ProjectMonitor } from "../features/project-monitor/project-monitor";
 import { AgentDetailPage } from "../features/project-workspace/agents/agent-detail-page";
@@ -191,18 +193,11 @@ function ProjectEventsRoute() {
 
 function NotFoundRoute() {
   return (
-    <main className="situ-shell">
-      <header className="situ-topbar">
-        <div>
-          <h1>Situ</h1>
-          <p>{window.location.pathname}</p>
-        </div>
-      </header>
-
-      <section className="situ-empty">
-        <h2>Page not found</h2>
-        <p>Open the local project index or a project monitor URL.</p>
-      </section>
-    </main>
+    <AppShell>
+      <DxEmptyState
+        heading="Page not found"
+        description="Open the local project index or a project monitor URL."
+      />
+    </AppShell>
   );
 }

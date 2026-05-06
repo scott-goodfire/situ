@@ -1,7 +1,8 @@
-import { DxBadge } from "@situ/web-ui";
+import { DxEmptyState } from "@situ/web-ui";
 import type { CollectionsBootstrapResult } from "@situ/protocol";
 import { useQuery } from "@tanstack/react-query";
 import { Outlet } from "@tanstack/react-router";
+import { AppShell } from "../../app/app-shell";
 import {
   fetchProjectSession,
   fetchProjectSnapshot,
@@ -10,11 +11,7 @@ import type {
   ProjectSummary,
   SessionConnection,
 } from "../../project-discovery/types";
-import {
-  SituMonitor,
-  type ConnectionState,
-} from "../run-monitor/situ-monitor";
-import { NoActiveHarness } from "../run-monitor/no-active-harness";
+import type { ConnectionState } from "../run-monitor/connection-badge";
 import { ProjectWorkspaceProvider } from "../project-workspace/context";
 import { ProjectWorkspaceLayout } from "../project-workspace/project-workspace";
 import { useLiveProjectSession } from "./use-live-project-session";
@@ -47,22 +44,14 @@ export function ProjectMonitor({ projectId }: { projectId: string }) {
   });
 
   if (sessionQuery.isPending && snapshotQuery.isPending && !project) {
-    return (
-      <EmptyMonitor
-        workspace={undefined}
-        connection={{ kind: "checking" }}
-      />
-    );
+    return <ConnectingShell projectId={projectId} />;
   }
 
   if (!response && !snapshotResponse && discoveredError) {
     return (
-      <EmptyMonitor
-        workspace={undefined}
-        connection={{
-          kind: "failed",
-          message: discoveredError,
-        }}
+      <FailedShell
+        projectId={projectId}
+        connection={{ kind: "failed", message: discoveredError }}
       />
     );
   }
@@ -84,9 +73,9 @@ export function ProjectMonitor({ projectId }: { projectId: string }) {
 
   if (snapshotQuery.isPending && !snapshotResponse) {
     return (
-      <EmptyMonitor
+      <ConnectingShell
+        projectId={projectId}
         workspace={project.workspace ?? project.project_id}
-        connection={{ kind: "checking" }}
       />
     );
   }
@@ -190,78 +179,85 @@ function ProjectNoActiveHarness({
   project: ProjectSummary;
   discoveryError: string | undefined;
 }) {
+  const workspace = project.workspace ?? project.project_id;
+  const description = project.status_reason
+    ? `${project.status_reason} Start a session from a terminal, then reopen this monitor.`
+    : "Start a session from a terminal, then reopen this monitor.";
+
   return (
-    <>
-      <NoActiveHarness workspace={project.workspace ?? project.project_id} />
-      {project.status_reason && (
-        <aside className="situ-floating-notice">
-          <p className="situ-status" data-tone={statusTone({ status: project.status })}>
-            {project.status_reason}
-          </p>
-        </aside>
-      )}
+    <AppShell
+      project={{
+        projectId: project.project_id,
+        workspace,
+        connection: { kind: "missing" },
+      }}
+    >
       {discoveryError && (
-        <aside className="situ-floating-notice">
-          <p className="situ-status" data-tone="warning">{discoveryError}</p>
-        </aside>
+        <p className="situ-status" data-tone="warning">
+          {discoveryError}
+        </p>
       )}
-    </>
+      <DxEmptyState
+        heading="No active Situ harness"
+        description={description}
+      />
+    </AppShell>
   );
 }
 
-function statusTone({
-  status,
+function ConnectingShell({
+  projectId,
+  workspace,
 }: {
-  status: ProjectSummary["status"];
-}): "warning" | "danger" | undefined {
-  if (status === "unhealthy" || status === "stale") {
-    return "danger";
-  }
+  projectId: string;
+  workspace?: string;
+}) {
+  return (
+    <AppShell
+      project={{
+        projectId,
+        workspace,
+        connection: { kind: "checking" },
+      }}
+    >
+      <DxEmptyState
+        heading="Connecting"
+        description="Looking for a live Situ session for this project."
+      />
+    </AppShell>
+  );
+}
 
-  if (status === "missing_workspace") {
-    return "warning";
-  }
+function FailedShell({
+  projectId,
+  connection,
+}: {
+  projectId: string;
+  connection: ConnectionState;
+}) {
+  const message =
+    connection.kind === "failed" || connection.kind === "disconnected"
+      ? connection.message
+      : undefined;
 
-  return undefined;
+  return (
+    <AppShell project={{ projectId, workspace: undefined, connection }}>
+      <DxEmptyState
+        heading="Could not reach Situ"
+        description={message ?? "Discovery API is unavailable."}
+      />
+    </AppShell>
+  );
 }
 
 function UnknownProject({ projectId }: { projectId: string }) {
   return (
-    <main className="situ-shell">
-      <header className="situ-topbar">
-        <div>
-          <h1>Situ</h1>
-          <p>{projectId}</p>
-        </div>
-        <DxBadge>No project</DxBadge>
-      </header>
-
-      <section className="situ-empty">
-        <h2>Project not found</h2>
-        <p>No local Situ project exists with this id.</p>
-      </section>
-    </main>
-  );
-}
-
-function EmptyMonitor({
-  workspace,
-  connection,
-}: {
-  workspace: string | undefined;
-  connection: ConnectionState;
-}) {
-  return (
-    <SituMonitor
-      workspace={workspace}
-      connection={connection}
-      objectives={[]}
-      sessions={[]}
-      hypotheses={[]}
-      experiments={[]}
-      experimentActivities={[]}
-      events={[]}
-    />
+    <AppShell>
+      <DxEmptyState
+        heading="Project not found"
+        description={`No local Situ project exists with id ${projectId}.`}
+      />
+    </AppShell>
   );
 }
 

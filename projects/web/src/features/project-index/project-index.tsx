@@ -1,8 +1,9 @@
-import { DxBadge, DxTable, type DxTableColumn } from "@situ/web-ui";
+import { DxBadge, DxEmptyState, DxTable, type DxTableColumn } from "@situ/web-ui";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { DateTime } from "luxon";
 import { useMemo } from "react";
+import { AppShell } from "../../app/app-shell";
 import { fetchProjects } from "../../project-discovery/client";
 import type {
   ProjectSessionStatus,
@@ -22,46 +23,39 @@ export function ProjectIndex() {
     : undefined;
 
   return (
-    <main className="situ-shell">
-      <header className="situ-topbar">
-        <div>
-          <h1>Local Situ Projects</h1>
-          <p>Attach-only monitors for projects found on this machine.</p>
-        </div>
-        <DxBadge>{projects.length} projects</DxBadge>
-      </header>
-
-      {error && <p className="situ-status" data-tone="danger">{error}</p>}
+    <AppShell topBarActions={<DxBadge>{projects.length} projects</DxBadge>}>
+      {error && (
+        <p className="situ-status" data-tone="danger">
+          {error}
+        </p>
+      )}
 
       {projectsQuery.isPending && projects.length === 0 && (
-        <section className="situ-empty">
-          <h2>Checking local Situ state</h2>
-          <p>Looking for projects under local Situ storage.</p>
-        </section>
+        <DxEmptyState
+          heading="Checking local Situ state"
+          description="Looking for projects under local Situ storage."
+        />
       )}
 
       {!projectsQuery.isPending && projects.length === 0 && (
-        <section className="situ-empty">
-          <h2>No local Situ projects found</h2>
-          <p>Start a terminal session, then refresh this page.</p>
-          <pre className="situ-command">situ start</pre>
-        </section>
+        <DxEmptyState
+          heading="No local Situ projects found"
+          description="Start a terminal session, then refresh this page."
+        />
       )}
 
       {projects.length > 0 && (
-        <section className="situ-project-index">
-          <DxTable
-            columns={columns}
-            rows={projects}
-            getRowKey={({ row }) => row.project_id}
-            emptyLabel="No local projects found"
-            density="compact"
-            stickyHeader
-            sortable
-          />
-        </section>
+        <DxTable
+          columns={columns}
+          rows={projects}
+          getRowKey={({ row }) => row.project_id}
+          emptyLabel="No local projects found"
+          density="compact"
+          stickyHeader
+          sortable
+        />
       )}
-    </main>
+    </AppShell>
   );
 }
 
@@ -132,7 +126,7 @@ function projectColumns(): Array<DxTableColumn<ProjectSummary>> {
       width: "92px",
       renderCell: ({ row }) => (
         <Link
-          className="situ-link-button"
+          className="situ-project-open"
           params={{ projectId: row.project_id }}
           to="/projects/$projectId"
         >

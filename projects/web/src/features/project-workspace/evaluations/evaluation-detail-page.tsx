@@ -6,6 +6,7 @@ import type {
 } from "@situ/protocol";
 import {
   DxBadge,
+  DxEmptyState,
   DxSection,
   DxTable,
   type DxBadgeTone,
@@ -37,10 +38,10 @@ export function EvaluationDetailPage({
 
   if (!evaluation) {
     return (
-      <section className="situ-empty">
-        <h2>Evaluation not found</h2>
-        <p>No evaluation exists with id {evaluationId}.</p>
-      </section>
+      <DxEmptyState
+        heading="Evaluation not found"
+        description={`No evaluation exists with id ${evaluationId}.`}
+      />
     );
   }
 

@@ -1,6 +1,7 @@
 import type { ArtifactRecord, ExperimentRecord, HypothesisRecord } from "@situ/protocol";
 import {
   DxBadge,
+  DxEmptyState,
   DxSection,
   DxTable,
   type DxBadgeTone,
@@ -32,10 +33,10 @@ export function ExperimentDetailPage({
 
   if (!experiment) {
     return (
-      <section className="situ-empty">
-        <h2>Experiment not found</h2>
-        <p>No experiment exists with id {experimentId}.</p>
-      </section>
+      <DxEmptyState
+        heading="Experiment not found"
+        description={`No experiment exists with id ${experimentId}.`}
+      />
     );
   }
 

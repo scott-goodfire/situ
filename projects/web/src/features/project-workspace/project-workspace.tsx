@@ -1,6 +1,5 @@
-import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
-import { ConnectionBadge } from "../run-monitor/connection-badge";
+import { AppShell } from "../../app/app-shell";
 import type { ProjectWorkspaceData } from "./types";
 
 export function ProjectWorkspaceLayout({
@@ -13,96 +12,46 @@ export function ProjectWorkspaceLayout({
   children: ReactNode;
 }) {
   return (
-    <main className="situ-shell">
-      <header className="situ-topbar">
-        <div>
-          <h1>Situ</h1>
-          <p>{data.workspace ?? "Local workspace"}</p>
-        </div>
-        <ConnectionBadge state={data.connection} />
-      </header>
-
-      <ProjectNav projectId={data.projectId} />
-
-      {data.connection.kind === "failed" && (
-        <p className="situ-status" data-tone="danger">{data.connection.message}</p>
-      )}
-
-      {data.connection.kind === "disconnected" && (
-        <p className="situ-status" data-tone="warning">{data.connection.message}</p>
-      )}
-
-      {discoveryError && (
-        <p className="situ-status" data-tone="warning">{discoveryError}</p>
-      )}
-
+    <AppShell
+      project={{
+        projectId: data.projectId,
+        workspace: data.workspace,
+        connection: data.connection,
+      }}
+    >
+      <ConnectionStatusBanner connection={data.connection} />
+      {discoveryError && <StatusBanner tone="warning">{discoveryError}</StatusBanner>}
       {children}
-    </main>
+    </AppShell>
   );
 }
 
-function ProjectNav({
-  projectId,
+function ConnectionStatusBanner({
+  connection,
 }: {
-  projectId: string;
+  connection: ProjectWorkspaceData["connection"];
+}) {
+  if (connection.kind === "failed") {
+    return <StatusBanner tone="danger">{connection.message}</StatusBanner>;
+  }
+
+  if (connection.kind === "disconnected") {
+    return <StatusBanner tone="warning">{connection.message}</StatusBanner>;
+  }
+
+  return null;
+}
+
+function StatusBanner({
+  tone,
+  children,
+}: {
+  tone: "warning" | "danger";
+  children: ReactNode;
 }) {
   return (
-    <nav className="situ-project-nav" aria-label="Project sections">
-      <Link
-        className="situ-project-nav__link"
-        to="/projects/$projectId"
-        params={{ projectId }}
-        activeOptions={{ exact: true }}
-        activeProps={{ "data-active": "true" }}
-        inactiveProps={{ "data-active": "false" }}
-      >
-        Overview
-      </Link>
-      <Link
-        className="situ-project-nav__link"
-        to="/projects/$projectId/hypotheses"
-        params={{ projectId }}
-        activeProps={{ "data-active": "true" }}
-        inactiveProps={{ "data-active": "false" }}
-      >
-        Hypotheses
-      </Link>
-      <Link
-        className="situ-project-nav__link"
-        to="/projects/$projectId/experiments"
-        params={{ projectId }}
-        activeProps={{ "data-active": "true" }}
-        inactiveProps={{ "data-active": "false" }}
-      >
-        Experiments
-      </Link>
-      <Link
-        className="situ-project-nav__link"
-        to="/projects/$projectId/evaluations"
-        params={{ projectId }}
-        activeProps={{ "data-active": "true" }}
-        inactiveProps={{ "data-active": "false" }}
-      >
-        Evaluations
-      </Link>
-      <Link
-        className="situ-project-nav__link"
-        to="/projects/$projectId/agents"
-        params={{ projectId }}
-        activeProps={{ "data-active": "true" }}
-        inactiveProps={{ "data-active": "false" }}
-      >
-        Agents
-      </Link>
-      <Link
-        className="situ-project-nav__link"
-        to="/projects/$projectId/events"
-        params={{ projectId }}
-        activeProps={{ "data-active": "true" }}
-        inactiveProps={{ "data-active": "false" }}
-      >
-        Events
-      </Link>
-    </nav>
+    <p className="situ-status" data-tone={tone}>
+      {children}
+    </p>
   );
 }

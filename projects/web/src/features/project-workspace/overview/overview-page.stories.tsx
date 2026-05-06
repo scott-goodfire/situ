@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
+import { AppShell, type AppShellProject } from "../../../app/app-shell";
 import type { ProjectWorkspaceData } from "../types";
 import { OverviewPage } from "./overview-page";
 import {
@@ -10,6 +11,14 @@ import {
   createRouter,
 } from "@tanstack/react-router";
 import { useMemo } from "react";
+
+function storyAppShellProject({ data }: { data: ProjectWorkspaceData }): AppShellProject {
+  return {
+    projectId: data.projectId,
+    workspace: data.workspace,
+    connection: data.connection,
+  };
+}
 
 const meta = {
   title: "Features/Project Workspace/Overview",
@@ -57,9 +66,9 @@ function createStoryRouter({
     getParentRoute: () => rootRoute,
     path: "/projects/$projectId",
     component: () => (
-      <main className="situ-shell">
+      <AppShell project={storyAppShellProject({ data })}>
         <OverviewPage data={data} />
-      </main>
+      </AppShell>
     ),
   });
   const projectHypothesisRoute = createRoute({

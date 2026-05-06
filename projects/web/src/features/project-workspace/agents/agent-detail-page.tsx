@@ -1,4 +1,4 @@
-import { DxBadge } from "@situ/web-ui";
+import { DxBadge, DxEmptyState } from "@situ/web-ui";
 import { agentSummaries } from "./agent-summaries";
 import { AgentPresence } from "./presence/agent-presence";
 import { AgentTranscript } from "./transcript/agent-transcript";
@@ -16,10 +16,10 @@ export function AgentDetailPage({
 
   if (!agent) {
     return (
-      <section className="situ-empty">
-        <h2>Agent not found</h2>
-        <p>No activity exists for agent {agentId}.</p>
-      </section>
+      <DxEmptyState
+        heading="Agent not found"
+        description={`No activity exists for agent ${agentId}.`}
+      />
     );
   }
 

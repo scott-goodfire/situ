@@ -8,9 +8,18 @@ import {
   createRouter,
 } from "@tanstack/react-router";
 import { useMemo } from "react";
+import { AppShell, type AppShellProject } from "../../../app/app-shell";
 import type { ProjectWorkspaceData } from "../types";
 import { EvaluationDetailPage } from "./evaluation-detail-page";
 import { EvaluationsPage } from "./evaluations-page";
+
+function storyAppShellProject({ data }: { data: ProjectWorkspaceData }): AppShellProject {
+  return {
+    projectId: data.projectId,
+    workspace: data.workspace,
+    connection: data.connection,
+  };
+}
 
 const meta = {
   title: "Features/Project Workspace/Evaluations",
@@ -76,9 +85,9 @@ function createStoryRouter({
     getParentRoute: () => projectRoute,
     path: "evaluations",
     component: () => (
-      <main className="situ-shell">
+      <AppShell project={storyAppShellProject({ data })}>
         <EvaluationsPage data={data} />
-      </main>
+      </AppShell>
     ),
   });
   const evaluationRoute = createRoute({
@@ -88,9 +97,9 @@ function createStoryRouter({
       const { evaluationId } = evaluationRoute.useParams();
 
       return (
-        <main className="situ-shell">
+        <AppShell project={storyAppShellProject({ data })}>
           <EvaluationDetailPage data={data} evaluationId={evaluationId} />
-        </main>
+        </AppShell>
       );
     },
   });

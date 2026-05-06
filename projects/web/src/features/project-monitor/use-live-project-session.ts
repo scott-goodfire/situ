@@ -27,7 +27,7 @@ import type {
   SessionRecord,
 } from "@situ/protocol";
 import type { SessionConnection } from "../../project-discovery/types";
-import type { ConnectionState } from "../run-monitor/situ-monitor";
+import type { ConnectionState } from "../run-monitor/connection-badge";
 
 export type LiveProjectSessionState = {
   connection: ConnectionState;
