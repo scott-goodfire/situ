@@ -25,6 +25,7 @@ from .evaluations import (
 from .experiments import (
     CreateExperimentTool,
     ListExperimentsTool,
+    RunExperimentTool,
     UpdateExperimentTool,
 )
 from .hypotheses import (
@@ -114,6 +115,7 @@ def build_research_toolset() -> FunctionToolset[SituToolDeps]:
             ListExperimentsTool().as_tool(),
             CreateExperimentTool().as_tool(),
             UpdateExperimentTool().as_tool(),
+            RunExperimentTool().as_tool(),
             ListEvaluationsTool().as_tool(),
             CreateEvaluationTool().as_tool(),
             UpdateEvaluationTool().as_tool(),

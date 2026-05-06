@@ -316,11 +316,17 @@ export async function applyCollectionUpsert({
     return;
   }
 
-  await upsertRecord({
-    collection: collections.events,
-    key: upsert.key,
-    record: upsert.record as unknown as EventRecord,
-  });
+  if (upsert.collection === "events") {
+    await upsertRecord({
+      collection: collections.events,
+      key: upsert.key,
+      record: upsert.record as unknown as EventRecord,
+    });
+    return;
+  }
+
+  const unsupportedCollection: never = upsert.collection;
+  throw new Error(`Unsupported Situ collection: ${unsupportedCollection}`);
 }
 
 async function hydrateCollection<T extends object>({
