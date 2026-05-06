@@ -18,6 +18,6 @@ export const Default: Story = {
 
 export const Short: Story = {
   args: {
-    command: "situ start",
+    command: "situ tui",
   },
 };

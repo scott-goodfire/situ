@@ -455,7 +455,7 @@ def test_should_build_web_detects_missing_build(tmp_path: Path) -> None:
     assert should_build_web(web_root, rebuild=True) is True
 
 
-def test_start_uses_existing_app_server(
+def test_tui_uses_existing_app_server(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -484,7 +484,7 @@ def test_start_uses_existing_app_server(
         fake_run,
     )
 
-    code = cli.main(["start", str(workspace)])
+    code = cli.main(["tui", str(workspace)])
 
     assert code == 0
     assert len(calls) == 1

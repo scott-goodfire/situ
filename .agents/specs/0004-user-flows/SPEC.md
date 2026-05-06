@@ -18,8 +18,8 @@ User runs `situ tui`
 
 The default runtime flow is two terminals: one app process for all sessions and
 one TUI client for the selected workspace. The TUI should not implicitly resume
-old research state. Compatibility commands may keep `situ start` as an alias,
-but the primary surface is `situ app` plus `situ tui`.
+old research state. The primary surface is `situ app` plus `situ tui`; there is
+no `situ start` compatibility command.
 
 ## Setup Inputs
 

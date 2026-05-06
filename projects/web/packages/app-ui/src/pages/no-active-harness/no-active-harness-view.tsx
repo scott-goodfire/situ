@@ -16,11 +16,11 @@ export function NoActiveHarnessView({
         </p>
       )}
       <DxEmptyState
-        heading="No active Situ harness found"
-        description="Start a session from a terminal, then reopen this web monitor."
+        heading="No active Situ session found"
+        description="Run the local app and open the TUI for this workspace, then reopen this web monitor."
         action={
           <div className={s.harnessActionStack}>
-            <pre className={s.commandPre}>situ start</pre>
+            <pre className={s.commandPre}>situ app{"\n"}situ tui {workspace ?? "<workspace>"}</pre>
             {onDownloadClick && (
               <DxButton variant="primary" onClick={onDownloadClick}>
                 Download for macOS

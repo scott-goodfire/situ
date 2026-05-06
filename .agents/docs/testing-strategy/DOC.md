@@ -53,7 +53,8 @@ repository and the relevant API service/schema.
 When wiring changes touch the harness runtime, run at least one TUI smoke:
 
 ```bash
-./commands/start.sh . --max-experiments 1
+./commands/app.sh
+./commands/tui.sh . --max-experiments 1
 ```
 
 When workspace command execution behavior changes, also run an external
@@ -61,7 +62,8 @@ workspace smoke:
 
 ```bash
 tmp=$(mktemp -d /private/tmp/situ-ext.XXXXXX)
-./commands/start.sh "$tmp" \
+./commands/app.sh
+./commands/tui.sh "$tmp" \
   --objective "Exercise the external workspace eval path." \
   --context "Run make eval from the repo root. It prints score and tests_passed." \
   --max-experiments 1

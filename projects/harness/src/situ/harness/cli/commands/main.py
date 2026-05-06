@@ -19,7 +19,6 @@ from ._shared.arguments import (
 from .app.command import run as app_run
 from .attach.command import run as attach_run
 from .resume.command import run as resume_run
-from .start.command import run as start_run
 from .tui.command import LATEST_SENTINEL, run as tui_run
 from .web.command import run as web_run
 
@@ -51,10 +50,6 @@ def main(argv: list[str] | None = None) -> int:
         help="attach without starting or resuming a session",
     )
 
-    start_parser = subparsers.add_parser("start", help="start the local TUI")
-    add_workspace_argument(start_parser)
-    add_setup_arguments(start_parser)
-
     resume_parser = subparsers.add_parser("resume", help="resume an existing session in the TUI")
     add_workspace_argument(resume_parser)
     resume_parser.add_argument(
@@ -67,7 +62,7 @@ def main(argv: list[str] | None = None) -> int:
         help="maximum number of additional experiments to run",
     )
 
-    attach_parser = subparsers.add_parser("attach", help="attach the TUI to a running harness")
+    attach_parser = subparsers.add_parser("attach", help="attach the TUI through the local app")
     add_workspace_argument(attach_parser)
 
     exec_parser = subparsers.add_parser("exec", help="run a headless local session")
@@ -151,8 +146,6 @@ def main(argv: list[str] | None = None) -> int:
         return app_run(args)
     if args.command == "tui":
         return tui_run(args)
-    if args.command == "start":
-        return start_run(args)
     if args.command == "resume":
         return resume_run(args)
     if args.command == "attach":

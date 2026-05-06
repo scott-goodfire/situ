@@ -60,8 +60,8 @@ export function ProjectIndexView({
     return (
       <DxEmptyState
         heading="No local Situ projects found"
-        description="Start a terminal session, then refresh this page."
-        action={<pre className={s.commandPre}>situ start</pre>}
+        description="Run the local app, open the TUI for a workspace, then refresh this page."
+        action={<pre className={s.commandPre}>situ app{"\n"}situ tui &lt;workspace&gt;</pre>}
       />
     );
   }

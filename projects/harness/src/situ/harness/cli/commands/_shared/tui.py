@@ -11,14 +11,6 @@ from ....core.project_context import ProjectContext
 from ...local_session import base_env, read_live_app
 
 
-def launch_managed_tui(
-    *,
-    args: argparse.Namespace,
-    mode: str,
-) -> int:
-    return launch_app_tui(args=args, mode=mode)
-
-
 def launch_app_tui(
     *,
     args: argparse.Namespace,

@@ -42,9 +42,9 @@ windows created or resumed through clients.
 - Lists all known local projects and sessions from the canonical app state.
 - Does not start, resume, or attach a session on its own.
 
-The older `situ start`, `situ resume`, and `situ attach` commands may remain as
-compatibility aliases while users migrate, but the primary command vocabulary is
-`app`, `tui`, and `web`.
+The command vocabulary is `app`, `tui`, and `web`. Do not keep a `start`
+compatibility command; starting a session is the default behavior of `situ tui`
+after the app server is already running.
 
 ## State Contract
 

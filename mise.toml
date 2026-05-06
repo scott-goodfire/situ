@@ -25,7 +25,7 @@ description = "Run Situ eval suites and print JSON"
 run = "./commands/evals-json.sh"
 
 [tasks."dev:tui"]
-description = "Run the TypeScript Ink TUI"
+description = "Run the Situ TUI over the local app"
 run = "./commands/dev-tui.sh"
 
 [tasks."tui-ui:check"]
@@ -40,16 +40,20 @@ run = "./commands/tui-story.sh"
 description = "Capture text and PNG snapshots for Situ TUI stories"
 run = "./commands/tui-snapshots.sh"
 
-[tasks.start]
-description = "Start the local Situ TUI"
-run = "./commands/start.sh"
+[tasks.app]
+description = "Run the local Situ app server"
+run = "./commands/app.sh"
+
+[tasks.tui]
+description = "Open the Situ TUI over the local app"
+run = "./commands/tui.sh"
 
 [tasks.resume]
 description = "Resume an existing Situ session in the TUI"
 run = "./commands/resume.sh"
 
 [tasks.attach]
-description = "Attach the TUI to a running Situ harness"
+description = "Attach the TUI to an active session through the local app"
 run = "./commands/attach.sh"
 
 [tasks.sessions]
