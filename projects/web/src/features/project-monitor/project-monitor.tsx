@@ -1,13 +1,10 @@
 import { DxEmptyState } from "@situ/web-ui";
-import type { CollectionsBootstrapResult } from "@situ/protocol";
+import type { ProjectRecord, SessionRecord } from "@situ/protocol";
 import { useQuery } from "@tanstack/react-query";
 import { Outlet } from "@tanstack/react-router";
 import { AppShell } from "../../app/app-shell";
 import * as s from "../../styles.css";
-import {
-  fetchProjectSession,
-  fetchProjectSnapshot,
-} from "../../project-discovery/client";
+import { fetchProjectSession } from "../../project-discovery/client";
 import type {
   ProjectSummary,
   SessionConnection,
@@ -15,7 +12,11 @@ import type {
 import type { ConnectionState } from "../run-monitor/connection-badge";
 import { ProjectWorkspaceProvider } from "../project-workspace/context";
 import { ProjectWorkspaceLayout } from "../project-workspace/project-workspace";
-import { useLiveProjectSession } from "./use-live-project-session";
+import type { ProjectWorkspaceData } from "../project-workspace/types";
+import {
+  useLiveProjectSession,
+  type LiveProjectSessionState,
+} from "./use-live-project-session";
 
 export function ProjectMonitor({ projectId }: { projectId: string }) {
   const sessionQuery = useQuery({
@@ -24,35 +25,21 @@ export function ProjectMonitor({ projectId }: { projectId: string }) {
     refetchInterval: 1_500,
     retry: false,
   });
-  const snapshotQuery = useQuery({
-    queryKey: ["project-snapshot", projectId],
-    queryFn: () => fetchProjectSnapshot({ projectId }),
-    refetchInterval: 2_000,
-    retry: false,
-  });
   const response = sessionQuery.data;
-  const snapshotResponse = snapshotQuery.data;
   const discoveryError = sessionQuery.error
     ? errorMessage({ error: sessionQuery.error })
     : undefined;
-  const snapshotError = snapshotQuery.error
-    ? errorMessage({ error: snapshotQuery.error })
-    : undefined;
-  const project = response?.project ?? snapshotResponse?.project ?? null;
-  const discoveredError = discoveredProblem({
-    discoveryError,
-    snapshotError,
-  });
+  const project = response?.project ?? null;
 
-  if (sessionQuery.isPending && snapshotQuery.isPending && !project) {
+  if (sessionQuery.isPending && !project) {
     return <ConnectingShell projectId={projectId} />;
   }
 
-  if (!response && !snapshotResponse && discoveredError) {
+  if (!response && discoveryError) {
     return (
       <FailedShell
         projectId={projectId}
-        connection={{ kind: "failed", message: discoveredError }}
+        connection={{ kind: "failed", message: discoveryError }}
       />
     );
   }
@@ -67,26 +54,7 @@ export function ProjectMonitor({ projectId }: { projectId: string }) {
         key={sessionKey({ session: response.session })}
         projectId={projectId}
         session={response.session}
-        discoveryError={discoveredError}
-      />
-    );
-  }
-
-  if (snapshotQuery.isPending && !snapshotResponse) {
-    return (
-      <ConnectingShell
-        projectId={projectId}
-        workspace={project.workspace ?? project.project_id}
-      />
-    );
-  }
-
-  if (snapshotResponse?.snapshot && snapshotHasRecords(snapshotResponse.snapshot)) {
-    return (
-      <SnapshotProjectSession
-        project={project}
-        snapshot={snapshotResponse.snapshot}
-        discoveryError={discoveredError}
+        discoveryError={discoveryError}
       />
     );
   }
@@ -94,7 +62,7 @@ export function ProjectMonitor({ projectId }: { projectId: string }) {
   return (
     <ProjectNoActiveHarness
       project={project}
-      discoveryError={discoveredError}
+      discoveryError={discoveryError}
     />
   );
 }
@@ -109,74 +77,11 @@ function LiveProjectSession({
   discoveryError: string | undefined;
 }) {
   const liveSession = useLiveProjectSession({ session });
-  const workspaceData = {
-    projectId,
-    workspace: session.workspace,
-    connection: liveSession.connection,
-    project: liveSession.projects.find((record) => record.id === projectId),
-    sessions: liveSession.sessions,
-    hypotheses: liveSession.hypotheses,
-    experiments: liveSession.experiments,
-    evaluations: liveSession.evaluations,
-    analyses: liveSession.analyses,
-    agents: liveSession.agents,
-    tasks: liveSession.tasks,
-    taskDependencies: liveSession.taskDependencies,
-    taskEntityLinks: liveSession.taskEntityLinks,
-    taskActivities: liveSession.taskActivities,
-    analysisActivities: liveSession.analysisActivities,
-    hypothesisExperimentLinks: liveSession.hypothesisExperimentLinks,
-    hypothesisActivities: liveSession.hypothesisActivities,
-    experimentActivities: liveSession.experimentActivities,
-    evaluationActivities: liveSession.evaluationActivities,
-    artifacts: liveSession.artifacts,
-    events: liveSession.events,
-  };
-
-  return (
-    <ProjectWorkspaceProvider data={workspaceData}>
-      <ProjectWorkspaceLayout data={workspaceData} discoveryError={discoveryError}>
-        <Outlet />
-      </ProjectWorkspaceLayout>
-    </ProjectWorkspaceProvider>
-  );
-}
-
-function SnapshotProjectSession({
-  project,
-  snapshot,
-  discoveryError,
-}: {
-  project: ProjectSummary;
-  snapshot: CollectionsBootstrapResult;
-  discoveryError: string | undefined;
-}) {
-  const workspaceData = {
-    projectId: project.project_id,
-    workspace: project.workspace ?? undefined,
-    connection: {
-      kind: "disconnected",
-      message: "Showing latest saved project data. No live session is connected.",
-    } as const,
-    project: snapshot.projects?.find((record) => record.id === project.project_id),
-    sessions: snapshot.sessions,
-    hypotheses: snapshot.hypotheses,
-    experiments: snapshot.experiments,
-    evaluations: snapshot.evaluations,
-    analyses: snapshot.analyses ?? [],
-    agents: snapshot.agents ?? [],
-    tasks: snapshot.tasks ?? [],
-    taskDependencies: snapshot.task_dependencies ?? [],
-    taskEntityLinks: snapshot.task_entity_links ?? [],
-    taskActivities: snapshot.task_activities ?? [],
-    analysisActivities: snapshot.analysis_activities ?? [],
-    hypothesisExperimentLinks: snapshot.hypothesis_experiment_links,
-    hypothesisActivities: snapshot.hypothesis_activities,
-    experimentActivities: snapshot.experiment_activities,
-    evaluationActivities: snapshot.evaluation_activities,
-    artifacts: snapshot.artifacts,
-    events: snapshot.events,
-  };
+  const workspaceData = scopedWorkspaceData({
+    liveSession,
+    routeProjectId: projectId,
+    session,
+  });
 
   return (
     <ProjectWorkspaceProvider data={workspaceData}>
@@ -280,32 +185,156 @@ function sessionKey({ session }: { session: SessionConnection }): string {
   return `${session.url}:${session.started_at}`;
 }
 
-function snapshotHasRecords(snapshot: CollectionsBootstrapResult): boolean {
-  return (
-    (snapshot.projects?.length ?? 0) > 0 ||
-    snapshot.sessions.length > 0 ||
-    snapshot.hypotheses.length > 0 ||
-    snapshot.experiments.length > 0 ||
-    snapshot.evaluations.length > 0 ||
-    (snapshot.analyses?.length ?? 0) > 0 ||
-    (snapshot.tasks?.length ?? 0) > 0 ||
-    snapshot.hypothesis_experiment_links.length > 0 ||
-    snapshot.hypothesis_activities.length > 0 ||
-    snapshot.experiment_activities.length > 0 ||
-    snapshot.evaluation_activities.length > 0 ||
-    snapshot.artifacts.length > 0 ||
-    snapshot.events.length > 0
-  );
+function scopedWorkspaceData({
+  liveSession,
+  routeProjectId,
+  session,
+}: {
+  liveSession: LiveProjectSessionState;
+  routeProjectId: string;
+  session: SessionConnection;
+}): ProjectWorkspaceData {
+  const ledgerProjectId = currentLedgerProjectId({
+    projects: liveSession.projects,
+    routeProjectId,
+    sessions: liveSession.sessions,
+  });
+  const project = ledgerProjectId
+    ? liveSession.projects.find((record) => record.id === ledgerProjectId)
+    : undefined;
+  const sessions = ledgerProjectId
+    ? liveSession.sessions.filter(
+        (record) => record.project_id === ledgerProjectId,
+      )
+    : [];
+  const agents = ledgerProjectId
+    ? liveSession.agents.filter((record) => record.project_id === ledgerProjectId)
+    : [];
+  const analyses = ledgerProjectId
+    ? liveSession.analyses.filter((record) => record.project_id === ledgerProjectId)
+    : [];
+  const hypotheses = ledgerProjectId
+    ? liveSession.hypotheses.filter(
+        (record) => record.project_id === ledgerProjectId,
+      )
+    : [];
+  const experiments = ledgerProjectId
+    ? liveSession.experiments.filter(
+        (record) => record.project_id === ledgerProjectId,
+      )
+    : [];
+  const evaluations = ledgerProjectId
+    ? liveSession.evaluations.filter(
+        (record) => record.project_id === ledgerProjectId,
+      )
+    : [];
+  const tasks = ledgerProjectId
+    ? liveSession.tasks.filter((record) => record.project_id === ledgerProjectId)
+    : [];
+  const artifacts = ledgerProjectId
+    ? liveSession.artifacts.filter(
+        (record) => record.project_id === ledgerProjectId,
+      )
+    : [];
+  const taskIds = new Set(tasks.map((record) => record.id));
+  const analysisIds = new Set(analyses.map((record) => record.id));
+  const hypothesisIds = new Set(hypotheses.map((record) => record.id));
+  const experimentIds = new Set(experiments.map((record) => record.id));
+  const evaluationIds = new Set(evaluations.map((record) => record.id));
+  const sessionIds = new Set(sessions.map((record) => record.id));
+
+  return {
+    projectId: routeProjectId,
+    ledgerProjectId,
+    workspace: session.workspace,
+    connection: liveSession.connection,
+    project,
+    sessions,
+    hypotheses,
+    experiments,
+    evaluations,
+    analyses,
+    agents,
+    tasks,
+    taskDependencies: liveSession.taskDependencies.filter((record) =>
+      taskIds.has(record.task_id),
+    ),
+    taskEntityLinks: liveSession.taskEntityLinks.filter((record) =>
+      taskIds.has(record.task_id),
+    ),
+    taskActivities: liveSession.taskActivities.filter((record) =>
+      taskIds.has(record.task_id),
+    ),
+    analysisActivities: liveSession.analysisActivities.filter((record) =>
+      analysisIds.has(record.analysis_id),
+    ),
+    hypothesisExperimentLinks: liveSession.hypothesisExperimentLinks.filter(
+      (record) =>
+        hypothesisIds.has(record.hypothesis_id) &&
+        experimentIds.has(record.experiment_id),
+    ),
+    hypothesisActivities: liveSession.hypothesisActivities.filter((record) =>
+      hypothesisIds.has(record.hypothesis_id),
+    ),
+    experimentActivities: liveSession.experimentActivities.filter((record) =>
+      experimentIds.has(record.experiment_id),
+    ),
+    evaluationActivities: liveSession.evaluationActivities.filter((record) =>
+      evaluationIds.has(record.evaluation_id),
+    ),
+    artifacts,
+    events: liveSession.events.filter(
+      (record) =>
+        record.associated_project_id === ledgerProjectId ||
+        Boolean(
+          record.associated_session_id &&
+            sessionIds.has(record.associated_session_id),
+        ),
+    ),
+  };
 }
 
-function discoveredProblem({
-  discoveryError,
-  snapshotError,
+function currentLedgerProjectId({
+  projects,
+  routeProjectId,
+  sessions,
 }: {
-  discoveryError: string | undefined;
-  snapshotError: string | undefined;
+  projects: ProjectRecord[];
+  routeProjectId: string;
+  sessions: SessionRecord[];
 }): string | undefined {
-  return discoveryError ?? snapshotError;
+  const activeSession = reverseRecords({ records: sessions }).find(
+    (record) => record.status === "active" && record.project_id,
+  );
+  if (activeSession?.project_id) {
+    return activeSession.project_id;
+  }
+
+  const latestSession = reverseRecords({ records: sessions }).find(
+    (record) => record.project_id,
+  );
+  if (latestSession?.project_id) {
+    return latestSession.project_id;
+  }
+
+  const activeProject = reverseRecords({ records: projects }).find(
+    (record) => record.workspace_id === routeProjectId && record.status === "active",
+  );
+  if (activeProject) {
+    return activeProject.id;
+  }
+
+  return reverseRecords({ records: projects }).find(
+    (record) => record.workspace_id === routeProjectId,
+  )?.id;
+}
+
+function reverseRecords<RecordType>({
+  records,
+}: {
+  records: RecordType[];
+}): RecordType[] {
+  return [...records].reverse();
 }
 
 function errorMessage({ error }: { error: unknown }): string {

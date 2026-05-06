@@ -10,7 +10,9 @@ export function tasksForProject({
 }: {
   data: ProjectWorkspaceData;
 }): TaskRecord[] {
-  return filter(data.tasks, (task) => task.project_id === data.projectId);
+  const projectId = data.ledgerProjectId ?? data.projectId;
+
+  return filter(data.tasks, (task) => task.project_id === projectId);
 }
 
 export function taskActivitiesForTask({

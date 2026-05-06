@@ -43,6 +43,22 @@ describe("local web app", () => {
       expect(payload).toEqual({ projects: [] });
     });
   });
+
+  test("does not fall back to the SPA for unknown api routes", async () => {
+    await withTemporaryDist(async ({ distDirectory }) => {
+      writeFileSync(join(distDirectory, "index.html"), "<main>Situ shell</main>");
+
+      const app = createLocalWebApp({
+        situHome: join(distDirectory, ".situ"),
+        distDirectory,
+      });
+      const response = await app.request(
+        "/api/projects/0123456789abcdef/snapshot",
+      );
+
+      expect(response.status).toBe(404);
+    });
+  });
 });
 
 async function withTemporaryDist(

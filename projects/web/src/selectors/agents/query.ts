@@ -7,5 +7,7 @@ export function agentsForProject({
 }: {
   data: ProjectWorkspaceData;
 }): AgentRecord[] {
-  return filter(data.agents, (agent) => agent.project_id === data.projectId);
+  const projectId = data.ledgerProjectId ?? data.projectId;
+
+  return filter(data.agents, (agent) => agent.project_id === projectId);
 }

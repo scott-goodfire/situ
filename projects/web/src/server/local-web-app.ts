@@ -20,6 +20,10 @@ export function createLocalWebApp({
 
   app.get("*", async (context) => {
     const pathname = new URL(context.req.url).pathname;
+    if (pathname.startsWith("/api/")) {
+      return context.notFound();
+    }
+
     const staticPath = safeStaticPath({
       distRoot,
       pathname,

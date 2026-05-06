@@ -10,9 +10,11 @@ export function analysesForProject({
 }: {
   data: ProjectWorkspaceData;
 }): AnalysisRecord[] {
+  const projectId = data.ledgerProjectId ?? data.projectId;
+
   return filter(
     data.analyses,
-    (analysis) => analysis.project_id === data.projectId,
+    (analysis) => analysis.project_id === projectId,
   );
 }
 
