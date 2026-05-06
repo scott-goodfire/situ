@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
+import { vars } from "../../theme.css";
 import { DxPopover } from "./dx-popover";
 import { DxButton } from "../dx-button/dx-button";
 
@@ -19,7 +20,7 @@ export const Default: Story = {
         <div style={{ fontWeight: 500, fontSize: 13, marginBottom: 4 }}>
           Plan Mission Control
         </div>
-        <div style={{ fontSize: 12, color: "var(--muted-foreground)" }}>
+        <div style={{ fontSize: 12, color: vars.color.mutedForeground }}>
           Drafted implementation steps in feature-prd.md
         </div>
       </>

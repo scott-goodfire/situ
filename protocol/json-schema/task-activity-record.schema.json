@@ -14,9 +14,25 @@
       "title": "Id",
       "type": "integer"
     },
+    "project_id": {
+      "title": "Project Id",
+      "type": "string"
+    },
     "task_id": {
       "title": "Task Id",
       "type": "string"
+    },
+    "created_in_session_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Created In Session Id"
     },
     "actor_agent_id": {
       "anyOf": [
@@ -53,6 +69,7 @@
   },
   "required": [
     "id",
+    "project_id",
     "task_id",
     "actor",
     "kind",

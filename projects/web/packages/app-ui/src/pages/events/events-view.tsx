@@ -1,5 +1,6 @@
 import type { EventRecord } from "@situ/protocol";
 import { DxBadge, DxEmptyState, DxTable, type DxTableColumn } from "@situ/web-ui";
+import * as s from "../../styles.css";
 
 export function EventsView({ events }: { events: EventRecord[] }) {
   if (events.length === 0) {
@@ -7,7 +8,7 @@ export function EventsView({ events }: { events: EventRecord[] }) {
   }
 
   return (
-    <div style={{ display: "grid", gap: 16 }}>
+    <div className={s.viewStack}>
       <PageHeader title="Events" count={events.length} />
       <DxTable
         columns={columns}
@@ -26,7 +27,7 @@ const columns: Array<DxTableColumn<EventRecord>> = [
     id: "time",
     header: "Time",
     width: "180px",
-    renderCell: ({ row }) => <Mono>{row.created_at}</Mono>,
+    renderCell: ({ row }) => <span className={s.monoTertiary}>{row.created_at}</span>,
     sortValue: ({ row }) => row.created_at,
   },
   {
@@ -39,39 +40,14 @@ const columns: Array<DxTableColumn<EventRecord>> = [
   {
     id: "message",
     header: "Message",
-    renderCell: ({ row }) => (
-      <span style={{ color: "var(--muted-foreground)" }}>{row.message}</span>
-    ),
+    renderCell: ({ row }) => <span className={s.cellMuted}>{row.message}</span>,
   },
 ];
 
-function Mono({ children }: { children: React.ReactNode }) {
-  return (
-    <span
-      style={{
-        fontFamily: "var(--font-mono)",
-        fontSize: "var(--text-product-sm)",
-        color: "var(--muted-foreground-tertiary)",
-      }}
-    >
-      {children}
-    </span>
-  );
-}
-
 function PageHeader({ title, count }: { title: string; count: number }) {
   return (
-    <header style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
-      <h1
-        style={{
-          margin: 0,
-          fontSize: "var(--text-display-md)",
-          fontWeight: 500,
-          letterSpacing: "var(--tracking-display)",
-        }}
-      >
-        {title}
-      </h1>
+    <header className={s.pageHeader}>
+      <h1 className={s.pageHeaderTitle}>{title}</h1>
       <DxBadge>{count}</DxBadge>
     </header>
   );

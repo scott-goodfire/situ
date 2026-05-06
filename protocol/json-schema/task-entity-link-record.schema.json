@@ -18,6 +18,10 @@
   },
   "additionalProperties": false,
   "properties": {
+    "project_id": {
+      "title": "Project Id",
+      "type": "string"
+    },
     "task_id": {
       "title": "Task Id",
       "type": "string"
@@ -39,6 +43,7 @@
     }
   },
   "required": [
+    "project_id",
     "task_id",
     "entity_kind",
     "entity_id",

@@ -120,14 +120,14 @@ def test_get_session_tool_reads_current_session_graph(repos: Repositories) -> No
 def test_task_tools_coordinate_claims_comments_and_entity_links(
     repos: Repositories,
 ) -> None:
-    repos.agents.ensure_session_agent(
+    agent = repos.agents.ensure_session_agent(
         session_id="session_0001",
         kind="scientist",
         display_name="Scientist",
     )
     deps = SituToolDeps(
         session_id="session_0001",
-        agent_id="agent_session_0001_scientist",
+        agent_id=agent.id,
         repos=repos,
     )
 
@@ -177,7 +177,7 @@ def test_task_tools_coordinate_claims_comments_and_entity_links(
         tool=AddTaskCommentTool(),
         deps=deps,
         task_id=dependent.task["id"],
-        actor_agent_id="agent_session_0001_scientist",
+        actor_agent_id=agent.id,
         comment="Claimed after baseline finished.",
     )
     link = invoke_situ_tool_sync(
@@ -742,13 +742,15 @@ def _event_collector(
     def emit_event(
         event_type: str,
         message: str,
-        session_id: str | None,
+        associated_project_id: str | None,
+        associated_session_id: str | None,
         payload: dict[str, Any] | None,
     ) -> dict[str, Any]:
         event = {
             "type": event_type,
             "message": message,
-            "session_id": session_id,
+            "associated_project_id": associated_project_id,
+            "associated_session_id": associated_session_id,
             "payload": payload or {},
         }
         emitted.append(event)

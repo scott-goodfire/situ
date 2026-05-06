@@ -82,17 +82,17 @@ describe("situ collections", () => {
     expect(collections.evaluations.get("eval_session_0001_baseline")?.status).toBe(
       "closed",
     );
-    expect(collections.agents.get("agent_session_0001_scientist")?.kind).toBe(
+    expect(collections.agents.get("agent_project_0001_scientist")?.kind).toBe(
       "scientist",
     );
-    expect(collections.tasks.get("task_session_0001_001")?.kind).toBe("baseline");
-    expect(collections.taskDependencies.get("task_session_0001_002:task_session_0001_001")?.blocked_by_task_id).toBe(
-      "task_session_0001_001",
+    expect(collections.tasks.get("task_project_0001_001")?.kind).toBe("baseline");
+    expect(collections.taskDependencies.get("task_project_0001_002:task_project_0001_001")?.blocked_by_task_id).toBe(
+      "task_project_0001_001",
     );
-    expect(collections.taskEntityLinks.get("task_session_0001_001:evaluation:eval_session_0001_baseline:created")?.entity_id).toBe(
+    expect(collections.taskEntityLinks.get("task_project_0001_001:evaluation:eval_session_0001_baseline:created")?.entity_id).toBe(
       "eval_session_0001_baseline",
     );
-    expect(collections.taskActivities.get("1")?.task_id).toBe("task_session_0001_001");
+    expect(collections.taskActivities.get("1")?.task_id).toBe("task_project_0001_001");
     expect(collections.experimentActivities.get("1")?.kind).toBe("comment");
     expect(collections.evaluationActivities.get("1")?.kind).toBe("comment");
     expect(collections.events.get("1")?.type).toBe("session.started");
@@ -184,7 +184,7 @@ describe("situ collections", () => {
       collections,
       upsert: upsert({
         collection: "agents",
-        key: "agent_session_0001_scientist",
+        key: "agent_project_0001_scientist",
         record: agentRecord({}),
       }),
     });
@@ -192,7 +192,7 @@ describe("situ collections", () => {
       collections,
       upsert: upsert({
         collection: "tasks",
-        key: "task_session_0001_001",
+        key: "task_project_0001_001",
         record: taskRecord({}),
       }),
     });
@@ -239,10 +239,10 @@ describe("situ collections", () => {
     expect(collections.sessions.get(SESSION_ID)?.status).toBe("closed");
     expect(collections.experiments.get("exp_session_0001_a")?.status).toBe("active");
     expect(collections.evaluations.get("eval_session_0001_a")?.status).toBe("active");
-    expect(collections.agents.get("agent_session_0001_scientist")?.status).toBe("idle");
-    expect(collections.tasks.get("task_session_0001_001")?.priority).toBe("high");
+    expect(collections.agents.get("agent_project_0001_scientist")?.status).toBe("idle");
+    expect(collections.tasks.get("task_project_0001_001")?.priority).toBe("high");
     expect(collections.taskActivities.get("1")?.actor_agent_id).toBe(
-      "agent_session_0001_scientist",
+      "agent_project_0001_scientist",
     );
     expect(collections.experimentActivities.get("3")?.kind).toBe("comment");
     expect(collections.experimentActivities.get("3")?.payload.activity_type).toBe(
@@ -394,8 +394,9 @@ function agentRecord({
   overrides?: Partial<AgentRecord>;
 }): AgentRecord {
   return {
-    id: "agent_session_0001_scientist",
-    session_id: SESSION_ID,
+    id: "agent_project_0001_scientist",
+    project_id: PROJECT_ID,
+    created_in_session_id: SESSION_ID,
     kind: "scientist",
     display_name: "Scientist",
     model_name: "openai:test",
@@ -412,8 +413,9 @@ function taskRecord({
   overrides?: Partial<TaskRecord>;
 }): TaskRecord {
   return {
-    id: "task_session_0001_001",
-    session_id: SESSION_ID,
+    id: "task_project_0001_001",
+    project_id: PROJECT_ID,
+    created_in_session_id: SESSION_ID,
     title: "Record baseline",
     content: "Run baseline eval and record evidence.",
     kind: "baseline",
@@ -428,7 +430,9 @@ function taskRecord({
     result_summary: undefined,
     created_at: "2026-01-01T00:00:01Z",
     available_at: "2026-01-01T00:00:01Z",
+    claimed_in_session_id: undefined,
     claimed_at: undefined,
+    completed_in_session_id: undefined,
     completed_at: undefined,
     updated_at: "2026-01-01T00:00:01Z",
     ...overrides,
@@ -441,8 +445,9 @@ function taskDependencyRecord({
   overrides?: Partial<TaskDependencyRecord>;
 }): TaskDependencyRecord {
   return {
-    task_id: "task_session_0001_002",
-    blocked_by_task_id: "task_session_0001_001",
+    project_id: PROJECT_ID,
+    task_id: "task_project_0001_002",
+    blocked_by_task_id: "task_project_0001_001",
     created_at: "2026-01-01T00:00:02Z",
     ...overrides,
   };
@@ -454,7 +459,8 @@ function taskEntityLinkRecord({
   overrides?: Partial<TaskEntityLinkRecord>;
 }): TaskEntityLinkRecord {
   return {
-    task_id: "task_session_0001_001",
+    project_id: PROJECT_ID,
+    task_id: "task_project_0001_001",
     entity_kind: "evaluation",
     entity_id: "eval_session_0001_baseline",
     relationship: "created",
@@ -470,8 +476,10 @@ function taskActivityRecord({
 }): TaskActivityRecord {
   return {
     id: 1,
-    task_id: "task_session_0001_001",
-    actor_agent_id: "agent_session_0001_scientist",
+    project_id: PROJECT_ID,
+    task_id: "task_project_0001_001",
+    created_in_session_id: SESSION_ID,
+    actor_agent_id: "agent_project_0001_scientist",
     actor: "agent",
     kind: "comment",
     body: "Baseline task claimed.",
@@ -520,7 +528,8 @@ function evaluationActivityRecord({
 function eventRecord({ overrides = {} }: { overrides?: Partial<EventRecord> }): EventRecord {
   return {
     id: 1,
-    session_id: SESSION_ID,
+    associated_project_id: PROJECT_ID,
+    associated_session_id: SESSION_ID,
     type: "session.started",
     message: "Started session_0001",
     payload: {},

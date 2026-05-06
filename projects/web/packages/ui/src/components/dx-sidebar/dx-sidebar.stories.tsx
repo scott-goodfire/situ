@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { Beaker, FileText, FlaskConical, ListChecks, Users } from "lucide-react";
+import { vars } from "../../theme.css";
 import { DxSidebar, DxSidebarItem, DxSidebarSection } from "./dx-sidebar";
 
 const meta = {
@@ -30,9 +31,9 @@ export const Default: Story = {
       style={{
         width: 240,
         height: 540,
-        background: "var(--panel)",
-        border: "1px solid var(--border-02)",
-        borderRadius: "var(--radius-lg)",
+        background: vars.color.panel,
+        border: `1px solid ${vars.color.border02}`,
+        borderRadius: vars.radius.lg,
       }}
     >
       <DxSidebar {...args} />

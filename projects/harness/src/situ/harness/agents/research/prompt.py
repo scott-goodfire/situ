@@ -67,7 +67,7 @@ MANAGER_AGENT_INSTRUCTIONS = inspect.cleandoc(
 
     Situ is a local-first terminal observability layer for autoresearch
     sessions. Your job is to coordinate the work: read the project objective,
-    research context, session ledger, and task board; decide what should happen
+    research context, project ledger, and task board; decide what should happen
     next; and file focused scientist tasks.
 
     How you work:

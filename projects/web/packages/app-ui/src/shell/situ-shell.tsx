@@ -14,6 +14,7 @@ import {
   Users,
 } from "lucide-react";
 import type { ReactNode } from "react";
+import * as s from "../styles.css";
 
 export type SituNavId =
   | "overview"
@@ -49,37 +50,12 @@ export function SituShell({
       sidebar={
         <DxSidebar
           header={
-            <div style={{ display: "grid", gap: 2 }}>
-              <span
-                style={{
-                  fontSize: 13,
-                  fontWeight: 500,
-                  color: "var(--foreground)",
-                }}
-              >
-                Situ
-              </span>
-              <span
-                style={{
-                  fontSize: 11,
-                  color: "var(--muted-foreground-tertiary)",
-                  fontFamily: "var(--font-mono)",
-                }}
-              >
-                {workspace}
-              </span>
+            <div className={s.sidebarHeader}>
+              <span className={s.sidebarBrand}>Situ</span>
+              <span className={s.sidebarWorkspace}>{workspace}</span>
             </div>
           }
-          footer={
-            <span
-              style={{
-                fontSize: 11,
-                color: "var(--muted-foreground-tertiary)",
-              }}
-            >
-              v0.0.1 · SOC 2
-            </span>
-          }
+          footer={<span className={s.sidebarFooter}>v0.0.1 · SOC 2</span>}
         >
           <DxSidebarSection title="Project">
             <NavItem
@@ -131,7 +107,7 @@ export function SituShell({
         connection || topBarActions ? (
           <>
             <div />
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div className={s.topBarActions}>
               {connection && <ConnectionBadge connection={connection} />}
               {topBarActions}
             </div>

@@ -6,7 +6,7 @@ import {
   type DxTableColumn,
 } from "@situ/web-ui";
 import type { ReactNode } from "react";
-import { commandPre } from "../../styles.css";
+import * as s from "../../styles.css";
 
 export type ProjectIndexViewStatus =
   | "running"
@@ -61,38 +61,17 @@ export function ProjectIndexView({
       <DxEmptyState
         heading="No local Situ projects found"
         description="Start a terminal session, then refresh this page."
-        action={<pre className={commandPre}>situ start</pre>}
+        action={<pre className={s.commandPre}>situ start</pre>}
       />
     );
   }
 
   return (
-    <div style={{ display: "grid", gap: 16 }}>
-      <header
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "baseline",
-        }}
-      >
+    <div className={s.viewStack}>
+      <header className={s.pageHeader}>
         <div>
-          <h1
-            style={{
-              margin: 0,
-              fontSize: "var(--text-display-md)",
-              fontWeight: 500,
-              letterSpacing: "var(--tracking-display)",
-            }}
-          >
-            Local Situ Projects
-          </h1>
-          <p
-            style={{
-              margin: "4px 0 0",
-              color: "var(--muted-foreground)",
-              fontSize: "var(--text-product-lg)",
-            }}
-          >
+          <h1 className={s.pageHeaderTitle}>Local Situ Projects</h1>
+          <p className={s.pageHeaderSubtitle}>
             Attach-only monitors for projects found on this machine.
           </p>
         </div>
@@ -123,17 +102,9 @@ function projectColumns({
       header: "Project",
       width: "30%",
       renderCell: ({ row }) => (
-        <div style={{ display: "grid", gap: 2 }}>
-          <span style={{ fontWeight: 500 }}>{row.label}</span>
-          <span
-            style={{
-              color: "var(--muted-foreground-tertiary)",
-              fontFamily: "var(--font-mono)",
-              fontSize: "var(--text-product-sm)",
-            }}
-          >
-            {row.id}
-          </span>
+        <div className={s.projectCellStack}>
+          <span className={s.cellTitle}>{row.label}</span>
+          <span className={s.monoTertiary}>{row.id}</span>
         </div>
       ),
       sortValue: ({ row }) => row.label,
@@ -149,16 +120,7 @@ function projectColumns({
       id: "workspace",
       header: "Workspace",
       renderCell: ({ row }) => (
-        <span
-          style={{
-            color: "var(--muted-foreground)",
-            fontFamily: "var(--font-mono)",
-            fontSize: "var(--text-product-sm)",
-            overflowWrap: "anywhere",
-          }}
-        >
-          {row.workspace ?? "Not configured yet"}
-        </span>
+        <span className={s.monoMuted}>{row.workspace ?? "Not configured yet"}</span>
       ),
       sortValue: ({ row }) => row.workspace ?? "",
     },
@@ -166,9 +128,7 @@ function projectColumns({
       id: "objective",
       header: "Objective",
       renderCell: ({ row }) => (
-        <span style={{ color: "var(--muted-foreground)" }}>
-          {row.objective ?? "No objective yet"}
-        </span>
+        <span className={s.cellMuted}>{row.objective ?? "No objective yet"}</span>
       ),
       sortValue: ({ row }) => row.objective ?? "",
     },

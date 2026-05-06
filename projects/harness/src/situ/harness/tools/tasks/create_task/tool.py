@@ -30,13 +30,15 @@ class CreateTaskTool(BaseSituTool[SituToolDeps, CreateTaskResult]):
         available_at: str | None = None,
         **_kwargs: Any,
     ) -> CreateTaskResult:
-        """Create a session-scoped task for agent coordination."""
+        """Create a project-scoped task for agent coordination."""
         repos = ctx.deps.get_repos()
+        project_id = ctx.deps.require_project_id()
         session_id = ctx.deps.session_id
-        resolved_task_id = task_id or repos.tasks.next_id(session_id)
+        resolved_task_id = task_id or repos.tasks.next_id(project_id)
         task = repos.tasks.create(
             task_id=resolved_task_id,
-            session_id=session_id,
+            project_id=project_id,
+            created_in_session_id=session_id,
             title=title,
             content=content,
             kind=kind,
@@ -56,6 +58,7 @@ class CreateTaskTool(BaseSituTool[SituToolDeps, CreateTaskResult]):
         dependencies = []
         for blocked_by_task_id in blocked_by_task_ids or []:
             dependency = repos.task_dependencies.create(
+                project_id=project_id,
                 task_id=task.id,
                 blocked_by_task_id=blocked_by_task_id,
             )

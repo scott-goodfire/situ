@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { vars } from "../../theme.css";
 import { DxStat } from "./dx-stat";
 
 const meta: Meta<typeof DxStat> = {
@@ -30,7 +31,7 @@ export const Diff: Story = {
     <div style={{ display: "inline-flex", gap: 6, fontSize: 13 }}>
       <DxStat tone="added">+20</DxStat>
       <DxStat tone="removed">−3</DxStat>
-      <span style={{ color: "var(--muted-foreground-tertiary)" }}>· Drafted implementation</span>
+      <span style={{ color: vars.color.mutedForegroundTertiary }}>· Drafted implementation</span>
     </div>
   ),
 };

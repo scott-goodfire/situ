@@ -97,7 +97,8 @@ export interface HypothesisExperimentLinkRecord {
 
 export interface AgentRecord {
   id: string;
-  session_id: string;
+  project_id: string;
+  created_in_session_id?: string | null;
   kind: "manager" | "scientist";
   display_name: string;
   model_name?: string | null;
@@ -108,7 +109,8 @@ export interface AgentRecord {
 
 export interface TaskRecord {
   id: string;
-  session_id: string;
+  project_id: string;
+  created_in_session_id?: string | null;
   title: string;
   content: string;
   kind: "plan" | "baseline" | "hypothesize" | "experiment" | "interpret" | "review";
@@ -123,18 +125,22 @@ export interface TaskRecord {
   result_summary?: string | null;
   created_at: string;
   available_at: string;
+  claimed_in_session_id?: string | null;
   claimed_at?: string | null;
+  completed_in_session_id?: string | null;
   completed_at?: string | null;
   updated_at: string;
 }
 
 export interface TaskDependencyRecord {
+  project_id: string;
   task_id: string;
   blocked_by_task_id: string;
   created_at: string;
 }
 
 export interface TaskEntityLinkRecord {
+  project_id: string;
   task_id: string;
   entity_kind: "hypothesis" | "experiment" | "evaluation" | "artifact" | "hypothesis_activity" | "experiment_activity" | "evaluation_activity" | "task_activity" | "event";
   entity_id: string;
@@ -144,7 +150,9 @@ export interface TaskEntityLinkRecord {
 
 export interface TaskActivityRecord {
   id: number;
+  project_id: string;
   task_id: string;
+  created_in_session_id?: string | null;
   actor_agent_id?: string | null;
   actor: string;
   kind: "comment";
@@ -202,7 +210,8 @@ export interface ArtifactRecord {
 
 export interface EventRecord {
   id: number;
-  session_id?: string | null;
+  associated_project_id?: string | null;
+  associated_session_id?: string | null;
   type: string;
   message: string;
   payload?: Record<string, unknown>;

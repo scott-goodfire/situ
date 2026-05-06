@@ -37,12 +37,14 @@ class ClaimTaskTool(BaseSituTool[SituToolDeps, ClaimTaskResult]):
                 task_id=task_id,
                 agent_id=agent.id,
                 eligible_kinds=eligible_kinds,
+                claimed_in_session_id=ctx.deps.session_id,
             )
             if task_id is not None
             else repos.tasks.claim_next(
-                session_id=ctx.deps.session_id,
+                project_id=agent.project_id,
                 agent_id=agent.id,
                 eligible_kinds=eligible_kinds,
+                claimed_in_session_id=ctx.deps.session_id,
             )
         )
         if task is None:

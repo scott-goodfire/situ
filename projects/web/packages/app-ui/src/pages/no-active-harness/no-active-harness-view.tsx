@@ -1,5 +1,5 @@
 import { DxButton, DxEmptyState } from "@situ/web-ui";
-import { commandPre } from "../../styles.css";
+import * as s from "../../styles.css";
 
 export function NoActiveHarnessView({
   workspace,
@@ -9,16 +9,9 @@ export function NoActiveHarnessView({
   onDownloadClick?: () => void;
 }) {
   return (
-    <div style={{ display: "grid", gap: 12 }}>
+    <div className={s.viewStackTight}>
       {workspace && (
-        <p
-          style={{
-            margin: 0,
-            color: "var(--muted-foreground-tertiary)",
-            fontFamily: "var(--font-mono)",
-            fontSize: "var(--text-product-sm)",
-          }}
-        >
+        <p className={s.monoTertiary} style={{ margin: 0 }}>
           {workspace}
         </p>
       )}
@@ -26,8 +19,8 @@ export function NoActiveHarnessView({
         heading="No active Situ harness found"
         description="Start a session from a terminal, then reopen this web monitor."
         action={
-          <div style={{ display: "flex", flexDirection: "column", gap: 12, alignItems: "center" }}>
-            <pre className={commandPre}>situ start</pre>
+          <div className={s.harnessActionStack}>
+            <pre className={s.commandPre}>situ start</pre>
             {onDownloadClick && (
               <DxButton variant="primary" onClick={onDownloadClick}>
                 Download for macOS

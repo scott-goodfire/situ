@@ -162,7 +162,8 @@ class AgentRecord(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     id: str
-    session_id: str
+    project_id: str
+    created_in_session_id: str | None = None
     kind: AgentKind
     display_name: str
     model_name: str | None = None
@@ -175,7 +176,8 @@ class TaskRecord(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     id: str
-    session_id: str
+    project_id: str
+    created_in_session_id: str | None = None
     title: str
     content: str
     kind: TaskKind
@@ -190,7 +192,9 @@ class TaskRecord(BaseModel):
     result_summary: str | None = None
     created_at: str
     available_at: str
+    claimed_in_session_id: str | None = None
     claimed_at: str | None = None
+    completed_in_session_id: str | None = None
     completed_at: str | None = None
     updated_at: str
 
@@ -198,6 +202,7 @@ class TaskRecord(BaseModel):
 class TaskDependencyRecord(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
+    project_id: str
     task_id: str
     blocked_by_task_id: str
     created_at: str
@@ -206,6 +211,7 @@ class TaskDependencyRecord(BaseModel):
 class TaskEntityLinkRecord(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
+    project_id: str
     task_id: str
     entity_kind: TaskEntityKind
     entity_id: str
@@ -217,7 +223,9 @@ class TaskActivityRecord(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     id: int
+    project_id: str
     task_id: str
+    created_in_session_id: str | None = None
     actor_agent_id: str | None = None
     actor: str
     kind: ActivityKind
@@ -285,7 +293,8 @@ class EventRecord(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     id: int
-    session_id: str | None = None
+    associated_project_id: str | None = None
+    associated_session_id: str | None = None
     type: str
     message: str
     payload: dict[str, Any] = Field(default_factory=dict)

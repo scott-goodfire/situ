@@ -1,5 +1,6 @@
 import type { ExperimentRecord } from "@situ/protocol";
 import { DxBadge, DxEmptyState, DxTable, type DxTableColumn } from "@situ/web-ui";
+import * as s from "../../styles.css";
 
 export function ExperimentsView({
   experiments,
@@ -11,7 +12,7 @@ export function ExperimentsView({
   }
 
   return (
-    <div style={{ display: "grid", gap: 16 }}>
+    <div className={s.viewStack}>
       <PageHeader title="Experiments" count={experiments.length} />
       <DxTable
         columns={columns}
@@ -30,23 +31,13 @@ const columns: Array<DxTableColumn<ExperimentRecord>> = [
     id: "id",
     header: "ID",
     width: "120px",
-    renderCell: ({ row }) => (
-      <span
-        style={{
-          fontFamily: "var(--font-mono)",
-          fontSize: "var(--text-product-sm)",
-          color: "var(--muted-foreground-tertiary)",
-        }}
-      >
-        {row.id}
-      </span>
-    ),
+    renderCell: ({ row }) => <span className={s.monoTertiary}>{row.id}</span>,
     sortValue: ({ row }) => row.id,
   },
   {
     id: "title",
     header: "Title",
-    renderCell: ({ row }) => <span style={{ fontWeight: 500 }}>{row.title}</span>,
+    renderCell: ({ row }) => <span className={s.cellTitle}>{row.title}</span>,
     sortValue: ({ row }) => row.title,
   },
   {
@@ -59,9 +50,7 @@ const columns: Array<DxTableColumn<ExperimentRecord>> = [
   {
     id: "summary",
     header: "Summary",
-    renderCell: ({ row }) => (
-      <span style={{ color: "var(--muted-foreground)" }}>{row.summary}</span>
-    ),
+    renderCell: ({ row }) => <span className={s.cellMuted}>{row.summary}</span>,
   },
 ];
 
@@ -73,17 +62,8 @@ function StatusBadge({ status }: { status: ExperimentRecord["status"] }) {
 
 function PageHeader({ title, count }: { title: string; count: number }) {
   return (
-    <header style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
-      <h1
-        style={{
-          margin: 0,
-          fontSize: "var(--text-display-md)",
-          fontWeight: 500,
-          letterSpacing: "var(--tracking-display)",
-        }}
-      >
-        {title}
-      </h1>
+    <header className={s.pageHeader}>
+      <h1 className={s.pageHeaderTitle}>{title}</h1>
       <DxBadge>{count}</DxBadge>
     </header>
   );

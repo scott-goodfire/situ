@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { vars } from "../../theme.css";
 import { DxCard } from "./dx-card";
 
 const meta: Meta<typeof DxCard> = {
@@ -24,7 +25,7 @@ const meta: Meta<typeof DxCard> = {
         <div style={{ fontWeight: 500, fontSize: 13, marginBottom: 4 }}>
           Filtering low-confidence retrieval
         </div>
-        <div style={{ fontSize: 13, color: "var(--muted-foreground)" }}>
+        <div style={{ fontSize: 13, color: vars.color.mutedForeground }}>
           Drop weak snippets before tool calls so the agent cites fewer irrelevant policies.
         </div>
       </>

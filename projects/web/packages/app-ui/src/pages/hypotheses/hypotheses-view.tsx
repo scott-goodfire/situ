@@ -1,5 +1,6 @@
 import type { HypothesisRecord } from "@situ/protocol";
 import { DxBadge, DxEmptyState, DxTable, type DxTableColumn } from "@situ/web-ui";
+import * as s from "../../styles.css";
 
 export function HypothesesView({
   hypotheses,
@@ -11,7 +12,7 @@ export function HypothesesView({
   }
 
   return (
-    <div style={{ display: "grid", gap: 16 }}>
+    <div className={s.viewStack}>
       <PageHeader title="Hypotheses" count={hypotheses.length} />
       <DxTable
         columns={columns}
@@ -30,13 +31,13 @@ const columns: Array<DxTableColumn<HypothesisRecord>> = [
     id: "id",
     header: "ID",
     width: "120px",
-    renderCell: ({ row }) => <Mono>{row.id}</Mono>,
+    renderCell: ({ row }) => <span className={s.monoTertiary}>{row.id}</span>,
     sortValue: ({ row }) => row.id,
   },
   {
     id: "title",
     header: "Title",
-    renderCell: ({ row }) => <span style={{ fontWeight: 500 }}>{row.title}</span>,
+    renderCell: ({ row }) => <span className={s.cellTitle}>{row.title}</span>,
     sortValue: ({ row }) => row.title,
   },
   {
@@ -49,9 +50,7 @@ const columns: Array<DxTableColumn<HypothesisRecord>> = [
   {
     id: "summary",
     header: "Summary",
-    renderCell: ({ row }) => (
-      <span style={{ color: "var(--muted-foreground)" }}>{row.summary}</span>
-    ),
+    renderCell: ({ row }) => <span className={s.cellMuted}>{row.summary}</span>,
   },
 ];
 
@@ -61,33 +60,10 @@ function StatusBadge({ status }: { status: HypothesisRecord["status"] }) {
   return <DxBadge>closed</DxBadge>;
 }
 
-function Mono({ children }: { children: React.ReactNode }) {
-  return (
-    <span
-      style={{
-        fontFamily: "var(--font-mono)",
-        fontSize: "var(--text-product-sm)",
-        color: "var(--muted-foreground-tertiary)",
-      }}
-    >
-      {children}
-    </span>
-  );
-}
-
 function PageHeader({ title, count }: { title: string; count: number }) {
   return (
-    <header style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
-      <h1
-        style={{
-          margin: 0,
-          fontSize: "var(--text-display-md)",
-          fontWeight: 500,
-          letterSpacing: "var(--tracking-display)",
-        }}
-      >
-        {title}
-      </h1>
+    <header className={s.pageHeader}>
+      <h1 className={s.pageHeaderTitle}>{title}</h1>
       <DxBadge>{count}</DxBadge>
     </header>
   );

@@ -478,8 +478,11 @@ def test_events_repository_add_and_list(repos: Repositories) -> None:
 
     assert event.id == 1
     assert event.type == "session.started"
+    assert event.associated_project_id == "project_0001"
+    assert event.associated_session_id == "session_0001"
     assert event.payload == {"session_id": "session_0001"}
     assert repos.events.list_for_session("session_0001") == [event]
+    assert repos.events.list_for_project("project_0001") == [event]
     assert repos.events.list_all() == [event]
 
 

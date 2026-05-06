@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { vars } from "@situ/web-ui";
 import {
   ProjectIndexView,
   type ProjectIndexViewProject,
@@ -11,7 +12,7 @@ const meta: Meta<typeof ProjectIndexView> = {
   parameters: { layout: "fullscreen" },
   decorators: [
     (Story) => (
-      <div style={{ height: "100vh", padding: 16, background: "var(--stage)" }}>
+      <div style={{ height: "100vh", padding: 16, background: vars.color.stage }}>
         <Story />
       </div>
     ),

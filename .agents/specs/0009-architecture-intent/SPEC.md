@@ -28,17 +28,19 @@ experiment work.
 TypeScript Ink TUI
   -> local session server over HTTP/SSE
       -> Python harness over JSON-RPC stdio
-          -> project (workspace boundary, owns sessions)
-          -> session (project_id required, owns the ledger)
-              -> objective         (1:1 sibling record)
-              -> research context  (1:1 sibling record)
-              -> hypotheses        (session_id required)
-              -> experiments       (session_id required)
-              -> evaluations       (session_id required)
+          -> workspace (folder boundary)
+          -> project (research effort, owns the ledger and coordination)
+              -> objective         (project field)
+              -> research context  (project field)
+              -> agents and tasks  (project-owned, session provenance)
+              -> hypotheses        (project_id required)
+              -> experiments       (project_id required)
+              -> evaluations       (project_id required)
               -> hypothesis/experiment links
-              -> activities        (parent-scoped, no session_id)
-              -> artifacts         (session_id required)
-              -> internal events
+              -> activities        (parent-scoped, session provenance)
+              -> artifacts         (project_id required)
+              -> internal events   (project/session associations)
+          -> session (workspace_id required, project_id optional)
               -> worker execution
 ```
 
@@ -48,10 +50,10 @@ The system should keep these responsibilities distinct:
 - Web UI: attach-only monitoring over an existing local session
 - Session server: harness subprocess ownership, HTTP RPC, event streaming, and
   local session discovery
-- Harness: project/session lifecycle, durable state, internal events,
-  hypotheses, experiments, evaluations, links, activities, artifacts, and
-  automated trust concerns. Objective and research context are
-  agent-populated session-owned records, not session columns.
+- Harness: workspace/project/session lifecycle, durable state, internal events,
+  agents, tasks, hypotheses, experiments, evaluations, links, activities,
+  artifacts, and automated trust concerns. Objective and research context are
+  fields on Project.
 - Workers: concrete experiments, code changes, eval runs, analysis
 - Protocol/API: stable boundary between clients, harness, and workers
 
@@ -62,17 +64,24 @@ one broad application-state object.
 
 For the first collection-backed slice, the sync surface is:
 
+- Workspaces
+- Projects
 - Sessions
+- Agents
+- Tasks
 - Hypotheses
 - Experiments
+- Evaluations
 - Hypothesis activities
 - Experiment activities
+- Evaluation activities
+- Artifacts
 - Events
 
 Full current-state composition should live in harness API services and schemas,
 not in a snapshot repository or durable snapshot model. UI work should use
 collection-shaped bootstrap data and row-level upsert notifications. Agent code
-should use explicit session/objective APIs. This keeps the TUI and future web UI
+should use explicit project/session APIs. This keeps the TUI and future web UI
 aligned with a shared TypeScript collection layer without requiring a full sync
 engine yet.
 
@@ -87,13 +96,13 @@ infrastructure under the Python harness, not as a new product surface.
 
 For the current slice:
 
-- Pydantic AI may inspect compact, typed session context.
+- Pydantic AI may inspect compact, typed project/session context.
 - DBOS should wrap agent execution through Pydantic AI `DBOSAgent`.
 - Logfire may observe harness, DBOS, and Pydantic AI spans.
 - The agent may request experiment execution through typed Situ tools.
-- The harness still owns objective/session identity, worker execution,
-  automated trust concerns, activities, artifacts, events, and persisted
-  message history.
+- The harness still owns workspace/project/session identity, worker execution,
+  automated trust concerns, activities, artifacts, events, task coordination,
+  and persisted message history.
 
 This keeps creativity in the agent layer while preserving Situ as the
 control plane.
@@ -127,12 +136,13 @@ terminal UI      ---------->  TypeScript     ---------->  local harness runtime
 
 Start with a narrow, durable core:
 
-- Local project (workspace boundary, owns sessions)
-- Session ledger with session-owned objective and research context records
-- Hypotheses, experiments, evaluations (all session-required)
+- Workspace as the folder boundary
+- Project ledger with objective and research context fields
+- Sessions as execution/provenance windows attached to zero or one project
+- Project-owned agents, tasks, hypotheses, experiments, and evaluations
 - Activities (parent-scoped)
-- Artifact references (session-required)
-- Internal event log
+- Artifact references (project-required)
+- Internal event log with optional project/session associations
 - TypeScript Ink TUI
 
 Only add parallelism, plugins, and remote workers after the agent/tool loop is

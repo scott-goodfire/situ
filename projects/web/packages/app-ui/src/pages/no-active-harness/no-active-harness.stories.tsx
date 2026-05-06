@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { vars } from "@situ/web-ui";
 import { NoActiveHarnessView } from "./no-active-harness-view";
 import { SituShell } from "../../shell/situ-shell";
 
@@ -8,7 +9,7 @@ const meta: Meta<typeof NoActiveHarnessView> = {
   parameters: { layout: "fullscreen" },
   decorators: [
     (Story) => (
-      <div style={{ height: "100vh", padding: 16, background: "var(--stage)" }}>
+      <div style={{ height: "100vh", padding: 16, background: vars.color.stage }}>
         <Story />
       </div>
     ),

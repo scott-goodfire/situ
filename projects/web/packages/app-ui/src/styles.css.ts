@@ -1,6 +1,10 @@
 import { style } from "@vanilla-extract/css";
 import { vars } from "@situ/web-ui";
 
+// ---------------------------------------------------------------------------
+// Inline command sample (no-active-harness + project-index empty state)
+// ---------------------------------------------------------------------------
+
 export const commandPre = style({
   margin: 0,
   width: "max-content",
@@ -10,4 +14,166 @@ export const commandPre = style({
   background: vars.color.card01Hex,
   fontFamily: vars.font.mono,
   fontSize: vars.text.productBase,
+});
+
+// ---------------------------------------------------------------------------
+// View layout
+// ---------------------------------------------------------------------------
+
+export const viewStack = style({
+  display: "grid",
+  gap: 16,
+});
+
+export const viewStackWide = style({
+  display: "grid",
+  gap: 18,
+});
+
+export const viewStackTight = style({
+  display: "grid",
+  gap: 12,
+});
+
+// ---------------------------------------------------------------------------
+// Page header (table views)
+// ---------------------------------------------------------------------------
+
+export const pageHeader = style({
+  display: "flex",
+  alignItems: "baseline",
+  justifyContent: "space-between",
+});
+
+export const pageHeaderTitle = style({
+  margin: 0,
+  fontSize: vars.text.displayMd,
+  fontWeight: 500,
+  letterSpacing: vars.tracking.display,
+});
+
+export const pageHeaderSubtitle = style({
+  margin: "4px 0 0",
+  color: vars.color.mutedForeground,
+  fontSize: vars.text.productLg,
+});
+
+// ---------------------------------------------------------------------------
+// Cell utilities
+// ---------------------------------------------------------------------------
+
+export const cellTitle = style({
+  fontWeight: 500,
+});
+
+export const cellMuted = style({
+  color: vars.color.mutedForeground,
+});
+
+export const monoTertiary = style({
+  fontFamily: vars.font.mono,
+  fontSize: vars.text.productSm,
+  color: vars.color.mutedForegroundTertiary,
+});
+
+export const monoMuted = style({
+  fontFamily: vars.font.mono,
+  fontSize: vars.text.productSm,
+  color: vars.color.mutedForeground,
+  overflowWrap: "anywhere",
+});
+
+// ---------------------------------------------------------------------------
+// SituShell sidebar
+// ---------------------------------------------------------------------------
+
+export const sidebarHeader = style({
+  display: "grid",
+  gap: 2,
+});
+
+export const sidebarBrand = style({
+  fontSize: 13,
+  fontWeight: 500,
+  color: vars.color.foreground,
+});
+
+export const sidebarWorkspace = style({
+  fontSize: 11,
+  color: vars.color.mutedForegroundTertiary,
+  fontFamily: vars.font.mono,
+});
+
+export const sidebarFooter = style({
+  fontSize: 11,
+  color: vars.color.mutedForegroundTertiary,
+});
+
+export const topBarActions = style({
+  display: "flex",
+  alignItems: "center",
+  gap: 8,
+});
+
+// ---------------------------------------------------------------------------
+// Project index cells
+// ---------------------------------------------------------------------------
+
+export const projectCellStack = style({
+  display: "grid",
+  gap: 2,
+});
+
+// ---------------------------------------------------------------------------
+// Run monitor view
+// ---------------------------------------------------------------------------
+
+export const runHeader = style({
+  display: "grid",
+  gap: 4,
+});
+
+export const runHeaderMeta = style({
+  display: "flex",
+  gap: 12,
+  color: vars.color.mutedForeground,
+  fontSize: vars.text.productLg,
+});
+
+export const fieldList = style({
+  display: "grid",
+  gap: 0,
+});
+
+export const fieldRow = style({
+  display: "grid",
+  gridTemplateColumns: "140px 1fr 110px",
+  gap: 12,
+  padding: "6px 0",
+  borderBottom: `1px solid ${vars.color.border01_5}`,
+  alignItems: "center",
+});
+
+export const fieldRowEvent = style({
+  display: "grid",
+  gridTemplateColumns: "180px 140px 1fr",
+  gap: 12,
+  padding: "6px 0",
+  borderBottom: `1px solid ${vars.color.border01_5}`,
+});
+
+export const emptyText = style({
+  color: vars.color.mutedForegroundTertiary,
+  fontSize: vars.text.productLg,
+});
+
+// ---------------------------------------------------------------------------
+// No active harness
+// ---------------------------------------------------------------------------
+
+export const harnessActionStack = style({
+  display: "flex",
+  flexDirection: "column",
+  gap: 12,
+  alignItems: "center",
 });

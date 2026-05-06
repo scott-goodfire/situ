@@ -1,4 +1,5 @@
 import { DxBadge, DxEmptyState, DxTable, type DxTableColumn } from "@situ/web-ui";
+import * as s from "../../styles.css";
 
 export type AgentRow = {
   id: string;
@@ -13,7 +14,7 @@ export function AgentsView({ agents }: { agents: AgentRow[] }) {
   }
 
   return (
-    <div style={{ display: "grid", gap: 16 }}>
+    <div className={s.viewStack}>
       <PageHeader title="Agents" count={agents.length} />
       <DxTable
         columns={columns}
@@ -32,32 +33,20 @@ const columns: Array<DxTableColumn<AgentRow>> = [
     id: "id",
     header: "ID",
     width: "140px",
-    renderCell: ({ row }) => (
-      <span
-        style={{
-          fontFamily: "var(--font-mono)",
-          fontSize: "var(--text-product-sm)",
-          color: "var(--muted-foreground-tertiary)",
-        }}
-      >
-        {row.id}
-      </span>
-    ),
+    renderCell: ({ row }) => <span className={s.monoTertiary}>{row.id}</span>,
     sortValue: ({ row }) => row.id,
   },
   {
     id: "name",
     header: "Name",
-    renderCell: ({ row }) => <span style={{ fontWeight: 500 }}>{row.name}</span>,
+    renderCell: ({ row }) => <span className={s.cellTitle}>{row.name}</span>,
     sortValue: ({ row }) => row.name,
   },
   {
     id: "role",
     header: "Role",
     width: "140px",
-    renderCell: ({ row }) => (
-      <span style={{ color: "var(--muted-foreground)" }}>{row.role}</span>
-    ),
+    renderCell: ({ row }) => <span className={s.cellMuted}>{row.role}</span>,
     sortValue: ({ row }) => row.role,
   },
   {
@@ -83,17 +72,8 @@ function StatusBadge({ status }: { status: AgentRow["status"] }) {
 
 function PageHeader({ title, count }: { title: string; count: number }) {
   return (
-    <header style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
-      <h1
-        style={{
-          margin: 0,
-          fontSize: "var(--text-display-md)",
-          fontWeight: 500,
-          letterSpacing: "var(--tracking-display)",
-        }}
-      >
-        {title}
-      </h1>
+    <header className={s.pageHeader}>
+      <h1 className={s.pageHeaderTitle}>{title}</h1>
       <DxBadge>{count}</DxBadge>
     </header>
   );

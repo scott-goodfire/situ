@@ -37,7 +37,7 @@ When reviewing a change, ask:
 2. Does it preserve local/private defaults?
 3. Does it improve terminal observability, activities, artifacts, or hypotheses?
 4. Does it avoid expanding scope before the current loop is solid?
-5. Does it keep agents/workers separate from durable session state?
+5. Does it keep agents/workers separate from durable Situ state?
 
 ## Format
 

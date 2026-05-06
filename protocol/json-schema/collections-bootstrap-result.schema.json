@@ -22,9 +22,21 @@
           "title": "Id",
           "type": "string"
         },
-        "session_id": {
-          "title": "Session Id",
+        "project_id": {
+          "title": "Project Id",
           "type": "string"
+        },
+        "created_in_session_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Created In Session Id"
         },
         "kind": {
           "$ref": "#/$defs/AgentKind"
@@ -59,7 +71,7 @@
       },
       "required": [
         "id",
-        "session_id",
+        "project_id",
         "kind",
         "display_name",
         "status",
@@ -292,7 +304,7 @@
           "title": "Id",
           "type": "integer"
         },
-        "session_id": {
+        "associated_project_id": {
           "anyOf": [
             {
               "type": "string"
@@ -302,7 +314,19 @@
             }
           ],
           "default": null,
-          "title": "Session Id"
+          "title": "Associated Project Id"
+        },
+        "associated_session_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Associated Session Id"
         },
         "type": {
           "title": "Type",
@@ -691,9 +715,25 @@
           "title": "Id",
           "type": "integer"
         },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
         "task_id": {
           "title": "Task Id",
           "type": "string"
+        },
+        "created_in_session_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Created In Session Id"
         },
         "actor_agent_id": {
           "anyOf": [
@@ -730,6 +770,7 @@
       },
       "required": [
         "id",
+        "project_id",
         "task_id",
         "actor",
         "kind",
@@ -742,6 +783,10 @@
     "TaskDependencyRecord": {
       "additionalProperties": false,
       "properties": {
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
         "task_id": {
           "title": "Task Id",
           "type": "string"
@@ -756,6 +801,7 @@
         }
       },
       "required": [
+        "project_id",
         "task_id",
         "blocked_by_task_id",
         "created_at"
@@ -781,6 +827,10 @@
     "TaskEntityLinkRecord": {
       "additionalProperties": false,
       "properties": {
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
         "task_id": {
           "title": "Task Id",
           "type": "string"
@@ -802,6 +852,7 @@
         }
       },
       "required": [
+        "project_id",
         "task_id",
         "entity_kind",
         "entity_id",
@@ -840,9 +891,21 @@
           "title": "Id",
           "type": "string"
         },
-        "session_id": {
-          "title": "Session Id",
+        "project_id": {
+          "title": "Project Id",
           "type": "string"
+        },
+        "created_in_session_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Created In Session Id"
         },
         "title": {
           "title": "Title",
@@ -937,6 +1000,18 @@
           "title": "Available At",
           "type": "string"
         },
+        "claimed_in_session_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Claimed In Session Id"
+        },
         "claimed_at": {
           "anyOf": [
             {
@@ -948,6 +1023,18 @@
           ],
           "default": null,
           "title": "Claimed At"
+        },
+        "completed_in_session_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Completed In Session Id"
         },
         "completed_at": {
           "anyOf": [
@@ -968,7 +1055,7 @@
       },
       "required": [
         "id",
-        "session_id",
+        "project_id",
         "title",
         "content",
         "kind",

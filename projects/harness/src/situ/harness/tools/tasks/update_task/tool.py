@@ -42,6 +42,7 @@ class UpdateTaskTool(BaseSituTool[SituToolDeps, UpdateTaskResult]):
             pydantic_run_id=pydantic_run_id,
             conversation_id=conversation_id,
             result_summary=result_summary,
+            completed_in_session_id=ctx.deps.session_id if status is not None else None,
         )
         if task is None:
             raise ValueError(f"task not found: {task_id}")

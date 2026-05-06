@@ -6,6 +6,7 @@ import type {
 } from "@situ/protocol";
 import { DxBadge, DxEmptyState, DxSection } from "@situ/web-ui";
 import type { ReactNode } from "react";
+import * as s from "../../styles.css";
 
 export function RunMonitorView({
   session,
@@ -25,7 +26,7 @@ export function RunMonitorView({
   }
 
   return (
-    <div style={{ display: "grid", gap: 18 }}>
+    <div className={s.viewStackWide}>
       <SessionHeader session={session} />
 
       <DxSection title="Hypotheses">
@@ -59,19 +60,10 @@ export function RunMonitorView({
       <DxSection title="Events">
         <FieldList>
           {events.map((event) => (
-            <div
-              key={event.id}
-              style={{
-                display: "grid",
-                gridTemplateColumns: "180px 140px 1fr",
-                gap: 12,
-                padding: "6px 0",
-                borderBottom: "1px solid var(--border-01-5)",
-              }}
-            >
-              <Mono>{event.created_at}</Mono>
+            <div key={event.id} className={s.fieldRowEvent}>
+              <span className={s.monoTertiary}>{event.created_at}</span>
               <DxBadge>{event.type}</DxBadge>
-              <span style={{ color: "var(--muted-foreground)" }}>{event.message}</span>
+              <span className={s.cellMuted}>{event.message}</span>
             </div>
           ))}
           {events.length === 0 && <Empty>No events.</Empty>}
@@ -83,28 +75,19 @@ export function RunMonitorView({
 
 function SessionHeader({ session }: { session: SessionRecord }) {
   return (
-    <header style={{ display: "grid", gap: 4 }}>
-      <h1
-        style={{
-          margin: 0,
-          fontSize: "var(--text-display-md)",
-          fontWeight: 500,
-          letterSpacing: "var(--tracking-display)",
-        }}
-      >
-        Run monitor
-      </h1>
-      <div style={{ display: "flex", gap: 12, color: "var(--muted-foreground)", fontSize: "var(--text-product-lg)" }}>
-        <Mono>{session.id}</Mono>
+    <header className={s.runHeader}>
+      <h1 className={s.pageHeaderTitle}>Run monitor</h1>
+      <div className={s.runHeaderMeta}>
+        <span className={s.monoTertiary}>{session.id}</span>
         <span>{session.status}</span>
-        <Mono>{session.created_at}</Mono>
+        <span className={s.monoTertiary}>{session.created_at}</span>
       </div>
     </header>
   );
 }
 
 function FieldList({ children }: { children: ReactNode }) {
-  return <div style={{ display: "grid", gap: 0 }}>{children}</div>;
+  return <div className={s.fieldList}>{children}</div>;
 }
 
 function FieldRow({
@@ -117,41 +100,14 @@ function FieldRow({
   status: string;
 }) {
   return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "140px 1fr 110px",
-        gap: 12,
-        padding: "6px 0",
-        borderBottom: "1px solid var(--border-01-5)",
-        alignItems: "center",
-      }}
-    >
-      <Mono>{id}</Mono>
-      <span style={{ color: "var(--foreground)" }}>{title}</span>
+    <div className={s.fieldRow}>
+      <span className={s.monoTertiary}>{id}</span>
+      <span>{title}</span>
       <DxBadge>{status}</DxBadge>
     </div>
   );
 }
 
-function Mono({ children }: { children: ReactNode }) {
-  return (
-    <span
-      style={{
-        fontFamily: "var(--font-mono)",
-        fontSize: "var(--text-product-sm)",
-        color: "var(--muted-foreground-tertiary)",
-      }}
-    >
-      {children}
-    </span>
-  );
-}
-
 function Empty({ children }: { children: ReactNode }) {
-  return (
-    <p style={{ color: "var(--muted-foreground-tertiary)", fontSize: "var(--text-product-lg)" }}>
-      {children}
-    </p>
-  );
+  return <p className={s.emptyText}>{children}</p>;
 }

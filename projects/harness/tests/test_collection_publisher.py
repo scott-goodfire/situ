@@ -146,7 +146,8 @@ def session_record() -> SessionRecord:
 def agent_record() -> AgentRecord:
     return AgentRecord(
         id="agent_0001",
-        session_id="session_0001",
+        project_id="project_0001",
+        created_in_session_id="session_0001",
         kind="scientist",
         display_name="Scientist",
         model_name="openai:test",
@@ -159,7 +160,8 @@ def agent_record() -> AgentRecord:
 def task_record() -> TaskRecord:
     return TaskRecord(
         id="task_0001",
-        session_id="session_0001",
+        project_id="project_0001",
+        created_in_session_id="session_0001",
         title="Run baseline",
         content="Run the baseline eval and record evidence.",
         kind="baseline",
@@ -174,7 +176,9 @@ def task_record() -> TaskRecord:
         result_summary=None,
         created_at="now",
         available_at="now",
+        claimed_in_session_id=None,
         claimed_at=None,
+        completed_in_session_id=None,
         completed_at=None,
         updated_at="now",
     )
@@ -182,6 +186,7 @@ def task_record() -> TaskRecord:
 
 def task_dependency_record() -> TaskDependencyRecord:
     return TaskDependencyRecord(
+        project_id="project_0001",
         task_id="task_0002",
         blocked_by_task_id="task_0001",
         created_at="now",
@@ -190,6 +195,7 @@ def task_dependency_record() -> TaskDependencyRecord:
 
 def task_entity_link_record() -> TaskEntityLinkRecord:
     return TaskEntityLinkRecord(
+        project_id="project_0001",
         task_id="task_0001",
         entity_kind="evaluation",
         entity_id="eval_0001",
@@ -201,7 +207,9 @@ def task_entity_link_record() -> TaskEntityLinkRecord:
 def task_activity_record() -> TaskActivityRecord:
     return TaskActivityRecord(
         id=5,
+        project_id="project_0001",
         task_id="task_0001",
+        created_in_session_id="session_0001",
         actor_agent_id="agent_0001",
         actor="agent",
         kind="comment",
@@ -309,7 +317,8 @@ def artifact_record() -> ArtifactRecord:
 def event_record() -> EventRecord:
     return EventRecord(
         id=3,
-        session_id="session_0001",
+        associated_project_id="project_0001",
+        associated_session_id="session_0001",
         type="session.started",
         message="Started session.",
         payload={},
