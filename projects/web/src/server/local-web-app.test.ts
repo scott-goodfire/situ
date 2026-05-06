@@ -52,9 +52,7 @@ describe("local web app", () => {
         situHome: join(distDirectory, ".situ"),
         distDirectory,
       });
-      const response = await app.request(
-        "/api/projects/0123456789abcdef/snapshot",
-      );
+      const response = await app.request("/api/not-a-route");
 
       expect(response.status).toBe(404);
     });
