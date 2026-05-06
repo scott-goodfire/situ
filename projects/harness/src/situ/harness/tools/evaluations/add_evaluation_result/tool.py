@@ -25,20 +25,47 @@ class AddEvaluationResultTool(
         payload: dict[str, Any] | None = None,
         **_kwargs: Any,
     ) -> AddEvaluationResult:
-        """Add human-readable result evidence to an evaluation activity trail."""
-        result_payload = {"activity_type": "result", **(payload or {})}
-        activity = ctx.deps.get_repos().evaluation_activities.add(
+        """Record one measurement under an evaluation.
+
+        The tool name is kept for existing agents, but the durable evidence
+        record is a measurement. A legacy evaluation activity is also written
+        while existing UI surfaces still read that trail. Metric payloads may
+        use shorthand values, but are normalized to typed metric value objects.
+        """
+        result_payload = {
+            "activity_type": "result",
+            "measurement_type": "result",
+            **(payload or {}),
+        }
+        repos = ctx.deps.get_repos()
+        measurement = repos.measurements.add(
+            evaluation_id=evaluation_id,
+            created_in_session_id=ctx.deps.session_id,
+            actor=actor,
+            body=result,
+            payload=result_payload,
+        )
+        activity = repos.evaluation_activities.add(
             evaluation_id=evaluation_id,
             created_in_session_id=ctx.deps.session_id,
             actor=actor,
             kind="result",
             body=result,
-            payload=result_payload,
+            payload={**result_payload, "measurement_id": measurement.id},
         )
         event = ctx.deps.record_event(
             "evaluation.result_added",
             result,
-            payload={"activity_id": activity.id, "evaluation_id": evaluation_id},
+            payload={
+                "measurement_id": measurement.id,
+                "activity_id": activity.id,
+                "evaluation_id": evaluation_id,
+            },
         )
+        ctx.deps.publish_record(measurement, event=event)
         ctx.deps.publish_record(activity, event=event)
-        return AddEvaluationResult(success=True, activity=activity.model_dump())
+        return AddEvaluationResult(
+            success=True,
+            measurement=measurement.model_dump(),
+            activity=activity.model_dump(),
+        )

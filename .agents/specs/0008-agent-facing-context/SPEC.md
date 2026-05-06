@@ -13,8 +13,8 @@ An agent should be able to ask:
 - What research context is relevant?
 - Which hypotheses are open or active?
 - What has already been tried?
-- What baseline evaluations exist?
-- What evaluation evidence came back for candidate experiments?
+- What baselines and baseline measurements exist?
+- What measurements came back for candidate experiments?
 - Which experiments relate to which hypotheses?
 - What result comments came back?
 - What concern comments apply?
@@ -75,23 +75,24 @@ The compact session context, exposed to agents through tools such as
 - Active hypotheses
 - Recent experiments
 - Recent evaluations
+- Recent measurements
 - Hypothesis/experiment links
 - Recent hypothesis activities
 - Recent experiment activities
-- Recent evaluation activities
+- Recent measurement evidence
 - Recent concern/result/decision comments
 - Artifact references
 - Internal events when useful
 
 Agent-facing write tools should stay close to the product models:
-`create_hypothesis`, `update_hypothesis`, `create_experiment`,
-`update_experiment`, `create_evaluation`, `update_evaluation`,
-`link_hypothesis_experiment`, `add_hypothesis_comment`,
-`add_experiment_comment`, and `add_evaluation_result`. Analysis, hypothesis,
-experiment, and task collaboration is stored as `kind="comment"` activities.
-Evaluation evidence is stored as `kind="result"` activities, with optional
-payload metadata when a view or agent needs structured metrics, raw evidence,
-or interpretation details.
+`create_hypothesis`, `update_hypothesis`, `create_baseline`,
+`create_experiment`, `update_experiment`, `create_evaluation`,
+`update_evaluation`, `link_hypothesis_experiment`, `add_hypothesis_comment`,
+`add_experiment_comment`, and a result- or measurement-shaped evidence tool.
+Analysis, hypothesis, experiment, and task collaboration is stored through
+comment-shaped activities. Measurement evidence carries human-readable result
+text plus optional payload metadata when a view or agent needs structured
+metrics, raw evidence, or interpretation details.
 
 Workspace interaction should come from a separate console toolset backed by the
 current repo path. The first slice should expose ordinary coding-agent tools
@@ -102,10 +103,9 @@ commands described in `--context`.
 Command output should be preserved as plaintext evidence. Situ should not
 deterministically parse arbitrary stdout into metrics or signals in the tool
 layer. If output matters, the agent records the raw text or an LLM-written
-interpretation through `add_evaluation_result`, linked back to the experiment
-being measured when there is one. Experiment comments should explain the
-attempted change and the research implication rather than acting as the raw
-benchmark log.
+interpretation through the measurement evidence tool, linked back to the
+evaluation subject. Experiment comments should explain the attempted change and
+the research implication rather than acting as the raw benchmark log.
 
 ## Product Rule
 

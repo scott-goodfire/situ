@@ -13,6 +13,7 @@ from situ.protocol import (
     AnalysisActivityRecord,
     AnalysisRecord,
     ArtifactRecord,
+    BaselineRecord,
     CollectionUpsertedParams,
     CollectionsBootstrapParams,
     CollectionsBootstrapResult,
@@ -32,6 +33,9 @@ from situ.protocol import (
     HypothesisActivityRecord,
     HypothesisExperimentLinkRecord,
     HypothesisRecord,
+    MeasurementPayload,
+    MeasurementRecord,
+    MetricValue,
     JsonRpcErrorObject,
     JsonRpcNotification,
     JsonRpcRequest,
@@ -72,7 +76,11 @@ MODELS: list[type[BaseModel]] = [
     SessionRecord,
     HypothesisRecord,
     ExperimentRecord,
+    BaselineRecord,
     EvaluationRecord,
+    MetricValue,
+    MeasurementPayload,
+    MeasurementRecord,
     AnalysisRecord,
     HypothesisExperimentLinkRecord,
     AgentRecord,
@@ -145,6 +153,8 @@ def render_interface(model: type[BaseModel]) -> str:
     for name, field in model.model_fields.items():
         optional = "?" if not field.is_required() else ""
         lines.append(f"  {name}{optional}: {ts_type(field.annotation)};")
+    if model.model_config.get("extra") == "allow":
+        lines.append("  [key: string]: unknown;")
     lines.append("}")
     return "\n".join(lines)
 
@@ -174,7 +184,12 @@ def ts_type(annotation: object) -> str:
         value_type = ts_type(args[1]) if len(args) == 2 else "unknown"
         return f"Record<string, {value_type}>"
     if origin in {types.UnionType, getattr(types, "UnionType", None)} or str(origin) == "typing.Union":
-        return " | ".join(ts_type(arg) for arg in args)
+        members: list[str] = []
+        for arg in args:
+            member = ts_type(arg)
+            if member not in members:
+                members.append(member)
+        return " | ".join(members)
     if isinstance(annotation, type) and issubclass(annotation, BaseModel):
         return annotation.__name__
 

@@ -16,6 +16,7 @@ def _evaluation_row(row: Any) -> EvaluationRecord:
         status=row["status"],
         title=row["title"],
         summary=row["summary"],
+        associated_baseline_id=row["associated_baseline_id"],
         associated_experiment_id=row["associated_experiment_id"],
         created_at=row["created_at"],
         updated_at=row["updated_at"],
@@ -30,6 +31,7 @@ class EvaluationsRepository(BaseRepository):
         project_id: str,
         title: str,
         summary: str,
+        associated_baseline_id: str | None = None,
         associated_experiment_id: str | None = None,
         created_in_session_id: str | None = None,
         status: WorkStatus | str = WorkStatus.OPEN,
@@ -41,6 +43,7 @@ class EvaluationsRepository(BaseRepository):
             created_in_session_id=created_in_session_id,
             title=title,
             summary=summary,
+            associated_baseline_id=associated_baseline_id,
             associated_experiment_id=associated_experiment_id,
             status=checked_status,
         )
@@ -49,8 +52,8 @@ class EvaluationsRepository(BaseRepository):
             """
             INSERT INTO evaluations
               (id, project_id, created_in_session_id, status, title, summary,
-               associated_experiment_id, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+               associated_baseline_id, associated_experiment_id, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 command.evaluation_id,
@@ -59,6 +62,7 @@ class EvaluationsRepository(BaseRepository):
                 command.status.value,
                 command.title,
                 command.summary,
+                command.associated_baseline_id,
                 command.associated_experiment_id,
                 now,
                 now,
@@ -76,6 +80,7 @@ class EvaluationsRepository(BaseRepository):
         title: str | None = None,
         summary: str | None = None,
         status: WorkStatus | str | None = None,
+        associated_baseline_id: str | None = None,
         associated_experiment_id: str | None = None,
     ) -> EvaluationRecord | None:
         checked_status = (
@@ -88,11 +93,20 @@ class EvaluationsRepository(BaseRepository):
             title=title,
             summary=summary,
             status=checked_status,
+            associated_baseline_id=associated_baseline_id,
             associated_experiment_id=associated_experiment_id,
         )
         current = self.get_by_id(command.evaluation_id)
         if current is None:
             return None
+        next_associated_baseline_id = current.associated_baseline_id
+        next_associated_experiment_id = current.associated_experiment_id
+        if command.associated_baseline_id is not None:
+            next_associated_baseline_id = command.associated_baseline_id
+            next_associated_experiment_id = None
+        if command.associated_experiment_id is not None:
+            next_associated_baseline_id = None
+            next_associated_experiment_id = command.associated_experiment_id
 
         self.db.execute(
             """
@@ -100,6 +114,7 @@ class EvaluationsRepository(BaseRepository):
             SET title = ?,
                 summary = ?,
                 status = ?,
+                associated_baseline_id = ?,
                 associated_experiment_id = ?,
                 updated_at = ?
             WHERE id = ?
@@ -108,9 +123,8 @@ class EvaluationsRepository(BaseRepository):
                 command.title if command.title is not None else current.title,
                 command.summary if command.summary is not None else current.summary,
                 command.status.value if command.status is not None else current.status.value,
-                command.associated_experiment_id
-                if command.associated_experiment_id is not None
-                else current.associated_experiment_id,
+                next_associated_baseline_id,
+                next_associated_experiment_id,
                 utc_now(),
                 command.evaluation_id,
             ),
@@ -158,5 +172,18 @@ class EvaluationsRepository(BaseRepository):
                 ORDER BY created_at
                 """,
                 (experiment_id,),
+            )
+        ]
+
+    def list_for_baseline(self, baseline_id: str) -> list[EvaluationRecord]:
+        return [
+            _evaluation_row(row)
+            for row in self.db.fetchall(
+                """
+                SELECT * FROM evaluations
+                WHERE associated_baseline_id = ?
+                ORDER BY created_at
+                """,
+                (baseline_id,),
             )
         ]

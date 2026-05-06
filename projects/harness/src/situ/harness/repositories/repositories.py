@@ -8,6 +8,7 @@ from .agent_message_history import AgentMessageHistoryRepository
 from .analyses import AnalysesRepository
 from .analysis_activities import AnalysisActivitiesRepository
 from .artifacts import ArtifactsRepository
+from .baselines import BaselinesRepository
 from .events import EventsRepository
 from .evaluation_activities import EvaluationActivitiesRepository
 from .evaluations import EvaluationsRepository
@@ -16,6 +17,7 @@ from .experiments import ExperimentsRepository
 from .hypotheses import HypothesesRepository
 from .hypothesis_activities import HypothesisActivitiesRepository
 from .hypothesis_experiment_links import HypothesisExperimentLinksRepository
+from .measurements import MeasurementsRepository
 from .project import ProjectRepository
 from .sessions import SessionsRepository
 from .task_activities import TaskActivitiesRepository
@@ -39,8 +41,10 @@ class Repositories(BaseModel):
     analyses: AnalysesRepository
     analysis_activities: AnalysisActivitiesRepository
     hypotheses: HypothesesRepository
+    baselines: BaselinesRepository
     experiments: ExperimentsRepository
     evaluations: EvaluationsRepository
+    measurements: MeasurementsRepository
     hypothesis_experiment_links: HypothesisExperimentLinksRepository
     hypothesis_activities: HypothesisActivitiesRepository
     experiment_activities: ExperimentActivitiesRepository
@@ -63,8 +67,10 @@ class Repositories(BaseModel):
             analyses=AnalysesRepository(db=db),
             analysis_activities=AnalysisActivitiesRepository(db=db),
             hypotheses=HypothesesRepository(db=db),
+            baselines=BaselinesRepository(db=db),
             experiments=ExperimentsRepository(db=db),
             evaluations=EvaluationsRepository(db=db),
+            measurements=MeasurementsRepository(db=db),
             hypothesis_experiment_links=HypothesisExperimentLinksRepository(db=db),
             hypothesis_activities=HypothesisActivitiesRepository(db=db),
             experiment_activities=ExperimentActivitiesRepository(db=db),

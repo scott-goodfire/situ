@@ -14,6 +14,7 @@ from situ.harness.records import (
     AnalysisActivityRecord,
     AnalysisRecord,
     ArtifactRecord,
+    BaselineRecord,
     EventRecord,
     EvaluationActivityRecord,
     EvaluationRecord,
@@ -22,6 +23,7 @@ from situ.harness.records import (
     HypothesisActivityRecord,
     HypothesisExperimentLinkRecord,
     HypothesisRecord,
+    MeasurementRecord,
     ProjectRecord,
     SessionRecord,
     TaskActivityRecord,
@@ -42,8 +44,10 @@ def test_collection_routes_cover_publishable_records() -> None:
         (project_record(), "projects", "project_0001"),
         (session_record(), "sessions", "session_0001"),
         (hypothesis_record(), "hypotheses", "hyp_0001"),
+        (baseline_record(), "baselines", "baseline_0001"),
         (experiment_record(), "experiments", "exp_0001"),
         (evaluation_record(), "evaluations", "eval_0001"),
+        (measurement_record(), "measurements", "7"),
         (analysis_record(), "analyses", "analysis_0001"),
         (
             HypothesisExperimentLinkRecord(
@@ -249,6 +253,19 @@ def experiment_record() -> ExperimentRecord:
     )
 
 
+def baseline_record() -> BaselineRecord:
+    return BaselineRecord(
+        id="baseline_0001",
+        project_id="project_0001",
+        created_in_session_id="session_0001",
+        status="active",
+        title="Baseline",
+        summary="Reference state.",
+        created_at="now",
+        updated_at="now",
+    )
+
+
 def evaluation_record() -> EvaluationRecord:
     return EvaluationRecord(
         id="eval_0001",
@@ -257,6 +274,7 @@ def evaluation_record() -> EvaluationRecord:
         status="active",
         title="Baseline eval",
         summary="Run baseline.",
+        associated_baseline_id="baseline_0001",
         associated_experiment_id=None,
         created_at="now",
         updated_at="now",
@@ -325,6 +343,18 @@ def evaluation_activity_record() -> EvaluationActivityRecord:
         created_in_session_id="session_0001",
         actor="agent",
         kind="result",
+        body="Baseline result.",
+        payload={"activity_type": "result"},
+        created_at="now",
+    )
+
+
+def measurement_record() -> MeasurementRecord:
+    return MeasurementRecord(
+        id=7,
+        evaluation_id="eval_0001",
+        created_in_session_id="session_0001",
+        actor="agent",
         body="Baseline result.",
         payload={"activity_type": "result"},
         created_at="now",

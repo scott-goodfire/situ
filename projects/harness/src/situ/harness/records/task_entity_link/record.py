@@ -7,9 +7,11 @@ from ..base import DbRecord
 
 class TaskEntityKind(StrEnum):
     ANALYSIS = "analysis"
+    BASELINE = "baseline"
     HYPOTHESIS = "hypothesis"
     EXPERIMENT = "experiment"
     EVALUATION = "evaluation"
+    MEASUREMENT = "measurement"
     ARTIFACT = "artifact"
     ANALYSIS_ACTIVITY = "analysis_activity"
     HYPOTHESIS_ACTIVITY = "hypothesis_activity"

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import sqlite3
 
+from .serialization import utc_now
+
 
 SCHEMA_SQL = """
 CREATE TABLE IF NOT EXISTS workspaces (
@@ -53,6 +55,17 @@ CREATE TABLE IF NOT EXISTS experiments (
   updated_at TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS baselines (
+  id TEXT PRIMARY KEY,
+  project_id TEXT NOT NULL REFERENCES projects(id),
+  created_in_session_id TEXT REFERENCES sessions(id),
+  status TEXT NOT NULL,
+  title TEXT NOT NULL,
+  summary TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS evaluations (
   id TEXT PRIMARY KEY,
   project_id TEXT NOT NULL REFERENCES projects(id),
@@ -60,6 +73,7 @@ CREATE TABLE IF NOT EXISTS evaluations (
   status TEXT NOT NULL,
   title TEXT NOT NULL,
   summary TEXT NOT NULL,
+  associated_baseline_id TEXT REFERENCES baselines(id),
   associated_experiment_id TEXT REFERENCES experiments(id),
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
@@ -198,6 +212,16 @@ CREATE TABLE IF NOT EXISTS evaluation_activities (
   created_at TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS measurements (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  evaluation_id TEXT NOT NULL REFERENCES evaluations(id),
+  created_in_session_id TEXT REFERENCES sessions(id),
+  actor TEXT NOT NULL,
+  body TEXT NOT NULL,
+  payload_json TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS artifacts (
   id TEXT PRIMARY KEY,
   project_id TEXT NOT NULL REFERENCES projects(id),
@@ -256,6 +280,7 @@ def reset_stale_schema(connection: sqlite3.Connection) -> None:
         "objectives",
         "research_contexts",
         "hypotheses",
+        "baselines",
         "experiments",
         "evaluations",
         "analyses",
@@ -269,6 +294,7 @@ def reset_stale_schema(connection: sqlite3.Connection) -> None:
         "hypothesis_activities",
         "experiment_activities",
         "evaluation_activities",
+        "measurements",
         "artifacts",
         "agent_message_history",
         "events",
@@ -385,9 +411,57 @@ def has_stale_schema(connection: sqlite3.Connection) -> bool:
 
 
 def upgrade_schema(connection: sqlite3.Connection) -> None:
+    if table_exists(connection, "evaluations"):
+        evaluation_columns = table_columns(connection, "evaluations")
+        if "associated_baseline_id" not in evaluation_columns:
+            connection.execute(
+                "ALTER TABLE evaluations ADD COLUMN associated_baseline_id TEXT "
+                "REFERENCES baselines(id)"
+            )
+        migrate_baseline_like_evaluations(connection)
+
     if table_exists(connection, "evaluation_activities"):
         connection.execute(
             "UPDATE evaluation_activities SET kind = 'result' WHERE kind = 'comment'"
+        )
+
+
+def migrate_baseline_like_evaluations(connection: sqlite3.Connection) -> None:
+    if not table_exists(connection, "baselines"):
+        return
+
+    now = utc_now()
+    rows = connection.execute(
+        """
+        SELECT DISTINCT project_id
+        FROM evaluations
+        WHERE associated_experiment_id IS NULL
+          AND associated_baseline_id IS NULL
+        """
+    ).fetchall()
+    for row in rows:
+        project_id = row["project_id"]
+        baseline_id = f"baseline_{project_id}_default"
+        connection.execute(
+            """
+            INSERT OR IGNORE INTO baselines
+              (id, project_id, created_in_session_id, status, title, summary,
+               created_at, updated_at)
+            VALUES (?, ?, NULL, 'open', 'Default baseline',
+                    'Migrated baseline for existing baseline-like evaluations.',
+                    ?, ?)
+            """,
+            (baseline_id, project_id, now, now),
+        )
+        connection.execute(
+            """
+            UPDATE evaluations
+            SET associated_baseline_id = ?
+            WHERE project_id = ?
+              AND associated_experiment_id IS NULL
+              AND associated_baseline_id IS NULL
+            """,
+            (baseline_id, project_id),
         )
 
 

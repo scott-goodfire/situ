@@ -34,10 +34,10 @@ def repo_bootstrap_cases() -> list[
                 You are in an unfamiliar local research repo. Start by
                 inspecting the project files and docs. Establish baseline
                 evidence only: run the project-native measurement command,
-                create an evaluation for that baseline, and record the raw
-                stdout/stderr plus your interpretation through
-                add_evaluation_result. Do not create a candidate experiment
-                until baseline evidence exists.
+                create a baseline record, create an evaluation associated
+                with that baseline, and record the raw stdout/stderr plus your
+                interpretation through add_evaluation_result. Do not create a
+                candidate experiment until baseline evidence exists.
                 """,
             ),
             metadata={"requires_real_llm": True},
@@ -48,6 +48,8 @@ def repo_bootstrap_cases() -> list[
                 ToolWasCalled("execute"),
                 ToolArgsContain("execute", "train.py"),
                 ToolResultContains("execute", "val_bpb"),
+                ToolWasCalled("create_baseline"),
+                ToolSucceeded("create_baseline"),
                 ToolWasCalled("create_evaluation"),
                 ToolSucceeded("create_evaluation"),
                 ToolWasCalled("add_evaluation_result"),

@@ -88,7 +88,7 @@ comparable.
 
 ## In Scope
 
-- Recording workspace state observations as evaluation evidence.
+- Recording workspace state observations as measurement evidence.
 - Flagging dirty starts, eval/test changes, dependency changes, generated file
   clutter, and changed test counts as concerns.
 - Showing concern comments in the live session.

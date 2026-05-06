@@ -8,17 +8,17 @@ autoresearch work across the agents attached to a project.
 
 ## Intent
 
-The current ledger records durable research outputs: hypotheses, experiments,
-evaluations, activities, artifacts, and events. Coordination records show the
-handoff layer: which project agent decided what should happen next, what
-focused work is waiting, what is currently claimed, and what output a finished
-work item produced.
+The current ledger records durable research outputs: hypotheses, baselines,
+experiments, evaluations, measurements, activities, artifacts, and events.
+Coordination records show the handoff layer: which project agent decided what
+should happen next, what focused work is waiting, what is currently claimed,
+and what output a finished work item produced.
 
 Tasks fill that gap without replacing the research ledger. A completed
-hypothesize task may produce several hypothesis records. A completed experiment
-task may produce an experiment, evaluation evidence, comments, and artifacts.
-The task explains the assignment and completion summary; the produced records
-remain the inspectable research state.
+hypothesize task may produce several hypothesis records. A completed baseline
+or experiment task may produce a baseline or experiment, evaluations,
+measurements, comments, and artifacts. The task explains the assignment and
+completion summary; the produced records remain the inspectable research state.
 
 ## Agents
 
@@ -70,8 +70,8 @@ with optional structured payload for view or agent use.
 
 Task activities can record planning notes, claim notes, user steering,
 failure explanations, or completion context. Research evidence should still
-be recorded on hypothesis, experiment, or evaluation activities when that is
-the natural place for it.
+be recorded on the natural research ledger records and measurements rather than
+hidden inside task activity.
 
 ## Wakeup Model
 
@@ -152,6 +152,6 @@ we learn?"
 - Dependencies are explicit records rather than unvalidated JSON lists.
 - Task-to-ledger output links are explicit records.
 - Task activities remain plain-language first and do not hide research
-  evidence that belongs on hypothesis, experiment, or evaluation activities.
+  evidence that belongs on the research ledger or measurement evidence.
 - Early project/session close requires the explicit request/confirm tool
   handshake, with an agent-readable warning on the request step.

@@ -301,6 +301,19 @@ def _create_experiment_with_result(
         associated_experiment_id=experiment_id,
         status="closed",
     )
+    repos.measurements.add(
+        evaluation_id=evaluation_id,
+        created_in_session_id=SESSION_ID,
+        actor="worker",
+        body=result_body,
+        payload={
+            "signals": [
+                {"key": key, "value": value}
+                for key, value in signals.items()
+            ],
+            "raw": {"shape": "standard"},
+        },
+    )
     repos.evaluation_activities.add(
         evaluation_id=evaluation_id,
         created_in_session_id=SESSION_ID,

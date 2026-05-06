@@ -17,7 +17,7 @@ or agent/worker flows.
 - [0007-slice-discipline/POLICY.md](./0007-slice-discipline/POLICY.md) - keep the current slice narrow but durable
 - [0008-docs-before-code/POLICY.md](./0008-docs-before-code/POLICY.md) - update specs before product-significant code
 - [0009-good-specs/POLICY.md](./0009-good-specs/POLICY.md) - define the writing bar for specs
-- [0010-activity-grounding/POLICY.md](./0010-activity-grounding/POLICY.md) - keep activities grounded in experiments, hypotheses, and artifacts
+- [0010-activity-grounding/POLICY.md](./0010-activity-grounding/POLICY.md) - keep activities and measurement evidence grounded in ledger records and artifacts
 - [0011-repository-layer/POLICY.md](./0011-repository-layer/POLICY.md) - keep durable state repository-owned and API composition service-owned
 - [0012-module-organization/POLICY.md](./0012-module-organization/POLICY.md) - prefer flat entrypoints and generic filenames inside ownership folders
 - [0013-frontend-code-style/POLICY.md](./0013-frontend-code-style/POLICY.md) - prefer explicit, spacious, kebab-cased frontend code
@@ -28,6 +28,7 @@ or agent/worker flows.
 - [0018-headless-interactive-siblings/POLICY.md](./0018-headless-interactive-siblings/POLICY.md) - keep TUI/web and headless automation as sibling surfaces over the same backend
 - [0019-dbos-agent-execution/POLICY.md](./0019-dbos-agent-execution/POLICY.md) - prefer Pydantic AI DBOSAgent over custom agent workflow orchestration
 - [0020-experiment-comparability/POLICY.md](./0020-experiment-comparability/POLICY.md) - make workspace state, eval commands, and changed evaluation surfaces visible before trusting experiment results
+- [0021-model-formality/POLICY.md](./0021-model-formality/POLICY.md) - formalize identities, relationships, statuses, gates, and contracts while keeping semantic research content text-rich
 
 ## Review Style
 

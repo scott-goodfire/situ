@@ -9,6 +9,7 @@ import type {
   AnalysisActivityRecord,
   AnalysisRecord,
   ArtifactRecord,
+  BaselineRecord,
   CollectionUpsertedParams,
   CollectionsBootstrapResult,
   EventRecord,
@@ -19,6 +20,7 @@ import type {
   HypothesisActivityRecord,
   HypothesisExperimentLinkRecord,
   HypothesisRecord,
+  MeasurementRecord,
   ProjectRecord,
   SessionRecord,
   TaskActivityRecord,
@@ -35,8 +37,10 @@ export type SituCollections = {
   projects: Collection<ProjectRecord, string>;
   sessions: Collection<SessionRecord, string>;
   hypotheses: Collection<HypothesisRecord, string>;
+  baselines: Collection<BaselineRecord, string>;
   experiments: Collection<ExperimentRecord, string>;
   evaluations: Collection<EvaluationRecord, string>;
+  measurements: Collection<MeasurementRecord, string>;
   analyses: Collection<AnalysisRecord, string>;
   hypothesisExperimentLinks: Collection<HypothesisExperimentLinkRecord, string>;
   agents: Collection<AgentRecord, string>;
@@ -99,6 +103,12 @@ export function createSituCollections(): SituCollections {
         getKey: (hypothesis) => hypothesis.id,
       }),
     ),
+    baselines: createCollection(
+      localOnlyCollectionOptions<BaselineRecord, string>({
+        id: "situ-baselines",
+        getKey: (baseline) => baseline.id,
+      }),
+    ),
     experiments: createCollection(
       localOnlyCollectionOptions<ExperimentRecord, string>({
         id: "situ-experiments",
@@ -109,6 +119,12 @@ export function createSituCollections(): SituCollections {
       localOnlyCollectionOptions<EvaluationRecord, string>({
         id: "situ-evaluations",
         getKey: (evaluation) => evaluation.id,
+      }),
+    ),
+    measurements: createCollection(
+      localOnlyCollectionOptions<MeasurementRecord, string>({
+        id: "situ-measurements",
+        getKey: (measurement) => String(measurement.id),
       }),
     ),
     analyses: createCollection(
@@ -216,12 +232,20 @@ export async function applyBootstrap({
       records: bootstrap.hypotheses ?? [],
     }),
     hydrateCollection({
+      collection: collections.baselines,
+      records: bootstrap.baselines ?? [],
+    }),
+    hydrateCollection({
       collection: collections.experiments,
       records: bootstrap.experiments ?? [],
     }),
     hydrateCollection({
       collection: collections.evaluations,
       records: bootstrap.evaluations ?? [],
+    }),
+    hydrateCollection({
+      collection: collections.measurements,
+      records: bootstrap.measurements ?? [],
     }),
     hydrateCollection({
       collection: collections.analyses,
@@ -318,6 +342,15 @@ export async function applyCollectionUpsert({
     return;
   }
 
+  if (upsert.collection === "baselines") {
+    await upsertRecord({
+      collection: collections.baselines,
+      key: upsert.key,
+      record: upsert.record as unknown as BaselineRecord,
+    });
+    return;
+  }
+
   if (upsert.collection === "experiments") {
     await upsertRecord({
       collection: collections.experiments,
@@ -332,6 +365,15 @@ export async function applyCollectionUpsert({
       collection: collections.evaluations,
       key: upsert.key,
       record: upsert.record as unknown as EvaluationRecord,
+    });
+    return;
+  }
+
+  if (upsert.collection === "measurements") {
+    await upsertRecord({
+      collection: collections.measurements,
+      key: upsert.key,
+      record: upsert.record as unknown as MeasurementRecord,
     });
     return;
   }

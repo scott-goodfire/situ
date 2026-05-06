@@ -7,6 +7,7 @@ from ...records import (
     AnalysisActivityRecord,
     AnalysisRecord,
     ArtifactRecord,
+    BaselineRecord,
     EventRecord,
     EvaluationActivityRecord,
     EvaluationRecord,
@@ -15,6 +16,7 @@ from ...records import (
     HypothesisActivityRecord,
     HypothesisExperimentLinkRecord,
     HypothesisRecord,
+    MeasurementRecord,
     ProjectRecord,
     SessionRecord,
     TaskActivityRecord,
@@ -32,8 +34,10 @@ class CurrentStateSchema(BaseModel):
     projects: list[ProjectRecord]
     sessions: list[SessionRecord]
     hypotheses: list[HypothesisRecord]
+    baselines: list[BaselineRecord]
     experiments: list[ExperimentRecord]
     evaluations: list[EvaluationRecord]
+    measurements: list[MeasurementRecord]
     hypothesis_experiment_links: list[HypothesisExperimentLinkRecord]
     agents: list[AgentRecord]
     tasks: list[TaskRecord]

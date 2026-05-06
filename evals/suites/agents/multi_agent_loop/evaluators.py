@@ -165,26 +165,33 @@ class BaselineEvaluationRecorded(
         ],
     ) -> EvaluationReason:
         evaluations = ctx.output.session_graph.get("evaluations", [])
+        measurements = ctx.output.session_graph.get("measurements", [])
         activities = ctx.output.session_graph.get("evaluation_activities", [])
+        result_measurements = [
+            measurement
+            for measurement in measurements
+            if "val_bpb" in json.dumps(measurement, sort_keys=True).lower()
+        ]
         result_activities = [
             activity
             for activity in activities
             if activity.get("kind") == "result"
             and "val_bpb" in json.dumps(activity, sort_keys=True).lower()
         ]
-        if evaluations and result_activities:
+        if evaluations and (result_measurements or result_activities):
             return EvaluationReason(
                 value=True,
                 reason=(
-                    "Found evaluation result evidence: "
-                    f"{[activity.get('id') for activity in result_activities]}"
+                    "Found evaluation measurement evidence: "
+                    f"{[item.get('id') for item in result_measurements or result_activities]}"
                 ),
             )
         return EvaluationReason(
             value=False,
             reason=(
-                "Missing baseline evaluation/result evidence. "
-                f"Evaluations: {evaluations}; activities: {activities}"
+                "Missing baseline evaluation/measurement evidence. "
+                f"Evaluations: {evaluations}; measurements: {measurements}; "
+                f"activities: {activities}"
             ),
         )
 

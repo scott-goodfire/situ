@@ -32,6 +32,7 @@ export {
   FullscreenDashboard,
   type DashboardTask,
   type DashboardTaskKind,
+  type DashboardTaskLoaderKind,
   type DashboardTaskStatus,
   type DashboardTaskTone,
 } from "./components/fullscreen-dashboard/fullscreen-dashboard.js";

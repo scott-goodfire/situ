@@ -28,6 +28,11 @@ they are fragile:
 
 Situ exists to make these loops safer and more useful.
 
+The durable catalog of research-loop failure modes Situ targets lives in
+[../../docs/failure-modes/DOC.md](../../docs/failure-modes/DOC.md).
+[../../docs/autoresearch-reference/DOC.md](../../docs/autoresearch-reference/DOC.md)
+captures the canonical autoresearch project Situ benchmarks against.
+
 ## Positioning
 
 Situ is not primarily another coding agent.

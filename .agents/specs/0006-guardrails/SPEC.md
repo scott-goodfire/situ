@@ -6,6 +6,9 @@ They protect interpretation activities from obvious invalidity. The user should
 not have to manually enumerate every forbidden behavior before Situ can
 notice suspicious results.
 
+The failure modes these checks protect against are catalogued in
+[../../docs/failure-modes/DOC.md](../../docs/failure-modes/DOC.md).
+
 ## Current Trust Checks
 
 The current slice should catch obvious issues without requiring the user to
@@ -32,13 +35,14 @@ concern comment is warranted.
 
 ## Suspicious Results
 
-A suspicious result is experiment activity that should not be treated as
-trustworthy support without review or corroboration.
+A suspicious result is measurement evidence, or interpretation of that
+evidence, that should not be treated as trustworthy support without review or
+corroboration.
 
 When this happens:
 
-- Keep the result activity.
-- Record a concern activity on the experiment.
+- Keep the measurement or result record.
+- Record a concern on the relevant measurement, evaluation, or experiment.
 - Preserve artifact references.
 - Explain the reason in plain language.
 - Show the concern in the TUI.

@@ -9,6 +9,7 @@ from pydantic_ai import RunContext
 
 from ....core.trust import check_result
 from ....records.base import DbRecord
+from ....records.measurement import MeasurementPayload, MetricValue
 from ...common import SituToolDeps, BaseSituTool
 from .models import RunExperimentResult
 
@@ -281,21 +282,64 @@ def _next_experiment_id(
 
 
 def baseline_score(deps: SituToolDeps, project_id: str) -> float | None:
+    repos = deps.get_repos()
+    for baseline in reversed(repos.baselines.list_for_project(project_id)):
+        evaluations = repos.evaluations.list_for_baseline(baseline.id)
+        for evaluation in reversed(evaluations):
+            measurements = repos.measurements.list_for_evaluation(evaluation.id)
+            for measurement in reversed(measurements):
+                value = _score_from_payload(measurement.payload)
+                if value is not None:
+                    return value
+
     baseline_id = f"exp_{project_id}_baseline"
-    activities = deps.get_repos().experiment_activities.list_for_experiment(baseline_id)
+    activities = repos.experiment_activities.list_for_experiment(baseline_id)
     for activity in reversed(activities):
         if activity.payload.get("activity_type") != "result" and "signals" not in activity.payload:
             continue
-        signals = activity.payload.get("signals", [])
-        if not isinstance(signals, list):
-            continue
-        for signal in signals:
-            if not isinstance(signal, dict):
-                continue
-            value = signal.get("value") if signal.get("key") == "score" else None
-            if isinstance(value, int | float):
-                return float(value)
+        value = _score_from_payload(activity.payload)
+        if value is not None:
+            return value
     return None
+
+
+def _score_from_payload(payload: MeasurementPayload | dict[str, Any]) -> float | None:
+    if isinstance(payload, MeasurementPayload):
+        score = payload.metrics.get("score")
+        if score is not None:
+            return _numeric_metric_value(score)
+        payload = payload.to_storage_dict()
+
+    metrics = payload.get("metrics")
+    if isinstance(metrics, dict):
+        score = metrics.get("score")
+        if isinstance(score, int | float):
+            if isinstance(score, bool):
+                return None
+            return float(score)
+        if isinstance(score, dict):
+            value = score.get("value")
+            if isinstance(value, int | float):
+                if isinstance(value, bool):
+                    return None
+                return float(value)
+
+    signals = payload.get("signals", [])
+    if not isinstance(signals, list):
+        return None
+    for signal in signals:
+        if not isinstance(signal, dict):
+            continue
+        value = signal.get("value") if signal.get("key") == "score" else None
+        if isinstance(value, int | float):
+            return float(value)
+    return None
+
+
+def _numeric_metric_value(metric: MetricValue) -> float | None:
+    if isinstance(metric.value, bool):
+        return None
+    return float(metric.value) if isinstance(metric.value, int | float) else None
 
 
 def interpret_result(

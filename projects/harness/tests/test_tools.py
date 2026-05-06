@@ -26,6 +26,11 @@ from situ.harness.tools.analyses import (
     UpdateAnalysisTool,
 )
 from situ.harness.tools.artifacts import CreateArtifactTool, ListArtifactsTool
+from situ.harness.tools.baselines import (
+    CreateBaselineTool,
+    ListBaselinesTool,
+    UpdateBaselineTool,
+)
 from situ.harness.tools.comments import (
     AddAnalysisCommentTool,
     AddExperimentCommentTool,
@@ -510,6 +515,49 @@ def test_experiment_tools_create_update_and_list(repos: Repositories) -> None:
     ]
 
 
+def test_baseline_tools_create_update_and_list(repos: Repositories) -> None:
+    emitted: list[dict[str, Any]] = []
+    deps = SituToolDeps(
+        session_id="session_0001",
+        repos=repos,
+        emit_event=_event_collector(emitted),
+    )
+
+    created = invoke_situ_tool_sync(
+        tool=CreateBaselineTool(),
+        deps=deps,
+        title="Current workspace baseline",
+        summary="Reference behavior before candidate changes.",
+    )
+    assert created.success is True
+    assert created.baseline is not None
+    assert created.baseline["id"] == "baseline_project_0001_agent_001"
+    assert created.baseline["project_id"] == "project_0001"
+    assert created.baseline["created_in_session_id"] == "session_0001"
+    assert created.baseline["status"] == "open"
+
+    updated = invoke_situ_tool_sync(
+        tool=UpdateBaselineTool(),
+        deps=deps,
+        baseline_id="baseline_project_0001_agent_001",
+        status="closed",
+        summary="Baseline accepted for comparison.",
+    )
+    assert updated.success is True
+    assert updated.baseline is not None
+    assert updated.baseline["status"] == "closed"
+
+    listed = invoke_situ_tool_sync(tool=ListBaselinesTool(), deps=deps)
+    assert listed.success is True
+    assert [baseline["id"] for baseline in listed.baselines] == [
+        "baseline_project_0001_agent_001"
+    ]
+    assert [event["type"] for event in emitted] == [
+        "baseline.created",
+        "baseline.updated",
+    ]
+
+
 def test_evaluation_tools_create_update_list_and_add_results(
     repos: Repositories,
 ) -> None:
@@ -519,12 +567,20 @@ def test_evaluation_tools_create_update_list_and_add_results(
         repos=repos,
         emit_event=_event_collector(emitted),
     )
+    baseline = invoke_situ_tool_sync(
+        tool=CreateBaselineTool(),
+        deps=deps,
+        title="Current workspace baseline",
+        summary="Reference behavior before candidate changes.",
+    )
+    assert baseline.baseline is not None
 
     created = invoke_situ_tool_sync(
         tool=CreateEvaluationTool(),
         deps=deps,
         title="Baseline project eval",
         summary="Run the normal project test/eval command before changes.",
+        associated_baseline_id=baseline.baseline["id"],
     )
     assert created.success is True
     assert created.evaluation is not None
@@ -532,19 +588,27 @@ def test_evaluation_tools_create_update_list_and_add_results(
     assert created.evaluation["project_id"] == "project_0001"
     assert created.evaluation["created_in_session_id"] == "session_0001"
     assert created.evaluation["status"] == "open"
+    assert created.evaluation["associated_baseline_id"] == baseline.baseline["id"]
 
     result = invoke_situ_tool_sync(
         tool=AddEvaluationResultTool(),
         deps=deps,
         evaluation_id="eval_project_0001_agent_001",
         result="Baseline command passed with score 0.71.",
-        payload={"raw": "score=0.71"},
+        payload={"raw": "score=0.71", "metrics": {"score": 0.71}},
     )
     assert result.success is True
+    assert result.measurement is not None
+    assert result.measurement["body"] == "Baseline command passed with score 0.71."
+    assert result.measurement["payload"]["activity_type"] == "result"
+    assert result.measurement["payload"]["metrics"] == {
+        "score": {"value": 0.71}
+    }
     assert result.activity is not None
     assert result.activity["kind"] == "result"
     assert result.activity["body"] == "Baseline command passed with score 0.71."
     assert result.activity["payload"]["activity_type"] == "result"
+    assert result.activity["payload"]["measurement_id"] == result.measurement["id"]
 
     updated = invoke_situ_tool_sync(
         tool=UpdateEvaluationTool(),
@@ -563,13 +627,16 @@ def test_evaluation_tools_create_update_list_and_add_results(
         deps=deps,
         evaluation_id="eval_project_0001_agent_001",
     )
+    measurements = repos.measurements.list_for_evaluation("eval_project_0001_agent_001")
 
     assert listed.success is True
     assert [evaluation["id"] for evaluation in listed.evaluations] == [
         "eval_project_0001_agent_001"
     ]
+    assert [measurement.id for measurement in measurements] == [1]
     assert [activity["id"] for activity in activities.activities] == [1]
     assert [event["type"] for event in emitted] == [
+        "baseline.created",
         "evaluation.created",
         "evaluation.result_added",
         "evaluation.updated",

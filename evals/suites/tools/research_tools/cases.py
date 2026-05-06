@@ -254,7 +254,10 @@ def research_tool_cases() -> list[Case[ResearchToolEvalInput, ResearchToolEvalOu
                 case_id="evaluation_result_kind_is_result",
                 seed="basic",
                 prompt=(
-                    "Create an evaluation with create_evaluation titled "
+                    "Create a baseline with create_baseline titled "
+                    "'Current baseline' and summary 'Reference behavior.' "
+                    "Create an evaluation associated with that baseline using "
+                    "create_evaluation titled "
                     "'Baseline command output' and summary 'Record baseline "
                     "score output.' Add an evaluation result with "
                     "add_evaluation_result using result 'score=0.730 latency=120'. "
@@ -264,6 +267,8 @@ def research_tool_cases() -> list[Case[ResearchToolEvalInput, ResearchToolEvalOu
             ),
             metadata={"requires_real_llm": True},
             evaluators=(
+                ToolWasCalled("create_baseline"),
+                ToolSucceeded("create_baseline"),
                 ToolWasCalled("create_evaluation"),
                 ToolSucceeded("create_evaluation"),
                 ToolWasCalled("add_evaluation_result"),

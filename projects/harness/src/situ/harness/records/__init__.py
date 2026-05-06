@@ -3,6 +3,7 @@ from .agent import AgentKind, AgentRecord, AgentStatus, parse_agent_kind, parse_
 from .analysis import AnalysisRecord
 from .analysis_activity import AnalysisActivityKind, AnalysisActivityRecord
 from .artifact import ArtifactRecord
+from .baseline import BaselineRecord
 from .event import EventRecord
 from .evaluation import EvaluationRecord
 from .evaluation_activity import (
@@ -15,6 +16,7 @@ from .experiment_activity import ExperimentActivityKind, ExperimentActivityRecor
 from .hypothesis import HypothesisRecord
 from .hypothesis_activity import HypothesisActivityKind, HypothesisActivityRecord
 from .hypothesis_experiment_link import HypothesisExperimentLinkRecord
+from .measurement import MeasurementPayload, MeasurementRecord, MetricValue
 from .project import ProjectRecord, ProjectStatus, parse_project_status
 from .session import SessionRecord, SessionStatus, parse_session_status
 from .task import (
@@ -42,6 +44,7 @@ __all__ = [
     "AnalysisActivityRecord",
     "AnalysisRecord",
     "ArtifactRecord",
+    "BaselineRecord",
     "EventRecord",
     "EvaluationActivityRecord",
     "EvaluationActivityKind",
@@ -53,6 +56,9 @@ __all__ = [
     "HypothesisActivityRecord",
     "HypothesisExperimentLinkRecord",
     "HypothesisRecord",
+    "MeasurementPayload",
+    "MeasurementRecord",
+    "MetricValue",
     "ProjectRecord",
     "ProjectStatus",
     "SessionRecord",

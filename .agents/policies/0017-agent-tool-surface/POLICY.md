@@ -24,12 +24,14 @@ console/filesystem toolset for ordinary coding-agent operations such as
 are backed by the current workspace root and do not write directly to Situ's
 research ledger.
 
-The durable storage model can remain general. For example,
-`add_experiment_comment` may create an `ExperimentActivity(kind="comment")`.
-The agent-facing tool name should still describe the product action directly.
-Likewise, `add_evaluation_result` may create an
-`EvaluationActivity(kind="result")`; the model should not have to call a
-generic activity writer to record benchmark evidence.
+The durable storage model can remain general. The agent-facing tool name should
+still describe the product action directly.
+Use the product-model meanings in
+[`../../specs/0003-product-primitives/SPEC.md`](../../specs/0003-product-primitives/SPEC.md)
+and the evidence model in
+[`../../specs/0010-activities-and-artifacts/SPEC.md`](../../specs/0010-activities-and-artifacts/SPEC.md)
+when naming tools for measurement or result evidence. The model should not have
+to call a generic activity writer to record benchmark evidence.
 
 ## Required Checks
 
@@ -51,16 +53,15 @@ generic activity writer to record benchmark evidence.
   objective or research-context CRUD tools.
 - Prefer comment-shaped collaboration tools:
   `add_hypothesis_comment`, `add_experiment_comment`.
-- Prefer result-shaped evaluation tools for measurement evidence:
-  `add_evaluation_result`. Do not add a spread of result/evidence/run/comment
-  variants until the product clearly needs them.
+- Prefer result- or measurement-shaped tools for measurement evidence, following
+  the current spec vocabulary. Do not add a spread of
+  result/evidence/run/comment variants until the product clearly needs them.
 - Do not expose a generic `record_activity(kind=...)` tool as the primary agent
   interface. The harness should store first-slice analysis, hypothesis,
-  experiment, and task collaboration as `kind="comment"` activities, and
-  evaluation evidence as `kind="result"` activities.
+  experiment, and task collaboration through product-shaped tools rather than
+  generic activity writers.
 - Do not expose `record_evaluation_activity` or similarly generic activity
-  tools. Evaluation storage can use `EvaluationActivity`; the exposed tool
-  should describe the higher-level action, such as adding a result.
+  tools. The exposed tool should describe the higher-level product action.
 - Harness-owned concern comments should stay harness-owned until there is a
   clear product need for an explicit agent tool.
 - Mutation tools that append comments, create records, or link records should

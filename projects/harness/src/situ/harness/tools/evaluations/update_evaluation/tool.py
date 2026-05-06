@@ -22,19 +22,24 @@ class UpdateEvaluationTool(BaseSituTool[SituToolDeps, UpdateEvaluationResult]):
         title: str | None = None,
         summary: str | None = None,
         status: WorkStatus | None = None,
+        associated_baseline_id: str | None = None,
         associated_experiment_id: str | None = None,
         **_kwargs: Any,
     ) -> UpdateEvaluationResult:
         """Update simple evaluation fields.
 
-        `status` must be `open`, `active`, or `closed`. Put raw evidence,
-        failures, suspiciousness, and interpretations in evaluation results.
+        `status` must be `open`, `active`, or `closed`. Setting
+        `associated_baseline_id` switches the measured subject to that
+        baseline; setting `associated_experiment_id` switches it to that
+        experiment. Put raw evidence, failures, suspiciousness, and
+        interpretations in measurements.
         """
         evaluation = ctx.deps.get_repos().evaluations.update(
             evaluation_id=evaluation_id,
             title=title,
             summary=summary,
             status=status,
+            associated_baseline_id=associated_baseline_id,
             associated_experiment_id=associated_experiment_id,
         )
         if evaluation is None:

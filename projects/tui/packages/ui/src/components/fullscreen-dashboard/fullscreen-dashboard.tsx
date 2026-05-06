@@ -45,6 +45,7 @@ export type DashboardTaskKind =
   | "evaluation"
   | "concern";
 export type DashboardTaskTone = "default" | "warning" | "success" | "danger";
+export type DashboardTaskLoaderKind = "flash" | "burst";
 
 export type DashboardTask = {
   id: string;
@@ -74,6 +75,7 @@ export function FullscreenDashboard({
   events,
   onDashboardCommand,
   initialControlMode = "idle",
+  taskLoaderKind = "flash",
   terminalSize,
 }: {
   workspace: string;
@@ -95,6 +97,7 @@ export function FullscreenDashboard({
   events: EventRecord[];
   onDashboardCommand: ({ command }: { command: DashboardCommand }) => void;
   initialControlMode?: DashboardControlMode;
+  taskLoaderKind?: DashboardTaskLoaderKind;
   terminalSize?: TerminalSize;
 }) {
   const [controlMode, setControlMode] =
@@ -176,7 +179,7 @@ export function FullscreenDashboard({
             <DashboardFrameFooter
               label={footerLabel({ label, message })}
               width={layout.width}
-              tone={message?.tone}
+              tone={footerTone({ message })}
             />
           )}
         />
@@ -216,6 +219,7 @@ export function FullscreenDashboard({
       >
         <TaskBoard
           tasks={dashboardTasks}
+          loaderKind={taskLoaderKind}
           height={layout.taskBoardHeight}
           columnWidths={layout.taskColumnWidths}
           maxRowsPerColumn={layout.taskRowsPerColumn}
@@ -500,11 +504,13 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function TaskBoard({
   tasks,
+  loaderKind,
   height,
   columnWidths,
   maxRowsPerColumn,
 }: {
   tasks: DashboardTask[];
+  loaderKind: DashboardTaskLoaderKind;
   height: number;
   columnWidths: [number, number, number];
   maxRowsPerColumn: number;
@@ -518,6 +524,7 @@ function TaskBoard({
       <TaskColumn
         title="TODO"
         tasks={todoTasks}
+        loaderKind={loaderKind}
         width={columnWidths[0]}
         height={height}
         maxRows={maxRowsPerColumn}
@@ -526,6 +533,7 @@ function TaskBoard({
       <TaskColumn
         title="IN PROGRESS"
         tasks={inProgressTasks}
+        loaderKind={loaderKind}
         width={columnWidths[1]}
         height={height}
         maxRows={maxRowsPerColumn}
@@ -534,6 +542,7 @@ function TaskBoard({
       <TaskColumn
         title="DONE"
         tasks={doneTasks}
+        loaderKind={loaderKind}
         width={columnWidths[2]}
         height={height}
         maxRows={maxRowsPerColumn}
@@ -545,12 +554,14 @@ function TaskBoard({
 function TaskColumn({
   title,
   tasks,
+  loaderKind,
   width,
   height,
   maxRows,
 }: {
   title: string;
   tasks: DashboardTask[];
+  loaderKind: DashboardTaskLoaderKind;
   width: number;
   height: number;
   maxRows: number;
@@ -569,12 +580,17 @@ function TaskColumn({
 
   return (
     <LayoutBox width={width} height={height}>
-      <Text color="cyan" bold>{fitRow({ value: title, width: rowWidth })}</Text>
+      <Text color="gray" bold>{fitRow({ value: title, width: rowWidth })}</Text>
       {visibleTasks.length === 0 && (
         <Text dimColor>{fitRow({ value: "No tasks", width: rowWidth })}</Text>
       )}
       {visibleTasks.map((task) => (
-        <TaskRow key={task.id} task={task} width={rowWidth} />
+        <TaskRow
+          key={task.id}
+          task={task}
+          loaderKind={loaderKind}
+          width={rowWidth}
+        />
       ))}
       {hiddenTaskCount > 0 && (
         <Text dimColor>
@@ -600,15 +616,49 @@ function TaskColumnDivider({ height }: { height: number }) {
   );
 }
 
-function TaskRow({ task, width }: { task: DashboardTask; width: number }) {
-  const glyph = useTaskGlyph({ task });
-  const color = colorForTask({ task });
-  const row = fitRow({
-    value: `${glyph} ${task.title}`,
-    width,
-  });
+function TaskRow({
+  task,
+  loaderKind,
+  width,
+}: {
+  task: DashboardTask;
+  loaderKind: DashboardTaskLoaderKind;
+  width: number;
+}) {
+  const glyph = useTaskGlyph({ task, loaderKind });
+  const glyphColor = glyphColorForTask({ task });
+  const markerWidth = 2;
+  const titleWidth = Math.max(0, width - markerWidth - 1);
 
-  return <Text color={color}>{row}</Text>;
+  if (width <= markerWidth) {
+    return <Text color={glyphColor}>{fitRow({ value: glyph, width })}</Text>;
+  }
+
+  return (
+    <Text>
+      <Text color={glyphColor}>{glyph}</Text>
+      {markerPadding({ glyph, markerWidth })}{" "}
+      {fitRow({ value: task.title, width: titleWidth })}
+    </Text>
+  );
+}
+
+function markerPadding({
+  glyph,
+  markerWidth,
+}: {
+  glyph: string;
+  markerWidth: number;
+}): string {
+  return " ".repeat(Math.max(0, markerWidth - glyphCellWidth({ glyph })));
+}
+
+function glyphCellWidth({ glyph }: { glyph: string }): number {
+  if (glyph === "⏺") {
+    return 2;
+  }
+
+  return 1;
 }
 
 function ActivityFeed({
@@ -708,6 +758,18 @@ function footerLabel({
   }
 
   return `${message.text} · ${label}`;
+}
+
+function footerTone({
+  message,
+}: {
+  message: DashboardControlMessage | undefined;
+}): "gray" | "yellow" | "red" | undefined {
+  if (message?.tone === "yellow" || message?.tone === "red") {
+    return message.tone;
+  }
+
+  return undefined;
 }
 
 type ActivityFeedRow = {
@@ -811,12 +873,12 @@ function toneForTaskRecord({
     return "danger";
   }
 
-  if (task.status === "done") {
-    return "success";
-  }
-
   if (task.priority === "urgent" || task.priority === "high") {
     return "warning";
+  }
+
+  if (task.status === "done") {
+    return "success";
   }
 
   return undefined;
@@ -1194,12 +1256,21 @@ function lastActivitySummary({
   return `last ${latest.kind} ${timeLabel({ isoTimestamp: latest.createdAt })}`;
 }
 
-function useTaskGlyph({ task }: { task: DashboardTask }): string {
+function useTaskGlyph({
+  task,
+  loaderKind,
+}: {
+  task: DashboardTask;
+  loaderKind: DashboardTaskLoaderKind;
+}): string {
   const isAnimated =
     task.status === "in-progress" &&
     task.tone !== "danger" &&
     task.kind !== "concern";
-  const animatedGlyph = useAnimatedInProgressGlyph({ isActive: isAnimated });
+  const animatedGlyph = useInProgressLoaderGlyph({
+    isActive: isAnimated,
+    kind: loaderKind,
+  });
 
   if (isAnimated) {
     return animatedGlyph;
@@ -1208,10 +1279,12 @@ function useTaskGlyph({ task }: { task: DashboardTask }): string {
   return glyphForTask({ task });
 }
 
-function useAnimatedInProgressGlyph({
+function useInProgressLoaderGlyph({
   isActive,
+  kind,
 }: {
   isActive: boolean;
+  kind: DashboardTaskLoaderKind;
 }): string {
   const [frameIndex, setFrameIndex] = useState(0);
 
@@ -1230,34 +1303,34 @@ function useAnimatedInProgressGlyph({
   }, [isActive]);
 
   if (!isActive) {
-    return "●";
+    return "⏺";
   }
 
-  const frames = ["●", "◐", "○", "◑"];
-  return frames[frameIndex % frames.length] ?? "●";
+  const frames = loaderFrames({ kind });
+  return frames[frameIndex % frames.length] ?? "⏺";
+}
+
+function loaderFrames({ kind }: { kind: DashboardTaskLoaderKind }): string[] {
+  if (kind === "burst") {
+    return ["·", "*", "✢", "✳", "✻", "✶"];
+  }
+
+  return ["⏺", "○"];
 }
 
 function glyphForTask({ task }: { task: DashboardTask }): string {
-  if (task.tone === "danger") {
-    return "!";
-  }
-
-  if (task.kind === "concern") {
-    return "!";
+  if (task.status === "done") {
+    return "⏺";
   }
 
   if (task.status === "in-progress") {
-    return "●";
-  }
-
-  if (task.status === "done") {
-    return "✓";
+    return "⏺";
   }
 
   return "○";
 }
 
-function colorForTask({
+function glyphColorForTask({
   task,
 }: {
   task: DashboardTask;

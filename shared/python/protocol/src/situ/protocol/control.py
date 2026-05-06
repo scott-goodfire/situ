@@ -7,6 +7,7 @@ from .events import (
     AnalysisActivityRecord,
     AnalysisRecord,
     ArtifactRecord,
+    BaselineRecord,
     EventRecord,
     EvaluationActivityRecord,
     EvaluationRecord,
@@ -15,6 +16,7 @@ from .events import (
     HypothesisActivityRecord,
     HypothesisExperimentLinkRecord,
     HypothesisRecord,
+    MeasurementRecord,
     ProjectRecord,
     SessionRecord,
     TaskActivityRecord,
@@ -64,8 +66,10 @@ CollectionName = Literal[
     "projects",
     "sessions",
     "hypotheses",
+    "baselines",
     "experiments",
     "evaluations",
+    "measurements",
     "analyses",
     "hypothesis_experiment_links",
     "agents",
@@ -94,8 +98,10 @@ class CollectionsBootstrapResult(BaseModel):
     projects: list[ProjectRecord] = Field(default_factory=list)
     sessions: list[SessionRecord]
     hypotheses: list[HypothesisRecord]
+    baselines: list[BaselineRecord] = Field(default_factory=list)
     experiments: list[ExperimentRecord]
     evaluations: list[EvaluationRecord]
+    measurements: list[MeasurementRecord] = Field(default_factory=list)
     analyses: list[AnalysisRecord] = Field(default_factory=list)
     hypothesis_experiment_links: list[HypothesisExperimentLinkRecord]
     agents: list[AgentRecord] = Field(default_factory=list)

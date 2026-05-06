@@ -43,6 +43,18 @@
       "title": "Summary",
       "type": "string"
     },
+    "associated_baseline_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Associated Baseline Id"
+    },
     "associated_experiment_id": {
       "anyOf": [
         {

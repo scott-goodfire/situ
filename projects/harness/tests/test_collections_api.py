@@ -65,11 +65,18 @@ def test_collections_bootstrap_returns_research_objects_and_events(
         status="active",
     )
     app.repos.experiments.create(
-        experiment_id="exp_session_0001_baseline",
+        experiment_id="exp_session_0001_a",
         project_id=project.id,
         created_in_session_id=session.id,
-        title="Record baseline",
-        summary="Baseline eval.",
+        title="Try component A",
+        summary="Candidate eval.",
+    )
+    baseline = app.repos.baselines.create(
+        baseline_id="baseline_project_0001_default",
+        project_id=project.id,
+        created_in_session_id=session.id,
+        title="Current workspace baseline",
+        summary="Reference behavior before candidate changes.",
     )
     evaluation = app.repos.evaluations.create(
         evaluation_id="eval_session_0001_baseline",
@@ -77,6 +84,7 @@ def test_collections_bootstrap_returns_research_objects_and_events(
         created_in_session_id=session.id,
         title="Baseline project eval",
         summary="Run the baseline project evaluation.",
+        associated_baseline_id=baseline.id,
     )
     analysis = app.repos.analyses.create(
         analysis_id="analysis_0001",
@@ -88,7 +96,7 @@ def test_collections_bootstrap_returns_research_objects_and_events(
         status="active",
     )
     activity = app.repos.experiment_activities.add(
-        experiment_id="exp_session_0001_baseline",
+        experiment_id="exp_session_0001_a",
         created_in_session_id=session.id,
         actor="worker",
         kind="comment",
@@ -110,11 +118,18 @@ def test_collections_bootstrap_returns_research_objects_and_events(
         body="Baseline result recorded.",
         payload={"activity_type": "result"},
     )
+    measurement = app.repos.measurements.add(
+        evaluation_id=evaluation.id,
+        created_in_session_id=session.id,
+        actor="agent",
+        body="Baseline result recorded.",
+        payload={"activity_type": "result", "metrics": {"score": 0.71}},
+    )
     event = app.record_event(
         "experiment.completed",
-        "Completed exp_session_0001_baseline",
+        "Completed baseline measurement",
         session_id="session_0001",
-        payload={"experiment_id": "exp_session_0001_baseline"},
+        payload={"measurement_id": measurement.id},
     )
 
     bootstrap = CollectionsBootstrapResult.model_validate(app.collections_bootstrap({}))
@@ -124,12 +139,16 @@ def test_collections_bootstrap_returns_research_objects_and_events(
     assert [project.id for project in bootstrap.projects] == [project.id]
     assert [session.id for session in bootstrap.sessions] == ["session_0001"]
     assert [hypothesis.id for hypothesis in bootstrap.hypotheses] == ["hyp_0001"]
+    assert [item.id for item in bootstrap.baselines] == [
+        "baseline_project_0001_default"
+    ]
     assert [experiment.id for experiment in bootstrap.experiments] == [
-        "exp_session_0001_baseline"
+        "exp_session_0001_a"
     ]
     assert [item.id for item in bootstrap.evaluations] == [
         "eval_session_0001_baseline"
     ]
+    assert [item.id for item in bootstrap.measurements] == [measurement.id]
     assert [item.id for item in bootstrap.analyses] == ["analysis_0001"]
     assert [item.id for item in bootstrap.experiment_activities] == [activity.id]
     assert [item.id for item in bootstrap.analysis_activities] == [

@@ -234,7 +234,7 @@ projects/web/src/selectors/
     relationships.ts
   evaluations/
     index.ts
-    query.ts             # evidenceState, latestEvaluationActivity, etc.
+    query.ts             # evidenceState, latestMeasurement, etc.
     relationships.ts     # evaluationsForExperiment, evaluationsForExperiments
   ...
 ```

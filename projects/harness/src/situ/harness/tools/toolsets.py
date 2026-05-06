@@ -13,6 +13,7 @@ from .activities import (
     ListHypothesisActivitiesTool,
 )
 from .artifacts import CreateArtifactTool, ListArtifactsTool
+from .baselines import CreateBaselineTool, ListBaselinesTool, UpdateBaselineTool
 from .analyses import CreateAnalysisTool, ListAnalysesTool, UpdateAnalysisTool
 from .comments import (
     AddAnalysisCommentTool,
@@ -66,7 +67,8 @@ RESEARCH_TOOLSET_INSTRUCTIONS = inspect.cleandoc(
     context needs refinement.
 
     Use `get_session` when you need the current board: hypotheses,
-    analyses, experiments, evaluations, activities, artifacts, and events.
+    analyses, baselines, experiments, evaluations, measurements, activities,
+    artifacts, and events.
     Use analysis tools for codebase/domain understanding before it becomes a
     hypothesis. Use the hypothesis, experiment, and evaluation tools to keep
     the research structure clear.
@@ -79,10 +81,13 @@ RESEARCH_TOOLSET_INSTRUCTIONS = inspect.cleandoc(
     useful decision, raw command evidence, or a next step. Avoid comments that
     only narrate routine tool use.
 
-    Before treating candidate experiments as comparable, establish baseline
-    evidence with an evaluation and evaluation result. Use evaluations for raw
-    command evidence, repeated measurement, reproduction notes, and
-    suspicious-result concerns. Use experiments for the attempted change.
+    Before treating candidate experiments as comparable, create or select a
+    baseline, create an evaluation associated with that baseline, and record
+    measurement evidence with `add_evaluation_result`. Use evaluations as named
+    checks, measurements for concrete observed results, and experiments for the
+    attempted change. When recording metrics, use stable keys under
+    `payload.metrics` and a typed value object such as
+    `{"score": {"value": 0.73, "direction": "higher_is_better"}}`.
 
     Use `inspect_workspace_state` before baseline interpretation and after
     candidate changes. Record dirty starts, changed tests/evals, dependency
@@ -148,6 +153,9 @@ def build_research_toolset() -> FunctionToolset[SituToolDeps]:
             ListHypothesesTool().as_tool(),
             CreateHypothesisTool().as_tool(),
             UpdateHypothesisTool().as_tool(),
+            ListBaselinesTool().as_tool(),
+            CreateBaselineTool().as_tool(),
+            UpdateBaselineTool().as_tool(),
             ListExperimentsTool().as_tool(),
             CreateExperimentTool().as_tool(),
             UpdateExperimentTool().as_tool(),

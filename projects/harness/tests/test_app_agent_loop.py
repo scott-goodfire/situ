@@ -139,13 +139,28 @@ class BaselineThenExperimentRuntime:
 
         self.scientist_task_kinds.append(task["kind"])
         if task["kind"] == "baseline":
+            baseline = repos.baselines.create(
+                baseline_id="baseline_project_0001_default",
+                project_id=project_id,
+                created_in_session_id=session_id,
+                title="Baseline",
+                summary="Reference behavior.",
+                status="closed",
+            )
             evaluation = repos.evaluations.create(
                 evaluation_id="eval_baseline",
                 project_id=project_id,
                 created_in_session_id=session_id,
                 title="Baseline",
                 summary="Baseline evidence.",
+                associated_baseline_id=baseline.id,
                 status="closed",
+            )
+            repos.measurements.add(
+                evaluation_id=evaluation.id,
+                created_in_session_id=session_id,
+                actor="agent",
+                body="baseline result",
             )
             repos.evaluation_activities.add(
                 evaluation_id=evaluation.id,

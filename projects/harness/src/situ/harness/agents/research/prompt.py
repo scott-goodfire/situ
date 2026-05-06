@@ -18,25 +18,26 @@ RESEARCH_AGENT_INSTRUCTIONS = inspect.cleandoc(
     - Treat the project objective and research context as the north star.
       If the session has no project but the setup input is sufficient, use
       `create_project` to create and attach one.
-    - Treat hypotheses, experiments, activities, and artifacts as the research
-      record.
-    - Treat evaluations as the measurement record: baseline evidence,
-      candidate benchmark evidence, reproductions, sanity checks, and blocked
-      setup attempts.
+    - Treat hypotheses, baselines, experiments, measurements, activities, and
+      artifacts as the research record.
+    - Treat evaluations as named measurement threads or checks. A baseline or
+      experiment can have many evaluations, and each evaluation can have many
+      measurements.
     - Use the workspace tools to inspect files and run project-native commands.
       Run ordinary evals/tests/benchmarks with `execute`; do not expect a
       special Situ eval script.
     - Use `inspect_workspace_state` before baseline interpretation and after
       candidate workspace changes. Include the eval command when known.
-    - Before proposing candidate changes as comparable, establish baseline
-      evidence with an evaluation and an evaluation result.
+    - Before proposing candidate changes as comparable, establish a baseline
+      and record baseline measurement evidence under a baseline-associated
+      evaluation.
     - Create or update hypotheses when they clarify the line of investigation.
     - Create or update experiments when there is a concrete thing to try.
     - Create or update evaluations when there is a concrete measurement thread.
     - Link experiments back to the hypotheses they probe.
-    - Record command output as plaintext evidence in evaluation results when
-      it matters. Interpret it with the LLM; do not rely on deterministic
-      metric parsing.
+    - Record command output as plaintext measurement evidence with
+      `add_evaluation_result` when it matters. Interpret it with the LLM; do
+      not rely on deterministic metric parsing.
     - Leave comments only for useful research judgment: what changed, what was
       learned, what looks risky, or what should be tried next.
     - Do not turn routine bookkeeping into comments.
@@ -181,7 +182,7 @@ def build_proposal_round_prompt(
         Look over the session and task board. File the next focused Scientist
         task or tasks with `create_task`. Make clear what is known, what is
         still uncertain, and what would make the next experiment worth running.
-        If there is no baseline evaluation evidence, file a `baseline` task
+        If there is no baseline measurement evidence, file a `baseline` task
         before candidate hypotheses get more specific. If baseline evidence
         exists, keep planning the next useful Scientist task; do not treat
         "baseline is done" as session completion. If you believe the project
@@ -259,20 +260,25 @@ def build_session_run_prompt(
 
         Check the session first, then inspect workspace state. Create or update
         hypotheses only when they make the board clearer. If baseline
-        evaluation evidence is missing, create a baseline evaluation, inspect
-        workspace state with the intended eval command, run the project-native
-        command with the workspace `execute` tool, and record useful plaintext
-        output plus your interpretation as an evaluation result before trying
-        candidate changes.
+        measurement evidence is missing, create or select a baseline, create a
+        baseline-associated evaluation, inspect workspace state with the
+        intended eval command, run the project-native command with the
+        workspace `execute` tool, and record useful plaintext output plus your
+        interpretation as a measurement with `add_evaluation_result` before
+        trying candidate changes. Put comparable values in `payload.metrics`
+        using one typed object per metric key.
 
         For concrete candidate attempts, create or update an experiment for the
-        attempted change, create or update an evaluation for the measurement,
+        attempted change, create or update an experiment-associated evaluation
+        for the measurement,
         inspect workspace state before interpreting the candidate, run the
         project-native command with the workspace `execute` tool, and record
         useful plaintext output plus workspace-state context and your
-        interpretation as an evaluation result. Use experiment comments for
-        what changed, whether source/tests/evals/dependencies/generated files
-        changed, and what the evaluation means for that experiment.
+        interpretation with `add_evaluation_result`. Use the same metric keys
+        as the comparable baseline measurement where possible. Use experiment
+        comments for what changed, whether source files, tests, evals,
+        dependencies, or generated files changed, and what the evaluation means
+        for that experiment.
 
         Link the active task to important produced or referenced ledger records
         with `link_task_entity`, and leave a concise `add_task_comment` when

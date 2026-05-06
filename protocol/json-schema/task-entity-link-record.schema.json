@@ -3,9 +3,11 @@
     "TaskEntityKind": {
       "enum": [
         "analysis",
+        "baseline",
         "hypothesis",
         "experiment",
         "evaluation",
+        "measurement",
         "artifact",
         "analysis_activity",
         "hypothesis_activity",

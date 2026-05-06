@@ -6,12 +6,14 @@ The first slice should not reduce autoresearch output to one best metric.
 Autoresearch often learns through many experiments whose value appears in
 patterns, combinations, failures, and suspicious results.
 
-This spec defines the minimal model for comment activities and artifacts.
+This spec defines the minimal model for comment activities, measurement
+evidence, and artifacts.
 
 ## Activity
 
 An activity is a timestamped, human-readable entry attached to a hypothesis, an
-experiment, or an evaluation.
+experiment, an evaluation, a measurement, or another inspectable ledger record
+when useful.
 
 It can describe:
 
@@ -28,7 +30,8 @@ First-slice activity shape:
 
 ```text
 id
-target_id        (NOT NULL, hypothesis_id / experiment_id / evaluation_id per table)
+target_id        (NOT NULL, per activity table or associated entity fields)
+created_in_session_id?
 actor
 kind: comment
 body
@@ -36,36 +39,40 @@ payload_json
 created_at
 ```
 
-Activities do not carry a `session_id` column. The session is reached through
-the parent (hypothesis, experiment, or evaluation), which is itself
-session-required.
+Activities should not be session-owned. The session that created an activity can
+be stored as optional `created_in_session_id` provenance. Ownership reaches the
+project through the parent ledger record.
 
 The body should be useful to humans. The payload can carry structured details
 for agents and views, such as `activity_type: result` or `activity_type:
 concern`, but the product model should not expose many activity kinds yet.
 
-## Results
+## Measurements And Results
 
-Results are usually evaluation activities written through the
-`add_evaluation_result` tool.
+A measurement is one concrete observed result under an evaluation. It is the
+model-level home for command output, workspace-state context, metric bundles,
+artifact references, failures, and concern metadata.
 
-They can include scalar metrics, pass/fail checks, slice-level outputs,
-latency/cost, logs, artifact references, or failures. Do not force every result
-into a single numeric metric.
+Measurements can include scalar metrics, pass/fail checks, slice-level outputs,
+latency/cost, logs, artifact references, or failures. Do not force every
+measurement into a single numeric metric.
 
-When a result comes from a mutable workspace, it should carry or reference the
-workspace state that made it interpretable: eval command, branch, commit, dirty
-state, changed paths, and coarse changed-path categories.
+When a measurement comes from a mutable workspace, it should carry or reference
+the workspace state that made it interpretable: eval command, branch, commit,
+dirty state, changed paths, and coarse changed-path categories.
 
-Experiment activities can summarize what a result means for the attempted
+Experiment activities can summarize what a measurement means for the attempted
 change, but repeated benchmark runs, raw stdout/stderr, and reproduction notes
-belong on the evaluation activity trail.
+belong on the measurement trail. In the current implementation, evaluation
+result activities are the closest storage shape to measurements; future model
+work should make the measurement concept explicit before adding a rigid metric
+table.
 
 ## Concerns
 
-Concerns are comment activities that make suspicious or invalid results
-explicit. They most often attach to evaluations, because evaluations are where
-the evidence arrives.
+Concerns are human-readable entries that make suspicious or invalid results
+explicit. They most often attach to measurements or evaluations, because that is
+where the evidence arrives.
 
 Examples:
 
@@ -108,37 +115,57 @@ created_in_session_id?
 title
 summary
 status: open | active | closed
+associated_baseline_id?
 associated_experiment_id?
 created_at
 updated_at
 ```
 
-First-slice evaluation activity shape:
+Exactly one measured subject should be associated: either
+`associated_baseline_id` or `associated_experiment_id`. Do not infer baseline
+meaning from a missing experiment association.
+
+Baseline and experiment records may each have many evaluations. Each evaluation
+may have many measurements. Use separate evaluations for distinct checks, such
+as a primary benchmark, reproduction track, latency smoke, or human review.
+
+Measurement shape:
 
 ```text
 id
 evaluation_id              (NOT NULL, FK -> evaluations)
 created_in_session_id?
 actor
-kind: result
 body
 payload_json
 created_at
 ```
 
-Multiple runs of the same measurement should normally be multiple
-evaluation activities under one evaluation. Create another evaluation only when
-the measurement thread itself changes enough that it deserves a separate card,
-such as a dedicated reproduction track.
+Multiple runs of the same evaluation should normally be multiple measurements
+under one evaluation. Create another evaluation only when the measurement thread
+itself changes enough that it deserves a separate card, such as a dedicated
+reproduction track.
 
-Baseline measurement should be represented as an evaluation without an
-associated experiment. Candidate and reproduction measurements should usually
-link to the experiment they measure.
+Baseline measurement should be represented as an evaluation associated with a
+baseline. Candidate and reproduction measurements should usually link to the
+experiment they measure.
+
+Comparisons should be derived from compatible measurements, not stored as metric
+values on the baseline itself. A candidate measurement may cite the baseline
+measurement or aggregate it was compared against in `payload_json`, along with
+metric deltas or a human-readable comparison summary. When multiple baseline
+measurements exist, the payload or nearby activity should make the selection or
+aggregation rule visible.
+
+Metric observations in `payload_json` should use a typed object shape under
+stable metric keys, such as `metrics.score.value`, with optional unit,
+direction, and notes metadata. Keep metric definitions inside the measurement
+payload until they need their own query surface or lifecycle.
 
 ## Artifacts
 
 Artifacts are receipts that projects, sessions, analyses, hypotheses,
-experiments, or activities can reference.
+baselines, experiments, evaluations, measurements, or activities can reference.
 
 They can include:
 
@@ -160,7 +187,8 @@ First-slice artifact shape:
 
 ```text
 id
-session_id              (NOT NULL, FK -> sessions)
+project_id              (NOT NULL, FK -> projects)
+created_in_session_id?
 associated_entity_kind
 associated_entity_id
 kind
@@ -171,10 +199,10 @@ size_bytes?
 created_at
 ```
 
-Artifacts always belong to a session. Use the generic associated entity
-fields instead of a widening set of nullable foreign keys. This keeps the
-record understandable without forcing the first slice to predict every
-artifact attachment target.
+Artifacts always belong to a project. Use the generic associated entity fields
+instead of a widening set of nullable foreign keys. This keeps the record
+understandable without forcing the first slice to predict every artifact
+attachment target.
 
 ## Product Rule
 

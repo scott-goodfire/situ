@@ -16,7 +16,10 @@ import {
   type DashboardCommand,
   type DashboardControlMessage,
 } from "../dashboard-controls/dashboard-controls.js";
-import { FullscreenDashboard } from "../fullscreen-dashboard/fullscreen-dashboard.js";
+import {
+  FullscreenDashboard,
+  type DashboardTaskLoaderKind,
+} from "../fullscreen-dashboard/fullscreen-dashboard.js";
 
 export function SituTuiView({
   workspace,
@@ -37,6 +40,7 @@ export function SituTuiView({
   evaluationActivities,
   events,
   onDashboardCommand,
+  taskLoaderKind,
 }: {
   workspace: string;
   statusLine: string;
@@ -56,6 +60,7 @@ export function SituTuiView({
   evaluationActivities: EvaluationActivityRecord[];
   events: EventRecord[];
   onDashboardCommand: ({ command }: { command: DashboardCommand }) => void;
+  taskLoaderKind?: DashboardTaskLoaderKind;
 }) {
   return (
     <FullscreenDashboard
@@ -77,6 +82,7 @@ export function SituTuiView({
       evaluationActivities={evaluationActivities}
       events={events}
       onDashboardCommand={onDashboardCommand}
+      taskLoaderKind={taskLoaderKind}
     />
   );
 }

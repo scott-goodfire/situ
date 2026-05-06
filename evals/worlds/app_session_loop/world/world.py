@@ -13,6 +13,7 @@ from evals.worlds.app_session_loop.models import (
     AppSessionLoopSeed,
 )
 from evals.worlds.repo_bootstrap.world.world import (
+    BASELINE_ID,
     BASELINE_EVALUATION_ID,
     FIXTURE_FILES,
     HYPOTHESIS_ID,
@@ -131,13 +132,39 @@ class AppSessionLoopWorld:
             summary="Try narrow train.py variants and compare against baseline.",
             status="active",
         )
+        baseline = self.app.repos.baselines.create(
+            baseline_id=BASELINE_ID,
+            project_id=self.project.id,
+            created_in_session_id=self.session_id,
+            title="Baseline train.py reference",
+            summary="Reference workspace behavior before variants.",
+            status="closed",
+        )
         self.app.repos.evaluations.create(
             evaluation_id=BASELINE_EVALUATION_ID,
             project_id=self.project.id,
             created_in_session_id=self.session_id,
             title="Baseline train.py measurement",
             summary="Run the project-native baseline measurement before variants.",
+            associated_baseline_id=baseline.id,
             status="closed",
+        )
+        self.app.repos.measurements.add(
+            evaluation_id=BASELINE_EVALUATION_ID,
+            created_in_session_id=self.session_id,
+            actor="worker",
+            body=(
+                "Baseline command: `python train.py`\n\n"
+                "```text\n"
+                "component: baseline\n"
+                "val_bpb: 2.713\n"
+                "train_time_s: 0.18\n"
+                "status: ok\n"
+                "```\n\n"
+                "Interpretation: baseline evidence is available; lower "
+                "val_bpb is better."
+            ),
+            payload={},
         )
         self.app.repos.evaluation_activities.add(
             evaluation_id=BASELINE_EVALUATION_ID,

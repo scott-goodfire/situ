@@ -47,7 +47,7 @@ export function DashboardFrameSection({
         borderBottom={false}
         borderLeft
         borderRight
-        borderColor="cyan"
+        borderColor="gray"
         flexDirection="column"
         height={height}
         paddingX={1}
@@ -90,7 +90,7 @@ function FrameDivider({
   tone?: DashboardFrameTone;
 }) {
   return (
-    <Text color={tone ?? "cyan"}>
+    <Text color={tone ?? "gray"}>
       {frameDividerLine({
         kind,
         label,

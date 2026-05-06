@@ -21,13 +21,15 @@ class CreateEvaluationTool(BaseSituTool[SituToolDeps, CreateEvaluationResult]):
         title: str,
         summary: str,
         evaluation_id: str | None = None,
+        associated_baseline_id: str | None = None,
         associated_experiment_id: str | None = None,
         status: WorkStatus = WorkStatus.OPEN,
         **_kwargs: Any,
     ) -> CreateEvaluationResult:
-        """Create a lightweight evaluation thread for baseline or candidate evidence.
+        """Create a lightweight evaluation thread for a baseline or experiment.
 
-        `status` must be `open`, `active`, or `closed`.
+        Exactly one of `associated_baseline_id` or `associated_experiment_id`
+        is required. `status` must be `open`, `active`, or `closed`.
         """
         repos = ctx.deps.get_repos()
         project_id = ctx.deps.require_project_id()
@@ -42,6 +44,7 @@ class CreateEvaluationTool(BaseSituTool[SituToolDeps, CreateEvaluationResult]):
             created_in_session_id=session_id,
             title=title,
             summary=summary,
+            associated_baseline_id=associated_baseline_id,
             associated_experiment_id=associated_experiment_id,
             status=status,
         )

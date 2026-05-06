@@ -16,6 +16,7 @@ PROJECT_ID = "project_repo_bootstrap"
 SESSION_ID = "session_repo_bootstrap_0001"
 SCIENTIST_AGENT_ID = f"agent_{PROJECT_ID}_scientist"
 HYPOTHESIS_ID = "hyp_repo_bootstrap_train_variants"
+BASELINE_ID = "baseline_repo_bootstrap_default"
 BASELINE_EVALUATION_ID = "eval_repo_bootstrap_baseline"
 
 RESEARCH_CONTEXT_BODY = (
@@ -263,13 +264,39 @@ def _seed(repos: Repositories, seed: RepoBootstrapSeed) -> None:
             summary="Try narrow train.py variants and compare against baseline.",
             status="active",
         )
+        baseline = repos.baselines.create(
+            baseline_id=BASELINE_ID,
+            project_id=PROJECT_ID,
+            created_in_session_id=SESSION_ID,
+            title="Baseline train.py reference",
+            summary="Reference workspace behavior before variants.",
+            status="closed",
+        )
         repos.evaluations.create(
             evaluation_id=BASELINE_EVALUATION_ID,
             project_id=PROJECT_ID,
             created_in_session_id=SESSION_ID,
             title="Baseline train.py measurement",
             summary="Run the project-native baseline measurement before variants.",
+            associated_baseline_id=baseline.id,
             status="closed",
+        )
+        repos.measurements.add(
+            evaluation_id=BASELINE_EVALUATION_ID,
+            created_in_session_id=SESSION_ID,
+            actor="worker",
+            body=(
+                "Baseline command: `python train.py`\n\n"
+                "```text\n"
+                "component: baseline\n"
+                "val_bpb: 2.713\n"
+                "train_time_s: 0.18\n"
+                "status: ok\n"
+                "```\n\n"
+                "Interpretation: baseline evidence is available; lower "
+                "val_bpb is better."
+            ),
+            payload={},
         )
         repos.evaluation_activities.add(
             evaluation_id=BASELINE_EVALUATION_ID,

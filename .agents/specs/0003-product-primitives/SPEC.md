@@ -3,7 +3,7 @@
 Use simple product nouns. For the first slice, keep the domain intentionally
 small and let activities carry nuance.
 
-## Current Hierarchy
+## Target Hierarchy
 
 ```text
 Workspace
@@ -18,10 +18,11 @@ Workspace
   |     |     `-- AnalysisActivity
   |     |-- Hypotheses                  (project_id required)
   |     |     `-- HypothesisActivity
-  |     |-- Experiments                 (project_id required)
+  |     |-- Baselines                   (project_id required; each may have many evaluations)
+  |     |-- Experiments                 (project_id required; each may have many evaluations)
   |     |     `-- ExperimentActivity
-  |     |-- Evaluations                 (project_id required)
-  |     |     `-- EvaluationActivity
+  |     |-- Evaluations                 (project_id required; each measures one baseline or experiment)
+  |     |     `-- Measurements           (each evaluation may have many measurements)
   |     |-- HypothesisExperimentLinks
   |     |-- Artifacts                   (project_id required)
   |     `-- Events                      (when project-associated)
@@ -37,18 +38,20 @@ session is valid while setup or triage is still incomplete.
 
 Projects own the durable research ledger and coordination state: agents, agent
 message history, tasks, task dependencies, task entity links, task activities,
-analyses, hypotheses, experiments, evaluations, research activities,
-hypothesis-experiment links, and artifacts. Those records carry `project_id`,
-not `session_id`. When useful for provenance, project-owned records may also
-carry fields such as `created_in_session_id`, `claimed_in_session_id`, or
-`completed_in_session_id`, but the session is not their owner.
+analyses, hypotheses, baselines, experiments, evaluations, measurements,
+research activities, hypothesis-experiment links, and artifacts. Those records
+carry `project_id`, not `session_id`. When useful for provenance,
+project-owned records may also carry fields such as `created_in_session_id`,
+`claimed_in_session_id`, or `completed_in_session_id`, but the session is not
+their owner.
 
 Sessions own lifecycle and runtime attachment state. Starting Situ creates a
 fresh session by default; resuming an existing session must be explicit. There
 is no stored "active session" pointer on the workspace; the most-recently-
 updated session is derived on demand. Agent and task records describe
 coordination and handoffs around the ledger work rather than replacing
-hypotheses, experiments, evaluations, activities, artifacts, or events.
+hypotheses, baselines, experiments, evaluations, measurements, activities,
+artifacts, or events.
 
 ## Workspace
 
@@ -72,10 +75,10 @@ user to reduce this to one command or one metric during onboarding.
 
 A session may have no project when it first starts. Once the setup is known,
 the manager or user can create or attach a project. Multiple sessions may attach
-to the same project over time. Analyses, hypotheses, experiments, evaluations,
-research activities, and artifacts created while that session is attached to a
-project belong to the project, with optional `created_in_session_id`
-provenance.
+to the same project over time. Analyses, hypotheses, baselines, experiments,
+evaluations, measurements, research activities, and artifacts created while
+that session is attached to a project belong to the project, with optional
+`created_in_session_id` provenance.
 
 ## Session
 
@@ -136,34 +139,136 @@ Experiments are required to belong to a project (`project_id` FK, NOT NULL). If
 a session created the experiment, store that provenance as
 `created_in_session_id`.
 
+An experiment may have many evaluations. Each evaluation is a distinct check
+for that candidate, such as a primary benchmark, reproduction track, latency
+smoke, or human review pass. Repeated runs of the same candidate check are
+measurements under one evaluation unless the check itself changes enough to
+deserve a separate measurement thread.
+
 Do not add `Variant` as a first-class model yet. Use experiment summaries,
 activity bodies, artifacts, and links to express baseline + A, baseline + B,
 A + C, or partial-C style combinations.
 
+## Baseline
+
+A project-level reference condition.
+
+A baseline is the control or reference state that candidate experiments compare
+against. It is the thing being measured, not a specific command execution and
+not the measurement result itself. The normal baseline is the current behavior
+of the researched workspace before autonomous candidate changes begin, but a
+project may record more than one baseline over time when the comparison anchor
+meaningfully changes.
+
+Baselines should be status-light: open, active, or closed. Whether a baseline is
+noisy, incomplete, dirty, suspicious, or accepted for comparison should be
+explained through measurement evidence, concerns, and activities rather than a
+large baseline status vocabulary.
+
+Baselines are required to belong to a project (`project_id` FK, NOT NULL). If a
+session created the baseline, store that provenance as
+`created_in_session_id`.
+
+A baseline may have many evaluations. Each evaluation is a distinct check
+against the reference condition, such as dev accuracy, held-out accuracy,
+latency smoke, unit tests, or human review. Repeated runs of the same baseline
+check are measurements under one evaluation unless the check itself changes
+enough to deserve a separate measurement thread.
+
+Before a session treats candidate experiments as comparable, it should establish
+at least one baseline with at least one evaluation and measurement carrying
+usable evidence. This is a product rule, not a requirement that onboarding
+reduce evaluation to one command or one metric.
+
 ## Evaluation
 
-A lightweight measurement thread.
+A lightweight measurement thread or check.
 
-Evaluations describe how the session checked behavior and what evidence came
-back. They are intentionally schema-light and text-heavy. An evaluation may
-represent baseline measurement, candidate measurement for an experiment,
-reproduction, sanity checking, or a blocked setup attempt.
+Evaluations describe what check is being run against a measured subject. The
+measured subject is exactly one baseline or one experiment. Evaluation is not a
+synonym for a single command run; repeated command runs and their outputs are
+measurements under the evaluation.
 
 Evaluations should be status-light: open, active, or closed. Repeated runs,
 stdout/stderr, observed signals, interpretations, concerns, and reproduction
-notes should be recorded as evaluation activities rather than columns on the
-evaluation itself.
+notes should be recorded as measurements and activities rather than columns on
+the evaluation itself.
 
 Evaluations are required to belong to a project (`project_id` FK, NOT NULL)
-and may optionally point at the experiment they measure
-(`associated_experiment_id`, nullable). A baseline evaluation usually has no
-associated experiment. A candidate or reproduction evaluation usually points
+and must point at exactly one measured subject:
+
+```text
+associated_baseline_id    (nullable FK -> baselines)
+associated_experiment_id  (nullable FK -> experiments)
+```
+
+Exactly one of those fields should be present. A baseline evaluation points at a
+baseline. A candidate, reproduction, or sanity evaluation for a candidate points
 at the experiment it measures. If a session created the evaluation, store that
 provenance as `created_in_session_id`.
 
-Before a session treats candidate experiments as comparable, it should establish
-at least one baseline evaluation activity with evidence. This is a product rule,
-not a requirement that onboarding reduce evaluation to one command or metric.
+Cardinality is intentionally simple: one baseline or experiment can have many
+evaluations, and one evaluation can have many measurements. Create a new
+evaluation when the check or measurement thread changes; add a measurement when
+the same check is rerun or observed again.
+
+Evaluation titles and summaries may remain text-rich because measurement
+instructions, commands, expected outputs, dashboards, and review criteria vary
+by project. The subject relationship must be structured because UI, agent
+context, task links, and comparability checks rely on it.
+
+## Measurement
+
+One concrete observed result under an evaluation.
+
+A measurement records what happened when the evaluation was actually run or
+observed. It can include command text, workspace state, raw output summaries,
+metric bundles, pass/fail checks, concern metadata, and artifact references.
+This is the model-level home for evidence that came back from a baseline or
+candidate check.
+
+Measurements are project-owned through their evaluation. If a session created a
+measurement, store that provenance as `created_in_session_id`.
+
+Measurements preserve repeated observations, variance, failed attempts, and
+reproduction evidence under the same evaluation. Summary fields on baselines,
+experiments, or evaluations should be derived from measurements or explained in
+activities rather than becoming the source of truth.
+
+Measurement bodies should remain human-readable. Structured payload metadata can
+hold machine-readable details such as:
+
+```text
+command
+workspace_state
+metrics
+raw_output_summary
+artifact_ids
+concerns
+comparison_baseline_id
+comparison_measurement_id
+comparison_metric_deltas
+```
+
+Comparisons are derived from measurements; they are not the baseline record
+itself. A comparable result should pair candidate measurement evidence with
+baseline measurement evidence from the same or clearly compatible evaluation
+thread, using matching metric keys and documenting any selected baseline
+measurement or aggregate in the measurement payload or an activity. If multiple
+baseline measurements exist, the comparison should say whether it used the
+latest accepted measurement, a selected measurement, or an aggregate summary.
+
+Metric bundles should stay inside the measurement payload until the product has
+a stable cross-project need for querying or enforcing individual metric fields.
+Metric observations inside the payload should use a typed shape with one value
+per metric key, optional unit/direction/notes metadata, and room for additional
+measurement context. This keeps metric output structured enough to compare while
+avoiding a separate metric lifecycle.
+
+Do not add a first-class `Metric` table before the current loop proves which
+metric shape is stable across different projects. Do not add a first-class
+`Comparison` table before the current loop proves that comparisons need their
+own lifecycle beyond derived summaries and activities.
 
 ## HypothesisExperimentLink
 
@@ -178,27 +283,28 @@ are enough. Put explanation in hypothesis or experiment activities.
 The main collaboration primitive.
 
 Activities are timeline entries attached to analyses, hypotheses, experiments,
-or evaluations. They replace standalone evidence, finding, warning, and
-decision models in the first slice.
+evaluations, measurements, tasks, or other inspectable ledger records when
+useful. They replace standalone finding, warning, and decision models in the
+first slice.
 
-Activities reach a project through their parent (the analysis, hypothesis,
-experiment, or evaluation), which is itself project-required. Activity rows do
-not carry their own `session_id` column. If a session created the activity,
+Activities reach a project through their parent ledger record or associated
+entity, following the ownership rules for that entity. Activity rows do not
+carry their own `session_id` owner column. If a session created the activity,
 store that provenance as `created_in_session_id`.
 
 Analysis, hypothesis, experiment, and task activities use `comment` as the
-activity kind. Evaluation activities use `result` as the activity kind because
-their purpose is measurement evidence. Results, concerns, interpretations,
-plans, and decisions still live in human-readable activity bodies, with
+activity kind. Measurement evidence should be recorded as measurements, with
+human-readable result text and structured payload metadata. Results, concerns,
+interpretations, plans, and decisions still live in human-readable bodies, with
 structured payloads available for views or agents when useful.
 
 The activity body should remain human-readable. Structured payloads can hold
-metrics, eval outputs, artifact IDs, or machine-readable details when useful.
-Raw benchmark or command evidence should normally be attached to an evaluation
-result activity, with experiment activities reserved for what changed, why it
-was tried, and how the result affects the experiment. Analysis activities should
-explain refinements, caveats, source notes, or why an analysis is superseded;
-they should not become a replacement for hypotheses or evaluations.
+artifact IDs or machine-readable details when useful. Raw benchmark or command
+evidence should normally be attached to a measurement, with experiment
+activities reserved for what changed, why it was tried, and how the result
+affects the experiment. Analysis activities should explain refinements, caveats,
+source notes, or why an analysis is superseded; they should not become a
+replacement for hypotheses, evaluations, or measurements.
 
 ## Artifact
 
@@ -219,7 +325,7 @@ associated_entity_id
 ```
 
 This keeps artifact storage simple while still allowing artifacts to attach to a
-project, hypothesis, experiment, evaluation, or activity.
+project, hypothesis, baseline, experiment, evaluation, measurement, or activity.
 
 ## Event
 
@@ -253,5 +359,6 @@ implementation slice:
 - Standalone Evidence
 - Standalone EvaluationProtocol
 - Standalone EvaluationRun
+- First-class Metric table
 - Report
 - Broad health model

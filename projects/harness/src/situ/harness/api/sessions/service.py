@@ -34,8 +34,10 @@ class SessionsService(BaseModel):
             else None
         )
         hypotheses = self.repos.hypotheses.list_for_session(session_id)
+        baselines = self.repos.baselines.list_for_session(session_id)
         experiments = self.repos.experiments.list_for_session(session_id)
         evaluations = self.repos.evaluations.list_for_session(session_id)
+        measurements = self.repos.measurements.list_for_session(session_id)
         agents = self.repos.agents.list_for_session(session_id)
         tasks = self.repos.tasks.list_for_session(session_id)
         analyses = self.repos.analyses.list_for_session(session_id)
@@ -97,8 +99,10 @@ class SessionsService(BaseModel):
             project=project,
             session=session,
             hypotheses=hypotheses,
+            baselines=baselines,
             experiments=experiments,
             evaluations=evaluations,
+            measurements=measurements,
             hypothesis_experiment_links=links,
             agents=agents,
             tasks=tasks,

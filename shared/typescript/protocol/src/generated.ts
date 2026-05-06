@@ -77,6 +77,17 @@ export interface ExperimentRecord {
   updated_at: string;
 }
 
+export interface BaselineRecord {
+  id: string;
+  project_id: string;
+  created_in_session_id?: string | null;
+  status: "open" | "active" | "closed";
+  title: string;
+  summary: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface EvaluationRecord {
   id: string;
   project_id: string;
@@ -84,9 +95,43 @@ export interface EvaluationRecord {
   status: "open" | "active" | "closed";
   title: string;
   summary: string;
+  associated_baseline_id?: string | null;
   associated_experiment_id?: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface MetricValue {
+  value: boolean | number | string;
+  unit?: string | null;
+  direction?: "higher_is_better" | "lower_is_better" | "target" | "informational";
+  notes?: string | null;
+}
+
+export interface MeasurementPayload {
+  activity_type?: string | null;
+  measurement_type?: string | null;
+  summary?: string | null;
+  command?: string | null;
+  workspace_state?: Record<string, unknown> | null;
+  metrics?: Record<string, MetricValue>;
+  raw_output_summary?: string | null;
+  artifact_ids?: string[];
+  concerns?: Record<string, unknown>[];
+  comparison_baseline_id?: string | null;
+  comparison_measurement_id?: number | null;
+  comparison_metric_deltas?: Record<string, MetricValue>;
+  [key: string]: unknown;
+}
+
+export interface MeasurementRecord {
+  id: number;
+  evaluation_id: string;
+  created_in_session_id?: string | null;
+  actor: string;
+  body: string;
+  payload?: MeasurementPayload;
+  created_at: string;
 }
 
 export interface AnalysisRecord {
@@ -156,7 +201,7 @@ export interface TaskDependencyRecord {
 export interface TaskEntityLinkRecord {
   project_id: string;
   task_id: string;
-  entity_kind: "analysis" | "hypothesis" | "experiment" | "evaluation" | "artifact" | "analysis_activity" | "hypothesis_activity" | "experiment_activity" | "evaluation_activity" | "task_activity" | "event";
+  entity_kind: "analysis" | "baseline" | "hypothesis" | "experiment" | "evaluation" | "measurement" | "artifact" | "analysis_activity" | "hypothesis_activity" | "experiment_activity" | "evaluation_activity" | "task_activity" | "event";
   entity_id: string;
   relationship: string;
   created_at: string;
@@ -276,8 +321,10 @@ export interface CollectionsBootstrapResult {
   projects?: ProjectRecord[];
   sessions: SessionRecord[];
   hypotheses: HypothesisRecord[];
+  baselines?: BaselineRecord[];
   experiments: ExperimentRecord[];
   evaluations: EvaluationRecord[];
+  measurements?: MeasurementRecord[];
   analyses?: AnalysisRecord[];
   hypothesis_experiment_links: HypothesisExperimentLinkRecord[];
   agents?: AgentRecord[];
@@ -303,7 +350,7 @@ export interface CollectionsSubscribeResult {
 
 export interface CollectionUpsertedParams {
   cursor: number;
-  collection: "workspaces" | "projects" | "sessions" | "hypotheses" | "experiments" | "evaluations" | "analyses" | "hypothesis_experiment_links" | "agents" | "tasks" | "task_dependencies" | "task_entity_links" | "task_activities" | "analysis_activities" | "hypothesis_activities" | "experiment_activities" | "evaluation_activities" | "artifacts" | "events";
+  collection: "workspaces" | "projects" | "sessions" | "hypotheses" | "baselines" | "experiments" | "evaluations" | "measurements" | "analyses" | "hypothesis_experiment_links" | "agents" | "tasks" | "task_dependencies" | "task_entity_links" | "task_activities" | "analysis_activities" | "hypothesis_activities" | "experiment_activities" | "evaluation_activities" | "artifacts" | "events";
   key: string;
   record: Record<string, unknown>;
 }

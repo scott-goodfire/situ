@@ -19,18 +19,21 @@ class ListEvaluationsTool(BaseSituTool[SituToolDeps, ListEvaluationsResult]):
         ctx: RunContext[SituToolDeps],
         project_id: str | None = None,
         session_id: str | None = None,
+        baseline_id: str | None = None,
         experiment_id: str | None = None,
         status: WorkStatus | None = None,
         **_kwargs: Any,
     ) -> ListEvaluationsResult:
-        """List evaluations by project or associated experiment."""
+        """List evaluations by project, associated baseline, or experiment."""
         checked_status = (
             parse_work_status(status=status, noun="evaluation")
             if status is not None
             else None
         )
         repos = ctx.deps.get_repos()
-        if experiment_id is not None:
+        if baseline_id is not None:
+            evaluations = repos.evaluations.list_for_baseline(baseline_id)
+        elif experiment_id is not None:
             evaluations = repos.evaluations.list_for_experiment(experiment_id)
         elif project_id is not None:
             evaluations = repos.evaluations.list_for_project(project_id)

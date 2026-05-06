@@ -42,11 +42,11 @@ Then Situ:
 - Starts a DBOS-backed Pydantic AI agent.
 - Lets the agent inspect project and session state, record durable analyses,
   and create hypotheses when useful.
-- Requires the agent to establish baseline evaluation evidence before treating
+- Requires the agent to establish baseline measurement evidence before treating
   candidate experiments as comparable.
 - Lets the agent call harness tools to run concrete experiments.
-- Records evaluation evidence, experiment results, concerns, interpretations,
-  and decisions as activities.
+- Records measurement evidence, experiment results, concerns, interpretations,
+  and decisions as inspectable ledger entries.
 - Renders a live terminal dashboard.
 
 The Situ install/dev root and the researched workspace are separate
@@ -64,13 +64,15 @@ code are launched from the Situ repository.
 - Internal project ledger with session provenance
 - Analysis ledger
 - Hypothesis ledger
+- Baseline ledger
 - Experiment ledger
 - Evaluation ledger
+- Measurement evidence ledger
 - Many-to-many hypothesis/experiment links
 - Analysis activity timeline
 - Hypothesis activity timeline
 - Experiment activity timeline
-- Evaluation activity timeline
+- Measurement/evaluation evidence timeline
 - Agent message history ledger
 - Comment activities, with results, concerns, plans, and interpretations carried
   in activity bodies and optional payload metadata
@@ -89,12 +91,12 @@ code are launched from the Situ repository.
 
 The agent path should express active behavior through approved harness tools.
 Getting project/session context, creating analyses, creating hypotheses,
-creating/running experiments, creating evaluations, linking hypotheses and
-experiments, attaching artifacts, and recording comments should have typed tool
-envelopes. Situ should persist Pydantic AI message history as the durable
-project agent transcript and use events/collection upserts for live tool-call
-observability rather than making a separate tool-call table the source of
-truth.
+creating baselines, creating/running experiments, creating evaluations,
+recording measurements, linking hypotheses and experiments, attaching
+artifacts, and recording comments should have typed tool envelopes. Situ should
+persist Pydantic AI message history as the durable project agent transcript and
+use events/collection upserts for live tool-call observability rather than
+making a separate tool-call table the source of truth.
 
 Candidate experiment evidence should be interpreted with workspace state in
 view. Before treating a result as comparable to baseline, the agent should know
@@ -128,8 +130,8 @@ tests/evals, dependencies, or generated files changed. See
 ## Success Criterion
 
 A user can start a fresh session, watch an agent inspect project/session state,
-create or update analyses and hypotheses, establish baseline evaluation
-evidence, request concrete experiments through the harness, see evaluation
+create or update analyses and hypotheses, establish baseline measurement
+evidence, request concrete experiments through the harness, see measurement
 evidence, worker results, and automated concern comments land in the TUI, and
 inspect artifacts when useful. If the user wants to continue an existing
 session, they must resume it explicitly.
@@ -138,5 +140,5 @@ session, they must resume it explicitly.
 
 The slice can be narrow, but the live state must be real. Workspaces, projects
 with objective/context, sessions, analyses, hypotheses, experiments,
-evaluations, coordination records, activities, artifacts, and internal events
-should survive process restart.
+baselines, evaluations, measurements, coordination records, activities,
+artifacts, and internal events should survive process restart.

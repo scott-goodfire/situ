@@ -57,7 +57,9 @@ Use:
 Current docs:
 
 - `.agents/docs/agents-surface/DOC.md` - conventions for the `.agents` layer
+- `.agents/docs/autoresearch-reference/DOC.md` - reference for Karpathy's autoresearch project, the canonical autoresearch loop Situ benchmarks against
 - `.agents/docs/evals-strategy/DOC.md` - strategy for code-first evals, fixture worlds, Logfire reporting, and behavioral checks
+- `.agents/docs/failure-modes/DOC.md` - catalog of autoresearch failure modes Situ exists to detect
 - `.agents/docs/loose-models-tool-calls/DOC.md` - guideline for loose semantic models, tool-call-shaped execution, DBOS durability, and hook-driven observability
 - `.agents/docs/milestones/DOC.md` - current milestone and benchmark context
 - `.agents/docs/testing-strategy/DOC.md` - current checks and smoke strategy

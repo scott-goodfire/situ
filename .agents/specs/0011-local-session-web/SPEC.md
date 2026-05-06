@@ -272,7 +272,8 @@ For this slice:
 - `/projects/<project-id>/agents` may remain a compact index of agents observed
   in activity records.
 - `/projects/<project-id>/agents/<agent-id>` should render a transcript-style
-  view over existing hypothesis, experiment, and evaluation activities.
+  view over existing hypothesis activity, experiment activity, measurement
+  evidence, and related evaluation state.
 - Transcript items should use human-readable labels such as "Recorded evidence"
   or "Updated experiment" instead of exposing raw activity payload names as the
   primary text.

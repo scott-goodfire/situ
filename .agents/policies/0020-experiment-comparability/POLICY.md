@@ -13,7 +13,11 @@ recording, artifact capture, and concern comments.
 ## Rule
 
 Experiment evidence must include enough workspace context for a reviewer to
-decide whether it is comparable to baseline evidence.
+decide whether it is comparable to baseline evidence. Use the measurement,
+baseline, experiment, and artifact meanings defined in
+[`../../specs/0003-product-primitives/SPEC.md`](../../specs/0003-product-primitives/SPEC.md)
+and
+[`../../specs/0010-activities-and-artifacts/SPEC.md`](../../specs/0010-activities-and-artifacts/SPEC.md).
 
 ## Required Checks
 

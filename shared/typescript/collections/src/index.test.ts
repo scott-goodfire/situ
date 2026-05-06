@@ -8,6 +8,7 @@ import type {
   AgentRecord,
   AnalysisActivityRecord,
   AnalysisRecord,
+  BaselineRecord,
   CollectionUpsertedParams,
   CollectionsBootstrapResult,
   EventRecord,
@@ -16,6 +17,7 @@ import type {
   ExperimentActivityRecord,
   ExperimentRecord,
   HypothesisRecord,
+  MeasurementRecord,
   ProjectRecord,
   SessionRecord,
   TaskActivityRecord,
@@ -38,8 +40,10 @@ describe("situ collections", () => {
       projects: [projectRecord({})],
       sessions: [sessionRecord({ overrides: { id: SESSION_ID } })],
       hypotheses: [hypothesisRecord({})],
+      baselines: [baselineRecord({})],
       experiments: [experimentRecord({})],
       evaluations: [evaluationRecord({})],
+      measurements: [measurementRecord({})],
       analyses: [analysisRecord({})],
       hypothesis_experiment_links: [
         {
@@ -80,6 +84,9 @@ describe("situ collections", () => {
     );
     expect(collections.sessions.get(SESSION_ID)?.status).toBe("active");
     expect(collections.hypotheses.get("hyp_0001")?.status).toBe("active");
+    expect(collections.baselines.get("baseline_project_0001_default")?.status).toBe(
+      "closed",
+    );
     expect(collections.experiments.get("exp_session_0001_baseline")?.status).toBe(
       "closed",
     );
@@ -101,6 +108,7 @@ describe("situ collections", () => {
     expect(collections.analysisActivities.get("1")?.kind).toBe("comment");
     expect(collections.experimentActivities.get("1")?.kind).toBe("comment");
     expect(collections.evaluationActivities.get("1")?.kind).toBe("result");
+    expect(collections.measurements.get("1")?.payload.activity_type).toBe("result");
     expect(collections.events.get("1")?.type).toBe("session.started");
     expect(collections.events.get("2")?.type).toBe("experiment.completed");
   });
@@ -127,7 +135,9 @@ describe("situ collections", () => {
 
     expect(collections.projects.get(PROJECT_ID)?.objective).toBe("Improve score.");
     expect(collections.workspaces.size).toBe(0);
+    expect(collections.baselines.size).toBe(0);
     expect(collections.evaluations.size).toBe(0);
+    expect(collections.measurements.size).toBe(0);
     expect(collections.analyses.size).toBe(0);
     expect(collections.analysisActivities.size).toBe(0);
     expect(collections.evaluationActivities.size).toBe(0);
@@ -171,6 +181,16 @@ describe("situ collections", () => {
     await applyCollectionUpsert({
       collections,
       upsert: upsert({
+        collection: "baselines",
+        key: "baseline_project_0001_default",
+        record: baselineRecord({
+          overrides: { id: "baseline_project_0001_default", status: "active" },
+        }),
+      }),
+    });
+    await applyCollectionUpsert({
+      collections,
+      upsert: upsert({
         collection: "experiments",
         key: "exp_session_0001_a",
         record: experimentRecord({
@@ -185,6 +205,19 @@ describe("situ collections", () => {
         key: "eval_session_0001_a",
         record: evaluationRecord({
           overrides: { id: "eval_session_0001_a", status: "active" },
+        }),
+      }),
+    });
+    await applyCollectionUpsert({
+      collections,
+      upsert: upsert({
+        collection: "measurements",
+        key: "6",
+        record: measurementRecord({
+          overrides: {
+            id: 6,
+            payload: { activity_type: "result", metrics: { score: { value: 0.73 } } },
+          },
         }),
       }),
     });
@@ -268,8 +301,14 @@ describe("situ collections", () => {
     );
     expect(collections.sessions.size).toBe(1);
     expect(collections.sessions.get(SESSION_ID)?.status).toBe("closed");
+    expect(collections.baselines.get("baseline_project_0001_default")?.status).toBe(
+      "active",
+    );
     expect(collections.experiments.get("exp_session_0001_a")?.status).toBe("active");
     expect(collections.evaluations.get("eval_session_0001_a")?.status).toBe("active");
+    expect(collections.measurements.get("6")?.payload.metrics).toEqual({
+      score: { value: 0.73 },
+    });
     expect(collections.analyses.get("analysis_0001")?.status).toBe("active");
     expect(collections.agents.get("agent_project_0001_scientist")?.status).toBe("idle");
     expect(collections.tasks.get("task_project_0001_001")?.priority).toBe("high");
@@ -299,8 +338,10 @@ function upsert({
     | ProjectRecord
     | SessionRecord
     | HypothesisRecord
+    | BaselineRecord
     | ExperimentRecord
     | EvaluationRecord
+    | MeasurementRecord
     | AnalysisRecord
     | AgentRecord
     | TaskRecord
@@ -404,6 +445,24 @@ function experimentRecord({
   };
 }
 
+function baselineRecord({
+  overrides = {},
+}: {
+  overrides?: Partial<BaselineRecord>;
+}): BaselineRecord {
+  return {
+    id: "baseline_project_0001_default",
+    project_id: PROJECT_ID,
+    created_in_session_id: SESSION_ID,
+    status: "closed",
+    title: "Current workspace baseline",
+    summary: "Reference behavior before candidate changes.",
+    created_at: "2026-01-01T00:00:01Z",
+    updated_at: "2026-01-01T00:00:01Z",
+    ...overrides,
+  };
+}
+
 function evaluationRecord({
   overrides = {},
 }: {
@@ -416,9 +475,27 @@ function evaluationRecord({
     status: "closed",
     title: "Baseline project eval",
     summary: "Baseline toy evaluation.",
+    associated_baseline_id: "baseline_project_0001_default",
     associated_experiment_id: undefined,
     created_at: "2026-01-01T00:00:01Z",
     updated_at: "2026-01-01T00:00:01Z",
+    ...overrides,
+  };
+}
+
+function measurementRecord({
+  overrides = {},
+}: {
+  overrides?: Partial<MeasurementRecord>;
+}): MeasurementRecord {
+  return {
+    id: 1,
+    evaluation_id: "eval_session_0001_baseline",
+    created_in_session_id: SESSION_ID,
+    actor: "agent",
+    body: "Baseline result recorded.",
+    payload: { activity_type: "result", metrics: { score: { value: 0.71 } } },
+    created_at: "2026-01-01T00:00:02Z",
     ...overrides,
   };
 }
