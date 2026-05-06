@@ -38,7 +38,7 @@ def launch_dbos() -> None:
 
 def reset_dbos_for_tests() -> None:
     global _CONFIGURED, _LAUNCHED
-    DBOS.destroy(workflow_completion_timeout_sec=0)
+    DBOS.destroy(destroy_registry=True, workflow_completion_timeout_sec=0)
     _CONFIGURED = False
     _LAUNCHED = False
 
