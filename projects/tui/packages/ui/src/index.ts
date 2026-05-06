@@ -11,8 +11,10 @@ export {
   type CommandMessage,
 } from "./components/command-input/command-input.js";
 export {
+  DashboardCommandPicker,
   DashboardControls,
   type DashboardCommand,
+  type DashboardControlMode,
   type DashboardControlMessage,
 } from "./components/dashboard-controls/dashboard-controls.js";
 export { ActivitySection } from "./components/activity-section/activity-section.js";

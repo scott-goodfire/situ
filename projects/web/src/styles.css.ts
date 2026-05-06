@@ -463,6 +463,17 @@ export const objectPageSummary = style({
   lineHeight: 1.55,
 });
 
+export const objectPageBadgeRow = style({
+  display: "flex",
+  gap: 8,
+  flexWrap: "wrap",
+});
+
+export const dependencyList = style({
+  display: "grid",
+  gap: 4,
+});
+
 // ---------------------------------------------------------------------------
 // Activity timeline
 // ---------------------------------------------------------------------------

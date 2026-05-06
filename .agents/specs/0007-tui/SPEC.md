@@ -119,6 +119,9 @@ filter, or future note composer.
 
 The first slice command palette should stay small and operational. It may expose
 status, help, and quit, but should not send arbitrary user text to the agent.
+When the command palette is opened from the live dashboard, it should replace
+the activity pane in place. It must not render below the full-screen frame or
+change the dashboard's overall height.
 
 ## Setup
 

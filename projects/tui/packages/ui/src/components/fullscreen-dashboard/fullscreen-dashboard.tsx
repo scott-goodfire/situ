@@ -1,5 +1,6 @@
 import lodash from "lodash";
 import { Text } from "ink";
+import { useEffect, useState } from "react";
 import type {
   AgentRecord,
   EventRecord,
@@ -15,8 +16,10 @@ import type {
   TaskRecord,
 } from "@situ/protocol";
 import {
+  DashboardCommandPicker,
   DashboardControls,
   type DashboardCommand,
+  type DashboardControlMode,
   type DashboardControlMessage,
 } from "../dashboard-controls/dashboard-controls.js";
 import { LayoutBox } from "../layout-box/layout-box.js";
@@ -70,6 +73,7 @@ export function FullscreenDashboard({
   evaluationActivities,
   events,
   onDashboardCommand,
+  initialControlMode = "idle",
   terminalSize,
 }: {
   workspace: string;
@@ -90,8 +94,11 @@ export function FullscreenDashboard({
   evaluationActivities: EvaluationActivityRecord[];
   events: EventRecord[];
   onDashboardCommand: ({ command }: { command: DashboardCommand }) => void;
+  initialControlMode?: DashboardControlMode;
   terminalSize?: TerminalSize;
 }) {
+  const [controlMode, setControlMode] =
+    useState<DashboardControlMode>(initialControlMode);
   const detectedTerminalSize = useTerminalSize();
   const effectiveTerminalSize = terminalSize ?? detectedTerminalSize;
   const layout = computeDashboardLayout({
@@ -161,7 +168,10 @@ export function FullscreenDashboard({
       footer={
         <DashboardControls
           message={dashboardMessage}
+          mode={controlMode}
+          onModeChange={setControlMode}
           onCommand={onDashboardCommand}
+          renderCommandsInPlace
           idleRenderer={({ label, message }) => (
             <DashboardFrameFooter
               label={footerLabel({ label, message })}
@@ -213,17 +223,54 @@ export function FullscreenDashboard({
       </DashboardFrameSection>
 
       <DashboardFrameSection
-        label="activity"
+        label={controlMode === "commands" ? "commands" : "activity"}
         width={layout.width}
         height={layout.activityHeight}
       >
-        <ActivityFeed
-          rows={activityRows}
-          width={layout.contentWidth}
-          height={layout.activityHeight}
-        />
+        {controlMode === "commands" ? (
+          <DashboardCommandPane
+            width={layout.contentWidth}
+            height={layout.activityHeight}
+            onCancel={() => {
+              setControlMode("idle");
+            }}
+            onCommand={({ command }) => {
+              setControlMode("idle");
+              onDashboardCommand({ command });
+            }}
+          />
+        ) : (
+          <ActivityFeed
+            rows={activityRows}
+            width={layout.contentWidth}
+            height={layout.activityHeight}
+          />
+        )}
       </DashboardFrameSection>
     </DashboardFrame>
+  );
+}
+
+function DashboardCommandPane({
+  width,
+  height,
+  onCancel,
+  onCommand,
+}: {
+  width: number;
+  height: number;
+  onCancel: () => void;
+  onCommand: ({ command }: { command: DashboardCommand }) => void;
+}) {
+  return (
+    <LayoutBox width={width} height={height}>
+      <DashboardCommandPicker
+        message={undefined}
+        onCancel={onCancel}
+        onCommand={onCommand}
+        showHint={false}
+      />
+    </LayoutBox>
   );
 }
 
@@ -554,7 +601,7 @@ function TaskColumnDivider({ height }: { height: number }) {
 }
 
 function TaskRow({ task, width }: { task: DashboardTask; width: number }) {
-  const glyph = glyphForTask({ task });
+  const glyph = useTaskGlyph({ task });
   const color = colorForTask({ task });
   const row = fitRow({
     value: `${glyph} ${task.title}`,
@@ -687,14 +734,10 @@ function buildDashboardTasks({
   experimentActivities: ExperimentActivityRecord[];
   evaluationActivities: EvaluationActivityRecord[];
 }): DashboardTask[] {
+  void agents;
+
   if (tasks.length > 0) {
-    const agentsById = lodash.keyBy(agents, "id");
-    const taskRows = tasks.map((task) =>
-      taskFromTaskRecord({
-        task,
-        agent: task.assignee_id ? agentsById[task.assignee_id] : undefined,
-      }),
-    );
+    const taskRows = tasks.map((task) => taskFromTaskRecord({ task }));
 
     return lodash.orderBy(
       taskRows,
@@ -731,16 +774,12 @@ function buildDashboardTasks({
 
 function taskFromTaskRecord({
   task,
-  agent,
 }: {
   task: TaskRecord;
-  agent: AgentRecord | undefined;
 }): DashboardTask {
-  const assigneePrefix = agent ? `${agent.display_name}: ` : "";
-
   return {
     id: `task:${task.id}`,
-    title: `${assigneePrefix}${task.title}`,
+    title: task.title,
     status: statusForTaskRecord({ status: task.status }),
     kind: "task",
     tone: toneForTaskRecord({ task }),
@@ -772,12 +811,12 @@ function toneForTaskRecord({
     return "danger";
   }
 
-  if (task.priority === "urgent" || task.priority === "high") {
-    return "warning";
-  }
-
   if (task.status === "done") {
     return "success";
+  }
+
+  if (task.priority === "urgent" || task.priority === "high") {
+    return "warning";
   }
 
   return undefined;
@@ -1153,6 +1192,49 @@ function lastActivitySummary({
   }
 
   return `last ${latest.kind} ${timeLabel({ isoTimestamp: latest.createdAt })}`;
+}
+
+function useTaskGlyph({ task }: { task: DashboardTask }): string {
+  const isAnimated =
+    task.status === "in-progress" &&
+    task.tone !== "danger" &&
+    task.kind !== "concern";
+  const animatedGlyph = useAnimatedInProgressGlyph({ isActive: isAnimated });
+
+  if (isAnimated) {
+    return animatedGlyph;
+  }
+
+  return glyphForTask({ task });
+}
+
+function useAnimatedInProgressGlyph({
+  isActive,
+}: {
+  isActive: boolean;
+}): string {
+  const [frameIndex, setFrameIndex] = useState(0);
+
+  useEffect(() => {
+    if (!isActive) {
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setFrameIndex((currentFrameIndex) => currentFrameIndex + 1);
+    }, 450);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [isActive]);
+
+  if (!isActive) {
+    return "●";
+  }
+
+  const frames = ["●", "◐", "○", "◑"];
+  return frames[frameIndex % frames.length] ?? "●";
 }
 
 function glyphForTask({ task }: { task: DashboardTask }): string {

@@ -44,6 +44,17 @@ export const stories = [
     ),
   },
   {
+    id: "fullscreen-dashboard/commands",
+    title: "Fullscreen Dashboard",
+    name: "commands",
+    render: () => (
+      <StoryFullscreenDashboard
+        initialControlMode="commands"
+        terminalSize={{ columns: 112, rows: 34 }}
+      />
+    ),
+  },
+  {
     id: "fullscreen-dashboard/too-small",
     title: "Fullscreen Dashboard",
     name: "too small",
@@ -56,8 +67,10 @@ export const stories = [
 ] satisfies TuiStory[];
 
 function StoryFullscreenDashboard({
+  initialControlMode = "idle",
   terminalSize,
 }: {
+  initialControlMode?: "idle" | "commands";
   terminalSize: { columns: number; rows: number };
 }) {
   const { exit } = useApp();
@@ -85,6 +98,7 @@ function StoryFullscreenDashboard({
       experimentActivities={runningExperimentActivities}
       evaluationActivities={runningEvaluationActivities}
       events={[]}
+      initialControlMode={initialControlMode}
       terminalSize={terminalSize}
       onDashboardCommand={({ command }) => {
         handleStoryDashboardCommand({

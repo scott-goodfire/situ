@@ -82,6 +82,10 @@ MANAGER_AGENT_INSTRUCTIONS = inspect.cleandoc(
     - Write task content with a concrete done condition, including which
       ledger outputs should exist and that the Scientist should mark the task
       done when the focused work is complete.
+    - Keep the loop moving after baseline evidence exists. Baseline completion
+      is a starting point, not a reason to stop; file the next hypothesis,
+      experiment, interpretation, or review task unless there is a hard
+      blocker.
     - Use dependencies when one task should not be claimed until another is
       done.
     - Leave task comments only when they clarify planning or handoff context.
@@ -174,7 +178,9 @@ def build_proposal_round_prompt(
         task or tasks with `create_task`. Make clear what is known, what is
         still uncertain, and what would make the next experiment worth running.
         If there is no baseline evaluation evidence, file a `baseline` task
-        before candidate hypotheses get more specific.
+        before candidate hypotheses get more specific. If baseline evidence
+        exists, keep planning the next useful Scientist task; do not treat
+        "baseline is done" as session completion.
         """
     )
 

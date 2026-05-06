@@ -98,6 +98,20 @@ start once the project exists. DBOS should still wrap runnable Pydantic AI
 agents; Situ should not add a separate workflow engine unless task-shaped
 agent/tool execution stops being enough.
 
+The runtime should treat Manager and Scientist as logically always-available
+workers. A Manager pass is triggered by session start, Scientist task
+completion, user steering, or lack of runnable Scientist work. A Scientist pass
+is triggered by a runnable Scientist task. Each LLM pass should stay focused:
+the Manager handles one planning task, and the Scientist handles one claimed
+work task.
+
+Baseline completion must not close the session by itself. The Manager should be
+prompted to keep planning after a Scientist task completes. A single Manager
+pass that creates no runnable next work is not enough to stop the loop; the
+runtime may close only after a small no-progress guardrail such as three
+consecutive planning cycles with no runnable Scientist task, after the
+experiment budget is reached, after user stop, or after a fatal failure.
+
 ## TUI Shape
 
 The TUI should be able to show a compact board grouped by task status:

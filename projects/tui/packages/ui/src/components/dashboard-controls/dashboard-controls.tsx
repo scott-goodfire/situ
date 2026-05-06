@@ -8,6 +8,7 @@ import {
 } from "../choice-prompt/choice-prompt.js";
 
 export type DashboardCommand = "status" | "help" | "quit";
+export type DashboardControlMode = "idle" | "commands";
 
 export type DashboardControlMessage = {
   text: string;
@@ -36,9 +37,12 @@ export function DashboardControls({
   initialMode = "idle",
   idleRenderer,
   message,
+  mode,
+  onModeChange,
   onCommand,
+  renderCommandsInPlace = false,
 }: {
-  initialMode?: "idle" | "commands";
+  initialMode?: DashboardControlMode;
   idleRenderer?: ({
     label,
     message,
@@ -47,9 +51,15 @@ export function DashboardControls({
     message: DashboardControlMessage | undefined;
   }) => ReactNode;
   message: DashboardControlMessage | undefined;
+  mode?: DashboardControlMode;
+  onModeChange?: (mode: DashboardControlMode) => void;
   onCommand: ({ command }: { command: DashboardCommand }) => void;
+  renderCommandsInPlace?: boolean;
 }) {
-  const [mode, setMode] = useState<"idle" | "commands">(initialMode);
+  const [internalMode, setInternalMode] =
+    useState<DashboardControlMode>(initialMode);
+  const controlMode = mode ?? internalMode;
+  const setMode = onModeChange ?? setInternalMode;
   const { isRawModeSupported } = useStdin();
   const canUseInput = Boolean(process.stdin.isTTY) && isRawModeSupported;
 
@@ -70,31 +80,42 @@ export function DashboardControls({
       }
     },
     {
-      isActive: canUseInput && mode === "idle",
+      isActive: canUseInput && controlMode === "idle",
     },
   );
 
-  if (mode === "commands") {
+  if (controlMode === "commands" && renderCommandsInPlace) {
+    if (idleRenderer) {
+      return (
+        <>
+          {idleRenderer({
+            label: commandModeLabel(),
+            message,
+          })}
+        </>
+      );
+    }
+
     return (
       <Box flexDirection="column">
         {message && <Text color={message.tone}>{message.text}</Text>}
-        <ChoicePrompt
-          title="Commands"
-          message="Choose a dashboard command."
-          options={commandOptions}
-          onCancel={() => {
-            setMode("idle");
-          }}
-          onSelect={({ option }) => {
-            handleCommandSelection({
-              option,
-              setMode,
-              onCommand,
-            });
-          }}
-        />
-        <Text dimColor>Enter selects. Escape closes commands.</Text>
+        <Text dimColor>{commandModeLabel()}</Text>
       </Box>
+    );
+  }
+
+  if (controlMode === "commands") {
+    return (
+      <DashboardCommandPicker
+        message={message}
+        onCancel={() => {
+          setMode("idle");
+        }}
+        onCommand={({ command }) => {
+          setMode("idle");
+          onCommand({ command });
+        }}
+      />
     );
   }
 
@@ -114,17 +135,48 @@ function controlLabel(): string {
   return "? help · : commands · q quit";
 }
 
+function commandModeLabel(): string {
+  return "Enter selects · Esc closes commands";
+}
+
+export function DashboardCommandPicker({
+  message,
+  onCancel,
+  onCommand,
+  showHint = true,
+}: {
+  message: DashboardControlMessage | undefined;
+  onCancel: () => void;
+  onCommand: ({ command }: { command: DashboardCommand }) => void;
+  showHint?: boolean;
+}) {
+  return (
+    <Box flexDirection="column">
+      {message && <Text color={message.tone}>{message.text}</Text>}
+      <ChoicePrompt
+        title="Commands"
+        message="Choose a dashboard command."
+        options={commandOptions}
+        onCancel={onCancel}
+        onSelect={({ option }) => {
+          handleCommandSelection({
+            option,
+            onCommand,
+          });
+        }}
+      />
+      {showHint && <Text dimColor>{commandModeLabel()}</Text>}
+    </Box>
+  );
+}
+
 function handleCommandSelection({
   option,
-  setMode,
   onCommand,
 }: {
   option: ChoicePromptSelection["option"];
-  setMode: (mode: "idle" | "commands") => void;
   onCommand: ({ command }: { command: DashboardCommand }) => void;
 }) {
-  setMode("idle");
-
   if (option.value === "status") {
     onCommand({ command: "status" });
     return;

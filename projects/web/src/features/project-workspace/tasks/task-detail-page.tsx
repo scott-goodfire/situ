@@ -58,7 +58,7 @@ export function TaskDetailPage({
           <DxBadge>{task.status.replace(/_/g, " ")}</DxBadge>
         </div>
         {task.content && <p className={s.objectPageSummary}>{task.content}</p>}
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <div className={s.objectPageBadgeRow}>
           <DxBadge>{task.priority}</DxBadge>
           <DxBadge>{task.source_kind}</DxBadge>
           {assignee && <DxBadge>assignee: {assignee.display_name}</DxBadge>}
@@ -119,7 +119,7 @@ function DependencyList({
   keyOf: (dep: TaskDependencyRecord) => string;
 }) {
   return (
-    <div style={{ display: "grid", gap: 4 }}>
+    <div className={s.dependencyList}>
       <strong>{label}</strong>
       {dependencies.map((dep) => {
         const targetId = keyOf(dep);

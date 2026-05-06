@@ -610,7 +610,7 @@ function evaluationActivityRecord({
     evaluation_id: "eval_session_0001_baseline",
     created_in_session_id: storySessionId,
     actor: "agent",
-    kind: "comment",
+    kind: "result",
     body: "Baseline eval result recorded.",
     payload: { activity_type: "result" },
     created_at: "2026-01-01T00:00:03Z",

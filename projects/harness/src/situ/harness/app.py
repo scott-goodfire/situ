@@ -37,12 +37,24 @@ from .core.notifications import (
 )
 from .core.observability import span
 from .core.project_context import ProjectContext
-from .records import AgentKind, AgentStatus, EventRecord, TaskKind, TaskRecord, TaskStatus
+from .records import (
+    AgentKind,
+    AgentStatus,
+    EventRecord,
+    SessionStatus,
+    TaskKind,
+    TaskRecord,
+    TaskStatus,
+)
 from .records.base import DbRecord
 from .repositories import Repositories
 from .tools.tasks.eligibility import eligible_task_kinds_for_agent
 
 NotificationWriter = Callable[[str, dict[str, Any]], None]
+
+MANAGER_NO_PROGRESS_LIMIT = 3
+SESSION_AGENT_PASS_LIMIT_MINIMUM = 12
+SESSION_AGENT_PASS_LIMIT_PER_EXPERIMENT = 8
 
 
 class HarnessApp:
@@ -397,7 +409,15 @@ class HarnessApp:
         terminal_statuses = {TaskStatus.DONE, TaskStatus.ABANDONED, TaskStatus.FAILED}
         if current.status in terminal_statuses:
             if current.assignee_id is not None:
-                self.repos.agents.update(current.assignee_id, status=AgentStatus.IDLE)
+                updated_agent = self.repos.agents.update(
+                    current.assignee_id,
+                    status=AgentStatus.IDLE,
+                )
+                if updated_agent is not None:
+                    self.publish_record(
+                        updated_agent,
+                        cursor=self.collections_api.current_cursor(),
+                    )
             return
         updated_task = self.repos.tasks.update(
             task.id,
@@ -427,8 +447,7 @@ class HarnessApp:
             self.publish_record(updated_agent, cursor=event.id)
 
     def _execute_session(self, session_id: str, max_experiments: int) -> None:
-        manager_task: TaskRecord | None = None
-        scientist_task: TaskRecord | None = None
+        active_task: TaskRecord | None = None
         try:
             workspace = self.repos.workspaces.get()
             session = self.repos.sessions.get(session_id)
@@ -439,106 +458,203 @@ class HarnessApp:
                 session_id
             )
             runtime = self._get_agent_runtime()
+            no_progress_plans = 0
+            agent_passes = 0
+            max_agent_passes = max(
+                SESSION_AGENT_PASS_LIMIT_MINIMUM,
+                max_experiments * SESSION_AGENT_PASS_LIMIT_PER_EXPERIMENT,
+            )
+            completion_summary = "Session loop completed."
 
             with span(
                 "situ.session.execute",
                 session_id=session_id,
                 workspace=workspace.repo_path,
             ):
-                manager_task = self._claim_next_task(
-                    session_id=session_id,
-                    agent_kind=AgentKind.MANAGER,
-                )
-                manager_result = runtime.plan_session(
-                    workspace=workspace.model_dump(),
-                    setup_objective=setup.get("objective", ""),
-                    setup_research_context=setup.get("research_context", ""),
-                    current_state=self.sessions_api.get_session(session_id).model_dump(),
-                    session_id=session_id,
-                    repos=self.repos,
-                    active_task=(
-                        manager_task.model_dump() if manager_task is not None else None
-                    ),
-                )
-                self.record_event(
-                    "session.manager_completed",
-                    manager_result.summary,
-                    session_id=session_id,
-                    payload=manager_result.model_dump(),
-                )
-                if manager_task is not None:
-                    self._finish_claimed_task(
-                        task=manager_task,
+                while True:
+                    session = self.repos.sessions.get(session_id)
+                    if session is None or session.status == SessionStatus.CLOSED:
+                        return
+
+                    completed_experiments = self._experiment_count(session_id)
+                    remaining_experiments = max(
+                        0,
+                        max_experiments - completed_experiments,
+                    )
+                    if remaining_experiments <= 0:
+                        completion_summary = (
+                            f"Completed {max_experiments} experiment budget."
+                        )
+                        break
+
+                    if agent_passes >= max_agent_passes:
+                        completion_summary = (
+                            "Stopped after reaching the session agent-pass "
+                            f"guardrail ({max_agent_passes} passes)."
+                        )
+                        break
+
+                    manager_task = self._claim_next_task(
                         session_id=session_id,
-                        status=TaskStatus.DONE,
-                        result_summary=manager_result.summary,
+                        agent_kind=AgentKind.MANAGER,
+                    )
+                    if manager_task is not None:
+                        active_task = manager_task
+                        agent_passes += 1
+                        manager_result = runtime.plan_session(
+                            workspace=workspace.model_dump(),
+                            setup_objective=setup.get("objective", ""),
+                            setup_research_context=setup.get("research_context", ""),
+                            current_state=self.sessions_api.get_session(
+                                session_id
+                            ).model_dump(),
+                            session_id=session_id,
+                            repos=self.repos,
+                            active_task=manager_task.model_dump(),
+                        )
+                        completion_summary = manager_result.summary
+                        self.record_event(
+                            "session.manager_completed",
+                            manager_result.summary,
+                            session_id=session_id,
+                            project_id=manager_task.project_id,
+                            payload=manager_result.model_dump(),
+                        )
+                        self._finish_claimed_task(
+                            task=manager_task,
+                            session_id=session_id,
+                            status=TaskStatus.DONE,
+                            result_summary=manager_result.summary,
+                        )
+                        active_task = None
+
+                    scientist_task = self._claim_next_task(
+                        session_id=session_id,
+                        agent_kind=AgentKind.SCIENTIST,
+                    )
+                    if scientist_task is not None:
+                        active_task = scientist_task
+                        no_progress_plans = 0
+                        agent_passes += 1
+                        result = runtime.run_session(
+                            workspace=workspace.model_dump(),
+                            setup_objective=setup.get("objective", ""),
+                            setup_research_context=setup.get("research_context", ""),
+                            current_state=self.sessions_api.get_session(
+                                session_id
+                            ).model_dump(),
+                            session_id=session_id,
+                            max_experiments=remaining_experiments,
+                            app_root=self.app_root,
+                            repos=self.repos,
+                            active_task=scientist_task.model_dump(),
+                        )
+                        completion_summary = result.summary
+                        self._finish_claimed_task(
+                            task=scientist_task,
+                            session_id=session_id,
+                            status=TaskStatus.DONE,
+                            result_summary=result.summary,
+                        )
+                        self.record_event(
+                            "session.agent_completed",
+                            result.summary,
+                            session_id=session_id,
+                            project_id=scientist_task.project_id,
+                            payload=result.model_dump(),
+                        )
+                        active_task = None
+
+                        if self._experiment_count(session_id) >= max_experiments:
+                            completion_summary = (
+                                f"Completed {max_experiments} experiment budget."
+                            )
+                            break
+
+                        self._enqueue_plan_task(
+                            session_id=session_id,
+                            project_id=scientist_task.project_id,
+                            title="Plan after Scientist task completion",
+                            content=(
+                                "A Scientist task just completed. Review the "
+                                "project ledger, task board, recent activity, "
+                                "and experiment budget. File the next focused "
+                                "Scientist task so the research loop keeps "
+                                "moving."
+                            ),
+                            source_kind="system",
+                        )
+                        continue
+
+                    no_progress_plans += 1
+                    if no_progress_plans >= MANAGER_NO_PROGRESS_LIMIT:
+                        completion_summary = (
+                            "Stopped after "
+                            f"{MANAGER_NO_PROGRESS_LIMIT} consecutive planning "
+                            "cycles produced no runnable Scientist task."
+                        )
+                        break
+
+                    project_id = session.project_id
+                    if project_id is None:
+                        completion_summary = "Stopped because the session has no project."
+                        break
+                    self._enqueue_plan_task(
+                        session_id=session_id,
+                        project_id=project_id,
+                        title="Continue planning the next research step",
+                        content=(
+                            "The previous planning cycle did not leave a "
+                            "runnable Scientist task. Re-read the project "
+                            "objective, ledger, and task board, then file one "
+                            "focused runnable Scientist task unless there is a "
+                            "hard blocker."
+                        ),
+                        source_kind="system",
                     )
 
-                scientist_task = self._claim_next_task(
-                    session_id=session_id,
-                    agent_kind=AgentKind.SCIENTIST,
-                )
-                result = runtime.run_session(
-                    workspace=workspace.model_dump(),
-                    setup_objective=setup.get("objective", ""),
-                    setup_research_context=setup.get("research_context", ""),
-                    current_state=self.sessions_api.get_session(session_id).model_dump(),
-                    session_id=session_id,
-                    max_experiments=max_experiments,
-                    app_root=self.app_root,
-                    repos=self.repos,
-                    active_task=(
-                        scientist_task.model_dump()
-                        if scientist_task is not None
-                        else None
-                    ),
-                )
-                if scientist_task is not None:
-                    self._finish_claimed_task(
-                        task=scientist_task,
-                        session_id=session_id,
-                        status=TaskStatus.DONE,
-                        result_summary=result.summary,
-                    )
-
-            self.record_event(
-                "session.agent_completed",
-                result.summary,
+            self._close_session(
                 session_id=session_id,
-                payload=result.model_dump(),
+                event_type="session.completed",
+                message=f"Completed {session_id}: {completion_summary}",
+                payload={"summary": completion_summary},
             )
-            session = self.repos.sessions.update_status(session_id, "closed")
-            event = self.record_event(
-                "session.completed",
-                f"Completed {session_id}",
-                session_id=session_id,
-            )
-            if session is not None:
-                self.publish_record(session, cursor=event.id)
         except Exception as error:
-            if manager_task is not None:
+            if active_task is not None:
                 self._finish_claimed_task(
-                    task=manager_task,
+                    task=active_task,
                     session_id=session_id,
                     status=TaskStatus.FAILED,
                     result_summary=str(error),
                 )
-            if scientist_task is not None:
-                self._finish_claimed_task(
-                    task=scientist_task,
-                    session_id=session_id,
-                    status=TaskStatus.FAILED,
-                    result_summary=str(error),
-                )
-            session = self.repos.sessions.update_status(session_id, "closed")
-            event = self.record_event(
-                "session.failed",
-                f"Session failed: {error}",
+            self._close_session(
                 session_id=session_id,
+                event_type="session.failed",
+                message=f"Session failed: {error}",
                 payload={"error": str(error)},
             )
-            if session is not None:
-                self.publish_record(session, cursor=event.id)
+
+    def _experiment_count(self, session_id: str) -> int:
+        return len(self.repos.experiments.list_for_session(session_id))
+
+    def _close_session(
+        self,
+        *,
+        session_id: str,
+        event_type: str,
+        message: str,
+        payload: dict[str, Any] | None = None,
+    ) -> None:
+        session = self.repos.sessions.update_status(session_id, "closed")
+        event = self.record_event(
+            event_type,
+            message,
+            session_id=session_id,
+            project_id=session.project_id if session is not None else None,
+            payload=payload,
+        )
+        if session is not None:
+            self.publish_record(session, cursor=event.id)
 
     def _setup_from_records(self, session_id: str) -> dict[str, str]:
         session = self.repos.sessions.get(session_id)
