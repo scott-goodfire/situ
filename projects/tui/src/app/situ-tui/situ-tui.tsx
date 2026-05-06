@@ -214,7 +214,6 @@ export function SituTui() {
     const mode = sessionMode();
     const sessionUrl = process.env.SITU_APP_URL ?? process.env.SITU_SESSION_URL;
     const sessionToken = process.env.SITU_APP_TOKEN ?? process.env.SITU_SESSION_TOKEN;
-    const projectId = process.env.SITU_PROJECT_ID;
 
     if (!sessionUrl || !sessionToken) {
       setStatus({
@@ -228,7 +227,6 @@ export function SituTui() {
       baseUrl: sessionUrl,
       token: sessionToken,
       workspace,
-      projectId,
     });
     clientRef.current = client;
     trackedSessionIdRef.current = undefined;

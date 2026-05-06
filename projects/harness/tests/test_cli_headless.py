@@ -462,6 +462,7 @@ def test_tui_uses_existing_app_server(
     workspace = tmp_path / "workspace"
     workspace.mkdir()
     calls: list[dict[str, Any]] = []
+    monkeypatch.delenv("SITU_PROJECT_ID", raising=False)
 
     class Completed:
         returncode = 0
@@ -491,3 +492,4 @@ def test_tui_uses_existing_app_server(
     assert calls[0]["env"]["SITU_APP_URL"] == "http://127.0.0.1:1"
     assert calls[0]["env"]["SITU_APP_TOKEN"] == "token"
     assert calls[0]["env"]["SITU_WORKSPACE"] == str(workspace)
+    assert "SITU_PROJECT_ID" not in calls[0]["env"]

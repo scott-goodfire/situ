@@ -41,6 +41,66 @@ def test_session_loop_replans_after_baseline_before_closing(
     )
 
 
+def test_default_session_start_creates_fresh_project_per_session(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    app = HarnessApp(
+        workspace,
+        app_root=Path.cwd(),
+        project_home=tmp_path / "home",
+        notify=lambda _method, _params: None,
+    )
+    monkeypatch.setattr(app, "_start_session_thread", lambda **_kwargs: None)
+
+    first = app.session_start(
+        {
+            "objective": "Improve score",
+            "research_context": "Run local evals.",
+            "max_experiments": 1,
+        }
+    )
+    second = app.session_start(
+        {
+            "objective": "Improve score again",
+            "research_context": "Run local evals again.",
+            "max_experiments": 1,
+        }
+    )
+
+    sessions = app.repos.sessions.list_all()
+    projects = app.repos.projects.list_all()
+    started_events = [
+        event for event in app.repos.events.list_all() if event.type == "session.started"
+    ]
+
+    assert [first["session_id"], second["session_id"]] == [
+        "session_0001",
+        "session_0002",
+    ]
+    assert len(projects) == 2
+    assert len(sessions) == 2
+    assert [session.project_id for session in sessions] == [
+        project.id for project in projects
+    ]
+    assert all(session.project_id is not None for session in sessions)
+    assert [project.title for project in projects] == ["workspace", "workspace"]
+    assert [project.objective for project in projects] == [
+        "Improve score",
+        "Improve score again",
+    ]
+    assert [event.associated_session_id for event in started_events] == [
+        "session_0001",
+        "session_0002",
+    ]
+    assert [event.associated_project_id for event in started_events] == [
+        projects[0].id,
+        projects[1].id,
+    ]
+
+
 def test_session_loop_retries_manager_before_no_progress_close(
     tmp_path: Path,
     monkeypatch,

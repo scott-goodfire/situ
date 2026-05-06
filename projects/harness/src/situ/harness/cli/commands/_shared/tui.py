@@ -7,7 +7,6 @@ from pathlib import Path
 
 from ..._shared import apply_session_env
 from ....core.paths import resolve_app_root, resolve_workspace
-from ....core.project_context import ProjectContext
 from ...local_session import base_env, read_live_app
 
 
@@ -31,12 +30,9 @@ def launch_app_tui(
         print("no active Situ app found; run situ app in another terminal", file=sys.stderr)
         return 1
 
-    context = ProjectContext(workspace)
-
     env = base_env(app_root, workspace)
     apply_session_env(env, args)
     env["SITU_SESSION_MODE"] = mode
-    env["SITU_PROJECT_ID"] = context.project_id
     env["SITU_APP_URL"] = app["url"]
     env["SITU_APP_TOKEN"] = app["token"]
     env["SITU_SESSION_URL"] = app["url"]

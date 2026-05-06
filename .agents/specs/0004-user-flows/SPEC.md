@@ -10,16 +10,16 @@ User runs `situ app`
 User runs `situ tui`
   |
   |-- Existing local project context?
-  |     |-- yes -> create a fresh session by default
-  |     `-- no  -> use supplied objective/context or sparse defaults, then create a fresh session
+  |     |-- yes -> create a fresh project and attached session by default
+  |     `-- no  -> use supplied objective/context or sparse defaults, then create a fresh project and attached session
   |
   `-- TUI renders live session observability
 ```
 
 The default runtime flow is two terminals: one app process for all sessions and
 one TUI client for the selected workspace. The TUI should not implicitly resume
-old research state. The primary surface is `situ app` plus `situ tui`; there is
-no `situ start` compatibility command.
+old research state or reuse an old project. The primary surface is `situ app`
+plus `situ tui`; there is no `situ start` compatibility command.
 
 ## Setup Inputs
 
@@ -46,8 +46,9 @@ situ exec . \
 which outputs matter, how to read ordinary command output, and what should be
 considered suspicious.
 
-After setup input is resolved, Situ should create a new session with its own
-objective and research context, then render the TUI dashboard.
+After setup input is resolved, Situ should create a new project carrying the
+objective and research context, create a new session attached to that project,
+then render the TUI dashboard.
 
 ## Resume Flow
 
@@ -61,7 +62,7 @@ User runs `situ tui --resume <session-id>`
 
 `resume` means continue the same session id and append to the same ledger.
 Starting from prior findings in a new session should be a separate future
-`start --from <session-id>` style flow, not implicit resume.
+`tui --from <session-id>` style flow, not implicit resume.
 
 ## Attach Flow
 

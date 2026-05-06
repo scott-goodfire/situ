@@ -33,8 +33,13 @@ Workspace
 The workspace is the folder boundary and owns local Situ state for a repo path.
 Projects are research efforts inside a workspace. A project carries the
 objective and research context for that effort. Sessions are live autoresearch
-runs inside a workspace, and may attach to zero or one project. A projectless
-session is valid while setup or triage is still incomplete.
+runs inside a workspace, and may attach to zero or one project.
+
+For the current product slice, the default `situ tui [workspace]` start flow is
+one fresh project for one fresh session. The project is created or resolved
+first, then the session is created attached to that project. A projectless
+session remains a valid low-level state while setup or triage is incomplete,
+but it is not the default user-facing start behavior.
 
 Projects own the durable research ledger and coordination state: agents, agent
 message history, tasks, task dependencies, task entity links, task activities,
@@ -73,12 +78,14 @@ Research context can include commands, tools, dashboards, metrics, eval suites,
 logs, cluster jobs, notebooks, or human review criteria. Do not require the
 user to reduce this to one command or one metric during onboarding.
 
-A session may have no project when it first starts. Once the setup is known,
-the manager or user can create or attach a project. Multiple sessions may attach
-to the same project over time. Analyses, hypotheses, baselines, experiments,
-evaluations, measurements, research activities, and artifacts created while
-that session is attached to a project belong to the project, with optional
-`created_in_session_id` provenance.
+The default start flow creates a new project for a new session and attaches the
+session immediately. Resuming an existing session continues that same session
+and therefore the same project. Future flows may let a user deliberately start
+a new session from an existing project, but that is not implicit in the current
+slice. Analyses, hypotheses, baselines, experiments, evaluations, measurements,
+research activities, and artifacts created while that session is attached to a
+project belong to the project, with optional `created_in_session_id`
+provenance.
 
 ## Session
 
@@ -86,10 +93,11 @@ The main unit of autoresearch work.
 
 A session belongs to one workspace (required `workspace_id` FK) and may attach
 to one project (`project_id`, nullable). It owns lifecycle status and runtime
-association, not the research ledger or coordination records. Each new `situ
-start` creates a new session. `situ resume` is the explicit action for
-continuing the same session id. There is no stored "active session" pointer on
-the workspace; lookups for "the latest session" sort by `updated_at` on demand.
+association, not the research ledger or coordination records. Each new default
+`situ tui [workspace]` start creates a new project and a new attached session.
+`situ tui --resume <session-id>` is the explicit action for continuing the same
+session id. There is no stored "active session" pointer on the workspace;
+lookups for "the latest session" sort by `updated_at` on demand.
 
 Agent, task, and research records may point back to the session that created,
 claimed, completed, or otherwise observed them. Those fields are provenance and

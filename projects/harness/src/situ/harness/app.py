@@ -41,6 +41,7 @@ from .records import (
     AgentKind,
     AgentStatus,
     EventRecord,
+    ProjectRecord,
     ProjectStatus,
     SessionStatus,
     TaskKind,
@@ -175,53 +176,50 @@ class HarnessApp:
     def session_start(self, params: dict[str, Any]) -> dict[str, Any]:
         start = SessionStartParams.model_validate(params)
         workspace = self.repos.workspaces.ensure()
+        session_id = self.sessions_api.next_session_id().session_id
         project = self._project_from_start(start, workspace_id=workspace.id)
 
-        session_id = self.sessions_api.next_session_id().session_id
         session = self.repos.sessions.create(
             session_id,
             workspace_id=workspace.id,
-            project_id=project.id if project is not None else None,
+            project_id=project.id,
         )
         self._session_setup[session_id] = {
-            "objective": project.objective if project is not None else start.objective,
-            "research_context": (
-                project.research_context if project is not None else start.research_context
-            ),
+            "objective": project.objective,
+            "research_context": project.research_context,
         }
         event = self.record_event(
             "session.started",
             f"Started {session_id}",
             session_id=session_id,
+            project_id=project.id,
             payload={
                 "workspace_id": workspace.id,
-                "project_id": project.id if project is not None else None,
-                "objective": start.objective,
-                "research_context": start.research_context,
+                "project_id": project.id,
+                "objective": project.objective,
+                "research_context": project.research_context,
             },
         )
         self.publish_record(workspace, cursor=event.id)
-        if project is not None:
-            self.publish_record(project, cursor=event.id)
+        self.publish_record(project, cursor=event.id)
         self.publish_record(session, cursor=event.id)
-        if project is not None:
-            self._ensure_project_agents(session_id=session_id, project_id=project.id)
-            self._enqueue_plan_task(
-                session_id=session_id,
-                project_id=project.id,
-                title="Plan the first research pass",
-                content=(
-                    "Read the session project, objective, research context, current "
-                    "ledger state, and task board. File the next focused scientist "
-                    "task or tasks."
-                ),
-                source_kind="system",
-            )
+        self._ensure_project_agents(session_id=session_id, project_id=project.id)
+        self._enqueue_plan_task(
+            session_id=session_id,
+            project_id=project.id,
+            title="Plan the first research pass",
+            content=(
+                "Read the session project, objective, research context, current "
+                "ledger state, and task board. File the next focused scientist "
+                "task or tasks."
+            ),
+            source_kind="system",
+        )
 
-            self._start_session_thread(
-                session_id=session_id,
-                max_experiments=start.max_experiments,
-            )
+        self._start_session_thread(
+            session_id=session_id,
+            max_experiments=start.max_experiments,
+        )
 
         return SessionStartResult(session_id=session_id, status="active").model_dump()
 
@@ -313,20 +311,29 @@ class HarnessApp:
         start: SessionStartParams,
         *,
         workspace_id: str,
-    ):
+    ) -> ProjectRecord:
         requested_project_id = getattr(start, "project_id", None)
         if requested_project_id:
             project = self.repos.projects.get(requested_project_id)
             if project is None:
                 raise RuntimeError(f"project not found: {requested_project_id}")
+            if project.workspace_id != workspace_id:
+                raise RuntimeError(
+                    f"project {requested_project_id} does not belong to "
+                    f"workspace {workspace_id}"
+                )
             return project
 
         objective = start.objective.strip()
         research_context = start.research_context.strip()
-        if not objective and not research_context:
-            return None
-
-        title = getattr(start, "project_title", None) or objective or "Untitled project"
+        raw_title = getattr(start, "project_title", None)
+        title = (
+            raw_title.strip()
+            if isinstance(raw_title, str) and raw_title.strip()
+            else self.context.repo_root.name
+            or objective
+            or "Untitled project"
+        )
         return self.repos.projects.create(
             project_id=self.repos.projects.next_id(workspace_id),
             workspace_id=workspace_id,

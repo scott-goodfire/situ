@@ -160,6 +160,7 @@ export function FullscreenDashboard({
   });
   const headerLabel = dashboardHeaderLabel({
     workspace,
+    project,
     session,
   });
 
@@ -728,16 +729,19 @@ function ExpandTerminalNotice({
 
 function dashboardHeaderLabel({
   workspace,
+  project,
   session,
 }: {
   workspace: string;
+  project: ProjectRecord | undefined;
   session: SessionRecord | undefined;
 }): string {
   const sessionLabel = session
     ? `${session.id} ${session.status}`
     : "no session";
+  const projectLabel = project?.title || workspaceName({ workspace });
 
-  return `SITU / ${workspaceName({ workspace })} / ${sessionLabel}`;
+  return `SITU / ${projectLabel} / ${sessionLabel}`;
 }
 
 function workspaceName({ workspace }: { workspace: string }): string {
