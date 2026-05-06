@@ -1,4 +1,5 @@
 import { useState } from "react";
+import * as s from "./dx-command.css";
 
 export function DxCommand({
   command,
@@ -10,11 +11,11 @@ export function DxCommand({
   const [copied, setCopied] = useState(false);
 
   return (
-    <div className="dx-command">
-      <code className="dx-command__text">{command}</code>
+    <div className={s.command}>
+      <code className={s.text}>{command}</code>
       <button
         type="button"
-        className="dx-command__copy"
+        className={s.copy}
         aria-label={ariaLabel}
         onClick={() => {
           navigator.clipboard.writeText(command).then(() => {

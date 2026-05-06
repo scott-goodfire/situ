@@ -21,29 +21,30 @@ class GetSessionTool(BaseSituTool[SituToolDeps, GetSessionResult]):
         **_kwargs: Any,
     ) -> GetSessionResult:
         """
-        Load a session and its related objective, research context,
-        hypotheses, experiments, evaluations, links, activities, artifacts,
-        and events.
+        Load a session and its related workspace, project, hypotheses,
+        experiments, evaluations, links, activities, artifacts, and events.
         """
         graph = SessionsService(repos=ctx.deps.get_repos()).get_session(
             session_id or ctx.deps.session_id
         )
         return GetSessionResult(
             success=True,
+            workspace=graph.workspace.model_dump() if graph.workspace is not None else None,
             project=graph.project.model_dump() if graph.project is not None else None,
             session=graph.session.model_dump() if graph.session is not None else None,
-            objective=graph.objective.model_dump() if graph.objective is not None else None,
-            research_context=(
-                graph.research_context.model_dump()
-                if graph.research_context is not None
-                else None
-            ),
             hypotheses=[hypothesis.model_dump() for hypothesis in graph.hypotheses],
             experiments=[experiment.model_dump() for experiment in graph.experiments],
             evaluations=[evaluation.model_dump() for evaluation in graph.evaluations],
             hypothesis_experiment_links=[
                 link.model_dump() for link in graph.hypothesis_experiment_links
             ],
+            agents=[agent.model_dump() for agent in graph.agents],
+            tasks=[task.model_dump() for task in graph.tasks],
+            task_dependencies=[
+                dependency.model_dump() for dependency in graph.task_dependencies
+            ],
+            task_entity_links=[link.model_dump() for link in graph.task_entity_links],
+            task_activities=[activity.model_dump() for activity in graph.task_activities],
             hypothesis_activities=[
                 activity.model_dump() for activity in graph.hypothesis_activities
             ],

@@ -1,5 +1,5 @@
 import type { EventRecord } from "@situ/protocol";
-import { DxSection, DxTable, type DxTableColumn, type DxTableRowTone } from "@situ/web-ui";
+import { DxSection, DxTable, mono, type DxTableColumn, type DxTableRowTone } from "@situ/web-ui";
 import { DateTime } from "luxon";
 import type { ProjectWorkspaceData } from "../types";
 
@@ -26,7 +26,7 @@ const eventColumns: Array<DxTableColumn<EventRecord>> = [
     id: "id",
     header: "Event",
     width: "90px",
-    renderCell: ({ row }) => <span className="dx-mono">#{row.id}</span>,
+    renderCell: ({ row }) => <span className={mono}>#{row.id}</span>,
     sortValue: ({ row }) => row.id,
   },
   {
@@ -46,7 +46,7 @@ const eventColumns: Array<DxTableColumn<EventRecord>> = [
     header: "Created",
     width: "190px",
     renderCell: ({ row }) => (
-      <span className="dx-mono">{formatTime({ value: row.created_at })}</span>
+      <span className={mono}>{formatTime({ value: row.created_at })}</span>
     ),
     sortValue: ({ row }) => row.created_at,
   },

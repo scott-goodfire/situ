@@ -1,4 +1,5 @@
 import { classNames } from "../../utils/class-names";
+import * as s from "./dx-spinner.css";
 
 export function DxSpinner({
   size = 16,
@@ -9,7 +10,7 @@ export function DxSpinner({
 }) {
   return (
     <svg
-      className={classNames({ values: ["dx-spinner", className] })}
+      className={classNames({ values: [s.spinner, className] })}
       width={size}
       height={size}
       viewBox="0 0 16 16"

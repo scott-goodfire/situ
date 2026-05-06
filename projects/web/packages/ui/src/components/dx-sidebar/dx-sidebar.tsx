@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { classNames } from "../../utils/class-names";
+import * as s from "./dx-sidebar.css";
 
 type RenderableProps = HTMLAttributes<HTMLElement> & AriaAttributes & { [key: string]: unknown };
 
@@ -21,10 +22,10 @@ export function DxSidebar({
   children: ReactNode;
 }) {
   return (
-    <div className="dx-sidebar">
-      {header && <div className="dx-sidebar__header">{header}</div>}
-      <div className="dx-sidebar__body">{children}</div>
-      {footer && <div className="dx-sidebar__footer">{footer}</div>}
+    <div className={s.sidebar}>
+      {header && <div className={s.header}>{header}</div>}
+      <div className={s.body}>{children}</div>
+      {footer && <div className={s.footer}>{footer}</div>}
     </div>
   );
 }
@@ -39,14 +40,14 @@ export function DxSidebarSection({
   children: ReactNode;
 }) {
   return (
-    <div className="dx-sidebar-section">
+    <div className={s.section}>
       {(title || count !== undefined) && (
-        <div className="dx-sidebar-section__header">
-          <span className="dx-sidebar-section__title">{title}</span>
-          {count !== undefined && <span className="dx-sidebar-section__count">{count}</span>}
+        <div className={s.sectionHeader}>
+          <span className={s.sectionTitle}>{title}</span>
+          {count !== undefined && <span className={s.sectionCount}>{count}</span>}
         </div>
       )}
-      <div className="dx-sidebar-section__items">{children}</div>
+      <div className={s.sectionItems}>{children}</div>
     </div>
   );
 }
@@ -70,15 +71,15 @@ export function DxSidebarItem({
   ...props
 }: DxSidebarItemProps) {
   const itemClassName = classNames({
-    values: ["dx-sidebar-item", active && "dx-sidebar-item--active", className],
+    values: [s.item, active && s.itemActive, className],
   });
 
   const inner = (
     <>
-      {icon && <span className="dx-sidebar-item__icon">{icon}</span>}
-      <span className="dx-sidebar-item__label">{label}</span>
+      {icon && <span className={s.itemIcon}>{icon}</span>}
+      <span className={s.itemLabel}>{label}</span>
       {badge !== undefined && badge !== null && (
-        <span className="dx-sidebar-item__badge">{badge}</span>
+        <span className={s.itemBadge}>{badge}</span>
       )}
     </>
   );

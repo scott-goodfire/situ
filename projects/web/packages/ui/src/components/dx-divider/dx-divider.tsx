@@ -1,5 +1,6 @@
 import { Separator } from "@base-ui/react/separator";
 import { classNames } from "../../utils/class-names";
+import * as s from "./dx-divider.css";
 
 export type DxDividerOrientation = "horizontal" | "vertical";
 
@@ -14,7 +15,7 @@ export function DxDivider({
     <Separator
       orientation={orientation}
       className={classNames({
-        values: ["dx-divider", `dx-divider--${orientation}`, className],
+        values: [s.divider, orientation === "vertical" ? s.vertical : s.horizontal, className],
       })}
     />
   );

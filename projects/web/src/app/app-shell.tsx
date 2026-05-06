@@ -18,6 +18,7 @@ import {
   ConnectionBadge,
   type ConnectionState,
 } from "../features/run-monitor/connection-badge";
+import * as s from "./app-shell.css";
 
 export type AppShellProject = {
   projectId: string;
@@ -50,7 +51,7 @@ export function AppShell({
         showTopBar ? (
           <>
             <div />
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div className={s.topBarActions}>
               {project && <ConnectionBadge state={project.connection} />}
               {topBarActions}
             </div>
@@ -65,85 +66,57 @@ export function AppShell({
 
 function SidebarHeader({ workspace }: { workspace: string | undefined }) {
   return (
-    <div style={{ display: "grid", gap: 2 }}>
-      <span
-        style={{
-          fontSize: 13,
-          fontWeight: 500,
-          color: "var(--foreground)",
-        }}
-      >
-        Situ
-      </span>
-      <span
-        style={{
-          fontSize: 11,
-          color: "var(--muted-foreground-tertiary)",
-          fontFamily: "var(--font-mono)",
-        }}
-      >
-        {workspace ?? "Local workspace"}
-      </span>
+    <div className={s.sidebarHeader}>
+      <span className={s.sidebarBrand}>Situ</span>
+      <span className={s.sidebarWorkspace}>{workspace ?? "Local workspace"}</span>
     </div>
   );
 }
 
 function SidebarFooter() {
-  return (
-    <span
-      style={{
-        fontSize: 11,
-        color: "var(--muted-foreground-tertiary)",
-      }}
-    >
-      v0.0.1
-    </span>
-  );
+  return <span className={s.sidebarFooter}>v0.0.1</span>;
 }
 
 function ProjectNavSection({ projectId }: { projectId: string }) {
   const matchRoute = useMatchRoute();
   const params = { projectId };
-  const isActive = (path: string, exact: boolean): boolean => {
-    return matchRoute({ to: path, params, fuzzy: !exact } as never) !== false;
-  };
 
   return (
     <DxSidebarSection title="Project">
       <DxSidebarItem
         icon={<FileText size={14} />}
         label="Overview"
-        active={isActive("/projects/$projectId", true)}
+        active={matchRoute({ to: "/projects/$projectId", params, fuzzy: false }) !== false}
         render={<Link to="/projects/$projectId" params={params} />}
       />
       <DxSidebarItem
         icon={<Beaker size={14} />}
         label="Hypotheses"
-        active={isActive("/projects/$projectId/hypotheses", false)}
+        active={matchRoute({ to: "/projects/$projectId/hypotheses", params, fuzzy: true }) !== false}
         render={<Link to="/projects/$projectId/hypotheses" params={params} />}
       />
       <DxSidebarItem
         icon={<FlaskConical size={14} />}
         label="Experiments"
-        active={isActive("/projects/$projectId/experiments", false)}
+        active={matchRoute({ to: "/projects/$projectId/experiments", params, fuzzy: true }) !== false}
         render={<Link to="/projects/$projectId/experiments" params={params} />}
       />
       <DxSidebarItem
         icon={<ListChecks size={14} />}
         label="Evaluations"
-        active={isActive("/projects/$projectId/evaluations", false)}
+        active={matchRoute({ to: "/projects/$projectId/evaluations", params, fuzzy: true }) !== false}
         render={<Link to="/projects/$projectId/evaluations" params={params} />}
       />
       <DxSidebarItem
         icon={<Users size={14} />}
         label="Agents"
-        active={isActive("/projects/$projectId/agents", false)}
+        active={matchRoute({ to: "/projects/$projectId/agents", params, fuzzy: true }) !== false}
         render={<Link to="/projects/$projectId/agents" params={params} />}
       />
       <DxSidebarItem
         icon={<Activity size={14} />}
         label="Events"
-        active={isActive("/projects/$projectId/events", false)}
+        active={matchRoute({ to: "/projects/$projectId/events", params, fuzzy: true }) !== false}
         render={<Link to="/projects/$projectId/events" params={params} />}
       />
     </DxSidebarSection>

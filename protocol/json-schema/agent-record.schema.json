@@ -1,0 +1,73 @@
+{
+  "$defs": {
+    "AgentKind": {
+      "enum": [
+        "manager",
+        "scientist"
+      ],
+      "title": "AgentKind",
+      "type": "string"
+    },
+    "AgentStatus": {
+      "enum": [
+        "idle",
+        "active",
+        "closed"
+      ],
+      "title": "AgentStatus",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "session_id": {
+      "title": "Session Id",
+      "type": "string"
+    },
+    "kind": {
+      "$ref": "#/$defs/AgentKind"
+    },
+    "display_name": {
+      "title": "Display Name",
+      "type": "string"
+    },
+    "model_name": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Model Name"
+    },
+    "status": {
+      "$ref": "#/$defs/AgentStatus"
+    },
+    "created_at": {
+      "title": "Created At",
+      "type": "string"
+    },
+    "updated_at": {
+      "title": "Updated At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "session_id",
+    "kind",
+    "display_name",
+    "status",
+    "created_at",
+    "updated_at"
+  ],
+  "title": "AgentRecord",
+  "type": "object"
+}

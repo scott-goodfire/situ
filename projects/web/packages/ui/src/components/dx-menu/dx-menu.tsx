@@ -1,5 +1,6 @@
 import { Menu } from "@base-ui/react/menu";
 import type { ReactElement, ReactNode } from "react";
+import * as s from "./dx-menu.css";
 
 export type DxMenuItem = {
   id: string;
@@ -19,12 +20,12 @@ export function DxMenu({
     <Menu.Root>
       <Menu.Trigger render={trigger} />
       <Menu.Portal>
-        <Menu.Positioner sideOffset={6} align="start" className="dx-menu__positioner">
-          <Menu.Popup className="dx-menu__popup">
+        <Menu.Positioner sideOffset={6} align="start" className={s.positioner}>
+          <Menu.Popup className={s.popup}>
             {items.map((item) => (
               <Menu.Item
                 key={item.id}
-                className="dx-menu__item"
+                className={s.item}
                 onClick={item.onSelect}
                 disabled={item.disabled}
               >

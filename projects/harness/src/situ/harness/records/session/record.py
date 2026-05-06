@@ -25,7 +25,8 @@ def parse_session_status(
 
 class SessionRecord(DbRecord):
     id: str
-    project_id: str
+    workspace_id: str
+    project_id: str | None = None
     status: SessionStatus
     created_at: str
     updated_at: str

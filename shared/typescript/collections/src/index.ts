@@ -5,6 +5,7 @@ import {
   type Transaction,
 } from "@tanstack/db";
 import type {
+  AgentRecord,
   ArtifactRecord,
   CollectionUpsertedParams,
   CollectionsBootstrapResult,
@@ -16,23 +17,30 @@ import type {
   HypothesisActivityRecord,
   HypothesisExperimentLinkRecord,
   HypothesisRecord,
-  ObjectiveRecord,
   ProjectRecord,
-  ResearchContextRecord,
   SessionRecord,
+  TaskActivityRecord,
+  TaskDependencyRecord,
+  TaskEntityLinkRecord,
+  TaskRecord,
+  WorkspaceRecord,
 } from "@situ/protocol";
 
 export type SituCollectionName = CollectionUpsertedParams["collection"];
 
 export type SituCollections = {
+  workspaces: Collection<WorkspaceRecord, string>;
   projects: Collection<ProjectRecord, string>;
-  objectives: Collection<ObjectiveRecord, string>;
-  researchContexts: Collection<ResearchContextRecord, string>;
   sessions: Collection<SessionRecord, string>;
   hypotheses: Collection<HypothesisRecord, string>;
   experiments: Collection<ExperimentRecord, string>;
   evaluations: Collection<EvaluationRecord, string>;
   hypothesisExperimentLinks: Collection<HypothesisExperimentLinkRecord, string>;
+  agents: Collection<AgentRecord, string>;
+  tasks: Collection<TaskRecord, string>;
+  taskDependencies: Collection<TaskDependencyRecord, string>;
+  taskEntityLinks: Collection<TaskEntityLinkRecord, string>;
+  taskActivities: Collection<TaskActivityRecord, string>;
   hypothesisActivities: Collection<HypothesisActivityRecord, string>;
   experimentActivities: Collection<ExperimentActivityRecord, string>;
   evaluationActivities: Collection<EvaluationActivityRecord, string>;
@@ -63,22 +71,16 @@ type UpsertRecordOptions<T extends object> = {
 
 export function createSituCollections(): SituCollections {
   return {
+    workspaces: createCollection(
+      localOnlyCollectionOptions<WorkspaceRecord, string>({
+        id: "situ-workspaces",
+        getKey: (workspace) => workspace.id,
+      }),
+    ),
     projects: createCollection(
       localOnlyCollectionOptions<ProjectRecord, string>({
         id: "situ-projects",
         getKey: (project) => project.id,
-      }),
-    ),
-    objectives: createCollection(
-      localOnlyCollectionOptions<ObjectiveRecord, string>({
-        id: "situ-objectives",
-        getKey: (objective) => objective.id,
-      }),
-    ),
-    researchContexts: createCollection(
-      localOnlyCollectionOptions<ResearchContextRecord, string>({
-        id: "situ-research-contexts",
-        getKey: (researchContext) => researchContext.id,
       }),
     ),
     sessions: createCollection(
@@ -109,6 +111,38 @@ export function createSituCollections(): SituCollections {
       localOnlyCollectionOptions<HypothesisExperimentLinkRecord, string>({
         id: "situ-hypothesis-experiment-links",
         getKey: (link) => `${link.hypothesis_id}:${link.experiment_id}`,
+      }),
+    ),
+    agents: createCollection(
+      localOnlyCollectionOptions<AgentRecord, string>({
+        id: "situ-agents",
+        getKey: (agent) => agent.id,
+      }),
+    ),
+    tasks: createCollection(
+      localOnlyCollectionOptions<TaskRecord, string>({
+        id: "situ-tasks",
+        getKey: (task) => task.id,
+      }),
+    ),
+    taskDependencies: createCollection(
+      localOnlyCollectionOptions<TaskDependencyRecord, string>({
+        id: "situ-task-dependencies",
+        getKey: (dependency) =>
+          `${dependency.task_id}:${dependency.blocked_by_task_id}`,
+      }),
+    ),
+    taskEntityLinks: createCollection(
+      localOnlyCollectionOptions<TaskEntityLinkRecord, string>({
+        id: "situ-task-entity-links",
+        getKey: (link) =>
+          `${link.task_id}:${link.entity_kind}:${link.entity_id}:${link.relationship}`,
+      }),
+    ),
+    taskActivities: createCollection(
+      localOnlyCollectionOptions<TaskActivityRecord, string>({
+        id: "situ-task-activities",
+        getKey: (activity) => String(activity.id),
       }),
     ),
     hypothesisActivities: createCollection(
@@ -150,16 +184,12 @@ export async function applyBootstrap({
 }: ApplyBootstrapOptions): Promise<void> {
   await Promise.all([
     hydrateCollection({
+      collection: collections.workspaces,
+      records: bootstrap.workspaces ?? [],
+    }),
+    hydrateCollection({
       collection: collections.projects,
       records: bootstrap.projects ?? [],
-    }),
-    hydrateCollection({
-      collection: collections.objectives,
-      records: bootstrap.objectives ?? [],
-    }),
-    hydrateCollection({
-      collection: collections.researchContexts,
-      records: bootstrap.research_contexts ?? [],
     }),
     hydrateCollection({
       collection: collections.sessions,
@@ -180,6 +210,26 @@ export async function applyBootstrap({
     hydrateCollection({
       collection: collections.hypothesisExperimentLinks,
       records: bootstrap.hypothesis_experiment_links ?? [],
+    }),
+    hydrateCollection({
+      collection: collections.agents,
+      records: bootstrap.agents ?? [],
+    }),
+    hydrateCollection({
+      collection: collections.tasks,
+      records: bootstrap.tasks ?? [],
+    }),
+    hydrateCollection({
+      collection: collections.taskDependencies,
+      records: bootstrap.task_dependencies ?? [],
+    }),
+    hydrateCollection({
+      collection: collections.taskEntityLinks,
+      records: bootstrap.task_entity_links ?? [],
+    }),
+    hydrateCollection({
+      collection: collections.taskActivities,
+      records: bootstrap.task_activities ?? [],
     }),
     hydrateCollection({
       collection: collections.hypothesisActivities,
@@ -208,29 +258,20 @@ export async function applyCollectionUpsert({
   collections,
   upsert,
 }: ApplyCollectionUpsertOptions): Promise<void> {
+  if (upsert.collection === "workspaces") {
+    await upsertRecord({
+      collection: collections.workspaces,
+      key: upsert.key,
+      record: upsert.record as unknown as WorkspaceRecord,
+    });
+    return;
+  }
+
   if (upsert.collection === "projects") {
     await upsertRecord({
       collection: collections.projects,
       key: upsert.key,
       record: upsert.record as unknown as ProjectRecord,
-    });
-    return;
-  }
-
-  if (upsert.collection === "objectives") {
-    await upsertRecord({
-      collection: collections.objectives,
-      key: upsert.key,
-      record: upsert.record as unknown as ObjectiveRecord,
-    });
-    return;
-  }
-
-  if (upsert.collection === "research_contexts") {
-    await upsertRecord({
-      collection: collections.researchContexts,
-      key: upsert.key,
-      record: upsert.record as unknown as ResearchContextRecord,
     });
     return;
   }
@@ -276,6 +317,51 @@ export async function applyCollectionUpsert({
       collection: collections.hypothesisExperimentLinks,
       key: upsert.key,
       record: upsert.record as unknown as HypothesisExperimentLinkRecord,
+    });
+    return;
+  }
+
+  if (upsert.collection === "agents") {
+    await upsertRecord({
+      collection: collections.agents,
+      key: upsert.key,
+      record: upsert.record as unknown as AgentRecord,
+    });
+    return;
+  }
+
+  if (upsert.collection === "tasks") {
+    await upsertRecord({
+      collection: collections.tasks,
+      key: upsert.key,
+      record: upsert.record as unknown as TaskRecord,
+    });
+    return;
+  }
+
+  if (upsert.collection === "task_dependencies") {
+    await upsertRecord({
+      collection: collections.taskDependencies,
+      key: upsert.key,
+      record: upsert.record as unknown as TaskDependencyRecord,
+    });
+    return;
+  }
+
+  if (upsert.collection === "task_entity_links") {
+    await upsertRecord({
+      collection: collections.taskEntityLinks,
+      key: upsert.key,
+      record: upsert.record as unknown as TaskEntityLinkRecord,
+    });
+    return;
+  }
+
+  if (upsert.collection === "task_activities") {
+    await upsertRecord({
+      collection: collections.taskActivities,
+      key: upsert.key,
+      record: upsert.record as unknown as TaskActivityRecord,
     });
     return;
   }

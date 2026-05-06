@@ -12,6 +12,7 @@ def _evaluation_activity_row(row: Any) -> EvaluationActivityRecord:
     return EvaluationActivityRecord(
         id=row["id"],
         evaluation_id=row["evaluation_id"],
+        created_in_session_id=row["created_in_session_id"],
         actor=row["actor"],
         kind=row["kind"],
         body=row["body"],
@@ -29,9 +30,11 @@ class EvaluationActivitiesRepository(BaseRepository):
         kind: str,
         body: str,
         payload: dict[str, Any] | None = None,
+        created_in_session_id: str | None = None,
     ) -> EvaluationActivityRecord:
         command = AddEvaluationActivity(
             evaluation_id=evaluation_id,
+            created_in_session_id=created_in_session_id,
             actor=actor,
             kind=kind,
             body=body,
@@ -40,11 +43,13 @@ class EvaluationActivitiesRepository(BaseRepository):
         cursor = self.db.execute(
             """
             INSERT INTO evaluation_activities
-              (evaluation_id, actor, kind, body, payload_json, created_at)
-            VALUES (?, ?, ?, ?, ?, ?)
+              (evaluation_id, created_in_session_id, actor, kind, body, payload_json,
+               created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 command.evaluation_id,
+                command.created_in_session_id,
                 command.actor,
                 command.kind,
                 command.body,
@@ -81,3 +86,23 @@ class EvaluationActivitiesRepository(BaseRepository):
                 (evaluation_id,),
             )
         ]
+
+    def list_for_project(self, project_id: str) -> list[EvaluationActivityRecord]:
+        return [
+            _evaluation_activity_row(row)
+            for row in self.db.fetchall(
+                """
+                SELECT evaluation_activities.*
+                FROM evaluation_activities
+                JOIN evaluations ON evaluations.id = evaluation_activities.evaluation_id
+                WHERE evaluations.project_id = ?
+                ORDER BY evaluation_activities.id
+                """,
+                (project_id,),
+            )
+        ]
+
+    def list_for_session(self, session_id: str) -> list[EvaluationActivityRecord]:
+        session = self.db.fetchone("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
+        project_id = session["project_id"] if session else None
+        return self.list_for_project(project_id) if project_id is not None else []

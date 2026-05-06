@@ -2,10 +2,23 @@ import { Box } from "ink";
 import type { ReactNode } from "react";
 
 export type LayoutBoxDirection = "column" | "row";
+export type LayoutBoxAlignItems =
+  | "flex-start"
+  | "center"
+  | "flex-end"
+  | "stretch";
+export type LayoutBoxJustifyContent =
+  | "flex-start"
+  | "center"
+  | "flex-end"
+  | "space-between"
+  | "space-around";
 
 export type LayoutBoxProps = {
   children: ReactNode;
   direction?: LayoutBoxDirection;
+  alignItems?: LayoutBoxAlignItems;
+  justifyContent?: LayoutBoxJustifyContent;
   width?: number;
   height?: number;
   flexGrow?: number;
@@ -21,6 +34,8 @@ export type LayoutBoxProps = {
 export function LayoutBox({
   children,
   direction = "column",
+  alignItems,
+  justifyContent,
   width,
   height,
   flexGrow,
@@ -35,6 +50,8 @@ export function LayoutBox({
   return (
     <Box
       flexDirection={direction}
+      alignItems={alignItems}
+      justifyContent={justifyContent}
       width={width}
       height={height}
       flexGrow={flexGrow}

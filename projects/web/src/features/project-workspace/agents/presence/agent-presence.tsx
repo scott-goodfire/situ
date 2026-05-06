@@ -1,3 +1,5 @@
+import * as s from "../../../../styles.css";
+
 export function AgentPresence({
   agentIds,
   detail,
@@ -17,24 +19,24 @@ export function AgentPresence({
 
   return (
     <div
-      className="situ-agent-presence"
+      className={s.agentPresence}
       data-empty={agentIds.length === 0}
     >
       {visibleAgentIds.length > 0 && (
-        <div className="situ-agent-presence__avatars" aria-hidden="true">
+        <div className={s.agentPresenceAvatars} aria-hidden="true">
           {visibleAgentIds.map((agentId) => (
-            <span className="situ-agent-presence__avatar" key={agentId}>
+            <span className={s.agentPresenceAvatar} key={agentId}>
               {agentInitials({ agentId })}
             </span>
           ))}
           {overflowCount > 0 && (
-            <span className="situ-agent-presence__overflow">
+            <span className={s.agentPresenceOverflow}>
               +{overflowCount}
             </span>
           )}
         </div>
       )}
-      <span className="situ-agent-presence__label">{label}</span>
+      <span className={s.agentPresenceLabel}>{label}</span>
     </div>
   );
 }

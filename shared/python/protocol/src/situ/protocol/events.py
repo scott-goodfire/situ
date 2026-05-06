@@ -4,7 +4,7 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field
 
 
-class ObjectiveStatus(StrEnum):
+class ProjectStatus(StrEnum):
     ACTIVE = "active"
     CLOSED = "closed"
 
@@ -24,7 +24,60 @@ class ActivityKind(StrEnum):
     COMMENT = "comment"
 
 
-class ProjectRecord(BaseModel):
+class AgentKind(StrEnum):
+    MANAGER = "manager"
+    SCIENTIST = "scientist"
+
+
+class AgentStatus(StrEnum):
+    IDLE = "idle"
+    ACTIVE = "active"
+    CLOSED = "closed"
+
+
+class TaskKind(StrEnum):
+    PLAN = "plan"
+    BASELINE = "baseline"
+    HYPOTHESIZE = "hypothesize"
+    EXPERIMENT = "experiment"
+    INTERPRET = "interpret"
+    REVIEW = "review"
+
+
+class TaskStatus(StrEnum):
+    BACKLOG = "backlog"
+    IN_PROGRESS = "in_progress"
+    DONE = "done"
+    ABANDONED = "abandoned"
+    FAILED = "failed"
+
+
+class TaskPriority(StrEnum):
+    URGENT = "urgent"
+    HIGH = "high"
+    NORMAL = "normal"
+    LOW = "low"
+
+
+class TaskSourceKind(StrEnum):
+    MANAGER = "manager"
+    USER = "user"
+    SYSTEM = "system"
+
+
+class TaskEntityKind(StrEnum):
+    HYPOTHESIS = "hypothesis"
+    EXPERIMENT = "experiment"
+    EVALUATION = "evaluation"
+    ARTIFACT = "artifact"
+    HYPOTHESIS_ACTIVITY = "hypothesis_activity"
+    EXPERIMENT_ACTIVITY = "experiment_activity"
+    EVALUATION_ACTIVITY = "evaluation_activity"
+    TASK_ACTIVITY = "task_activity"
+    EVENT = "event"
+
+
+class WorkspaceRecord(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     id: str
@@ -33,24 +86,15 @@ class ProjectRecord(BaseModel):
     updated_at: str
 
 
-class ObjectiveRecord(BaseModel):
+class ProjectRecord(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     id: str
-    session_id: str
+    workspace_id: str
     title: str
-    description: str
-    status: ObjectiveStatus
-    created_at: str
-    updated_at: str
-
-
-class ResearchContextRecord(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    id: str
-    session_id: str
-    body: str
+    objective: str
+    research_context: str
+    status: ProjectStatus
     created_at: str
     updated_at: str
 
@@ -59,7 +103,8 @@ class SessionRecord(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     id: str
-    project_id: str
+    workspace_id: str
+    project_id: str | None = None
     status: SessionStatus
     created_at: str
     updated_at: str
@@ -69,7 +114,8 @@ class HypothesisRecord(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     id: str
-    session_id: str
+    project_id: str
+    created_in_session_id: str | None = None
     title: str
     summary: str
     status: WorkStatus
@@ -81,7 +127,8 @@ class ExperimentRecord(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     id: str
-    session_id: str
+    project_id: str
+    created_in_session_id: str | None = None
     status: WorkStatus
     title: str
     summary: str
@@ -93,7 +140,8 @@ class EvaluationRecord(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     id: str
-    session_id: str
+    project_id: str
+    created_in_session_id: str | None = None
     status: WorkStatus
     title: str
     summary: str
@@ -110,11 +158,80 @@ class HypothesisExperimentLinkRecord(BaseModel):
     created_at: str
 
 
+class AgentRecord(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: str
+    session_id: str
+    kind: AgentKind
+    display_name: str
+    model_name: str | None = None
+    status: AgentStatus
+    created_at: str
+    updated_at: str
+
+
+class TaskRecord(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: str
+    session_id: str
+    title: str
+    content: str
+    kind: TaskKind
+    status: TaskStatus
+    priority: TaskPriority
+    source_kind: TaskSourceKind
+    assignee_id: str | None = None
+    parent_task_id: str | None = None
+    payload: dict[str, Any] = Field(default_factory=dict)
+    pydantic_run_id: str | None = None
+    conversation_id: str | None = None
+    result_summary: str | None = None
+    created_at: str
+    available_at: str
+    claimed_at: str | None = None
+    completed_at: str | None = None
+    updated_at: str
+
+
+class TaskDependencyRecord(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    task_id: str
+    blocked_by_task_id: str
+    created_at: str
+
+
+class TaskEntityLinkRecord(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    task_id: str
+    entity_kind: TaskEntityKind
+    entity_id: str
+    relationship: str
+    created_at: str
+
+
+class TaskActivityRecord(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: int
+    task_id: str
+    actor_agent_id: str | None = None
+    actor: str
+    kind: ActivityKind
+    body: str
+    payload: dict[str, Any] = Field(default_factory=dict)
+    created_at: str
+
+
 class HypothesisActivityRecord(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     id: int
     hypothesis_id: str
+    created_in_session_id: str | None = None
     actor: str
     kind: ActivityKind
     body: str
@@ -127,6 +244,7 @@ class ExperimentActivityRecord(BaseModel):
 
     id: int
     experiment_id: str
+    created_in_session_id: str | None = None
     actor: str
     kind: ActivityKind
     body: str
@@ -139,6 +257,7 @@ class EvaluationActivityRecord(BaseModel):
 
     id: int
     evaluation_id: str
+    created_in_session_id: str | None = None
     actor: str
     kind: ActivityKind
     body: str
@@ -150,7 +269,8 @@ class ArtifactRecord(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     id: str
-    session_id: str
+    project_id: str
+    created_in_session_id: str | None = None
     associated_entity_kind: str
     associated_entity_id: str
     kind: str

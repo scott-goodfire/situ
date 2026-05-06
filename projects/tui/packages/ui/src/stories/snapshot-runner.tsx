@@ -5,7 +5,13 @@ import { DateTime } from "luxon";
 import type { TuiStory } from "./story-types.js";
 
 type PngRenderer = {
-  capture: ({ frame, pngPath }: { frame: string; pngPath: string }) => Promise<void>;
+  capture: ({
+    frame,
+    pngPath,
+  }: {
+    frame: string;
+    pngPath: string;
+  }) => Promise<void>;
   close: () => Promise<void>;
 };
 
@@ -60,7 +66,7 @@ async function main() {
       join(outDir, "stories.txt"),
       `${allStories.map((story) => story.id).join("\n")}\n`,
     );
-    console.log(outDir);
+    console.log(`${outDir} (${snapshotArtifactLabel({ options })})`);
   } finally {
     await pngRenderer?.close();
   }
@@ -76,7 +82,8 @@ function snapshotOptions({
   png: boolean;
 } {
   const outDirIndex = args.indexOf("--out-dir");
-  const png = args.includes("--png");
+  const textOnly = args.includes("--text-only") || args.includes("--no-png");
+  const png = args.includes("--png") && !textOnly;
   const color = args.includes("--color") || args.includes("--ansi") || png;
 
   if (outDirIndex >= 0) {
@@ -97,6 +104,25 @@ function snapshotOptions({
     color,
     png,
   };
+}
+
+function snapshotArtifactLabel({
+  options,
+}: {
+  options: {
+    color: boolean;
+    png: boolean;
+  };
+}): string {
+  if (options.png) {
+    return "ANSI txt + PNG";
+  }
+
+  if (options.color) {
+    return "ANSI txt";
+  }
+
+  return "plain txt";
 }
 
 function enableAnsiColor() {

@@ -7,7 +7,15 @@
       "title": "ActivityKind",
       "type": "string"
     },
-    "ArtifactRecord": {
+    "AgentKind": {
+      "enum": [
+        "manager",
+        "scientist"
+      ],
+      "title": "AgentKind",
+      "type": "string"
+    },
+    "AgentRecord": {
       "additionalProperties": false,
       "properties": {
         "id": {
@@ -17,6 +25,81 @@
         "session_id": {
           "title": "Session Id",
           "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/AgentKind"
+        },
+        "display_name": {
+          "title": "Display Name",
+          "type": "string"
+        },
+        "model_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model Name"
+        },
+        "status": {
+          "$ref": "#/$defs/AgentStatus"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        },
+        "updated_at": {
+          "title": "Updated At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "session_id",
+        "kind",
+        "display_name",
+        "status",
+        "created_at",
+        "updated_at"
+      ],
+      "title": "AgentRecord",
+      "type": "object"
+    },
+    "AgentStatus": {
+      "enum": [
+        "idle",
+        "active",
+        "closed"
+      ],
+      "title": "AgentStatus",
+      "type": "string"
+    },
+    "ArtifactRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "created_in_session_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Created In Session Id"
         },
         "associated_entity_kind": {
           "title": "Associated Entity Kind",
@@ -69,7 +152,7 @@
       },
       "required": [
         "id",
-        "session_id",
+        "project_id",
         "associated_entity_kind",
         "associated_entity_id",
         "kind",
@@ -90,6 +173,18 @@
         "evaluation_id": {
           "title": "Evaluation Id",
           "type": "string"
+        },
+        "created_in_session_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Created In Session Id"
         },
         "actor": {
           "title": "Actor",
@@ -130,9 +225,21 @@
           "title": "Id",
           "type": "string"
         },
-        "session_id": {
-          "title": "Session Id",
+        "project_id": {
+          "title": "Project Id",
           "type": "string"
+        },
+        "created_in_session_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Created In Session Id"
         },
         "status": {
           "$ref": "#/$defs/WorkStatus"
@@ -168,7 +275,7 @@
       },
       "required": [
         "id",
-        "session_id",
+        "project_id",
         "status",
         "title",
         "summary",
@@ -235,6 +342,18 @@
           "title": "Experiment Id",
           "type": "string"
         },
+        "created_in_session_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Created In Session Id"
+        },
         "actor": {
           "title": "Actor",
           "type": "string"
@@ -274,9 +393,21 @@
           "title": "Id",
           "type": "string"
         },
-        "session_id": {
-          "title": "Session Id",
+        "project_id": {
+          "title": "Project Id",
           "type": "string"
+        },
+        "created_in_session_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Created In Session Id"
         },
         "status": {
           "$ref": "#/$defs/WorkStatus"
@@ -300,7 +431,7 @@
       },
       "required": [
         "id",
-        "session_id",
+        "project_id",
         "status",
         "title",
         "summary",
@@ -320,6 +451,18 @@
         "hypothesis_id": {
           "title": "Hypothesis Id",
           "type": "string"
+        },
+        "created_in_session_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Created In Session Id"
         },
         "actor": {
           "title": "Actor",
@@ -384,9 +527,21 @@
           "title": "Id",
           "type": "string"
         },
-        "session_id": {
-          "title": "Session Id",
+        "project_id": {
+          "title": "Project Id",
           "type": "string"
+        },
+        "created_in_session_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Created In Session Id"
         },
         "title": {
           "title": "Title",
@@ -410,7 +565,7 @@
       },
       "required": [
         "id",
-        "session_id",
+        "project_id",
         "title",
         "summary",
         "status",
@@ -420,7 +575,265 @@
       "title": "HypothesisRecord",
       "type": "object"
     },
-    "ObjectiveRecord": {
+    "ProjectRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "workspace_id": {
+          "title": "Workspace Id",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "objective": {
+          "title": "Objective",
+          "type": "string"
+        },
+        "research_context": {
+          "title": "Research Context",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/ProjectStatus"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        },
+        "updated_at": {
+          "title": "Updated At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "workspace_id",
+        "title",
+        "objective",
+        "research_context",
+        "status",
+        "created_at",
+        "updated_at"
+      ],
+      "title": "ProjectRecord",
+      "type": "object"
+    },
+    "ProjectStatus": {
+      "enum": [
+        "active",
+        "closed"
+      ],
+      "title": "ProjectStatus",
+      "type": "string"
+    },
+    "SessionRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "workspace_id": {
+          "title": "Workspace Id",
+          "type": "string"
+        },
+        "project_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Project Id"
+        },
+        "status": {
+          "$ref": "#/$defs/SessionStatus"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        },
+        "updated_at": {
+          "title": "Updated At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "workspace_id",
+        "status",
+        "created_at",
+        "updated_at"
+      ],
+      "title": "SessionRecord",
+      "type": "object"
+    },
+    "SessionStatus": {
+      "enum": [
+        "active",
+        "closed"
+      ],
+      "title": "SessionStatus",
+      "type": "string"
+    },
+    "TaskActivityRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "integer"
+        },
+        "task_id": {
+          "title": "Task Id",
+          "type": "string"
+        },
+        "actor_agent_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Actor Agent Id"
+        },
+        "actor": {
+          "title": "Actor",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/ActivityKind"
+        },
+        "body": {
+          "title": "Body",
+          "type": "string"
+        },
+        "payload": {
+          "additionalProperties": true,
+          "title": "Payload",
+          "type": "object"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "task_id",
+        "actor",
+        "kind",
+        "body",
+        "created_at"
+      ],
+      "title": "TaskActivityRecord",
+      "type": "object"
+    },
+    "TaskDependencyRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "task_id": {
+          "title": "Task Id",
+          "type": "string"
+        },
+        "blocked_by_task_id": {
+          "title": "Blocked By Task Id",
+          "type": "string"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "task_id",
+        "blocked_by_task_id",
+        "created_at"
+      ],
+      "title": "TaskDependencyRecord",
+      "type": "object"
+    },
+    "TaskEntityKind": {
+      "enum": [
+        "hypothesis",
+        "experiment",
+        "evaluation",
+        "artifact",
+        "hypothesis_activity",
+        "experiment_activity",
+        "evaluation_activity",
+        "task_activity",
+        "event"
+      ],
+      "title": "TaskEntityKind",
+      "type": "string"
+    },
+    "TaskEntityLinkRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "task_id": {
+          "title": "Task Id",
+          "type": "string"
+        },
+        "entity_kind": {
+          "$ref": "#/$defs/TaskEntityKind"
+        },
+        "entity_id": {
+          "title": "Entity Id",
+          "type": "string"
+        },
+        "relationship": {
+          "title": "Relationship",
+          "type": "string"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "task_id",
+        "entity_kind",
+        "entity_id",
+        "relationship",
+        "created_at"
+      ],
+      "title": "TaskEntityLinkRecord",
+      "type": "object"
+    },
+    "TaskKind": {
+      "enum": [
+        "plan",
+        "baseline",
+        "hypothesize",
+        "experiment",
+        "interpret",
+        "review"
+      ],
+      "title": "TaskKind",
+      "type": "string"
+    },
+    "TaskPriority": {
+      "enum": [
+        "urgent",
+        "high",
+        "normal",
+        "low"
+      ],
+      "title": "TaskPriority",
+      "type": "string"
+    },
+    "TaskRecord": {
       "additionalProperties": false,
       "properties": {
         "id": {
@@ -435,16 +848,118 @@
           "title": "Title",
           "type": "string"
         },
-        "description": {
-          "title": "Description",
+        "content": {
+          "title": "Content",
           "type": "string"
         },
+        "kind": {
+          "$ref": "#/$defs/TaskKind"
+        },
         "status": {
-          "$ref": "#/$defs/ObjectiveStatus"
+          "$ref": "#/$defs/TaskStatus"
+        },
+        "priority": {
+          "$ref": "#/$defs/TaskPriority"
+        },
+        "source_kind": {
+          "$ref": "#/$defs/TaskSourceKind"
+        },
+        "assignee_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Assignee Id"
+        },
+        "parent_task_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parent Task Id"
+        },
+        "payload": {
+          "additionalProperties": true,
+          "title": "Payload",
+          "type": "object"
+        },
+        "pydantic_run_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pydantic Run Id"
+        },
+        "conversation_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Conversation Id"
+        },
+        "result_summary": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Result Summary"
         },
         "created_at": {
           "title": "Created At",
           "type": "string"
+        },
+        "available_at": {
+          "title": "Available At",
+          "type": "string"
+        },
+        "claimed_at": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Claimed At"
+        },
+        "completed_at": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Completed At"
         },
         "updated_at": {
           "title": "Updated At",
@@ -455,23 +970,48 @@
         "id",
         "session_id",
         "title",
-        "description",
+        "content",
+        "kind",
         "status",
+        "priority",
+        "source_kind",
         "created_at",
+        "available_at",
         "updated_at"
       ],
-      "title": "ObjectiveRecord",
+      "title": "TaskRecord",
       "type": "object"
     },
-    "ObjectiveStatus": {
+    "TaskSourceKind": {
       "enum": [
+        "manager",
+        "user",
+        "system"
+      ],
+      "title": "TaskSourceKind",
+      "type": "string"
+    },
+    "TaskStatus": {
+      "enum": [
+        "backlog",
+        "in_progress",
+        "done",
+        "abandoned",
+        "failed"
+      ],
+      "title": "TaskStatus",
+      "type": "string"
+    },
+    "WorkStatus": {
+      "enum": [
+        "open",
         "active",
         "closed"
       ],
-      "title": "ObjectiveStatus",
+      "title": "WorkStatus",
       "type": "string"
     },
-    "ProjectRecord": {
+    "WorkspaceRecord": {
       "additionalProperties": false,
       "properties": {
         "id": {
@@ -497,92 +1037,8 @@
         "created_at",
         "updated_at"
       ],
-      "title": "ProjectRecord",
+      "title": "WorkspaceRecord",
       "type": "object"
-    },
-    "ResearchContextRecord": {
-      "additionalProperties": false,
-      "properties": {
-        "id": {
-          "title": "Id",
-          "type": "string"
-        },
-        "session_id": {
-          "title": "Session Id",
-          "type": "string"
-        },
-        "body": {
-          "title": "Body",
-          "type": "string"
-        },
-        "created_at": {
-          "title": "Created At",
-          "type": "string"
-        },
-        "updated_at": {
-          "title": "Updated At",
-          "type": "string"
-        }
-      },
-      "required": [
-        "id",
-        "session_id",
-        "body",
-        "created_at",
-        "updated_at"
-      ],
-      "title": "ResearchContextRecord",
-      "type": "object"
-    },
-    "SessionRecord": {
-      "additionalProperties": false,
-      "properties": {
-        "id": {
-          "title": "Id",
-          "type": "string"
-        },
-        "project_id": {
-          "title": "Project Id",
-          "type": "string"
-        },
-        "status": {
-          "$ref": "#/$defs/SessionStatus"
-        },
-        "created_at": {
-          "title": "Created At",
-          "type": "string"
-        },
-        "updated_at": {
-          "title": "Updated At",
-          "type": "string"
-        }
-      },
-      "required": [
-        "id",
-        "project_id",
-        "status",
-        "created_at",
-        "updated_at"
-      ],
-      "title": "SessionRecord",
-      "type": "object"
-    },
-    "SessionStatus": {
-      "enum": [
-        "active",
-        "closed"
-      ],
-      "title": "SessionStatus",
-      "type": "string"
-    },
-    "WorkStatus": {
-      "enum": [
-        "open",
-        "active",
-        "closed"
-      ],
-      "title": "WorkStatus",
-      "type": "string"
     }
   },
   "additionalProperties": false,
@@ -591,25 +1047,18 @@
       "title": "Cursor",
       "type": "integer"
     },
+    "workspaces": {
+      "items": {
+        "$ref": "#/$defs/WorkspaceRecord"
+      },
+      "title": "Workspaces",
+      "type": "array"
+    },
     "projects": {
       "items": {
         "$ref": "#/$defs/ProjectRecord"
       },
       "title": "Projects",
-      "type": "array"
-    },
-    "objectives": {
-      "items": {
-        "$ref": "#/$defs/ObjectiveRecord"
-      },
-      "title": "Objectives",
-      "type": "array"
-    },
-    "research_contexts": {
-      "items": {
-        "$ref": "#/$defs/ResearchContextRecord"
-      },
-      "title": "Research Contexts",
       "type": "array"
     },
     "sessions": {
@@ -645,6 +1094,41 @@
         "$ref": "#/$defs/HypothesisExperimentLinkRecord"
       },
       "title": "Hypothesis Experiment Links",
+      "type": "array"
+    },
+    "agents": {
+      "items": {
+        "$ref": "#/$defs/AgentRecord"
+      },
+      "title": "Agents",
+      "type": "array"
+    },
+    "tasks": {
+      "items": {
+        "$ref": "#/$defs/TaskRecord"
+      },
+      "title": "Tasks",
+      "type": "array"
+    },
+    "task_dependencies": {
+      "items": {
+        "$ref": "#/$defs/TaskDependencyRecord"
+      },
+      "title": "Task Dependencies",
+      "type": "array"
+    },
+    "task_entity_links": {
+      "items": {
+        "$ref": "#/$defs/TaskEntityLinkRecord"
+      },
+      "title": "Task Entity Links",
+      "type": "array"
+    },
+    "task_activities": {
+      "items": {
+        "$ref": "#/$defs/TaskActivityRecord"
+      },
+      "title": "Task Activities",
       "type": "array"
     },
     "hypothesis_activities": {
@@ -685,9 +1169,6 @@
   },
   "required": [
     "cursor",
-    "projects",
-    "objectives",
-    "research_contexts",
     "sessions",
     "hypotheses",
     "experiments",

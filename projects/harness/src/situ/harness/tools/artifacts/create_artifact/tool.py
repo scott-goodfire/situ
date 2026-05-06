@@ -27,18 +27,20 @@ class CreateArtifactTool(BaseSituTool[SituToolDeps, CreateArtifactResult]):
         size_bytes: int | None = None,
         **_kwargs: Any,
     ) -> CreateArtifactResult:
-        """Create an artifact reference for a session, hypothesis, or experiment."""
+        """Create an artifact reference for a project, hypothesis, or experiment."""
         repos = ctx.deps.get_repos()
+        project_id = ctx.deps.require_project_id()
         session_id = ctx.deps.session_id
-        resolved_entity_kind = associated_entity_kind or "session"
-        resolved_entity_id = associated_entity_id or session_id
+        resolved_entity_kind = associated_entity_kind or "project"
+        resolved_entity_id = associated_entity_id or project_id
         resolved_artifact_id = artifact_id or _next_artifact_id(
             repos=repos,
-            session_id=session_id,
+            project_id=project_id,
         )
         artifact = repos.artifacts.create(
             artifact_id=resolved_artifact_id,
-            session_id=session_id,
+            project_id=project_id,
+            created_in_session_id=session_id,
             associated_entity_kind=resolved_entity_kind,
             associated_entity_id=resolved_entity_id,
             kind=kind,
@@ -59,7 +61,7 @@ class CreateArtifactTool(BaseSituTool[SituToolDeps, CreateArtifactResult]):
 def _next_artifact_id(
     *,
     repos: Any,
-    session_id: str,
+    project_id: str,
 ) -> str:
-    count = len(repos.artifacts.list_for_session(session_id)) + 1
-    return f"artifact_{session_id}_{count:03d}"
+    count = len(repos.artifacts.list_for_project(project_id)) + 1
+    return f"artifact_{project_id}_{count:03d}"

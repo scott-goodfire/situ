@@ -1,9 +1,10 @@
-import { DxBadge, DxEmptyState, DxTable, type DxTableColumn } from "@situ/web-ui";
+import { DxBadge, DxEmptyState, DxTable, mono, type DxTableColumn } from "@situ/web-ui";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { DateTime } from "luxon";
 import { useMemo } from "react";
 import { AppShell } from "../../app/app-shell";
+import * as s from "../../styles.css";
 import { fetchProjects } from "../../project-discovery/client";
 import type {
   ProjectSessionStatus,
@@ -25,7 +26,7 @@ export function ProjectIndex() {
   return (
     <AppShell topBarActions={<DxBadge>{projects.length} projects</DxBadge>}>
       {error && (
-        <p className="situ-status" data-tone="danger">
+        <p className={s.status} data-tone="danger">
           {error}
         </p>
       )}
@@ -66,15 +67,15 @@ function projectColumns(): Array<DxTableColumn<ProjectSummary>> {
       header: "Project",
       width: "28%",
       renderCell: ({ row }) => (
-        <div className="situ-project-cell">
+        <div className={s.projectCell}>
           <Link
-            className="situ-project-link"
+            className={s.projectLink}
             params={{ projectId: row.project_id }}
             to="/projects/$projectId"
           >
             {row.label}
           </Link>
-          <span className="situ-project-id">{row.project_id}</span>
+          <span className={s.projectId}>{row.project_id}</span>
         </div>
       ),
       sortValue: ({ row }) => row.label,
@@ -84,7 +85,7 @@ function projectColumns(): Array<DxTableColumn<ProjectSummary>> {
       header: "Status",
       width: "120px",
       renderCell: ({ row }) => (
-        <div className="situ-project-status">
+        <div className={s.projectStatus}>
           <ProjectStatusBadge status={row.status} />
           {row.status_reason && <span>{row.status_reason}</span>}
         </div>
@@ -95,7 +96,7 @@ function projectColumns(): Array<DxTableColumn<ProjectSummary>> {
       id: "workspace",
       header: "Workspace",
       renderCell: ({ row }) => (
-        <span className="situ-project-path">
+        <span className={s.projectPath}>
           {row.workspace ?? "Not configured yet"}
         </span>
       ),
@@ -105,7 +106,7 @@ function projectColumns(): Array<DxTableColumn<ProjectSummary>> {
       id: "objective",
       header: "Objective",
       renderCell: ({ row }) => (
-        <span className="situ-project-path">
+        <span className={s.projectPath}>
           {row.objective_title ?? "No objective yet"}
         </span>
       ),
@@ -116,7 +117,7 @@ function projectColumns(): Array<DxTableColumn<ProjectSummary>> {
       header: "Updated",
       width: "180px",
       renderCell: ({ row }) => (
-        <span className="dx-mono">{formatTimestamp({ value: row.last_seen_at })}</span>
+        <span className={mono}>{formatTimestamp({ value: row.last_seen_at })}</span>
       ),
       sortValue: ({ row }) => row.last_seen_at ?? "",
     },
@@ -126,7 +127,7 @@ function projectColumns(): Array<DxTableColumn<ProjectSummary>> {
       width: "92px",
       renderCell: ({ row }) => (
         <Link
-          className="situ-project-open"
+          className={s.projectOpen}
           params={{ projectId: row.project_id }}
           to="/projects/$projectId"
         >

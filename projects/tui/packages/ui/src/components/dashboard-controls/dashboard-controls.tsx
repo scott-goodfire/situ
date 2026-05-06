@@ -1,5 +1,6 @@
 import { Box, Text, useInput, useStdin } from "ink";
 import { useState } from "react";
+import type { ReactNode } from "react";
 import {
   ChoicePrompt,
   type ChoicePromptOption,
@@ -33,10 +34,18 @@ const commandOptions = [
 
 export function DashboardControls({
   initialMode = "idle",
+  idleRenderer,
   message,
   onCommand,
 }: {
   initialMode?: "idle" | "commands";
+  idleRenderer?: ({
+    label,
+    message,
+  }: {
+    label: string;
+    message: DashboardControlMessage | undefined;
+  }) => ReactNode;
   message: DashboardControlMessage | undefined;
   onCommand: ({ command }: { command: DashboardCommand }) => void;
 }) {
@@ -89,12 +98,20 @@ export function DashboardControls({
     );
   }
 
+  if (idleRenderer) {
+    return <>{idleRenderer({ label: controlLabel(), message })}</>;
+  }
+
   return (
     <Box flexDirection="column">
       {message && <Text color={message.tone}>{message.text}</Text>}
-      <Text dimColor>? help · : commands · q quit</Text>
+      <Text dimColor>{controlLabel()}</Text>
     </Box>
   );
+}
+
+function controlLabel(): string {
+  return "? help · : commands · q quit";
 }
 
 function handleCommandSelection({

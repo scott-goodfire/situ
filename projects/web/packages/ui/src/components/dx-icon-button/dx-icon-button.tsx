@@ -1,6 +1,7 @@
 import { Button as BaseButton } from "@base-ui/react/button";
 import type { ComponentPropsWithoutRef } from "react";
 import { classNames } from "../../utils/class-names";
+import * as s from "./dx-icon-button.css";
 
 type BaseButtonProps = ComponentPropsWithoutRef<typeof BaseButton>;
 
@@ -21,9 +22,9 @@ export function DxIconButton({
 }: DxIconButtonProps) {
   const buttonClassName = classNames({
     values: [
-      "dx-icon-button",
-      `dx-icon-button--${variant}`,
-      `dx-icon-button--${size}`,
+      s.iconButton,
+      variant === "secondary" && s.secondary,
+      size === "small" && s.small,
       className,
     ],
   });

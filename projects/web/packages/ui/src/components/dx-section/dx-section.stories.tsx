@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
+import { muted } from "../../utilities.css";
 import { DxSection } from "./dx-section";
 
 const meta = {
@@ -19,6 +20,6 @@ export const Default: Story = {};
 export const WithMutedText: Story = {
   args: {
     title: "Timeline",
-    children: <p className="dx-muted">No events yet</p>,
+    children: <p className={muted}>No events yet</p>,
   },
 };

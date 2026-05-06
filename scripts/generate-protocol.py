@@ -9,6 +9,7 @@ from typing import Any, Literal, get_args, get_origin
 from pydantic import BaseModel
 
 from situ.protocol import (
+    AgentRecord,
     ArtifactRecord,
     CollectionUpsertedParams,
     CollectionsBootstrapParams,
@@ -33,9 +34,7 @@ from situ.protocol import (
     JsonRpcNotification,
     JsonRpcRequest,
     JsonRpcResponse,
-    ObjectiveRecord,
     ProjectRecord,
-    ResearchContextRecord,
     SessionRecord,
     SessionResumeParams,
     SessionResumeResult,
@@ -43,6 +42,10 @@ from situ.protocol import (
     SessionStartResult,
     SessionStatusParams,
     SessionStatusResult,
+    TaskActivityRecord,
+    TaskDependencyRecord,
+    TaskEntityLinkRecord,
+    TaskRecord,
     SetupCompleteParams,
     SetupCompleteResult,
     SetupGetParams,
@@ -50,6 +53,7 @@ from situ.protocol import (
     WorkerInitializeParams,
     WorkerInitializeResult,
     WorkerProgressParams,
+    WorkspaceRecord,
 )
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -61,14 +65,18 @@ MODELS: list[type[BaseModel]] = [
     JsonRpcRequest,
     JsonRpcNotification,
     JsonRpcResponse,
+    WorkspaceRecord,
     ProjectRecord,
-    ObjectiveRecord,
-    ResearchContextRecord,
     SessionRecord,
     HypothesisRecord,
     ExperimentRecord,
     EvaluationRecord,
     HypothesisExperimentLinkRecord,
+    AgentRecord,
+    TaskRecord,
+    TaskDependencyRecord,
+    TaskEntityLinkRecord,
+    TaskActivityRecord,
     HypothesisActivityRecord,
     ExperimentActivityRecord,
     EvaluationActivityRecord,

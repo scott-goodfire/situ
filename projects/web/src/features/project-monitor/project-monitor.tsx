@@ -3,6 +3,7 @@ import type { CollectionsBootstrapResult } from "@situ/protocol";
 import { useQuery } from "@tanstack/react-query";
 import { Outlet } from "@tanstack/react-router";
 import { AppShell } from "../../app/app-shell";
+import * as s from "../../styles.css";
 import {
   fetchProjectSession,
   fetchProjectSnapshot,
@@ -193,7 +194,7 @@ function ProjectNoActiveHarness({
       }}
     >
       {discoveryError && (
-        <p className="situ-status" data-tone="warning">
+        <p className={s.status} data-tone="warning">
           {discoveryError}
         </p>
       )}

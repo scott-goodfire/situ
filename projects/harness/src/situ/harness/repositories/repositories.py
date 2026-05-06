@@ -3,6 +3,7 @@ from __future__ import annotations
 from pydantic import BaseModel, ConfigDict
 
 from ..core.db import Database
+from .agents import AgentsRepository
 from .agent_message_history import AgentMessageHistoryRepository
 from .artifacts import ArtifactsRepository
 from .events import EventsRepository
@@ -13,19 +14,26 @@ from .experiments import ExperimentsRepository
 from .hypotheses import HypothesesRepository
 from .hypothesis_activities import HypothesisActivitiesRepository
 from .hypothesis_experiment_links import HypothesisExperimentLinksRepository
-from .objectives import ObjectivesRepository
 from .project import ProjectRepository
-from .research_contexts import ResearchContextsRepository
 from .sessions import SessionsRepository
+from .task_activities import TaskActivitiesRepository
+from .task_dependencies import TaskDependenciesRepository
+from .task_entity_links import TaskEntityLinksRepository
+from .tasks import TasksRepository
+from .workspaces import WorkspacesRepository
 
 
 class Repositories(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    project: ProjectRepository
-    objectives: ObjectivesRepository
-    research_contexts: ResearchContextsRepository
+    workspaces: WorkspacesRepository
+    projects: ProjectRepository
     sessions: SessionsRepository
+    agents: AgentsRepository
+    tasks: TasksRepository
+    task_dependencies: TaskDependenciesRepository
+    task_entity_links: TaskEntityLinksRepository
+    task_activities: TaskActivitiesRepository
     hypotheses: HypothesesRepository
     experiments: ExperimentsRepository
     evaluations: EvaluationsRepository
@@ -40,10 +48,14 @@ class Repositories(BaseModel):
     @classmethod
     def create(cls, db: Database) -> "Repositories":
         return cls(
-            project=ProjectRepository(db=db),
-            objectives=ObjectivesRepository(db=db),
-            research_contexts=ResearchContextsRepository(db=db),
+            workspaces=WorkspacesRepository(db=db),
+            projects=ProjectRepository(db=db),
             sessions=SessionsRepository(db=db),
+            agents=AgentsRepository(db=db),
+            tasks=TasksRepository(db=db),
+            task_dependencies=TaskDependenciesRepository(db=db),
+            task_entity_links=TaskEntityLinksRepository(db=db),
+            task_activities=TaskActivitiesRepository(db=db),
             hypotheses=HypothesesRepository(db=db),
             experiments=ExperimentsRepository(db=db),
             evaluations=EvaluationsRepository(db=db),

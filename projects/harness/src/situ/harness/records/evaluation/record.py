@@ -6,7 +6,8 @@ from ..experiment.record import WorkStatus
 
 class EvaluationRecord(DbRecord):
     id: str
-    session_id: str
+    project_id: str
+    created_in_session_id: str | None = None
     status: WorkStatus
     title: str
     summary: str

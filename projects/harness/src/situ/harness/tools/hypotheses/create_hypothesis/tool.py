@@ -24,19 +24,21 @@ class CreateHypothesisTool(BaseSituTool[SituToolDeps, CreateHypothesisResult]):
         status: WorkStatus = WorkStatus.OPEN,
         **_kwargs: Any,
     ) -> CreateHypothesisResult:
-        """Create a hypothesis under the current session.
+        """Create a hypothesis under the current project.
 
         `status` must be `open`, `active`, or `closed`.
         """
         repos = ctx.deps.get_repos()
+        project_id = ctx.deps.require_project_id()
         session_id = ctx.deps.session_id
         resolved_hypothesis_id = hypothesis_id or _next_hypothesis_id(
             repos=repos,
-            session_id=session_id,
+            project_id=project_id,
         )
         hypothesis = repos.hypotheses.create(
             hypothesis_id=resolved_hypothesis_id,
-            session_id=session_id,
+            project_id=project_id,
+            created_in_session_id=session_id,
             title=title,
             summary=summary,
             status=status,
@@ -53,7 +55,7 @@ class CreateHypothesisTool(BaseSituTool[SituToolDeps, CreateHypothesisResult]):
 def _next_hypothesis_id(
     *,
     repos: Any,
-    session_id: str,
+    project_id: str,
 ) -> str:
-    count = len(repos.hypotheses.list_for_session(session_id)) + 1
-    return f"hyp_{session_id}_agent_{count:03d}"
+    count = len(repos.hypotheses.list_for_project(project_id)) + 1
+    return f"hyp_{project_id}_agent_{count:03d}"

@@ -1,5 +1,6 @@
 import type { AnchorHTMLAttributes, ReactNode } from "react";
 import { classNames } from "../../utils/class-names";
+import * as s from "./dx-link.css";
 
 export type DxLinkVariant = "accent" | "muted";
 
@@ -18,14 +19,14 @@ export function DxLink({
   ...props
 }: DxLinkProps) {
   const linkClassName = classNames({
-    values: ["dx-link", `dx-link--${variant}`, className],
+    values: [s.link, variant === "muted" ? s.muted : s.accent, className],
   });
 
   return (
     <a {...props} className={linkClassName}>
       <span>{children}</span>
       {withArrow && (
-        <span className="dx-link__arrow" aria-hidden>
+        <span className={s.arrow} aria-hidden>
           →
         </span>
       )}

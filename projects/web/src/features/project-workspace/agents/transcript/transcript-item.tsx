@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { DateTime } from "luxon";
+import * as s from "../../../../styles.css";
 import type { AgentTranscriptItem } from "./types";
 
 export function TranscriptItem({
@@ -13,27 +14,27 @@ export function TranscriptItem({
 }) {
   return (
     <article
-      className="situ-transcript-item"
+      className={s.transcriptItem}
       data-tone={item.tone}
       data-latest={isLatest}
     >
-      <div className="situ-transcript-item__rail" aria-hidden="true">
-        <span className="situ-transcript-item__dot" />
+      <div className={s.transcriptItemRail} aria-hidden="true">
+        <span className={s.transcriptItemDot} />
       </div>
 
-      <div className="situ-transcript-item__content">
-        <header className="situ-transcript-item__header">
-          <div className="situ-transcript-item__title">
+      <div className={s.transcriptItemContent}>
+        <header className={s.transcriptItemHeader}>
+          <div className={s.transcriptItemTitle}>
             <span>{item.title}</span>
-            <span className="situ-transcript-item__preposition">on</span>
+            <span className={s.transcriptItemPreposition}>on</span>
             <EntityLink item={item} projectId={projectId} />
           </div>
           <time dateTime={item.createdAt}>{formatTime({ value: item.createdAt })}</time>
         </header>
 
-        <p className="situ-transcript-item__body">{item.body}</p>
+        <p className={s.transcriptItemBody}>{item.body}</p>
 
-        <footer className="situ-transcript-item__meta">
+        <footer className={s.transcriptItemMeta}>
           <span>{item.entity.kind}</span>
           <span>{item.activityType}</span>
         </footer>
@@ -52,7 +53,7 @@ function EntityLink({
   if (item.entity.kind === "hypothesis") {
     return (
       <Link
-        className="situ-record-link"
+        className={s.recordLink}
         to="/projects/$projectId/hypotheses/$hypothesisId"
         params={{
           projectId,
@@ -67,7 +68,7 @@ function EntityLink({
   if (item.entity.kind === "experiment") {
     return (
       <Link
-        className="situ-record-link"
+        className={s.recordLink}
         to="/projects/$projectId/experiments/$experimentId"
         params={{
           projectId,
@@ -81,7 +82,7 @@ function EntityLink({
 
   return (
     <Link
-      className="situ-record-link"
+      className={s.recordLink}
       to="/projects/$projectId/evaluations/$evaluationId"
       params={{
         projectId,

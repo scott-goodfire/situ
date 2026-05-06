@@ -1,8 +1,15 @@
 import type { ReactNode } from "react";
 import { classNames } from "../../utils/class-names";
+import * as s from "./dx-card.css";
 
 export type DxCardTone = "default" | "warning" | "danger";
 export type DxCardPadding = "none" | "tight" | "default";
+
+const PADDING_CLASS = {
+  none: s.paddingNone,
+  tight: s.paddingTight,
+  default: s.paddingDefault,
+} as const;
 
 export function DxCard({
   children,
@@ -19,10 +26,11 @@ export function DxCard({
 }) {
   const cardClassName = classNames({
     values: [
-      "dx-card",
-      `dx-card--${tone}`,
-      `dx-card--padding-${padding}`,
-      interactive && "dx-card--interactive",
+      s.card,
+      tone === "warning" && s.warning,
+      tone === "danger" && s.danger,
+      PADDING_CLASS[padding],
+      interactive && s.interactive,
       className,
     ],
   });

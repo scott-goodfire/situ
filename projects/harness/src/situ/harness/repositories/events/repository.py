@@ -11,7 +11,8 @@ from .command import AddEvent
 def _event_row(row: Any) -> EventRecord:
     return EventRecord(
         id=row["id"],
-        session_id=row["session_id"],
+        associated_project_id=row["associated_project_id"],
+        associated_session_id=row["associated_session_id"],
         type=row["type"],
         message=row["message"],
         payload=json_loads(row["payload_json"]),
@@ -25,22 +26,32 @@ class EventsRepository(BaseRepository):
         *,
         event_type: str,
         message: str,
+        associated_project_id: str | None = None,
+        associated_session_id: str | None = None,
         session_id: str | None = None,
         payload: dict[str, Any] | None = None,
     ) -> EventRecord:
+        resolved_session_id = associated_session_id or session_id
+        resolved_project_id = associated_project_id
+        if resolved_project_id is None and resolved_session_id is not None:
+            resolved_project_id = self._project_id_for_session(resolved_session_id)
         command = AddEvent(
             event_type=event_type,
             message=message,
-            session_id=session_id,
+            associated_project_id=resolved_project_id,
+            associated_session_id=resolved_session_id,
             payload=payload or {},
         )
         cursor = self.db.execute(
             """
-            INSERT INTO events (session_id, type, message, payload_json, created_at)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO events
+              (associated_project_id, associated_session_id, type, message,
+               payload_json, created_at)
+            VALUES (?, ?, ?, ?, ?, ?)
             """,
             (
-                command.session_id,
+                command.associated_project_id,
+                command.associated_session_id,
                 command.event_type,
                 command.message,
                 json_dumps(command.payload),
@@ -66,7 +77,20 @@ class EventsRepository(BaseRepository):
         return [
             _event_row(row)
             for row in self.db.fetchall(
-                "SELECT * FROM events WHERE session_id = ? ORDER BY id",
+                "SELECT * FROM events WHERE associated_session_id = ? ORDER BY id",
                 (session_id,),
             )
         ]
+
+    def list_for_project(self, project_id: str) -> list[EventRecord]:
+        return [
+            _event_row(row)
+            for row in self.db.fetchall(
+                "SELECT * FROM events WHERE associated_project_id = ? ORDER BY id",
+                (project_id,),
+            )
+        ]
+
+    def _project_id_for_session(self, session_id: str) -> str | None:
+        row = self.db.fetchone("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
+        return row["project_id"] if row else None

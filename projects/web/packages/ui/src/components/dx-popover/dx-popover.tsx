@@ -1,5 +1,6 @@
 import { Popover } from "@base-ui/react/popover";
 import type { ReactElement, ReactNode } from "react";
+import * as s from "./dx-popover.css";
 
 export function DxPopover({
   trigger,
@@ -20,9 +21,9 @@ export function DxPopover({
           side={side}
           align={align}
           sideOffset={6}
-          className="dx-popover__positioner"
+          className={s.positioner}
         >
-          <Popover.Popup className="dx-popover__popup">{children}</Popover.Popup>
+          <Popover.Popup className={s.popup}>{children}</Popover.Popup>
         </Popover.Positioner>
       </Popover.Portal>
     </Popover.Root>

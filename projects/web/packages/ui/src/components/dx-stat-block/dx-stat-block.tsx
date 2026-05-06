@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import * as s from "./dx-stat-block.css";
 
 export function DxStatBlock({
   value,
@@ -10,10 +11,10 @@ export function DxStatBlock({
   detail?: ReactNode;
 }) {
   return (
-    <div className="dx-stat-block">
-      <div className="dx-stat-block__value">{value}</div>
-      {caption && <div className="dx-stat-block__caption">{caption}</div>}
-      {detail && <div className="dx-stat-block__detail">{detail}</div>}
+    <div className={s.block}>
+      <div className={s.value}>{value}</div>
+      {caption && <div className={s.caption}>{caption}</div>}
+      {detail && <div className={s.detail}>{detail}</div>}
     </div>
   );
 }

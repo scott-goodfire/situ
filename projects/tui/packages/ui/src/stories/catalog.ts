@@ -9,6 +9,7 @@ import { stories as contrastiveFeatureDiffStories } from "../components/contrast
 import { stories as contributionBarsStories } from "../components/contribution-bars/contribution-bars.stories.js";
 import { stories as dashboardControlsStories } from "../components/dashboard-controls/dashboard-controls.stories.js";
 import { stories as experimentsSectionStories } from "../components/experiments-section/experiments-section.stories.js";
+import { stories as fullscreenDashboardStories } from "../components/fullscreen-dashboard/fullscreen-dashboard.stories.js";
 import { stories as heatmapGridStories } from "../components/heatmap-grid/heatmap-grid.stories.js";
 import { stories as hypothesesSectionStories } from "../components/hypotheses-section/hypotheses-section.stories.js";
 import { stories as layoutBoxStories } from "../components/layout-box/layout-box.stories.js";
@@ -30,6 +31,7 @@ export const allStories: TuiStory[] = [
   ...choicePromptStories,
   ...commandInputStories,
   ...dashboardControlsStories,
+  ...fullscreenDashboardStories,
   ...contrastiveFeatureDiffStories,
   ...contributionBarsStories,
   ...heatmapGridStories,

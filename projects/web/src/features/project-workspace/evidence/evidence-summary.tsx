@@ -3,6 +3,7 @@ import type {
   EvaluationRecord,
 } from "@situ/protocol";
 import { DxBadge } from "@situ/web-ui";
+import * as s from "../../../styles.css";
 import {
   evidenceLabel,
   evidenceState,
@@ -31,9 +32,9 @@ export function EvidenceSummary({
   });
 
   return (
-    <div className="situ-evidence-summary">
+    <div className={s.evidenceSummary}>
       <DxBadge tone={evidenceTone({ state })}>{label}</DxBadge>
-      <span className="situ-evidence-summary__text">
+      <span className={s.evidenceSummaryText}>
         {latestActivity?.body ?? missingLabel}
       </span>
     </div>

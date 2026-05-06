@@ -1,3 +1,5 @@
+export { vars } from "./theme.css";
+export { mono, muted } from "./utilities.css";
 export { BucketBars } from "./components/bucket-bars/bucket-bars";
 export { ContrastiveFeatureDiff } from "./components/contrastive-feature-diff/contrastive-feature-diff";
 export { ContributionBars } from "./components/contribution-bars/contribution-bars";

@@ -14,17 +14,21 @@ class CollectionsService(BaseModel):
 
     def bootstrap(self) -> CollectionsBootstrapSchema:
         events = self.repos.events.list_all()
-        project = self.repos.project.get()
+        workspace = self.repos.workspaces.get()
         return CollectionsBootstrapSchema(
             cursor=self.cursor(events),
-            projects=[project] if project is not None else [],
-            objectives=self.repos.objectives.list_all(),
-            research_contexts=self.repos.research_contexts.list_all(),
+            workspaces=[workspace] if workspace is not None else [],
+            projects=self.repos.projects.list_all(),
             sessions=self.repos.sessions.list_all(),
             hypotheses=self.repos.hypotheses.list_all(),
             experiments=self.repos.experiments.list_all(),
             evaluations=self.repos.evaluations.list_all(),
             hypothesis_experiment_links=self.repos.hypothesis_experiment_links.list_all(),
+            agents=self.repos.agents.list_all(),
+            tasks=self.repos.tasks.list_all(),
+            task_dependencies=self.repos.task_dependencies.list_all(),
+            task_entity_links=self.repos.task_entity_links.list_all(),
+            task_activities=self.repos.task_activities.list_all(),
             hypothesis_activities=self.repos.hypothesis_activities.list_all(),
             experiment_activities=self.repos.experiment_activities.list_all(),
             evaluation_activities=self.repos.evaluation_activities.list_all(),

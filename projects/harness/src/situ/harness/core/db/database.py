@@ -10,9 +10,19 @@ from .migrations import run_migrations
 
 
 class Database:
-    def __init__(self, path: Path, *, project_id: str, repo_path: str) -> None:
+    def __init__(
+        self,
+        path: Path,
+        *,
+        workspace_id: str | None = None,
+        project_id: str | None = None,
+        repo_path: str,
+    ) -> None:
         self.path = path
-        self.project_id = project_id
+        self.workspace_id = workspace_id or project_id
+        if self.workspace_id is None:
+            raise ValueError("workspace_id is required")
+        self.project_id = self.workspace_id
         self.repo_path = repo_path
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self._lock = threading.Lock()

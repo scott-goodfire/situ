@@ -9,11 +9,13 @@ import {
   DxEmptyState,
   DxSection,
   DxTable,
+  mono,
   type DxBadgeTone,
   type DxTableColumn,
 } from "@situ/web-ui";
 import { Link } from "@tanstack/react-router";
 import filter from "lodash/filter";
+import * as s from "../../../styles.css";
 import {
   activityLabel,
   evaluationActivitiesForEvaluation,
@@ -64,10 +66,10 @@ export function EvaluationDetailPage({
 
   return (
     <>
-      <section className="situ-object-page">
-        <div className="situ-object-page__header">
+      <section className={s.objectPage}>
+        <div className={s.objectPageHeader}>
           <div>
-            <p className="situ-object-page__eyebrow">{evaluation.id}</p>
+            <p className={s.objectPageEyebrow}>{evaluation.id}</p>
             <h2>{evaluation.title}</h2>
           </div>
           <DxBadge
@@ -79,7 +81,7 @@ export function EvaluationDetailPage({
             {hasConcern ? "concern" : evaluation.status}
           </DxBadge>
         </div>
-        <p className="situ-object-page__summary">
+        <p className={s.objectPageSummary}>
           {latestActivity?.body ?? evaluation.summary}
         </p>
       </section>
@@ -107,9 +109,9 @@ function EvaluationSource({
   if (experiment) {
     return (
       <DxSection title="Source">
-        <div className="situ-record-cell">
+        <div className={s.recordCell}>
           <Link
-            className="situ-record-link"
+            className={s.recordLink}
             to="/projects/$projectId/experiments/$experimentId"
             params={{
               projectId,
@@ -118,7 +120,7 @@ function EvaluationSource({
           >
             {experiment.title}
           </Link>
-          <span className="situ-record-id">{experiment.id}</span>
+          <span className={s.recordId}>{experiment.id}</span>
         </div>
       </DxSection>
     );
@@ -126,9 +128,9 @@ function EvaluationSource({
 
   return (
     <DxSection title="Source">
-      <div className="situ-record-cell">
+      <div className={s.recordCell}>
         <span>Baseline evidence</span>
-        <span className="situ-record-id">{evaluation.session_id}</span>
+        <span className={s.recordId}>{evaluation.session_id}</span>
       </div>
     </DxSection>
   );
@@ -157,9 +159,9 @@ const artifactColumns: Array<DxTableColumn<ArtifactRow>> = [
     header: "Artifact",
     width: "30%",
     renderCell: ({ row }) => (
-      <div className="situ-record-cell">
-        <span className="situ-record-link">{row.artifact.title}</span>
-        <span className="situ-record-id">{row.artifact.id}</span>
+      <div className={s.recordCell}>
+        <span className={s.recordLink}>{row.artifact.title}</span>
+        <span className={s.recordId}>{row.artifact.id}</span>
       </div>
     ),
   },
@@ -172,7 +174,7 @@ const artifactColumns: Array<DxTableColumn<ArtifactRow>> = [
   {
     id: "path",
     header: "Path",
-    renderCell: ({ row }) => <span className="dx-mono">{row.artifact.path}</span>,
+    renderCell: ({ row }) => <span className={mono}>{row.artifact.path}</span>,
   },
 ];
 

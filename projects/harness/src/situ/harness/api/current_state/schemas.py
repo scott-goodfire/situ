@@ -3,6 +3,7 @@ from __future__ import annotations
 from pydantic import BaseModel, ConfigDict
 
 from ...records import (
+    AgentRecord,
     ArtifactRecord,
     EventRecord,
     EvaluationActivityRecord,
@@ -12,24 +13,31 @@ from ...records import (
     HypothesisActivityRecord,
     HypothesisExperimentLinkRecord,
     HypothesisRecord,
-    ObjectiveRecord,
     ProjectRecord,
-    ResearchContextRecord,
     SessionRecord,
+    TaskActivityRecord,
+    TaskDependencyRecord,
+    TaskEntityLinkRecord,
+    TaskRecord,
+    WorkspaceRecord,
 )
 
 
 class CurrentStateSchema(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    project: ProjectRecord | None
-    objectives: list[ObjectiveRecord]
-    research_contexts: list[ResearchContextRecord]
+    workspace: WorkspaceRecord | None
+    projects: list[ProjectRecord]
     sessions: list[SessionRecord]
     hypotheses: list[HypothesisRecord]
     experiments: list[ExperimentRecord]
     evaluations: list[EvaluationRecord]
     hypothesis_experiment_links: list[HypothesisExperimentLinkRecord]
+    agents: list[AgentRecord]
+    tasks: list[TaskRecord]
+    task_dependencies: list[TaskDependencyRecord]
+    task_entity_links: list[TaskEntityLinkRecord]
+    task_activities: list[TaskActivityRecord]
     hypothesis_activities: list[HypothesisActivityRecord]
     experiment_activities: list[ExperimentActivityRecord]
     evaluation_activities: list[EvaluationActivityRecord]

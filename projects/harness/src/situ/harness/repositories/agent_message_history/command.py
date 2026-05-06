@@ -4,7 +4,9 @@ from ..base.command import RepositoryCommand
 
 
 class AppendAgentMessageHistory(RepositoryCommand):
-    session_id: str
+    project_id: str
+    created_in_session_id: str | None = None
+    agent_id: str | None = None
     agent_name: str
     messages_json: str
     pydantic_run_id: str | None = None

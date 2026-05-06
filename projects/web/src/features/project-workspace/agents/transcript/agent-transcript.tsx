@@ -1,6 +1,7 @@
-import { DxSection } from "@situ/web-ui";
+import { DxSection, muted } from "@situ/web-ui";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useMemo, useRef } from "react";
+import * as s from "../../../../styles.css";
 import { TranscriptItem } from "./transcript-item";
 import type { AgentTranscriptItem } from "./types";
 
@@ -13,7 +14,7 @@ export function AgentTranscript({
 }) {
   const prefersReducedMotion = useReducedMotion();
   const trigger = useMemo(
-    () => items.map((item) => item.id).join("\u001f"),
+    () => items.map((item) => item.id).join(""),
     [items],
   );
   const autoScroll = useTranscriptAutoScroll({
@@ -24,7 +25,7 @@ export function AgentTranscript({
   if (items.length === 0) {
     return (
       <DxSection title="Transcript">
-        <p className="dx-muted">No transcript activity for this agent yet</p>
+        <p className={muted}>No transcript activity for this agent yet</p>
       </DxSection>
     );
   }
@@ -34,15 +35,15 @@ export function AgentTranscript({
   return (
     <DxSection title="Transcript">
       <div
-        className="situ-agent-transcript"
+        className={s.agentTranscript}
         ref={autoScroll.scrollRef}
         onScroll={autoScroll.handleScroll}
       >
-        <ol className="situ-agent-transcript__list">
+        <ol className={s.agentTranscriptList}>
           <AnimatePresence initial={false}>
             {items.map((item, index) => (
               <motion.li
-                className="situ-agent-transcript__row"
+                className={s.agentTranscriptRow}
                 key={item.id}
                 layout={shouldAnimate}
                 initial={shouldAnimate ? { opacity: 0, y: 6 } : false}
@@ -60,7 +61,7 @@ export function AgentTranscript({
           </AnimatePresence>
         </ol>
         <div
-          className="situ-agent-transcript__anchor"
+          className={s.agentTranscriptAnchor}
           ref={autoScroll.anchorRef}
         />
       </div>

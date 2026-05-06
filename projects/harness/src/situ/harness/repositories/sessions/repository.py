@@ -5,12 +5,13 @@ from typing import Any
 from ...core.db.serialization import utc_now
 from ...records import SessionRecord, SessionStatus, parse_session_status
 from ..base import BaseRepository
-from .command import CreateSession, UpdateSessionStatus
+from .command import CreateSession, UpdateSessionProject, UpdateSessionStatus
 
 
 def _session_row(row: Any) -> SessionRecord:
     return SessionRecord(
         id=row["id"],
+        workspace_id=row["workspace_id"],
         project_id=row["project_id"],
         status=row["status"],
         created_at=row["created_at"],
@@ -23,21 +24,24 @@ class SessionsRepository(BaseRepository):
         self,
         session_id: str,
         *,
-        project_id: str,
+        workspace_id: str,
+        project_id: str | None = None,
     ) -> SessionRecord:
         command = CreateSession(
             session_id=session_id,
+            workspace_id=workspace_id,
             project_id=project_id,
         )
         now = utc_now()
         self.db.execute(
             """
             INSERT INTO sessions
-              (id, project_id, status, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?)
+              (id, workspace_id, project_id, status, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?)
             """,
             (
                 command.session_id,
+                command.workspace_id,
                 command.project_id,
                 SessionStatus.ACTIVE.value,
                 now,
@@ -64,6 +68,20 @@ class SessionsRepository(BaseRepository):
         )
         return self.get_by_id(command.session_id)
 
+    def update_project(
+        self,
+        session_id: str,
+        project_id: str | None,
+    ) -> SessionRecord | None:
+        command = UpdateSessionProject(session_id=session_id, project_id=project_id)
+        if self.get_by_id(command.session_id) is None:
+            return None
+        self.db.execute(
+            "UPDATE sessions SET project_id = ?, updated_at = ? WHERE id = ?",
+            (command.project_id, utc_now(), command.session_id),
+        )
+        return self.get_by_id(command.session_id)
+
     def get_by_id(self, session_id: str) -> SessionRecord | None:
         row = self.db.fetchone("SELECT * FROM sessions WHERE id = ?", (session_id,))
         return _session_row(row) if row else None
@@ -75,6 +93,15 @@ class SessionsRepository(BaseRepository):
         return [
             _session_row(row)
             for row in self.db.fetchall("SELECT * FROM sessions ORDER BY created_at")
+        ]
+
+    def list_for_workspace(self, workspace_id: str) -> list[SessionRecord]:
+        return [
+            _session_row(row)
+            for row in self.db.fetchall(
+                "SELECT * FROM sessions WHERE workspace_id = ? ORDER BY created_at",
+                (workspace_id,),
+            )
         ]
 
     def list_for_project(self, project_id: str) -> list[SessionRecord]:

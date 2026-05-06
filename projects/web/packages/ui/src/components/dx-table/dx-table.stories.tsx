@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
+import { mono } from "../../utilities.css";
 import { DxTable, type DxTableColumn } from "./dx-table";
 
 type Row = {
@@ -30,7 +31,7 @@ const columns: Array<DxTableColumn<Row>> = [
     id: "id",
     header: "Experiment",
     width: "220px",
-    renderCell: ({ row }) => <span className="dx-mono">{row.id}</span>,
+    renderCell: ({ row }) => <span className={mono}>{row.id}</span>,
     sortValue: ({ row }) => row.id,
   },
   {

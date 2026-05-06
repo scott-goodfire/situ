@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import * as s from "./dx-app-frame.css";
 
 export function DxAppFrame({
   sidebar,
@@ -10,11 +11,11 @@ export function DxAppFrame({
   children: ReactNode;
 }) {
   return (
-    <div className="dx-app-frame">
-      <aside className="dx-app-frame__sidebar">{sidebar}</aside>
-      <div className="dx-app-frame__main">
-        {topBar && <div className="dx-app-frame__top-bar">{topBar}</div>}
-        <div className="dx-app-frame__content">{children}</div>
+    <div className={s.frame}>
+      <aside className={s.sidebar}>{sidebar}</aside>
+      <div className={s.main}>
+        {topBar && <div className={s.topBar}>{topBar}</div>}
+        <div className={s.content}>{children}</div>
       </div>
     </div>
   );

@@ -1,3 +1,3 @@
-from .record import ProjectRecord
+from .record import ProjectRecord, ProjectStatus, parse_project_status
 
-__all__ = ["ProjectRecord"]
+__all__ = ["ProjectRecord", "ProjectStatus", "parse_project_status"]

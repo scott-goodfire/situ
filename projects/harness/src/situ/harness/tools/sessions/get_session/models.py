@@ -8,14 +8,18 @@ from ...common import SituToolReturn
 
 
 class GetSessionResult(SituToolReturn):
+    workspace: dict[str, Any] | None = None
     project: dict[str, Any] | None = None
     session: dict[str, Any] | None = None
-    objective: dict[str, Any] | None = None
-    research_context: dict[str, Any] | None = None
     hypotheses: list[dict[str, Any]] = Field(default_factory=list)
     experiments: list[dict[str, Any]] = Field(default_factory=list)
     evaluations: list[dict[str, Any]] = Field(default_factory=list)
     hypothesis_experiment_links: list[dict[str, Any]] = Field(default_factory=list)
+    agents: list[dict[str, Any]] = Field(default_factory=list)
+    tasks: list[dict[str, Any]] = Field(default_factory=list)
+    task_dependencies: list[dict[str, Any]] = Field(default_factory=list)
+    task_entity_links: list[dict[str, Any]] = Field(default_factory=list)
+    task_activities: list[dict[str, Any]] = Field(default_factory=list)
     hypothesis_activities: list[dict[str, Any]] = Field(default_factory=list)
     experiment_activities: list[dict[str, Any]] = Field(default_factory=list)
     evaluation_activities: list[dict[str, Any]] = Field(default_factory=list)

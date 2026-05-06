@@ -6,7 +6,8 @@ from ..base.command import RepositoryCommand
 
 class CreateEvaluation(RepositoryCommand):
     evaluation_id: str
-    session_id: str
+    project_id: str
+    created_in_session_id: str | None = None
     title: str
     summary: str
     associated_experiment_id: str | None = None

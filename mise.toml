@@ -37,7 +37,7 @@ description = "Render an Situ TUI story"
 run = "./commands/tui-story.sh"
 
 [tasks."tui:snapshots"]
-description = "Capture text snapshots for Situ TUI stories"
+description = "Capture text and PNG snapshots for Situ TUI stories"
 run = "./commands/tui-snapshots.sh"
 
 [tasks.start]

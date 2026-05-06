@@ -6,82 +6,100 @@ small and let activities carry nuance.
 ## Current Hierarchy
 
 ```text
-Project
-  `-- Sessions (project_id required)
-        |-- Objective       (1:1, session-owned record)
-        |-- ResearchContext (1:1, session-owned record)
-        |-- Hypotheses                  (session_id required)
-        |     `-- HypothesisActivity
-        |-- Experiments                 (session_id required)
-        |     `-- ExperimentActivity
-        |-- Evaluations                 (session_id required)
-        |     `-- EvaluationActivity
-        |-- HypothesisExperimentLinks
-        |-- Artifacts                   (session_id required)
-        `-- Events
+Workspace
+  |-- Projects                     (workspace-owned research efforts)
+  |     |-- Agents                      (project participants)
+  |     |     `-- AgentMessageHistory
+  |     |-- Tasks                       (agent work orders)
+  |     |     |-- TaskDependencies
+  |     |     |-- TaskEntityLinks
+  |     |     `-- TaskActivity
+  |     |-- Hypotheses                  (project_id required)
+  |     |     `-- HypothesisActivity
+  |     |-- Experiments                 (project_id required)
+  |     |     `-- ExperimentActivity
+  |     |-- Evaluations                 (project_id required)
+  |     |     `-- EvaluationActivity
+  |     |-- HypothesisExperimentLinks
+  |     |-- Artifacts                   (project_id required)
+  |     `-- Events                      (when project-associated)
+  `-- Sessions                     (workspace_id required, project_id optional)
+        `-- Events                      (when session-associated)
 ```
 
-The project is the workspace boundary and owns sessions. Sessions own every
-ledger entity inside them: hypotheses, experiments, evaluations, artifacts,
-activities, and the session's objective and research context records. Every
-ledger row carries the `session_id` it was created under, no nullable session
-columns. Starting Situ creates a fresh session by default; resuming an
-existing session must be explicit. There is no stored "active session" pointer
-on the project; the most-recently-updated session is derived on demand.
+The workspace is the folder boundary and owns local Situ state for a repo path.
+Projects are research efforts inside a workspace. A project carries the
+objective and research context for that effort. Sessions are live autoresearch
+runs inside a workspace, and may attach to zero or one project. A projectless
+session is valid while setup or triage is still incomplete.
 
-## Objective
+Projects own the durable research ledger and coordination state: agents, agent
+message history, tasks, task dependencies, task entity links, task activities,
+hypotheses, experiments, evaluations, research activities, hypothesis-
+experiment links, and artifacts. Those records carry `project_id`, not
+`session_id`. When useful for provenance, project-owned records may also carry
+fields such as `created_in_session_id`, `claimed_in_session_id`, or
+`completed_in_session_id`, but the session is not their owner.
 
-The session north star. It defines what this session is trying to improve or
-understand.
+Sessions own lifecycle and runtime attachment state. Starting Situ creates a
+fresh session by default; resuming an existing session must be explicit. There
+is no stored "active session" pointer on the workspace; the most-recently-
+updated session is derived on demand. Agent and task records describe
+coordination and handoffs around the ledger work rather than replacing
+hypotheses, experiments, evaluations, activities, artifacts, or events.
 
-A first objective needs title/description.
+## Workspace
 
-Objectives are sibling records to sessions, with a required `session_id` FK
-(unique per session in the first slice). The agent populates the session's
-objective on session kickoff via the `create_objective` tool, reading the
-free-text setup input. A project may have many sessions with similar
-objectives, but each session owns its own objective record and ledger.
+The folder/runtime boundary.
 
-## Research Context
+A workspace records the repo path where Situ is running and scopes local state,
+subscriptions, and sessions. It should not carry the research objective or
+experiment context; those belong to projects.
 
-A plain-language description of how progress is judged.
+## Project
 
-It can include commands, tools, dashboards, metrics, eval suites, logs, cluster
-jobs, notebooks, or human review criteria. Do not require the user to reduce
-this to one command or one metric during onboarding.
+A research effort inside a workspace.
 
-Research context is its own session-owned record (1:1 with sessions, required
-`session_id` FK), not a column on the session row. The agent populates it via
-`create_research_context` on session kickoff, reading the free-text setup
-input. Keep the body as one LLM-friendly text field in the first slice. Do not
-split it into separate required fields for eval commands, known signals,
-metric names, and experiment scope until the product proves those boundaries
-are stable.
+A project owns the objective and research context for a bundle of sessions. The
+objective names what the effort is trying to improve or understand. The
+research context describes how progress is judged.
+
+Research context can include commands, tools, dashboards, metrics, eval suites,
+logs, cluster jobs, notebooks, or human review criteria. Do not require the
+user to reduce this to one command or one metric during onboarding.
+
+A session may have no project when it first starts. Once the setup is known,
+the manager or user can create or attach a project. Multiple sessions may attach
+to the same project over time. Hypotheses, experiments, evaluations, research
+activities, and artifacts created while that session is attached to a project
+belong to the project, with optional `created_in_session_id` provenance.
 
 ## Session
 
 The main unit of autoresearch work.
 
-A session belongs to one project (required `project_id` FK) and owns one
-objective record, one research context record, lifecycle status, agent
-message history, hypotheses, experiments, evaluations, activities, artifacts,
-and events. Each new `situ start` creates a new session. `situ resume`
-is the explicit action for continuing the same session id. There is no stored
-"active session" pointer on the project; lookups for "the latest session"
-sort by `updated_at` on demand.
+A session belongs to one workspace (required `workspace_id` FK) and may attach
+to one project (`project_id`, nullable). It owns lifecycle status and runtime
+association, not the research ledger or coordination records. Each new `situ
+start` creates a new session. `situ resume` is the explicit action for
+continuing the same session id. There is no stored "active session" pointer on
+the workspace; lookups for "the latest session" sort by `updated_at` on demand.
+
+Agent, task, and research records may point back to the session that created,
+claimed, completed, or otherwise observed them. Those fields are provenance and
+should not be used as ownership boundaries.
 
 ## Hypothesis
 
-A research thread inside a session.
+A research thread inside a project.
 
 Hypotheses should be lightweight and status-light. A hypothesis can be open,
 active, or closed. Whether it is promising, weakened, suspicious, or mostly
 supported should be explained through activities rather than status explosion.
 
-Hypotheses are required to belong to a session (`session_id` FK, NOT NULL).
-Prior-session hypotheses may be used as reference material later, but they
-should not appear as current-session state unless explicitly copied or
-summarized into the new session.
+Hypotheses are required to belong to a project (`project_id` FK, NOT NULL). If
+a session created the hypothesis, store that provenance as
+`created_in_session_id`.
 
 ## Experiment
 
@@ -91,7 +109,9 @@ Experiments should also be status-light: open, active, or closed. Details such
 as failure, suspiciousness, reproduction, or interpretation should be expressed
 as experiment activities.
 
-Experiments are required to belong to a session (`session_id` FK, NOT NULL).
+Experiments are required to belong to a project (`project_id` FK, NOT NULL). If
+a session created the experiment, store that provenance as
+`created_in_session_id`.
 
 Do not add `Variant` as a first-class model yet. Use experiment summaries,
 activity bodies, artifacts, and links to express baseline + A, baseline + B,
@@ -111,11 +131,12 @@ stdout/stderr, observed signals, interpretations, concerns, and reproduction
 notes should be recorded as evaluation activities rather than columns on the
 evaluation itself.
 
-Evaluations are required to belong to a session (`session_id` FK, NOT NULL)
+Evaluations are required to belong to a project (`project_id` FK, NOT NULL)
 and may optionally point at the experiment they measure
 (`associated_experiment_id`, nullable). A baseline evaluation usually has no
 associated experiment. A candidate or reproduction evaluation usually points
-at the experiment it measures.
+at the experiment it measures. If a session created the evaluation, store that
+provenance as `created_in_session_id`.
 
 Before a session treats candidate experiments as comparable, it should establish
 at least one baseline evaluation activity with evidence. This is a product rule,
@@ -137,9 +158,10 @@ Activities are timeline entries attached to hypotheses, experiments, or
 evaluations. They replace standalone evidence, finding, warning, and decision
 models in the first slice.
 
-Activities reach a session through their parent (the hypothesis, experiment,
-or evaluation), which is itself session-required. Activity rows do not carry
-their own `session_id` column.
+Activities reach a project through their parent (the hypothesis, experiment,
+or evaluation), which is itself project-required. Activity rows do not carry
+their own `session_id` column. If a session created the activity, store that
+provenance as `created_in_session_id`.
 
 The first slice uses only `comment` as the activity kind. Results, concerns,
 interpretations, plans, and decisions are written as comments. Structured
@@ -160,24 +182,38 @@ Artifacts are file-like or bulky outputs that activities reference: raw eval
 JSON, logs, diffs, patches, screenshots, traces, samples, or reproduction
 bundles. Activities explain what happened; artifacts preserve the thing.
 
-Artifacts always belong to a session (`session_id` FK, NOT NULL) and attach
-to a specific entity within that session through a generic association:
+Artifacts always belong to a project (`project_id` FK, NOT NULL) and attach
+to a specific entity within that project through a generic association:
 
 ```text
-session_id              (required)
+project_id              (required)
+created_in_session_id   (optional)
 associated_entity_kind
 associated_entity_id
 ```
 
 This keeps artifact storage simple while still allowing artifacts to attach to a
-session, objective, hypothesis, experiment, or activity.
+project, hypothesis, experiment, evaluation, or activity.
 
 ## Event
 
 An internal timestamped record of system/runtime behavior.
 
-Events power debugging and session streaming. They should not become the main
-product collaboration layer; activities are for that.
+Events power debugging and streaming. They should not become the main product
+collaboration layer; activities are for that.
+
+Events may be associated with a project, a session, both, or neither:
+
+```text
+associated_project_id   (optional)
+associated_session_id   (optional)
+```
+
+Project-associated events describe changes to project-owned research or
+coordination state. Session-associated events describe lifecycle, runtime, or
+diagnostic behavior for one execution window. A `session.started` event for an
+attached project should carry both associations; a pre-setup runtime event may
+carry only `associated_session_id`.
 
 ## Deferred Primitives
 

@@ -4,6 +4,7 @@ import {
 } from "@situ/chart-model";
 import { classNames } from "../../utils/class-names";
 import { ContributionBars } from "../contribution-bars/contribution-bars";
+import * as s from "./contrastive-feature-diff.css";
 
 export function ContrastiveFeatureDiff({
   featureSet,
@@ -15,15 +16,13 @@ export function ContrastiveFeatureDiff({
   className?: string;
 }) {
   const contributions = signedContributionsFromContrastiveFeatures({ featureSet });
-  const rootClassName = classNames({
-    values: ["dx-contrastive-feature-diff", className],
-  });
+  const rootClassName = classNames({ values: [s.root, className] });
 
   return (
     <div className={rootClassName}>
-      <div className="dx-contrastive-feature-diff__header">
-        <div className="dx-contrastive-feature-diff__title">{featureSet.label}</div>
-        <div className="dx-contrastive-feature-diff__legend">
+      <div className={s.header}>
+        <div className={s.title}>{featureSet.label}</div>
+        <div className={s.legend}>
           + {featureSet.leftLabel} / - {featureSet.rightLabel}
         </div>
       </div>

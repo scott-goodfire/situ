@@ -11,7 +11,8 @@ from .command import CreateExperiment, UpdateExperiment
 def _experiment_row(row: Any) -> ExperimentRecord:
     return ExperimentRecord(
         id=row["id"],
-        session_id=row["session_id"],
+        project_id=row["project_id"],
+        created_in_session_id=row["created_in_session_id"],
         status=row["status"],
         title=row["title"],
         summary=row["summary"],
@@ -25,15 +26,17 @@ class ExperimentsRepository(BaseRepository):
         self,
         *,
         experiment_id: str,
-        session_id: str,
+        project_id: str,
         title: str,
         summary: str,
+        created_in_session_id: str | None = None,
         status: WorkStatus | str = WorkStatus.OPEN,
     ) -> ExperimentRecord:
         checked_status = parse_work_status(status=status, noun="experiment")
         command = CreateExperiment(
             experiment_id=experiment_id,
-            session_id=session_id,
+            project_id=project_id,
+            created_in_session_id=created_in_session_id,
             title=title,
             summary=summary,
             status=checked_status,
@@ -42,12 +45,14 @@ class ExperimentsRepository(BaseRepository):
         self.db.execute(
             """
             INSERT INTO experiments
-              (id, session_id, status, title, summary, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+              (id, project_id, created_in_session_id, status, title, summary,
+               created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 command.experiment_id,
-                command.session_id,
+                command.project_id,
+                command.created_in_session_id,
                 command.status.value,
                 command.title,
                 command.summary,
@@ -112,11 +117,16 @@ class ExperimentsRepository(BaseRepository):
             for row in self.db.fetchall("SELECT * FROM experiments ORDER BY created_at")
         ]
 
-    def list_for_session(self, session_id: str) -> list[ExperimentRecord]:
+    def list_for_project(self, project_id: str) -> list[ExperimentRecord]:
         return [
             _experiment_row(row)
             for row in self.db.fetchall(
-                "SELECT * FROM experiments WHERE session_id = ? ORDER BY created_at",
-                (session_id,),
+                "SELECT * FROM experiments WHERE project_id = ? ORDER BY created_at",
+                (project_id,),
             )
         ]
+
+    def list_for_session(self, session_id: str) -> list[ExperimentRecord]:
+        session = self.db.fetchone("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
+        project_id = session["project_id"] if session else None
+        return self.list_for_project(project_id) if project_id is not None else []

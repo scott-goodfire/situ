@@ -28,34 +28,28 @@ export interface JsonRpcResponse {
   error?: JsonRpcErrorObject | null;
 }
 
-export interface ProjectRecord {
+export interface WorkspaceRecord {
   id: string;
   repo_path: string;
   created_at: string;
   updated_at: string;
 }
 
-export interface ObjectiveRecord {
+export interface ProjectRecord {
   id: string;
-  session_id: string;
+  workspace_id: string;
   title: string;
-  description: string;
+  objective: string;
+  research_context: string;
   status: "active" | "closed";
-  created_at: string;
-  updated_at: string;
-}
-
-export interface ResearchContextRecord {
-  id: string;
-  session_id: string;
-  body: string;
   created_at: string;
   updated_at: string;
 }
 
 export interface SessionRecord {
   id: string;
-  project_id: string;
+  workspace_id: string;
+  project_id?: string | null;
   status: "active" | "closed";
   created_at: string;
   updated_at: string;
@@ -63,7 +57,8 @@ export interface SessionRecord {
 
 export interface HypothesisRecord {
   id: string;
-  session_id: string;
+  project_id: string;
+  created_in_session_id?: string | null;
   title: string;
   summary: string;
   status: "open" | "active" | "closed";
@@ -73,7 +68,8 @@ export interface HypothesisRecord {
 
 export interface ExperimentRecord {
   id: string;
-  session_id: string;
+  project_id: string;
+  created_in_session_id?: string | null;
   status: "open" | "active" | "closed";
   title: string;
   summary: string;
@@ -83,7 +79,8 @@ export interface ExperimentRecord {
 
 export interface EvaluationRecord {
   id: string;
-  session_id: string;
+  project_id: string;
+  created_in_session_id?: string | null;
   status: "open" | "active" | "closed";
   title: string;
   summary: string;
@@ -98,9 +95,68 @@ export interface HypothesisExperimentLinkRecord {
   created_at: string;
 }
 
+export interface AgentRecord {
+  id: string;
+  session_id: string;
+  kind: "manager" | "scientist";
+  display_name: string;
+  model_name?: string | null;
+  status: "idle" | "active" | "closed";
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TaskRecord {
+  id: string;
+  session_id: string;
+  title: string;
+  content: string;
+  kind: "plan" | "baseline" | "hypothesize" | "experiment" | "interpret" | "review";
+  status: "backlog" | "in_progress" | "done" | "abandoned" | "failed";
+  priority: "urgent" | "high" | "normal" | "low";
+  source_kind: "manager" | "user" | "system";
+  assignee_id?: string | null;
+  parent_task_id?: string | null;
+  payload?: Record<string, unknown>;
+  pydantic_run_id?: string | null;
+  conversation_id?: string | null;
+  result_summary?: string | null;
+  created_at: string;
+  available_at: string;
+  claimed_at?: string | null;
+  completed_at?: string | null;
+  updated_at: string;
+}
+
+export interface TaskDependencyRecord {
+  task_id: string;
+  blocked_by_task_id: string;
+  created_at: string;
+}
+
+export interface TaskEntityLinkRecord {
+  task_id: string;
+  entity_kind: "hypothesis" | "experiment" | "evaluation" | "artifact" | "hypothesis_activity" | "experiment_activity" | "evaluation_activity" | "task_activity" | "event";
+  entity_id: string;
+  relationship: string;
+  created_at: string;
+}
+
+export interface TaskActivityRecord {
+  id: number;
+  task_id: string;
+  actor_agent_id?: string | null;
+  actor: string;
+  kind: "comment";
+  body: string;
+  payload?: Record<string, unknown>;
+  created_at: string;
+}
+
 export interface HypothesisActivityRecord {
   id: number;
   hypothesis_id: string;
+  created_in_session_id?: string | null;
   actor: string;
   kind: "comment";
   body: string;
@@ -111,6 +167,7 @@ export interface HypothesisActivityRecord {
 export interface ExperimentActivityRecord {
   id: number;
   experiment_id: string;
+  created_in_session_id?: string | null;
   actor: string;
   kind: "comment";
   body: string;
@@ -121,6 +178,7 @@ export interface ExperimentActivityRecord {
 export interface EvaluationActivityRecord {
   id: number;
   evaluation_id: string;
+  created_in_session_id?: string | null;
   actor: string;
   kind: "comment";
   body: string;
@@ -130,7 +188,8 @@ export interface EvaluationActivityRecord {
 
 export interface ArtifactRecord {
   id: string;
-  session_id: string;
+  project_id: string;
+  created_in_session_id?: string | null;
   associated_entity_kind: string;
   associated_entity_id: string;
   kind: string;
@@ -164,14 +223,14 @@ export interface SetupGetParams {
 
 export interface SetupGetResult {
   configured: boolean;
-  project?: ProjectRecord | null;
+  workspace?: WorkspaceRecord | null;
 }
 
 export interface SetupCompleteParams {
 }
 
 export interface SetupCompleteResult {
-  project: ProjectRecord;
+  workspace: WorkspaceRecord;
 }
 
 export interface CollectionsBootstrapParams {
@@ -179,14 +238,18 @@ export interface CollectionsBootstrapParams {
 
 export interface CollectionsBootstrapResult {
   cursor: number;
-  projects: ProjectRecord[];
-  objectives: ObjectiveRecord[];
-  research_contexts: ResearchContextRecord[];
+  workspaces?: WorkspaceRecord[];
+  projects?: ProjectRecord[];
   sessions: SessionRecord[];
   hypotheses: HypothesisRecord[];
   experiments: ExperimentRecord[];
   evaluations: EvaluationRecord[];
   hypothesis_experiment_links: HypothesisExperimentLinkRecord[];
+  agents?: AgentRecord[];
+  tasks?: TaskRecord[];
+  task_dependencies?: TaskDependencyRecord[];
+  task_entity_links?: TaskEntityLinkRecord[];
+  task_activities?: TaskActivityRecord[];
   hypothesis_activities: HypothesisActivityRecord[];
   experiment_activities: ExperimentActivityRecord[];
   evaluation_activities: EvaluationActivityRecord[];
@@ -204,7 +267,7 @@ export interface CollectionsSubscribeResult {
 
 export interface CollectionUpsertedParams {
   cursor: number;
-  collection: "projects" | "objectives" | "research_contexts" | "sessions" | "hypotheses" | "experiments" | "evaluations" | "hypothesis_experiment_links" | "hypothesis_activities" | "experiment_activities" | "evaluation_activities" | "artifacts" | "events";
+  collection: "workspaces" | "projects" | "sessions" | "hypotheses" | "experiments" | "evaluations" | "hypothesis_experiment_links" | "agents" | "tasks" | "task_dependencies" | "task_entity_links" | "task_activities" | "hypothesis_activities" | "experiment_activities" | "evaluation_activities" | "artifacts" | "events";
   key: string;
   record: Record<string, unknown>;
 }
@@ -229,8 +292,10 @@ export interface SessionResumeResult {
 }
 
 export interface SessionStartParams {
-  objective: string;
-  research_context: string;
+  objective?: string;
+  research_context?: string;
+  project_title?: string | null;
+  project_id?: string | null;
   max_experiments?: number;
 }
 

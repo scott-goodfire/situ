@@ -11,7 +11,9 @@ from .command import AppendAgentMessageHistory
 def _agent_message_history_row(row: Any) -> AgentMessageHistoryRecord:
     return AgentMessageHistoryRecord(
         id=row["id"],
-        session_id=row["session_id"],
+        project_id=row["project_id"],
+        created_in_session_id=row["created_in_session_id"],
+        agent_id=row["agent_id"] if "agent_id" in row.keys() else None,
         agent_name=row["agent_name"],
         pydantic_run_id=row["pydantic_run_id"],
         conversation_id=row["conversation_id"],
@@ -21,10 +23,12 @@ def _agent_message_history_row(row: Any) -> AgentMessageHistoryRecord:
 
 
 class AgentMessageHistoryRepository(BaseRepository):
-    def append_session_messages(
+    def append_project_messages(
         self,
         *,
-        session_id: str,
+        project_id: str,
+        created_in_session_id: str | None = None,
+        agent_id: str | None = None,
         agent_name: str,
         messages_json: bytes | str,
         pydantic_run_id: str | None = None,
@@ -34,7 +38,9 @@ class AgentMessageHistoryRepository(BaseRepository):
         messages = self._messages_from_json(normalized_json)
         inferred_run_id, inferred_conversation_id = self._infer_pydantic_ids(messages)
         command = AppendAgentMessageHistory(
-            session_id=session_id,
+            project_id=project_id,
+            created_in_session_id=created_in_session_id,
+            agent_id=agent_id,
             agent_name=agent_name,
             messages_json=normalized_json,
             pydantic_run_id=pydantic_run_id or inferred_run_id,
@@ -43,12 +49,14 @@ class AgentMessageHistoryRepository(BaseRepository):
         cursor = self.db.execute(
             """
             INSERT INTO agent_message_history
-              (session_id, agent_name, pydantic_run_id, conversation_id,
-               messages_json, created_at)
-            VALUES (?, ?, ?, ?, ?, ?)
+              (project_id, created_in_session_id, agent_id, agent_name,
+               pydantic_run_id, conversation_id, messages_json, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
-                command.session_id,
+                command.project_id,
+                command.created_in_session_id,
+                command.agent_id,
                 command.agent_name,
                 command.pydantic_run_id,
                 command.conversation_id,
@@ -61,6 +69,31 @@ class AgentMessageHistoryRepository(BaseRepository):
             raise RuntimeError("agent message history was not persisted")
         return record
 
+    def append_session_messages(
+        self,
+        *,
+        session_id: str,
+        agent_id: str | None = None,
+        agent_name: str,
+        messages_json: bytes | str,
+        pydantic_run_id: str | None = None,
+        conversation_id: str | None = None,
+    ) -> AgentMessageHistoryRecord:
+        project_id = self._project_id_for_session(session_id)
+        if project_id is None:
+            raise ValueError(
+                "session has no project; create or attach a project before recording agent messages"
+            )
+        return self.append_project_messages(
+            project_id=project_id,
+            created_in_session_id=session_id,
+            agent_id=agent_id,
+            agent_name=agent_name,
+            messages_json=messages_json,
+            pydantic_run_id=pydantic_run_id,
+            conversation_id=conversation_id,
+        )
+
     def get_by_id(self, history_id: int) -> AgentMessageHistoryRecord | None:
         row = self.db.fetchone("SELECT * FROM agent_message_history WHERE id = ?", (history_id,))
         return _agent_message_history_row(row) if row else None
@@ -68,27 +101,62 @@ class AgentMessageHistoryRepository(BaseRepository):
     def get(self, history_id: int) -> AgentMessageHistoryRecord | None:
         return self.get_by_id(history_id)
 
-    def list_for_session(
+    def list_for_project(
         self,
-        session_id: str,
+        project_id: str,
         *,
+        agent_id: str | None = None,
         agent_name: str | None = None,
     ) -> list[AgentMessageHistoryRecord]:
-        if agent_name is None:
+        if agent_id is None and agent_name is None:
             rows = self.db.fetchall(
-                "SELECT * FROM agent_message_history WHERE session_id = ? ORDER BY id",
-                (session_id,),
+                "SELECT * FROM agent_message_history WHERE project_id = ? ORDER BY id",
+                (project_id,),
+            )
+        elif agent_id is not None and agent_name is not None:
+            rows = self.db.fetchall(
+                """
+                SELECT * FROM agent_message_history
+                WHERE project_id = ? AND agent_id = ? AND agent_name = ?
+                ORDER BY id
+                """,
+                (project_id, agent_id, agent_name),
+            )
+        elif agent_id is not None:
+            rows = self.db.fetchall(
+                """
+                SELECT * FROM agent_message_history
+                WHERE project_id = ? AND agent_id = ?
+                ORDER BY id
+                """,
+                (project_id, agent_id),
             )
         else:
             rows = self.db.fetchall(
                 """
                 SELECT * FROM agent_message_history
-                WHERE session_id = ? AND agent_name = ?
+                WHERE project_id = ? AND agent_name = ?
                 ORDER BY id
                 """,
-                (session_id, agent_name),
+                (project_id, agent_name),
             )
         return [_agent_message_history_row(row) for row in rows]
+
+    def list_for_session(
+        self,
+        session_id: str,
+        *,
+        agent_id: str | None = None,
+        agent_name: str | None = None,
+    ) -> list[AgentMessageHistoryRecord]:
+        project_id = self._project_id_for_session(session_id)
+        if project_id is None:
+            return []
+        return self.list_for_project(
+            project_id,
+            agent_id=agent_id,
+            agent_name=agent_name,
+        )
 
     def list_all(self) -> list[AgentMessageHistoryRecord]:
         return [
@@ -98,34 +166,54 @@ class AgentMessageHistoryRepository(BaseRepository):
 
     def get_message_history(
         self,
-        session_id: str,
+        project_or_session_id: str,
         *,
+        agent_id: str | None = None,
         agent_name: str | None = None,
     ) -> list[dict[str, Any]]:
+        project_id = self._resolve_project_id(project_or_session_id)
+        if project_id is None:
+            return []
         messages: list[dict[str, Any]] = []
-        for record in self.list_for_session(session_id, agent_name=agent_name):
+        for record in self.list_for_project(
+            project_id,
+            agent_id=agent_id,
+            agent_name=agent_name,
+        ):
             messages.extend(record.messages)
         return messages
 
     def get_message_history_json(
         self,
-        session_id: str,
+        project_or_session_id: str,
         *,
+        agent_id: str | None = None,
         agent_name: str | None = None,
     ) -> bytes:
-        return json_dumps(self.get_message_history(session_id, agent_name=agent_name)).encode()
+        return json_dumps(
+            self.get_message_history(
+                project_or_session_id,
+                agent_id=agent_id,
+                agent_name=agent_name,
+            )
+        ).encode()
 
     def get_model_message_history(
         self,
-        session_id: str,
+        project_or_session_id: str,
         *,
+        agent_id: str | None = None,
         agent_name: str | None = None,
     ) -> list[Any]:
         from pydantic_ai import ModelMessagesTypeAdapter
 
         return list(
             ModelMessagesTypeAdapter.validate_json(
-                self.get_message_history_json(session_id, agent_name=agent_name)
+                self.get_message_history_json(
+                    project_or_session_id,
+                    agent_id=agent_id,
+                    agent_name=agent_name,
+                )
             )
         )
 
@@ -156,3 +244,12 @@ class AgentMessageHistoryRepository(BaseRepository):
             if pydantic_run_id is not None and conversation_id is not None:
                 break
         return pydantic_run_id, conversation_id
+
+    def _resolve_project_id(self, project_or_session_id: str) -> str | None:
+        if self.db.fetchone("SELECT 1 FROM projects WHERE id = ?", (project_or_session_id,)):
+            return project_or_session_id
+        return self._project_id_for_session(project_or_session_id)
+
+    def _project_id_for_session(self, session_id: str) -> str | None:
+        row = self.db.fetchone("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
+        return row["project_id"] if row else None

@@ -7,12 +7,14 @@ import {
   DxBadge,
   DxSection,
   DxTable,
+  mono,
   type DxBadgeTone,
   type DxTableColumn,
   type DxTableRowTone,
 } from "@situ/web-ui";
 import { Link } from "@tanstack/react-router";
 import { DateTime } from "luxon";
+import * as s from "../../../styles.css";
 import {
   activityLabel,
   evaluationActivitiesForEvaluation,
@@ -71,9 +73,9 @@ function evaluationColumns({
       header: "Evaluation",
       width: "28%",
       renderCell: ({ row }) => (
-        <div className="situ-record-cell">
+        <div className={s.recordCell}>
           <Link
-            className="situ-record-link"
+            className={s.recordLink}
             to="/projects/$projectId/evaluations/$evaluationId"
             params={{
               projectId,
@@ -82,7 +84,7 @@ function evaluationColumns({
           >
             {row.evaluation.title}
           </Link>
-          <span className="situ-record-id">{row.evaluation.id}</span>
+          <span className={s.recordId}>{row.evaluation.id}</span>
         </div>
       ),
       sortValue: ({ row }) => row.evaluation.title,
@@ -113,7 +115,7 @@ function evaluationColumns({
       header: "Updated",
       width: "190px",
       renderCell: ({ row }) => (
-        <span className="dx-mono">
+        <span className={mono}>
           {formatTime({ value: row.evaluation.updated_at })}
         </span>
       ),
@@ -131,9 +133,9 @@ function sourceCell({
 }) {
   if (row.sourceExperiment) {
     return (
-      <div className="situ-record-cell">
+      <div className={s.recordCell}>
         <Link
-          className="situ-record-link"
+          className={s.recordLink}
           to="/projects/$projectId/experiments/$experimentId"
           params={{
             projectId,
@@ -142,15 +144,15 @@ function sourceCell({
         >
           {row.sourceExperiment.title}
         </Link>
-        <span className="situ-record-id">{row.sourceExperiment.id}</span>
+        <span className={s.recordId}>{row.sourceExperiment.id}</span>
       </div>
     );
   }
 
   return (
-    <div className="situ-record-cell">
+    <div className={s.recordCell}>
       <span>Baseline</span>
-      <span className="situ-record-id">{row.evaluation.session_id}</span>
+      <span className={s.recordId}>{row.evaluation.session_id}</span>
     </div>
   );
 }
@@ -165,8 +167,8 @@ function latestEvidence({ row }: { row: EvaluationRow }) {
   }
 
   return (
-    <div className="situ-evaluation-latest">
-      <span className="dx-mono">{activityLabel({ activity: latestActivity })}</span>
+    <div className={s.evaluationLatest}>
+      <span className={mono}>{activityLabel({ activity: latestActivity })}</span>
       <span>{latestActivity.body}</span>
     </div>
   );

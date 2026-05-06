@@ -10,6 +10,11 @@ const config: StorybookConfig = {
   typescript: {
     reactDocgen: "react-docgen-typescript",
   },
+  async viteFinal(config) {
+    const { vanillaExtractPlugin } = await import("@vanilla-extract/vite-plugin");
+    config.plugins = [...(config.plugins ?? []), vanillaExtractPlugin()];
+    return config;
+  },
 };
 
 export default config;

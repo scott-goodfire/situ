@@ -11,7 +11,8 @@ from .command import CreateArtifact
 def _artifact_row(row: Any) -> ArtifactRecord:
     return ArtifactRecord(
         id=row["id"],
-        session_id=row["session_id"],
+        project_id=row["project_id"],
+        created_in_session_id=row["created_in_session_id"],
         associated_entity_kind=row["associated_entity_kind"],
         associated_entity_id=row["associated_entity_id"],
         kind=row["kind"],
@@ -28,18 +29,20 @@ class ArtifactsRepository(BaseRepository):
         self,
         *,
         artifact_id: str,
-        session_id: str,
+        project_id: str,
         kind: str,
         title: str,
         path: str,
         associated_entity_kind: str,
         associated_entity_id: str,
+        created_in_session_id: str | None = None,
         media_type: str | None = None,
         size_bytes: int | None = None,
     ) -> ArtifactRecord:
         command = CreateArtifact(
             artifact_id=artifact_id,
-            session_id=session_id,
+            project_id=project_id,
+            created_in_session_id=created_in_session_id,
             kind=kind,
             title=title,
             path=path,
@@ -51,13 +54,15 @@ class ArtifactsRepository(BaseRepository):
         self.db.execute(
             """
             INSERT INTO artifacts
-              (id, session_id, associated_entity_kind, associated_entity_id,
-               kind, title, path, media_type, size_bytes, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+              (id, project_id, created_in_session_id, associated_entity_kind,
+               associated_entity_id, kind, title, path, media_type, size_bytes,
+               created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 command.artifact_id,
-                command.session_id,
+                command.project_id,
+                command.created_in_session_id,
                 command.associated_entity_kind,
                 command.associated_entity_id,
                 command.kind,
@@ -100,11 +105,16 @@ class ArtifactsRepository(BaseRepository):
             )
         ]
 
-    def list_for_session(self, session_id: str) -> list[ArtifactRecord]:
+    def list_for_project(self, project_id: str) -> list[ArtifactRecord]:
         return [
             _artifact_row(row)
             for row in self.db.fetchall(
-                "SELECT * FROM artifacts WHERE session_id = ? ORDER BY created_at",
-                (session_id,),
+                "SELECT * FROM artifacts WHERE project_id = ? ORDER BY created_at",
+                (project_id,),
             )
         ]
+
+    def list_for_session(self, session_id: str) -> list[ArtifactRecord]:
+        session = self.db.fetchone("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
+        project_id = session["project_id"] if session else None
+        return self.list_for_project(project_id) if project_id is not None else []

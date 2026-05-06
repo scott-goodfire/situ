@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import * as s from "./dx-empty-state.css";
 
 export function DxEmptyState({
   heading,
@@ -10,10 +11,10 @@ export function DxEmptyState({
   action?: ReactNode;
 }) {
   return (
-    <section className="dx-empty-state">
-      <h2 className="dx-empty-state__heading">{heading}</h2>
-      {description && <p className="dx-empty-state__description">{description}</p>}
-      {action && <div className="dx-empty-state__action">{action}</div>}
+    <section className={s.root}>
+      <h2 className={s.heading}>{heading}</h2>
+      {description && <p className={s.description}>{description}</p>}
+      {action && <div className={s.action}>{action}</div>}
     </section>
   );
 }

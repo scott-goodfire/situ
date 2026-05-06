@@ -1,8 +1,9 @@
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from .events import (
+    AgentRecord,
     ArtifactRecord,
     EventRecord,
     EvaluationActivityRecord,
@@ -12,10 +13,13 @@ from .events import (
     HypothesisActivityRecord,
     HypothesisExperimentLinkRecord,
     HypothesisRecord,
-    ObjectiveRecord,
     ProjectRecord,
-    ResearchContextRecord,
     SessionRecord,
+    TaskActivityRecord,
+    TaskDependencyRecord,
+    TaskEntityLinkRecord,
+    TaskRecord,
+    WorkspaceRecord,
 )
 
 
@@ -40,7 +44,7 @@ class SetupGetResult(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     configured: bool
-    project: ProjectRecord | None = None
+    workspace: WorkspaceRecord | None = None
 
 
 class SetupCompleteParams(BaseModel):
@@ -50,18 +54,22 @@ class SetupCompleteParams(BaseModel):
 class SetupCompleteResult(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    project: ProjectRecord
+    workspace: WorkspaceRecord
 
 
 CollectionName = Literal[
+    "workspaces",
     "projects",
-    "objectives",
-    "research_contexts",
     "sessions",
     "hypotheses",
     "experiments",
     "evaluations",
     "hypothesis_experiment_links",
+    "agents",
+    "tasks",
+    "task_dependencies",
+    "task_entity_links",
+    "task_activities",
     "hypothesis_activities",
     "experiment_activities",
     "evaluation_activities",
@@ -78,14 +86,18 @@ class CollectionsBootstrapResult(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     cursor: int
-    projects: list[ProjectRecord]
-    objectives: list[ObjectiveRecord]
-    research_contexts: list[ResearchContextRecord]
+    workspaces: list[WorkspaceRecord] = Field(default_factory=list)
+    projects: list[ProjectRecord] = Field(default_factory=list)
     sessions: list[SessionRecord]
     hypotheses: list[HypothesisRecord]
     experiments: list[ExperimentRecord]
     evaluations: list[EvaluationRecord]
     hypothesis_experiment_links: list[HypothesisExperimentLinkRecord]
+    agents: list[AgentRecord] = Field(default_factory=list)
+    tasks: list[TaskRecord] = Field(default_factory=list)
+    task_dependencies: list[TaskDependencyRecord] = Field(default_factory=list)
+    task_entity_links: list[TaskEntityLinkRecord] = Field(default_factory=list)
+    task_activities: list[TaskActivityRecord] = Field(default_factory=list)
     hypothesis_activities: list[HypothesisActivityRecord]
     experiment_activities: list[ExperimentActivityRecord]
     evaluation_activities: list[EvaluationActivityRecord]
@@ -129,8 +141,10 @@ class EventsSubscribeResult(BaseModel):
 class SessionStartParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    objective: str
-    research_context: str
+    objective: str = ""
+    research_context: str = ""
+    project_title: str | None = None
+    project_id: str | None = None
     max_experiments: int = 6
 
 

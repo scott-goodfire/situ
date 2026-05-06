@@ -3,11 +3,13 @@ import {
   DxBadge,
   DxSection,
   DxTable,
+  mono,
   type DxBadgeTone,
   type DxTableColumn,
 } from "@situ/web-ui";
 import { Link } from "@tanstack/react-router";
 import filter from "lodash/filter";
+import * as s from "../../../styles.css";
 import { EvidenceSummary } from "../evidence/evidence-summary";
 import {
   evaluationActivitiesForEvaluations,
@@ -78,9 +80,9 @@ function hypothesisColumns({
       header: "Hypothesis",
       width: "30%",
       renderCell: ({ row }) => (
-        <div className="situ-record-cell">
+        <div className={s.recordCell}>
           <Link
-            className="situ-record-link"
+            className={s.recordLink}
             to="/projects/$projectId/hypotheses/$hypothesisId"
             params={{
               projectId,
@@ -89,7 +91,7 @@ function hypothesisColumns({
           >
             {row.hypothesis.title}
           </Link>
-          <span className="situ-record-id">{row.hypothesis.id}</span>
+          <span className={s.recordId}>{row.hypothesis.id}</span>
         </div>
       ),
       sortValue: ({ row }) => row.hypothesis.title,
@@ -109,7 +111,7 @@ function hypothesisColumns({
       id: "experiments",
       header: "Experiments",
       width: "120px",
-      renderCell: ({ row }) => <span className="dx-mono">{row.experimentCount}</span>,
+      renderCell: ({ row }) => <span className={mono}>{row.experimentCount}</span>,
       sortValue: ({ row }) => row.experimentCount,
     },
     {

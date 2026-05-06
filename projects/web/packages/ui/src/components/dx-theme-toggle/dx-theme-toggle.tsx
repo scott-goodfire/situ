@@ -1,4 +1,5 @@
 import { classNames } from "../../utils/class-names";
+import * as s from "./dx-theme-toggle.css";
 
 export type DxThemeMode = "light" | "dark" | "auto";
 
@@ -10,7 +11,7 @@ export function DxThemeToggle({
   onChange: ({ mode }: { mode: DxThemeMode }) => void;
 }) {
   return (
-    <div role="radiogroup" aria-label="Theme" className="dx-theme-toggle">
+    <div role="radiogroup" aria-label="Theme" className={s.toggle}>
       <ThemeOption mode="light" current={value} onChange={onChange} label="Light">
         <SunIcon />
       </ThemeOption>
@@ -44,9 +45,7 @@ function ThemeOption({
       role="radio"
       aria-checked={selected}
       aria-label={label}
-      className={classNames({
-        values: ["dx-theme-toggle__option", selected && "dx-theme-toggle__option--selected"],
-      })}
+      className={classNames({ values: [s.option, selected && s.optionSelected] })}
       onClick={() => onChange({ mode })}
     >
       {children}

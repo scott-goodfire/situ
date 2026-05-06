@@ -40,17 +40,16 @@ from situ.harness.tools.hypotheses import (
     UpdateHypothesisTool,
 )
 from situ.harness.tools.links import LinkHypothesisExperimentTool
-from situ.harness.tools.objectives import (
-    CreateObjectiveTool,
-    GetObjectiveTool,
-    UpdateObjectiveTool,
-)
-from situ.harness.tools.research_contexts import (
-    CreateResearchContextTool,
-    GetResearchContextTool,
-    UpdateResearchContextTool,
-)
+from situ.harness.tools.projects import CreateProjectTool, GetProjectTool, UpdateProjectTool
 from situ.harness.tools.sessions import GetSessionTool
+from situ.harness.tools.tasks import (
+    AddTaskCommentTool,
+    ClaimTaskTool,
+    CreateTaskTool,
+    GetTaskBoardTool,
+    LinkTaskEntityTool,
+    UpdateTaskTool,
+)
 from situ.harness.tools.workspace_state import InspectWorkspaceStateTool
 from situ.protocol import ExperimentRunParams, ExperimentRunResult
 
@@ -63,39 +62,38 @@ def _git(cwd: Path, *args: str) -> None:
 def repos(tmp_path: Path) -> Repositories:
     db = Database(
         tmp_path / "situ.sqlite",
-        project_id="project_test",
+        workspace_id="workspace_test",
         repo_path="/tmp/project",
     )
     repositories = Repositories.create(db)
-    project = repositories.project.ensure()
-    repositories.sessions.create(
-        "session_0001",
-        project_id=project.id,
-    )
-    repositories.objectives.create(
-        objective_id="obj_session_0001",
-        session_id="session_0001",
+    workspace = repositories.workspaces.ensure()
+    project = repositories.projects.create(
+        project_id="project_0001",
+        workspace_id=workspace.id,
         title="Improve score",
-        description="Improve score without hurting latency.",
-    )
-    repositories.research_contexts.create(
-        research_context_id="rctx_session_0001",
-        session_id="session_0001",
-        body=(
+        objective="Improve score without hurting latency.",
+        research_context=(
             "Use the available eval scripts and compare score/latency. "
             "Expected signals: score, latency_ms. Baseline, variants, and combinations."
         ),
     )
+    repositories.sessions.create(
+        "session_0001",
+        workspace_id=workspace.id,
+        project_id=project.id,
+    )
     repositories.hypotheses.create(
         hypothesis_id="hyp_0001",
-        session_id="session_0001",
+        project_id=project.id,
+        created_in_session_id="session_0001",
         title="Component A helps",
         summary="Component A may improve score.",
         status="active",
     )
     repositories.experiments.create(
         experiment_id="exp_session_0001_a",
-        session_id="session_0001",
+        project_id=project.id,
+        created_in_session_id="session_0001",
         title="Try component A",
         summary="Apply component A.",
     )
@@ -108,9 +106,9 @@ def test_get_session_tool_reads_current_session_graph(repos: Repositories) -> No
     result = invoke_situ_tool_sync(tool=GetSessionTool(), deps=deps)
 
     assert result.success is True
+    assert result.workspace is not None
     assert result.project is not None
-    assert result.objective is not None
-    assert result.objective["title"] == "Improve score"
+    assert result.project["objective"] == "Improve score without hurting latency."
     assert result.session is not None
     assert result.session["id"] == "session_0001"
     assert [hypothesis["id"] for hypothesis in result.hypotheses] == ["hyp_0001"]
@@ -119,103 +117,133 @@ def test_get_session_tool_reads_current_session_graph(repos: Repositories) -> No
     ]
 
 
-def test_get_objective_tool_reads_current_session_objective(
+def test_task_tools_coordinate_claims_comments_and_entity_links(
+    repos: Repositories,
+) -> None:
+    repos.agents.ensure_session_agent(
+        session_id="session_0001",
+        kind="scientist",
+        display_name="Scientist",
+    )
+    deps = SituToolDeps(
+        session_id="session_0001",
+        agent_id="agent_session_0001_scientist",
+        repos=repos,
+    )
+
+    baseline = invoke_situ_tool_sync(
+        tool=CreateTaskTool(),
+        deps=deps,
+        title="Establish baseline",
+        content="Run the baseline command and record evidence.",
+        kind="baseline",
+        priority="high",
+        source_kind="manager",
+    )
+    dependent = invoke_situ_tool_sync(
+        tool=CreateTaskTool(),
+        deps=deps,
+        title="Generate alternatives",
+        content="Generate candidate hypotheses after baseline evidence exists.",
+        kind="hypothesize",
+        priority="urgent",
+        source_kind="manager",
+        blocked_by_task_ids=[baseline.task["id"]],
+    )
+
+    first_claim = invoke_situ_tool_sync(
+        tool=ClaimTaskTool(),
+        deps=deps,
+    )
+    assert first_claim.success is True
+    assert first_claim.task is not None
+    assert first_claim.task["id"] == baseline.task["id"]
+
+    invoke_situ_tool_sync(
+        tool=UpdateTaskTool(),
+        deps=deps,
+        task_id=baseline.task["id"],
+        status="done",
+        result_summary="Baseline evidence recorded.",
+    )
+    second_claim = invoke_situ_tool_sync(
+        tool=ClaimTaskTool(),
+        deps=deps,
+    )
+    assert second_claim.task is not None
+    assert second_claim.task["id"] == dependent.task["id"]
+
+    comment = invoke_situ_tool_sync(
+        tool=AddTaskCommentTool(),
+        deps=deps,
+        task_id=dependent.task["id"],
+        actor_agent_id="agent_session_0001_scientist",
+        comment="Claimed after baseline finished.",
+    )
+    link = invoke_situ_tool_sync(
+        tool=LinkTaskEntityTool(),
+        deps=deps,
+        task_id=dependent.task["id"],
+        entity_kind="hypothesis",
+        entity_id="hyp_0001",
+        relationship="referenced",
+    )
+    board = invoke_situ_tool_sync(tool=GetTaskBoardTool(), deps=deps)
+
+    assert comment.activity is not None
+    assert link.link is not None
+    assert len(board.tasks) == 2
+    assert [dependency["task_id"] for dependency in board.task_dependencies] == [
+        dependent.task["id"]
+    ]
+    assert board.task_entity_links[0]["entity_id"] == "hyp_0001"
+
+
+def test_get_project_tool_reads_current_session_project(
     repos: Repositories,
 ) -> None:
     deps = SituToolDeps(session_id="session_0001", repos=repos)
 
-    result = invoke_situ_tool_sync(tool=GetObjectiveTool(), deps=deps)
+    result = invoke_situ_tool_sync(tool=GetProjectTool(), deps=deps)
 
     assert result.success is True
-    assert result.objective is not None
-    assert result.objective["id"] == "obj_session_0001"
+    assert result.project is not None
+    assert result.project["id"] == "project_0001"
 
 
-def test_create_objective_tool_is_idempotent(repos: Repositories) -> None:
+def test_create_project_tool_creates_and_attaches_project(repos: Repositories) -> None:
     db = Database(
-        repos.project.db.path.parent / "fresh.sqlite",
-        project_id="project_fresh",
+        repos.projects.db.path.parent / "fresh.sqlite",
+        workspace_id="workspace_fresh",
         repo_path="/tmp/fresh",
     )
     fresh = Repositories.create(db)
-    project = fresh.project.ensure()
-    fresh.sessions.create("session_fresh", project_id=project.id)
+    workspace = fresh.workspaces.ensure()
+    fresh.sessions.create("session_fresh", workspace_id=workspace.id)
     deps = SituToolDeps(session_id="session_fresh", repos=fresh)
 
-    first = invoke_situ_tool_sync(
-        tool=CreateObjectiveTool(),
+    created = invoke_situ_tool_sync(
+        tool=CreateProjectTool(),
         deps=deps,
         title="First",
-        description="First objective",
-    )
-    second = invoke_situ_tool_sync(
-        tool=CreateObjectiveTool(),
-        deps=deps,
-        title="Different",
-        description="Different objective",
+        objective="First objective",
+        research_context="Run eval; expected signals: score.",
     )
 
-    assert first.success is True
-    assert second.success is True
-    assert first.objective is not None
-    assert second.objective is not None
-    assert second.objective["id"] == first.objective["id"]
-    assert second.objective["title"] == "First"
-
-
-def test_research_context_tools_create_get_and_update(repos: Repositories) -> None:
-    db = Database(
-        repos.project.db.path.parent / "rctx.sqlite",
-        project_id="project_rctx",
-        repo_path="/tmp/rctx",
-    )
-    fresh = Repositories.create(db)
-    project = fresh.project.ensure()
-    fresh.sessions.create("session_rctx", project_id=project.id)
-    deps = SituToolDeps(session_id="session_rctx", repos=fresh)
-
-    created = invoke_situ_tool_sync(
-        tool=CreateResearchContextTool(),
-        deps=deps,
-        body="Run eval; expected signals: score.",
-    )
     assert created.success is True
-    assert created.research_context is not None
-    assert "score" in created.research_context["body"]
-
-    fetched = invoke_situ_tool_sync(
-        tool=GetResearchContextTool(),
-        deps=deps,
-    )
-    assert fetched.success is True
-    assert fetched.research_context is not None
-    assert fetched.research_context["id"] == created.research_context["id"]
+    assert created.project is not None
+    assert created.session is not None
+    assert created.session["project_id"] == created.project["id"]
+    assert created.project["workspace_id"] == "workspace_fresh"
 
     updated = invoke_situ_tool_sync(
-        tool=UpdateResearchContextTool(),
+        tool=UpdateProjectTool(),
         deps=deps,
-        body="Refined: focus on score, ignore latency.",
+        research_context="Refined: focus on score, ignore latency.",
     )
     assert updated.success is True
-    assert updated.research_context is not None
-    assert "Refined" in updated.research_context["body"]
-
-
-def test_update_objective_tool_updates_session_objective(
-    repos: Repositories,
-) -> None:
-    deps = SituToolDeps(session_id="session_0001", repos=repos)
-
-    updated = invoke_situ_tool_sync(
-        tool=UpdateObjectiveTool(),
-        deps=deps,
-        title="Improve score safely",
-        status="closed",
-    )
-    assert updated.success is True
-    assert updated.objective is not None
-    assert updated.objective["title"] == "Improve score safely"
-    assert updated.objective["status"] == "closed"
+    assert updated.project is not None
+    assert "Refined" in updated.project["research_context"]
 
 
 def test_hypothesis_tools_create_update_and_list(repos: Repositories) -> None:
@@ -234,13 +262,15 @@ def test_hypothesis_tools_create_update_and_list(repos: Repositories) -> None:
     )
     assert created.success is True
     assert created.hypothesis is not None
-    assert created.hypothesis["id"] == "hyp_session_0001_agent_002"
+    assert created.hypothesis["id"] == "hyp_project_0001_agent_002"
+    assert created.hypothesis["project_id"] == "project_0001"
+    assert created.hypothesis["created_in_session_id"] == "session_0001"
     assert created.hypothesis["status"] == "open"
 
     updated = invoke_situ_tool_sync(
         tool=UpdateHypothesisTool(),
         deps=deps,
-        hypothesis_id="hyp_session_0001_agent_002",
+        hypothesis_id="hyp_project_0001_agent_002",
         status="active",
         summary="Component C is ready to test.",
     )
@@ -256,7 +286,7 @@ def test_hypothesis_tools_create_update_and_list(repos: Repositories) -> None:
     assert listed.success is True
     assert [hypothesis["id"] for hypothesis in listed.hypotheses] == [
         "hyp_0001",
-        "hyp_session_0001_agent_002",
+        "hyp_project_0001_agent_002",
     ]
     assert [event["type"] for event in emitted] == [
         "hypothesis.created",
@@ -280,13 +310,15 @@ def test_experiment_tools_create_update_and_list(repos: Repositories) -> None:
     )
     assert created.success is True
     assert created.experiment is not None
-    assert created.experiment["id"] == "exp_session_0001_agent_002"
+    assert created.experiment["id"] == "exp_project_0001_agent_002"
+    assert created.experiment["project_id"] == "project_0001"
+    assert created.experiment["created_in_session_id"] == "session_0001"
     assert created.experiment["status"] == "open"
 
     updated = invoke_situ_tool_sync(
         tool=UpdateExperimentTool(),
         deps=deps,
-        experiment_id="exp_session_0001_agent_002",
+        experiment_id="exp_project_0001_agent_002",
         status="closed",
         summary="Component C improved score but hurt latency.",
     )
@@ -298,7 +330,7 @@ def test_experiment_tools_create_update_and_list(repos: Repositories) -> None:
     assert listed.success is True
     assert [experiment["id"] for experiment in listed.experiments] == [
         "exp_session_0001_a",
-        "exp_session_0001_agent_002",
+        "exp_project_0001_agent_002",
     ]
     assert [event["type"] for event in emitted] == [
         "experiment.created",
@@ -324,13 +356,15 @@ def test_evaluation_tools_create_update_list_and_add_results(
     )
     assert created.success is True
     assert created.evaluation is not None
-    assert created.evaluation["id"] == "eval_session_0001_agent_001"
+    assert created.evaluation["id"] == "eval_project_0001_agent_001"
+    assert created.evaluation["project_id"] == "project_0001"
+    assert created.evaluation["created_in_session_id"] == "session_0001"
     assert created.evaluation["status"] == "open"
 
     result = invoke_situ_tool_sync(
         tool=AddEvaluationResultTool(),
         deps=deps,
-        evaluation_id="eval_session_0001_agent_001",
+        evaluation_id="eval_project_0001_agent_001",
         result="Baseline command passed with score 0.71.",
         payload={"raw": "score=0.71"},
     )
@@ -342,7 +376,7 @@ def test_evaluation_tools_create_update_list_and_add_results(
     updated = invoke_situ_tool_sync(
         tool=UpdateEvaluationTool(),
         deps=deps,
-        evaluation_id="eval_session_0001_agent_001",
+        evaluation_id="eval_project_0001_agent_001",
         status="closed",
         summary="Baseline result recorded.",
     )
@@ -354,12 +388,12 @@ def test_evaluation_tools_create_update_list_and_add_results(
     activities = invoke_situ_tool_sync(
         tool=ListEvaluationActivitiesTool(),
         deps=deps,
-        evaluation_id="eval_session_0001_agent_001",
+        evaluation_id="eval_project_0001_agent_001",
     )
 
     assert listed.success is True
     assert [evaluation["id"] for evaluation in listed.evaluations] == [
-        "eval_session_0001_agent_001"
+        "eval_project_0001_agent_001"
     ]
     assert [activity["id"] for activity in activities.activities] == [1]
     assert [event["type"] for event in emitted] == [
@@ -458,10 +492,12 @@ def test_comment_tools_write_activity_records(repos: Repositories) -> None:
     assert hypothesis_comment.success is True
     assert hypothesis_comment.activity is not None
     assert hypothesis_comment.activity["kind"] == "comment"
+    assert hypothesis_comment.activity["created_in_session_id"] == "session_0001"
     assert hypothesis_comment.activity["body"] == "Component A is promising enough to test."
     assert experiment_comment.success is True
     assert experiment_comment.activity is not None
     assert experiment_comment.activity["kind"] == "comment"
+    assert experiment_comment.activity["created_in_session_id"] == "session_0001"
     assert experiment_comment.activity["body"] == "Component A improved score."
 
     hypothesis_activities = invoke_situ_tool_sync(
@@ -499,7 +535,9 @@ def test_artifact_tools_create_and_list_artifacts(repos: Repositories) -> None:
     )
     assert created.success is True
     assert created.artifact is not None
-    assert created.artifact["id"] == "artifact_session_0001_001"
+    assert created.artifact["id"] == "artifact_project_0001_001"
+    assert created.artifact["project_id"] == "project_0001"
+    assert created.artifact["created_in_session_id"] == "session_0001"
     assert created.artifact["associated_entity_kind"] == "experiment"
     assert created.artifact["associated_entity_id"] == "exp_session_0001_a"
 
@@ -511,7 +549,7 @@ def test_artifact_tools_create_and_list_artifacts(repos: Repositories) -> None:
     )
     assert listed.success is True
     assert [artifact["id"] for artifact in listed.artifacts] == [
-        "artifact_session_0001_001"
+        "artifact_project_0001_001"
     ]
 
 

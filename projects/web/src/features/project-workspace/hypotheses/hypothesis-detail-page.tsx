@@ -9,6 +9,7 @@ import {
 } from "@situ/web-ui";
 import { Link } from "@tanstack/react-router";
 import filter from "lodash/filter";
+import * as s from "../../../styles.css";
 import { EvidenceSummary } from "../evidence/evidence-summary";
 import {
   evaluationActivitiesForEvaluations,
@@ -51,17 +52,17 @@ export function HypothesisDetailPage({
 
   return (
     <>
-      <section className="situ-object-page">
-        <div className="situ-object-page__header">
+      <section className={s.objectPage}>
+        <div className={s.objectPageHeader}>
           <div>
-            <p className="situ-object-page__eyebrow">{hypothesis.id}</p>
+            <p className={s.objectPageEyebrow}>{hypothesis.id}</p>
             <h2>{hypothesis.title}</h2>
           </div>
           <DxBadge tone={statusTone({ status: hypothesis.status })}>
             {hypothesis.status}
           </DxBadge>
         </div>
-        <p className="situ-object-page__summary">{hypothesis.summary}</p>
+        <p className={s.objectPageSummary}>{hypothesis.summary}</p>
       </section>
 
       <LinkedExperiments
@@ -117,9 +118,9 @@ function linkedExperimentColumns({
       header: "Experiment",
       width: "34%",
       renderCell: ({ row }) => (
-        <div className="situ-record-cell">
+        <div className={s.recordCell}>
           <Link
-            className="situ-record-link"
+            className={s.recordLink}
             to="/projects/$projectId/experiments/$experimentId"
             params={{
               projectId,
@@ -128,7 +129,7 @@ function linkedExperimentColumns({
           >
             {row.experiment.title}
           </Link>
-          <span className="situ-record-id">{row.experiment.id}</span>
+          <span className={s.recordId}>{row.experiment.id}</span>
         </div>
       ),
     },

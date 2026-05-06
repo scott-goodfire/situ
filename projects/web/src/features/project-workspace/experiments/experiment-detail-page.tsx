@@ -4,11 +4,13 @@ import {
   DxEmptyState,
   DxSection,
   DxTable,
+  mono,
   type DxBadgeTone,
   type DxTableColumn,
 } from "@situ/web-ui";
 import { Link } from "@tanstack/react-router";
 import filter from "lodash/filter";
+import * as s from "../../../styles.css";
 import { EvaluationActivityList } from "../evidence/evaluation-activity-list";
 import { evaluationsForExperiment } from "../evidence/evaluation-selectors";
 import { ActivityTimeline } from "../shared/activity-timeline";
@@ -60,10 +62,10 @@ export function ExperimentDetailPage({
 
   return (
     <>
-      <section className="situ-object-page">
-        <div className="situ-object-page__header">
+      <section className={s.objectPage}>
+        <div className={s.objectPageHeader}>
           <div>
-            <p className="situ-object-page__eyebrow">{experiment.id}</p>
+            <p className={s.objectPageEyebrow}>{experiment.id}</p>
             <h2>{experiment.title}</h2>
           </div>
           <DxBadge
@@ -75,7 +77,7 @@ export function ExperimentDetailPage({
             {hasConcern ? "concern" : experiment.status}
           </DxBadge>
         </div>
-        <p className="situ-object-page__summary">{experiment.summary}</p>
+        <p className={s.objectPageSummary}>{experiment.summary}</p>
       </section>
 
       <LinkedHypotheses
@@ -151,9 +153,9 @@ function linkedHypothesisColumns({
       header: "Hypothesis",
       width: "34%",
       renderCell: ({ row }) => (
-        <div className="situ-record-cell">
+        <div className={s.recordCell}>
           <Link
-            className="situ-record-link"
+            className={s.recordLink}
             to="/projects/$projectId/hypotheses/$hypothesisId"
             params={{
               projectId,
@@ -162,7 +164,7 @@ function linkedHypothesisColumns({
           >
             {row.hypothesis.title}
           </Link>
-          <span className="situ-record-id">{row.hypothesis.id}</span>
+          <span className={s.recordId}>{row.hypothesis.id}</span>
         </div>
       ),
     },
@@ -187,9 +189,9 @@ function artifactColumns(): Array<DxTableColumn<ArtifactRow>> {
       header: "Artifact",
       width: "30%",
       renderCell: ({ row }) => (
-        <div className="situ-record-cell">
-          <span className="situ-record-link">{row.artifact.title}</span>
-          <span className="situ-record-id">{row.artifact.id}</span>
+        <div className={s.recordCell}>
+          <span className={s.recordLink}>{row.artifact.title}</span>
+          <span className={s.recordId}>{row.artifact.id}</span>
         </div>
       ),
     },
@@ -202,7 +204,7 @@ function artifactColumns(): Array<DxTableColumn<ArtifactRow>> {
     {
       id: "path",
       header: "Path",
-      renderCell: ({ row }) => <span className="dx-mono">{row.artifact.path}</span>,
+      renderCell: ({ row }) => <span className={mono}>{row.artifact.path}</span>,
     },
   ];
 }

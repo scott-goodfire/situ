@@ -1,4 +1,5 @@
 from .agent_message_history import AgentMessageHistoryRecord
+from .agent import AgentKind, AgentRecord, AgentStatus, parse_agent_kind, parse_agent_status
 from .artifact import ArtifactRecord
 from .event import EventRecord
 from .evaluation import EvaluationRecord
@@ -8,14 +9,30 @@ from .experiment_activity import ExperimentActivityRecord
 from .hypothesis import HypothesisRecord
 from .hypothesis_activity import ActivityKind, HypothesisActivityRecord
 from .hypothesis_experiment_link import HypothesisExperimentLinkRecord
-from .objective import ObjectiveRecord, ObjectiveStatus, parse_objective_status
-from .project import ProjectRecord
-from .research_context import ResearchContextRecord
+from .project import ProjectRecord, ProjectStatus, parse_project_status
 from .session import SessionRecord, SessionStatus, parse_session_status
+from .task import (
+    TaskKind,
+    TaskPriority,
+    TaskRecord,
+    TaskSourceKind,
+    TaskStatus,
+    parse_task_kind,
+    parse_task_priority,
+    parse_task_source_kind,
+    parse_task_status,
+)
+from .task_activity import TaskActivityRecord
+from .task_dependency import TaskDependencyRecord
+from .task_entity_link import TaskEntityKind, TaskEntityLinkRecord, parse_task_entity_kind
+from .workspace import WorkspaceRecord
 
 __all__ = [
     "ActivityKind",
+    "AgentKind",
     "AgentMessageHistoryRecord",
+    "AgentRecord",
+    "AgentStatus",
     "ArtifactRecord",
     "EventRecord",
     "EvaluationActivityRecord",
@@ -25,14 +42,29 @@ __all__ = [
     "HypothesisActivityRecord",
     "HypothesisExperimentLinkRecord",
     "HypothesisRecord",
-    "ObjectiveRecord",
-    "ObjectiveStatus",
     "ProjectRecord",
-    "ResearchContextRecord",
+    "ProjectStatus",
     "SessionRecord",
     "SessionStatus",
+    "TaskActivityRecord",
+    "TaskDependencyRecord",
+    "TaskEntityKind",
+    "TaskEntityLinkRecord",
+    "TaskKind",
+    "TaskPriority",
+    "TaskRecord",
+    "TaskSourceKind",
+    "TaskStatus",
     "WorkStatus",
-    "parse_objective_status",
+    "WorkspaceRecord",
+    "parse_agent_kind",
+    "parse_agent_status",
+    "parse_project_status",
     "parse_session_status",
+    "parse_task_entity_kind",
+    "parse_task_kind",
+    "parse_task_priority",
+    "parse_task_source_kind",
+    "parse_task_status",
     "parse_work_status",
 ]

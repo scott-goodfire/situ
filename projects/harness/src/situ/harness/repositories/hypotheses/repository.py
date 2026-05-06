@@ -11,7 +11,8 @@ from .command import CreateHypothesis, UpdateHypothesis
 def _hypothesis_row(row: Any) -> HypothesisRecord:
     return HypothesisRecord(
         id=row["id"],
-        session_id=row["session_id"],
+        project_id=row["project_id"],
+        created_in_session_id=row["created_in_session_id"],
         title=row["title"],
         summary=row["summary"],
         status=row["status"],
@@ -25,15 +26,17 @@ class HypothesesRepository(BaseRepository):
         self,
         *,
         hypothesis_id: str,
-        session_id: str,
+        project_id: str,
         title: str,
         summary: str,
+        created_in_session_id: str | None = None,
         status: WorkStatus | str = WorkStatus.OPEN,
     ) -> HypothesisRecord:
         checked_status = parse_work_status(status=status, noun="hypothesis")
         command = CreateHypothesis(
             hypothesis_id=hypothesis_id,
-            session_id=session_id,
+            project_id=project_id,
+            created_in_session_id=created_in_session_id,
             title=title,
             summary=summary,
             status=checked_status,
@@ -42,12 +45,14 @@ class HypothesesRepository(BaseRepository):
         self.db.execute(
             """
             INSERT INTO hypotheses
-              (id, session_id, title, summary, status, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+              (id, project_id, created_in_session_id, title, summary, status,
+               created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 command.hypothesis_id,
-                command.session_id,
+                command.project_id,
+                command.created_in_session_id,
                 command.title,
                 command.summary,
                 command.status.value,
@@ -111,15 +116,20 @@ class HypothesesRepository(BaseRepository):
             for row in self.db.fetchall("SELECT * FROM hypotheses ORDER BY created_at")
         ]
 
-    def list_for_session(self, session_id: str) -> list[HypothesisRecord]:
+    def list_for_project(self, project_id: str) -> list[HypothesisRecord]:
         return [
             _hypothesis_row(row)
             for row in self.db.fetchall(
                 """
                 SELECT * FROM hypotheses
-                WHERE session_id = ?
+                WHERE project_id = ?
                 ORDER BY created_at
                 """,
-                (session_id,),
+                (project_id,),
             )
         ]
+
+    def list_for_session(self, session_id: str) -> list[HypothesisRecord]:
+        session = self.db.fetchone("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
+        project_id = session["project_id"] if session else None
+        return self.list_for_project(project_id) if project_id is not None else []

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { classNames } from "../../utils/class-names";
+import * as s from "./dx-list-row.css";
 
 export function DxListRow({
   icon,
@@ -18,18 +19,16 @@ export function DxListRow({
   onClick?: () => void;
   className?: string;
 }) {
-  const rowClassName = classNames({
-    values: ["dx-list-row", active && "dx-list-row--active", className],
-  });
+  const rowClassName = classNames({ values: [s.row, className] });
 
   return (
     <button type="button" className={rowClassName} onClick={onClick} data-active={active}>
-      {icon && <span className="dx-list-row__icon">{icon}</span>}
-      <span className="dx-list-row__content">
-        <span className="dx-list-row__title">{title}</span>
-        {status && <span className="dx-list-row__status">{status}</span>}
+      {icon && <span className={s.icon}>{icon}</span>}
+      <span className={s.content}>
+        <span className={s.title}>{title}</span>
+        {status && <span className={s.status}>{status}</span>}
       </span>
-      {meta && <span className="dx-list-row__meta">{meta}</span>}
+      {meta && <span className={s.meta}>{meta}</span>}
     </button>
   );
 }

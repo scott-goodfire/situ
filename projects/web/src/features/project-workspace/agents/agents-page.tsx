@@ -1,6 +1,7 @@
-import { DxSection, DxTable, type DxTableColumn } from "@situ/web-ui";
+import { DxSection, DxTable, mono, type DxTableColumn } from "@situ/web-ui";
 import { Link } from "@tanstack/react-router";
 import { DateTime } from "luxon";
+import * as s from "../../../styles.css";
 import type { AgentSummary, ProjectWorkspaceData } from "../types";
 import { agentSummaries } from "./agent-summaries";
 
@@ -35,7 +36,7 @@ function agentColumns({
       width: "30%",
       renderCell: ({ row }) => (
         <Link
-          className="situ-record-link"
+          className={s.recordLink}
           to="/projects/$projectId/agents/$agentId"
           params={{
             projectId,
@@ -51,21 +52,21 @@ function agentColumns({
       id: "hypotheses",
       header: "Hypothesis Activity",
       width: "180px",
-      renderCell: ({ row }) => <span className="dx-mono">{row.hypothesisActivityCount}</span>,
+      renderCell: ({ row }) => <span className={mono}>{row.hypothesisActivityCount}</span>,
       sortValue: ({ row }) => row.hypothesisActivityCount,
     },
     {
       id: "experiments",
       header: "Experiment Activity",
       width: "180px",
-      renderCell: ({ row }) => <span className="dx-mono">{row.experimentActivityCount}</span>,
+      renderCell: ({ row }) => <span className={mono}>{row.experimentActivityCount}</span>,
       sortValue: ({ row }) => row.experimentActivityCount,
     },
     {
       id: "evaluations",
       header: "Evaluation Activity",
       width: "180px",
-      renderCell: ({ row }) => <span className="dx-mono">{row.evaluationActivityCount}</span>,
+      renderCell: ({ row }) => <span className={mono}>{row.evaluationActivityCount}</span>,
       sortValue: ({ row }) => row.evaluationActivityCount,
     },
     {

@@ -15,9 +15,21 @@
       "title": "Id",
       "type": "string"
     },
-    "project_id": {
-      "title": "Project Id",
+    "workspace_id": {
+      "title": "Workspace Id",
       "type": "string"
+    },
+    "project_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Project Id"
     },
     "status": {
       "$ref": "#/$defs/SessionStatus"
@@ -33,7 +45,7 @@
   },
   "required": [
     "id",
-    "project_id",
+    "workspace_id",
     "status",
     "created_at",
     "updated_at"

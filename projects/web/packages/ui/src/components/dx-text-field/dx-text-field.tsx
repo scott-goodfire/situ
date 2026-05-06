@@ -1,6 +1,7 @@
 import { Field } from "@base-ui/react/field";
 import compact from "lodash/compact";
 import { useId, type InputHTMLAttributes, type ReactNode } from "react";
+import * as s from "./dx-text-field.css";
 
 export type DxTextFieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, "className"> & {
   label: ReactNode;
@@ -36,8 +37,8 @@ export function DxTextField({
   });
 
   return (
-    <Field.Root className="dx-text-field" disabled={disabled} invalid={Boolean(error)}>
-      <Field.Label className="dx-text-field__label" htmlFor={inputId}>
+    <Field.Root className={s.textField} disabled={disabled} invalid={Boolean(error)}>
+      <Field.Label className={s.label} htmlFor={inputId}>
         {label}
       </Field.Label>
 
@@ -45,19 +46,19 @@ export function DxTextField({
         {...inputProps}
         aria-describedby={describedBy}
         aria-invalid={Boolean(error)}
-        className="dx-text-field__control"
+        className={s.control}
         disabled={disabled}
         id={inputId}
       />
 
       {description && (
-        <Field.Description className="dx-text-field__description" id={descriptionId}>
+        <Field.Description className={s.description} id={descriptionId}>
           {description}
         </Field.Description>
       )}
 
       {error && (
-        <div className="dx-text-field__error" id={errorId} role="alert">
+        <div className={s.error} id={errorId} role="alert">
           {error}
         </div>
       )}

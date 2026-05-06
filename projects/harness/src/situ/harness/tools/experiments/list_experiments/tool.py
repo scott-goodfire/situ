@@ -17,19 +17,23 @@ class ListExperimentsTool(BaseSituTool[SituToolDeps, ListExperimentsResult]):
         self,
         *,
         ctx: RunContext[SituToolDeps],
+        project_id: str | None = None,
         session_id: str | None = None,
         status: WorkStatus | None = None,
         **_kwargs: Any,
     ) -> ListExperimentsResult:
-        """List experiments for a session, defaulting to the current session."""
+        """List experiments for a project, defaulting to the current session's project."""
         checked_status = (
             parse_work_status(status=status, noun="experiment")
             if status is not None
             else None
         )
         repos = ctx.deps.get_repos()
-        target_session_id = session_id or ctx.deps.session_id
-        experiments = repos.experiments.list_for_session(target_session_id)
+        if project_id is not None:
+            experiments = repos.experiments.list_for_project(project_id)
+        else:
+            target_session_id = session_id or ctx.deps.session_id
+            experiments = repos.experiments.list_for_session(target_session_id)
 
         if checked_status is not None:
             experiments = [

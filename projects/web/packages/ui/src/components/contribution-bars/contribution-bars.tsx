@@ -15,6 +15,9 @@ import {
   YAxis,
 } from "recharts";
 import { classNames } from "../../utils/class-names";
+import { vars } from "../../theme.css";
+import { muted } from "../../utilities.css";
+import * as s from "./contribution-bars.css";
 
 export function ContributionBars({
   contributions,
@@ -29,13 +32,11 @@ export function ContributionBars({
     contributions,
     limit,
   });
-  const rootClassName = classNames({
-    values: ["dx-contribution-bars", className],
-  });
+  const rootClassName = classNames({ values: [s.root, className] });
   const chartHeight = Math.max(normalizedContributions.length * 34, 96);
 
   if (normalizedContributions.length === 0) {
-    return <p className="dx-muted">No contributions yet</p>;
+    return <p className={muted}>No contributions yet</p>;
   }
 
   return (
@@ -58,7 +59,7 @@ export function ContributionBars({
             width={120}
             tickLine={false}
             axisLine={false}
-            tick={{ fill: "var(--dx-color-subtle)", fontSize: 13 }}
+            tick={{ fill: vars.color.mutedForegroundTertiary, fontSize: 13 }}
           />
           <Tooltip
             formatter={(_value, _name, item) =>
@@ -88,12 +89,12 @@ export function ContributionBars({
 
 function fillForTone({ tone }: { tone: ChartTone }): string {
   if (tone === "success") {
-    return "var(--dx-color-success)";
+    return vars.color.successStrong;
   }
 
   if (tone === "danger") {
-    return "var(--dx-color-danger)";
+    return vars.color.dangerStrong;
   }
 
-  return "var(--dx-color-subtle)";
+  return vars.color.mutedForegroundTertiary;
 }

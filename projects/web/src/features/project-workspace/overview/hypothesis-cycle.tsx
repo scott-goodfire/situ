@@ -1,6 +1,7 @@
 import type { HypothesisRecord } from "@situ/protocol";
-import { DxSection } from "@situ/web-ui";
+import { DxSection, muted } from "@situ/web-ui";
 import filter from "lodash/filter";
+import * as s from "../../../styles.css";
 import { HypothesisCard } from "./hypothesis-card";
 import { experimentsForHypothesis } from "../shared/relationship-selectors";
 import type { ProjectWorkspaceData } from "../types";
@@ -28,11 +29,11 @@ export function HypothesisCycle({
   return (
     <DxSection title="Research Cycle">
       {hypotheses.length === 0 && (
-        <p className="dx-muted">No hypotheses have been created yet.</p>
+        <p className={muted}>No hypotheses have been created yet.</p>
       )}
 
       {hypotheses.length > 0 && (
-        <div className="situ-cycle-grid">
+        <div className={s.cycleGrid}>
           <HypothesisLane
             data={data}
             title="Backlog"
@@ -69,10 +70,10 @@ function HypothesisLane({
   emptyLabel: string;
 }) {
   return (
-    <section className="situ-cycle-lane">
+    <section className={s.cycleLane}>
       <h3>{title}</h3>
 
-      {hypotheses.length === 0 && <p className="dx-muted">{emptyLabel}</p>}
+      {hypotheses.length === 0 && <p className={muted}>{emptyLabel}</p>}
 
       {hypotheses.map((hypothesis) => (
         <HypothesisCard

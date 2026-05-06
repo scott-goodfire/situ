@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { classNames } from "../../utils/class-names";
+import * as s from "./dx-badge.css";
 
 export type DxBadgeTone = "neutral" | "success" | "warning" | "danger";
 
@@ -13,12 +14,18 @@ export function DxBadge({
   children: ReactNode;
 }) {
   const className = classNames({
-    values: ["dx-badge", `dx-badge--${tone}`, withDot && "dx-badge--with-dot"],
+    values: [
+      s.badge,
+      tone === "success" && s.success,
+      tone === "warning" && s.warning,
+      tone === "danger" && s.danger,
+      withDot && s.withDot,
+    ],
   });
 
   return (
     <span className={className}>
-      {withDot && <span className="dx-badge__dot" aria-hidden />}
+      {withDot && <span className={s.dot} aria-hidden />}
       {children}
     </span>
   );

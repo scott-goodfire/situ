@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { AppShell } from "../../app/app-shell";
+import * as s from "../../styles.css";
 import type { ProjectWorkspaceData } from "./types";
 
 export function ProjectWorkspaceLayout({
@@ -50,7 +51,7 @@ function StatusBanner({
   children: ReactNode;
 }) {
   return (
-    <p className="situ-status" data-tone={tone}>
+    <p className={s.status} data-tone={tone}>
       {children}
     </p>
   );

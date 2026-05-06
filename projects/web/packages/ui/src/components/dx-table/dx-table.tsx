@@ -17,6 +17,8 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react";
+import { muted } from "../../utilities.css";
+import * as s from "./dx-table.css";
 
 export type DxTableColumn<Row> = {
   id: string;
@@ -90,7 +92,7 @@ export function DxTable<Row>({
   });
 
   const tableRows = table.getRowModel().rows;
-  const scrollTrigger = tableRows.map((row) => row.id).join("\u001f");
+  const scrollTrigger = tableRows.map((row) => row.id).join("");
   const autoScrollState = usePinnedAutoScroll({
     enabled: autoScroll,
     smooth: prefersReducedMotion !== true,
@@ -99,18 +101,18 @@ export function DxTable<Row>({
   const shouldAnimateRows = animateRows && prefersReducedMotion !== true;
 
   if (rows.length === 0) {
-    return <p className="dx-muted">{emptyLabel}</p>;
+    return <p className={muted}>{emptyLabel}</p>;
   }
 
   return (
     <div
-      className="dx-table__scroll"
+      className={s.scroll}
       ref={autoScrollState.scrollRef}
       style={scrollStyle({ maxHeight })}
       onScroll={autoScrollState.handleScroll}
     >
       <table
-        className="dx-table"
+        className={s.table}
         data-density={density}
         data-sticky-header={stickyHeader}
       >
@@ -140,7 +142,7 @@ export function DxTable<Row>({
           </AnimatePresence>
         </tbody>
       </table>
-      <div className="dx-table__scroll-anchor" ref={autoScrollState.anchorRef} />
+      <div className={s.scrollAnchor} ref={autoScrollState.anchorRef} />
     </div>
   );
 }
@@ -155,7 +157,7 @@ function DxTableHeader<Row>({
   const label = flexRender(header.column.columnDef.header, header.getContext());
 
   if (!canSort) {
-    return <span className="dx-table__header-label">{label}</span>;
+    return <span className={s.headerLabel}>{label}</span>;
   }
 
   const sortLabel = (() => {
@@ -174,14 +176,14 @@ function DxTableHeader<Row>({
 
   return (
     <button
-      className="dx-table__header-button"
+      className={s.headerButton}
       type="button"
       onClick={header.column.getToggleSortingHandler()}
       aria-label={`${String(header.column.id)} ${sortLabel}`}
     >
-      <span className="dx-table__header-label">{label}</span>
+      <span className={s.headerLabel}>{label}</span>
       {sortIndicator && (
-        <span className="dx-table__sort-indicator" aria-hidden="true">
+        <span className={s.sortIndicator} aria-hidden="true">
           {sortIndicator}
         </span>
       )}
@@ -217,7 +219,7 @@ function renderTableRow<Row>({
   const tone = getRowTone?.({ row: tableRow.original }) ?? "neutral";
   const cells = tableRow.getVisibleCells().map((cell) => (
     <td key={cell.id}>
-      <div className="dx-table__cell">
+      <div className={s.cell}>
         {flexRender(cell.column.columnDef.cell, cell.getContext())}
       </div>
     </td>

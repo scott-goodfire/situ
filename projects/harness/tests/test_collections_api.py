@@ -43,43 +43,44 @@ def test_collections_bootstrap_returns_research_objects_and_events(
     app: HarnessApp,
 ) -> None:
     app.setup_complete({})
-    project = app.repos.project.ensure()
+    workspace = app.repos.workspaces.ensure()
+    project = app.repos.projects.create(
+        project_id="project_0001",
+        workspace_id=workspace.id,
+        title="Improve score",
+        objective="Improve score.",
+        research_context="Run local evals. Expected signals: score. Baseline and variants.",
+    )
     session = app.repos.sessions.create(
         "session_0001",
+        workspace_id=workspace.id,
         project_id=project.id,
-    )
-    objective = app.repos.objectives.create(
-        objective_id="obj_session_0001",
-        session_id=session.id,
-        title="Improve score",
-        description="Improve score.",
-    )
-    app.repos.research_contexts.create(
-        research_context_id="rctx_session_0001",
-        session_id=session.id,
-        body="Run local evals. Expected signals: score. Baseline and variants.",
     )
     app.repos.hypotheses.create(
         hypothesis_id="hyp_0001",
-        session_id="session_0001",
+        project_id=project.id,
+        created_in_session_id=session.id,
         title="Component A helps",
         summary="Component A may improve score.",
         status="active",
     )
     app.repos.experiments.create(
         experiment_id="exp_session_0001_baseline",
-        session_id="session_0001",
+        project_id=project.id,
+        created_in_session_id=session.id,
         title="Record baseline",
         summary="Baseline eval.",
     )
     evaluation = app.repos.evaluations.create(
         evaluation_id="eval_session_0001_baseline",
-        session_id="session_0001",
+        project_id=project.id,
+        created_in_session_id=session.id,
         title="Baseline project eval",
         summary="Run the baseline project evaluation.",
     )
     activity = app.repos.experiment_activities.add(
         experiment_id="exp_session_0001_baseline",
+        created_in_session_id=session.id,
         actor="worker",
         kind="comment",
         body="Baseline result recorded.",
@@ -87,6 +88,7 @@ def test_collections_bootstrap_returns_research_objects_and_events(
     )
     evaluation_activity = app.repos.evaluation_activities.add(
         evaluation_id=evaluation.id,
+        created_in_session_id=session.id,
         actor="agent",
         kind="comment",
         body="Baseline result recorded.",
@@ -102,9 +104,8 @@ def test_collections_bootstrap_returns_research_objects_and_events(
     bootstrap = CollectionsBootstrapResult.model_validate(app.collections_bootstrap({}))
 
     assert bootstrap.cursor == event.id
+    assert [item.id for item in bootstrap.workspaces] == [workspace.id]
     assert [project.id for project in bootstrap.projects] == [project.id]
-    assert [item.id for item in bootstrap.objectives] == [objective.id]
-    assert [item.session_id for item in bootstrap.research_contexts] == ["session_0001"]
     assert [session.id for session in bootstrap.sessions] == ["session_0001"]
     assert [hypothesis.id for hypothesis in bootstrap.hypotheses] == ["hyp_0001"]
     assert [experiment.id for experiment in bootstrap.experiments] == [

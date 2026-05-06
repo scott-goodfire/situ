@@ -75,6 +75,11 @@ def _run_experiment_impl(
     session = repos.sessions.get(deps.session_id)
     if session is None:
         raise ValueError(f"session not found: {deps.session_id}")
+    if session.project_id is None:
+        raise ValueError(
+            "current session has no project; create or attach a project first"
+        )
+    project_id = session.project_id
 
     experiment_id = payload.experiment_id or _next_experiment_id(deps=deps)
 
@@ -82,7 +87,8 @@ def _run_experiment_impl(
     if experiment is None:
         experiment = repos.experiments.create(
             experiment_id=experiment_id,
-            session_id=deps.session_id,
+            project_id=project_id,
+            created_in_session_id=deps.session_id,
             title=payload.title,
             summary=payload.summary,
             status="open",
@@ -153,7 +159,7 @@ def _run_experiment_impl(
 
     concerns = check_result(
         known_signals=[],
-        baseline_score=baseline_score(deps, deps.session_id),
+        baseline_score=baseline_score(deps, project_id),
         signals=worker_result.signals,
         raw=worker_result.raw,
     )
@@ -218,6 +224,7 @@ def _record_experiment_activity(
 ) -> None:
     activity = deps.get_repos().experiment_activities.add(
         experiment_id=experiment_id,
+        created_in_session_id=deps.session_id,
         actor=actor,
         kind="comment",
         body=body,
@@ -241,6 +248,7 @@ def _record_hypothesis_activity(
 ) -> None:
     activity = deps.get_repos().hypothesis_activities.add(
         hypothesis_id=hypothesis_id,
+        created_in_session_id=deps.session_id,
         actor=actor,
         kind="comment",
         body=body,
@@ -267,12 +275,13 @@ def _next_experiment_id(
     deps: SituToolDeps,
 ) -> str:
     repos = deps.get_repos()
-    count = len(repos.experiments.list_for_session(deps.session_id)) + 1
-    return f"exp_{deps.session_id}_agent_{count:03d}"
+    project_id = deps.require_project_id()
+    count = len(repos.experiments.list_for_project(project_id)) + 1
+    return f"exp_{project_id}_agent_{count:03d}"
 
 
-def baseline_score(deps: SituToolDeps, session_id: str) -> float | None:
-    baseline_id = f"exp_{session_id}_baseline"
+def baseline_score(deps: SituToolDeps, project_id: str) -> float | None:
+    baseline_id = f"exp_{project_id}_baseline"
     activities = deps.get_repos().experiment_activities.list_for_experiment(baseline_id)
     for activity in reversed(activities):
         if activity.payload.get("activity_type") != "result" and "signals" not in activity.payload:

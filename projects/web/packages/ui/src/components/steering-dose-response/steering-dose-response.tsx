@@ -4,6 +4,7 @@ import {
 } from "@situ/chart-model";
 import { classNames } from "../../utils/class-names";
 import { MetricTrend } from "../metric-trend/metric-trend";
+import * as s from "./steering-dose-response.css";
 
 export function SteeringDoseResponse({
   response,
@@ -13,13 +14,11 @@ export function SteeringDoseResponse({
   className?: string;
 }) {
   const series = metricSeriesFromSteeringDoseResponse({ response });
-  const rootClassName = classNames({
-    values: ["dx-steering-dose-response", className],
-  });
+  const rootClassName = classNames({ values: [s.root, className] });
 
   return (
     <div className={rootClassName}>
-      <div className="dx-steering-dose-response__title">{response.label}</div>
+      <div className={s.title}>{response.label}</div>
       <MetricTrend series={series} />
     </div>
   );

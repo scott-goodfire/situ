@@ -1,6 +1,7 @@
-import { DxSection } from "@situ/web-ui";
+import { DxSection, muted } from "@situ/web-ui";
 import { DateTime } from "luxon";
 import orderBy from "lodash/orderBy";
+import * as s from "../../../styles.css";
 import type { ActivityItem } from "../types";
 
 export function ActivityTimeline({
@@ -20,13 +21,13 @@ export function ActivityTimeline({
 
   return (
     <DxSection title={title}>
-      {sortedActivities.length === 0 && <p className="dx-muted">{emptyLabel}</p>}
+      {sortedActivities.length === 0 && <p className={muted}>{emptyLabel}</p>}
 
       {sortedActivities.length > 0 && (
-        <ol className="situ-activity-list">
+        <ol className={s.activityList}>
           {sortedActivities.map((activity) => (
-            <li className="situ-activity-item" key={activity.id}>
-              <div className="situ-activity-item__meta">
+            <li className={s.activityItem} key={activity.id}>
+              <div className={s.activityItemMeta}>
                 <span>{activity.actor}</span>
                 <span>{activity.kind}</span>
                 <span>{formatTime({ value: activity.createdAt })}</span>

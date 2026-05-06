@@ -14,6 +14,7 @@ from situ.harness.api.collections.schemas import CollectionsBootstrapSchema
 from situ.harness.api.current_state.schemas import CurrentStateSchema
 from situ.harness.api.sessions.schemas import SessionGraphSchema
 from situ.harness.records import (
+    AgentRecord,
     ArtifactRecord,
     EventRecord,
     EvaluationActivityRecord,
@@ -23,10 +24,13 @@ from situ.harness.records import (
     HypothesisActivityRecord,
     HypothesisExperimentLinkRecord,
     HypothesisRecord,
-    ObjectiveRecord,
     ProjectRecord,
-    ResearchContextRecord,
     SessionRecord,
+    TaskActivityRecord,
+    TaskDependencyRecord,
+    TaskEntityLinkRecord,
+    TaskRecord,
+    WorkspaceRecord,
 )
 from situ.harness.records.base import DbRecord
 from situ.harness.tools import build_research_toolset
@@ -39,9 +43,8 @@ TS_COLLECTIONS_PATH = (
 )
 
 PUBLISHABLE_RECORDS: dict[str, tuple[type[DbRecord], type]] = {
+    "workspaces": (WorkspaceRecord, protocol.WorkspaceRecord),
     "projects": (ProjectRecord, protocol.ProjectRecord),
-    "objectives": (ObjectiveRecord, protocol.ObjectiveRecord),
-    "research_contexts": (ResearchContextRecord, protocol.ResearchContextRecord),
     "sessions": (SessionRecord, protocol.SessionRecord),
     "hypotheses": (HypothesisRecord, protocol.HypothesisRecord),
     "experiments": (ExperimentRecord, protocol.ExperimentRecord),
@@ -50,6 +53,11 @@ PUBLISHABLE_RECORDS: dict[str, tuple[type[DbRecord], type]] = {
         HypothesisExperimentLinkRecord,
         protocol.HypothesisExperimentLinkRecord,
     ),
+    "agents": (AgentRecord, protocol.AgentRecord),
+    "tasks": (TaskRecord, protocol.TaskRecord),
+    "task_dependencies": (TaskDependencyRecord, protocol.TaskDependencyRecord),
+    "task_entity_links": (TaskEntityLinkRecord, protocol.TaskEntityLinkRecord),
+    "task_activities": (TaskActivityRecord, protocol.TaskActivityRecord),
     "hypothesis_activities": (
         HypothesisActivityRecord,
         protocol.HypothesisActivityRecord,
@@ -67,14 +75,18 @@ PUBLISHABLE_RECORDS: dict[str, tuple[type[DbRecord], type]] = {
 }
 
 TS_COLLECTION_FIELDS = {
+    "workspaces": "workspaces",
     "projects": "projects",
-    "objectives": "objectives",
-    "research_contexts": "researchContexts",
     "sessions": "sessions",
     "hypotheses": "hypotheses",
     "experiments": "experiments",
     "evaluations": "evaluations",
     "hypothesis_experiment_links": "hypothesisExperimentLinks",
+    "agents": "agents",
+    "tasks": "tasks",
+    "task_dependencies": "taskDependencies",
+    "task_entity_links": "taskEntityLinks",
+    "task_activities": "taskActivities",
     "hypothesis_activities": "hypothesisActivities",
     "experiment_activities": "experimentActivities",
     "evaluation_activities": "evaluationActivities",
@@ -82,7 +94,7 @@ TS_COLLECTION_FIELDS = {
     "events": "events",
 }
 
-MUTATING_TOOL_PREFIXES = ("create_", "update_", "add_", "link_", "run_")
+MUTATING_TOOL_PREFIXES = ("create_", "update_", "add_", "link_", "claim_", "run_")
 
 
 def test_publishable_records_and_collection_surfaces_stay_aligned() -> None:
@@ -97,17 +109,16 @@ def test_publishable_records_and_collection_surfaces_stay_aligned() -> None:
     assert set(CollectionsBootstrapResult.model_fields) - {"cursor"} == collection_names
 
     assert set(CurrentStateSchema.model_fields) == {
-        "project",
-        *(collection_names - {"projects"}),
+        "workspace",
+        *(collection_names - {"workspaces"}),
     }
     assert set(SessionGraphSchema.model_fields) == {
+        "workspace",
         "project",
         "session",
-        "objective",
-        "research_context",
         *(
             collection_names
-            - {"projects", "sessions", "objectives", "research_contexts"}
+            - {"workspaces", "projects", "sessions"}
         ),
     }
 

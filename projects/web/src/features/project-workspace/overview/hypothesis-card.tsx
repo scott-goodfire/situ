@@ -4,8 +4,9 @@ import type {
   ExperimentRecord,
   HypothesisRecord,
 } from "@situ/protocol";
-import { DxBadge, type DxBadgeTone } from "@situ/web-ui";
+import { DxBadge, mono, type DxBadgeTone } from "@situ/web-ui";
 import { Link } from "@tanstack/react-router";
+import * as s from "../../../styles.css";
 import {
   evidenceState,
   evaluationActivitiesForEvaluations,
@@ -43,11 +44,11 @@ export function HypothesisCard({
   });
 
   return (
-    <article className="situ-hypothesis-card">
-      <header className="situ-hypothesis-card__header">
-        <div className="situ-record-cell">
+    <article className={s.hypothesisCard}>
+      <header className={s.hypothesisCardHeader}>
+        <div className={s.recordCell}>
           <Link
-            className="situ-record-link"
+            className={s.recordLink}
             to="/projects/$projectId/hypotheses/$hypothesisId"
             params={{
               projectId: data.projectId,
@@ -56,14 +57,14 @@ export function HypothesisCard({
           >
             {hypothesis.title}
           </Link>
-          <span className="situ-record-id">{hypothesis.id}</span>
+          <span className={s.recordId}>{hypothesis.id}</span>
         </div>
         <DxBadge tone={statusTone({ status: hypothesis.status })}>
           {hypothesis.status}
         </DxBadge>
       </header>
 
-      <p className="situ-hypothesis-card__summary">{hypothesis.summary}</p>
+      <p className={s.hypothesisCardSummary}>{hypothesis.summary}</p>
 
       <PresenceLine
         agents={agents}
@@ -135,7 +136,7 @@ function EvidenceLine({
     return `Evidence: ${latestActivity?.body ?? "result recorded"}`;
   })();
 
-  return <p className="situ-hypothesis-card__evidence">{label}</p>;
+  return <p className={s.hypothesisCardEvidence}>{label}</p>;
 }
 
 function CurrentExperiment({
@@ -150,10 +151,10 @@ function CurrentExperiment({
   }
 
   return (
-    <div className="situ-hypothesis-card__experiment">
-      <span className="dx-mono">{experiment.status}</span>
+    <div className={s.hypothesisCardExperiment}>
+      <span className={mono}>{experiment.status}</span>
       <Link
-        className="situ-record-link"
+        className={s.recordLink}
         to="/projects/$projectId/experiments/$experimentId"
         params={{
           projectId,

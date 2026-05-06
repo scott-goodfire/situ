@@ -35,33 +35,35 @@ from .hypotheses import (
 )
 from .common import SituToolDeps
 from .links import LinkHypothesisExperimentTool
-from .objectives import (
-    CreateObjectiveTool,
-    GetObjectiveTool,
-    UpdateObjectiveTool,
-)
-from .research_contexts import (
-    CreateResearchContextTool,
-    GetResearchContextTool,
-    UpdateResearchContextTool,
-)
+from .projects import CreateProjectTool, GetProjectTool, UpdateProjectTool
 from .sessions import GetSessionTool
+from .tasks import (
+    AddTaskCommentTool,
+    ClaimTaskTool,
+    CreateTaskTool,
+    GetTaskBoardTool,
+    LinkTaskEntityTool,
+    UpdateTaskTool,
+)
 from .workspace_state import InspectWorkspaceStateTool
 
 RESEARCH_TOOLSET_INSTRUCTIONS = inspect.cleandoc(
     """
     This toolset is the Situ research ledger.
 
-    On session kickoff your first responsibility is to record the session's
-    objective and research context from the free-text setup input. Call
-    `create_objective` and `create_research_context` once at the start of
-    the session; they are 1:1 with the session and will be ignored if
-    already populated.
+    On session kickoff, make sure the session has a project when the objective
+    and research context are known. Use `create_project` if the session is
+    projectless, and `update_project` when the project objective or research
+    context needs refinement.
 
     Use `get_session` when you need the current board: hypotheses,
     experiments, evaluations, activities, artifacts, and events.
     Use the hypothesis, experiment, and evaluation tools to keep the research
     structure clear.
+
+    Use task tools for coordination: inspect the task board, file focused work,
+    claim eligible work, leave task comments, update task status, and link
+    tasks to the ledger records they produce.
 
     Use comments for durable research judgment: an interpretation, a risk, a
     useful decision, raw command evidence, or a next step. Avoid comments that
@@ -80,6 +82,18 @@ RESEARCH_TOOLSET_INSTRUCTIONS = inspect.cleandoc(
     To inspect files or run project-native commands, use the workspace console
     tools. Keep Situ responsible for the ledger and the workspace tools
     responsible for bash/filesystem interaction.
+    """
+)
+
+MANAGER_TOOLSET_INSTRUCTIONS = inspect.cleandoc(
+    """
+    This toolset is the Situ manager surface.
+
+    Use it to inspect the current session, project, and task board; create or
+    update the session project when kickoff context requires it; file focused
+    tasks; add coordination comments; and update the current planning task. Do
+    not use the manager pass to run experiments or write research outputs
+    directly; file scientist tasks for that work.
     """
 )
 
@@ -102,13 +116,16 @@ def build_research_toolset() -> FunctionToolset[SituToolDeps]:
         instructions=RESEARCH_TOOLSET_INSTRUCTIONS,
         tools=[
             GetSessionTool().as_tool(),
+            GetProjectTool().as_tool(),
+            CreateProjectTool().as_tool(),
+            UpdateProjectTool().as_tool(),
+            GetTaskBoardTool().as_tool(),
+            CreateTaskTool().as_tool(),
+            ClaimTaskTool().as_tool(),
+            UpdateTaskTool().as_tool(),
+            AddTaskCommentTool().as_tool(),
+            LinkTaskEntityTool().as_tool(),
             InspectWorkspaceStateTool().as_tool(),
-            CreateObjectiveTool().as_tool(),
-            UpdateObjectiveTool().as_tool(),
-            GetObjectiveTool().as_tool(),
-            CreateResearchContextTool().as_tool(),
-            UpdateResearchContextTool().as_tool(),
-            GetResearchContextTool().as_tool(),
             ListHypothesesTool().as_tool(),
             CreateHypothesisTool().as_tool(),
             UpdateHypothesisTool().as_tool(),
@@ -128,6 +145,24 @@ def build_research_toolset() -> FunctionToolset[SituToolDeps]:
             ListEvaluationActivitiesTool().as_tool(),
             CreateArtifactTool().as_tool(),
             ListArtifactsTool().as_tool(),
+        ],
+    )
+
+
+def build_manager_toolset() -> FunctionToolset[SituToolDeps]:
+    return FunctionToolset[SituToolDeps](
+        id="situ.manager.v1",
+        instructions=MANAGER_TOOLSET_INSTRUCTIONS,
+        tools=[
+            GetSessionTool().as_tool(),
+            GetProjectTool().as_tool(),
+            CreateProjectTool().as_tool(),
+            UpdateProjectTool().as_tool(),
+            GetTaskBoardTool().as_tool(),
+            CreateTaskTool().as_tool(),
+            ClaimTaskTool().as_tool(),
+            UpdateTaskTool().as_tool(),
+            AddTaskCommentTool().as_tool(),
         ],
     )
 

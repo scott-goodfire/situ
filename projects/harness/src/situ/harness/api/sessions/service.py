@@ -23,14 +23,25 @@ class SessionsService(BaseModel):
 
     def get_session(self, session_id: str) -> SessionGraphSchema:
         session = self.repos.sessions.get(session_id)
-        objective = self.repos.objectives.get_for_session(session_id)
-        research_context = self.repos.research_contexts.get_for_session(session_id)
+        workspace = (
+            self.repos.workspaces.get(session.workspace_id)
+            if session is not None
+            else None
+        )
+        project = (
+            self.repos.projects.get(session.project_id)
+            if session is not None and session.project_id is not None
+            else None
+        )
         hypotheses = self.repos.hypotheses.list_for_session(session_id)
         experiments = self.repos.experiments.list_for_session(session_id)
         evaluations = self.repos.evaluations.list_for_session(session_id)
+        agents = self.repos.agents.list_for_session(session_id)
+        tasks = self.repos.tasks.list_for_session(session_id)
         hypothesis_ids = {hypothesis.id for hypothesis in hypotheses}
         experiment_ids = {experiment.id for experiment in experiments}
         evaluation_ids = {evaluation.id for evaluation in evaluations}
+        task_ids = {task.id for task in tasks}
         links = [
             link
             for link in self.repos.hypothesis_experiment_links.list_all()
@@ -57,15 +68,34 @@ class SessionsService(BaseModel):
                 evaluation_id
             )
         ]
+        task_activities = [
+            activity
+            for task_id in task_ids
+            for activity in self.repos.task_activities.list_for_task(task_id)
+        ]
+        task_dependencies = [
+            dependency
+            for dependency in self.repos.task_dependencies.list_all()
+            if dependency.task_id in task_ids or dependency.blocked_by_task_id in task_ids
+        ]
+        task_entity_links = [
+            link
+            for link in self.repos.task_entity_links.list_all()
+            if link.task_id in task_ids
+        ]
         return SessionGraphSchema(
-            project=self.repos.project.get(),
+            workspace=workspace,
+            project=project,
             session=session,
-            objective=objective,
-            research_context=research_context,
             hypotheses=hypotheses,
             experiments=experiments,
             evaluations=evaluations,
             hypothesis_experiment_links=links,
+            agents=agents,
+            tasks=tasks,
+            task_dependencies=task_dependencies,
+            task_entity_links=task_entity_links,
+            task_activities=task_activities,
             hypothesis_activities=hypothesis_activities,
             experiment_activities=experiment_activities,
             evaluation_activities=evaluation_activities,

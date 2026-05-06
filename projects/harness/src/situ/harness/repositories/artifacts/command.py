@@ -5,7 +5,8 @@ from ..base.command import RepositoryCommand
 
 class CreateArtifact(RepositoryCommand):
     artifact_id: str
-    session_id: str
+    project_id: str
+    created_in_session_id: str | None = None
     kind: str
     title: str
     path: str

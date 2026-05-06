@@ -1,0 +1,64 @@
+{
+  "$defs": {
+    "ActivityKind": {
+      "enum": [
+        "comment"
+      ],
+      "title": "ActivityKind",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "title": "Id",
+      "type": "integer"
+    },
+    "task_id": {
+      "title": "Task Id",
+      "type": "string"
+    },
+    "actor_agent_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Actor Agent Id"
+    },
+    "actor": {
+      "title": "Actor",
+      "type": "string"
+    },
+    "kind": {
+      "$ref": "#/$defs/ActivityKind"
+    },
+    "body": {
+      "title": "Body",
+      "type": "string"
+    },
+    "payload": {
+      "additionalProperties": true,
+      "title": "Payload",
+      "type": "object"
+    },
+    "created_at": {
+      "title": "Created At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "task_id",
+    "actor",
+    "kind",
+    "body",
+    "created_at"
+  ],
+  "title": "TaskActivityRecord",
+  "type": "object"
+}

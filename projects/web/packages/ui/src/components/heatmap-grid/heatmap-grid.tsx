@@ -6,6 +6,8 @@ import {
   type NormalizedHeatmapCell,
 } from "@situ/chart-model";
 import { classNames } from "../../utils/class-names";
+import { vars } from "../../theme.css";
+import * as s from "./heatmap-grid.css";
 
 export function HeatmapGrid({
   matrix,
@@ -17,33 +19,31 @@ export function HeatmapGrid({
   className?: string;
 }) {
   const normalizedMatrix = normalizeHeatmapMatrix({ matrix });
-  const rootClassName = classNames({
-    values: ["dx-heatmap-grid", className],
-  });
+  const rootClassName = classNames({ values: [s.root, className] });
 
   return (
     <div className={rootClassName}>
-      <div className="dx-heatmap-grid__title">{matrix.label}</div>
+      <div className={s.title}>{matrix.label}</div>
       <div
-        className="dx-heatmap-grid__matrix"
+        className={s.matrix}
         style={{
           gridTemplateColumns: `96px repeat(${matrix.columns.length}, minmax(36px, 1fr))`,
         }}
       >
         <div />
         {matrix.columns.map((column) => (
-          <div key={column.id} className="dx-heatmap-grid__column-label">
+          <div key={column.id} className={s.columnLabel}>
             {column.label}
           </div>
         ))}
 
         {matrix.rows.map((row) => (
           <>
-            <div key={`${row.id}-label`} className="dx-heatmap-grid__row-label">
+            <div key={`${row.id}-label`} className={s.rowLabel}>
               {row.label}
             </div>
             {matrix.columns.map((column) => {
-              const cell = heatmapCellFor({
+              const heatmapCell = heatmapCellFor({
                 matrix: normalizedMatrix,
                 rowId: row.id,
                 columnId: column.id,
@@ -52,16 +52,16 @@ export function HeatmapGrid({
               return (
                 <div
                   key={`${row.id}-${column.id}`}
-                  className="dx-heatmap-grid__cell"
-                  style={cellStyle({ cell })}
+                  className={s.cell}
+                  style={cellStyle({ cell: heatmapCell })}
                   title={cellTitle({
-                    cell,
+                    cell: heatmapCell,
                     rowLabel: row.label,
                     columnLabel: column.label,
                     precision,
                   })}
                 >
-                  {cellLabel({ cell, precision })}
+                  {cellLabel({ cell: heatmapCell, precision })}
                 </div>
               );
             })}
@@ -82,28 +82,28 @@ function cellStyle({
 } {
   if (!cell) {
     return {
-      backgroundColor: "var(--dx-color-border-soft)",
-      color: "var(--dx-color-muted)",
+      backgroundColor: vars.color.border01_5,
+      color: vars.color.mutedForeground,
     };
   }
 
   if (cell.value > 0) {
     return {
       backgroundColor: positiveCellColor({ ratio: cell.signedRatio }),
-      color: "var(--dx-color-success)",
+      color: vars.color.successStrong,
     };
   }
 
   if (cell.value < 0) {
     return {
       backgroundColor: negativeCellColor({ ratio: cell.signedRatio }),
-      color: "var(--dx-color-danger)",
+      color: vars.color.dangerStrong,
     };
   }
 
   return {
-    backgroundColor: "var(--dx-color-border-soft)",
-    color: "var(--dx-color-muted)",
+    backgroundColor: vars.color.border01_5,
+    color: vars.color.mutedForeground,
   };
 }
 

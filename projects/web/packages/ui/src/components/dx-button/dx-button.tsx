@@ -1,6 +1,7 @@
 import { Button as BaseButton } from "@base-ui/react/button";
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
 import { classNames } from "../../utils/class-names";
+import * as s from "./dx-button.css";
 
 type BaseButtonProps = ComponentPropsWithoutRef<typeof BaseButton>;
 
@@ -11,6 +12,13 @@ export type DxButtonProps = Omit<BaseButtonProps, "className"> & {
   iconAfter?: ReactNode;
   className?: string;
 };
+
+const VARIANT_CLASS = {
+  primary: s.primary,
+  secondary: s.secondary,
+  ghost: s.ghost,
+  danger: s.dangerVariant,
+} as const;
 
 export function DxButton({
   variant = "secondary",
@@ -23,14 +31,14 @@ export function DxButton({
   ...props
 }: DxButtonProps) {
   const buttonClassName = classNames({
-    values: ["dx-button", `dx-button--${variant}`, `dx-button--${size}`, className],
+    values: [s.button, VARIANT_CLASS[variant], size === "small" && s.small, className],
   });
 
   return (
     <BaseButton {...props} className={buttonClassName} type={type}>
-      {iconBefore && <span className="dx-button__icon">{iconBefore}</span>}
+      {iconBefore && <span className={s.icon}>{iconBefore}</span>}
       {children}
-      {iconAfter && <span className="dx-button__icon">{iconAfter}</span>}
+      {iconAfter && <span className={s.icon}>{iconAfter}</span>}
     </BaseButton>
   );
 }

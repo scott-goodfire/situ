@@ -12,6 +12,9 @@ import {
   YAxis,
 } from "recharts";
 import { classNames } from "../../utils/class-names";
+import { vars } from "../../theme.css";
+import { muted } from "../../utilities.css";
+import * as s from "./bucket-bars.css";
 
 export function BucketBars({
   buckets,
@@ -20,13 +23,11 @@ export function BucketBars({
   buckets: BucketDatum[];
   className?: string;
 }) {
-  const rootClassName = classNames({
-    values: ["dx-bucket-bars", className],
-  });
+  const rootClassName = classNames({ values: [s.root, className] });
   const chartHeight = Math.max(buckets.length * 36, 96);
 
   if (buckets.length === 0) {
-    return <p className="dx-muted">No buckets yet</p>;
+    return <p className={muted}>No buckets yet</p>;
   }
 
   return (
@@ -49,7 +50,7 @@ export function BucketBars({
             width={110}
             tickLine={false}
             axisLine={false}
-            tick={{ fill: "var(--dx-color-subtle)", fontSize: 13 }}
+            tick={{ fill: vars.color.mutedForegroundTertiary, fontSize: 13 }}
           />
           <Tooltip />
           <Bar dataKey="value" radius={[0, 5, 5, 0]} isAnimationActive={false}>
@@ -68,20 +69,20 @@ export function BucketBars({
 
 function fillForTone({ tone }: { tone: ChartTone }): string {
   if (tone === "success") {
-    return "var(--dx-color-success)";
+    return vars.color.successStrong;
   }
 
   if (tone === "warning") {
-    return "var(--dx-color-warning)";
+    return vars.color.warningStrong;
   }
 
   if (tone === "danger") {
-    return "var(--dx-color-danger)";
+    return vars.color.dangerStrong;
   }
 
   if (tone === "info") {
-    return "var(--dx-color-focus)";
+    return vars.color.accent;
   }
 
-  return "var(--dx-color-subtle)";
+  return vars.color.mutedForegroundTertiary;
 }

@@ -11,7 +11,8 @@ from .command import CreateEvaluation, UpdateEvaluation
 def _evaluation_row(row: Any) -> EvaluationRecord:
     return EvaluationRecord(
         id=row["id"],
-        session_id=row["session_id"],
+        project_id=row["project_id"],
+        created_in_session_id=row["created_in_session_id"],
         status=row["status"],
         title=row["title"],
         summary=row["summary"],
@@ -26,16 +27,18 @@ class EvaluationsRepository(BaseRepository):
         self,
         *,
         evaluation_id: str,
-        session_id: str,
+        project_id: str,
         title: str,
         summary: str,
         associated_experiment_id: str | None = None,
+        created_in_session_id: str | None = None,
         status: WorkStatus | str = WorkStatus.OPEN,
     ) -> EvaluationRecord:
         checked_status = parse_work_status(status=status, noun="evaluation")
         command = CreateEvaluation(
             evaluation_id=evaluation_id,
-            session_id=session_id,
+            project_id=project_id,
+            created_in_session_id=created_in_session_id,
             title=title,
             summary=summary,
             associated_experiment_id=associated_experiment_id,
@@ -45,13 +48,14 @@ class EvaluationsRepository(BaseRepository):
         self.db.execute(
             """
             INSERT INTO evaluations
-              (id, session_id, status, title, summary,
+              (id, project_id, created_in_session_id, status, title, summary,
                associated_experiment_id, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 command.evaluation_id,
-                command.session_id,
+                command.project_id,
+                command.created_in_session_id,
                 command.status.value,
                 command.title,
                 command.summary,
@@ -126,18 +130,23 @@ class EvaluationsRepository(BaseRepository):
             for row in self.db.fetchall("SELECT * FROM evaluations ORDER BY created_at")
         ]
 
-    def list_for_session(self, session_id: str) -> list[EvaluationRecord]:
+    def list_for_project(self, project_id: str) -> list[EvaluationRecord]:
         return [
             _evaluation_row(row)
             for row in self.db.fetchall(
                 """
                 SELECT * FROM evaluations
-                WHERE session_id = ?
+                WHERE project_id = ?
                 ORDER BY created_at
                 """,
-                (session_id,),
+                (project_id,),
             )
         ]
+
+    def list_for_session(self, session_id: str) -> list[EvaluationRecord]:
+        session = self.db.fetchone("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
+        project_id = session["project_id"] if session else None
+        return self.list_for_project(project_id) if project_id is not None else []
 
     def list_for_experiment(self, experiment_id: str) -> list[EvaluationRecord]:
         return [

@@ -1,9 +1,10 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
+import { vanillaExtractPlugin } from "@vanilla-extract/vite-plugin";
 import { defineConfig, type Plugin } from "vite";
 import { createDiscoveryApi } from "./src/server/discovery-api";
 
 export default defineConfig({
-  plugins: [situDiscoveryApi()],
+  plugins: [vanillaExtractPlugin(), situDiscoveryApi()],
 });
 
 function situDiscoveryApi(): Plugin {

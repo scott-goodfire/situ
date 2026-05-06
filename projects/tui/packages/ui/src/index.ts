@@ -20,6 +20,19 @@ export { ContrastiveFeatureDiff } from "./components/contrastive-feature-diff/co
 export { ContributionBars } from "./components/contribution-bars/contribution-bars.js";
 export { ExperimentsSection } from "./components/experiments-section/experiments-section.js";
 export { EvaluationsSection } from "./components/evaluations-section/evaluations-section.js";
+export {
+  DashboardFrame,
+  DashboardFrameFooter,
+  DashboardFrameSection,
+  type DashboardFrameTone,
+} from "./components/fullscreen-dashboard/dashboard-frame.js";
+export {
+  FullscreenDashboard,
+  type DashboardTask,
+  type DashboardTaskKind,
+  type DashboardTaskStatus,
+  type DashboardTaskTone,
+} from "./components/fullscreen-dashboard/fullscreen-dashboard.js";
 export { HeatmapGrid } from "./components/heatmap-grid/heatmap-grid.js";
 export { HypothesesSection } from "./components/hypotheses-section/hypotheses-section.js";
 export {

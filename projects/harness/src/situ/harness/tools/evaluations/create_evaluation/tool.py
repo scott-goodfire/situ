@@ -30,14 +30,16 @@ class CreateEvaluationTool(BaseSituTool[SituToolDeps, CreateEvaluationResult]):
         `status` must be `open`, `active`, or `closed`.
         """
         repos = ctx.deps.get_repos()
+        project_id = ctx.deps.require_project_id()
         session_id = ctx.deps.session_id
         resolved_evaluation_id = evaluation_id or _next_evaluation_id(
             repos=repos,
-            session_id=session_id,
+            project_id=project_id,
         )
         evaluation = repos.evaluations.create(
             evaluation_id=resolved_evaluation_id,
-            session_id=session_id,
+            project_id=project_id,
+            created_in_session_id=session_id,
             title=title,
             summary=summary,
             associated_experiment_id=associated_experiment_id,
@@ -55,7 +57,7 @@ class CreateEvaluationTool(BaseSituTool[SituToolDeps, CreateEvaluationResult]):
 def _next_evaluation_id(
     *,
     repos: Any,
-    session_id: str,
+    project_id: str,
 ) -> str:
-    count = len(repos.evaluations.list_for_session(session_id)) + 1
-    return f"eval_{session_id}_agent_{count:03d}"
+    count = len(repos.evaluations.list_for_project(project_id)) + 1
+    return f"eval_{project_id}_agent_{count:03d}"

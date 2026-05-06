@@ -23,48 +23,49 @@ current-state composition for rendering.
 The first useful screen should look conceptually like:
 
 ```text
-Situ
-
-Objective
-  Improve support-agent resolution rate without increasing hallucinations
-
-Session
-  session_0001 | active | experiments 3/6
-
-Hypotheses
-  hyp_0001 active  Retrieval filtering improves billing answers
-  hyp_0002 open    Cancellation-ticket failures need a separate prompt path
-
-Now
-  exp_session_0001_retrieval_filter active
-
-Experiments
-  exp                                  status   summary
-  exp_session_0001_baseline            closed   Baseline support eval
-  exp_session_0001_retrieval_filter    active   Filter low-score snippets
-  exp_session_0001_cancellation_prompt open     Split cancellation prompt
-
-Recent Activity
-  result   baseline resolution 61.0% hallucination 2.4%
-  result   retrieval filter improved billing slice
-  concern  result missing hallucination_rate signal
-  update   cancellation tickets remain the weakest slice
-
-Timeline
-  #12 experiment.started exp_session_0001_retrieval_filter
-  #13 worker.progress applying candidate
-  #14 experiment.activity.result recorded
+┌ SITU / workspace / session_0001 active ───────────────────────────┐
+│ active session · Improve support-agent resolution · experiments 3/6│
+│ workspace · branch/session status · research context preview       │
+├ counts ────────────────────────────────────────────────────────────┤
+│ experiments 3/6   hypotheses 2   evaluations 4   concerns 1        │
+├ tasks ─────────────────────────────────────────────────────────────┤
+│ TODO                 │ IN PROGRESS              │ DONE              │
+│ ○ Run cancellation…  │ ● Test retrieval filter  │ ✓ Record baseline │
+│ ○ Add hallucination… │ ● Compare billing slice  │ ✓ Save result     │
+│ ○ Split cancellati…  │                          │ ✓ Capture state   │
+├ activity ──────────────────────────────────────────────────────────┤
+│ result   baseline resolution 61.0% hallucination 2.4%              │
+│ concern  result missing hallucination_rate signal                  │
+│ update   retrieval filter running candidate eval                   │
+└ ? help · : commands · q quit ──────────────────────────────────────┘
 ```
 
 ## Layout
 
-The TUI should feel like a terminal-native session surface, not a boxed
-dashboard embedded inside the terminal.
+The TUI should feel like a terminal-native framed session surface, not a chat
+transcript or a generic dashboard embedded inside the terminal.
 
-Use a compact framed banner for the initial Situ identity, workspace, and
-session status at the top of the screen. The live observability body beneath it
-should be unframed: sections may use headings, spacing, and compact separators,
-but the full terminal surface should not be wrapped in a persistent outer box.
+The live dashboard should occupy the available terminal viewport by default.
+Use one outer frame with labeled dividers for Situ identity, counts, tasks,
+activity, and footer controls. The frame chrome should make section boundaries
+clear while the React/Ink implementation still treats the section bodies as
+composable panes with measured widths and heights so resizing can reflow and
+truncate content predictably.
+
+The task board should be grouped into todo, in-progress, and done columns with
+vertical dividers between columns. The columns should resize with the terminal
+and truncate each task title independently.
+
+The task board should prefer plain-language task titles over IDs. Rows should
+look like terminal-native work items, for example `○ Run cancellation eval`,
+`● Test retrieval filter`, and `✓ Record baseline eval`. IDs and metadata may
+be secondary or hidden on the main screen. Until durable tasks are fully wired,
+the TUI may derive task-like rows from existing hypotheses, experiments,
+evaluations, and concern activities.
+
+When the terminal is too small to render the dashboard legibly, show a compact
+"please expand terminal" state with the current terminal size and the minimum
+required size. The warning state should still allow the normal quit control.
 
 ## Start, Resume, And Attach
 

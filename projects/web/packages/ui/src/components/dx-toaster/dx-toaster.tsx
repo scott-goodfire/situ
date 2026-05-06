@@ -1,4 +1,5 @@
 import { Toaster as SonnerToaster, toast } from "sonner";
+import * as s from "./dx-toaster.css";
 
 export function DxToaster() {
   return (
@@ -8,11 +9,11 @@ export function DxToaster() {
       offset={24}
       toastOptions={{
         classNames: {
-          toast: "dx-toast",
-          title: "dx-toast__title",
-          description: "dx-toast__description",
-          actionButton: "dx-toast__action",
-          closeButton: "dx-toast__close",
+          toast: s.toast,
+          title: s.title,
+          description: s.description,
+          actionButton: s.action,
+          closeButton: s.close,
         },
       }}
     />

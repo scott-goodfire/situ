@@ -1,6 +1,6 @@
 {
   "$defs": {
-    "ProjectRecord": {
+    "WorkspaceRecord": {
       "additionalProperties": false,
       "properties": {
         "id": {
@@ -26,18 +26,18 @@
         "created_at",
         "updated_at"
       ],
-      "title": "ProjectRecord",
+      "title": "WorkspaceRecord",
       "type": "object"
     }
   },
   "additionalProperties": false,
   "properties": {
-    "project": {
-      "$ref": "#/$defs/ProjectRecord"
+    "workspace": {
+      "$ref": "#/$defs/WorkspaceRecord"
     }
   },
   "required": [
-    "project"
+    "workspace"
   ],
   "title": "SetupCompleteResult",
   "type": "object"

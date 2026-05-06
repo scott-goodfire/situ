@@ -10,7 +10,7 @@
     "check": "tsc --noEmit -p tsconfig.json",
     "test": "bun test",
     "story": "bun run src/stories/story-runner.tsx",
-    "snapshots": "bun run src/stories/snapshot-runner.tsx"
+    "snapshots": "bun run src/stories/snapshot-runner.tsx --png"
   },
   "dependencies": {
     "@situ/chart-model": "workspace:*",

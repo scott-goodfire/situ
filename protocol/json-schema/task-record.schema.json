@@ -1,0 +1,193 @@
+{
+  "$defs": {
+    "TaskKind": {
+      "enum": [
+        "plan",
+        "baseline",
+        "hypothesize",
+        "experiment",
+        "interpret",
+        "review"
+      ],
+      "title": "TaskKind",
+      "type": "string"
+    },
+    "TaskPriority": {
+      "enum": [
+        "urgent",
+        "high",
+        "normal",
+        "low"
+      ],
+      "title": "TaskPriority",
+      "type": "string"
+    },
+    "TaskSourceKind": {
+      "enum": [
+        "manager",
+        "user",
+        "system"
+      ],
+      "title": "TaskSourceKind",
+      "type": "string"
+    },
+    "TaskStatus": {
+      "enum": [
+        "backlog",
+        "in_progress",
+        "done",
+        "abandoned",
+        "failed"
+      ],
+      "title": "TaskStatus",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "session_id": {
+      "title": "Session Id",
+      "type": "string"
+    },
+    "title": {
+      "title": "Title",
+      "type": "string"
+    },
+    "content": {
+      "title": "Content",
+      "type": "string"
+    },
+    "kind": {
+      "$ref": "#/$defs/TaskKind"
+    },
+    "status": {
+      "$ref": "#/$defs/TaskStatus"
+    },
+    "priority": {
+      "$ref": "#/$defs/TaskPriority"
+    },
+    "source_kind": {
+      "$ref": "#/$defs/TaskSourceKind"
+    },
+    "assignee_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Assignee Id"
+    },
+    "parent_task_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Parent Task Id"
+    },
+    "payload": {
+      "additionalProperties": true,
+      "title": "Payload",
+      "type": "object"
+    },
+    "pydantic_run_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Pydantic Run Id"
+    },
+    "conversation_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Conversation Id"
+    },
+    "result_summary": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Result Summary"
+    },
+    "created_at": {
+      "title": "Created At",
+      "type": "string"
+    },
+    "available_at": {
+      "title": "Available At",
+      "type": "string"
+    },
+    "claimed_at": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Claimed At"
+    },
+    "completed_at": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Completed At"
+    },
+    "updated_at": {
+      "title": "Updated At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "session_id",
+    "title",
+    "content",
+    "kind",
+    "status",
+    "priority",
+    "source_kind",
+    "created_at",
+    "available_at",
+    "updated_at"
+  ],
+  "title": "TaskRecord",
+  "type": "object"
+}

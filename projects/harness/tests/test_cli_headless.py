@@ -80,7 +80,8 @@ def test_snapshot_json_reads_local_state_without_live_session(
     assert code == 0
     assert captured.err == ""
     assert payload["source"] == "local"
-    assert payload["snapshot"]["objectives"] == []
+    assert payload["snapshot"]["workspaces"][0]["repo_path"] == str(workspace)
+    assert payload["snapshot"]["projects"] == []
     assert payload["snapshot"]["events"][0]["type"] == "setup.completed"
 
 
@@ -240,6 +241,7 @@ def test_exec_uses_shared_rpc_lifecycle_and_prints_final_json(
             return {
                 "session": {
                     "id": "session_0001",
+                    "workspace_id": "workspace_test",
                     "project_id": "project_test",
                     "status": "closed",
                 }
@@ -249,6 +251,7 @@ def test_exec_uses_shared_rpc_lifecycle_and_prints_final_json(
                 "sessions": [
                     {
                         "id": "session_0001",
+                        "workspace_id": "workspace_test",
                         "project_id": "project_test",
                         "status": "closed",
                     }

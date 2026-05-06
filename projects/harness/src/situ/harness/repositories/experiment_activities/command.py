@@ -9,6 +9,7 @@ from ..base.command import RepositoryCommand
 
 class AddExperimentActivity(RepositoryCommand):
     experiment_id: str
+    created_in_session_id: str | None = None
     actor: str
     kind: str
     body: str

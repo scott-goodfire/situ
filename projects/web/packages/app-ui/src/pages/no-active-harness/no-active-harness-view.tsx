@@ -1,4 +1,5 @@
 import { DxButton, DxEmptyState } from "@situ/web-ui";
+import { commandPre } from "../../styles.css";
 
 export function NoActiveHarnessView({
   workspace,
@@ -26,7 +27,7 @@ export function NoActiveHarnessView({
         description="Start a session from a terminal, then reopen this web monitor."
         action={
           <div style={{ display: "flex", flexDirection: "column", gap: 12, alignItems: "center" }}>
-            <pre className="situ-command">situ start</pre>
+            <pre className={commandPre}>situ start</pre>
             {onDownloadClick && (
               <DxButton variant="primary" onClick={onDownloadClick}>
                 Download for macOS

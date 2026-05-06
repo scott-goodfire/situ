@@ -12,6 +12,7 @@ def _experiment_activity_row(row: Any) -> ExperimentActivityRecord:
     return ExperimentActivityRecord(
         id=row["id"],
         experiment_id=row["experiment_id"],
+        created_in_session_id=row["created_in_session_id"],
         actor=row["actor"],
         kind=row["kind"],
         body=row["body"],
@@ -29,9 +30,11 @@ class ExperimentActivitiesRepository(BaseRepository):
         kind: str,
         body: str,
         payload: dict[str, Any] | None = None,
+        created_in_session_id: str | None = None,
     ) -> ExperimentActivityRecord:
         command = AddExperimentActivity(
             experiment_id=experiment_id,
+            created_in_session_id=created_in_session_id,
             actor=actor,
             kind=kind,
             body=body,
@@ -40,11 +43,13 @@ class ExperimentActivitiesRepository(BaseRepository):
         cursor = self.db.execute(
             """
             INSERT INTO experiment_activities
-              (experiment_id, actor, kind, body, payload_json, created_at)
-            VALUES (?, ?, ?, ?, ?, ?)
+              (experiment_id, created_in_session_id, actor, kind, body, payload_json,
+               created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 command.experiment_id,
+                command.created_in_session_id,
                 command.actor,
                 command.kind,
                 command.body,
@@ -78,3 +83,23 @@ class ExperimentActivitiesRepository(BaseRepository):
                 (experiment_id,),
             )
         ]
+
+    def list_for_project(self, project_id: str) -> list[ExperimentActivityRecord]:
+        return [
+            _experiment_activity_row(row)
+            for row in self.db.fetchall(
+                """
+                SELECT experiment_activities.*
+                FROM experiment_activities
+                JOIN experiments ON experiments.id = experiment_activities.experiment_id
+                WHERE experiments.project_id = ?
+                ORDER BY experiment_activities.id
+                """,
+                (project_id,),
+            )
+        ]
+
+    def list_for_session(self, session_id: str) -> list[ExperimentActivityRecord]:
+        session = self.db.fetchone("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
+        project_id = session["project_id"] if session else None
+        return self.list_for_project(project_id) if project_id is not None else []

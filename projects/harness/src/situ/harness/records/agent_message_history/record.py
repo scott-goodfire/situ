@@ -7,7 +7,9 @@ from ..base import DbRecord
 
 class AgentMessageHistoryRecord(DbRecord):
     id: int
-    session_id: str
+    project_id: str
+    created_in_session_id: str | None = None
+    agent_id: str | None = None
     agent_name: str
     pydantic_run_id: str | None = None
     conversation_id: str | None = None

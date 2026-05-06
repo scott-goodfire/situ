@@ -6,6 +6,7 @@ import {
   type DxTableColumn,
 } from "@situ/web-ui";
 import type { ReactNode } from "react";
+import { commandPre } from "../../styles.css";
 
 export type ProjectIndexViewStatus =
   | "running"
@@ -60,7 +61,7 @@ export function ProjectIndexView({
       <DxEmptyState
         heading="No local Situ projects found"
         description="Start a terminal session, then refresh this page."
-        action={<pre className="situ-command">situ start</pre>}
+        action={<pre className={commandPre}>situ start</pre>}
       />
     );
   }

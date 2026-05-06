@@ -5,6 +5,7 @@ from typing import Callable
 
 from ...core.notifications import emit_collection_upsert
 from ...records import (
+    AgentRecord,
     ArtifactRecord,
     EventRecord,
     EvaluationActivityRecord,
@@ -14,10 +15,13 @@ from ...records import (
     HypothesisActivityRecord,
     HypothesisExperimentLinkRecord,
     HypothesisRecord,
-    ObjectiveRecord,
     ProjectRecord,
-    ResearchContextRecord,
     SessionRecord,
+    TaskActivityRecord,
+    TaskDependencyRecord,
+    TaskEntityLinkRecord,
+    TaskRecord,
+    WorkspaceRecord,
 )
 from ...records.base import DbRecord
 
@@ -39,10 +43,23 @@ def _hypothesis_experiment_link_key(record: DbRecord) -> str:
     return f"{link.hypothesis_id}:{link.experiment_id}"
 
 
+def _task_dependency_key(record: DbRecord) -> str:
+    dependency = record
+    if not isinstance(dependency, TaskDependencyRecord):
+        raise TypeError(f"expected TaskDependencyRecord, got {type(record).__name__}")
+    return f"{dependency.task_id}:{dependency.blocked_by_task_id}"
+
+
+def _task_entity_link_key(record: DbRecord) -> str:
+    link = record
+    if not isinstance(link, TaskEntityLinkRecord):
+        raise TypeError(f"expected TaskEntityLinkRecord, got {type(record).__name__}")
+    return f"{link.task_id}:{link.entity_kind}:{link.entity_id}:{link.relationship}"
+
+
 COLLECTION_ROUTES: dict[type[DbRecord], CollectionRoute] = {
+    WorkspaceRecord: CollectionRoute("workspaces", _record_id),
     ProjectRecord: CollectionRoute("projects", _record_id),
-    ObjectiveRecord: CollectionRoute("objectives", _record_id),
-    ResearchContextRecord: CollectionRoute("research_contexts", _record_id),
     SessionRecord: CollectionRoute("sessions", _record_id),
     HypothesisRecord: CollectionRoute("hypotheses", _record_id),
     ExperimentRecord: CollectionRoute("experiments", _record_id),
@@ -51,6 +68,11 @@ COLLECTION_ROUTES: dict[type[DbRecord], CollectionRoute] = {
         "hypothesis_experiment_links",
         _hypothesis_experiment_link_key,
     ),
+    AgentRecord: CollectionRoute("agents", _record_id),
+    TaskRecord: CollectionRoute("tasks", _record_id),
+    TaskDependencyRecord: CollectionRoute("task_dependencies", _task_dependency_key),
+    TaskEntityLinkRecord: CollectionRoute("task_entity_links", _task_entity_link_key),
+    TaskActivityRecord: CollectionRoute("task_activities", _record_id),
     HypothesisActivityRecord: CollectionRoute("hypothesis_activities", _record_id),
     ExperimentActivityRecord: CollectionRoute("experiment_activities", _record_id),
     EvaluationActivityRecord: CollectionRoute("evaluation_activities", _record_id),

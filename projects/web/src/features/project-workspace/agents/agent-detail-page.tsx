@@ -1,4 +1,5 @@
 import { DxBadge, DxEmptyState } from "@situ/web-ui";
+import * as s from "../../../styles.css";
 import { agentSummaries } from "./agent-summaries";
 import { AgentPresence } from "./presence/agent-presence";
 import { AgentTranscript } from "./transcript/agent-transcript";
@@ -31,10 +32,10 @@ export function AgentDetailPage({
 
   return (
     <>
-      <section className="situ-object-page">
-        <div className="situ-object-page__header">
+      <section className={s.objectPage}>
+        <div className={s.objectPageHeader}>
           <div>
-            <p className="situ-object-page__eyebrow">Agent</p>
+            <p className={s.objectPageEyebrow}>Agent</p>
             <h2>{agent.id}</h2>
           </div>
           <DxBadge>{activityCountLabel({ count: transcriptItems.length })}</DxBadge>

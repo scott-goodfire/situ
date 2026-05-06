@@ -17,6 +17,7 @@ Read in this order:
 10. [0010-activities-and-artifacts/SPEC.md](./0010-activities-and-artifacts/SPEC.md)
 11. [0011-local-session-web/SPEC.md](./0011-local-session-web/SPEC.md)
 12. [0012-experiment-workspace-state/SPEC.md](./0012-experiment-workspace-state/SPEC.md)
+13. [0013-agent-task-coordination/SPEC.md](./0013-agent-task-coordination/SPEC.md)
 
 ## Product Thesis
 

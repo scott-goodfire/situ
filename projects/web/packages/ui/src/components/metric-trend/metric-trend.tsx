@@ -16,6 +16,23 @@ import {
   YAxis,
 } from "recharts";
 import { classNames } from "../../utils/class-names";
+import { vars } from "../../theme.css";
+import {
+  chartToneDanger,
+  chartToneInfo,
+  chartToneNeutral,
+  chartToneSuccess,
+  chartToneWarning,
+} from "../../utilities.css";
+import * as s from "./metric-trend.css";
+
+const TONE_CLASS = {
+  success: chartToneSuccess,
+  warning: chartToneWarning,
+  danger: chartToneDanger,
+  info: chartToneInfo,
+  neutral: chartToneNeutral,
+} as const;
 
 export function MetricTrend({
   series,
@@ -26,32 +43,30 @@ export function MetricTrend({
   showSummary?: boolean;
   className?: string;
 }) {
-  const summary = summarizeMetricSeries({ series });
-  const tone = toneForTrend({ trend: summary.trend });
+  const summaryData = summarizeMetricSeries({ series });
+  const tone = toneForTrend({ trend: summaryData.trend });
   const chartData = series.points.map((point) => ({
     id: point.id,
     label: point.label,
     value: point.value,
   }));
-  const rootClassName = classNames({
-    values: ["dx-metric-trend", className],
-  });
+  const rootClassName = classNames({ values: [s.root, className] });
 
   return (
     <div className={rootClassName}>
-      <div className="dx-metric-trend__header">
+      <div className={s.header}>
         <div>
-          <div className="dx-metric-trend__label">{series.label}</div>
+          <div className={s.label}>{series.label}</div>
           {showSummary && (
-            <div className="dx-metric-trend__summary">
+            <div className={s.summary}>
               {formatMetricValue({
-                value: summary.firstValue,
+                value: summaryData.firstValue,
                 unit: series.unit,
                 precision: series.precision,
               })}
               {" -> "}
               {formatMetricValue({
-                value: summary.lastValue,
+                value: summaryData.lastValue,
                 unit: series.unit,
                 precision: series.precision,
               })}
@@ -59,9 +74,9 @@ export function MetricTrend({
           )}
         </div>
         {showSummary && (
-          <div className={toneClassName({ tone })}>
+          <div className={classNames({ values: [s.delta, TONE_CLASS[tone]] })}>
             {formatMetricDelta({
-              summary,
+              summary: summaryData,
               unit: series.unit,
               precision: series.precision,
             })}
@@ -69,7 +84,7 @@ export function MetricTrend({
         )}
       </div>
 
-      <div className="dx-metric-trend__chart">
+      <div className={s.chart}>
         <ResponsiveContainer width="100%" height="100%">
           <LineChart
             data={chartData}
@@ -80,19 +95,19 @@ export function MetricTrend({
               left: 0,
             }}
           >
-            <CartesianGrid stroke="var(--dx-color-border-soft)" vertical={false} />
+            <CartesianGrid stroke={vars.color.border01_5} vertical={false} />
             <XAxis
               dataKey="label"
               tickLine={false}
               axisLine={false}
               minTickGap={24}
-              tick={{ fill: "var(--dx-color-muted)", fontSize: 12 }}
+              tick={{ fill: vars.color.mutedForeground, fontSize: 12 }}
             />
             <YAxis
               width={42}
               tickLine={false}
               axisLine={false}
-              tick={{ fill: "var(--dx-color-muted)", fontSize: 12 }}
+              tick={{ fill: vars.color.mutedForeground, fontSize: 12 }}
             />
             <Tooltip
               formatter={(value) =>
@@ -118,28 +133,22 @@ export function MetricTrend({
   );
 }
 
-function toneClassName({ tone }: { tone: ChartTone }): string {
-  return classNames({
-    values: ["dx-metric-trend__delta", `dx-chart-tone-${tone}`],
-  });
-}
-
 function strokeForTone({ tone }: { tone: ChartTone }): string {
   if (tone === "success") {
-    return "var(--dx-color-success)";
+    return vars.color.successStrong;
   }
 
   if (tone === "warning") {
-    return "var(--dx-color-warning)";
+    return vars.color.warningStrong;
   }
 
   if (tone === "danger") {
-    return "var(--dx-color-danger)";
+    return vars.color.dangerStrong;
   }
 
   if (tone === "info") {
-    return "var(--dx-color-focus)";
+    return vars.color.accent;
   }
 
-  return "var(--dx-color-subtle)";
+  return vars.color.mutedForegroundTertiary;
 }

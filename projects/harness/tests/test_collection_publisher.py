@@ -10,6 +10,7 @@ from situ.harness.core.notifications import (
     set_project_collections_subscribed,
 )
 from situ.harness.records import (
+    AgentRecord,
     ArtifactRecord,
     EventRecord,
     EvaluationActivityRecord,
@@ -19,10 +20,13 @@ from situ.harness.records import (
     HypothesisActivityRecord,
     HypothesisExperimentLinkRecord,
     HypothesisRecord,
-    ObjectiveRecord,
     ProjectRecord,
-    ResearchContextRecord,
     SessionRecord,
+    TaskActivityRecord,
+    TaskDependencyRecord,
+    TaskEntityLinkRecord,
+    TaskRecord,
+    WorkspaceRecord,
 )
 
 
@@ -32,9 +36,8 @@ class _NonCollectionRecord:
 
 def test_collection_routes_cover_publishable_records() -> None:
     records = [
+        (workspace_record(), "workspaces", "workspace_0001"),
         (project_record(), "projects", "project_0001"),
-        (objective_record(), "objectives", "objective_0001"),
-        (research_context_record(), "research_contexts", "rctx_0001"),
         (session_record(), "sessions", "session_0001"),
         (hypothesis_record(), "hypotheses", "hyp_0001"),
         (experiment_record(), "experiments", "exp_0001"),
@@ -48,6 +51,19 @@ def test_collection_routes_cover_publishable_records() -> None:
             "hypothesis_experiment_links",
             "hyp_0001:exp_0001",
         ),
+        (agent_record(), "agents", "agent_0001"),
+        (task_record(), "tasks", "task_0001"),
+        (
+            task_dependency_record(),
+            "task_dependencies",
+            "task_0002:task_0001",
+        ),
+        (
+            task_entity_link_record(),
+            "task_entity_links",
+            "task_0001:evaluation:eval_0001:created",
+        ),
+        (task_activity_record(), "task_activities", "5"),
         (hypothesis_activity_record(), "hypothesis_activities", "1"),
         (experiment_activity_record(), "experiment_activities", "2"),
         (evaluation_activity_record(), "evaluation_activities", "4"),
@@ -72,7 +88,7 @@ def test_collection_publisher_emits_generic_upsert() -> None:
 
     publish_record_upsert(
         project_id=project_id,
-        record=objective_record(),
+        record=project_record(),
         cursor=42,
     )
 
@@ -81,9 +97,9 @@ def test_collection_publisher_emits_generic_upsert() -> None:
             "collections.upserted",
             {
                 "cursor": 42,
-                "collection": "objectives",
-                "key": "objective_0001",
-                "record": objective_record().model_dump(),
+                "collection": "projects",
+                "key": "project_0001",
+                "record": project_record().model_dump(),
             },
         )
     ]
@@ -94,32 +110,23 @@ def test_collection_route_rejects_non_collection_records() -> None:
         collection_route_for_record(_NonCollectionRecord())  # type: ignore[arg-type]
 
 
-def project_record() -> ProjectRecord:
-    return ProjectRecord(
-        id="project_0001",
+def workspace_record() -> WorkspaceRecord:
+    return WorkspaceRecord(
+        id="workspace_0001",
         repo_path="/tmp/project",
         created_at="now",
         updated_at="now",
     )
 
 
-def objective_record() -> ObjectiveRecord:
-    return ObjectiveRecord(
-        id="objective_0001",
-        session_id="session_0001",
+def project_record() -> ProjectRecord:
+    return ProjectRecord(
+        id="project_0001",
+        workspace_id="workspace_0001",
         title="Improve score",
-        description="Improve score.",
+        objective="Improve score.",
+        research_context="Run evals. Expected signals: score.",
         status="active",
-        created_at="now",
-        updated_at="now",
-    )
-
-
-def research_context_record() -> ResearchContextRecord:
-    return ResearchContextRecord(
-        id="rctx_0001",
-        session_id="session_0001",
-        body="Run evals. Expected signals: score.",
         created_at="now",
         updated_at="now",
     )
@@ -128,6 +135,7 @@ def research_context_record() -> ResearchContextRecord:
 def session_record() -> SessionRecord:
     return SessionRecord(
         id="session_0001",
+        workspace_id="workspace_0001",
         project_id="project_0001",
         status="active",
         created_at="now",
@@ -135,10 +143,79 @@ def session_record() -> SessionRecord:
     )
 
 
+def agent_record() -> AgentRecord:
+    return AgentRecord(
+        id="agent_0001",
+        session_id="session_0001",
+        kind="scientist",
+        display_name="Scientist",
+        model_name="openai:test",
+        status="idle",
+        created_at="now",
+        updated_at="now",
+    )
+
+
+def task_record() -> TaskRecord:
+    return TaskRecord(
+        id="task_0001",
+        session_id="session_0001",
+        title="Run baseline",
+        content="Run the baseline eval and record evidence.",
+        kind="baseline",
+        status="backlog",
+        priority="high",
+        source_kind="manager",
+        assignee_id=None,
+        parent_task_id=None,
+        payload={},
+        pydantic_run_id=None,
+        conversation_id=None,
+        result_summary=None,
+        created_at="now",
+        available_at="now",
+        claimed_at=None,
+        completed_at=None,
+        updated_at="now",
+    )
+
+
+def task_dependency_record() -> TaskDependencyRecord:
+    return TaskDependencyRecord(
+        task_id="task_0002",
+        blocked_by_task_id="task_0001",
+        created_at="now",
+    )
+
+
+def task_entity_link_record() -> TaskEntityLinkRecord:
+    return TaskEntityLinkRecord(
+        task_id="task_0001",
+        entity_kind="evaluation",
+        entity_id="eval_0001",
+        relationship="created",
+        created_at="now",
+    )
+
+
+def task_activity_record() -> TaskActivityRecord:
+    return TaskActivityRecord(
+        id=5,
+        task_id="task_0001",
+        actor_agent_id="agent_0001",
+        actor="agent",
+        kind="comment",
+        body="Task claimed.",
+        payload={},
+        created_at="now",
+    )
+
+
 def hypothesis_record() -> HypothesisRecord:
     return HypothesisRecord(
         id="hyp_0001",
-        session_id="session_0001",
+        project_id="project_0001",
+        created_in_session_id="session_0001",
         title="Hypothesis",
         summary="Summary.",
         status="active",
@@ -150,7 +227,8 @@ def hypothesis_record() -> HypothesisRecord:
 def experiment_record() -> ExperimentRecord:
     return ExperimentRecord(
         id="exp_0001",
-        session_id="session_0001",
+        project_id="project_0001",
+        created_in_session_id="session_0001",
         status="active",
         title="Experiment",
         summary="Summary.",
@@ -162,7 +240,8 @@ def experiment_record() -> ExperimentRecord:
 def evaluation_record() -> EvaluationRecord:
     return EvaluationRecord(
         id="eval_0001",
-        session_id="session_0001",
+        project_id="project_0001",
+        created_in_session_id="session_0001",
         status="active",
         title="Baseline eval",
         summary="Run baseline.",
@@ -176,6 +255,7 @@ def hypothesis_activity_record() -> HypothesisActivityRecord:
     return HypothesisActivityRecord(
         id=1,
         hypothesis_id="hyp_0001",
+        created_in_session_id="session_0001",
         actor="agent",
         kind="comment",
         body="Comment.",
@@ -188,6 +268,7 @@ def experiment_activity_record() -> ExperimentActivityRecord:
     return ExperimentActivityRecord(
         id=2,
         experiment_id="exp_0001",
+        created_in_session_id="session_0001",
         actor="agent",
         kind="comment",
         body="Comment.",
@@ -200,6 +281,7 @@ def evaluation_activity_record() -> EvaluationActivityRecord:
     return EvaluationActivityRecord(
         id=4,
         evaluation_id="eval_0001",
+        created_in_session_id="session_0001",
         actor="agent",
         kind="comment",
         body="Baseline result.",
@@ -211,7 +293,8 @@ def evaluation_activity_record() -> EvaluationActivityRecord:
 def artifact_record() -> ArtifactRecord:
     return ArtifactRecord(
         id="artifact_0001",
-        session_id="session_0001",
+        project_id="project_0001",
+        created_in_session_id="session_0001",
         associated_entity_kind="experiment",
         associated_entity_id="exp_0001",
         kind="json",

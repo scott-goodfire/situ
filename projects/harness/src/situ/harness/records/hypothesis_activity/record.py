@@ -15,6 +15,7 @@ class ActivityKind(StrEnum):
 class HypothesisActivityRecord(DbRecord):
     id: int
     hypothesis_id: str
+    created_in_session_id: str | None = None
     actor: str
     kind: ActivityKind
     body: str

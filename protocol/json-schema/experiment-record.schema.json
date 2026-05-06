@@ -16,9 +16,21 @@
       "title": "Id",
       "type": "string"
     },
-    "session_id": {
-      "title": "Session Id",
+    "project_id": {
+      "title": "Project Id",
       "type": "string"
+    },
+    "created_in_session_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Created In Session Id"
     },
     "status": {
       "$ref": "#/$defs/WorkStatus"
@@ -42,7 +54,7 @@
   },
   "required": [
     "id",
-    "session_id",
+    "project_id",
     "status",
     "title",
     "summary",
