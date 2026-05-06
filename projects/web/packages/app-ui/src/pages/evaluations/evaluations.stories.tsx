@@ -24,7 +24,7 @@ type Story = StoryObj<typeof EvaluationsView>;
 const EVALUATIONS: EvaluationRecord[] = [
   {
     id: "eval_0001",
-    session_id: "session_0001",
+    project_id: "proj_0001",
     status: "closed",
     title: "Baseline support eval",
     summary: "Baseline before candidate changes.",
@@ -34,7 +34,7 @@ const EVALUATIONS: EvaluationRecord[] = [
   },
   {
     id: "eval_0002",
-    session_id: "session_0001",
+    project_id: "proj_0001",
     status: "active",
     title: "Retrieval filtering candidate",
     summary: "Candidate measurement for exp_0002.",
@@ -44,7 +44,7 @@ const EVALUATIONS: EvaluationRecord[] = [
   },
   {
     id: "eval_0003",
-    session_id: "session_0001",
+    project_id: "proj_0001",
     status: "closed",
     title: "Prompt decomposition candidate",
     summary: "Candidate measurement for exp_0003.",

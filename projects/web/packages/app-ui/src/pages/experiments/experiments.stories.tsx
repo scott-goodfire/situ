@@ -24,7 +24,7 @@ type Story = StoryObj<typeof ExperimentsView>;
 const EXPERIMENTS: ExperimentRecord[] = [
   {
     id: "exp_0001",
-    session_id: "session_0001",
+    project_id: "proj_0001",
     status: "closed",
     title: "Baseline support eval",
     summary: "Recorded native support-agent eval output before changing behavior.",
@@ -33,7 +33,7 @@ const EXPERIMENTS: ExperimentRecord[] = [
   },
   {
     id: "exp_0002",
-    session_id: "session_0001",
+    project_id: "proj_0001",
     status: "active",
     title: "Try retrieval filtering",
     summary: "Filter snippets below the confidence floor on cancellation tickets.",
@@ -42,7 +42,7 @@ const EXPERIMENTS: ExperimentRecord[] = [
   },
   {
     id: "exp_0003",
-    session_id: "session_0001",
+    project_id: "proj_0001",
     status: "open",
     title: "Try prompt decomposition",
     summary: "Split billing prompt into identify, plan, and answer steps.",

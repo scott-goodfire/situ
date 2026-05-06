@@ -1,5 +1,5 @@
 import { globalStyle } from "@vanilla-extract/css";
-import { vars } from "@situ/web-ui";
+import { vars } from "./theme.css";
 
 globalStyle("*", {
   boxSizing: "border-box",

@@ -1,4 +1,5 @@
 import type {
+  ArtifactRecord,
   EvaluationRecord,
   ExperimentRecord,
 } from "@situ/protocol";
@@ -34,4 +35,35 @@ export function evaluationsForExperiments({
 
     return experimentIds.has(evaluation.associated_experiment_id);
   });
+}
+
+export function sourceExperimentForEvaluation({
+  data,
+  evaluation,
+}: {
+  data: ProjectWorkspaceData;
+  evaluation: EvaluationRecord;
+}): ExperimentRecord | undefined {
+  if (!evaluation.associated_experiment_id) {
+    return undefined;
+  }
+
+  return data.experiments.find(
+    (experiment) => experiment.id === evaluation.associated_experiment_id,
+  );
+}
+
+export function artifactsForEvaluation({
+  data,
+  evaluationId,
+}: {
+  data: ProjectWorkspaceData;
+  evaluationId: string;
+}): ArtifactRecord[] {
+  return filter(
+    data.artifacts,
+    (artifact) =>
+      artifact.associated_entity_kind === "evaluation" &&
+      artifact.associated_entity_id === evaluationId,
+  );
 }

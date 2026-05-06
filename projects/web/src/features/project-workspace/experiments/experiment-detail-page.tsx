@@ -9,11 +9,16 @@ import {
   type DxTableColumn,
 } from "@situ/web-ui";
 import { Link } from "@tanstack/react-router";
-import filter from "lodash/filter";
-import * as s from "../../../styles.css";
-import { EvaluationActivityList } from "../evidence/evaluation-activity-list";
 import { evaluationsForExperiment } from "../../../selectors/evaluations";
+import {
+  artifactsForExperiment,
+  experimentActivitiesForExperiment,
+  hasConcernActivities,
+  hypothesesForExperiment,
+} from "../../../selectors/experiments";
+import * as s from "../../../styles.css";
 import { ActivityTimeline } from "../__shared__/activity-timeline";
+import { EvaluationActivityList } from "../evidence/evaluation-activity-list";
 import type { ActivityItem, ProjectWorkspaceData } from "../types";
 
 type LinkedHypothesisRow = {
@@ -46,10 +51,21 @@ export function ExperimentDetailPage({
     data,
     experimentId,
   });
-  const activities = activitiesForExperiment({
+  const rawActivities = experimentActivitiesForExperiment({
     data,
     experimentId,
   });
+  const activities = rawActivities.map(
+    (activity): ActivityItem => ({
+      id: `experiment-activity-${activity.id}`,
+      actor: activity.actor,
+      body: activity.body,
+      kind: activity.payload?.activity_type
+        ? String(activity.payload.activity_type)
+        : activity.kind,
+      createdAt: activity.created_at,
+    }),
+  );
   const artifacts = artifactsForExperiment({
     data,
     experimentId,
@@ -58,7 +74,7 @@ export function ExperimentDetailPage({
     data,
     experimentId,
   });
-  const hasConcern = activities.some((activity) => activity.kind === "concern");
+  const hasConcern = hasConcernActivities({ activities: rawActivities });
 
   return (
     <>
@@ -207,57 +223,6 @@ function artifactColumns(): Array<DxTableColumn<ArtifactRow>> {
       renderCell: ({ row }) => <span className={mono}>{row.artifact.path}</span>,
     },
   ];
-}
-
-function hypothesesForExperiment({
-  data,
-  experimentId,
-}: {
-  data: ProjectWorkspaceData;
-  experimentId: string;
-}): HypothesisRecord[] {
-  const hypothesisIds = new Set(
-    filter(
-      data.hypothesisExperimentLinks,
-      (link) => link.experiment_id === experimentId,
-    ).map((link) => link.hypothesis_id),
-  );
-
-  return filter(data.hypotheses, (hypothesis) => hypothesisIds.has(hypothesis.id));
-}
-
-function activitiesForExperiment({
-  data,
-  experimentId,
-}: {
-  data: ProjectWorkspaceData;
-  experimentId: string;
-}): ActivityItem[] {
-  return filter(
-    data.experimentActivities,
-    (activity) => activity.experiment_id === experimentId,
-  ).map((activity) => ({
-    id: `experiment-activity-${activity.id}`,
-    actor: activity.actor,
-    body: activity.body,
-    kind: activity.payload?.activity_type ? String(activity.payload.activity_type) : activity.kind,
-    createdAt: activity.created_at,
-  }));
-}
-
-function artifactsForExperiment({
-  data,
-  experimentId,
-}: {
-  data: ProjectWorkspaceData;
-  experimentId: string;
-}): ArtifactRecord[] {
-  return filter(
-    data.artifacts,
-    (artifact) =>
-      artifact.associated_entity_kind === "experiment" &&
-      artifact.associated_entity_id === experimentId,
-  );
 }
 
 function statusTone({

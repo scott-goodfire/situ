@@ -104,7 +104,9 @@ class MultiAgentLoopWorld:
                     "Urgent user steering. Inspect README.md and prepare.py, "
                     "explain why setup/evaluation-surface changes are risky, "
                     "leave a task comment containing 'urgent user task handled', "
-                    "and mark this task done. Do not modify files."
+                    "and mark this task done. Do not modify files. After this "
+                    "urgent task is done, stop this Scientist pass instead of "
+                    "claiming normal backlog work."
                 ),
                 kind=TaskKind.REVIEW,
                 priority="urgent",

@@ -1,13 +1,12 @@
 import type { AnalysisRecord } from "@situ/protocol";
 import { DxBadge, DxSection, DxTable, type DxBadgeTone, type DxTableColumn } from "@situ/web-ui";
 import { Link } from "@tanstack/react-router";
+import { analysesForProject } from "../../../selectors/analyses";
 import * as s from "../../../styles.css";
 import type { ProjectWorkspaceData } from "../types";
 
 export function AnalysesPage({ data }: { data: ProjectWorkspaceData }) {
-  const analyses = data.analyses.filter(
-    (analysis) => analysis.project_id === data.projectId,
-  );
+  const analyses = analysesForProject({ data });
   const columns = analysisColumns({ projectId: data.projectId });
 
   return (

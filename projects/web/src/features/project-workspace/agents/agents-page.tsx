@@ -2,11 +2,12 @@ import type { AgentRecord } from "@situ/protocol";
 import { DxBadge, DxSection, DxTable, mono, type DxTableColumn } from "@situ/web-ui";
 import { Link } from "@tanstack/react-router";
 import { DateTime } from "luxon";
+import { agentsForProject } from "../../../selectors/agents";
 import * as s from "../../../styles.css";
 import type { ProjectWorkspaceData } from "../types";
 
 export function AgentsPage({ data }: { data: ProjectWorkspaceData }) {
-  const agents = data.agents.filter((agent) => agent.project_id === data.projectId);
+  const agents = agentsForProject({ data });
   const columns = agentColumns({ projectId: data.projectId });
 
   return (

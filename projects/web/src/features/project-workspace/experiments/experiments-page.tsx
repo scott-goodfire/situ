@@ -1,4 +1,4 @@
-import type { ExperimentActivityRecord, ExperimentRecord } from "@situ/protocol";
+import type { ExperimentRecord } from "@situ/protocol";
 import {
   DxBadge,
   DxSection,
@@ -8,13 +8,17 @@ import {
   type DxTableColumn,
 } from "@situ/web-ui";
 import { Link } from "@tanstack/react-router";
-import filter from "lodash/filter";
-import * as s from "../../../styles.css";
-import { EvidenceSummary } from "../evidence/evidence-summary";
 import {
   evaluationActivitiesForEvaluations,
   evaluationsForExperiment,
 } from "../../../selectors/evaluations";
+import {
+  experimentActivitiesForExperiment,
+  hasConcernActivities,
+  linkedHypothesisCount,
+} from "../../../selectors/experiments";
+import * as s from "../../../styles.css";
+import { EvidenceSummary } from "../evidence/evidence-summary";
 import type { ProjectWorkspaceData } from "../types";
 
 type ExperimentRow = {
@@ -29,7 +33,7 @@ type ExperimentRow = {
 export function ExperimentsPage({ data }: { data: ProjectWorkspaceData }) {
   const columns = experimentColumns({ projectId: data.projectId });
   const rows = data.experiments.map((experiment) => {
-    const activities = activitiesForExperiment({
+    const activities = experimentActivitiesForExperiment({
       data,
       experimentId: experiment.id,
     });
@@ -49,7 +53,7 @@ export function ExperimentsPage({ data }: { data: ProjectWorkspaceData }) {
         experimentId: experiment.id,
       }),
       latestActivity: activities.at(-1)?.body ?? "No activity yet",
-      hasConcern: hasConcern({ activities }),
+      hasConcern: hasConcernActivities({ activities }),
       evaluations,
       evaluationActivities,
     };
@@ -137,48 +141,14 @@ function experimentColumns({
   ];
 }
 
-function linkedHypothesisCount({
-  data,
-  experimentId,
-}: {
-  data: ProjectWorkspaceData;
-  experimentId: string;
-}): number {
-  return filter(
-    data.hypothesisExperimentLinks,
-    (link) => link.experiment_id === experimentId,
-  ).length;
-}
-
-function activitiesForExperiment({
-  data,
-  experimentId,
-}: {
-  data: ProjectWorkspaceData;
-  experimentId: string;
-}): ExperimentActivityRecord[] {
-  return filter(
-    data.experimentActivities,
-    (activity) => activity.experiment_id === experimentId,
-  );
-}
-
-function hasConcern({
-  activities,
-}: {
-  activities: ExperimentActivityRecord[];
-}): boolean {
-  return activities.some((activity) => activity.payload?.activity_type === "concern");
-}
-
 function statusTone({
   status,
-  hasConcern: rowHasConcern,
+  hasConcern,
 }: {
   status: ExperimentRecord["status"];
   hasConcern: boolean;
 }): DxBadgeTone {
-  if (rowHasConcern) {
+  if (hasConcern) {
     return "warning";
   }
 

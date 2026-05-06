@@ -21,6 +21,7 @@ import {
   evidenceRowTone,
   isConcernActivity,
   latestEvaluationActivity,
+  sourceExperimentForEvaluation,
 } from "../../../selectors/evaluations";
 import type { ProjectWorkspaceData } from "../types";
 
@@ -173,22 +174,6 @@ function latestEvidence({ row }: { row: EvaluationRow }) {
       <span className={mono}>{activityLabel({ activity: latestActivity })}</span>
       <span>{latestActivity.body}</span>
     </div>
-  );
-}
-
-function sourceExperimentForEvaluation({
-  data,
-  evaluation,
-}: {
-  data: ProjectWorkspaceData;
-  evaluation: EvaluationRecord;
-}): ExperimentRecord | undefined {
-  if (!evaluation.associated_experiment_id) {
-    return undefined;
-  }
-
-  return data.experiments.find(
-    (experiment) => experiment.id === evaluation.associated_experiment_id,
   );
 }
 

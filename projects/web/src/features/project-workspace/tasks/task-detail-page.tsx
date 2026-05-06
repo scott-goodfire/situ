@@ -1,7 +1,12 @@
 import type { TaskDependencyRecord, TaskEntityLinkRecord, TaskRecord } from "@situ/protocol";
 import { DxBadge, DxEmptyState, DxSection } from "@situ/web-ui";
 import { Link } from "@tanstack/react-router";
-import filter from "lodash/filter";
+import {
+  dependenciesBlockedByTask,
+  dependenciesBlockingTask,
+  entityLinksForTask,
+  taskActivitiesForTask,
+} from "../../../selectors/tasks";
 import * as s from "../../../styles.css";
 import { ActivityTimeline } from "../__shared__/activity-timeline";
 import type { ActivityItem, ProjectWorkspaceData } from "../types";
@@ -24,16 +29,20 @@ export function TaskDetailPage({
     );
   }
 
-  const blockedBy = filter(
-    data.taskDependencies,
-    (dep) => dep.task_id === taskId,
+  const blockedBy = dependenciesBlockingTask({ data, taskId });
+  const blocks = dependenciesBlockedByTask({ data, taskId });
+  const links = entityLinksForTask({ data, taskId });
+  const activities = taskActivitiesForTask({ data, taskId }).map(
+    (activity): ActivityItem => ({
+      id: `task-activity-${activity.id}`,
+      actor: activity.actor,
+      body: activity.body,
+      kind: activity.payload?.activity_type
+        ? String(activity.payload.activity_type)
+        : activity.kind,
+      createdAt: activity.created_at,
+    }),
   );
-  const blocks = filter(
-    data.taskDependencies,
-    (dep) => dep.blocked_by_task_id === taskId,
-  );
-  const links = filter(data.taskEntityLinks, (link) => link.task_id === taskId);
-  const activities = activitiesForTask({ data, taskId });
   const assignee = task.assignee_id
     ? data.agents.find((agent) => agent.id === task.assignee_id)
     : null;
@@ -137,25 +146,4 @@ function EntityLinkRow({ link }: { link: TaskEntityLinkRecord }) {
       <span className={s.recordId}>{link.entity_kind} · {link.entity_id}</span>
     </div>
   );
-}
-
-function activitiesForTask({
-  data,
-  taskId,
-}: {
-  data: ProjectWorkspaceData;
-  taskId: string;
-}): ActivityItem[] {
-  return filter(
-    data.taskActivities,
-    (activity) => activity.task_id === taskId,
-  ).map((activity) => ({
-    id: `task-activity-${activity.id}`,
-    actor: activity.actor,
-    body: activity.body,
-    kind: activity.payload?.activity_type
-      ? String(activity.payload.activity_type)
-      : activity.kind,
-    createdAt: activity.created_at,
-  }));
 }

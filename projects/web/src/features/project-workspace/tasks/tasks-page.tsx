@@ -1,11 +1,12 @@
 import type { TaskRecord } from "@situ/protocol";
 import { DxBadge, DxSection, DxTable, type DxBadgeTone, type DxTableColumn } from "@situ/web-ui";
 import { Link } from "@tanstack/react-router";
+import { tasksForProject } from "../../../selectors/tasks";
 import * as s from "../../../styles.css";
 import type { ProjectWorkspaceData } from "../types";
 
 export function TasksPage({ data }: { data: ProjectWorkspaceData }) {
-  const tasks = data.tasks.filter((task) => task.project_id === data.projectId);
+  const tasks = tasksForProject({ data });
   const columns = taskColumns({ projectId: data.projectId, agents: data.agents });
 
   return (

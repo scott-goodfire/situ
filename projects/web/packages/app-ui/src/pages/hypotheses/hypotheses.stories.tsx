@@ -24,7 +24,7 @@ type Story = StoryObj<typeof HypothesesView>;
 const HYPOTHESES: HypothesisRecord[] = [
   {
     id: "hyp_0001",
-    session_id: "session_0001",
+    project_id: "proj_0001",
     title: "Filtering low-confidence retrieval helps cancellation tickets",
     summary: "Drop weak snippets before tool calls so the agent cites fewer irrelevant policies.",
     status: "active",
@@ -33,7 +33,7 @@ const HYPOTHESES: HypothesisRecord[] = [
   },
   {
     id: "hyp_0002",
-    session_id: "session_0001",
+    project_id: "proj_0001",
     title: "Tool-use discipline reduces billing detours",
     summary: "Require account lookup before offering cancellation or refund guidance.",
     status: "open",
@@ -42,7 +42,7 @@ const HYPOTHESES: HypothesisRecord[] = [
   },
   {
     id: "hyp_0003",
-    session_id: "session_0001",
+    project_id: "proj_0001",
     title: "Prompt decomposition is saturated",
     summary: "Further prompt decomposition did not improve the billing slice.",
     status: "closed",

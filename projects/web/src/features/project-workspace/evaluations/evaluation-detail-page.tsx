@@ -14,14 +14,15 @@ import {
   type DxTableColumn,
 } from "@situ/web-ui";
 import { Link } from "@tanstack/react-router";
-import filter from "lodash/filter";
-import * as s from "../../../styles.css";
 import {
   activityLabel,
+  artifactsForEvaluation,
   evaluationActivitiesForEvaluation,
   isConcernActivity,
   latestEvaluationActivity,
+  sourceExperimentForEvaluation,
 } from "../../../selectors/evaluations";
+import * as s from "../../../styles.css";
 import { ActivityTimeline } from "../__shared__/activity-timeline";
 import type { ActivityItem, ProjectWorkspaceData } from "../types";
 
@@ -193,37 +194,6 @@ function EvaluationTranscript({
       activities={activityItemsForEvaluation({ activities: visibleActivities })}
       emptyLabel="No evaluation evidence yet"
     />
-  );
-}
-
-function sourceExperimentForEvaluation({
-  data,
-  evaluation,
-}: {
-  data: ProjectWorkspaceData;
-  evaluation: EvaluationRecord;
-}): ExperimentRecord | undefined {
-  if (!evaluation.associated_experiment_id) {
-    return undefined;
-  }
-
-  return data.experiments.find(
-    (experiment) => experiment.id === evaluation.associated_experiment_id,
-  );
-}
-
-function artifactsForEvaluation({
-  data,
-  evaluationId,
-}: {
-  data: ProjectWorkspaceData;
-  evaluationId: string;
-}): ArtifactRecord[] {
-  return filter(
-    data.artifacts,
-    (artifact) =>
-      artifact.associated_entity_kind === "evaluation" &&
-      artifact.associated_entity_id === evaluationId,
   );
 }
 

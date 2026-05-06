@@ -8,14 +8,16 @@ import {
   type DxTableColumn,
 } from "@situ/web-ui";
 import { Link } from "@tanstack/react-router";
-import filter from "lodash/filter";
-import * as s from "../../../styles.css";
-import { EvidenceSummary } from "../evidence/evidence-summary";
 import {
   evaluationActivitiesForEvaluations,
   evaluationsForExperiment,
 } from "../../../selectors/evaluations";
-import { experimentsForHypothesis } from "../../../selectors/hypotheses";
+import {
+  experimentsForHypothesis,
+  hypothesisActivitiesForHypothesis,
+} from "../../../selectors/hypotheses";
+import * as s from "../../../styles.css";
+import { EvidenceSummary } from "../evidence/evidence-summary";
 import { ActivityTimeline } from "../__shared__/activity-timeline";
 import type { ActivityItem, ProjectWorkspaceData } from "../types";
 
@@ -45,10 +47,20 @@ export function HypothesisDetailPage({
     data,
     hypothesisId,
   });
-  const activities = activitiesForHypothesis({
+  const activities = hypothesisActivitiesForHypothesis({
     data,
     hypothesisId,
-  });
+  }).map(
+    (activity): ActivityItem => ({
+      id: `hypothesis-activity-${activity.id}`,
+      actor: activity.actor,
+      body: activity.body,
+      kind: activity.payload?.activity_type
+        ? String(activity.payload.activity_type)
+        : activity.kind,
+      createdAt: activity.created_at,
+    }),
+  );
 
   return (
     <>
@@ -168,25 +180,6 @@ function linkedExperimentColumns({
       },
     },
   ];
-}
-
-function activitiesForHypothesis({
-  data,
-  hypothesisId,
-}: {
-  data: ProjectWorkspaceData;
-  hypothesisId: string;
-}): ActivityItem[] {
-  return filter(
-    data.hypothesisActivities,
-    (activity) => activity.hypothesis_id === hypothesisId,
-  ).map((activity) => ({
-    id: `hypothesis-activity-${activity.id}`,
-    actor: activity.actor,
-    body: activity.body,
-    kind: activity.payload?.activity_type ? String(activity.payload.activity_type) : activity.kind,
-    createdAt: activity.created_at,
-  }));
 }
 
 function statusTone({

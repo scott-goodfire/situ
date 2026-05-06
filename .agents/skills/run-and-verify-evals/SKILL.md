@@ -10,6 +10,10 @@ description: Use when running Situ eval suites, checking eval pass/fail output, 
 Use this skill for Situ eval execution and verification. Evals make real LLM
 calls and should be treated separately from deterministic pytest checks.
 
+Logfire is the preferred way to observe realistic evals while they are
+running. Use local output for the final pass/fail summary, but watch Logfire
+live for tool calls, traces, errors, and whether the agent is making progress.
+
 Do not print secrets. If you need to inspect env, check only whether required
 variables are present.
 
@@ -36,7 +40,21 @@ git status --short
 Eval discovery and `--list` should work without credentials. Executing cases
 should fail clearly if credentials are missing.
 
-## Run
+## Run Strategy
+
+Realistic evals can take a while because they make live model calls and may run
+multiple agent passes. During iteration, run the smallest targeted eval that
+can answer the question:
+
+- One case with `--case` when debugging behavior.
+- One eval group with `--concurrency 1` when stabilizing a suite.
+- Deterministic pytest/syntax checks before rerunning expensive live evals.
+
+Use broader, parallel eval runs for regression verification after the targeted
+case is stable. Parallel runs are useful when looking for regressions across a
+suite, but they interleave traces and are noisier for first-pass debugging.
+
+## Commands
 
 Run all evals:
 
@@ -68,8 +86,41 @@ Run one case:
 ./commands/evals.sh evals/suites/tools/research_tools/eval_group.py --case get_session --concurrency 1
 ```
 
-Use low concurrency for first-pass debugging. Increase only after the suite is
-stable.
+Run a full group in parallel after the targeted checks are stable:
+
+```bash
+./commands/evals.sh evals/suites/agents/multi_agent_loop/eval_group.py --concurrency 4
+```
+
+If a turn is interrupted, check for leftover eval runners before starting a new
+run so duplicate live model calls do not continue in the background.
+
+```bash
+ps -eo pid,ppid,pgid,stat,etime,command | rg 'commands/evals.sh|evals.runner|eval_group.py' | rg -v rg
+```
+
+## Live Logfire Observation
+
+Use Logfire during long evals instead of waiting blind for local output. This
+is especially useful for multi-agent loops where the local runner may stay
+quiet until the case finishes.
+
+For detailed auth, token, and query workflows, use:
+
+```text
+.agents/skills/use-logfire/SKILL.md
+```
+
+Good live checks:
+
+- Recent `running tool` spans to see what the agent is doing now.
+- Recent `evaluate {name}` spans to identify the experiment/run.
+- Recent error/exception/failed messages across `situ-evals` and
+  `situ-harness`.
+- Root eval span metadata for case count, averages, and experiment identity.
+
+Prefer compact queries while watching live. Avoid dumping full prompt or
+attribute payloads unless debugging a specific failure.
 
 ## Local Verification
 
@@ -87,7 +138,8 @@ to verify Logfire.
 
 ## Logfire Verification
 
-For detailed auth, token, and query workflows, use:
+Post-run Logfire verification is still required when the user asks whether a
+run reached Logfire. For detailed auth, token, and query workflows, use:
 
 ```text
 .agents/skills/use-logfire/SKILL.md

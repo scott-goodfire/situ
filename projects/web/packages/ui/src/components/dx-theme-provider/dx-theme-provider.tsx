@@ -1,5 +1,5 @@
 import { useEffect, type ReactNode } from "react";
-import type { DxThemeMode } from "./dx-theme-toggle";
+import type { DxThemeMode } from "../dx-theme-toggle/dx-theme-toggle";
 
 export function DxThemeProvider({
   mode,

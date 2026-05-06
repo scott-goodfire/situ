@@ -1,6 +1,7 @@
 import type { Decorator, Preview } from "@storybook/react-vite";
 import { DxThemeProvider, type DxThemeMode } from "../src";
 import "@situ/web-design-tokens/styles.css";
+import "../src/foundation.css";
 
 const withTheme: Decorator = (Story, context) => {
   const themeGlobal = context.globals.theme;

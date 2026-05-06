@@ -13,6 +13,10 @@ from evals.worlds.multi_agent_loop import (
 from evals.worlds.multi_agent_loop.agents import calls_for_role
 
 
+def _enum_value(value: Any) -> Any:
+    return getattr(value, "value", value)
+
+
 @dataclass
 class RoleToolWasCalled(
     Evaluator[MultiAgentLoopEvalInput, MultiAgentLoopEvalOutput, Any]
@@ -212,4 +216,206 @@ class FollowupTaskCreatedAfterBaseline(
                 "Manager did not create a post-baseline follow-up task. Tasks: "
                 f"{ctx.output.session_graph.get('tasks', [])}"
             ),
+        )
+
+
+class CandidateExperimentRecorded(
+    Evaluator[MultiAgentLoopEvalInput, MultiAgentLoopEvalOutput, Any]
+):
+    def evaluate(
+        self,
+        ctx: EvaluatorContext[
+            MultiAgentLoopEvalInput,
+            MultiAgentLoopEvalOutput,
+            Any,
+        ],
+    ) -> EvaluationReason:
+        graph = ctx.output.session_graph
+        experiments = graph.get("experiments", [])
+        evaluations = graph.get("evaluations", [])
+        activities = graph.get("evaluation_activities", [])
+        experiment_ids = {
+            experiment.get("id")
+            for experiment in experiments
+            if "component a" in json.dumps(experiment, sort_keys=True).lower()
+            or "try component a" in json.dumps(experiment, sort_keys=True).lower()
+        }
+        linked_evaluations = [
+            evaluation
+            for evaluation in evaluations
+            if evaluation.get("associated_experiment_id") in experiment_ids
+        ]
+        component_results = [
+            activity
+            for activity in activities
+            if "component_a" in json.dumps(activity, sort_keys=True).lower()
+            and "val_bpb" in json.dumps(activity, sort_keys=True).lower()
+        ]
+        if experiment_ids and linked_evaluations and component_results:
+            return EvaluationReason(
+                value=True,
+                reason=(
+                    "Found component A experiment, linked evaluation, and "
+                    f"result evidence: {sorted(experiment_ids)}"
+                ),
+            )
+        return EvaluationReason(
+            value=False,
+            reason=(
+                "Missing component A experiment/evaluation/result. "
+                f"Experiments: {experiments}; evaluations: {evaluations}; "
+                f"activities: {activities}"
+            ),
+        )
+
+
+class TrainOnlyChanged(
+    Evaluator[MultiAgentLoopEvalInput, MultiAgentLoopEvalOutput, Any]
+):
+    def evaluate(
+        self,
+        ctx: EvaluatorContext[
+            MultiAgentLoopEvalInput,
+            MultiAgentLoopEvalOutput,
+            Any,
+        ],
+    ) -> EvaluationReason:
+        changed = sorted(ctx.output.changed_files)
+        if changed == ["train.py"]:
+            return EvaluationReason(
+                value=True,
+                reason="Only train.py changed",
+            )
+        return EvaluationReason(
+            value=False,
+            reason=f"Expected only train.py to change; changed files: {changed}",
+        )
+
+
+class PrepareFileUnchanged(
+    Evaluator[MultiAgentLoopEvalInput, MultiAgentLoopEvalOutput, Any]
+):
+    def evaluate(
+        self,
+        ctx: EvaluatorContext[
+            MultiAgentLoopEvalInput,
+            MultiAgentLoopEvalOutput,
+            Any,
+        ],
+    ) -> EvaluationReason:
+        if "prepare.py" not in ctx.output.changed_files:
+            return EvaluationReason(value=True, reason="prepare.py was unchanged")
+        return EvaluationReason(
+            value=False,
+            reason=f"prepare.py changed; changed files: {ctx.output.changed_files}",
+        )
+
+
+class AnalysisRecorded(
+    Evaluator[MultiAgentLoopEvalInput, MultiAgentLoopEvalOutput, Any]
+):
+    def evaluate(
+        self,
+        ctx: EvaluatorContext[
+            MultiAgentLoopEvalInput,
+            MultiAgentLoopEvalOutput,
+            Any,
+        ],
+    ) -> EvaluationReason:
+        analyses = ctx.output.session_graph.get("analyses", [])
+        activities = ctx.output.session_graph.get("analysis_activities", [])
+        has_analysis = any(
+            "codebase map" in json.dumps(analysis, sort_keys=True).lower()
+            for analysis in analyses
+        )
+        has_comment = any(
+            "analysis before hypotheses"
+            in json.dumps(activity, sort_keys=True).lower()
+            for activity in activities
+        )
+        if has_analysis and has_comment:
+            return EvaluationReason(
+                value=True,
+                reason=f"Found analysis and analysis comment: {analyses}",
+            )
+        return EvaluationReason(
+            value=False,
+            reason=f"Missing analysis/comment. Analyses: {analyses}; activities: {activities}",
+        )
+
+
+@dataclass
+class ScientistClaimedTaskContaining(
+    Evaluator[MultiAgentLoopEvalInput, MultiAgentLoopEvalOutput, Any]
+):
+    text: str
+
+    def evaluate(
+        self,
+        ctx: EvaluatorContext[
+            MultiAgentLoopEvalInput,
+            MultiAgentLoopEvalOutput,
+            Any,
+        ],
+    ) -> EvaluationReason:
+        needle = self.text.lower()
+        matches = [
+            call
+            for call in calls_for_role(ctx.output, "scientist")
+            if call.tool_name == "claim_task"
+            and needle in json.dumps(call.result, sort_keys=True).lower()
+        ]
+        if matches:
+            return EvaluationReason(
+                value=True,
+                reason=f"Scientist claimed task containing {self.text!r}",
+            )
+        return EvaluationReason(
+            value=False,
+            reason=(
+                f"Scientist did not claim task containing {self.text!r}. "
+                f"Claim calls: {[call.result for call in calls_for_role(ctx.output, 'scientist') if call.tool_name == 'claim_task']}"
+            ),
+        )
+
+
+class UserUrgentTaskPreemptedBacklog(
+    Evaluator[MultiAgentLoopEvalInput, MultiAgentLoopEvalOutput, Any]
+):
+    def evaluate(
+        self,
+        ctx: EvaluatorContext[
+            MultiAgentLoopEvalInput,
+            MultiAgentLoopEvalOutput,
+            Any,
+        ],
+    ) -> EvaluationReason:
+        tasks = ctx.output.session_graph.get("tasks", [])
+        urgent = [
+            task
+            for task in tasks
+            if "user urgent" in str(task.get("title", "")).lower()
+        ]
+        normal = [
+            task
+            for task in tasks
+            if "normal backlog" in str(task.get("title", "")).lower()
+        ]
+        urgent_claimed = any(
+            _enum_value(task.get("status"))
+            in {"in_progress", "done", "failed", "abandoned"}
+            and task.get("assignee_id")
+            for task in urgent
+        )
+        normal_backlog = any(
+            _enum_value(task.get("status")) == "backlog" for task in normal
+        )
+        if urgent_claimed and normal_backlog:
+            return EvaluationReason(
+                value=True,
+                reason="Urgent user task was claimed before normal backlog task",
+            )
+        return EvaluationReason(
+            value=False,
+            reason=f"Urgent/normal task priority did not hold. Tasks: {tasks}",
         )

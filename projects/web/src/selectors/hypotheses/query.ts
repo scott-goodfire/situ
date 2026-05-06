@@ -1,4 +1,7 @@
-import type { HypothesisRecord } from "@situ/protocol";
+import type {
+  HypothesisActivityRecord,
+  HypothesisRecord,
+} from "@situ/protocol";
 import filter from "lodash/filter";
 import orderBy from "lodash/orderBy";
 import type { ProjectWorkspaceData } from "../../features/project-workspace/types";
@@ -17,6 +20,19 @@ export function overviewHypotheses({
     hypotheses,
     [(hypothesis) => statusRank({ status: hypothesis.status }), (hypothesis) => hypothesis.updated_at],
     ["asc", "desc"],
+  );
+}
+
+export function hypothesisActivitiesForHypothesis({
+  data,
+  hypothesisId,
+}: {
+  data: ProjectWorkspaceData;
+  hypothesisId: string;
+}): HypothesisActivityRecord[] {
+  return filter(
+    data.hypothesisActivities,
+    (activity) => activity.hypothesis_id === hypothesisId,
   );
 }
 

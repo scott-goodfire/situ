@@ -10,6 +10,11 @@ description: "Use when working with Pydantic Logfire from this repo: checking CL
 Use this skill for Logfire auth, project selection, read-token creation, trace
 queries, and UI verification.
 
+For realistic Situ evals and harness runs, Logfire should be treated as the
+ideal live observability surface. Use it while the process is still running to
+watch tool calls, model turns, trace progress, and errors; do not wait only for
+the local runner summary when a long eval is quiet.
+
 Never print token values. Check only whether secrets are present, and use temp
 files or in-memory variables for short-lived read tokens.
 
@@ -134,6 +139,52 @@ with LogfireQueryClient(match.group(1)) as client:
     print(client.info())
 PY
 ```
+
+## Observe Live Evals
+
+When an eval is running, query compact recent records instead of dumping full
+attributes. Start with tool activity and errors:
+
+```sql
+SELECT trace_id, start_timestamp, span_name, message, attributes
+FROM records
+WHERE service_name = 'situ-evals'
+  AND start_timestamp >= now() - interval '10 minutes'
+  AND span_name = 'running tool'
+ORDER BY start_timestamp DESC
+LIMIT 20
+```
+
+```sql
+SELECT trace_id, start_timestamp, service_name, span_name, message, attributes
+FROM records
+WHERE service_name IN ('situ-evals', 'situ-harness')
+  AND start_timestamp >= now() - interval '10 minutes'
+  AND (
+    lower(message) LIKE '%error%'
+    OR lower(message) LIKE '%exception%'
+    OR lower(message) LIKE '%failed%'
+  )
+ORDER BY start_timestamp DESC
+LIMIT 20
+```
+
+Also check root eval spans to identify the active experiment:
+
+```sql
+SELECT trace_id, start_timestamp, span_name, message, attributes
+FROM records
+WHERE service_name = 'situ-evals'
+  AND start_timestamp >= now() - interval '3 hours'
+  AND span_name LIKE 'evaluate %'
+ORDER BY start_timestamp DESC
+LIMIT 10
+```
+
+When reporting live observation, include non-secret details: project queried,
+trace IDs, latest meaningful tool calls, whether errors were found, and whether
+the local process was still running. Do not claim final pass/fail until the
+local eval runner exits.
 
 ## Verify Eval Runs
 

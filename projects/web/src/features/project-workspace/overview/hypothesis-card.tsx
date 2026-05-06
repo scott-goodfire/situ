@@ -13,6 +13,7 @@ import {
   evaluationsForExperiments,
   latestEvaluationActivity,
 } from "../../../selectors/evaluations";
+import { actorsForHypothesis } from "../../../selectors/hypotheses";
 import { AgentPresence } from "../agents/presence/agent-presence";
 import type { ProjectWorkspaceData } from "../types";
 
@@ -36,7 +37,7 @@ export function HypothesisCard({
   const currentExperiment = currentExperimentFor({
     experiments,
   });
-  const agents = agentsForHypothesis({
+  const agents = actorsForHypothesis({
     data,
     hypothesis,
     experiments,
@@ -188,42 +189,6 @@ function currentExperimentFor({
     experiments.find((experiment) => experiment.status === "active") ??
     experiments.at(-1)
   );
-}
-
-function agentsForHypothesis({
-  data,
-  hypothesis,
-  experiments,
-  evaluations,
-}: {
-  data: ProjectWorkspaceData;
-  hypothesis: HypothesisRecord;
-  experiments: ExperimentRecord[];
-  evaluations: ReturnType<typeof evaluationsForExperiments>;
-}): string[] {
-  const experimentIds = new Set(experiments.map((experiment) => experiment.id));
-  const evaluationIds = new Set(evaluations.map((evaluation) => evaluation.id));
-  const agents = new Set<string>();
-
-  for (const activity of data.hypothesisActivities) {
-    if (activity.hypothesis_id === hypothesis.id) {
-      agents.add(activity.actor);
-    }
-  }
-
-  for (const activity of data.experimentActivities) {
-    if (experimentIds.has(activity.experiment_id)) {
-      agents.add(activity.actor);
-    }
-  }
-
-  for (const activity of data.evaluationActivities) {
-    if (evaluationIds.has(activity.evaluation_id)) {
-      agents.add(activity.actor);
-    }
-  }
-
-  return Array.from(agents).sort((left, right) => left.localeCompare(right));
 }
 
 function statusTone({

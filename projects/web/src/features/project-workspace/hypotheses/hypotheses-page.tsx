@@ -8,14 +8,16 @@ import {
   type DxTableColumn,
 } from "@situ/web-ui";
 import { Link } from "@tanstack/react-router";
-import filter from "lodash/filter";
-import * as s from "../../../styles.css";
-import { EvidenceSummary } from "../evidence/evidence-summary";
 import {
   evaluationActivitiesForEvaluations,
   evaluationsForExperiments,
 } from "../../../selectors/evaluations";
-import { experimentsForHypothesis } from "../../../selectors/hypotheses";
+import {
+  experimentsForHypothesis,
+  hypothesisActivitiesForHypothesis,
+} from "../../../selectors/hypotheses";
+import * as s from "../../../styles.css";
+import { EvidenceSummary } from "../evidence/evidence-summary";
 import type { ProjectWorkspaceData } from "../types";
 
 type HypothesisRow = {
@@ -142,10 +144,10 @@ function latestHypothesisActivity({
   data: ProjectWorkspaceData;
   hypothesisId: string;
 }): string {
-  const activities = filter(
-    data.hypothesisActivities,
-    (activity) => activity.hypothesis_id === hypothesisId,
-  );
+  const activities = hypothesisActivitiesForHypothesis({
+    data,
+    hypothesisId,
+  });
 
   return activities.at(-1)?.body ?? "No activity yet";
 }

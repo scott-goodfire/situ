@@ -236,10 +236,13 @@ def build_session_run_prompt(
         Recent experiment activity
         {recent_experiment_activity}
 
-        Continue the research from the live session state. If an active task is
-        provided, use its content as the focus for this pass and do not claim a
-        different task. If no active task is provided, inspect the task board
-        and claim one runnable Scientist task before doing focused work.
+        Continue the research from the live session state. A Scientist work
+        pass handles at most one task. If an active task is provided, use its
+        content as the focus for this pass and do not claim a different task.
+        If no active task is provided, inspect the task board and claim one
+        runnable Scientist task before doing focused work. After that task is
+        done, failed, or clearly commented as blocked, stop instead of claiming
+        more backlog work in the same pass.
 
         Check the session first, then inspect workspace state. Create or update
         hypotheses only when they make the board clearer. If baseline

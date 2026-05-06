@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useLocalStorage } from "../../use-local-storage";
-import type { DxThemeMode } from "./dx-theme-toggle";
+import type { DxThemeMode } from "../dx-theme-toggle/dx-theme-toggle";
 
 const STORAGE_KEY = "dx-theme";
 

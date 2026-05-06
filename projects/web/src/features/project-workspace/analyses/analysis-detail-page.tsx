@@ -1,5 +1,5 @@
 import { DxBadge, DxEmptyState, DxSection } from "@situ/web-ui";
-import filter from "lodash/filter";
+import { analysisActivitiesForAnalysis } from "../../../selectors/analyses";
 import * as s from "../../../styles.css";
 import { ActivityTimeline } from "../__shared__/activity-timeline";
 import type { ActivityItem, ProjectWorkspaceData } from "../types";
@@ -22,7 +22,17 @@ export function AnalysisDetailPage({
     );
   }
 
-  const activities = activitiesForAnalysis({ data, analysisId });
+  const activities = analysisActivitiesForAnalysis({ data, analysisId }).map(
+    (activity): ActivityItem => ({
+      id: `analysis-activity-${activity.id}`,
+      actor: activity.actor,
+      body: activity.body,
+      kind: activity.payload?.activity_type
+        ? String(activity.payload.activity_type)
+        : activity.kind,
+      createdAt: activity.created_at,
+    }),
+  );
 
   return (
     <>
@@ -52,25 +62,4 @@ export function AnalysisDetailPage({
       />
     </>
   );
-}
-
-function activitiesForAnalysis({
-  data,
-  analysisId,
-}: {
-  data: ProjectWorkspaceData;
-  analysisId: string;
-}): ActivityItem[] {
-  return filter(
-    data.analysisActivities,
-    (activity) => activity.analysis_id === analysisId,
-  ).map((activity) => ({
-    id: `analysis-activity-${activity.id}`,
-    actor: activity.actor,
-    body: activity.body,
-    kind: activity.payload?.activity_type
-      ? String(activity.payload.activity_type)
-      : activity.kind,
-    createdAt: activity.created_at,
-  }));
 }
