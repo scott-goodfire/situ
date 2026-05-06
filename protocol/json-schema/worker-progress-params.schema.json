@@ -1,5 +1,4 @@
 {
-  "additionalProperties": false,
   "properties": {
     "session_id": {
       "title": "Session Id",

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 
 from ...records import (
     AgentRecord,
@@ -28,8 +28,6 @@ from ...records import (
 
 
 class CurrentStateSchema(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
     workspace: WorkspaceRecord | None
     projects: list[ProjectRecord]
     sessions: list[SessionRecord]

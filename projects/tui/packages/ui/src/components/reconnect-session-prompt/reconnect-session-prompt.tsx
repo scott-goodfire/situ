@@ -1,11 +1,10 @@
-import { Text } from "ink";
 import type { ProjectRecord, SessionRecord } from "@situ/protocol";
-import { AppFrame } from "../app-frame/app-frame.js";
 import {
-  ChoicePrompt,
   type ChoicePromptOption,
   type ChoicePromptSelection,
 } from "../choice-prompt/choice-prompt.js";
+import { FramedChoicePrompt } from "../framed-choice-prompt/framed-choice-prompt.js";
+import type { TerminalSize } from "../fullscreen-dashboard/use-terminal-size.js";
 
 const reconnectOptions = [
   {
@@ -28,6 +27,7 @@ export function ReconnectSessionPrompt({
   maxExperiments,
   onReconnect,
   onQuit,
+  terminalSize,
 }: {
   workspace: string;
   session: SessionRecord;
@@ -36,32 +36,34 @@ export function ReconnectSessionPrompt({
   maxExperiments: number;
   onReconnect: () => void;
   onQuit: () => void;
+  terminalSize?: TerminalSize;
 }) {
   return (
-    <AppFrame
+    <FramedChoicePrompt
       workspace={workspace}
-      statusLine="Active session found"
-      footer={<Text dimColor>Enter selects. Escape quits.</Text>}
-    >
-      <ChoicePrompt
-        title="Reconnect to active session?"
-        message={reconnectMessage({
-          session,
-          project,
-          experimentCount,
-          maxExperiments,
-        })}
-        options={reconnectOptions}
-        onCancel={onQuit}
-        onSelect={({ option }) => {
-          handleReconnectSelection({
-            option,
-            onReconnect,
-            onQuit,
-          });
-        }}
-      />
-    </AppFrame>
+      frameStatus={`${session.id} active`}
+      sectionLabel="reconnect"
+      statusLine="active session · Reconnect to continue watching this run"
+      subtitle={workspace}
+      title="Reconnect to active session?"
+      message={reconnectMessage({
+        session,
+        project,
+        experimentCount,
+        maxExperiments,
+      })}
+      options={reconnectOptions}
+      footerLabel="Enter selects · Esc quits"
+      onCancel={onQuit}
+      onSelect={({ option }) => {
+        handleReconnectSelection({
+          option,
+          onReconnect,
+          onQuit,
+        });
+      }}
+      terminalSize={terminalSize}
+    />
   );
 }
 
@@ -78,7 +80,11 @@ function reconnectMessage({
 }): string {
   const objectiveLabel = project?.objective ?? "(no objective)";
 
-  return `${session.id} is active for ${objectiveLabel}. Experiments ${experimentCount}/${maxExperiments}.`;
+  return [
+    `Session: ${session.id}`,
+    `Objective: ${objectiveLabel}`,
+    `Experiments: ${experimentCount}/${maxExperiments}`,
+  ].join("\n");
 }
 
 function handleReconnectSelection({

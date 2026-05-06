@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import ConfigDict
-
 from evals.harness.models import EvalModel
 
 ResearchSessionSeed = Literal[
@@ -22,16 +20,12 @@ ResearchSessionSeed = Literal[
 
 
 class ResearchToolEvalInput(EvalModel):
-    model_config = ConfigDict(extra="forbid")
-
     case_id: str
     seed: ResearchSessionSeed
     prompt: str
 
 
 class ResearchAgentEvalInput(EvalModel):
-    model_config = ConfigDict(extra="forbid")
-
     case_id: str
     seed: ResearchSessionSeed
     objective: str = "Improve validation score without worsening latency."

@@ -19,7 +19,8 @@ HYPOTHESIS_ID = "hyp_eval_component_a"
 EXPERIMENT_ID = "exp_eval_component_a"
 ARTIFACT_ID = "artifact_eval_raw_output"
 ANALYSIS_ID = "analysis_eval_codebase_map"
-BASELINE_EXPERIMENT_ID = "exp_eval_baseline"
+BASELINE_ID = "baseline_eval_default"
+BASELINE_EVALUATION_ID = "eval_eval_baseline"
 COMPONENT_A_EXPERIMENT_ID = "exp_eval_component_a"
 COMPONENT_C_EXPERIMENT_ID = "exp_eval_component_c"
 
@@ -99,8 +100,10 @@ class ResearchSessionWorld:
                 item.model_dump() for item in graph.analysis_activities
             ],
             "hypotheses": [item.model_dump() for item in graph.hypotheses],
+            "baselines": [item.model_dump() for item in graph.baselines],
             "experiments": [item.model_dump() for item in graph.experiments],
             "evaluations": [item.model_dump() for item in graph.evaluations],
+            "measurements": [item.model_dump() for item in graph.measurements],
             "hypothesis_experiment_links": [
                 item.model_dump() for item in graph.hypothesis_experiment_links
             ],
@@ -167,17 +170,10 @@ def _seed(repos: Repositories, seed: ResearchSessionSeed) -> None:
         )
 
     if seed in {"with_baseline_result", "with_promising_results"}:
-        _create_experiment_with_result(
+        _create_baseline_measurement(
             repos,
-            experiment_id=BASELINE_EXPERIMENT_ID,
-            title="Record baseline",
-            summary="Baseline validation run.",
             result_body="Baseline completed: score 0.710, latency_ms 120, tests_passed true.",
-            signals={"score": 0.710, "latency_ms": 120, "tests_passed": True},
-        )
-        repos.hypothesis_experiment_links.create(
-            hypothesis_id=HYPOTHESIS_ID,
-            experiment_id=BASELINE_EXPERIMENT_ID,
+            metrics={"score": 0.710, "latency_ms": 120, "tests_passed": True},
         )
 
     if seed == "with_promising_results":
@@ -307,6 +303,7 @@ def _create_experiment_with_result(
         actor="worker",
         body=result_body,
         payload={
+            "metrics": _metric_values(signals),
             "signals": [
                 {"key": key, "value": value}
                 for key, value in signals.items()
@@ -321,6 +318,7 @@ def _create_experiment_with_result(
         kind="result",
         body=result_body,
         payload={
+            "metrics": _metric_values(signals),
             "signals": [
                 {"key": key, "value": value}
                 for key, value in signals.items()
@@ -342,6 +340,58 @@ def _create_experiment_with_result(
             "raw": {"shape": "standard"},
         },
     )
+
+
+def _create_baseline_measurement(
+    repos: Repositories,
+    *,
+    result_body: str,
+    metrics: dict[str, int | float | str | bool | None],
+) -> None:
+    baseline = repos.baselines.create(
+        baseline_id=BASELINE_ID,
+        project_id=PROJECT_ID,
+        created_in_session_id=SESSION_ID,
+        title="Default baseline",
+        summary="Reference validation run before candidate variants.",
+        status="closed",
+    )
+    repos.evaluations.create(
+        evaluation_id=BASELINE_EVALUATION_ID,
+        project_id=PROJECT_ID,
+        created_in_session_id=SESSION_ID,
+        title="Baseline evaluation",
+        summary="Measurement evidence for the default baseline.",
+        associated_baseline_id=baseline.id,
+        status="closed",
+    )
+    repos.measurements.add(
+        evaluation_id=BASELINE_EVALUATION_ID,
+        created_in_session_id=SESSION_ID,
+        actor="worker",
+        body=result_body,
+        payload={
+            "metrics": _metric_values(metrics),
+            "raw": {"shape": "standard"},
+        },
+    )
+    repos.evaluation_activities.add(
+        evaluation_id=BASELINE_EVALUATION_ID,
+        created_in_session_id=SESSION_ID,
+        actor="worker",
+        kind="result",
+        body=result_body,
+        payload={
+            "metrics": _metric_values(metrics),
+            "raw": {"shape": "standard"},
+        },
+    )
+
+
+def _metric_values(
+    signals: dict[str, int | float | str | bool | None],
+) -> dict[str, int | float | str | bool]:
+    return {key: value for key, value in signals.items() if value is not None}
 
 
 def _seed_dirty_workspace(repo_path: Path) -> None:

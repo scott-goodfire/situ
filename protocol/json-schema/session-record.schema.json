@@ -9,7 +9,6 @@
       "type": "string"
     }
   },
-  "additionalProperties": false,
   "properties": {
     "id": {
       "title": "Id",

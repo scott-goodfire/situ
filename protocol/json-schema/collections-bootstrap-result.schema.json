@@ -9,7 +9,6 @@
       "type": "string"
     },
     "AgentRecord": {
-      "additionalProperties": false,
       "properties": {
         "id": {
           "title": "Id",
@@ -91,7 +90,6 @@
       "type": "string"
     },
     "AnalysisActivityRecord": {
-      "additionalProperties": false,
       "properties": {
         "id": {
           "title": "Id",
@@ -146,7 +144,6 @@
       "type": "object"
     },
     "AnalysisRecord": {
-      "additionalProperties": false,
       "properties": {
         "id": {
           "title": "Id",
@@ -230,7 +227,6 @@
       "type": "object"
     },
     "ArtifactRecord": {
-      "additionalProperties": false,
       "properties": {
         "id": {
           "title": "Id",
@@ -315,7 +311,6 @@
       "type": "object"
     },
     "BaselineRecord": {
-      "additionalProperties": false,
       "properties": {
         "id": {
           "title": "Id",
@@ -377,7 +372,6 @@
       "type": "string"
     },
     "EvaluationActivityRecord": {
-      "additionalProperties": false,
       "properties": {
         "id": {
           "title": "Id",
@@ -432,7 +426,6 @@
       "type": "object"
     },
     "EvaluationRecord": {
-      "additionalProperties": false,
       "properties": {
         "id": {
           "title": "Id",
@@ -511,7 +504,6 @@
       "type": "object"
     },
     "EventRecord": {
-      "additionalProperties": false,
       "properties": {
         "id": {
           "title": "Id",
@@ -576,7 +568,6 @@
       "type": "string"
     },
     "ExperimentActivityRecord": {
-      "additionalProperties": false,
       "properties": {
         "id": {
           "title": "Id",
@@ -631,7 +622,6 @@
       "type": "object"
     },
     "ExperimentRecord": {
-      "additionalProperties": false,
       "properties": {
         "id": {
           "title": "Id",
@@ -693,7 +683,6 @@
       "type": "string"
     },
     "HypothesisActivityRecord": {
-      "additionalProperties": false,
       "properties": {
         "id": {
           "title": "Id",
@@ -748,7 +737,6 @@
       "type": "object"
     },
     "HypothesisExperimentLinkRecord": {
-      "additionalProperties": false,
       "properties": {
         "hypothesis_id": {
           "title": "Hypothesis Id",
@@ -772,7 +760,6 @@
       "type": "object"
     },
     "HypothesisRecord": {
-      "additionalProperties": false,
       "properties": {
         "id": {
           "title": "Id",
@@ -960,7 +947,6 @@
       "type": "object"
     },
     "MeasurementRecord": {
-      "additionalProperties": false,
       "properties": {
         "id": {
           "title": "Id",
@@ -1009,7 +995,6 @@
       "type": "object"
     },
     "MetricValue": {
-      "additionalProperties": false,
       "properties": {
         "value": {
           "anyOf": [
@@ -1071,7 +1056,6 @@
       "type": "object"
     },
     "ProjectRecord": {
-      "additionalProperties": false,
       "properties": {
         "id": {
           "title": "Id",
@@ -1127,7 +1111,6 @@
       "type": "string"
     },
     "SessionRecord": {
-      "additionalProperties": false,
       "properties": {
         "id": {
           "title": "Id",
@@ -1187,7 +1170,6 @@
       "type": "string"
     },
     "TaskActivityRecord": {
-      "additionalProperties": false,
       "properties": {
         "id": {
           "title": "Id",
@@ -1259,7 +1241,6 @@
       "type": "object"
     },
     "TaskDependencyRecord": {
-      "additionalProperties": false,
       "properties": {
         "project_id": {
           "title": "Project Id",
@@ -1307,7 +1288,6 @@
       "type": "string"
     },
     "TaskEntityLinkRecord": {
-      "additionalProperties": false,
       "properties": {
         "project_id": {
           "title": "Project Id",
@@ -1367,7 +1347,6 @@
       "type": "string"
     },
     "TaskRecord": {
-      "additionalProperties": false,
       "properties": {
         "id": {
           "title": "Id",
@@ -1581,7 +1560,6 @@
       "type": "string"
     },
     "WorkspaceRecord": {
-      "additionalProperties": false,
       "properties": {
         "id": {
           "title": "Id",
@@ -1610,7 +1588,6 @@
       "type": "object"
     }
   },
-  "additionalProperties": false,
   "properties": {
     "cursor": {
       "title": "Cursor",

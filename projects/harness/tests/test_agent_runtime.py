@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 from pydantic_ai.durable_exec.dbos import DBOSAgent
 
+from situ.harness.config import DEFAULTS
 from situ.harness.agent_runtime import MANAGER_AGENT_NAME, AgentRuntime
 from situ.harness.agents.research.agent import RESEARCH_AGENT_NAME
 
@@ -17,9 +18,15 @@ def test_agent_runtime_wraps_research_agent_with_dbos_agent(
 
     runtime = AgentRuntime(tmp_path)
 
+    assert runtime.model_name == DEFAULTS.agent_model
     assert runtime.agent.name == RESEARCH_AGENT_NAME
+    assert runtime.agent.model_settings == {
+        "thinking": "low",
+        "openai_reasoning_effort": "low",
+    }
     assert isinstance(runtime.dbos_agent, DBOSAgent)
     assert runtime.agent.toolsets
     assert runtime.manager_agent.name == MANAGER_AGENT_NAME
+    assert runtime.manager_agent.model_settings == runtime.agent.model_settings
     assert isinstance(runtime.dbos_manager_agent, DBOSAgent)
     assert runtime.manager_agent.toolsets

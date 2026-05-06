@@ -134,7 +134,6 @@
       "type": "object"
     },
     "MetricValue": {
-      "additionalProperties": false,
       "properties": {
         "value": {
           "anyOf": [
@@ -196,7 +195,6 @@
       "type": "object"
     }
   },
-  "additionalProperties": false,
   "properties": {
     "id": {
       "title": "Id",

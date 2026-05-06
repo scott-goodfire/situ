@@ -1,5 +1,4 @@
 {
-  "additionalProperties": false,
   "properties": {
     "project_id": {
       "title": "Project Id",

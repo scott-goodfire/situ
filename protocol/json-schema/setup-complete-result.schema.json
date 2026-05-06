@@ -1,7 +1,6 @@
 {
   "$defs": {
     "WorkspaceRecord": {
-      "additionalProperties": false,
       "properties": {
         "id": {
           "title": "Id",
@@ -30,7 +29,6 @@
       "type": "object"
     }
   },
-  "additionalProperties": false,
   "properties": {
     "workspace": {
       "$ref": "#/$defs/WorkspaceRecord"

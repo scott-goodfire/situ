@@ -1,7 +1,6 @@
 {
   "$defs": {
     "MetricValue": {
-      "additionalProperties": false,
       "properties": {
         "value": {
           "anyOf": [

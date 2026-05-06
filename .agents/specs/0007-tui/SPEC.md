@@ -91,6 +91,11 @@ work begins. The first picker should offer:
 - Start session
 - Exit
 
+The preflight picker is still part of the fullscreen TUI shell. It should
+render inside the same outer frame used by the running dashboard, with the
+picker occupying a framed section rather than appearing below a separate
+header box.
+
 Selecting Start calls `session.start` and moves into the live dashboard.
 Selecting Exit closes the TUI without starting an agent run. This keeps opening
 the product surface distinct from beginning a long-running autoresearch loop.
@@ -104,6 +109,10 @@ session.
 
 The TUI should not silently reconnect to or resume old research state. Session
 continuity must come from an explicit command.
+
+Any explicit reconnect choice screen should follow the same fullscreen frame
+contract as the start preflight picker, so setup, reconnect, and running views
+feel like pages inside one terminal surface rather than separate prompt shapes.
 
 ## Command Surface
 

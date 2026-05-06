@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 from pathlib import Path
 from typing import Any
 
@@ -40,7 +39,7 @@ class AgentRuntime:
         secrets.apply_sdk_environment()
         secrets.require_openai_key()
 
-        self.model_name = os.environ.get("SITU_AGENT_MODEL", DEFAULTS.agent_model)
+        self.model_name = DEFAULTS.agent_model
         self.agent: Agent[SituToolDeps, AgentPlan] = Agent(
             self.model_name,
             deps_type=SituToolDeps,
@@ -50,6 +49,7 @@ class AgentRuntime:
                 build_research_toolset(),
                 build_workspace_toolset(),
             ],
+            model_settings=DEFAULTS.model_settings(),
             name=RESEARCH_AGENT_NAME,
         )
         self.dbos_agent = DBOSAgent(self.agent, name=RESEARCH_AGENT_NAME)
@@ -59,6 +59,7 @@ class AgentRuntime:
             output_type=AgentPlan,
             instructions=MANAGER_AGENT_INSTRUCTIONS,
             toolsets=[build_manager_toolset()],
+            model_settings=DEFAULTS.model_settings(),
             name=MANAGER_AGENT_NAME,
         )
         self.dbos_manager_agent = DBOSAgent(self.manager_agent, name=MANAGER_AGENT_NAME)

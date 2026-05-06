@@ -15,6 +15,8 @@ from evals.suites.tools.research_tools.evaluators import (
 )
 from evals.worlds.research_session import (
     ARTIFACT_ID,
+    BASELINE_EVALUATION_ID,
+    BASELINE_ID,
     EXPERIMENT_ID,
     HYPOTHESIS_ID,
     PROJECT_ID,
@@ -249,6 +251,31 @@ def research_tool_cases() -> list[Case[ResearchToolEvalInput, ResearchToolEvalOu
             ),
         ),
         Case(
+            name="list_baseline_evaluations_and_measurements",
+            inputs=ResearchToolEvalInput(
+                case_id="list_baseline_evaluations_and_measurements",
+                seed="with_baseline_result",
+                prompt=(
+                    "Please inspect existing baseline evidence. Call "
+                    "list_baselines, then list_evaluations for that baseline, "
+                    "then list_measurements for that baseline. State the "
+                    "baseline id, evaluation id, and score you found."
+                ),
+            ),
+            metadata={"requires_real_llm": True},
+            evaluators=(
+                ToolWasCalled("list_baselines"),
+                ToolSucceeded("list_baselines"),
+                ToolResultContains("list_baselines", BASELINE_ID),
+                ToolWasCalled("list_evaluations"),
+                ToolSucceeded("list_evaluations"),
+                ToolResultContains("list_evaluations", BASELINE_EVALUATION_ID),
+                ToolWasCalled("list_measurements"),
+                ToolSucceeded("list_measurements"),
+                ToolResultContains("list_measurements", "0.71"),
+            ),
+        ),
+        Case(
             name="evaluation_result_kind_is_result",
             inputs=ResearchToolEvalInput(
                 case_id="evaluation_result_kind_is_result",
@@ -261,8 +288,9 @@ def research_tool_cases() -> list[Case[ResearchToolEvalInput, ResearchToolEvalOu
                     "'Baseline command output' and summary 'Record baseline "
                     "score output.' Add an evaluation result with "
                     "add_evaluation_result using result 'score=0.730 latency=120'. "
-                    "Then call list_evaluation_activities for that evaluation "
-                    "and report the activity kind."
+                    "Then call list_measurements and list_evaluation_activities "
+                    "for that evaluation and report the measurement body and "
+                    "activity kind."
                 ),
             ),
             metadata={"requires_real_llm": True},
@@ -273,6 +301,9 @@ def research_tool_cases() -> list[Case[ResearchToolEvalInput, ResearchToolEvalOu
                 ToolSucceeded("create_evaluation"),
                 ToolWasCalled("add_evaluation_result"),
                 ToolSucceeded("add_evaluation_result"),
+                ToolWasCalled("list_measurements"),
+                ToolSucceeded("list_measurements"),
+                ToolResultContains("list_measurements", "score=0.730"),
                 ToolWasCalled("list_evaluation_activities"),
                 ToolSucceeded("list_evaluation_activities"),
                 ToolResultContains("list_evaluation_activities", '"kind": "result"'),

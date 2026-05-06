@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 
 from ...records import (
     AgentRecord,
@@ -28,8 +28,6 @@ from ...records import (
 
 
 class CollectionsBootstrapSchema(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
     cursor: int
     workspaces: list[WorkspaceRecord]
     projects: list[ProjectRecord]

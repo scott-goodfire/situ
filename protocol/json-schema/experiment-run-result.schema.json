@@ -1,5 +1,4 @@
 {
-  "additionalProperties": false,
   "properties": {
     "experiment_id": {
       "title": "Experiment Id",

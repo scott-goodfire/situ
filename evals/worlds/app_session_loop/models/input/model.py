@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import ConfigDict
-
 from evals.harness.models import EvalModel
 
 AppSessionLoopSeed = Literal[
@@ -13,8 +11,6 @@ AppSessionLoopSeed = Literal[
 
 
 class AppSessionLoopEvalInput(EvalModel):
-    model_config = ConfigDict(extra="forbid")
-
     case_id: str
     seed: AppSessionLoopSeed
     max_experiments: int = 1

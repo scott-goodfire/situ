@@ -27,6 +27,7 @@ function ReconnectSessionPromptStory() {
       maxExperiments={maxExperimentCount}
       onReconnect={() => {}}
       onQuit={() => {}}
+      terminalSize={{ columns: 112, rows: 34 }}
     />
   );
 }

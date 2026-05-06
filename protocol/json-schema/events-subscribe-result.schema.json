@@ -1,5 +1,4 @@
 {
-  "additionalProperties": false,
   "properties": {
     "subscribed": {
       "title": "Subscribed",

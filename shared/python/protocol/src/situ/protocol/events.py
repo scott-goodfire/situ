@@ -61,8 +61,6 @@ MetricScalar = bool | int | float | str
 
 
 class MetricValue(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
     value: MetricScalar
     unit: str | None = None
     direction: MetricDirection = "informational"
@@ -153,8 +151,6 @@ class TaskEntityKind(StrEnum):
 
 
 class WorkspaceRecord(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
     id: str
     repo_path: str
     created_at: str
@@ -162,8 +158,6 @@ class WorkspaceRecord(BaseModel):
 
 
 class ProjectRecord(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
     id: str
     workspace_id: str
     title: str
@@ -175,8 +169,6 @@ class ProjectRecord(BaseModel):
 
 
 class SessionRecord(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
     id: str
     workspace_id: str
     project_id: str | None = None
@@ -186,8 +178,6 @@ class SessionRecord(BaseModel):
 
 
 class HypothesisRecord(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
     id: str
     project_id: str
     created_in_session_id: str | None = None
@@ -199,8 +189,6 @@ class HypothesisRecord(BaseModel):
 
 
 class ExperimentRecord(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
     id: str
     project_id: str
     created_in_session_id: str | None = None
@@ -212,8 +200,6 @@ class ExperimentRecord(BaseModel):
 
 
 class BaselineRecord(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
     id: str
     project_id: str
     created_in_session_id: str | None = None
@@ -225,8 +211,6 @@ class BaselineRecord(BaseModel):
 
 
 class EvaluationRecord(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
     id: str
     project_id: str
     created_in_session_id: str | None = None
@@ -240,8 +224,6 @@ class EvaluationRecord(BaseModel):
 
 
 class AnalysisRecord(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
     id: str
     project_id: str
     created_in_session_id: str | None = None
@@ -256,16 +238,12 @@ class AnalysisRecord(BaseModel):
 
 
 class HypothesisExperimentLinkRecord(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
     hypothesis_id: str
     experiment_id: str
     created_at: str
 
 
 class AgentRecord(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
     id: str
     project_id: str
     created_in_session_id: str | None = None
@@ -278,8 +256,6 @@ class AgentRecord(BaseModel):
 
 
 class TaskRecord(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
     id: str
     project_id: str
     created_in_session_id: str | None = None
@@ -305,8 +281,6 @@ class TaskRecord(BaseModel):
 
 
 class TaskDependencyRecord(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
     project_id: str
     task_id: str
     blocked_by_task_id: str
@@ -314,8 +288,6 @@ class TaskDependencyRecord(BaseModel):
 
 
 class TaskEntityLinkRecord(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
     project_id: str
     task_id: str
     entity_kind: TaskEntityKind
@@ -325,8 +297,6 @@ class TaskEntityLinkRecord(BaseModel):
 
 
 class TaskActivityRecord(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
     id: int
     project_id: str
     task_id: str
@@ -340,8 +310,6 @@ class TaskActivityRecord(BaseModel):
 
 
 class AnalysisActivityRecord(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
     id: int
     analysis_id: str
     created_in_session_id: str | None = None
@@ -353,8 +321,6 @@ class AnalysisActivityRecord(BaseModel):
 
 
 class HypothesisActivityRecord(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
     id: int
     hypothesis_id: str
     created_in_session_id: str | None = None
@@ -366,8 +332,6 @@ class HypothesisActivityRecord(BaseModel):
 
 
 class ExperimentActivityRecord(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
     id: int
     experiment_id: str
     created_in_session_id: str | None = None
@@ -379,8 +343,6 @@ class ExperimentActivityRecord(BaseModel):
 
 
 class EvaluationActivityRecord(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
     id: int
     evaluation_id: str
     created_in_session_id: str | None = None
@@ -392,8 +354,6 @@ class EvaluationActivityRecord(BaseModel):
 
 
 class MeasurementRecord(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
     id: int
     evaluation_id: str
     created_in_session_id: str | None = None
@@ -408,8 +368,6 @@ class MeasurementRecord(BaseModel):
 
 
 class ArtifactRecord(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
     id: str
     project_id: str
     created_in_session_id: str | None = None
@@ -424,8 +382,6 @@ class ArtifactRecord(BaseModel):
 
 
 class EventRecord(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
     id: int
     associated_project_id: str | None = None
     associated_session_id: str | None = None

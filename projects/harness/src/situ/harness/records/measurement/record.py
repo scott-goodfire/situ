@@ -16,8 +16,6 @@ MetricScalar = bool | int | float | str
 
 
 class MetricValue(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
     value: MetricScalar
     unit: str | None = None
     direction: MetricDirection = "informational"

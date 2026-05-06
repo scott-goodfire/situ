@@ -1,7 +1,6 @@
 {
   "$defs": {
     "JsonRpcErrorObject": {
-      "additionalProperties": false,
       "properties": {
         "code": {
           "title": "Code",
@@ -30,7 +29,6 @@
       "type": "object"
     }
   },
-  "additionalProperties": false,
   "properties": {
     "jsonrpc": {
       "const": "2.0",

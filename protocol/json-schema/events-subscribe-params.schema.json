@@ -1,5 +1,4 @@
 {
-  "additionalProperties": false,
   "properties": {
     "replay_existing": {
       "default": false,

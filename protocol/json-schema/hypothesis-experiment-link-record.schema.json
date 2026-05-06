@@ -1,5 +1,4 @@
 {
-  "additionalProperties": false,
   "properties": {
     "hypothesis_id": {
       "title": "Hypothesis Id",

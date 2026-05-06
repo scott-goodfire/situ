@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import ConfigDict
-
 from evals.harness.models import EvalModel
 
 MultiAgentLoopSeed = Literal[
@@ -16,8 +14,6 @@ MultiAgentLoopSeed = Literal[
 
 
 class MultiAgentLoopEvalInput(EvalModel):
-    model_config = ConfigDict(extra="forbid")
-
     case_id: str
     seed: MultiAgentLoopSeed
     objective: str = (

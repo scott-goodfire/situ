@@ -15,6 +15,9 @@ RESEARCH_AGENT_INSTRUCTIONS = inspect.cleandoc(
 
     How you work:
     - Start from the current session state before making claims.
+    - Use `get_session` for the whole current ledger. Use focused `list_*`
+      tools such as `list_baselines`, `list_evaluations`, and
+      `list_measurements` when you need a narrower evidence slice.
     - Treat the project objective and research context as the north star.
       If the session has no project but the setup input is sufficient, use
       `create_project` to create and attach one.
@@ -141,6 +144,9 @@ def build_proposal_round_prompt(
     research_context_body = project.get("research_context", "") or setup_research_context
     tasks = current_state.get("tasks", [])
     task_dependencies = current_state.get("task_dependencies", [])
+    baselines = current_state.get("baselines", [])
+    recent_evaluations = current_state.get("evaluations", [])[-8:]
+    recent_measurements = current_state.get("measurements", [])[-8:]
     task_activities = current_state.get("task_activities", [])[-8:]
     recent_hypothesis_activity = current_state.get("hypothesis_activities", [])[-5:]
     recent_experiment_activity = current_state.get("experiment_activities", [])[-5:]
@@ -169,6 +175,15 @@ def build_proposal_round_prompt(
 
         Task dependencies
         {task_dependencies}
+
+        Current baselines
+        {baselines}
+
+        Recent evaluations
+        {recent_evaluations}
+
+        Recent measurements
+        {recent_measurements}
 
         Recent task activity
         {task_activities}
@@ -206,6 +221,9 @@ def build_session_run_prompt(
     research_context_body = project.get("research_context", "") or setup_research_context
     tasks = current_state.get("tasks", [])
     task_dependencies = current_state.get("task_dependencies", [])
+    baselines = current_state.get("baselines", [])
+    recent_evaluations = current_state.get("evaluations", [])[-8:]
+    recent_measurements = current_state.get("measurements", [])[-8:]
     task_activities = current_state.get("task_activities", [])[-8:]
     recent_hypothesis_activity = current_state.get("hypothesis_activities", [])[-8:]
     recent_experiment_activity = current_state.get("experiment_activities", [])[-8:]
@@ -241,6 +259,15 @@ def build_session_run_prompt(
         Task dependencies
         {task_dependencies}
 
+        Current baselines
+        {baselines}
+
+        Recent evaluations
+        {recent_evaluations}
+
+        Recent measurements
+        {recent_measurements}
+
         Recent task activity
         {task_activities}
 
@@ -258,7 +285,8 @@ def build_session_run_prompt(
         done, failed, or clearly commented as blocked, stop instead of claiming
         more backlog work in the same pass.
 
-        Check the session first, then inspect workspace state. Create or update
+        Check the session first, then inspect focused baseline/evaluation/
+        measurement lists when you need more detail. Create or update
         hypotheses only when they make the board clearer. If baseline
         measurement evidence is missing, create or select a baseline, create a
         baseline-associated evaluation, inspect workspace state with the

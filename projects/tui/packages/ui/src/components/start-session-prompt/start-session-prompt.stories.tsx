@@ -26,6 +26,7 @@ function StartSessionPromptStory() {
       isActive={false}
       onStart={() => {}}
       onExit={() => {}}
+      terminalSize={{ columns: 112, rows: 34 }}
     />
   );
 }

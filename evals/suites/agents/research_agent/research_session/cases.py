@@ -16,28 +16,31 @@ def research_session_planning_cases() -> list[
 ]:
     return [
         Case(
-            name="creates_baseline_hypothesis",
+            name="creates_baseline_measurement_thread",
             inputs=ResearchAgentEvalInput(
-                case_id="creates_baseline_hypothesis",
+                case_id="creates_baseline_measurement_thread",
                 seed="needs_baseline",
                 prompt="""
                 Take a look at the current session first. We do not have a
-                baseline yet, so set up the first hypothesis as "Baseline
-                first" with the summary "Record a baseline before variants."
-                Leave a short hypothesis comment that says "baseline is the
-                first step", and mention that same line in your summary.
+                baseline yet, so create a baseline titled "Baseline first"
+                with the summary "Reference condition before variants." Then
+                create an evaluation associated with that baseline titled
+                "Baseline measurement plan" with the summary "Record a
+                baseline before variants." Mention "baseline is the first
+                step" in your summary.
                 """,
             ),
             metadata={"requires_real_llm": True},
             evaluators=(
                 ToolWasCalled("get_session"),
                 ToolSucceeded("get_session"),
-                ToolWasCalled("create_hypothesis"),
-                ToolSucceeded("create_hypothesis"),
-                ToolWasCalled("add_hypothesis_comment"),
-                ToolSucceeded("add_hypothesis_comment"),
-                ToolArgsContain("create_hypothesis", "Baseline first"),
-                SessionGraphContains("baseline is the first step"),
+                ToolWasCalled("create_baseline"),
+                ToolSucceeded("create_baseline"),
+                ToolWasCalled("create_evaluation"),
+                ToolSucceeded("create_evaluation"),
+                ToolArgsContain("create_baseline", "Baseline first"),
+                ToolArgsContain("create_evaluation", "Baseline measurement plan"),
+                SessionGraphContains("Baseline measurement plan"),
                 ContentContains("baseline is the first step"),
             ),
         ),

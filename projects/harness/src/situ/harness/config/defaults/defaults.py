@@ -1,15 +1,21 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict
+
+ModelThinking = Literal["minimal", "low", "medium", "high", "xhigh"]
+OpenAIReasoningEffort = Literal["none", "minimal", "low", "medium", "high", "xhigh"]
 
 
 class SituDefaults(BaseModel):
     model_config = ConfigDict(frozen=True)
 
-    agent_model: str = "openai:gpt-5.5"
-    eval_model: str = "openai:gpt-5.5"
+    agent_model: str = "openai-responses:gpt-5.5"
+    eval_model: str = "openai-responses:gpt-5.5"
+    model_thinking: ModelThinking = "low"
+    openai_reasoning_effort: OpenAIReasoningEffort = "low"
     harness_logfire_service_name: str = "situ-harness"
     eval_logfire_service_name: str = "situ-evals"
     local_environment: str = "local"
@@ -21,6 +27,12 @@ class SituDefaults(BaseModel):
 
     def local_state_home_path(self) -> Path:
         return self.local_state_home.expanduser()
+
+    def model_settings(self) -> dict[str, str]:
+        return {
+            "thinking": self.model_thinking,
+            "openai_reasoning_effort": self.openai_reasoning_effort,
+        }
 
 
 DEFAULTS = SituDefaults()

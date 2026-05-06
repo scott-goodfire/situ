@@ -1,24 +1,18 @@
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field
 
 
 class WorkerInitializeParams(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
     protocol_version: int = 1
 
 
 class WorkerInitializeResult(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
     worker_name: str
     protocol_version: int = 1
 
 
 class ExperimentRunParams(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
     session_id: str
     experiment_id: str
     title: str
@@ -28,8 +22,6 @@ class ExperimentRunParams(BaseModel):
 
 
 class ExperimentRunResult(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
     experiment_id: str
     status: str
     summary: str
@@ -38,8 +30,6 @@ class ExperimentRunResult(BaseModel):
 
 
 class WorkerProgressParams(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
     session_id: str
     experiment_id: str
     message: str

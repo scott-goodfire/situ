@@ -1,5 +1,4 @@
 {
-  "additionalProperties": false,
   "properties": {
     "jsonrpc": {
       "const": "2.0",

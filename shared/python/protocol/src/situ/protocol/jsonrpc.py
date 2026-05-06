@@ -1,21 +1,17 @@
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 
 JsonRpcId = str | int | None
 
 
 class JsonRpcErrorObject(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
     code: int
     message: str
     data: Any | None = None
 
 
 class JsonRpcRequest(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
     jsonrpc: Literal["2.0"]
     id: JsonRpcId = None
     method: str
@@ -23,16 +19,12 @@ class JsonRpcRequest(BaseModel):
 
 
 class JsonRpcNotification(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
     jsonrpc: Literal["2.0"] = "2.0"
     method: str
     params: dict[str, Any] | None = None
 
 
 class JsonRpcResponse(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
     jsonrpc: Literal["2.0"] = "2.0"
     id: JsonRpcId = None
     result: Any | None = None

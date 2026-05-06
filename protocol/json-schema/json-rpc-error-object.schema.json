@@ -1,5 +1,4 @@
 {
-  "additionalProperties": false,
   "properties": {
     "code": {
       "title": "Code",

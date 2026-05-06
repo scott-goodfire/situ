@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 
 from ...records import (
     AgentRecord,
@@ -28,15 +28,11 @@ from ...records import (
 
 
 class NextSessionIdSchema(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
     session_id: str
     session_number: int
 
 
 class SessionGraphSchema(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
     workspace: WorkspaceRecord | None = None
     project: ProjectRecord | None = None
     session: SessionRecord | None = None

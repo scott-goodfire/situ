@@ -8,6 +8,7 @@ from pydantic_ai import Agent, FunctionToolset
 from pydantic_ai.capabilities.abstract import AbstractCapability
 from pydantic_ai.models import Model
 
+from ...config import DEFAULTS
 from ...tools import build_manager_toolset, build_research_toolset, build_workspace_toolset
 from ...tools.common import SituToolDeps
 from ..common import SituAgentContext, SituAgentPrompt, BaseSituAgent
@@ -84,6 +85,7 @@ class ResearchAgent(
             output_type=ResearchAgentOutput,
             instructions=RESEARCH_AGENT_INSTRUCTIONS,
             toolsets=toolsets,
+            model_settings=DEFAULTS.model_settings(),
             capabilities=list(self.capabilities),
         )
 
@@ -117,6 +119,7 @@ class ManagerAgent(BaseSituAgent[ManagerAgentContext, ResearchAgentOutput]):
             output_type=ResearchAgentOutput,
             instructions=MANAGER_AGENT_INSTRUCTIONS,
             toolsets=[build_manager_toolset()],
+            model_settings=DEFAULTS.model_settings(),
             capabilities=list(self.capabilities),
         )
 
@@ -154,5 +157,6 @@ class ScientistAgent(BaseSituAgent[ScientistAgentContext, ResearchAgentOutput]):
                 build_research_toolset(),
                 build_workspace_toolset(),
             ],
+            model_settings=DEFAULTS.model_settings(),
             capabilities=list(self.capabilities),
         )

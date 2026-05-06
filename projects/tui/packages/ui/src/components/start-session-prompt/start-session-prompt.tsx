@@ -1,11 +1,10 @@
-import { Text } from "ink";
 import type { SessionStartParams } from "@situ/protocol";
-import { AppFrame } from "../app-frame/app-frame.js";
 import {
-  ChoicePrompt,
   type ChoicePromptOption,
   type ChoicePromptSelection,
 } from "../choice-prompt/choice-prompt.js";
+import { FramedChoicePrompt } from "../framed-choice-prompt/framed-choice-prompt.js";
+import type { TerminalSize } from "../fullscreen-dashboard/use-terminal-size.js";
 
 const startOptions = [
   {
@@ -26,34 +25,37 @@ export function StartSessionPrompt({
   isActive = true,
   onStart,
   onExit,
+  terminalSize,
 }: {
   workspace: string;
   params: SessionStartParams;
   isActive?: boolean;
   onStart: () => void;
   onExit: () => void;
+  terminalSize?: TerminalSize;
 }) {
   return (
-    <AppFrame
+    <FramedChoicePrompt
       workspace={workspace}
-      statusLine="Ready to start a fresh session"
-      footer={<Text dimColor>Enter selects. Escape exits.</Text>}
-    >
-      <ChoicePrompt
-        title="Start autoresearch session?"
-        message={startMessage({ params })}
-        options={startOptions}
-        isActive={isActive}
-        onCancel={onExit}
-        onSelect={({ option }) => {
-          handleStartSelection({
-            option,
-            onStart,
-            onExit,
-          });
-        }}
-      />
-    </AppFrame>
+      frameStatus="ready"
+      sectionLabel="start"
+      statusLine="ready · Ready to start a fresh session"
+      subtitle={workspace}
+      title="Start autoresearch session?"
+      message={startMessage({ params })}
+      options={startOptions}
+      isActive={isActive}
+      footerLabel="Enter selects · Esc exits"
+      onCancel={onExit}
+      onSelect={({ option }) => {
+        handleStartSelection({
+          option,
+          onStart,
+          onExit,
+        });
+      }}
+      terminalSize={terminalSize}
+    />
   );
 }
 

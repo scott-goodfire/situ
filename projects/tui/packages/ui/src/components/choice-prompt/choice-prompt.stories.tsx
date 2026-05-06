@@ -5,7 +5,7 @@ import {
   type ChoicePromptOption,
   type ChoicePromptSelection,
 } from "./choice-prompt.js";
-import { AppFrame } from "../app-frame/app-frame.js";
+import { FramedChoicePrompt } from "../framed-choice-prompt/framed-choice-prompt.js";
 import { storyWorkspace } from "../../fixtures/story-data.js";
 import type { TuiStory } from "../../stories/story-types.js";
 
@@ -76,22 +76,30 @@ export const stories = [
     id: "choice-prompt/in-frame",
     title: "Choice Prompt",
     name: "in-frame",
-    render: () => (
-      <AppFrame
-        workspace={storyWorkspace}
-        statusLine="run_0001 | needs input | experiments 3/5"
-        footer={<Text dimColor>Enter selects. Escape cancels.</Text>}
-      >
-        <ChoicePromptStory
-          title="Review suspicious improvement"
-          message="exp_run_0001_fixture_edit touched eval fixtures."
-          options={nextActionOptions}
-          initialIndex={1}
-        />
-      </AppFrame>
-    ),
+    render: () => <FramedChoicePromptStory />,
   },
 ] satisfies TuiStory[];
+
+function FramedChoicePromptStory() {
+  return (
+    <FramedChoicePrompt
+      workspace={storyWorkspace}
+      frameStatus="run_0001 needs input"
+      sectionLabel="choice"
+      statusLine="needs input · run_0001 · experiments 3/5"
+      subtitle={storyWorkspace}
+      title="Review suspicious improvement"
+      message="exp_run_0001_fixture_edit touched eval fixtures."
+      options={nextActionOptions}
+      initialIndex={1}
+      isActive={false}
+      footerLabel="Enter selects · Esc cancels"
+      onCancel={() => {}}
+      onSelect={() => {}}
+      terminalSize={{ columns: 112, rows: 34 }}
+    />
+  );
+}
 
 function ChoicePromptStory({
   title,

@@ -4,6 +4,7 @@ import inspect
 
 from pydantic_ai import Agent
 
+from situ.harness.config import DEFAULTS
 from situ.harness.tools import build_research_toolset
 from situ.harness.tools.common import SituToolDeps
 from evals.harness.capture import ToolCallCaptureCapability
@@ -24,9 +25,10 @@ RESEARCH_TOOL_AGENT_INSTRUCTIONS = inspect.cleandoc(
     You are helping test Situ's research tool surface.
 
     Do the requested action directly with the available tools. Use the ledger
-    for all session, objective, hypothesis, experiment, activity, and artifact
-    facts. Keep the final answer short, grounded, and explicit about the action
-    you completed.
+    for all session, objective, hypothesis, baseline, experiment, evaluation,
+    measurement, activity, and artifact facts. Prefer focused `list_*` tools
+    when the prompt asks you to read one type of record. Keep the final answer
+    short, grounded, and explicit about the action you completed.
     """
 )
 
@@ -68,5 +70,6 @@ def _build_agent(
         output_type=str,
         instructions=RESEARCH_TOOL_AGENT_INSTRUCTIONS,
         toolsets=[build_research_toolset()],
+        model_settings=DEFAULTS.model_settings(),
         capabilities=[capture],
     )

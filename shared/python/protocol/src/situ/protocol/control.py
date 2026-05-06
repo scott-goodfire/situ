@@ -1,6 +1,6 @@
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field
 
 from .events import (
     AgentRecord,
@@ -28,36 +28,28 @@ from .events import (
 
 
 class HarnessHelloParams(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
     name: str = "world"
 
 
 class HarnessHelloResult(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
     message: str
     harness: str = "python"
 
 
 class SetupGetParams(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    pass
 
 
 class SetupGetResult(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
     configured: bool
     workspace: WorkspaceRecord | None = None
 
 
 class SetupCompleteParams(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    pass
 
 
 class SetupCompleteResult(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
     workspace: WorkspaceRecord
 
 
@@ -87,12 +79,10 @@ CollectionName = Literal[
 
 
 class CollectionsBootstrapParams(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    pass
 
 
 class CollectionsBootstrapResult(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
     cursor: int
     workspaces: list[WorkspaceRecord] = Field(default_factory=list)
     projects: list[ProjectRecord] = Field(default_factory=list)
@@ -118,19 +108,15 @@ class CollectionsBootstrapResult(BaseModel):
 
 
 class CollectionsSubscribeParams(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    pass
 
 
 class CollectionsSubscribeResult(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
     subscribed: bool
     cursor: int
 
 
 class CollectionUpsertedParams(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
     cursor: int
     collection: CollectionName
     key: str
@@ -138,21 +124,15 @@ class CollectionUpsertedParams(BaseModel):
 
 
 class EventsSubscribeParams(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
     replay_existing: bool = False
 
 
 class EventsSubscribeResult(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
     subscribed: bool
     replayed: int = 0
 
 
 class SessionStartParams(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
     objective: str = ""
     research_context: str = ""
     project_title: str | None = None
@@ -161,33 +141,23 @@ class SessionStartParams(BaseModel):
 
 
 class SessionStartResult(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
     session_id: str
     status: str
 
 
 class SessionResumeParams(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
     session_id: str
     max_experiments: int = 6
 
 
 class SessionResumeResult(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
     session_id: str
     status: str
 
 
 class SessionStatusParams(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
     session_id: str
 
 
 class SessionStatusResult(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
     session: SessionRecord | None

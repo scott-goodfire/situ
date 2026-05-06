@@ -1,7 +1,6 @@
 {
   "$defs": {
     "SessionRecord": {
-      "additionalProperties": false,
       "properties": {
         "id": {
           "title": "Id",
@@ -54,7 +53,6 @@
       "type": "string"
     }
   },
-  "additionalProperties": false,
   "properties": {
     "session": {
       "anyOf": [
