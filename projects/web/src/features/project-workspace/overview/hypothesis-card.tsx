@@ -12,7 +12,7 @@ import {
   evaluationActivitiesForEvaluations,
   evaluationsForExperiments,
   latestEvaluationActivity,
-} from "../evidence/evaluation-selectors";
+} from "../../../selectors/evaluations";
 import { AgentPresence } from "../agents/presence/agent-presence";
 import type { ProjectWorkspaceData } from "../types";
 

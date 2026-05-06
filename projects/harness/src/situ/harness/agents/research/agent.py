@@ -8,12 +8,19 @@ from pydantic_ai import Agent, FunctionToolset
 from pydantic_ai.capabilities.abstract import AbstractCapability
 from pydantic_ai.models import Model
 
-from ...tools import build_research_toolset, build_workspace_toolset
+from ...tools import build_manager_toolset, build_research_toolset, build_workspace_toolset
 from ...tools.common import SituToolDeps
 from ..common import SituAgentContext, SituAgentPrompt, BaseSituAgent
-from .prompt import RESEARCH_AGENT_INSTRUCTIONS, build_research_agent_user_prompt
+from .prompt import (
+    MANAGER_AGENT_INSTRUCTIONS,
+    RESEARCH_AGENT_INSTRUCTIONS,
+    build_proposal_round_prompt,
+    build_research_agent_user_prompt,
+    build_session_run_prompt,
+)
 
 RESEARCH_AGENT_NAME = "situ-research-agent"
+MANAGER_AGENT_NAME = "situ-manager-agent"
 
 
 class ResearchAgentOutput(BaseModel):
@@ -26,6 +33,21 @@ class ResearchAgentOutput(BaseModel):
 class ResearchAgentContext(SituAgentContext[SituToolDeps]):
     objective: str = ""
     user_prompt: str | None = None
+
+
+class ManagerAgentContext(SituAgentContext[SituToolDeps]):
+    setup_objective: str = ""
+    setup_research_context: str = ""
+    current_state: dict[str, Any] = Field(default_factory=dict)
+    active_task: dict[str, Any] | None = None
+
+
+class ScientistAgentContext(SituAgentContext[SituToolDeps]):
+    setup_objective: str = ""
+    setup_research_context: str = ""
+    current_state: dict[str, Any] = Field(default_factory=dict)
+    max_experiments: int = 1
+    active_task: dict[str, Any] | None = None
 
 
 class ResearchAgent(
@@ -62,5 +84,75 @@ class ResearchAgent(
             output_type=ResearchAgentOutput,
             instructions=RESEARCH_AGENT_INSTRUCTIONS,
             toolsets=toolsets,
+            capabilities=list(self.capabilities),
+        )
+
+
+class ManagerAgent(BaseSituAgent[ManagerAgentContext, ResearchAgentOutput]):
+    model: Model | str
+    capabilities: Sequence[AbstractCapability[Any]] = Field(default_factory=tuple)
+
+    def generate_prompt(self, context: ManagerAgentContext) -> SituAgentPrompt:
+        return SituAgentPrompt(
+            instructions=MANAGER_AGENT_INSTRUCTIONS,
+            user_prompt=build_proposal_round_prompt(
+                setup_objective=context.setup_objective,
+                setup_research_context=context.setup_research_context,
+                current_state=context.current_state,
+                active_task=context.active_task,
+            ),
+        )
+
+    def build_agent(
+        self,
+        *,
+        context: ManagerAgentContext,
+        prompt: SituAgentPrompt,
+    ) -> Agent[SituToolDeps, ResearchAgentOutput]:
+        _ = (context, prompt)
+        return Agent[SituToolDeps, ResearchAgentOutput](
+            name=MANAGER_AGENT_NAME,
+            model=self.model,
+            deps_type=SituToolDeps,
+            output_type=ResearchAgentOutput,
+            instructions=MANAGER_AGENT_INSTRUCTIONS,
+            toolsets=[build_manager_toolset()],
+            capabilities=list(self.capabilities),
+        )
+
+
+class ScientistAgent(BaseSituAgent[ScientistAgentContext, ResearchAgentOutput]):
+    model: Model | str
+    capabilities: Sequence[AbstractCapability[Any]] = Field(default_factory=tuple)
+
+    def generate_prompt(self, context: ScientistAgentContext) -> SituAgentPrompt:
+        return SituAgentPrompt(
+            instructions=RESEARCH_AGENT_INSTRUCTIONS,
+            user_prompt=build_session_run_prompt(
+                setup_objective=context.setup_objective,
+                setup_research_context=context.setup_research_context,
+                current_state=context.current_state,
+                max_experiments=context.max_experiments,
+                active_task=context.active_task,
+            ),
+        )
+
+    def build_agent(
+        self,
+        *,
+        context: ScientistAgentContext,
+        prompt: SituAgentPrompt,
+    ) -> Agent[SituToolDeps, ResearchAgentOutput]:
+        _ = (context, prompt)
+        return Agent[SituToolDeps, ResearchAgentOutput](
+            name=RESEARCH_AGENT_NAME,
+            model=self.model,
+            deps_type=SituToolDeps,
+            output_type=ResearchAgentOutput,
+            instructions=RESEARCH_AGENT_INSTRUCTIONS,
+            toolsets=[
+                build_research_toolset(),
+                build_workspace_toolset(),
+            ],
             capabilities=list(self.capabilities),
         )

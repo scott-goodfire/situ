@@ -12,8 +12,8 @@ import { Link } from "@tanstack/react-router";
 import filter from "lodash/filter";
 import * as s from "../../../styles.css";
 import { EvaluationActivityList } from "../evidence/evaluation-activity-list";
-import { evaluationsForExperiment } from "../evidence/evaluation-selectors";
-import { ActivityTimeline } from "../shared/activity-timeline";
+import { evaluationsForExperiment } from "../../../selectors/evaluations";
+import { ActivityTimeline } from "../__shared__/activity-timeline";
 import type { ActivityItem, ProjectWorkspaceData } from "../types";
 
 type LinkedHypothesisRow = {

@@ -1,5 +1,5 @@
 import type { AnchorHTMLAttributes, ReactNode } from "react";
-import { classNames } from "../../utils/class-names";
+import { classNames } from "../../class-names";
 import * as s from "./dx-link.css";
 
 export type DxLinkVariant = "accent" | "muted";

@@ -14,9 +14,9 @@ import { EvidenceSummary } from "../evidence/evidence-summary";
 import {
   evaluationActivitiesForEvaluations,
   evaluationsForExperiment,
-} from "../evidence/evaluation-selectors";
-import { experimentsForHypothesis } from "../shared/relationship-selectors";
-import { ActivityTimeline } from "../shared/activity-timeline";
+} from "../../../selectors/evaluations";
+import { experimentsForHypothesis } from "../../../selectors/hypotheses";
+import { ActivityTimeline } from "../__shared__/activity-timeline";
 import type { ActivityItem, ProjectWorkspaceData } from "../types";
 
 type LinkedExperimentRow = {

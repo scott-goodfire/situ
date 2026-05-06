@@ -1,7 +1,7 @@
 import { DxBadge, DxEmptyState, DxSection } from "@situ/web-ui";
 import filter from "lodash/filter";
 import * as s from "../../../styles.css";
-import { ActivityTimeline } from "../shared/activity-timeline";
+import { ActivityTimeline } from "../__shared__/activity-timeline";
 import type { ActivityItem, ProjectWorkspaceData } from "../types";
 
 export function AnalysisDetailPage({

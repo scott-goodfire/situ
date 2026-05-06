@@ -15,7 +15,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { classNames } from "../../utils/class-names";
+import { classNames } from "../../class-names";
 import { vars } from "../../theme.css";
 import {
   chartToneDanger,

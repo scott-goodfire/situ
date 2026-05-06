@@ -82,7 +82,8 @@ For this slice:
   store project id, workspace path, label, discovered time, last seen time, last
   opened time, and archived time.
 - The registry should remain a small project index. It must not accumulate
-  objectives, hypotheses, experiments, artifacts, or other research state.
+  project objective/context, hypotheses, experiments, artifacts, or other
+  research state.
 - `situ start` should upsert the global registry for the workspace it is
   starting.
 - `situ web` may backfill missing registry rows from existing per-project
@@ -263,7 +264,7 @@ For this slice:
   primary text.
 - Tool-call-shaped or ledger-update-shaped activity should be visually compact
   and expandable later, but the default view should emphasize what happened and
-  which objective object it affected.
+  which project record or research object it affected.
 - New transcript entries may animate subtly and auto-follow when the user is at
   the bottom of the transcript. Motion should never become the point of the UI.
 - Agent presence indicators may appear on overview cards and agent pages when

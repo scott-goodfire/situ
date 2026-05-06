@@ -1,6 +1,6 @@
 import { Button as BaseButton } from "@base-ui/react/button";
 import type { ComponentPropsWithoutRef } from "react";
-import { classNames } from "../../utils/class-names";
+import { classNames } from "../../class-names";
 import * as s from "./dx-icon-button.css";
 
 type BaseButtonProps = ComponentPropsWithoutRef<typeof BaseButton>;

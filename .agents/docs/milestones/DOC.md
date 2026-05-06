@@ -56,7 +56,8 @@ The TUI should make the session legible without reading raw logs.
 Hundreds of experiments can become unusable output.
 
 The first answer is not a final report. The first answer is a live, structured
-view of objectives, hypotheses, experiments, activities, artifacts, and events.
+view of the project objective, hypotheses, experiments, activities, artifacts,
+and events.
 
 ## Milestone 2: Karpathy Autoresearch Benchmark
 

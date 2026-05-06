@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { DateTime } from "luxon";
-import * as s from "../../../../styles.css";
-import type { AgentTranscriptItem } from "./types";
+import * as s from "../../../../../styles.css";
+import type { AgentTranscriptItem } from "../../../../../selectors/agents";
 
 export function TranscriptItem({
   item,

@@ -1,3 +1,19 @@
-from .research import ResearchAgent, ResearchAgentContext, ResearchAgentOutput
+from .research import (
+    ManagerAgent,
+    ManagerAgentContext,
+    ResearchAgent,
+    ResearchAgentContext,
+    ResearchAgentOutput,
+    ScientistAgent,
+    ScientistAgentContext,
+)
 
-__all__ = ["ResearchAgent", "ResearchAgentContext", "ResearchAgentOutput"]
+__all__ = [
+    "ManagerAgent",
+    "ManagerAgentContext",
+    "ResearchAgent",
+    "ResearchAgentContext",
+    "ResearchAgentOutput",
+    "ScientistAgent",
+    "ScientistAgentContext",
+]

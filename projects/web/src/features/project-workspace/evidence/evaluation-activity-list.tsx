@@ -18,7 +18,7 @@ import {
   evaluationActivitiesForEvaluation,
   evidenceRowTone,
   latestEvaluationActivity,
-} from "./evaluation-selectors";
+} from "../../../selectors/evaluations";
 import type { ProjectWorkspaceData } from "../types";
 
 type EvaluationRow = {

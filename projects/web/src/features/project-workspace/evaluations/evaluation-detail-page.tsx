@@ -21,8 +21,8 @@ import {
   evaluationActivitiesForEvaluation,
   isConcernActivity,
   latestEvaluationActivity,
-} from "../evidence/evaluation-selectors";
-import { ActivityTimeline } from "../shared/activity-timeline";
+} from "../../../selectors/evaluations";
+import { ActivityTimeline } from "../__shared__/activity-timeline";
 import type { ActivityItem, ProjectWorkspaceData } from "../types";
 
 type ArtifactRow = {

@@ -9,7 +9,7 @@ import type {
 import filter from "lodash/filter";
 import keyBy from "lodash/keyBy";
 import orderBy from "lodash/orderBy";
-import type { ProjectWorkspaceData } from "../../types";
+import type { ProjectWorkspaceData } from "../../features/project-workspace/types";
 import type {
   AgentTranscriptEntityKind,
   AgentTranscriptItem,

@@ -1,4 +1,4 @@
-import { classNames } from "../../utils/class-names";
+import { classNames } from "../../class-names";
 import * as s from "./dx-spinner.css";
 
 export function DxSpinner({

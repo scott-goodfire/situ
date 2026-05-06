@@ -1,6 +1,6 @@
 import type { ExperimentRecord } from "@situ/protocol";
 import filter from "lodash/filter";
-import type { ProjectWorkspaceData } from "../types";
+import type { ProjectWorkspaceData } from "../../features/project-workspace/types";
 
 export function experimentsForHypothesis({
   data,

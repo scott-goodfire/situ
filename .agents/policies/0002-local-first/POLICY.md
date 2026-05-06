@@ -19,8 +19,8 @@ repo or send data to hosted services unless the user explicitly opts in.
 - Default runtime state lives outside the researched repo, under a user-local
   Situ directory.
 - Repo writes are explicit exports or user-approved patches.
-- Config, objectives, sessions, hypotheses, experiments, activities, events, and
-  minimal artifact references are durable locally.
+- Config, project objective/context, sessions, hypotheses, experiments,
+  activities, events, and minimal artifact references are durable locally.
 - The product can resume after process restart.
 - Hosted model or service calls are optional and visible to the user.
 
@@ -30,5 +30,5 @@ repo or send data to hosted services unless the user explicitly opts in.
 - Writing generated reports or patches into the repo without an explicit export
   or publish action.
 - Depending on cloud state for the current local slice.
-- Losing objective, session, hypothesis, experiment, activity, or event state
-  after restart.
+- Losing project objective/context, session, hypothesis, experiment, activity,
+  or event state after restart.

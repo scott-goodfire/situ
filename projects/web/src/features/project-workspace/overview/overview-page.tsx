@@ -1,8 +1,8 @@
 import type { ProjectRecord } from "@situ/protocol";
 import { DxBadge } from "@situ/web-ui";
 import * as s from "../../../styles.css";
+import { overviewHypotheses } from "../../../selectors/hypotheses";
 import { HypothesisCycle } from "./hypothesis-cycle";
-import { overviewHypotheses } from "./selectors";
 import type { ProjectWorkspaceData } from "../types";
 
 export function OverviewPage({ data }: { data: ProjectWorkspaceData }) {

@@ -136,7 +136,7 @@ session, they must resume it explicitly.
 
 ## Quality Bar
 
-The slice can be narrow, but the live state must be real. Workspaces, projects,
-sessions, objectives, analyses, hypotheses, experiments, evaluations,
-coordination records, activities, artifacts, and internal events should survive
-process restart.
+The slice can be narrow, but the live state must be real. Workspaces, projects
+with objective/context, sessions, analyses, hypotheses, experiments,
+evaluations, coordination records, activities, artifacts, and internal events
+should survive process restart.

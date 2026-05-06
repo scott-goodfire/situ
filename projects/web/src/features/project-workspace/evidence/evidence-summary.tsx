@@ -9,7 +9,7 @@ import {
   evidenceState,
   evidenceTone,
   latestEvaluationActivity,
-} from "./evaluation-selectors";
+} from "../../../selectors/evaluations";
 
 export function EvidenceSummary({
   evaluations,

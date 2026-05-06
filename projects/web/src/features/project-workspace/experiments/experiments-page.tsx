@@ -14,7 +14,7 @@ import { EvidenceSummary } from "../evidence/evidence-summary";
 import {
   evaluationActivitiesForEvaluations,
   evaluationsForExperiment,
-} from "../evidence/evaluation-selectors";
+} from "../../../selectors/evaluations";
 import type { ProjectWorkspaceData } from "../types";
 
 type ExperimentRow = {

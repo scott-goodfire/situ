@@ -1,5 +1,5 @@
 import { Avatar } from "@base-ui/react/avatar";
-import { classNames } from "../../utils/class-names";
+import { classNames } from "../../class-names";
 import * as s from "./dx-avatar.css";
 
 export type DxAvatarSize = "sm" | "md";

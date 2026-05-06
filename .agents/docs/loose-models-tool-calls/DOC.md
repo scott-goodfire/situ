@@ -108,7 +108,7 @@ Useful examples:
 - Inspect diff
 - Record result activity as a harness-owned effect
 - Record concern activity as a harness-owned effect
-- Update session/objective state
+- Update project/session state
 
 The harness should own which tools exist and whether a call is allowed. The LLM
 can request or choose tool calls, but it should not bypass the harness ledger.

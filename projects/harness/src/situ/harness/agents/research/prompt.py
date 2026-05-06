@@ -79,6 +79,9 @@ MANAGER_AGENT_INSTRUCTIONS = inspect.cleandoc(
       is missing.
     - Use `hypothesize`, `experiment`, `interpret`, and `review` tasks to
       hand off focused research work to the Scientist.
+    - Write task content with a concrete done condition, including which
+      ledger outputs should exist and that the Scientist should mark the task
+      done when the focused work is complete.
     - Use dependencies when one task should not be claimed until another is
       done.
     - Leave task comments only when they clarify planning or handoff context.
@@ -258,6 +261,12 @@ def build_session_run_prompt(
         Link the active task to important produced or referenced ledger records
         with `link_task_entity`, and leave a concise `add_task_comment` when
         it helps the next pass understand what happened.
+
+        When you complete a claimed task, call `update_task` with
+        status="done" and a short result summary. If the task cannot be
+        completed because setup is blocked or evidence is suspicious, mark the
+        task failed or leave it clearly commented instead of pretending it is
+        done.
 
         Stop when the budget is reached, when the next experiment is not
         justified by the record, or when the evidence says the session needs

@@ -71,6 +71,11 @@ Follow Pydantic Evals and Logfire defaults where they fit:
   defaults unless an eval has proven it needs a supported override.
 - For Pydantic AI agents, capture tool calls with hook/capability utilities
   rather than ad hoc wrappers.
+- Treat realism as the default optimization target for agent evals. Expensive
+  or slower evals are acceptable when they exercise the real loop a human would
+  trust.
+- Keep fast focused evals for debugging, but do not use them as substitutes for
+  integrated workflow evals when the product behavior depends on coordination.
 
 ## What To Evaluate
 
@@ -82,6 +87,9 @@ Good first targets:
 - The full research agent can inspect an unfamiliar local repo, discover the
   project-native measurement command, run it, and record plaintext baseline
   evidence before candidate experiments.
+- The multi-agent loop can run Manager planning, Task creation, Scientist task
+  claiming, focused work, ledger writes, Task completion, and Manager replanning
+  as one integrated workflow.
 - The planner explores simple variants before over-committing.
 - The planner combines promising hypothesis/experiment activity.
 - The research-tool agent reads compact session context with `get_session`.
@@ -114,6 +122,11 @@ Initial worlds:
 
 Future worlds may add heavier sandbox repos when the deterministic local
 fixture worlds are not enough.
+
+Realistic multi-agent worlds should run the real Manager and Scientist
+entrypoints against a temporary workspace/project/session. They may bound the
+run with limits such as max planning passes or max claimed tasks, but should
+still let each agent decide which tools to call inside those limits.
 
 ## Logfire
 

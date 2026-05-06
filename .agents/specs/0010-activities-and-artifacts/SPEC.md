@@ -137,8 +137,8 @@ link to the experiment they measure.
 
 ## Artifacts
 
-Artifacts are receipts that sessions, objectives, hypotheses, experiments, or
-activities can reference.
+Artifacts are receipts that projects, sessions, analyses, hypotheses,
+experiments, or activities can reference.
 
 They can include:
 

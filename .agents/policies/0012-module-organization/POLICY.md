@@ -22,7 +22,7 @@ directory, never deciding whether to promote a `.py` to a directory.
 ```
 
 - `<category>` — `records`, `repositories`, `tools`, `cli`, `core`, `agents`, `api`, ...
-- `<concept>` — the entity, command, or subsystem (`objective`, `start`, `notifications`)
+- `<concept>` — the entity, command, or subsystem (`project`, `start`, `notifications`)
 - `<role>.py` — what kind of code lives here (`record.py`, `repository.py`, `command.py`, `tool.py`, `models.py`, `registry.py`, `manager.py`, `runtime.py`, `configure.py`, ...)
 
 `__init__.py` is the public surface of every concept directory. External
@@ -74,16 +74,16 @@ The trade-off is more directories. Accepted.
 ### Records (durable state shape)
 ```text
 records/
-  objective/
-    __init__.py        # re-exports ObjectiveRecord, ObjectiveStatus, parse_objective_status
+  project/
+    __init__.py        # re-exports ProjectRecord, ProjectStatus, parse_project_status
     record.py          # the Pydantic model + status enum + status parser
 ```
 
 ### Repositories (durable state CRUD)
 ```text
 repositories/
-  objectives/
-    __init__.py        # re-exports ObjectivesRepository
+  project/
+    __init__.py        # re-exports ProjectRepository
     repository.py      # CRUD methods using Database
     command.py         # input Pydantic models with extra="forbid"
 ```
@@ -100,14 +100,14 @@ api/
 ### Tools (agent-callable actions)
 ```text
 tools/
-  objectives/
-    create_objective/
+  projects/
+    create_project/
       __init__.py
       tool.py          # subclass of BaseSituTool with execute_sync
       models.py        # return type extending SituToolReturn
 ```
 
-Group tools by entity (`objectives/`, `hypotheses/`); cross-cutting tools get
+Group tools by entity (`projects/`, `hypotheses/`); cross-cutting tools get
 their own group (`comments/`, `links/`, `workspace_state/`). Register all
 tools in `tools/toolsets.py`.
 

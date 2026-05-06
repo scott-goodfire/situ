@@ -1,6 +1,6 @@
-export type AgentTranscriptTone = "neutral" | "warning" | "danger";
-
 export type AgentTranscriptEntityKind = "hypothesis" | "experiment" | "evaluation";
+
+export type AgentTranscriptTone = "neutral" | "warning" | "danger";
 
 export type AgentTranscriptItem = {
   id: string;

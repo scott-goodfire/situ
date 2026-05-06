@@ -21,7 +21,7 @@ import {
   evidenceRowTone,
   isConcernActivity,
   latestEvaluationActivity,
-} from "../evidence/evaluation-selectors";
+} from "../../../selectors/evaluations";
 import type { ProjectWorkspaceData } from "../types";
 
 type EvaluationRow = {

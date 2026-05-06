@@ -5,7 +5,7 @@ import {
   type HeatmapMatrix,
   type NormalizedHeatmapCell,
 } from "@situ/chart-model";
-import { classNames } from "../../utils/class-names";
+import { classNames } from "../../class-names";
 import { vars } from "../../theme.css";
 import * as s from "./heatmap-grid.css";
 

@@ -1,7 +1,7 @@
 # Testing Strategy
 
 This repo is still in an early slice, so testing should stay fast and focused
-while making the durable session/objective ledger hard to break.
+while making the durable workspace/project/session ledger hard to break.
 
 ## Current Checks
 
@@ -20,16 +20,26 @@ For repository changes, use a temporary SQLite database and exercise the changed
 paths directly:
 
 ```text
-Database(temp_path, project_id="project_test", repo_path="/tmp/project")
-Repositories.create(db)
-repos.project_config.set(...)
-repos.objectives.create(...)
-repos.sessions.create(...)
+Database(temp_path, workspace_id="workspace_test", repo_path="/tmp/project")
+repos = Repositories.create(db)
+workspace = repos.workspaces.ensure()
+project = repos.projects.create(
+    project_id="project_test",
+    workspace_id=workspace.id,
+    title="Test project",
+    objective="Improve the target behavior.",
+    research_context="Run local evals and compare score.",
+)
+repos.sessions.create("session_test", workspace_id=workspace.id, project_id=project.id)
+repos.analyses.create(...)
 repos.hypotheses.create(...)
 repos.experiments.create(...)
+repos.evaluations.create(...)
 repos.hypothesis_experiment_links.create(...)
+repos.analysis_activities.add(...)
 repos.experiment_activities.add(...)
 repos.hypothesis_activities.add(...)
+repos.evaluation_activities.add(...)
 repos.events.add(...)
 CurrentStateService(repos=repos).get()
 CollectionsService(repos=repos).bootstrap()
@@ -112,14 +122,18 @@ Useful targets:
 
 ```text
 CollectionsBootstrapResult
-ProjectConfigRecord
-ObjectiveRecord
+WorkspaceRecord
+ProjectRecord
 SessionRecord
+AnalysisRecord
+AnalysisActivityRecord
 HypothesisRecord
 ExperimentRecord
+EvaluationRecord
 HypothesisExperimentLinkRecord
 HypothesisActivityRecord
 ExperimentActivityRecord
+EvaluationActivityRecord
 ArtifactRecord
 EventRecord
 ```

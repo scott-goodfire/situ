@@ -14,7 +14,7 @@ agents read or mutate Situ research state.
 
 Situ ledger tools should feel like explicit operations over Situ product
 models and familiar research actions. Prefer concrete, inspectable tools such
-as `get_session`, `create_hypothesis`, `update_experiment`,
+as `get_session`, `get_project`, `create_hypothesis`, `update_experiment`,
 `add_experiment_comment`, and `add_evaluation_result` over abstract tools that
 ask the model to choose internal ontology details.
 
@@ -44,8 +44,11 @@ generic activity writer to record benchmark evidence.
   Pydantic-compatible primitives. Avoid unstructured catch-all payloads unless
   the domain object itself has a payload field.
 - Prefer model-shaped tool names:
-  `get_session`, `get_objective`, `list_hypotheses`,
+  `get_session`, `get_project`, `list_hypotheses`,
   `create_experiment`, `link_hypothesis_experiment`.
+- Project objective and research context changes go through project-shaped
+  tools such as `create_project` and `update_project`; do not expose separate
+  objective or research-context CRUD tools.
 - Prefer comment-shaped collaboration tools:
   `add_hypothesis_comment`, `add_experiment_comment`.
 - Prefer result-shaped evaluation tools for measurement evidence:
@@ -70,7 +73,7 @@ generic activity writer to record benchmark evidence.
 - Tool names should avoid obsolete or overly generic phrasing like
   `record_finding` or `record_activity` when a product-model operation is
   clearer. A compact context reader is acceptable in the slim slice, but prefer
-  names that make the session/objective scope obvious.
+  names that make the project/session scope obvious.
 
 ## Red Flags
 
@@ -80,6 +83,8 @@ generic activity writer to record benchmark evidence.
   than product state.
 - Agent-facing tools that ask the model to choose internal activity kinds for
   routine collaboration.
+- Standalone objective or research-context tools. Those are Project fields, not
+  separate agent-facing primitives.
 - Tools that return loose dicts when a typed schema would be easy.
 - Tools that duplicate repository SQL or bypass repository validation.
 - Tool folders that collect many unrelated tools in one `tool.py`.

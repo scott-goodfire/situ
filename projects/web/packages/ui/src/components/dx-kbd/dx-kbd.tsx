@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { classNames } from "../../utils/class-names";
+import { classNames } from "../../class-names";
 import * as s from "./dx-kbd.css";
 
 export type DxKbdSize = "sm" | "md";

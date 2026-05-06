@@ -7,7 +7,7 @@ import {
   type ReactElement,
   type ReactNode,
 } from "react";
-import { classNames } from "../../utils/class-names";
+import { classNames } from "../../class-names";
 import * as s from "./dx-sidebar.css";
 
 type RenderableProps = HTMLAttributes<HTMLElement> & AriaAttributes & { [key: string]: unknown };

@@ -55,7 +55,7 @@ export {
 } from "./components/dx-theme-toggle/dx-theme-toggle";
 export { DxThemeProvider } from "./components/dx-theme-toggle/dx-theme-provider";
 export { useDxTheme } from "./components/dx-theme-toggle/use-dx-theme";
-export { useLocalStorage } from "./utils/use-local-storage";
+export { useLocalStorage } from "./use-local-storage";
 export { DxToaster, toast } from "./components/dx-toaster/dx-toaster";
 export { DxTooltip, DxTooltipProvider } from "./components/dx-tooltip/dx-tooltip";
 export { HeatmapGrid } from "./components/heatmap-grid/heatmap-grid";

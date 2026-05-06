@@ -2,8 +2,8 @@ import type { HypothesisRecord } from "@situ/protocol";
 import { DxSection, muted } from "@situ/web-ui";
 import filter from "lodash/filter";
 import * as s from "../../../styles.css";
+import { experimentsForHypothesis } from "../../../selectors/hypotheses";
 import { HypothesisCard } from "./hypothesis-card";
-import { experimentsForHypothesis } from "../shared/relationship-selectors";
 import type { ProjectWorkspaceData } from "../types";
 
 export function HypothesisCycle({

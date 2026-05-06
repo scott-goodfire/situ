@@ -1,9 +1,9 @@
 import { DxSection, muted } from "@situ/web-ui";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useMemo, useRef } from "react";
-import * as s from "../../../../styles.css";
-import { TranscriptItem } from "./transcript-item";
-import type { AgentTranscriptItem } from "./types";
+import * as s from "../../../../../styles.css";
+import type { AgentTranscriptItem } from "../../../../../selectors/agents";
+import { TranscriptItem } from "../transcript-item";
 
 export function AgentTranscript({
   projectId,

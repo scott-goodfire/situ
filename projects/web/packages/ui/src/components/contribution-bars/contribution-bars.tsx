@@ -14,7 +14,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { classNames } from "../../utils/class-names";
+import { classNames } from "../../class-names";
 import { vars } from "../../theme.css";
 import { muted } from "../../utilities.css";
 import * as s from "./contribution-bars.css";

@@ -7,8 +7,8 @@ status: active
 
 ## Applies To
 
-TUI, CLI status, current-state APIs, event streams, experiment summaries, and
-activity rendering.
+TUI, CLI status, current-state APIs, event streams, experiment summaries,
+activity rendering, and the web monitor.
 
 ## Rule
 
@@ -25,6 +25,17 @@ guidance, or final reports before the TUI observability loop is useful.
 - Raw logs are artifact/drill-down references, not the main screen.
 - The same state can be returned as agent-readable JSON.
 - The display remains dense and terminal-friendly.
+- The web monitor (`projects/web`) is **read-only by design** in the current
+  slice. It observes durable state through `collections.bootstrap` /
+  `.subscribe` and renders. Mutations — creating hypotheses, claiming tasks,
+  recording activities, running experiments — happen via agents (through the
+  harness's tool surface) or the CLI, not through web forms or buttons. The
+  web monitor is a viewer alongside the TUI, not a replacement or a control
+  surface.
+- Adding a write surface to the web monitor (a "create hypothesis" form, a
+  "claim task" button, a "submit comment" textarea) is out of scope until
+  the live-observability loop and agent-driven workflow are stable. When that
+  changes, a follow-up policy update should make it explicit.
 
 ## Red Flags
 
@@ -35,3 +46,6 @@ guidance, or final reports before the TUI observability loop is useful.
   available.
 - A final report feature before live observability works.
 - A web UI as the primary first-slice surface.
+- Adding mutation surfaces to the web monitor (forms, action buttons, edit
+  inputs) before the read-only observability surface is settled and the
+  agent/CLI write paths are sufficient.

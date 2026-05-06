@@ -1,8 +1,8 @@
 import { DxBadge, DxEmptyState } from "@situ/web-ui";
 import * as s from "../../../styles.css";
+import { agentTranscriptItems } from "../../../selectors/agents";
 import { AgentPresence } from "./presence/agent-presence";
 import { AgentTranscript } from "./transcript/agent-transcript";
-import { agentTranscriptItems } from "./transcript/selectors";
 import type { ProjectWorkspaceData } from "../types";
 
 export function AgentDetailPage({

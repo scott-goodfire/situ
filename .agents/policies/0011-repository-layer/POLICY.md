@@ -9,7 +9,7 @@ status: active
 
 Database access, repository additions, persistence refactors, API composition
 over durable state, migrations, DBOS integration, and tests touching durable
-session/objective state.
+project/session state.
 
 ## Rule
 

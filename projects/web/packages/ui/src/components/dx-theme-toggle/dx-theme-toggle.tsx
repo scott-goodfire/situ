@@ -1,4 +1,4 @@
-import { classNames } from "../../utils/class-names";
+import { classNames } from "../../class-names";
 import * as s from "./dx-theme-toggle.css";
 
 export type DxThemeMode = "light" | "dark" | "auto";
