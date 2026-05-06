@@ -2,10 +2,21 @@ from __future__ import annotations
 
 from typing import Any
 
-from ...core.db.serialization import event_row, json_dumps, utc_now
+from ...core.db.serialization import json_dumps, json_loads, utc_now
 from ...records import EventRecord
 from ..base import BaseRepository
 from .command import AddEvent
+
+
+def _event_row(row: Any) -> EventRecord:
+    return EventRecord(
+        id=row["id"],
+        session_id=row["session_id"],
+        type=row["type"],
+        message=row["message"],
+        payload=json_loads(row["payload_json"]),
+        created_at=row["created_at"],
+    )
 
 
 class EventsRepository(BaseRepository):
@@ -43,17 +54,17 @@ class EventsRepository(BaseRepository):
 
     def get_by_id(self, event_id: int) -> EventRecord | None:
         row = self.db.fetchone("SELECT * FROM events WHERE id = ?", (event_id,))
-        return event_row(row) if row else None
+        return _event_row(row) if row else None
 
     def get(self, event_id: int) -> EventRecord | None:
         return self.get_by_id(event_id)
 
     def list_all(self) -> list[EventRecord]:
-        return [event_row(row) for row in self.db.fetchall("SELECT * FROM events ORDER BY id")]
+        return [_event_row(row) for row in self.db.fetchall("SELECT * FROM events ORDER BY id")]
 
     def list_for_session(self, session_id: str) -> list[EventRecord]:
         return [
-            event_row(row)
+            _event_row(row)
             for row in self.db.fetchall(
                 "SELECT * FROM events WHERE session_id = ? ORDER BY id",
                 (session_id,),

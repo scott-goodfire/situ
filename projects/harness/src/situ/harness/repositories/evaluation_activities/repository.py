@@ -2,10 +2,22 @@ from __future__ import annotations
 
 from typing import Any
 
-from ...core.db.serialization import evaluation_activity_row, json_dumps, utc_now
+from ...core.db.serialization import json_dumps, json_loads, utc_now
 from ...records import EvaluationActivityRecord
 from ..base import BaseRepository
 from .command import AddEvaluationActivity
+
+
+def _evaluation_activity_row(row: Any) -> EvaluationActivityRecord:
+    return EvaluationActivityRecord(
+        id=row["id"],
+        evaluation_id=row["evaluation_id"],
+        actor=row["actor"],
+        kind=row["kind"],
+        body=row["body"],
+        payload=json_loads(row["payload_json"]),
+        created_at=row["created_at"],
+    )
 
 
 class EvaluationActivitiesRepository(BaseRepository):
@@ -50,20 +62,20 @@ class EvaluationActivitiesRepository(BaseRepository):
             "SELECT * FROM evaluation_activities WHERE id = ?",
             (activity_id,),
         )
-        return evaluation_activity_row(row) if row else None
+        return _evaluation_activity_row(row) if row else None
 
     def get(self, activity_id: int) -> EvaluationActivityRecord | None:
         return self.get_by_id(activity_id)
 
     def list_all(self) -> list[EvaluationActivityRecord]:
         return [
-            evaluation_activity_row(row)
+            _evaluation_activity_row(row)
             for row in self.db.fetchall("SELECT * FROM evaluation_activities ORDER BY id")
         ]
 
     def list_for_evaluation(self, evaluation_id: str) -> list[EvaluationActivityRecord]:
         return [
-            evaluation_activity_row(row)
+            _evaluation_activity_row(row)
             for row in self.db.fetchall(
                 "SELECT * FROM evaluation_activities WHERE evaluation_id = ? ORDER BY id",
                 (evaluation_id,),

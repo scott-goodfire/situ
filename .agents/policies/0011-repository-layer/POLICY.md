@@ -28,9 +28,14 @@ API services own multi-table composition; orchestration code owns session flow.
 - SQL execution goes through `Database`; runtime code outside `core/db/` should
   not open SQLite connections directly.
 - DB infrastructure lives under `projects/harness/src/situ/harness/core/db/`.
-  Schema changes live in `core/db/migrations.py`; JSON encoding and row
-  decoding live in `core/db/serialization.py` unless there is a clear reason to
-  keep them local.
+  Schema changes live in `core/db/migrations.py`; shared JSON/time helpers live
+  in `core/db/serialization.py`.
+- Repositories own table-level row decoding for the tables they persist. Keep
+  row-to-record helpers local to the repository that owns the corresponding
+  SQL, unless a helper is genuinely shared across multiple repository owners.
+- Durable record models under `records/<singular_concept>/record.py` should stay
+  storage-agnostic Pydantic shapes. Do not make records know about SQLite rows
+  or JSON column names.
 - Repository input validators live near the repository they serve, or in a
   local `command.py`, when a method benefits from Pydantic validation before
   writing.
@@ -63,7 +68,9 @@ API services own multi-table composition; orchestration code owns session flow.
 - Adding persistence fields that are written but never surfaced through API
   schemas or agent-facing context when they matter to observability.
 - Reintroducing a broad catch-all state object that hides table ownership.
-- Duplicating JSON serialization or row mapping across repositories.
+- Duplicating JSON serialization across repositories.
+- Moving repository-specific row decoding into record models or unrelated
+  shared helpers.
 - Making repositories call workers, agents, TUI code, or long-running
   orchestration logic.
 - Returning loose dicts from new repository methods when a DB record model

@@ -1,9 +1,26 @@
 from __future__ import annotations
 
-from ...core.db.serialization import artifact_row, utc_now
+from typing import Any
+
+from ...core.db.serialization import utc_now
 from ...records import ArtifactRecord
 from ..base import BaseRepository
 from .command import CreateArtifact
+
+
+def _artifact_row(row: Any) -> ArtifactRecord:
+    return ArtifactRecord(
+        id=row["id"],
+        session_id=row["session_id"],
+        associated_entity_kind=row["associated_entity_kind"],
+        associated_entity_id=row["associated_entity_id"],
+        kind=row["kind"],
+        title=row["title"],
+        path=row["path"],
+        media_type=row["media_type"],
+        size_bytes=row["size_bytes"],
+        created_at=row["created_at"],
+    )
 
 
 class ArtifactsRepository(BaseRepository):
@@ -58,20 +75,20 @@ class ArtifactsRepository(BaseRepository):
 
     def get_by_id(self, artifact_id: str) -> ArtifactRecord | None:
         row = self.db.fetchone("SELECT * FROM artifacts WHERE id = ?", (artifact_id,))
-        return artifact_row(row) if row else None
+        return _artifact_row(row) if row else None
 
     def get(self, artifact_id: str) -> ArtifactRecord | None:
         return self.get_by_id(artifact_id)
 
     def list_all(self) -> list[ArtifactRecord]:
         return [
-            artifact_row(row)
+            _artifact_row(row)
             for row in self.db.fetchall("SELECT * FROM artifacts ORDER BY created_at")
         ]
 
     def list_for_experiment(self, experiment_id: str) -> list[ArtifactRecord]:
         return [
-            artifact_row(row)
+            _artifact_row(row)
             for row in self.db.fetchall(
                 """
                 SELECT * FROM artifacts
@@ -85,7 +102,7 @@ class ArtifactsRepository(BaseRepository):
 
     def list_for_session(self, session_id: str) -> list[ArtifactRecord]:
         return [
-            artifact_row(row)
+            _artifact_row(row)
             for row in self.db.fetchall(
                 "SELECT * FROM artifacts WHERE session_id = ? ORDER BY created_at",
                 (session_id,),

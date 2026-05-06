@@ -1,9 +1,23 @@
 from __future__ import annotations
 
-from ...core.db.serialization import objective_row, utc_now
+from typing import Any
+
+from ...core.db.serialization import utc_now
 from ...records import ObjectiveRecord, ObjectiveStatus, parse_objective_status
 from ..base import BaseRepository
 from .command import CreateObjective, UpdateObjective
+
+
+def _objective_row(row: Any) -> ObjectiveRecord:
+    return ObjectiveRecord(
+        id=row["id"],
+        session_id=row["session_id"],
+        title=row["title"],
+        description=row["description"],
+        status=row["status"],
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+    )
 
 
 class ObjectivesRepository(BaseRepository):
@@ -87,7 +101,7 @@ class ObjectivesRepository(BaseRepository):
 
     def get_by_id(self, objective_id: str) -> ObjectiveRecord | None:
         row = self.db.fetchone("SELECT * FROM objectives WHERE id = ?", (objective_id,))
-        return objective_row(row) if row else None
+        return _objective_row(row) if row else None
 
     def get(self, objective_id: str) -> ObjectiveRecord | None:
         return self.get_by_id(objective_id)
@@ -96,10 +110,10 @@ class ObjectivesRepository(BaseRepository):
         row = self.db.fetchone(
             "SELECT * FROM objectives WHERE session_id = ?", (session_id,)
         )
-        return objective_row(row) if row else None
+        return _objective_row(row) if row else None
 
     def list_all(self) -> list[ObjectiveRecord]:
         return [
-            objective_row(row)
+            _objective_row(row)
             for row in self.db.fetchall("SELECT * FROM objectives ORDER BY created_at")
         ]

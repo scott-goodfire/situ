@@ -1,9 +1,21 @@
 from __future__ import annotations
 
-from ...core.db.serialization import research_context_row, utc_now
+from typing import Any
+
+from ...core.db.serialization import utc_now
 from ...records import ResearchContextRecord
 from ..base import BaseRepository
 from .command import CreateResearchContext, UpdateResearchContext
+
+
+def _research_context_row(row: Any) -> ResearchContextRecord:
+    return ResearchContextRecord(
+        id=row["id"],
+        session_id=row["session_id"],
+        body=row["body"],
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+    )
 
 
 class ResearchContextsRepository(BaseRepository):
@@ -72,7 +84,7 @@ class ResearchContextsRepository(BaseRepository):
         row = self.db.fetchone(
             "SELECT * FROM research_contexts WHERE id = ?", (research_context_id,)
         )
-        return research_context_row(row) if row else None
+        return _research_context_row(row) if row else None
 
     def get(self, research_context_id: str) -> ResearchContextRecord | None:
         return self.get_by_id(research_context_id)
@@ -81,11 +93,11 @@ class ResearchContextsRepository(BaseRepository):
         row = self.db.fetchone(
             "SELECT * FROM research_contexts WHERE session_id = ?", (session_id,)
         )
-        return research_context_row(row) if row else None
+        return _research_context_row(row) if row else None
 
     def list_all(self) -> list[ResearchContextRecord]:
         return [
-            research_context_row(row)
+            _research_context_row(row)
             for row in self.db.fetchall(
                 "SELECT * FROM research_contexts ORDER BY created_at"
             )

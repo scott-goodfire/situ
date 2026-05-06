@@ -1,9 +1,19 @@
 from __future__ import annotations
 
-from ...core.db.serialization import hypothesis_experiment_link_row, utc_now
+from typing import Any
+
+from ...core.db.serialization import utc_now
 from ...records import HypothesisExperimentLinkRecord
 from ..base import BaseRepository
 from .command import LinkHypothesisExperiment
+
+
+def _hypothesis_experiment_link_row(row: Any) -> HypothesisExperimentLinkRecord:
+    return HypothesisExperimentLinkRecord(
+        hypothesis_id=row["hypothesis_id"],
+        experiment_id=row["experiment_id"],
+        created_at=row["created_at"],
+    )
 
 
 class HypothesisExperimentLinksRepository(BaseRepository):
@@ -50,11 +60,11 @@ class HypothesisExperimentLinksRepository(BaseRepository):
             """,
             (hypothesis_id, experiment_id),
         )
-        return hypothesis_experiment_link_row(row) if row else None
+        return _hypothesis_experiment_link_row(row) if row else None
 
     def list_all(self) -> list[HypothesisExperimentLinkRecord]:
         return [
-            hypothesis_experiment_link_row(row)
+            _hypothesis_experiment_link_row(row)
             for row in self.db.fetchall(
                 "SELECT * FROM hypothesis_experiment_links ORDER BY created_at"
             )
@@ -62,7 +72,7 @@ class HypothesisExperimentLinksRepository(BaseRepository):
 
     def list_for_hypothesis(self, hypothesis_id: str) -> list[HypothesisExperimentLinkRecord]:
         return [
-            hypothesis_experiment_link_row(row)
+            _hypothesis_experiment_link_row(row)
             for row in self.db.fetchall(
                 """
                 SELECT * FROM hypothesis_experiment_links
@@ -75,7 +85,7 @@ class HypothesisExperimentLinksRepository(BaseRepository):
 
     def list_for_experiment(self, experiment_id: str) -> list[HypothesisExperimentLinkRecord]:
         return [
-            hypothesis_experiment_link_row(row)
+            _hypothesis_experiment_link_row(row)
             for row in self.db.fetchall(
                 """
                 SELECT * FROM hypothesis_experiment_links

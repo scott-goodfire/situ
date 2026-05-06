@@ -1,9 +1,23 @@
 from __future__ import annotations
 
-from ...core.db.serialization import hypothesis_row, utc_now
+from typing import Any
+
+from ...core.db.serialization import utc_now
 from ...records import HypothesisRecord, WorkStatus, parse_work_status
 from ..base import BaseRepository
 from .command import CreateHypothesis, UpdateHypothesis
+
+
+def _hypothesis_row(row: Any) -> HypothesisRecord:
+    return HypothesisRecord(
+        id=row["id"],
+        session_id=row["session_id"],
+        title=row["title"],
+        summary=row["summary"],
+        status=row["status"],
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+    )
 
 
 class HypothesesRepository(BaseRepository):
@@ -86,20 +100,20 @@ class HypothesesRepository(BaseRepository):
 
     def get_by_id(self, hypothesis_id: str) -> HypothesisRecord | None:
         row = self.db.fetchone("SELECT * FROM hypotheses WHERE id = ?", (hypothesis_id,))
-        return hypothesis_row(row) if row else None
+        return _hypothesis_row(row) if row else None
 
     def get(self, hypothesis_id: str) -> HypothesisRecord | None:
         return self.get_by_id(hypothesis_id)
 
     def list_all(self) -> list[HypothesisRecord]:
         return [
-            hypothesis_row(row)
+            _hypothesis_row(row)
             for row in self.db.fetchall("SELECT * FROM hypotheses ORDER BY created_at")
         ]
 
     def list_for_session(self, session_id: str) -> list[HypothesisRecord]:
         return [
-            hypothesis_row(row)
+            _hypothesis_row(row)
             for row in self.db.fetchall(
                 """
                 SELECT * FROM hypotheses

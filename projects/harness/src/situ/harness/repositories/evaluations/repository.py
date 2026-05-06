@@ -1,9 +1,24 @@
 from __future__ import annotations
 
-from ...core.db.serialization import evaluation_row, utc_now
+from typing import Any
+
+from ...core.db.serialization import utc_now
 from ...records import EvaluationRecord, WorkStatus, parse_work_status
 from ..base import BaseRepository
 from .command import CreateEvaluation, UpdateEvaluation
+
+
+def _evaluation_row(row: Any) -> EvaluationRecord:
+    return EvaluationRecord(
+        id=row["id"],
+        session_id=row["session_id"],
+        status=row["status"],
+        title=row["title"],
+        summary=row["summary"],
+        associated_experiment_id=row["associated_experiment_id"],
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+    )
 
 
 class EvaluationsRepository(BaseRepository):
@@ -100,20 +115,20 @@ class EvaluationsRepository(BaseRepository):
 
     def get_by_id(self, evaluation_id: str) -> EvaluationRecord | None:
         row = self.db.fetchone("SELECT * FROM evaluations WHERE id = ?", (evaluation_id,))
-        return evaluation_row(row) if row else None
+        return _evaluation_row(row) if row else None
 
     def get(self, evaluation_id: str) -> EvaluationRecord | None:
         return self.get_by_id(evaluation_id)
 
     def list_all(self) -> list[EvaluationRecord]:
         return [
-            evaluation_row(row)
+            _evaluation_row(row)
             for row in self.db.fetchall("SELECT * FROM evaluations ORDER BY created_at")
         ]
 
     def list_for_session(self, session_id: str) -> list[EvaluationRecord]:
         return [
-            evaluation_row(row)
+            _evaluation_row(row)
             for row in self.db.fetchall(
                 """
                 SELECT * FROM evaluations
@@ -126,7 +141,7 @@ class EvaluationsRepository(BaseRepository):
 
     def list_for_experiment(self, experiment_id: str) -> list[EvaluationRecord]:
         return [
-            evaluation_row(row)
+            _evaluation_row(row)
             for row in self.db.fetchall(
                 """
                 SELECT * FROM evaluations

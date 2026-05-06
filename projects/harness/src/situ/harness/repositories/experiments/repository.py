@@ -1,9 +1,23 @@
 from __future__ import annotations
 
-from ...core.db.serialization import experiment_row, utc_now
+from typing import Any
+
+from ...core.db.serialization import utc_now
 from ...records import ExperimentRecord, WorkStatus, parse_work_status
 from ..base import BaseRepository
 from .command import CreateExperiment, UpdateExperiment
+
+
+def _experiment_row(row: Any) -> ExperimentRecord:
+    return ExperimentRecord(
+        id=row["id"],
+        session_id=row["session_id"],
+        status=row["status"],
+        title=row["title"],
+        summary=row["summary"],
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+    )
 
 
 class ExperimentsRepository(BaseRepository):
@@ -87,20 +101,20 @@ class ExperimentsRepository(BaseRepository):
 
     def get_by_id(self, experiment_id: str) -> ExperimentRecord | None:
         row = self.db.fetchone("SELECT * FROM experiments WHERE id = ?", (experiment_id,))
-        return experiment_row(row) if row else None
+        return _experiment_row(row) if row else None
 
     def get(self, experiment_id: str) -> ExperimentRecord | None:
         return self.get_by_id(experiment_id)
 
     def list_all(self) -> list[ExperimentRecord]:
         return [
-            experiment_row(row)
+            _experiment_row(row)
             for row in self.db.fetchall("SELECT * FROM experiments ORDER BY created_at")
         ]
 
     def list_for_session(self, session_id: str) -> list[ExperimentRecord]:
         return [
-            experiment_row(row)
+            _experiment_row(row)
             for row in self.db.fetchall(
                 "SELECT * FROM experiments WHERE session_id = ? ORDER BY created_at",
                 (session_id,),

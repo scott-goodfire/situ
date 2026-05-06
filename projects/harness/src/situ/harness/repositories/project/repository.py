@@ -1,8 +1,19 @@
 from __future__ import annotations
 
-from ...core.db.serialization import project_row, utc_now
+from typing import Any
+
+from ...core.db.serialization import utc_now
 from ...records import ProjectRecord
 from ..base import BaseRepository
+
+
+def _project_row(row: Any) -> ProjectRecord:
+    return ProjectRecord(
+        id=row["id"],
+        repo_path=row["repo_path"],
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+    )
 
 
 class ProjectRepository(BaseRepository):
@@ -10,7 +21,7 @@ class ProjectRepository(BaseRepository):
         row = self.db.fetchone(
             "SELECT * FROM projects WHERE id = ?", (self.db.project_id,)
         )
-        return project_row(row) if row else None
+        return _project_row(row) if row else None
 
     def ensure(self) -> ProjectRecord:
         existing = self.get()

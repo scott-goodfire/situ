@@ -2,10 +2,22 @@ from __future__ import annotations
 
 from typing import Any
 
-from ...core.db.serialization import agent_message_history_row, json_dumps, json_loads, utc_now
+from ...core.db.serialization import json_dumps, json_loads, utc_now
 from ...records import AgentMessageHistoryRecord
 from ..base import BaseRepository
 from .command import AppendAgentMessageHistory
+
+
+def _agent_message_history_row(row: Any) -> AgentMessageHistoryRecord:
+    return AgentMessageHistoryRecord(
+        id=row["id"],
+        session_id=row["session_id"],
+        agent_name=row["agent_name"],
+        pydantic_run_id=row["pydantic_run_id"],
+        conversation_id=row["conversation_id"],
+        messages=json_loads(row["messages_json"]),
+        created_at=row["created_at"],
+    )
 
 
 class AgentMessageHistoryRepository(BaseRepository):
@@ -51,7 +63,7 @@ class AgentMessageHistoryRepository(BaseRepository):
 
     def get_by_id(self, history_id: int) -> AgentMessageHistoryRecord | None:
         row = self.db.fetchone("SELECT * FROM agent_message_history WHERE id = ?", (history_id,))
-        return agent_message_history_row(row) if row else None
+        return _agent_message_history_row(row) if row else None
 
     def get(self, history_id: int) -> AgentMessageHistoryRecord | None:
         return self.get_by_id(history_id)
@@ -76,11 +88,11 @@ class AgentMessageHistoryRepository(BaseRepository):
                 """,
                 (session_id, agent_name),
             )
-        return [agent_message_history_row(row) for row in rows]
+        return [_agent_message_history_row(row) for row in rows]
 
     def list_all(self) -> list[AgentMessageHistoryRecord]:
         return [
-            agent_message_history_row(row)
+            _agent_message_history_row(row)
             for row in self.db.fetchall("SELECT * FROM agent_message_history ORDER BY id")
         ]
 

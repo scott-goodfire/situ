@@ -1,9 +1,21 @@
 from __future__ import annotations
 
-from ...core.db.serialization import session_row, utc_now
+from typing import Any
+
+from ...core.db.serialization import utc_now
 from ...records import SessionRecord, SessionStatus, parse_session_status
 from ..base import BaseRepository
 from .command import CreateSession, UpdateSessionStatus
+
+
+def _session_row(row: Any) -> SessionRecord:
+    return SessionRecord(
+        id=row["id"],
+        project_id=row["project_id"],
+        status=row["status"],
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+    )
 
 
 class SessionsRepository(BaseRepository):
@@ -54,20 +66,20 @@ class SessionsRepository(BaseRepository):
 
     def get_by_id(self, session_id: str) -> SessionRecord | None:
         row = self.db.fetchone("SELECT * FROM sessions WHERE id = ?", (session_id,))
-        return session_row(row) if row else None
+        return _session_row(row) if row else None
 
     def get(self, session_id: str) -> SessionRecord | None:
         return self.get_by_id(session_id)
 
     def list_all(self) -> list[SessionRecord]:
         return [
-            session_row(row)
+            _session_row(row)
             for row in self.db.fetchall("SELECT * FROM sessions ORDER BY created_at")
         ]
 
     def list_for_project(self, project_id: str) -> list[SessionRecord]:
         return [
-            session_row(row)
+            _session_row(row)
             for row in self.db.fetchall(
                 "SELECT * FROM sessions WHERE project_id = ? ORDER BY created_at",
                 (project_id,),
@@ -78,4 +90,4 @@ class SessionsRepository(BaseRepository):
         row = self.db.fetchone(
             "SELECT * FROM sessions ORDER BY updated_at DESC LIMIT 1"
         )
-        return session_row(row) if row else None
+        return _session_row(row) if row else None
