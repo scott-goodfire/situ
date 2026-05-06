@@ -39,6 +39,7 @@ from .hypotheses import (
 )
 from .common import SituToolDeps
 from .links import LinkHypothesisExperimentTool
+from .measurements import ListMeasurementsTool
 from .projects import (
     ConfirmProjectCloseTool,
     CreateProjectTool,
@@ -163,6 +164,7 @@ def build_research_toolset() -> FunctionToolset[SituToolDeps]:
             ListEvaluationsTool().as_tool(),
             CreateEvaluationTool().as_tool(),
             UpdateEvaluationTool().as_tool(),
+            ListMeasurementsTool().as_tool(),
             LinkHypothesisExperimentTool().as_tool(),
             AddAnalysisCommentTool().as_tool(),
             AddHypothesisCommentTool().as_tool(),

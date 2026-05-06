@@ -61,8 +61,10 @@ Do not split first-slice setup into `--eval`, `--signals`, or repeated signal
 flags. Situ should preserve ambiguous project context and structure it over
 time.
 
-Defer richer guidance, proposal-context commands, and broad object-specific
-list commands until the basic loop is working.
+Defer richer guidance and proposal-context commands until the basic loop is
+working. Agent-facing toolsets may expose explicit `list_*` tools for
+first-class research records when those tools make state inspection clearer
+than requiring agents to fetch the full session graph.
 
 ## Session Context
 
@@ -83,6 +85,11 @@ The compact session context, exposed to agents through tools such as
 - Recent concern/result/decision comments
 - Artifact references
 - Internal events when useful
+
+Agent-facing read and write tools should stay close to the product models.
+Use `get_session` for the compact current graph, and use explicit `list_*`
+tools when an agent needs a focused slice such as hypotheses, baselines,
+experiments, evaluations, measurements, activities, or artifacts.
 
 Agent-facing write tools should stay close to the product models:
 `create_hypothesis`, `update_hypothesis`, `create_baseline`,

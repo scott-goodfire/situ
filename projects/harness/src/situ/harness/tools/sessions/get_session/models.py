@@ -12,8 +12,10 @@ class GetSessionResult(SituToolReturn):
     project: dict[str, Any] | None = None
     session: dict[str, Any] | None = None
     hypotheses: list[dict[str, Any]] = Field(default_factory=list)
+    baselines: list[dict[str, Any]] = Field(default_factory=list)
     experiments: list[dict[str, Any]] = Field(default_factory=list)
     evaluations: list[dict[str, Any]] = Field(default_factory=list)
+    measurements: list[dict[str, Any]] = Field(default_factory=list)
     hypothesis_experiment_links: list[dict[str, Any]] = Field(default_factory=list)
     agents: list[dict[str, Any]] = Field(default_factory=list)
     tasks: list[dict[str, Any]] = Field(default_factory=list)

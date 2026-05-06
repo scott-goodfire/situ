@@ -83,6 +83,36 @@ class MeasurementsRepository(BaseRepository):
             )
         ]
 
+    def list_for_baseline(self, baseline_id: str) -> list[MeasurementRecord]:
+        return [
+            _measurement_row(row)
+            for row in self.db.fetchall(
+                """
+                SELECT measurements.*
+                FROM measurements
+                JOIN evaluations ON evaluations.id = measurements.evaluation_id
+                WHERE evaluations.associated_baseline_id = ?
+                ORDER BY measurements.id
+                """,
+                (baseline_id,),
+            )
+        ]
+
+    def list_for_experiment(self, experiment_id: str) -> list[MeasurementRecord]:
+        return [
+            _measurement_row(row)
+            for row in self.db.fetchall(
+                """
+                SELECT measurements.*
+                FROM measurements
+                JOIN evaluations ON evaluations.id = measurements.evaluation_id
+                WHERE evaluations.associated_experiment_id = ?
+                ORDER BY measurements.id
+                """,
+                (experiment_id,),
+            )
+        ]
+
     def list_for_project(self, project_id: str) -> list[MeasurementRecord]:
         return [
             _measurement_row(row)

@@ -55,6 +55,7 @@ from situ.harness.tools.hypotheses import (
     UpdateHypothesisTool,
 )
 from situ.harness.tools.links import LinkHypothesisExperimentTool
+from situ.harness.tools.measurements import ListMeasurementsTool
 from situ.harness.tools.projects import (
     ConfirmProjectCloseTool,
     CreateProjectTool,
@@ -123,6 +124,27 @@ def repos(tmp_path: Path) -> Repositories:
 
 def test_get_session_tool_reads_current_session_graph(repos: Repositories) -> None:
     deps = SituToolDeps(session_id="session_0001", repos=repos)
+    baseline = repos.baselines.create(
+        baseline_id="baseline_project_0001_default",
+        project_id="project_0001",
+        created_in_session_id="session_0001",
+        title="Current workspace baseline",
+        summary="Reference behavior before candidate changes.",
+    )
+    evaluation = repos.evaluations.create(
+        evaluation_id="eval_session_0001_baseline",
+        project_id="project_0001",
+        created_in_session_id="session_0001",
+        title="Baseline project eval",
+        summary="Run the normal project test/eval command before changes.",
+        associated_baseline_id=baseline.id,
+    )
+    repos.measurements.add(
+        evaluation_id=evaluation.id,
+        created_in_session_id="session_0001",
+        actor="agent",
+        body="Baseline command passed.",
+    )
 
     result = invoke_situ_tool_sync(tool=GetSessionTool(), deps=deps)
 
@@ -133,8 +155,14 @@ def test_get_session_tool_reads_current_session_graph(repos: Repositories) -> No
     assert result.session is not None
     assert result.session["id"] == "session_0001"
     assert [hypothesis["id"] for hypothesis in result.hypotheses] == ["hyp_0001"]
+    assert [baseline["id"] for baseline in result.baselines] == [
+        "baseline_project_0001_default"
+    ]
     assert [experiment["id"] for experiment in result.experiments] == [
         "exp_session_0001_a"
+    ]
+    assert [measurement["evaluation_id"] for measurement in result.measurements] == [
+        "eval_session_0001_baseline"
     ]
 
 
@@ -622,6 +650,11 @@ def test_evaluation_tools_create_update_list_and_add_results(
     assert updated.evaluation["status"] == "closed"
 
     listed = invoke_situ_tool_sync(tool=ListEvaluationsTool(), deps=deps)
+    listed_measurements = invoke_situ_tool_sync(
+        tool=ListMeasurementsTool(),
+        deps=deps,
+        baseline_id=baseline.baseline["id"],
+    )
     activities = invoke_situ_tool_sync(
         tool=ListEvaluationActivitiesTool(),
         deps=deps,
@@ -632,6 +665,9 @@ def test_evaluation_tools_create_update_list_and_add_results(
     assert listed.success is True
     assert [evaluation["id"] for evaluation in listed.evaluations] == [
         "eval_project_0001_agent_001"
+    ]
+    assert [measurement["id"] for measurement in listed_measurements.measurements] == [
+        1
     ]
     assert [measurement.id for measurement in measurements] == [1]
     assert [activity["id"] for activity in activities.activities] == [1]

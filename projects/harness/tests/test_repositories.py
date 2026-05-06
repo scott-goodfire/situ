@@ -618,6 +618,9 @@ def test_measurements_repository_add_and_list(repos: Repositories) -> None:
     assert repos.measurements.list_for_evaluation("eval_session_0001_baseline") == [
         measurement
     ]
+    assert repos.measurements.list_for_baseline("baseline_project_0001_default") == [
+        measurement
+    ]
     assert repos.measurements.list_for_project("project_0001") == [measurement]
     assert repos.measurements.list_for_session("session_0001") == [measurement]
 
