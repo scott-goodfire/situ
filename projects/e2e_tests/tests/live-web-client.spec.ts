@@ -71,7 +71,7 @@ test("web client receives live agent events from a real session", async ({ page 
     await expect(page.getByText("experiment.comment_added")).toBeVisible();
     await expect(page.getByText("session.completed")).toBeVisible();
     await expect(
-      page.getByText(/session_0001 \| closed \| hypotheses [1-9]\d* \| experiments [1-9]\d*/),
+      page.getByText(/S1 \| closed \| hypotheses [1-9]\d* \| experiments [1-9]\d*/),
     ).toBeVisible();
 
     const screenshotPath = finalScreenshotPath();

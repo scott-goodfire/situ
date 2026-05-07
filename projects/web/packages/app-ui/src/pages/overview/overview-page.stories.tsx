@@ -25,7 +25,7 @@ type Story = StoryObj<typeof OverviewPageView>;
 
 const FULL_HYPOTHESES: OverviewHypothesis[] = [
   {
-    id: "hyp_0002",
+    id: "H2",
     title: "Tool-use discipline reduces billing detours",
     status: "open",
     summary:
@@ -33,7 +33,7 @@ const FULL_HYPOTHESES: OverviewHypothesis[] = [
     evidence: "No active work yet",
   },
   {
-    id: "hyp_0001",
+    id: "H1",
     title: "Filtering low-confidence retrieval helps cancellation tickets",
     status: "active",
     summary:
@@ -44,7 +44,7 @@ const FULL_HYPOTHESES: OverviewHypothesis[] = [
     experimentLabel: "Try retrieval filtering",
   },
   {
-    id: "hyp_0003",
+    id: "H3",
     title: "Prompt decomposition is saturated",
     status: "closed",
     summary: "Further prompt decomposition did not improve the billing slice.",
@@ -81,7 +81,7 @@ export const SparseProject: Story = {
   args: {
     hypotheses: [
       {
-        id: "hyp_0001",
+        id: "H1",
         title: "Initial guess: prompt is too verbose",
         status: "open",
         summary: "Smaller prompts may improve latency without hurting accuracy.",

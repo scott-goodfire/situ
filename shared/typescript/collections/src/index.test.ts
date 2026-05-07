@@ -28,8 +28,8 @@ import type {
 } from "@situ/protocol";
 
 const WORKSPACE_ID = "workspace_0001";
-const PROJECT_ID = "project_0001";
-const SESSION_ID = "session_0001";
+const PROJECT_ID = "P1";
+const SESSION_ID = "S1";
 
 describe("situ collections", () => {
   test("hydrates workspaces, projects, sessions, activities, and events", async () => {
@@ -47,8 +47,8 @@ describe("situ collections", () => {
       analyses: [analysisRecord({})],
       hypothesis_experiment_links: [
         {
-          hypothesis_id: "hyp_0001",
-          experiment_id: "exp_session_0001_baseline",
+          hypothesis_id: "H1",
+          experiment_id: "E1",
           created_at: "2026-01-01T00:00:01Z",
         },
       ],
@@ -83,28 +83,28 @@ describe("situ collections", () => {
       "Run project-native tests and collect plaintext evidence.",
     );
     expect(collections.sessions.get(SESSION_ID)?.status).toBe("active");
-    expect(collections.hypotheses.get("hyp_0001")?.status).toBe("active");
-    expect(collections.baselines.get("baseline_project_0001_default")?.status).toBe(
+    expect(collections.hypotheses.get("H1")?.status).toBe("active");
+    expect(collections.baselines.get("B1")?.status).toBe(
       "closed",
     );
-    expect(collections.experiments.get("exp_session_0001_baseline")?.status).toBe(
+    expect(collections.experiments.get("E1")?.status).toBe(
       "closed",
     );
-    expect(collections.evaluations.get("eval_session_0001_baseline")?.status).toBe(
+    expect(collections.evaluations.get("V1")?.status).toBe(
       "closed",
     );
-    expect(collections.analyses.get("analysis_0001")?.status).toBe("open");
-    expect(collections.agents.get("agent_project_0001_scientist")?.kind).toBe(
+    expect(collections.analyses.get("A1")?.status).toBe("open");
+    expect(collections.agents.get("agent_P1_scientist")?.kind).toBe(
       "scientist",
     );
-    expect(collections.tasks.get("task_project_0001_001")?.kind).toBe("baseline");
-    expect(collections.taskDependencies.get("task_project_0001_002:task_project_0001_001")?.blocked_by_task_id).toBe(
-      "task_project_0001_001",
+    expect(collections.tasks.get("T1")?.kind).toBe("baseline");
+    expect(collections.taskDependencies.get("T2:T1")?.blocked_by_task_id).toBe(
+      "T1",
     );
-    expect(collections.taskEntityLinks.get("task_project_0001_001:evaluation:eval_session_0001_baseline:created")?.entity_id).toBe(
-      "eval_session_0001_baseline",
+    expect(collections.taskEntityLinks.get("T1:evaluation:V1:created")?.entity_id).toBe(
+      "V1",
     );
-    expect(collections.taskActivities.get("1")?.task_id).toBe("task_project_0001_001");
+    expect(collections.taskActivities.get("1")?.task_id).toBe("T1");
     expect(collections.analysisActivities.get("1")?.kind).toBe("comment");
     expect(collections.experimentActivities.get("1")?.kind).toBe("comment");
     expect(collections.evaluationActivities.get("1")?.kind).toBe("result");
@@ -182,9 +182,9 @@ describe("situ collections", () => {
       collections,
       upsert: upsert({
         collection: "baselines",
-        key: "baseline_project_0001_default",
+        key: "B1",
         record: baselineRecord({
-          overrides: { id: "baseline_project_0001_default", status: "active" },
+          overrides: { id: "B1", status: "active" },
         }),
       }),
     });
@@ -192,9 +192,9 @@ describe("situ collections", () => {
       collections,
       upsert: upsert({
         collection: "experiments",
-        key: "exp_session_0001_a",
+        key: "E1",
         record: experimentRecord({
-          overrides: { id: "exp_session_0001_a", status: "active" },
+          overrides: { id: "E1", status: "active" },
         }),
       }),
     });
@@ -202,9 +202,9 @@ describe("situ collections", () => {
       collections,
       upsert: upsert({
         collection: "evaluations",
-        key: "eval_session_0001_a",
+        key: "V2",
         record: evaluationRecord({
-          overrides: { id: "eval_session_0001_a", status: "active" },
+          overrides: { id: "V2", status: "active" },
         }),
       }),
     });
@@ -225,9 +225,9 @@ describe("situ collections", () => {
       collections,
       upsert: upsert({
         collection: "analyses",
-        key: "analysis_0001",
+        key: "A1",
         record: analysisRecord({
-          overrides: { id: "analysis_0001", status: "active" },
+          overrides: { id: "A1", status: "active" },
         }),
       }),
     });
@@ -235,7 +235,7 @@ describe("situ collections", () => {
       collections,
       upsert: upsert({
         collection: "agents",
-        key: "agent_project_0001_scientist",
+        key: "agent_P1_scientist",
         record: agentRecord({}),
       }),
     });
@@ -243,7 +243,7 @@ describe("situ collections", () => {
       collections,
       upsert: upsert({
         collection: "tasks",
-        key: "task_project_0001_001",
+        key: "T1",
         record: taskRecord({}),
       }),
     });
@@ -301,19 +301,19 @@ describe("situ collections", () => {
     );
     expect(collections.sessions.size).toBe(1);
     expect(collections.sessions.get(SESSION_ID)?.status).toBe("closed");
-    expect(collections.baselines.get("baseline_project_0001_default")?.status).toBe(
+    expect(collections.baselines.get("B1")?.status).toBe(
       "active",
     );
-    expect(collections.experiments.get("exp_session_0001_a")?.status).toBe("active");
-    expect(collections.evaluations.get("eval_session_0001_a")?.status).toBe("active");
+    expect(collections.experiments.get("E1")?.status).toBe("active");
+    expect(collections.evaluations.get("V2")?.status).toBe("active");
     expect(collections.measurements.get("6")?.payload.metrics).toEqual({
       score: { value: 0.73 },
     });
-    expect(collections.analyses.get("analysis_0001")?.status).toBe("active");
-    expect(collections.agents.get("agent_project_0001_scientist")?.status).toBe("idle");
-    expect(collections.tasks.get("task_project_0001_001")?.priority).toBe("high");
+    expect(collections.analyses.get("A1")?.status).toBe("active");
+    expect(collections.agents.get("agent_P1_scientist")?.status).toBe("idle");
+    expect(collections.tasks.get("T1")?.priority).toBe("high");
     expect(collections.taskActivities.get("1")?.actor_agent_id).toBe(
-      "agent_project_0001_scientist",
+      "agent_P1_scientist",
     );
     expect(collections.analysisActivities.get("5")?.payload.source).toBe("first pass");
     expect(collections.experimentActivities.get("3")?.kind).toBe("comment");
@@ -415,7 +415,7 @@ function hypothesisRecord({
   overrides?: Partial<HypothesisRecord>;
 }): HypothesisRecord {
   return {
-    id: "hyp_0001",
+    id: "H1",
     project_id: PROJECT_ID,
     created_in_session_id: SESSION_ID,
     title: "Component C helps",
@@ -433,7 +433,7 @@ function experimentRecord({
   overrides?: Partial<ExperimentRecord>;
 }): ExperimentRecord {
   return {
-    id: "exp_session_0001_baseline",
+    id: "E1",
     project_id: PROJECT_ID,
     created_in_session_id: SESSION_ID,
     status: "closed",
@@ -451,7 +451,7 @@ function baselineRecord({
   overrides?: Partial<BaselineRecord>;
 }): BaselineRecord {
   return {
-    id: "baseline_project_0001_default",
+    id: "B1",
     project_id: PROJECT_ID,
     created_in_session_id: SESSION_ID,
     status: "closed",
@@ -469,13 +469,13 @@ function evaluationRecord({
   overrides?: Partial<EvaluationRecord>;
 }): EvaluationRecord {
   return {
-    id: "eval_session_0001_baseline",
+    id: "V1",
     project_id: PROJECT_ID,
     created_in_session_id: SESSION_ID,
     status: "closed",
     title: "Baseline project eval",
     summary: "Baseline toy evaluation.",
-    associated_baseline_id: "baseline_project_0001_default",
+    associated_baseline_id: "B1",
     associated_experiment_id: undefined,
     created_at: "2026-01-01T00:00:01Z",
     updated_at: "2026-01-01T00:00:01Z",
@@ -490,7 +490,7 @@ function measurementRecord({
 }): MeasurementRecord {
   return {
     id: 1,
-    evaluation_id: "eval_session_0001_baseline",
+    evaluation_id: "V1",
     created_in_session_id: SESSION_ID,
     actor: "agent",
     body: "Baseline result recorded.",
@@ -506,10 +506,10 @@ function analysisRecord({
   overrides?: Partial<AnalysisRecord>;
 }): AnalysisRecord {
   return {
-    id: "analysis_0001",
+    id: "A1",
     project_id: PROJECT_ID,
     created_in_session_id: SESSION_ID,
-    created_by_agent_id: "agent_project_0001_scientist",
+    created_by_agent_id: "agent_P1_scientist",
     status: "open",
     title: "Codebase map",
     summary: "Mapped the main backend primitives.",
@@ -527,7 +527,7 @@ function agentRecord({
   overrides?: Partial<AgentRecord>;
 }): AgentRecord {
   return {
-    id: "agent_project_0001_scientist",
+    id: "agent_P1_scientist",
     project_id: PROJECT_ID,
     created_in_session_id: SESSION_ID,
     kind: "scientist",
@@ -546,7 +546,7 @@ function taskRecord({
   overrides?: Partial<TaskRecord>;
 }): TaskRecord {
   return {
-    id: "task_project_0001_001",
+    id: "T1",
     project_id: PROJECT_ID,
     created_in_session_id: SESSION_ID,
     title: "Record baseline",
@@ -579,8 +579,8 @@ function taskDependencyRecord({
 }): TaskDependencyRecord {
   return {
     project_id: PROJECT_ID,
-    task_id: "task_project_0001_002",
-    blocked_by_task_id: "task_project_0001_001",
+    task_id: "T2",
+    blocked_by_task_id: "T1",
     created_at: "2026-01-01T00:00:02Z",
     ...overrides,
   };
@@ -593,9 +593,9 @@ function taskEntityLinkRecord({
 }): TaskEntityLinkRecord {
   return {
     project_id: PROJECT_ID,
-    task_id: "task_project_0001_001",
+    task_id: "T1",
     entity_kind: "evaluation",
-    entity_id: "eval_session_0001_baseline",
+    entity_id: "V1",
     relationship: "created",
     created_at: "2026-01-01T00:00:02Z",
     ...overrides,
@@ -610,9 +610,9 @@ function taskActivityRecord({
   return {
     id: 1,
     project_id: PROJECT_ID,
-    task_id: "task_project_0001_001",
+    task_id: "T1",
     created_in_session_id: SESSION_ID,
-    actor_agent_id: "agent_project_0001_scientist",
+    actor_agent_id: "agent_P1_scientist",
     actor: "agent",
     kind: "comment",
     body: "Baseline task claimed.",
@@ -629,7 +629,7 @@ function experimentActivityRecord({
 }): ExperimentActivityRecord {
   return {
     id: 1,
-    experiment_id: "exp_session_0001_baseline",
+    experiment_id: "E1",
     created_in_session_id: SESSION_ID,
     actor: "worker",
     kind: "comment",
@@ -647,7 +647,7 @@ function analysisActivityRecord({
 }): AnalysisActivityRecord {
   return {
     id: 1,
-    analysis_id: "analysis_0001",
+    analysis_id: "A1",
     created_in_session_id: SESSION_ID,
     actor: "agent",
     kind: "comment",
@@ -665,7 +665,7 @@ function evaluationActivityRecord({
 }): EvaluationActivityRecord {
   return {
     id: 1,
-    evaluation_id: "eval_session_0001_baseline",
+    evaluation_id: "V1",
     created_in_session_id: SESSION_ID,
     actor: "agent",
     kind: "result",
@@ -682,7 +682,7 @@ function eventRecord({ overrides = {} }: { overrides?: Partial<EventRecord> }): 
     associated_project_id: PROJECT_ID,
     associated_session_id: SESSION_ID,
     type: "session.started",
-    message: "Started session_0001",
+    message: "Started S1",
     payload: {},
     created_at: "2026-01-01T00:00:02Z",
     ...overrides,

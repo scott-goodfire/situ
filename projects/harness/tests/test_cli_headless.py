@@ -269,13 +269,13 @@ def test_exec_uses_shared_rpc_lifecycle_and_prints_final_json(
     ) -> dict[str, Any]:
         calls.append((method, params or {}))
         if method == "session.start":
-            return {"session_id": "session_0001", "status": "active"}
+            return {"session_id": "S1", "status": "active"}
         if method == "session.status":
             return {
                 "session": {
-                    "id": "session_0001",
+                    "id": "S1",
                     "workspace_id": "workspace_test",
-                    "project_id": "project_test",
+                    "project_id": "P1",
                     "status": "closed",
                 }
             }
@@ -283,9 +283,9 @@ def test_exec_uses_shared_rpc_lifecycle_and_prints_final_json(
             return {
                 "sessions": [
                     {
-                        "id": "session_0001",
+                        "id": "S1",
                         "workspace_id": "workspace_test",
-                        "project_id": "project_test",
+                        "project_id": "P1",
                         "status": "closed",
                     }
                 ],
@@ -325,9 +325,9 @@ def test_exec_uses_shared_rpc_lifecycle_and_prints_final_json(
     captured = capsys.readouterr()
     payload = json.loads(captured.out)
     assert code == 0
-    assert "started session_0001" in captured.err
+    assert "started S1" in captured.err
     assert payload["status"] == "completed"
-    assert payload["session_id"] == "session_0001"
+    assert payload["session_id"] == "S1"
     assert calls == [
         (
             "session.start",
@@ -341,7 +341,7 @@ def test_exec_uses_shared_rpc_lifecycle_and_prints_final_json(
                 "max_experiments": 2,
             },
         ),
-        ("session.status", {"session_id": "session_0001"}),
+        ("session.status", {"session_id": "S1"}),
         ("collections.bootstrap", {}),
     ]
 

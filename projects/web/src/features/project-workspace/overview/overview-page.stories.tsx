@@ -117,7 +117,7 @@ function overviewData(): ProjectWorkspaceData {
     },
     sessions: [
       {
-        id: "session_0001",
+        id: "S1",
         workspace_id: "workspace_demo",
         project_id: "support-agent-demo",
         status: "active",
@@ -127,7 +127,7 @@ function overviewData(): ProjectWorkspaceData {
     ],
     hypotheses: [
       {
-        id: "hyp_0001",
+        id: "H1",
         project_id: "support-agent-demo",
         title: "Filtering low-confidence retrieval helps cancellation tickets",
         summary:
@@ -137,7 +137,7 @@ function overviewData(): ProjectWorkspaceData {
         updated_at: "2026-01-01T00:08:00Z",
       },
       {
-        id: "hyp_0002",
+        id: "H2",
         project_id: "support-agent-demo",
         title: "Tool-use discipline reduces billing detours",
         summary: "Require account lookup before offering cancellation or refund guidance.",
@@ -146,7 +146,7 @@ function overviewData(): ProjectWorkspaceData {
         updated_at: "2026-01-01T00:04:00Z",
       },
       {
-        id: "hyp_0003",
+        id: "H3",
         project_id: "support-agent-demo",
         title: "Prompt decomposition is saturated",
         summary: "Further prompt decomposition did not improve the billing slice.",
@@ -157,7 +157,7 @@ function overviewData(): ProjectWorkspaceData {
     ],
     experiments: [
       {
-        id: "exp_0001",
+        id: "E1",
         project_id: "support-agent-demo",
         status: "closed",
         title: "Baseline support eval",
@@ -166,7 +166,7 @@ function overviewData(): ProjectWorkspaceData {
         updated_at: "2026-01-01T00:03:00Z",
       },
       {
-        id: "exp_0002",
+        id: "E2",
         project_id: "support-agent-demo",
         status: "active",
         title: "Try retrieval filtering",
@@ -175,7 +175,7 @@ function overviewData(): ProjectWorkspaceData {
         updated_at: "2026-01-01T00:08:00Z",
       },
       {
-        id: "exp_0003",
+        id: "E3",
         project_id: "support-agent-demo",
         status: "closed",
         title: "Try prompt decomposition",
@@ -186,7 +186,7 @@ function overviewData(): ProjectWorkspaceData {
     ],
     evaluations: [
       {
-        id: "eval_0001",
+        id: "V1",
         project_id: "support-agent-demo",
         status: "closed",
         title: "Baseline support eval",
@@ -196,22 +196,22 @@ function overviewData(): ProjectWorkspaceData {
         updated_at: "2026-01-01T00:03:00Z",
       },
       {
-        id: "eval_0002",
+        id: "V2",
         project_id: "support-agent-demo",
         status: "active",
         title: "Retrieval filtering candidate",
-        summary: "Candidate measurement for exp_0002.",
-        associated_experiment_id: "exp_0002",
+        summary: "Candidate measurement for E2.",
+        associated_experiment_id: "E2",
         created_at: "2026-01-01T00:05:00Z",
         updated_at: "2026-01-01T00:08:00Z",
       },
       {
-        id: "eval_0003",
+        id: "V3",
         project_id: "support-agent-demo",
         status: "closed",
         title: "Prompt decomposition candidate",
-        summary: "Candidate measurement for exp_0003.",
-        associated_experiment_id: "exp_0003",
+        summary: "Candidate measurement for E3.",
+        associated_experiment_id: "E3",
         created_at: "2026-01-01T00:04:00Z",
         updated_at: "2026-01-01T00:06:00Z",
       },
@@ -225,20 +225,20 @@ function overviewData(): ProjectWorkspaceData {
     analysisActivities: [],
     hypothesisExperimentLinks: [
       {
-        hypothesis_id: "hyp_0001",
-        experiment_id: "exp_0002",
+        hypothesis_id: "H1",
+        experiment_id: "E2",
         created_at: "2026-01-01T00:05:00Z",
       },
       {
-        hypothesis_id: "hyp_0003",
-        experiment_id: "exp_0003",
+        hypothesis_id: "H3",
+        experiment_id: "E3",
         created_at: "2026-01-01T00:04:00Z",
       },
     ],
     hypothesisActivities: [
       {
         id: 1,
-        hypothesis_id: "hyp_0001",
+        hypothesis_id: "H1",
         actor: "agent",
         kind: "comment",
         body: "Retrieval filtering is the current thread because cancellation failures cluster around irrelevant snippets.",
@@ -247,7 +247,7 @@ function overviewData(): ProjectWorkspaceData {
       },
       {
         id: 2,
-        hypothesis_id: "hyp_0003",
+        hypothesis_id: "H3",
         actor: "agent",
         kind: "comment",
         body: "Closed prompt decomposition because the candidate did not beat baseline.",
@@ -258,7 +258,7 @@ function overviewData(): ProjectWorkspaceData {
     experimentActivities: [
       {
         id: 1,
-        experiment_id: "exp_0002",
+        experiment_id: "E2",
         actor: "agent",
         kind: "comment",
         body: "Applied filtering only to retrieval selection; graders and fixtures were unchanged.",
@@ -267,7 +267,7 @@ function overviewData(): ProjectWorkspaceData {
       },
       {
         id: 2,
-        experiment_id: "exp_0003",
+        experiment_id: "E3",
         actor: "worker",
         kind: "comment",
         body: "No meaningful lift after splitting the prompt.",
@@ -278,7 +278,7 @@ function overviewData(): ProjectWorkspaceData {
     evaluationActivities: [
       {
         id: 1,
-        evaluation_id: "eval_0001",
+        evaluation_id: "V1",
         actor: "agent",
         kind: "result",
         body: "Baseline: resolution_rate 61.0%, latency 1830ms, hallucination_rate 2.4%.",
@@ -287,7 +287,7 @@ function overviewData(): ProjectWorkspaceData {
       },
       {
         id: 2,
-        evaluation_id: "eval_0002",
+        evaluation_id: "V2",
         actor: "agent",
         kind: "result",
         body: "Candidate: resolution_rate 64.8%, latency 1910ms. Needs reproduction before treating as accepted.",
@@ -296,7 +296,7 @@ function overviewData(): ProjectWorkspaceData {
       },
       {
         id: 3,
-        evaluation_id: "eval_0003",
+        evaluation_id: "V3",
         actor: "worker",
         kind: "result",
         body: "Candidate: resolution_rate 60.8%, latency 1860ms. Closed as unpromising.",

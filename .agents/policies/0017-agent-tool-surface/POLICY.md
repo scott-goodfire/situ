@@ -39,6 +39,14 @@ task comments with source names and URLs. Do not attach web search to Scientist
 or Critic by default; those roles should focus on workspace evidence,
 measurements, and review.
 
+Runtime skills are also separate from Situ research-record tools. Skills may
+package reusable methodology, resources, or scripts for a role, but skill use
+must still produce ordinary Situ records when the finding matters. Keep
+runtime skills under the harness package, not `.agents/skills`; `.agents/skills`
+is for developer agents maintaining this repo. Manager and Researcher may have
+runtime skills by default. Do not attach runtime skills to Scientist or Critic
+until their core role loops need them.
+
 The durable storage model can remain general. The agent-facing tool name should
 still describe the product action directly.
 Use the product-model meanings in
@@ -105,6 +113,13 @@ to call a generic activity writer to record benchmark evidence.
   SQLite.
 - Toolsets should include concise instructions that explain when to read state
   and when to write comments.
+- Runtime skills should use progressive disclosure. Prefer advertising skill
+  names and descriptions, then requiring `load_skill(skill_name=...)` before
+  applying detailed methodology.
+- Runtime skills should be role-scoped. A Manager skill should help planning
+  and task decomposition; a Researcher skill should help analysis, source
+  synthesis, or hypothesis handoff. The skill must not blur role boundaries or
+  grant record-writing behavior that the role's normal toolset does not have.
 - Tool names should avoid obsolete or overly generic phrasing like
   `record_finding` or `record_activity` when a product-model operation is
   clearer. A compact context reader is acceptable in the slim slice, but prefer

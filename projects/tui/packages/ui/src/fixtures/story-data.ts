@@ -17,8 +17,8 @@ export const storyWorkspace = "/Users/situ/sandbox/support-agent";
 export const maxExperimentCount = 5;
 
 const storyWorkspaceId = "workspace_0001";
-const storyProjectId = "project_0001";
-const storySessionId = "session_0001";
+const storyProjectId = "P1";
+const storySessionId = "S1";
 
 export const activeProject = projectRecord({});
 
@@ -58,7 +58,7 @@ export const activeHypothesis = hypothesisRecord({});
 
 const baselineExperiment = experimentRecord({
   overrides: {
-    id: "exp_session_0001_baseline",
+    id: "E1",
     status: "closed",
     title: "Record baseline",
     summary: "Baseline result recorded: score 0.61, latency 1830ms.",
@@ -67,7 +67,7 @@ const baselineExperiment = experimentRecord({
 
 export const runningExperiment = experimentRecord({
   overrides: {
-    id: "exp_session_0001_retrieval_filter",
+    id: "E2",
     status: "active",
     title: "Try retrieval filtering",
     summary: "Try retrieval filtering on cancellation-ticket failures.",
@@ -76,7 +76,7 @@ export const runningExperiment = experimentRecord({
 
 export const acceptedExperiment = experimentRecord({
   overrides: {
-    id: "exp_session_0001_tool_discipline",
+    id: "E3",
     status: "closed",
     title: "Tighten tool-use discipline",
     summary: "Tighten tool-use discipline for billing tickets.",
@@ -85,7 +85,7 @@ export const acceptedExperiment = experimentRecord({
 
 export const suspiciousExperiment = experimentRecord({
   overrides: {
-    id: "exp_session_0001_fixture_edit",
+    id: "E4",
     status: "closed",
     title: "Reported large improvement",
     summary: "Reported large improvement after eval fixture edit.",
@@ -94,7 +94,7 @@ export const suspiciousExperiment = experimentRecord({
 
 const baselineEvaluation = evaluationRecord({
   overrides: {
-    id: "eval_session_0001_baseline",
+    id: "V1",
     status: "closed",
     title: "Baseline project eval",
     summary: "Baseline result recorded before candidate changes.",
@@ -103,7 +103,7 @@ const baselineEvaluation = evaluationRecord({
 
 const runningEvaluation = evaluationRecord({
   overrides: {
-    id: "eval_session_0001_retrieval_filter",
+    id: "V2",
     status: "active",
     title: "Evaluate retrieval filtering",
     summary: "Run the normal support-agent eval after retrieval filtering.",
@@ -113,7 +113,7 @@ const runningEvaluation = evaluationRecord({
 
 const suspiciousEvaluation = evaluationRecord({
   overrides: {
-    id: "eval_session_0001_fixture_edit",
+    id: "V3",
     status: "closed",
     title: "Evaluate reported large improvement",
     summary: "Candidate output is suspicious because eval fixtures changed.",
@@ -155,7 +155,7 @@ export const completedEvaluations = [
 export const runningTasks = [
   taskRecord({
     overrides: {
-      id: "task_0001",
+      id: "T1",
       title: "Record baseline eval",
       kind: "baseline",
       status: "done",
@@ -167,7 +167,7 @@ export const runningTasks = [
   }),
   taskRecord({
     overrides: {
-      id: "task_0002",
+      id: "T2",
       title: "Test retrieval filter",
       kind: "experiment",
       status: "in_progress",
@@ -179,7 +179,7 @@ export const runningTasks = [
   }),
   taskRecord({
     overrides: {
-      id: "task_0003",
+      id: "T3",
       title: "Split cancellation hypothesis",
       kind: "hypothesize",
       status: "backlog",
@@ -188,7 +188,7 @@ export const runningTasks = [
   }),
   taskRecord({
     overrides: {
-      id: "task_0004",
+      id: "T4",
       title: "Check hallucination-rate signal",
       kind: "review",
       status: "backlog",
@@ -202,7 +202,7 @@ export const suspiciousTasks = [
   ...runningTasks,
   taskRecord({
     overrides: {
-      id: "task_0005",
+      id: "T5",
       title: "Review eval fixture edit",
       kind: "review",
       status: "failed",
@@ -296,7 +296,7 @@ export const runningTaskActivities = [
   taskActivityRecord({
     overrides: {
       id: 1,
-      task_id: "task_0001",
+      task_id: "T1",
       actor_agent_id: scientistAgent.id,
       actor: "scientist",
       body: "Baseline task completed with score 0.61.",
@@ -306,7 +306,7 @@ export const runningTaskActivities = [
   taskActivityRecord({
     overrides: {
       id: 2,
-      task_id: "task_0002",
+      task_id: "T2",
       actor_agent_id: scientistAgent.id,
       actor: "scientist",
       body: "Retrieval filter is running against cancellation failures.",
@@ -347,7 +347,7 @@ export const suspiciousTaskActivities = [
   taskActivityRecord({
     overrides: {
       id: 3,
-      task_id: "task_0005",
+      task_id: "T5",
       actor_agent_id: managerAgent.id,
       actor: "manager",
       body: "Review failed because the trust check found fixture drift.",
@@ -362,7 +362,7 @@ export const completedTaskActivities = [
   taskActivityRecord({
     overrides: {
       id: 4,
-      task_id: "task_0004",
+      task_id: "T4",
       actor_agent_id: managerAgent.id,
       actor: "manager",
       body: "Closed review after validating result signals.",
@@ -376,14 +376,14 @@ export const runningEvents = [
     overrides: {
       id: 1,
       type: "session.started",
-      message: "Started session_0001",
+      message: "Started S1",
     },
   }),
   eventRecord({
     overrides: {
       id: 2,
       type: "experiment.completed",
-      message: "Completed exp_session_0001_baseline",
+      message: "Completed E1",
       created_at: "2026-01-01T00:00:03Z",
     },
   }),
@@ -391,7 +391,7 @@ export const runningEvents = [
     overrides: {
       id: 3,
       type: "experiment.started",
-      message: "Started exp_session_0001_retrieval_filter",
+      message: "Started E2",
       created_at: "2026-01-01T00:00:05Z",
     },
   }),
@@ -403,7 +403,7 @@ export const suspiciousEvents = [
     overrides: {
       id: 4,
       type: "experiment.activity_recorded",
-      message: "Concern recorded for exp_session_0001_fixture_edit.",
+      message: "Concern recorded for E4.",
       created_at: "2026-01-01T00:00:08Z",
     },
   }),
@@ -415,7 +415,7 @@ export const completedEvents = [
     overrides: {
       id: 4,
       type: "session.completed",
-      message: "Completed session_0001",
+      message: "Completed S1",
       created_at: "2026-01-01T00:00:09Z",
     },
   }),
@@ -480,7 +480,7 @@ function taskRecord({
   overrides?: Partial<TaskRecord>;
 }): TaskRecord {
   return {
-    id: "task_0001",
+    id: "T1",
     project_id: storyProjectId,
     created_in_session_id: storySessionId,
     title: "Record baseline eval",
@@ -512,7 +512,7 @@ function hypothesisRecord({
   overrides?: Partial<HypothesisRecord>;
 }): HypothesisRecord {
   return {
-    id: "hyp_0001",
+    id: "H1",
     project_id: storyProjectId,
     created_in_session_id: storySessionId,
     title: "Retrieval filtering can improve cancellation tickets",
@@ -530,7 +530,7 @@ function experimentRecord({
   overrides?: Partial<ExperimentRecord>;
 }): ExperimentRecord {
   return {
-    id: "exp_session_0001_baseline",
+    id: "E1",
     project_id: storyProjectId,
     created_in_session_id: storySessionId,
     status: "open",
@@ -548,7 +548,7 @@ function evaluationRecord({
   overrides?: Partial<EvaluationRecord>;
 }): EvaluationRecord {
   return {
-    id: "eval_session_0001_baseline",
+    id: "V1",
     project_id: storyProjectId,
     created_in_session_id: storySessionId,
     status: "open",
@@ -569,7 +569,7 @@ function taskActivityRecord({
   return {
     id: 1,
     project_id: storyProjectId,
-    task_id: "task_0001",
+    task_id: "T1",
     created_in_session_id: storySessionId,
     actor_agent_id: scientistAgent.id,
     actor: "scientist",
@@ -588,7 +588,7 @@ function hypothesisActivityRecord({
 }): HypothesisActivityRecord {
   return {
     id: 1,
-    hypothesis_id: "hyp_0001",
+    hypothesis_id: "H1",
     created_in_session_id: storySessionId,
     actor: "agent",
     kind: "comment",
@@ -606,7 +606,7 @@ function evaluationActivityRecord({
 }): EvaluationActivityRecord {
   return {
     id: 1,
-    evaluation_id: "eval_session_0001_baseline",
+    evaluation_id: "V1",
     created_in_session_id: storySessionId,
     actor: "agent",
     kind: "result",
@@ -624,7 +624,7 @@ function experimentActivityRecord({
 }): ExperimentActivityRecord {
   return {
     id: 1,
-    experiment_id: "exp_session_0001_baseline",
+    experiment_id: "E1",
     created_in_session_id: storySessionId,
     actor: "worker",
     kind: "comment",
@@ -641,7 +641,7 @@ function eventRecord({ overrides = {} }: { overrides?: Partial<EventRecord> }): 
     associated_project_id: storyProjectId,
     associated_session_id: storySessionId,
     type: "session.started",
-    message: "Started session_0001",
+    message: "Started S1",
     payload: {},
     created_at: "2026-01-01T00:00:02Z",
     ...overrides,

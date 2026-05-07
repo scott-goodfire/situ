@@ -33,8 +33,7 @@ class CreateArtifactTool(BaseSituTool[SituToolDeps, CreateArtifactResult]):
         session_id = ctx.deps.session_id
         resolved_entity_kind = associated_entity_kind or "project"
         resolved_entity_id = associated_entity_id or project_id
-        resolved_artifact_id = artifact_id or _next_artifact_id(
-            repos=repos,
+        resolved_artifact_id = artifact_id or repos.artifacts.next_id(
             project_id=project_id,
         )
         artifact = repos.artifacts.create(
@@ -56,12 +55,3 @@ class CreateArtifactTool(BaseSituTool[SituToolDeps, CreateArtifactResult]):
         )
         ctx.deps.publish_record(record=artifact, event=event)
         return CreateArtifactResult(success=True, artifact=artifact.model_dump())
-
-
-def _next_artifact_id(
-    *,
-    repos: Any,
-    project_id: str,
-) -> str:
-    count = len(repos.artifacts.list_for_project(project_id=project_id)) + 1
-    return f"artifact_{project_id}_{count:03d}"

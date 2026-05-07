@@ -3,9 +3,16 @@ from __future__ import annotations
 from typing import Any
 
 from ...core.db.serialization import utc_now
+from ...core.ids import (
+    RECORD_ID_PREFIXES,
+    ensure_canonical_record_id,
+    next_canonical_record_id,
+)
 from ...records import ProjectRecord, ProjectStatus, parse_project_status
 from ..base import BaseRepository
 from .command import CreateProject, UpdateProject
+
+PROJECT_ID_PREFIX = RECORD_ID_PREFIXES["project"]
 
 
 def _project_row(row: Any) -> ProjectRecord:
@@ -32,6 +39,11 @@ class ProjectRepository(BaseRepository):
         research_context: str,
         status: ProjectStatus | str = ProjectStatus.ACTIVE,
     ) -> ProjectRecord:
+        ensure_canonical_record_id(
+            record_id=project_id,
+            prefix=PROJECT_ID_PREFIX,
+            noun="project",
+        )
         command = CreateProject(
             project_id=project_id,
             workspace_id=workspace_id,
@@ -129,5 +141,8 @@ class ProjectRepository(BaseRepository):
         ]
 
     def next_id(self, *, workspace_id: str) -> str:
-        count = len(self.list_for_workspace(workspace_id=workspace_id)) + 1
-        return f"project_{workspace_id}_{count:03d}"
+        rows = self.db.fetchall("SELECT id FROM projects")
+        return next_canonical_record_id(
+            existing_ids=(str(row["id"]) for row in rows),
+            prefix=PROJECT_ID_PREFIX,
+        )

@@ -19,8 +19,8 @@ export const stories = [
     name: "meta",
     render: () => (
       <PaneSection title="Hypotheses" meta="2 active">
-        <Text>hyp_0001 | active | Retrieval filtering helps billing answers</Text>
-        <Text>hyp_0002 | open | Cancellation tickets need a separate path</Text>
+        <Text>H1 | active | Retrieval filtering helps billing answers</Text>
+        <Text>H2 | open | Cancellation tickets need a separate path</Text>
       </PaneSection>
     ),
   },
@@ -48,7 +48,7 @@ export const stories = [
         tone="accent"
         width={72}
       >
-        <Text>session_0001 is active for support-agent evals.</Text>
+        <Text>S1 is active for support-agent evals.</Text>
         <Text dimColor>Enter reconnects. Escape quits.</Text>
       </PaneSection>
     ),
@@ -60,7 +60,7 @@ export const stories = [
     render: () => (
       <Box flexDirection="column" gap={1} width={72}>
         <PaneSection title="Now">
-          <Text>exp_session_0001_retrieval_filter | active</Text>
+          <Text>E2 | active</Text>
         </PaneSection>
         <PaneSection title="Trust Checks" chrome="box" tone="warning" density="compact">
           <Text>concern | eval command changed during candidate run</Text>

@@ -20,7 +20,7 @@ export const stories = [
       <DashboardControlsStory
         initialMessage={{
           tone: "cyan",
-          text: "session_0001 | active | experiments 3/5",
+          text: "S1 | active | experiments 3/5",
         }}
       />
     ),
@@ -52,7 +52,7 @@ function DashboardControlsStory({
         if (command === "status") {
           setMessage({
             tone: "cyan",
-            text: "session_0001 | active | experiments 3/5",
+            text: "S1 | active | experiments 3/5",
           });
           return;
         }

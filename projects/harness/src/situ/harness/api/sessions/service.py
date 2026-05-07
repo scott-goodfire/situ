@@ -15,8 +15,9 @@ class SessionsService(BaseModel):
         return len(self.repos.sessions.list_all())
 
     def next_session_id(self) -> NextSessionIdSchema:
+        session_id = self.repos.sessions.next_id()
         session_number = self.current_session_count() + 1
         return NextSessionIdSchema(
-            session_id=f"session_{session_number:04d}",
+            session_id=session_id,
             session_number=session_number,
         )

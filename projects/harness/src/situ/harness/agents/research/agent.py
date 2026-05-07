@@ -8,6 +8,10 @@ from pydantic_ai import Agent, FunctionToolset, WebSearchTool
 from pydantic_ai.capabilities.abstract import AbstractCapability
 from pydantic_ai.models import Model
 
+from ...agent_skills import (
+    build_manager_skill_capabilities,
+    build_researcher_skill_capabilities,
+)
 from ...config import DEFAULTS
 from ...tools import (
     build_critic_toolset,
@@ -147,7 +151,10 @@ class ManagerAgent(BaseSituAgent[ManagerAgentContext, ResearchAgentOutput]):
             toolsets=[build_manager_toolset()],
             builtin_tools=build_web_search_builtin_tools(),
             model_settings=DEFAULTS.model_settings(),
-            capabilities=list(self.capabilities),
+            capabilities=[
+                *build_manager_skill_capabilities(),
+                *self.capabilities,
+            ],
         )
 
 
@@ -221,7 +228,10 @@ class ResearcherAgent(BaseSituAgent[ResearcherAgentContext, ResearchAgentOutput]
             ],
             builtin_tools=build_web_search_builtin_tools(),
             model_settings=DEFAULTS.model_settings(),
-            capabilities=list(self.capabilities),
+            capabilities=[
+                *build_researcher_skill_capabilities(),
+                *self.capabilities,
+            ],
         )
 
 

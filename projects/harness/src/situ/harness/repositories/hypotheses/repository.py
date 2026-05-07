@@ -3,9 +3,16 @@ from __future__ import annotations
 from typing import Any
 
 from ...core.db.serialization import utc_now
+from ...core.ids import (
+    RECORD_ID_PREFIXES,
+    ensure_canonical_record_id,
+    next_canonical_record_id,
+)
 from ...records import HypothesisRecord, WorkStatus, parse_work_status
 from ..base import BaseRepository
 from .command import CreateHypothesis, UpdateHypothesis
+
+HYPOTHESIS_ID_PREFIX = RECORD_ID_PREFIXES["hypothesis"]
 
 
 def _hypothesis_row(row: Any) -> HypothesisRecord:
@@ -32,6 +39,11 @@ class HypothesesRepository(BaseRepository):
         created_in_session_id: str | None = None,
         status: WorkStatus | str = WorkStatus.OPEN,
     ) -> HypothesisRecord:
+        ensure_canonical_record_id(
+            record_id=hypothesis_id,
+            prefix=HYPOTHESIS_ID_PREFIX,
+            noun="hypothesis",
+        )
         checked_status = parse_work_status(status=status, noun="hypothesis")
         command = CreateHypothesis(
             hypothesis_id=hypothesis_id,
@@ -136,4 +148,11 @@ class HypothesesRepository(BaseRepository):
             self.list_for_project(project_id=project_id)
             if project_id is not None
             else []
+        )
+
+    def next_id(self, *, project_id: str) -> str:
+        rows = self.db.fetchall("SELECT id FROM hypotheses")
+        return next_canonical_record_id(
+            existing_ids=(str(row["id"]) for row in rows),
+            prefix=HYPOTHESIS_ID_PREFIX,
         )

@@ -18,7 +18,7 @@ source of truth.
 
 - Workspace/run path, for example
   `/Users/.../runs/spell-autoresearch`.
-- Session id, for example `session_0004`.
+- Session id, for example `S4`.
 - Optional project id if known.
 - Optional validation command, such as `python harness.py`.
 - Optional local state home if not `~/.situ`.

@@ -6,19 +6,19 @@ import { tasksForProject } from "./query";
 describe("tasksForProject", () => {
   test("filters tasks by the active project record id instead of the route id", () => {
     const routeProjectId = "cd826e9f8090d9b7";
-    const activeProjectRecordId = "project_cd826e9f8090d9b7_004";
-    const otherProjectRecordId = "project_cd826e9f8090d9b7_003";
+    const activeProjectRecordId = "P1";
+    const otherProjectRecordId = "P2";
     const data = {
       projectId: routeProjectId,
       activeProjectRecordId,
       tasks: [
         taskRecord({
-          id: "task_project_cd826e9f8090d9b7_004_001",
+          id: "T4",
           projectId: activeProjectRecordId,
           title: "Plan the resumed research pass",
         }),
         taskRecord({
-          id: "task_project_cd826e9f8090d9b7_003_001",
+          id: "T3",
           projectId: otherProjectRecordId,
           title: "Previous session task",
         }),
@@ -26,7 +26,7 @@ describe("tasksForProject", () => {
     } as ProjectWorkspaceData;
 
     expect(tasksForProject({ data }).map((task) => task.id)).toEqual([
-      "task_project_cd826e9f8090d9b7_004_001",
+      "T4",
     ]);
   });
 });
@@ -43,7 +43,7 @@ function taskRecord({
   return {
     id,
     project_id: projectId,
-    created_in_session_id: "session_0004",
+    created_in_session_id: "S4",
     title,
     content: title,
     kind: "plan",

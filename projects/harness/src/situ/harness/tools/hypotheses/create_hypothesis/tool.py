@@ -31,8 +31,7 @@ class CreateHypothesisTool(BaseSituTool[SituToolDeps, CreateHypothesisResult]):
         repos = ctx.deps.get_repos()
         project_id = ctx.deps.require_project_id()
         session_id = ctx.deps.session_id
-        resolved_hypothesis_id = hypothesis_id or _next_hypothesis_id(
-            repos=repos,
+        resolved_hypothesis_id = hypothesis_id or repos.hypotheses.next_id(
             project_id=project_id,
         )
         hypothesis = repos.hypotheses.create(
@@ -50,12 +49,3 @@ class CreateHypothesisTool(BaseSituTool[SituToolDeps, CreateHypothesisResult]):
         )
         ctx.deps.publish_record(record=hypothesis, event=event)
         return CreateHypothesisResult(success=True, hypothesis=hypothesis.model_dump())
-
-
-def _next_hypothesis_id(
-    *,
-    repos: Any,
-    project_id: str,
-) -> str:
-    count = len(repos.hypotheses.list_for_project(project_id=project_id)) + 1
-    return f"hyp_{project_id}_agent_{count:03d}"

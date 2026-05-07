@@ -7,6 +7,10 @@ from typing import Any
 from pydantic_ai import Agent
 from pydantic_ai.durable_exec.dbos import DBOSAgent
 
+from .agent_skills import (
+    build_manager_skill_capabilities,
+    build_researcher_skill_capabilities,
+)
 from .agents.research.agent import (
     CRITIC_AGENT_NAME,
     RESEARCHER_AGENT_NAME,
@@ -81,6 +85,7 @@ class AgentRuntime:
             ],
             builtin_tools=build_web_search_builtin_tools(),
             model_settings=DEFAULTS.model_settings(),
+            capabilities=build_researcher_skill_capabilities(),
             name=RESEARCHER_AGENT_NAME,
         )
         self.dbos_researcher_agent = DBOSAgent(
@@ -95,6 +100,7 @@ class AgentRuntime:
             toolsets=[build_manager_toolset()],
             builtin_tools=build_web_search_builtin_tools(),
             model_settings=DEFAULTS.model_settings(),
+            capabilities=build_manager_skill_capabilities(),
             name=MANAGER_AGENT_NAME,
         )
         self.dbos_manager_agent = DBOSAgent(self.manager_agent, name=MANAGER_AGENT_NAME)

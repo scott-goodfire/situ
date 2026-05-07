@@ -24,30 +24,30 @@ type Story = StoryObj<typeof EventsView>;
 const EVENTS: EventRecord[] = [
   {
     id: 1,
-    associated_session_id: "session_0001",
+    associated_session_id: "S1",
     type: "session.start",
     message: "Session started",
     created_at: "2026-01-01T00:00:00Z",
   },
   {
     id: 2,
-    associated_session_id: "session_0001",
+    associated_session_id: "S1",
     type: "hypothesis.create",
-    message: "Created hypothesis hyp_0001",
+    message: "Created hypothesis H1",
     created_at: "2026-01-01T00:01:00Z",
   },
   {
     id: 3,
-    associated_session_id: "session_0001",
+    associated_session_id: "S1",
     type: "experiment.start",
-    message: "Started experiment exp_0002",
+    message: "Started experiment E2",
     created_at: "2026-01-01T00:04:00Z",
   },
   {
     id: 4,
-    associated_session_id: "session_0001",
+    associated_session_id: "S1",
     type: "evaluation.complete",
-    message: "Eval eval_0002 completed: resolution_rate 64.8%",
+    message: "Eval V2 completed: resolution_rate 64.8%",
     created_at: "2026-01-01T00:08:00Z",
   },
 ];

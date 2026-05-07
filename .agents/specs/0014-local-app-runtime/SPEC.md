@@ -81,6 +81,14 @@ It stores durable Situ product state across workspaces: known workspaces,
 projects, sessions, agents, tasks, analyses, hypotheses, experiments,
 evaluations, activities, artifacts, and internal events.
 
+Human-facing product records in this database use compact canonical IDs:
+projects `P<N>`, sessions `S<N>`, analyses `A<N>`, hypotheses `H<N>`,
+baselines `B<N>`, experiments `E<N>`, evaluations `V<N>`, artifacts `F<N>`,
+and tasks `T<N>`. Existing local databases that contain older long-form IDs are
+stale for this runtime and may be reset instead of migrated. Workspace IDs may
+remain internal path-derived identifiers so the same repo path resolves to the
+same workspace boundary.
+
 Per-project runtime state remains under:
 
 ```text

@@ -49,7 +49,7 @@ export const List: Story = {
 export const Detail: Story = {
   args: {
     data: analysesPageData(),
-    path: "/projects/support-agent-demo/analyses/analysis_codebase_map",
+    path: "/projects/support-agent-demo/analyses/A1",
   },
 };
 
@@ -124,7 +124,7 @@ function analysesPageData(): ProjectWorkspaceData {
     },
     sessions: [
       {
-        id: "session_0001",
+        id: "S1",
         workspace_id: "workspace_demo",
         project_id: "support-agent-demo",
         status: "active",
@@ -137,7 +137,7 @@ function analysesPageData(): ProjectWorkspaceData {
     evaluations: [],
     analyses: [
       {
-        id: "analysis_codebase_map",
+        id: "A1",
         project_id: "support-agent-demo",
         status: "active",
         title: "Support-agent codebase map",
@@ -147,7 +147,7 @@ function analysesPageData(): ProjectWorkspaceData {
         updated_at: "2026-01-01T00:05:00Z",
       },
       {
-        id: "analysis_constraint_latency",
+        id: "A2",
         project_id: "support-agent-demo",
         status: "active",
         title: "Latency budget — 2s p95",
@@ -157,7 +157,7 @@ function analysesPageData(): ProjectWorkspaceData {
         updated_at: "2026-01-01T00:02:00Z",
       },
       {
-        id: "analysis_open_question",
+        id: "A3",
         project_id: "support-agent-demo",
         status: "open",
         title: "Open: weak retrieval clusters by topic",
@@ -167,12 +167,12 @@ function analysesPageData(): ProjectWorkspaceData {
         updated_at: "2026-01-01T00:03:00Z",
       },
       {
-        id: "analysis_closed_synth",
+        id: "A4",
         project_id: "support-agent-demo",
         status: "closed",
         title: "Synthesis: prompt decomposition saturated",
         summary: "Prompt decomposition is closed; further splits don't help the billing slice.",
-        content: "Reviewed exp_0003 results across 3 reproductions; gains are within noise.",
+        content: "Reviewed E3 results across 3 reproductions; gains are within noise.",
         created_at: "2026-01-01T00:04:00Z",
         updated_at: "2026-01-01T00:06:00Z",
       },
@@ -185,7 +185,7 @@ function analysesPageData(): ProjectWorkspaceData {
     analysisActivities: [
       {
         id: 1,
-        analysis_id: "analysis_codebase_map",
+        analysis_id: "A1",
         actor: "research-agent",
         kind: "comment",
         body: "Mapped retrieval and tool-call surfaces across `agents/support/` — cancellation paths cluster around two helpers.",

@@ -257,7 +257,7 @@ class HarnessApp:
         self._enqueue_plan_task(
             session_id=session_id,
             project_id=project.id,
-            title="Plan the first research pass",
+            title="Plan first research pass",
             content=(
                 "Read the session project, objective, research context, current "
                 "project state, and task board. File the next focused Researcher "
@@ -299,7 +299,7 @@ class HarnessApp:
             self._enqueue_plan_task(
                 session_id=resume.session_id,
                 project_id=session.project_id,
-                title="Plan the resumed research pass",
+                title="Plan resumed research pass",
                 content=(
                     "Review the resumed session and decide what focused work should "
                     "happen next."
@@ -724,7 +724,7 @@ class HarnessApp:
                             self._enqueue_plan_task(
                                 session_id=session_id,
                                 project_id=critic_task.project_id,
-                                title="Plan after Critic review",
+                                title="Plan from critic review",
                                 content=(
                                     "A Critic review just completed. Review the "
                                     "experiment review activity, concerns, project "
@@ -818,7 +818,7 @@ class HarnessApp:
                         self._enqueue_plan_task(
                             session_id=session_id,
                             project_id=researcher_task.project_id,
-                            title="Plan after Researcher task completion",
+                            title="Plan next research step",
                             content=(
                                 "A Researcher task just completed. Review the "
                                 "project board and research records, task board, recent activity, "
@@ -900,7 +900,7 @@ class HarnessApp:
                             self._enqueue_plan_task(
                                 session_id=session_id,
                                 project_id=scientist_task.project_id,
-                                title="Plan after Scientist task completion",
+                                title="Plan next experiment step",
                                 content=(
                                     "A Scientist task just completed. Review the "
                                     "project board and research records, task board, recent activity, "
@@ -929,7 +929,7 @@ class HarnessApp:
                     self._enqueue_plan_task(
                         session_id=session_id,
                         project_id=project_id,
-                        title="Continue planning the next research step",
+                        title="Plan runnable next step",
                         content=(
                             "The previous planning cycle did not leave a "
                             "runnable Researcher, Scientist, or Critic task. Re-read the project "

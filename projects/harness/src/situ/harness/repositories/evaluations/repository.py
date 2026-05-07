@@ -3,9 +3,16 @@ from __future__ import annotations
 from typing import Any
 
 from ...core.db.serialization import utc_now
+from ...core.ids import (
+    RECORD_ID_PREFIXES,
+    ensure_canonical_record_id,
+    next_canonical_record_id,
+)
 from ...records import EvaluationRecord, WorkStatus, parse_work_status
 from ..base import BaseRepository
 from .command import CreateEvaluation, UpdateEvaluation
+
+EVALUATION_ID_PREFIX = RECORD_ID_PREFIXES["evaluation"]
 
 
 def _evaluation_row(row: Any) -> EvaluationRecord:
@@ -36,6 +43,11 @@ class EvaluationsRepository(BaseRepository):
         created_in_session_id: str | None = None,
         status: WorkStatus | str = WorkStatus.OPEN,
     ) -> EvaluationRecord:
+        ensure_canonical_record_id(
+            record_id=evaluation_id,
+            prefix=EVALUATION_ID_PREFIX,
+            noun="evaluation",
+        )
         checked_status = parse_work_status(status=status, noun="evaluation")
         command = CreateEvaluation(
             evaluation_id=evaluation_id,
@@ -191,3 +203,10 @@ class EvaluationsRepository(BaseRepository):
                 (baseline_id,),
             )
         ]
+
+    def next_id(self, *, project_id: str) -> str:
+        rows = self.db.fetchall("SELECT id FROM evaluations")
+        return next_canonical_record_id(
+            existing_ids=(str(row["id"]) for row in rows),
+            prefix=EVALUATION_ID_PREFIX,
+        )

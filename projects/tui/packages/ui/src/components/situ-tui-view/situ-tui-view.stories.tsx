@@ -80,7 +80,7 @@ export const stories = [
     name: "running",
     render: () => (
       <StorySituTuiView
-        statusLine="session_0001 | active | experiments 3/5"
+        statusLine="S1 | active | experiments 3/5"
         project={activeProject}
         session={runningSession}
         tasks={runningTasks}
@@ -102,7 +102,7 @@ export const stories = [
     name: "suspicious",
     render: () => (
       <StorySituTuiView
-        statusLine="session_0001 | active | experiments 3/5"
+        statusLine="S1 | active | experiments 3/5"
         project={activeProject}
         session={runningSession}
         tasks={suspiciousTasks}
@@ -124,7 +124,7 @@ export const stories = [
     name: "completed",
     render: () => (
       <StorySituTuiView
-        statusLine="session_0001 | closed | experiments 2/5"
+        statusLine="S1 | closed | experiments 2/5"
         project={activeProject}
         session={completedSession}
         tasks={completedTasks}
@@ -146,7 +146,7 @@ export const stories = [
     name: "failed",
     render: () => (
       <StorySituTuiView
-        statusLine="Session session_0001 failed"
+        statusLine="Session S1 failed"
         project={activeProject}
         session={runningSession}
         tasks={suspiciousTasks}

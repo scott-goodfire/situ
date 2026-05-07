@@ -23,8 +23,8 @@ from evals.worlds.repo_bootstrap.world.world import (
 
 MANAGER_AGENT_ID = f"agent_{PROJECT_ID}_manager"
 CRITIC_AGENT_ID = f"agent_{PROJECT_ID}_critic"
-FOLLOWUP_EXPERIMENT_ID = "exp_critic_followup_candidate"
-FOLLOWUP_EVALUATION_ID = "eval_critic_followup_candidate"
+FOLLOWUP_EXPERIMENT_ID = "E1"
+FOLLOWUP_EVALUATION_ID = "V2"
 
 
 class CriticFollowupWorld:

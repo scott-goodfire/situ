@@ -23,8 +23,8 @@ export const Deep: Story = {
   args: {
     items: [
       { id: "p", label: "Project", href: "#" },
-      { id: "h", label: "hyp_0001", href: "#" },
-      { id: "e", label: "exp_0042", href: "#" },
+      { id: "h", label: "H1", href: "#" },
+      { id: "e", label: "E42", href: "#" },
       { id: "v", label: "evaluation" },
     ],
   },

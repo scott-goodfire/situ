@@ -42,14 +42,14 @@ type Story = StoryObj<typeof meta>;
 export const Board: Story = {
   args: {
     data: tasksPageData(),
-    path: "/projects/support-agent-demo/tasks",
+    path: "/projects/P1/tasks",
   },
 };
 
 export const Detail: Story = {
   args: {
     data: tasksPageData(),
-    path: "/projects/support-agent-demo/tasks/task_run_filter_eval",
+    path: "/projects/P1/tasks/T3",
   },
 };
 
@@ -109,11 +109,11 @@ function createStoryRouter({
 
 function tasksPageData(): ProjectWorkspaceData {
   return {
-    projectId: "support-agent-demo",
+    projectId: "P1",
     workspace: "/Users/situ/sandbox/support-agent",
     connection: { kind: "connected" },
     project: {
-      id: "support-agent-demo",
+      id: "P1",
       workspace_id: "workspace_demo",
       title: "Improve support-agent resolution",
       objective: "Improve billing and cancellation outcomes without making latency worse.",
@@ -124,9 +124,9 @@ function tasksPageData(): ProjectWorkspaceData {
     },
     sessions: [
       {
-        id: "session_0001",
+        id: "S1",
         workspace_id: "workspace_demo",
-        project_id: "support-agent-demo",
+        project_id: "P1",
         status: "active",
         created_at: "2026-01-01T00:00:00Z",
         updated_at: "2026-01-01T00:10:00Z",
@@ -139,7 +139,7 @@ function tasksPageData(): ProjectWorkspaceData {
     agents: [
       {
         id: "agent_research_001",
-        project_id: "support-agent-demo",
+        project_id: "P1",
         kind: "scientist",
         display_name: "Research Agent",
         model_name: "claude-opus-4-7",
@@ -150,8 +150,8 @@ function tasksPageData(): ProjectWorkspaceData {
     ],
     tasks: [
       {
-        id: "task_plan_billing_slice",
-        project_id: "support-agent-demo",
+        id: "T1",
+        project_id: "P1",
         title: "Plan baseline + first hypothesis for billing slice",
         content: "Survey activity stream, define what counts as resolved, and queue a baseline experiment.",
         kind: "plan",
@@ -165,8 +165,8 @@ function tasksPageData(): ProjectWorkspaceData {
         updated_at: "2026-01-01T00:01:00Z",
       },
       {
-        id: "task_baseline_record",
-        project_id: "support-agent-demo",
+        id: "T2",
+        project_id: "P1",
         title: "Record support-agent baseline eval",
         content: "Run native support-agent eval; capture stdout + per-bucket metrics as artifact.",
         kind: "baseline",
@@ -180,8 +180,8 @@ function tasksPageData(): ProjectWorkspaceData {
         updated_at: "2026-01-01T00:03:00Z",
       },
       {
-        id: "task_run_filter_eval",
-        project_id: "support-agent-demo",
+        id: "T3",
+        project_id: "P1",
         title: "Run retrieval-filter candidate eval",
         content: "Apply confidence-floor filter at retrieval and re-run cancellation slice.",
         kind: "experiment",
@@ -189,29 +189,29 @@ function tasksPageData(): ProjectWorkspaceData {
         priority: "urgent",
         source_kind: "manager",
         assignee_id: "agent_research_001",
-        parent_task_id: "task_plan_billing_slice",
+        parent_task_id: "T1",
         created_at: "2026-01-01T00:04:00Z",
         available_at: "2026-01-01T00:04:00Z",
         claimed_at: "2026-01-01T00:05:00Z",
         updated_at: "2026-01-01T00:08:00Z",
       },
       {
-        id: "task_reproduce_filter",
-        project_id: "support-agent-demo",
+        id: "T4",
+        project_id: "P1",
         title: "Reproduce retrieval-filter result before accepting",
         content: "Re-run candidate twice; compare stdout digests; promote evidence only if reproduction matches.",
         kind: "interpret",
         status: "backlog",
         priority: "high",
         source_kind: "manager",
-        parent_task_id: "task_run_filter_eval",
+        parent_task_id: "T3",
         created_at: "2026-01-01T00:08:00Z",
         available_at: "2026-01-01T00:09:00Z",
         updated_at: "2026-01-01T00:08:00Z",
       },
       {
-        id: "task_failed_decomp",
-        project_id: "support-agent-demo",
+        id: "T5",
+        project_id: "P1",
         title: "Try prompt decomposition on billing slice",
         content: "Split billing prompt into identify, plan, answer steps and rerun.",
         kind: "experiment",
@@ -228,26 +228,26 @@ function tasksPageData(): ProjectWorkspaceData {
     ],
     taskDependencies: [
       {
-        project_id: "support-agent-demo",
-        task_id: "task_reproduce_filter",
-        blocked_by_task_id: "task_run_filter_eval",
+        project_id: "P1",
+        task_id: "T4",
+        blocked_by_task_id: "T3",
         created_at: "2026-01-01T00:08:00Z",
       },
     ],
     taskEntityLinks: [
       {
-        project_id: "support-agent-demo",
-        task_id: "task_run_filter_eval",
+        project_id: "P1",
+        task_id: "T3",
         entity_kind: "experiment",
-        entity_id: "exp_0002",
+        entity_id: "E2",
         relationship: "produces",
         created_at: "2026-01-01T00:05:00Z",
       },
       {
-        project_id: "support-agent-demo",
-        task_id: "task_run_filter_eval",
+        project_id: "P1",
+        task_id: "T3",
         entity_kind: "hypothesis",
-        entity_id: "hyp_0001",
+        entity_id: "H1",
         relationship: "tests",
         created_at: "2026-01-01T00:05:00Z",
       },
@@ -255,8 +255,8 @@ function tasksPageData(): ProjectWorkspaceData {
     taskActivities: [
       {
         id: 1,
-        project_id: "support-agent-demo",
-        task_id: "task_run_filter_eval",
+        project_id: "P1",
+        task_id: "T3",
         actor: "research-agent",
         actor_agent_id: "agent_research_001",
         kind: "comment",
@@ -265,8 +265,8 @@ function tasksPageData(): ProjectWorkspaceData {
       },
       {
         id: 2,
-        project_id: "support-agent-demo",
-        task_id: "task_run_filter_eval",
+        project_id: "P1",
+        task_id: "T3",
         actor: "research-agent",
         actor_agent_id: "agent_research_001",
         kind: "comment",

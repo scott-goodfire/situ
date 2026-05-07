@@ -27,7 +27,7 @@ export default meta;
 type Story = StoryObj<typeof RunMonitorView>;
 
 const SESSION: SessionRecord = {
-  id: "session_0001",
+  id: "S1",
   workspace_id: "ws_0001",
   project_id: "proj_0001",
   status: "active",
@@ -37,7 +37,7 @@ const SESSION: SessionRecord = {
 
 const HYPOTHESES: HypothesisRecord[] = [
   {
-    id: "hyp_0001",
+    id: "H1",
     project_id: "proj_0001",
     title: "Filtering low-confidence retrieval helps cancellation tickets",
     summary: "Drop weak snippets before tool calls.",
@@ -46,7 +46,7 @@ const HYPOTHESES: HypothesisRecord[] = [
     updated_at: "2026-01-01T00:08:00Z",
   },
   {
-    id: "hyp_0002",
+    id: "H2",
     project_id: "proj_0001",
     title: "Tool-use discipline reduces billing detours",
     summary: "Require account lookup before refund.",
@@ -58,7 +58,7 @@ const HYPOTHESES: HypothesisRecord[] = [
 
 const EXPERIMENTS: ExperimentRecord[] = [
   {
-    id: "exp_0002",
+    id: "E2",
     project_id: "proj_0001",
     status: "active",
     title: "Try retrieval filtering",
@@ -71,16 +71,16 @@ const EXPERIMENTS: ExperimentRecord[] = [
 const EVENTS: EventRecord[] = [
   {
     id: 1,
-    associated_session_id: "session_0001",
+    associated_session_id: "S1",
     type: "session.start",
     message: "Session started",
     created_at: "2026-01-01T00:00:00Z",
   },
   {
     id: 2,
-    associated_session_id: "session_0001",
+    associated_session_id: "S1",
     type: "experiment.start",
-    message: "Started experiment exp_0002",
+    message: "Started experiment E2",
     created_at: "2026-01-01T00:04:00Z",
   },
 ];

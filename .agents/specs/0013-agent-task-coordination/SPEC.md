@@ -41,12 +41,19 @@ rather than stored as a separate assignee kind.
 
 ## Tasks
 
-A task belongs to exactly one project. It has a title, content, kind, status,
-priority, source, optional parent task, optional assignee agent, optional
-kind-specific payload, and optional completion summary. Session provenance is
-captured with explicit fields such as `created_in_session_id`,
-`claimed_in_session_id`, and `completed_in_session_id`; those fields do not
-make the session the owner of the task.
+A task belongs to exactly one project. It has a short human-referenceable ID
+such as `T1`, a title, content, kind, status, priority, source, optional parent
+task, optional assignee agent, optional kind-specific payload, and optional
+completion summary. Session provenance is captured with explicit fields such
+as `created_in_session_id`, `claimed_in_session_id`, and
+`completed_in_session_id`; those fields do not make the session the owner of
+the task.
+
+Task IDs should be compact enough to cite in the TUI, logs, and agent prompts.
+Task IDs use the `T<N>` shape and participate in the same compact-ID posture as
+projects `P<N>`, sessions `S<N>`, hypotheses `H<N>`, experiments `E<N>`, and
+the other human-facing research records. This is a hard local-state cutover:
+older long-form task IDs are not part of the supported model.
 
 Task kinds should stay bounded and product-specific:
 

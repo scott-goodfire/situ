@@ -29,8 +29,7 @@ class CreateAnalysisTool(BaseSituTool[SituToolDeps, CreateAnalysisResult]):
         """Create durable project understanding before it becomes a hypothesis."""
         repos = ctx.deps.get_repos()
         project_id = ctx.deps.require_project_id()
-        resolved_analysis_id = analysis_id or _next_analysis_id(
-            repos=repos,
+        resolved_analysis_id = analysis_id or repos.analyses.next_id(
             project_id=project_id,
         )
         analysis = repos.analyses.create(
@@ -51,12 +50,3 @@ class CreateAnalysisTool(BaseSituTool[SituToolDeps, CreateAnalysisResult]):
         )
         ctx.deps.publish_record(record=analysis, event=event)
         return CreateAnalysisResult(success=True, analysis=analysis.model_dump())
-
-
-def _next_analysis_id(
-    *,
-    repos: Any,
-    project_id: str,
-) -> str:
-    count = len(repos.analyses.list_for_project(project_id=project_id)) + 1
-    return f"analysis_{project_id}_agent_{count:03d}"

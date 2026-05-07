@@ -51,6 +51,8 @@ export type DashboardTask = {
   title: string;
   status: DashboardTaskStatus;
   kind: DashboardTaskKind;
+  taskLabel?: string;
+  taskKind?: TaskRecord["kind"];
   tone?: DashboardTaskTone;
 };
 
@@ -800,26 +802,31 @@ function TaskColumn({
   height: number;
   maxRows: number;
 }) {
-  const hiddenTaskCountAtFullHeight = Math.max(0, tasks.length - maxRows);
-  const visibleLimit =
-    hiddenTaskCountAtFullHeight > 0 ? Math.max(0, maxRows - 1) : maxRows;
-  const visibleTasks = tasks.slice(0, visibleLimit);
-  const hiddenTaskCount = Math.max(0, tasks.length - visibleTasks.length);
   const rowWidth = width;
+  const visibleTaskRows = visibleTaskRowsForColumn({
+    tasks,
+    width: rowWidth,
+    maxRows,
+  });
+  const hiddenTaskCount = Math.max(0, tasks.length - visibleTaskRows.length);
+  const taskBodyRowCount = lodash.sumBy(
+    visibleTaskRows,
+    (task) => taskRowLineCount({ task, width: rowWidth }),
+  );
   const bodyRowCount =
-    visibleTasks.length +
-    (visibleTasks.length === 0 ? 1 : 0) +
+    taskBodyRowCount +
+    (tasks.length === 0 ? 1 : 0) +
     (hiddenTaskCount > 0 ? 1 : 0);
   const blankRowCount = Math.max(0, maxRows - bodyRowCount);
 
   return (
     <LayoutBox width={width} height={height}>
       <Text color="gray" bold>{fitRow({ value: title, width: rowWidth })}</Text>
-      {visibleTasks.length === 0 && (
+      {tasks.length === 0 && (
         <Text dimColor>{fitRow({ value: "No tasks", width: rowWidth })}</Text>
       )}
-      {visibleTasks.map((task) => (
-        <TaskRow
+      {visibleTaskRows.map((task) => (
+        <TaskRows
           key={task.id}
           task={task}
           loaderKind={loaderKind}
@@ -850,7 +857,7 @@ function TaskColumnDivider({ height }: { height: number }) {
   );
 }
 
-function TaskRow({
+function TaskRows({
   task,
   loaderKind,
   width,
@@ -861,19 +868,88 @@ function TaskRow({
 }) {
   const glyph = useTaskGlyph({ task, loaderKind });
   const glyphColor = glyphColorForTask({ task });
-  const leadingWidth = 3;
+  const taskLabel = taskReferenceLabel({ task });
+  const labelText = taskLabel ? ` ${taskLabel}` : "";
+  const leadingWidth = 2 + labelText.length;
   const titleWidth = Math.max(0, width - leadingWidth);
+  const titleLines = taskTitleLines({ task, width });
 
   if (width <= leadingWidth) {
     return <Text color={glyphColor}>{fitRow({ value: glyph, width })}</Text>;
   }
 
   return (
-    <Text>
-      <Text color={glyphColor}>{glyph}</Text>
-      {`  ${fitRow({ value: task.title, width: titleWidth })}`}
-    </Text>
+    <>
+      {titleLines.map((line, index) => (
+        <Text key={`${task.id}:line:${index}`}>
+          {index === 0 ? (
+            <>
+              <Text color={glyphColor}>{glyph}</Text>
+              {`${labelText} ${fitRow({ value: line, width: titleWidth })}`}
+            </>
+          ) : (
+            `${" ".repeat(leadingWidth)}${fitRow({ value: line, width: titleWidth })}`
+          )}
+        </Text>
+      ))}
+    </>
   );
+}
+
+function visibleTaskRowsForColumn({
+  tasks,
+  width,
+  maxRows,
+}: {
+  tasks: DashboardTask[];
+  width: number;
+  maxRows: number;
+}): DashboardTask[] {
+  const visibleTasks: DashboardTask[] = [];
+  let usedRows = 0;
+
+  for (const task of tasks) {
+    const rowCount = taskRowLineCount({ task, width });
+    const remainingTaskCount = tasks.length - visibleTasks.length - 1;
+    const reservedMoreRowCount = remainingTaskCount > 0 ? 1 : 0;
+
+    if (usedRows + rowCount + reservedMoreRowCount > maxRows) {
+      break;
+    }
+
+    visibleTasks.push(task);
+    usedRows += rowCount;
+  }
+
+  return visibleTasks;
+}
+
+function taskRowLineCount({
+  task,
+  width,
+}: {
+  task: DashboardTask;
+  width: number;
+}): number {
+  return taskTitleLines({ task, width }).length;
+}
+
+function taskTitleLines({
+  task,
+  width,
+}: {
+  task: DashboardTask;
+  width: number;
+}): string[] {
+  const taskLabel = taskReferenceLabel({ task });
+  const leadingWidth = 2 + (taskLabel ? taskLabel.length + 1 : 0);
+  const titleWidth = Math.max(1, width - leadingWidth);
+
+  return wrapTaskTitleForDashboard({
+    title: readableDashboardTaskTitle({ task }),
+    width: titleWidth,
+    maxLines: 2,
+  });
 }
 
 
@@ -1081,6 +1157,8 @@ function taskFromTaskRecord({
     title: task.title,
     status: statusForTaskRecord({ status: task.status }),
     kind: "task",
+    taskLabel: taskLabelFromId({ id: task.id }),
+    taskKind: task.kind,
     tone: toneForTaskRecord({ task }),
   };
 }
@@ -1601,6 +1679,223 @@ function sortRankForTask({ task }: { task: DashboardTask }): number {
   }
 
   return 2;
+}
+
+export function taskLabelFromId({ id }: { id: string }): string | undefined {
+  const canonicalMatch = /^T([1-9]\d*)$/i.exec(id);
+  if (canonicalMatch?.[1]) {
+    return `[T${canonicalMatch[1]}]`;
+  }
+
+  return undefined;
+}
+
+function taskReferenceLabel({ task }: { task: DashboardTask }): string | undefined {
+  return task.taskLabel ?? taskLabelFromId({ id: task.id });
+}
+
+export function readableDashboardTaskTitle({
+  task,
+}: {
+  task: DashboardTask;
+}): string {
+  const title = normalizeTaskTitle({ title: task.title });
+  if (!task.taskKind || startsWithActionVerb({ title })) {
+    return title || "Untitled task";
+  }
+
+  const prefix = taskKindTitlePrefix({ taskKind: task.taskKind });
+  return `${prefix} ${title || "next step"}`;
+}
+
+export function wrapTaskTitleForDashboard({
+  title,
+  width,
+  maxLines,
+}: {
+  title: string;
+  width: number;
+  maxLines: number;
+}): string[] {
+  if (width <= 0 || maxLines <= 0) {
+    return [];
+  }
+
+  const words = normalizeTaskTitle({ title }).split(" ").filter(Boolean);
+  if (words.length === 0) {
+    return [""];
+  }
+
+  const lines: string[] = [];
+  let currentLine = "";
+  let wordIndex = 0;
+  let truncated = false;
+
+  while (wordIndex < words.length && lines.length < maxLines) {
+    const word = words[wordIndex] ?? "";
+
+    if (word.length > width) {
+      if (currentLine.length > 0) {
+        lines.push(currentLine);
+        currentLine = "";
+        continue;
+      }
+
+      lines.push(word.slice(0, width));
+      words[wordIndex] = word.slice(width);
+      truncated = wordIndex < words.length && lines.length >= maxLines;
+      continue;
+    }
+
+    const candidate = currentLine ? `${currentLine} ${word}` : word;
+    if (candidate.length <= width) {
+      currentLine = candidate;
+      wordIndex += 1;
+      continue;
+    }
+
+    if (!currentLine) {
+      currentLine = word;
+      wordIndex += 1;
+      continue;
+    }
+
+    lines.push(currentLine);
+    currentLine = "";
+  }
+
+  if (currentLine && lines.length < maxLines) {
+    lines.push(currentLine);
+    currentLine = "";
+  }
+
+  if (wordIndex < words.length || currentLine) {
+    truncated = true;
+  }
+
+  const visibleLines = lines.slice(0, maxLines);
+  if (visibleLines.length === 0) {
+    return [""];
+  }
+
+  if (truncated) {
+    visibleLines[visibleLines.length - 1] = ellipsizeLine({
+      value: visibleLines[visibleLines.length - 1] ?? "",
+      width,
+    });
+  }
+
+  return visibleLines;
+}
+
+function normalizeTaskTitle({ title }: { title: string }): string {
+  return title
+    .replace(/\s+/g, " ")
+    .replace(/^(task|todo|to do|in progress|done)\s*[:.-]\s*/i, "")
+    .replace(/^(manager|researcher|scientist|critic)\s*[:.-]\s*/i, "")
+    .trim();
+}
+
+function startsWithActionVerb({ title }: { title: string }): boolean {
+  const firstToken = title
+    .trim()
+    .split(/\s+/)
+    .at(0)
+    ?.replace(/[^a-z-]/gi, "")
+    .toLowerCase();
+
+  if (!firstToken) {
+    return false;
+  }
+
+  return ACTION_TITLE_VERBS.has(firstToken);
+}
+
+const ACTION_TITLE_VERBS = new Set([
+  "add",
+  "analyze",
+  "benchmark",
+  "capture",
+  "check",
+  "compare",
+  "create",
+  "debug",
+  "establish",
+  "evaluate",
+  "explore",
+  "find",
+  "fix",
+  "form",
+  "identify",
+  "improve",
+  "inspect",
+  "instrument",
+  "map",
+  "measure",
+  "plan",
+  "record",
+  "reproduce",
+  "research",
+  "review",
+  "run",
+  "split",
+  "summarize",
+  "test",
+  "tighten",
+  "try",
+  "update",
+  "validate",
+  "verify",
+]);
+
+function taskKindTitlePrefix({
+  taskKind,
+}: {
+  taskKind: TaskRecord["kind"];
+}): string {
+  if (taskKind === "baseline") {
+    return "Measure";
+  }
+
+  if (taskKind === "experiment") {
+    return "Test";
+  }
+
+  if (taskKind === "hypothesize") {
+    return "Form";
+  }
+
+  if (taskKind === "interpret") {
+    return "Interpret";
+  }
+
+  if (taskKind === "review") {
+    return "Review";
+  }
+
+  if (taskKind === "research") {
+    return "Research";
+  }
+
+  return "Plan";
+}
+
+function ellipsizeLine({
+  value,
+  width,
+}: {
+  value: string;
+  width: number;
+}): string {
+  if (width <= 1) {
+    return "…";
+  }
+
+  if (value.length >= width) {
+    return `${value.slice(0, width - 1)}…`;
+  }
+
+  return `${value}…`;
 }
 
 function fitRow({

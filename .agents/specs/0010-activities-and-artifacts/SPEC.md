@@ -98,7 +98,7 @@ Examples:
 
 - `A improved over baseline, but only on the easy slice.`
 - `A+C looks promising; C explains most of the observed lift.`
-- `The large improvement in exp_004 is suspicious because eval scope changed.`
+- `The large improvement in E4 is suspicious because eval scope changed.`
 
 ## Critic Reviews
 
@@ -222,6 +222,11 @@ media_type?
 size_bytes?
 created_at
 ```
+
+Artifact IDs should use the compact `F<N>` form when the harness creates them.
+Artifacts may still attach to projects, hypotheses, baselines, experiments,
+evaluations, measurements, or activities through the generic association
+fields.
 
 Artifacts always belong to a project. Use the generic associated entity fields
 instead of a widening set of nullable foreign keys. This keeps the record

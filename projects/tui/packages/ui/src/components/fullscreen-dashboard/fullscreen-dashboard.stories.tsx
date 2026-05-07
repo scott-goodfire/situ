@@ -99,7 +99,7 @@ function StoryFullscreenDashboard({
   const [message, setMessage] = useState<DashboardControlMessage | undefined>(
     undefined,
   );
-  const statusLine = "session_0001 | active | experiments 3/5";
+  const statusLine = "S1 | active | experiments 3/5";
 
   return (
     <FullscreenDashboard

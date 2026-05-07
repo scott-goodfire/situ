@@ -2,7 +2,20 @@ from __future__ import annotations
 
 import sqlite3
 
+from ..ids import RECORD_ID_PREFIXES, is_canonical_record_id, next_canonical_record_id
 from .serialization import utc_now
+
+CANONICAL_ID_TABLES = {
+    "projects": RECORD_ID_PREFIXES["project"],
+    "sessions": RECORD_ID_PREFIXES["session"],
+    "analyses": RECORD_ID_PREFIXES["analysis"],
+    "hypotheses": RECORD_ID_PREFIXES["hypothesis"],
+    "baselines": RECORD_ID_PREFIXES["baseline"],
+    "experiments": RECORD_ID_PREFIXES["experiment"],
+    "evaluations": RECORD_ID_PREFIXES["evaluation"],
+    "artifacts": RECORD_ID_PREFIXES["artifact"],
+    "tasks": RECORD_ID_PREFIXES["task"],
+}
 
 
 SCHEMA_SQL = """
@@ -377,6 +390,8 @@ def has_stale_schema(connection: sqlite3.Connection) -> bool:
         or "completed_in_session_id" not in task_columns
     ):
         return True
+    if has_noncanonical_record_ids(connection):
+        return True
 
     dependency_columns = table_columns(connection, "task_dependencies")
     if "project_id" not in dependency_columns:
@@ -450,7 +465,13 @@ def migrate_baseline_like_evaluations(connection: sqlite3.Connection) -> None:
     ).fetchall()
     for row in rows:
         project_id = row["project_id"]
-        baseline_id = f"baseline_{project_id}_default"
+        baseline_id = next_canonical_record_id(
+            existing_ids=(
+                str(existing["id"])
+                for existing in connection.execute("SELECT id FROM baselines").fetchall()
+            ),
+            prefix=RECORD_ID_PREFIXES["baseline"],
+        )
         connection.execute(
             """
             INSERT OR IGNORE INTO baselines
@@ -472,6 +493,19 @@ def migrate_baseline_like_evaluations(connection: sqlite3.Connection) -> None:
             """,
             (baseline_id, project_id),
         )
+
+
+def has_noncanonical_record_ids(connection: sqlite3.Connection) -> bool:
+    for table, prefix in CANONICAL_ID_TABLES.items():
+        if not table_exists(connection, table):
+            continue
+        rows = connection.execute(f"SELECT id FROM {table}").fetchall()
+        if any(
+            not is_canonical_record_id(record_id=str(row["id"]), prefix=prefix)
+            for row in rows
+        ):
+            return True
+    return False
 
 
 def table_exists(connection: sqlite3.Connection, table: str) -> bool:

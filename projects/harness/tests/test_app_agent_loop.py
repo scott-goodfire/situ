@@ -94,7 +94,7 @@ def test_experiment_review_task_links_evaluations_and_measurements(
         session_id=session_id,
         project_id=project_id,
         experiment_id=experiment_id,
-        source_task_id="task_source_experiment",
+        source_task_id="T999",
     )
 
     links = app.repos.task_entity_links.list_for_task(task_id=task.id)
@@ -119,13 +119,13 @@ def test_experiment_review_task_is_not_duplicated_for_same_experiment(
         session_id=session_id,
         project_id=project_id,
         experiment_id=experiment_id,
-        source_task_id="task_source_experiment",
+        source_task_id="T999",
     )
     second = app._enqueue_experiment_review_task(
         session_id=session_id,
         project_id=project_id,
         experiment_id=experiment_id,
-        source_task_id="task_source_experiment",
+        source_task_id="T999",
     )
 
     review_tasks = [
@@ -175,8 +175,8 @@ def test_default_session_start_creates_fresh_project_per_session(
     ]
 
     assert [first["session_id"], second["session_id"]] == [
-        "session_0001",
-        "session_0002",
+        "S1",
+        "S2",
     ]
     assert len(projects) == 2
     assert len(sessions) == 2
@@ -190,8 +190,8 @@ def test_default_session_start_creates_fresh_project_per_session(
         "Improve score again",
     ]
     assert [event.associated_session_id for event in started_events] == [
-        "session_0001",
-        "session_0002",
+        "S1",
+        "S2",
     ]
     assert [event.associated_project_id for event in started_events] == [
         projects[0].id,
@@ -397,7 +397,7 @@ class BaselineThenExperimentRuntime:
         self.scientist_repo_paths.append(kwargs.get("repo_path"))
         if task.kind == "baseline":
             baseline = repos.baselines.create(
-                baseline_id="baseline_project_0001_default",
+                baseline_id="B1",
                 project_id=project_id,
                 created_in_session_id=session_id,
                 title="Baseline",
@@ -405,7 +405,7 @@ class BaselineThenExperimentRuntime:
                 status="closed",
             )
             evaluation = repos.evaluations.create(
-                evaluation_id="eval_baseline",
+                evaluation_id="V1",
                 project_id=project_id,
                 created_in_session_id=session_id,
                 title="Baseline",
@@ -491,7 +491,7 @@ class BaselineOnlyRuntime:
         project_id = repos.sessions.get(session_id=session_id).project_id
         assert project_id is not None
         baseline = repos.baselines.create(
-            baseline_id="baseline_project_0001_default",
+            baseline_id="B1",
             project_id=project_id,
             created_in_session_id=session_id,
             title="Baseline",
@@ -499,7 +499,7 @@ class BaselineOnlyRuntime:
             status="closed",
         )
         evaluation = repos.evaluations.create(
-            evaluation_id="eval_baseline",
+            evaluation_id="V1",
             project_id=project_id,
             created_in_session_id=session_id,
             title="Baseline",
@@ -586,7 +586,7 @@ class ResearcherThenNoProgressRuntime:
         project_id = repos.sessions.get(session_id=session_id).project_id
         assert project_id is not None
         repos.analyses.create(
-            analysis_id="analysis_project_0001_001",
+            analysis_id="A1",
             project_id=project_id,
             created_in_session_id=session_id,
             status="open",
@@ -647,14 +647,14 @@ def _app_with_initial_plan(tmp_path: Path) -> tuple[HarnessApp, str, str]:
     )
     workspace_record = app.repos.workspaces.ensure()
     project = app.repos.projects.create(
-        project_id="project_0001",
+        project_id="P1",
         workspace_id=workspace_record.id,
         title="Improve score",
         objective="Improve score.",
         research_context="Run local evals.",
     )
     session = app.repos.sessions.create(
-        session_id="session_0001",
+        session_id="S1",
         workspace_id=workspace_record.id,
         project_id=project.id,
     )
@@ -681,7 +681,7 @@ def _seed_closed_experiment_with_measurement(
     workspace = app.repos.workspaces.get()
     assert workspace is not None
     experiment = app.repos.experiments.create(
-        experiment_id="exp_project_0001_candidate",
+        experiment_id="E1",
         project_id=project_id,
         created_in_session_id=session_id,
         title="Try candidate",
@@ -691,7 +691,7 @@ def _seed_closed_experiment_with_measurement(
         base_commit="test-base",
     )
     evaluation = app.repos.evaluations.create(
-        evaluation_id="eval_project_0001_candidate",
+        evaluation_id="V1",
         project_id=project_id,
         created_in_session_id=session_id,
         title="Candidate eval",

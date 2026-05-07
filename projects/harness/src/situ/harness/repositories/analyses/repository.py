@@ -3,6 +3,11 @@ from __future__ import annotations
 from typing import Any
 
 from ...core.db.serialization import utc_now
+from ...core.ids import (
+    RECORD_ID_PREFIXES,
+    ensure_canonical_record_id,
+    next_canonical_record_id,
+)
 from ...records import (
     AnalysisRecord,
     WorkStatus,
@@ -10,6 +15,8 @@ from ...records import (
 )
 from ..base import BaseRepository
 from .command import CreateAnalysis, UpdateAnalysis
+
+ANALYSIS_ID_PREFIX = RECORD_ID_PREFIXES["analysis"]
 
 
 def _analysis_row(row: Any) -> AnalysisRecord:
@@ -42,6 +49,11 @@ class AnalysesRepository(BaseRepository):
         created_by_agent_id: str | None = None,
         supersedes_analysis_id: str | None = None,
     ) -> AnalysisRecord:
+        ensure_canonical_record_id(
+            record_id=analysis_id,
+            prefix=ANALYSIS_ID_PREFIX,
+            noun="analysis",
+        )
         command = CreateAnalysis(
             analysis_id=analysis_id,
             project_id=project_id,
@@ -167,4 +179,11 @@ class AnalysesRepository(BaseRepository):
             self.list_for_project(project_id=project_id)
             if project_id is not None
             else []
+        )
+
+    def next_id(self, *, project_id: str) -> str:
+        rows = self.db.fetchall("SELECT id FROM analyses")
+        return next_canonical_record_id(
+            existing_ids=(str(row["id"]) for row in rows),
+            prefix=ANALYSIS_ID_PREFIX,
         )

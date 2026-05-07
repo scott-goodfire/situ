@@ -31,7 +31,7 @@ single session disconnected or closed.
 The first useful screen should look conceptually like:
 
 ```text
-┌ SITU / workspace / session_0001 active ───────────────────────────┐
+┌ SITU / workspace / S1 active ─────────────────────────────────────┐
 │ active session · Improve support-agent resolution · experiments 3/6│
 │ workspace · branch/session status · research context preview       │
 ├ counts ────────────────────────────────────────────────────────────┤
@@ -61,15 +61,22 @@ composable panes with measured widths and heights so resizing can reflow and
 truncate content predictably.
 
 The task board should be grouped into todo, in-progress, and done columns with
-vertical dividers between columns. The columns should resize with the terminal
-and truncate each task title independently.
+vertical dividers between columns. The columns should resize with the terminal.
+Task titles should wrap within a bounded row budget before truncating, so the
+main screen preserves board shape while showing enough title text to understand
+the task.
 
 The task board should prefer durable task records and plain-language task
-titles over IDs. Rows should look like terminal-native work items, for example
-`○ Run cancellation eval`, `● Test retrieval filter`, and `✓ Record baseline
-eval`. IDs and metadata may be secondary or hidden on the main screen. Until
-durable tasks are fully wired, the TUI may derive task-like rows from existing
-hypotheses, experiments, evaluations, and concern activities as a fallback.
+titles over IDs. Titles should read as short human action phrases rather than
+internal labels or workflow narration. Rows should look like terminal-native
+work items, for example
+`○ [T3] Run cancellation eval`, `● [T4] Test retrieval filter`, and
+`✓ [T1] Record baseline eval`. The short task ID should be visible on task
+rows so humans and agents can refer to a task without copying a long database
+identifier. Other metadata may be secondary or hidden on the main screen.
+Until durable tasks are fully wired, the TUI may derive task-like rows from
+existing hypotheses, experiments, evaluations, and concern activities as a
+fallback.
 
 The header and counts strip should make live progress legible without turning
 the dashboard into a chart wall. Compact visuals such as an experiment budget
@@ -112,7 +119,8 @@ Exiting onboarding closes the TUI without starting an agent run. This keeps
 opening the product surface distinct from beginning a long-running autoresearch
 loop.
 
-`situ tui --resume <session-id>` explicitly resumes an existing session id.
+`situ tui --resume <session-id>` explicitly resumes an existing session id. The
+session id uses the compact `S<N>` form, such as `S1`.
 Compatibility commands may offer `situ resume`, defaulting to the latest local
 session for the workspace when the user does not provide one.
 

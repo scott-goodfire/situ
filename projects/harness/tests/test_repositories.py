@@ -37,7 +37,7 @@ def create_workspace(repos: Repositories) -> WorkspaceRecord:
 
 def create_project(
     repos: Repositories,
-    project_id: str = "project_0001",
+    project_id: str = "P1",
 ) -> ProjectRecord:
     workspace = create_workspace(repos)
     existing = repos.projects.get(project_id=project_id)
@@ -54,7 +54,7 @@ def create_project(
 
 def create_session(
     repos: Repositories,
-    session_id: str = "session_0001",
+    session_id: str = "S1",
 ) -> SessionRecord:
     workspace = create_workspace(repos)
     project = create_project(repos)
@@ -71,11 +71,11 @@ def create_session(
 def create_hypothesis(repos: Repositories) -> HypothesisRecord:
     project = create_project(repos)
     session = create_session(repos)
-    existing = repos.hypotheses.get(hypothesis_id="hyp_0001")
+    existing = repos.hypotheses.get(hypothesis_id="H1")
     if existing is not None:
         return existing
     return repos.hypotheses.create(
-        hypothesis_id="hyp_0001",
+        hypothesis_id="H1",
         project_id=project.id,
         created_in_session_id=session.id,
         title="Component A helps",
@@ -86,7 +86,7 @@ def create_hypothesis(repos: Repositories) -> HypothesisRecord:
 
 def create_experiment(
     repos: Repositories,
-    experiment_id: str = "exp_session_0001_a",
+    experiment_id: str = "E1",
 ) -> ExperimentRecord:
     project = create_project(repos)
     session = create_session(repos)
@@ -105,7 +105,7 @@ def create_experiment(
 
 def create_baseline(
     repos: Repositories,
-    baseline_id: str = "baseline_project_0001_default",
+    baseline_id: str = "B1",
 ) -> BaselineRecord:
     project = create_project(repos)
     session = create_session(repos)
@@ -126,7 +126,7 @@ def create_evaluation(repos: Repositories) -> EvaluationRecord:
     session = create_session(repos)
     baseline = create_baseline(repos)
     return repos.evaluations.create(
-        evaluation_id="eval_session_0001_baseline",
+        evaluation_id="V1",
         project_id=project.id,
         created_in_session_id=session.id,
         title="Baseline project eval",
@@ -139,7 +139,7 @@ def create_measurement(repos: Repositories) -> MeasurementRecord:
     evaluation = create_evaluation(repos)
     return repos.measurements.add(
         evaluation_id=evaluation.id,
-        created_in_session_id="session_0001",
+        created_in_session_id="S1",
         actor="agent",
         body="Baseline result recorded.",
         payload={"metrics": {"score": 0.71}},
@@ -149,11 +149,11 @@ def create_measurement(repos: Repositories) -> MeasurementRecord:
 def create_analysis(repos: Repositories) -> AnalysisRecord:
     project = create_project(repos)
     session = create_session(repos)
-    existing = repos.analyses.get(analysis_id="analysis_0001")
+    existing = repos.analyses.get(analysis_id="A1")
     if existing is not None:
         return existing
     return repos.analyses.create(
-        analysis_id="analysis_0001",
+        analysis_id="A1",
         project_id=project.id,
         created_in_session_id=session.id,
         created_by_agent_id=None,
@@ -162,6 +162,62 @@ def create_analysis(repos: Repositories) -> AnalysisRecord:
         content="Project-owned records represent durable research state.",
         status="active",
     )
+
+
+def test_repositories_generate_canonical_short_ids(repos: Repositories) -> None:
+    project = create_project(repos)
+    session = create_session(repos)
+
+    assert repos.projects.next_id(workspace_id=project.workspace_id) == "P2"
+    assert repos.sessions.next_id() == "S2"
+    assert repos.analyses.next_id(project_id=project.id) == "A1"
+    assert repos.hypotheses.next_id(project_id=project.id) == "H1"
+    assert repos.baselines.next_id(project_id=project.id) == "B1"
+    assert repos.experiments.next_id(project_id=project.id) == "E1"
+    assert repos.evaluations.next_id(project_id=project.id) == "V1"
+    assert repos.artifacts.next_id(project_id=project.id) == "F1"
+    assert repos.tasks.next_id(project_id=project.id) == "T1"
+
+    task = repos.tasks.create(
+        task_id=repos.tasks.next_id(project_id=project.id),
+        project_id=project.id,
+        created_in_session_id=session.id,
+        title="Plan next step",
+        content="Review project state and file the next task.",
+        kind="plan",
+    )
+
+    assert task.id == "T1"
+    assert repos.tasks.next_id(project_id=project.id) == "T2"
+
+
+def test_database_hard_resets_legacy_product_record_ids(tmp_path: Path) -> None:
+    db_path = tmp_path / "situ.sqlite"
+    db = Database(
+        db_path,
+        workspace_id="workspace_test",
+        repo_path="/tmp/project",
+    )
+    repos = Repositories.create(db)
+    project = create_project(repos)
+    db.execute(
+        "UPDATE projects SET id = ? WHERE id = ?",
+        ("project_legacy_001", project.id),
+    )
+    db.close()
+
+    reopened = Database(
+        db_path,
+        workspace_id="workspace_test",
+        repo_path="/tmp/project",
+    )
+    reopened_repos = Repositories.create(reopened)
+
+    try:
+        assert reopened_repos.projects.list_all() == []
+        assert reopened_repos.workspaces.get() is None
+    finally:
+        reopened.close()
 
 
 def test_workspace_repository_ensure_get_and_idempotent(repos: Repositories) -> None:
@@ -180,7 +236,7 @@ def test_workspace_repository_ensure_get_and_idempotent(repos: Repositories) -> 
 def test_projects_repository_create_update_get_and_list(repos: Repositories) -> None:
     project = create_project(repos)
 
-    assert project.id == "project_0001"
+    assert project.id == "P1"
     assert project.workspace_id == "workspace_test"
     assert project.title == "Improve score"
     assert "latency" in project.objective
@@ -188,7 +244,7 @@ def test_projects_repository_create_update_get_and_list(repos: Repositories) -> 
     assert project.status == "active"
 
     updated = repos.projects.update(
-        project_id="project_0001",
+        project_id="P1",
         title="Improve score safely",
         research_context="Refined: focus on score, ignore latency.",
         status="closed",
@@ -197,185 +253,185 @@ def test_projects_repository_create_update_get_and_list(repos: Repositories) -> 
     assert updated.title == "Improve score safely"
     assert "Refined" in updated.research_context
     assert updated.status == "closed"
-    assert repos.projects.get(project_id="project_0001") == updated
-    assert [item.id for item in repos.projects.list_all()] == ["project_0001"]
+    assert repos.projects.get(project_id="P1") == updated
+    assert [item.id for item in repos.projects.list_all()] == ["P1"]
     assert [item.id for item in repos.projects.list_for_workspace(workspace_id="workspace_test")] == [
-        "project_0001"
+        "P1"
     ]
 
 
 def test_sessions_repository_create_update_get_and_list(repos: Repositories) -> None:
     session = create_session(repos)
 
-    assert session.id == "session_0001"
+    assert session.id == "S1"
     assert session.workspace_id == "workspace_test"
-    assert session.project_id == "project_0001"
+    assert session.project_id == "P1"
     assert session.status == "active"
 
     projectless = repos.sessions.create(
-        session_id="session_0002",
+        session_id="S2",
         workspace_id="workspace_test",
     )
     assert projectless.project_id is None
-    attached = repos.sessions.update_project(session_id="session_0002", project_id="project_0001")
+    attached = repos.sessions.update_project(session_id="S2", project_id="P1")
     assert attached is not None
-    assert attached.project_id == "project_0001"
+    assert attached.project_id == "P1"
 
-    updated = repos.sessions.update_status(session_id="session_0001", status="closed")
+    updated = repos.sessions.update_status(session_id="S1", status="closed")
     assert updated is not None
     assert updated.status == "closed"
-    assert repos.sessions.get(session_id="session_0001") == updated
+    assert repos.sessions.get(session_id="S1") == updated
     assert [item.id for item in repos.sessions.list_for_workspace(workspace_id="workspace_test")] == [
-        "session_0001",
-        "session_0002",
+        "S1",
+        "S2",
     ]
-    assert [item.id for item in repos.sessions.list_for_project(project_id="project_0001")] == [
-        "session_0001",
-        "session_0002",
+    assert [item.id for item in repos.sessions.list_for_project(project_id="P1")] == [
+        "S1",
+        "S2",
     ]
 
 
 def test_hypotheses_repository_create_update_get_and_list(repos: Repositories) -> None:
     hypothesis = create_hypothesis(repos)
 
-    assert hypothesis.id == "hyp_0001"
-    assert hypothesis.project_id == "project_0001"
-    assert hypothesis.created_in_session_id == "session_0001"
+    assert hypothesis.id == "H1"
+    assert hypothesis.project_id == "P1"
+    assert hypothesis.created_in_session_id == "S1"
     assert hypothesis.status == "active"
 
     updated = repos.hypotheses.update(
-        hypothesis_id="hyp_0001",
+        hypothesis_id="H1",
         summary="Component A helped in first result.",
         status="closed",
     )
     assert updated is not None
     assert updated.summary == "Component A helped in first result."
     assert updated.status == "closed"
-    assert repos.hypotheses.get(hypothesis_id="hyp_0001") == updated
-    assert [item.id for item in repos.hypotheses.list_for_project(project_id="project_0001")] == [
-        "hyp_0001"
+    assert repos.hypotheses.get(hypothesis_id="H1") == updated
+    assert [item.id for item in repos.hypotheses.list_for_project(project_id="P1")] == [
+        "H1"
     ]
-    assert [item.id for item in repos.hypotheses.list_for_session(session_id="session_0001")] == [
-        "hyp_0001"
+    assert [item.id for item in repos.hypotheses.list_for_session(session_id="S1")] == [
+        "H1"
     ]
 
 
 def test_experiments_repository_create_update_get_and_list(repos: Repositories) -> None:
     experiment = create_experiment(repos)
 
-    assert experiment.id == "exp_session_0001_a"
-    assert experiment.project_id == "project_0001"
-    assert experiment.created_in_session_id == "session_0001"
+    assert experiment.id == "E1"
+    assert experiment.project_id == "P1"
+    assert experiment.created_in_session_id == "S1"
     assert experiment.status == "open"
     assert experiment.title == "Try component A"
     assert experiment.worktree_path is None
     assert experiment.base_commit is None
 
     updated = repos.experiments.update(
-        experiment_id="exp_session_0001_a",
+        experiment_id="E1",
         status="closed",
         summary="A improved score.",
-        worktree_path="/tmp/worktree/exp_session_0001_a",
+        worktree_path="/tmp/worktree/E1",
         base_commit="abc123",
     )
     assert updated is not None
     assert updated.status == "closed"
     assert updated.summary == "A improved score."
-    assert updated.worktree_path == "/tmp/worktree/exp_session_0001_a"
+    assert updated.worktree_path == "/tmp/worktree/E1"
     assert updated.base_commit == "abc123"
-    assert repos.experiments.get(experiment_id="exp_session_0001_a") == updated
-    assert [item.id for item in repos.experiments.list_for_project(project_id="project_0001")] == [
-        "exp_session_0001_a"
+    assert repos.experiments.get(experiment_id="E1") == updated
+    assert [item.id for item in repos.experiments.list_for_project(project_id="P1")] == [
+        "E1"
     ]
-    assert [item.id for item in repos.experiments.list_for_session(session_id="session_0001")] == [
-        "exp_session_0001_a"
+    assert [item.id for item in repos.experiments.list_for_session(session_id="S1")] == [
+        "E1"
     ]
 
 
 def test_baselines_repository_create_update_get_and_list(repos: Repositories) -> None:
     baseline = create_baseline(repos)
 
-    assert baseline.id == "baseline_project_0001_default"
-    assert baseline.project_id == "project_0001"
-    assert baseline.created_in_session_id == "session_0001"
+    assert baseline.id == "B1"
+    assert baseline.project_id == "P1"
+    assert baseline.created_in_session_id == "S1"
     assert baseline.status == "open"
     assert baseline.title == "Current workspace baseline"
 
     updated = repos.baselines.update(
-        baseline_id="baseline_project_0001_default",
+        baseline_id="B1",
         status="closed",
         summary="Baseline accepted for comparison.",
     )
     assert updated is not None
     assert updated.status == "closed"
     assert updated.summary == "Baseline accepted for comparison."
-    assert repos.baselines.get(baseline_id="baseline_project_0001_default") == updated
-    assert [item.id for item in repos.baselines.list_for_project(project_id="project_0001")] == [
-        "baseline_project_0001_default"
+    assert repos.baselines.get(baseline_id="B1") == updated
+    assert [item.id for item in repos.baselines.list_for_project(project_id="P1")] == [
+        "B1"
     ]
-    assert [item.id for item in repos.baselines.list_for_session(session_id="session_0001")] == [
-        "baseline_project_0001_default"
+    assert [item.id for item in repos.baselines.list_for_session(session_id="S1")] == [
+        "B1"
     ]
 
 
 def test_evaluations_repository_create_update_get_and_list(repos: Repositories) -> None:
     evaluation = create_evaluation(repos)
 
-    assert evaluation.id == "eval_session_0001_baseline"
-    assert evaluation.project_id == "project_0001"
-    assert evaluation.created_in_session_id == "session_0001"
+    assert evaluation.id == "V1"
+    assert evaluation.project_id == "P1"
+    assert evaluation.created_in_session_id == "S1"
     assert evaluation.status == "open"
     assert evaluation.title == "Baseline project eval"
-    assert evaluation.associated_baseline_id == "baseline_project_0001_default"
+    assert evaluation.associated_baseline_id == "B1"
     assert evaluation.associated_experiment_id is None
 
     create_experiment(repos)
     updated = repos.evaluations.update(
-        evaluation_id="eval_session_0001_baseline",
+        evaluation_id="V1",
         status="closed",
         summary="Baseline result recorded.",
-        associated_experiment_id="exp_session_0001_a",
+        associated_experiment_id="E1",
     )
     assert updated is not None
     assert updated.status == "closed"
     assert updated.summary == "Baseline result recorded."
     assert updated.associated_baseline_id is None
-    assert updated.associated_experiment_id == "exp_session_0001_a"
-    assert repos.evaluations.get(evaluation_id="eval_session_0001_baseline") == updated
-    assert [item.id for item in repos.evaluations.list_for_project(project_id="project_0001")] == [
-        "eval_session_0001_baseline"
+    assert updated.associated_experiment_id == "E1"
+    assert repos.evaluations.get(evaluation_id="V1") == updated
+    assert [item.id for item in repos.evaluations.list_for_project(project_id="P1")] == [
+        "V1"
     ]
-    assert [item.id for item in repos.evaluations.list_for_session(session_id="session_0001")] == [
-        "eval_session_0001_baseline"
+    assert [item.id for item in repos.evaluations.list_for_session(session_id="S1")] == [
+        "V1"
     ]
-    assert [item.id for item in repos.evaluations.list_for_experiment(experiment_id="exp_session_0001_a")] == [
-        "eval_session_0001_baseline"
+    assert [item.id for item in repos.evaluations.list_for_experiment(experiment_id="E1")] == [
+        "V1"
     ]
 
     baseline_again = repos.evaluations.update(
-        evaluation_id="eval_session_0001_baseline",
-        associated_baseline_id="baseline_project_0001_default",
+        evaluation_id="V1",
+        associated_baseline_id="B1",
     )
     assert baseline_again is not None
-    assert baseline_again.associated_baseline_id == "baseline_project_0001_default"
+    assert baseline_again.associated_baseline_id == "B1"
     assert baseline_again.associated_experiment_id is None
     assert [item.id for item in repos.evaluations.list_for_baseline(
-        baseline_id="baseline_project_0001_default"
-    )] == ["eval_session_0001_baseline"]
+        baseline_id="B1"
+    )] == ["V1"]
 
 
 def test_analyses_repository_create_update_get_and_list(repos: Repositories) -> None:
     analysis = create_analysis(repos)
 
-    assert analysis.id == "analysis_0001"
-    assert analysis.project_id == "project_0001"
-    assert analysis.created_in_session_id == "session_0001"
+    assert analysis.id == "A1"
+    assert analysis.project_id == "P1"
+    assert analysis.created_in_session_id == "S1"
     assert analysis.created_by_agent_id is None
     assert analysis.status == "active"
     assert "backend primitives" in analysis.summary
 
     updated = repos.analyses.update(
-        analysis_id="analysis_0001",
+        analysis_id="A1",
         status="closed",
         summary="Synthesized codebase map into design constraints.",
         content="The main knobs are repository records, tools, and protocol schemas.",
@@ -383,24 +439,24 @@ def test_analyses_repository_create_update_get_and_list(repos: Repositories) -> 
     assert updated is not None
     assert updated.status == "closed"
     assert "design constraints" in updated.summary
-    assert repos.analyses.get(analysis_id="analysis_0001") == updated
-    assert [item.id for item in repos.analyses.list_for_project(project_id="project_0001")] == [
-        "analysis_0001"
+    assert repos.analyses.get(analysis_id="A1") == updated
+    assert [item.id for item in repos.analyses.list_for_project(project_id="P1")] == [
+        "A1"
     ]
-    assert [item.id for item in repos.analyses.list_for_session(session_id="session_0001")] == [
-        "analysis_0001"
+    assert [item.id for item in repos.analyses.list_for_session(session_id="S1")] == [
+        "A1"
     ]
 
     superseding = repos.analyses.create(
-        analysis_id="analysis_0002",
-        project_id="project_0001",
-        created_in_session_id="session_0001",
+        analysis_id="A2",
+        project_id="P1",
+        created_in_session_id="S1",
         title="Updated codebase map",
         summary="Second pass replaced the first map.",
         content="This note supersedes the initial map.",
-        supersedes_analysis_id="analysis_0001",
+        supersedes_analysis_id="A1",
     )
-    assert superseding.supersedes_analysis_id == "analysis_0001"
+    assert superseding.supersedes_analysis_id == "A1"
 
 
 def test_work_repositories_reject_invalid_agent_statuses(
@@ -410,15 +466,15 @@ def test_work_repositories_reject_invalid_agent_statuses(
 
     with pytest.raises(ValueError, match="invalid experiment status"):
         repos.experiments.update(
-            experiment_id="exp_session_0001_a",
+            experiment_id="E1",
             status="completed",
         )
 
     with pytest.raises(ValueError, match="Record result details"):
         repos.experiments.create(
-            experiment_id="exp_session_0001_b",
-            project_id="project_0001",
-            created_in_session_id="session_0001",
+            experiment_id="E2",
+            project_id="P1",
+            created_in_session_id="S1",
             title="Try component B",
             summary="Apply component B.",
             status="running",
@@ -426,26 +482,26 @@ def test_work_repositories_reject_invalid_agent_statuses(
 
     with pytest.raises(ValueError, match="invalid hypothesis status"):
         repos.hypotheses.update(
-            hypothesis_id="hyp_0001",
+            hypothesis_id="H1",
             status="completed",
         )
 
     with pytest.raises(ValueError, match="invalid evaluation status"):
         repos.evaluations.create(
-            evaluation_id="eval_session_0001_bad",
-            project_id="project_0001",
-            created_in_session_id="session_0001",
+            evaluation_id="V3",
+            project_id="P1",
+            created_in_session_id="S1",
             title="Bad evaluation",
             summary="This should fail.",
-            associated_baseline_id="baseline_project_0001_default",
+            associated_baseline_id="B1",
             status="running",
         )
 
     with pytest.raises(ValueError, match="invalid baseline status"):
         repos.baselines.create(
-            baseline_id="baseline_bad_status",
-            project_id="project_0001",
-            created_in_session_id="session_0001",
+            baseline_id="B2",
+            project_id="P1",
+            created_in_session_id="S1",
             title="Bad baseline",
             summary="This should fail.",
             status="running",
@@ -453,18 +509,18 @@ def test_work_repositories_reject_invalid_agent_statuses(
 
     with pytest.raises(ValueError, match="exactly one measured subject"):
         repos.evaluations.create(
-            evaluation_id="eval_session_0001_no_subject",
-            project_id="project_0001",
-            created_in_session_id="session_0001",
+            evaluation_id="V4",
+            project_id="P1",
+            created_in_session_id="S1",
             title="No subject",
             summary="This should fail.",
         )
 
     with pytest.raises(ValueError, match="invalid analysis status"):
         repos.analyses.create(
-            analysis_id="analysis_bad_status",
-            project_id="project_0001",
-            created_in_session_id="session_0001",
+            analysis_id="A2",
+            project_id="P1",
+            created_in_session_id="S1",
             title="Bad analysis",
             summary="This should fail.",
             content="Bad status.",
@@ -477,13 +533,13 @@ def test_core_repositories_reject_invalid_statuses(repos: Repositories) -> None:
 
     with pytest.raises(ValueError, match="invalid project status"):
         repos.projects.update(
-            project_id="project_0001",
+            project_id="P1",
             status="completed",
         )
 
     with pytest.raises(ValueError, match="invalid session status"):
         repos.sessions.update_status(
-            session_id="session_0001",
+            session_id="S1",
             status="completed",
         )
 
@@ -495,16 +551,16 @@ def test_experiments_repository_accepts_work_status_enum(
 
     create_hypothesis(repos)
     experiment = repos.experiments.create(
-        experiment_id="exp_session_0001_b",
-        project_id="project_0001",
-        created_in_session_id="session_0001",
+        experiment_id="E2",
+        project_id="P1",
+        created_in_session_id="S1",
         title="Try component B",
         summary="Apply component B.",
         status=WorkStatus.ACTIVE,
     )
 
     updated = repos.experiments.update(
-        experiment_id="exp_session_0001_b",
+        experiment_id="E2",
         status=WorkStatus.CLOSED,
     )
 
@@ -519,18 +575,18 @@ def test_hypothesis_experiment_links_repository_create_and_list(
     create_experiment(repos)
 
     link = repos.hypothesis_experiment_links.create(
-        hypothesis_id="hyp_0001",
-        experiment_id="exp_session_0001_a",
+        hypothesis_id="H1",
+        experiment_id="E1",
     )
 
-    assert link.hypothesis_id == "hyp_0001"
-    assert link.experiment_id == "exp_session_0001_a"
+    assert link.hypothesis_id == "H1"
+    assert link.experiment_id == "E1"
     assert repos.hypothesis_experiment_links.get(
-        hypothesis_id="hyp_0001",
-        experiment_id="exp_session_0001_a",
+        hypothesis_id="H1",
+        experiment_id="E1",
     ) == link
-    assert repos.hypothesis_experiment_links.list_for_hypothesis(hypothesis_id="hyp_0001") == [link]
-    assert repos.hypothesis_experiment_links.list_for_experiment(experiment_id="exp_session_0001_a") == [
+    assert repos.hypothesis_experiment_links.list_for_hypothesis(hypothesis_id="H1") == [link]
+    assert repos.hypothesis_experiment_links.list_for_experiment(experiment_id="E1") == [
         link
     ]
 
@@ -539,27 +595,27 @@ def test_hypothesis_activities_repository_add_and_list(repos: Repositories) -> N
     create_hypothesis(repos)
 
     activity = repos.hypothesis_activities.add(
-        hypothesis_id="hyp_0001",
-        created_in_session_id="session_0001",
+        hypothesis_id="H1",
+        created_in_session_id="S1",
         actor="agent",
         kind="comment",
         body="A looks worth trying.",
-        payload={"experiment_id": "exp_session_0001_a"},
+        payload={"experiment_id": "E1"},
     )
 
     assert activity.id == 1
-    assert activity.created_in_session_id == "session_0001"
-    assert activity.payload == {"experiment_id": "exp_session_0001_a"}
-    assert repos.hypothesis_activities.list_for_hypothesis(hypothesis_id="hyp_0001") == [activity]
-    assert repos.hypothesis_activities.list_for_project(project_id="project_0001") == [activity]
+    assert activity.created_in_session_id == "S1"
+    assert activity.payload == {"experiment_id": "E1"}
+    assert repos.hypothesis_activities.list_for_hypothesis(hypothesis_id="H1") == [activity]
+    assert repos.hypothesis_activities.list_for_project(project_id="P1") == [activity]
 
 
 def test_experiment_activities_repository_add_and_list(repos: Repositories) -> None:
     create_experiment(repos)
 
     activity = repos.experiment_activities.add(
-        experiment_id="exp_session_0001_a",
-        created_in_session_id="session_0001",
+        experiment_id="E1",
+        created_in_session_id="S1",
         actor="worker",
         kind="comment",
         body="A improved score.",
@@ -570,20 +626,20 @@ def test_experiment_activities_repository_add_and_list(repos: Repositories) -> N
     )
 
     assert activity.id == 1
-    assert activity.created_in_session_id == "session_0001"
+    assert activity.created_in_session_id == "S1"
     assert activity.kind == "comment"
-    assert repos.experiment_activities.list_for_experiment(experiment_id="exp_session_0001_a") == [
+    assert repos.experiment_activities.list_for_experiment(experiment_id="E1") == [
         activity
     ]
-    assert repos.experiment_activities.list_for_project(project_id="project_0001") == [activity]
+    assert repos.experiment_activities.list_for_project(project_id="P1") == [activity]
 
 
 def test_evaluation_activities_repository_add_and_list(repos: Repositories) -> None:
     create_evaluation(repos)
 
     activity = repos.evaluation_activities.add(
-        evaluation_id="eval_session_0001_baseline",
-        created_in_session_id="session_0001",
+        evaluation_id="V1",
+        created_in_session_id="S1",
         actor="agent",
         kind="result",
         body="Baseline result recorded.",
@@ -594,17 +650,17 @@ def test_evaluation_activities_repository_add_and_list(repos: Repositories) -> N
     )
 
     assert activity.id == 1
-    assert activity.created_in_session_id == "session_0001"
+    assert activity.created_in_session_id == "S1"
     assert activity.kind == "result"
     assert repos.evaluation_activities.list_for_evaluation(
-        evaluation_id="eval_session_0001_baseline"
+        evaluation_id="V1"
     ) == [activity]
-    assert repos.evaluation_activities.list_for_project(project_id="project_0001") == [activity]
+    assert repos.evaluation_activities.list_for_project(project_id="P1") == [activity]
 
     with pytest.raises(ValueError, match="invalid evaluation activity kind"):
         repos.evaluation_activities.add(
-            evaluation_id="eval_session_0001_baseline",
-            created_in_session_id="session_0001",
+            evaluation_id="V1",
+            created_in_session_id="S1",
             actor="agent",
             kind="comment",
             body="Evaluation discussion belongs in a result body for now.",
@@ -615,29 +671,29 @@ def test_measurements_repository_add_and_list(repos: Repositories) -> None:
     measurement = create_measurement(repos)
 
     assert measurement.id == 1
-    assert measurement.evaluation_id == "eval_session_0001_baseline"
-    assert measurement.created_in_session_id == "session_0001"
+    assert measurement.evaluation_id == "V1"
+    assert measurement.created_in_session_id == "S1"
     assert measurement.actor == "agent"
     assert measurement.payload.metrics["score"].value == 0.71
     assert measurement.model_dump()["payload"] == {
         "metrics": {"score": {"value": 0.71}}
     }
-    assert repos.measurements.list_for_evaluation(evaluation_id="eval_session_0001_baseline") == [
+    assert repos.measurements.list_for_evaluation(evaluation_id="V1") == [
         measurement
     ]
-    assert repos.measurements.list_for_baseline(baseline_id="baseline_project_0001_default") == [
+    assert repos.measurements.list_for_baseline(baseline_id="B1") == [
         measurement
     ]
-    assert repos.measurements.list_for_project(project_id="project_0001") == [measurement]
-    assert repos.measurements.list_for_session(session_id="session_0001") == [measurement]
+    assert repos.measurements.list_for_project(project_id="P1") == [measurement]
+    assert repos.measurements.list_for_session(session_id="S1") == [measurement]
 
 
 def test_analysis_activities_repository_add_and_list(repos: Repositories) -> None:
     create_analysis(repos)
 
     activity = repos.analysis_activities.add(
-        analysis_id="analysis_0001",
-        created_in_session_id="session_0001",
+        analysis_id="A1",
+        created_in_session_id="S1",
         actor="agent",
         kind="comment",
         body="This map is ready for hypothesis generation.",
@@ -645,26 +701,26 @@ def test_analysis_activities_repository_add_and_list(repos: Repositories) -> Non
     )
 
     assert activity.id == 1
-    assert activity.created_in_session_id == "session_0001"
+    assert activity.created_in_session_id == "S1"
     assert activity.kind == "comment"
     assert activity.payload == {"source": "initial scan"}
-    assert repos.analysis_activities.list_for_analysis(analysis_id="analysis_0001") == [activity]
-    assert repos.analysis_activities.list_for_project(project_id="project_0001") == [activity]
+    assert repos.analysis_activities.list_for_analysis(analysis_id="A1") == [activity]
+    assert repos.analysis_activities.list_for_project(project_id="P1") == [activity]
 
 
 def test_artifacts_repository_create_and_list(repos: Repositories) -> None:
     create_experiment(repos)
     activity = repos.experiment_activities.add(
-        experiment_id="exp_session_0001_a",
+        experiment_id="E1",
         actor="worker",
         kind="comment",
         body="A improved score.",
     )
 
     artifact = repos.artifacts.create(
-        artifact_id="artifact_0001",
-        project_id="project_0001",
-        created_in_session_id="session_0001",
+        artifact_id="F1",
+        project_id="P1",
+        created_in_session_id="S1",
         associated_entity_kind="experiment_activity",
         associated_entity_id=str(activity.id),
         kind="json",
@@ -674,14 +730,14 @@ def test_artifacts_repository_create_and_list(repos: Repositories) -> None:
         size_bytes=120,
     )
 
-    assert artifact.id == "artifact_0001"
-    assert artifact.project_id == "project_0001"
-    assert artifact.created_in_session_id == "session_0001"
+    assert artifact.id == "F1"
+    assert artifact.project_id == "P1"
+    assert artifact.created_in_session_id == "S1"
     assert artifact.associated_entity_kind == "experiment_activity"
     assert artifact.associated_entity_id == str(activity.id)
-    assert repos.artifacts.get(artifact_id="artifact_0001") == artifact
-    assert repos.artifacts.list_for_project(project_id="project_0001") == [artifact]
-    assert repos.artifacts.list_for_session(session_id="session_0001") == [artifact]
+    assert repos.artifacts.get(artifact_id="F1") == artifact
+    assert repos.artifacts.list_for_project(project_id="P1") == [artifact]
+    assert repos.artifacts.list_for_session(session_id="S1") == [artifact]
 
 
 def test_events_repository_add_and_list(repos: Repositories) -> None:
@@ -689,18 +745,18 @@ def test_events_repository_add_and_list(repos: Repositories) -> None:
 
     event = repos.events.add(
         event_type="session.started",
-        message="Started session_0001",
-        session_id="session_0001",
-        payload={"session_id": "session_0001"},
+        message="Started S1",
+        session_id="S1",
+        payload={"session_id": "S1"},
     )
 
     assert event.id == 1
     assert event.type == "session.started"
-    assert event.associated_project_id == "project_0001"
-    assert event.associated_session_id == "session_0001"
-    assert event.payload == {"session_id": "session_0001"}
-    assert repos.events.list_for_session(session_id="session_0001") == [event]
-    assert repos.events.list_for_project(project_id="project_0001") == [event]
+    assert event.associated_project_id == "P1"
+    assert event.associated_session_id == "S1"
+    assert event.payload == {"session_id": "S1"}
+    assert repos.events.list_for_session(session_id="S1") == [event]
+    assert repos.events.list_for_project(project_id="P1") == [event]
     assert repos.events.list_all() == [event]
 
 
@@ -709,18 +765,18 @@ def test_agent_message_history_repository_appends_and_reconstructs(
 ) -> None:
     create_session(repos)
     manager = repos.agents.ensure_session_agent(
-        session_id="session_0001",
+        session_id="S1",
         kind="manager",
         display_name="Manager",
     )
     scientist = repos.agents.ensure_session_agent(
-        session_id="session_0001",
+        session_id="S1",
         kind="scientist",
         display_name="Scientist",
     )
 
     first = repos.agent_message_history.append_session_messages(
-        session_id="session_0001",
+        session_id="S1",
         agent_id=manager.id,
         agent_name="situ-research-planner",
         messages_json=(
@@ -729,7 +785,7 @@ def test_agent_message_history_repository_appends_and_reconstructs(
         ),
     )
     second = repos.agent_message_history.append_session_messages(
-        session_id="session_0001",
+        session_id="S1",
         agent_id=scientist.id,
         agent_name="situ-research-planner",
         messages_json='[{"kind":"response","run_id":"pydantic_run_1","conversation_id":"conversation_1"}]',
@@ -740,13 +796,13 @@ def test_agent_message_history_repository_appends_and_reconstructs(
     assert first.conversation_id == "conversation_1"
     assert second.id == 2
     assert repos.agent_message_history.get_message_history(
-        project_or_session_id="session_0001",
+        project_or_session_id="S1",
         agent_id=manager.id,
     ) == [
         {"kind": "request", "run_id": "pydantic_run_1", "conversation_id": "conversation_1"},
     ]
     assert repos.agent_message_history.get_message_history(
-        project_or_session_id="session_0001",
+        project_or_session_id="S1",
         agent_name="situ-research-planner",
     ) == [
         {"kind": "request", "run_id": "pydantic_run_1", "conversation_id": "conversation_1"},
@@ -758,11 +814,11 @@ def test_current_state_api_composes_protocol_shaped_state(repos: Repositories) -
     create_experiment(repos)
     analysis = create_analysis(repos)
     repos.hypothesis_experiment_links.create(
-        hypothesis_id="hyp_0001",
-        experiment_id="exp_session_0001_a",
+        hypothesis_id="H1",
+        experiment_id="E1",
     )
     repos.experiment_activities.add(
-        experiment_id="exp_session_0001_a",
+        experiment_id="E1",
         actor="worker",
         kind="comment",
         body="A improved score.",
@@ -773,30 +829,30 @@ def test_current_state_api_composes_protocol_shaped_state(repos: Repositories) -
     )
     repos.analysis_activities.add(
         analysis_id=analysis.id,
-        created_in_session_id="session_0001",
+        created_in_session_id="S1",
         actor="agent",
         kind="comment",
         body="Mapped the codebase.",
     )
     baseline = create_baseline(repos)
     repos.evaluations.create(
-        evaluation_id="eval_session_0001_baseline",
-        project_id="project_0001",
-        created_in_session_id="session_0001",
+        evaluation_id="V1",
+        project_id="P1",
+        created_in_session_id="S1",
         title="Baseline project eval",
         summary="Run the baseline project evaluation.",
         associated_baseline_id=baseline.id,
     )
     repos.measurements.add(
-        evaluation_id="eval_session_0001_baseline",
-        created_in_session_id="session_0001",
+        evaluation_id="V1",
+        created_in_session_id="S1",
         actor="agent",
         body="Baseline result recorded.",
         payload={"activity_type": "result"},
     )
     repos.evaluation_activities.add(
-        evaluation_id="eval_session_0001_baseline",
-        created_in_session_id="session_0001",
+        evaluation_id="V1",
+        created_in_session_id="S1",
         actor="agent",
         kind="result",
         body="Baseline result recorded.",
@@ -804,27 +860,27 @@ def test_current_state_api_composes_protocol_shaped_state(repos: Repositories) -
     )
     repos.events.add(
         event_type="experiment.completed",
-        message="Completed exp_session_0001_a",
-        session_id="session_0001",
-        payload={"experiment_id": "exp_session_0001_a"},
+        message="Completed E1",
+        session_id="S1",
+        payload={"experiment_id": "E1"},
     )
 
     current_state = CurrentStateService(repos=repos).get()
     assert current_state.workspace is not None
     assert current_state.workspace.id == "workspace_test"
-    assert [project.id for project in current_state.projects] == ["project_0001"]
-    assert [session.id for session in current_state.sessions] == ["session_0001"]
-    assert [hypothesis.id for hypothesis in current_state.hypotheses] == ["hyp_0001"]
+    assert [project.id for project in current_state.projects] == ["P1"]
+    assert [session.id for session in current_state.sessions] == ["S1"]
+    assert [hypothesis.id for hypothesis in current_state.hypotheses] == ["H1"]
     assert [baseline.id for baseline in current_state.baselines] == [
-        "baseline_project_0001_default"
+        "B1"
     ]
     assert [experiment.id for experiment in current_state.experiments] == [
-        "exp_session_0001_a"
+        "E1"
     ]
     assert [evaluation.id for evaluation in current_state.evaluations] == [
-        "eval_session_0001_baseline"
+        "V1"
     ]
-    assert [analysis.id for analysis in current_state.analyses] == ["analysis_0001"]
+    assert [analysis.id for analysis in current_state.analyses] == ["A1"]
     assert [measurement.id for measurement in current_state.measurements] == [1]
     assert [activity.kind for activity in current_state.analysis_activities] == [
         "comment"
@@ -842,72 +898,72 @@ def test_project_board_api_composes_project_board(repos: Repositories) -> None:
     create_experiment(repos)
     analysis = create_analysis(repos)
     repos.hypothesis_experiment_links.create(
-        hypothesis_id="hyp_0001",
-        experiment_id="exp_session_0001_a",
+        hypothesis_id="H1",
+        experiment_id="E1",
     )
     repos.hypothesis_activities.add(
-        hypothesis_id="hyp_0001",
+        hypothesis_id="H1",
         actor="agent",
         kind="comment",
         body="A is active.",
     )
     repos.analysis_activities.add(
         analysis_id=analysis.id,
-        created_in_session_id="session_0001",
+        created_in_session_id="S1",
         actor="agent",
         kind="comment",
         body="Mapped the codebase.",
     )
     repos.experiment_activities.add(
-        experiment_id="exp_session_0001_a",
+        experiment_id="E1",
         actor="worker",
         kind="comment",
         body="A improved score.",
     )
     baseline = create_baseline(repos)
     repos.evaluations.create(
-        evaluation_id="eval_session_0001_baseline",
-        project_id="project_0001",
-        created_in_session_id="session_0001",
+        evaluation_id="V1",
+        project_id="P1",
+        created_in_session_id="S1",
         title="Baseline project eval",
         summary="Run the baseline project evaluation.",
         associated_baseline_id=baseline.id,
     )
     repos.measurements.add(
-        evaluation_id="eval_session_0001_baseline",
-        created_in_session_id="session_0001",
+        evaluation_id="V1",
+        created_in_session_id="S1",
         actor="agent",
         body="Baseline result recorded.",
     )
     repos.evaluation_activities.add(
-        evaluation_id="eval_session_0001_baseline",
-        created_in_session_id="session_0001",
+        evaluation_id="V1",
+        created_in_session_id="S1",
         actor="agent",
         kind="result",
         body="Baseline result recorded.",
     )
 
     graph = ProjectBoardService(repos=repos).get_project_board(
-        session_id="session_0001"
+        session_id="S1"
     )
 
     assert graph.workspace is not None
     assert graph.workspace.id == "workspace_test"
     assert graph.project is not None
-    assert graph.project.id == "project_0001"
+    assert graph.project.id == "P1"
     assert graph.session is not None
-    assert graph.session.id == "session_0001"
-    assert [hypothesis.id for hypothesis in graph.hypotheses] == ["hyp_0001"]
+    assert graph.session.id == "S1"
+    assert [hypothesis.id for hypothesis in graph.hypotheses] == ["H1"]
     assert [baseline.id for baseline in graph.baselines] == [
-        "baseline_project_0001_default"
+        "B1"
     ]
     assert [experiment.id for experiment in graph.experiments] == [
-        "exp_session_0001_a"
+        "E1"
     ]
     assert [evaluation.id for evaluation in graph.evaluations] == [
-        "eval_session_0001_baseline"
+        "V1"
     ]
-    assert [analysis.id for analysis in graph.analyses] == ["analysis_0001"]
+    assert [analysis.id for analysis in graph.analyses] == ["A1"]
     assert [measurement.id for measurement in graph.measurements] == [1]
     assert [activity.kind for activity in graph.analysis_activities] == ["comment"]
     assert [activity.kind for activity in graph.experiment_activities] == [

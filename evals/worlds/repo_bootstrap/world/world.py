@@ -13,12 +13,12 @@ from evals.framework.models import EvalEvent
 from evals.worlds.repo_bootstrap.models import RepoBootstrapSeed
 
 WORKSPACE_ID = "workspace_repo_bootstrap"
-PROJECT_ID = "project_repo_bootstrap"
-SESSION_ID = "session_repo_bootstrap_0001"
+PROJECT_ID = "P1"
+SESSION_ID = "S1"
 SCIENTIST_AGENT_ID = f"agent_{PROJECT_ID}_scientist"
-HYPOTHESIS_ID = "hyp_repo_bootstrap_train_variants"
-BASELINE_ID = "baseline_repo_bootstrap_default"
-BASELINE_EVALUATION_ID = "eval_repo_bootstrap_baseline"
+HYPOTHESIS_ID = "H1"
+BASELINE_ID = "B1"
+BASELINE_EVALUATION_ID = "V1"
 
 RESEARCH_CONTEXT_BODY = (
     "You are observing a tiny local autoresearch-style repo. Inspect "

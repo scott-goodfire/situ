@@ -1861,6 +1861,20 @@ console = [
 ]
 
 [[package]]
+name = "pydantic-ai-skills"
+version = "0.9.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "anyio" },
+    { name = "pydantic-ai-slim" },
+    { name = "pyyaml" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/59/b2/9e861796ceb2cc021a9a7f505b1861b6cd24234c7492389b1c2ca2303869/pydantic_ai_skills-0.9.0.tar.gz", hash = "sha256:9f944576ed21d1732267f7b5dda8cdf4d57c715692b080add562b9f6f83d47dd", size = 9011432, upload-time = "2026-05-03T02:56:40.254Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/40/58/c84b6626eaaec3082f63e7fd1e2c7839d4349d3b4a82c7d4e7cce65036c2/pydantic_ai_skills-0.9.0-py3-none-any.whl", hash = "sha256:81c28b5be5e553f5c9edc666add8c5c1763abb70761c5aed813c9a42b695558c", size = 55649, upload-time = "2026-05-03T02:56:38.641Z" },
+]
+
+[[package]]
 name = "pydantic-ai-slim"
 version = "1.89.1"
 source = { registry = "https://pypi.org/simple" }
@@ -2441,6 +2455,7 @@ dependencies = [
     { name = "logfire" },
     { name = "pydantic-ai", extra = ["dbos"] },
     { name = "pydantic-ai-backend", extra = ["console"] },
+    { name = "pydantic-ai-skills" },
     { name = "pydantic-settings" },
     { name = "situ-protocol" },
 ]
@@ -2451,6 +2466,7 @@ requires-dist = [
     { name = "logfire", specifier = ">=4.32.1" },
     { name = "pydantic-ai", extras = ["dbos"], specifier = ">=1.89.1" },
     { name = "pydantic-ai-backend", extras = ["console"], specifier = ">=0.2.5" },
+    { name = "pydantic-ai-skills", specifier = ">=0.9.0" },
     { name = "pydantic-settings", specifier = ">=2.0.0" },
     { name = "situ-protocol", editable = "shared/python/protocol" },
 ]

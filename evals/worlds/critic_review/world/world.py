@@ -18,8 +18,8 @@ from evals.worlds.repo_bootstrap.world.world import (
 )
 
 CRITIC_AGENT_ID = f"agent_{PROJECT_ID}_critic"
-CANDIDATE_EXPERIMENT_ID = "exp_critic_candidate"
-CANDIDATE_EVALUATION_ID = "eval_critic_candidate"
+CANDIDATE_EXPERIMENT_ID = "E1"
+CANDIDATE_EVALUATION_ID = "V2"
 
 
 class CriticReviewWorld:

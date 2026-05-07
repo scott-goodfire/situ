@@ -62,7 +62,7 @@ the environment used to launch evals.
 
 ```text
 evals/
-  harness/
+  framework/
     capture/tool_call_capture/capability.py
     eval_groups/base_situ_eval_group/eval_group.py
     evaluators/tool_was_called/evaluator.py

@@ -11,10 +11,10 @@ export const stories = [
     render: () => (
       <LayoutBox gap={1} width={72}>
         <PaneSection title="Session">
-          <Text>session_0001 | active | experiments 3/5</Text>
+          <Text>S1 | active | experiments 3/5</Text>
         </PaneSection>
         <PaneSection title="Now">
-          <Text>exp_session_0001_retrieval_filter | active</Text>
+          <Text>E2 | active</Text>
         </PaneSection>
       </LayoutBox>
     ),

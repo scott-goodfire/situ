@@ -35,6 +35,22 @@ Projects are research efforts inside a workspace. A project carries the
 objective and research context for that effort. Sessions are live autoresearch
 runs inside a workspace, and may attach to zero or one project.
 
+Human-facing persisted records should have compact, referenceable IDs. The
+current canonical forms are `P<N>` for projects, `S<N>` for sessions, `A<N>`
+for analyses, `H<N>` for hypotheses, `B<N>` for baselines, `E<N>` for
+experiments, `V<N>` for evaluations, `F<N>` for artifacts, and `T<N>` for
+tasks. These IDs should be short enough for terminal rows, activity text, agent
+prompts, and user steering. This is a hard local-state cutover: older long-form
+IDs such as `project_...`, `session_0001`, `hyp_...`, `exp_...`, and
+`eval_...` are not part of the supported product model.
+
+Workspace IDs are the exception. A workspace ID may remain an internal,
+path-derived stable identifier because the workspace is the repo-path boundary,
+not the thing humans normally cite during a run. Activity, event, measurement,
+message-history, dependency, and link row IDs may remain storage-local or
+compound implementation identifiers when their parent record carries the
+human-facing reference.
+
 For the current product slice, the default `situ tui [workspace]` start flow is
 one fresh project for one fresh session. The project is created or resolved
 first, then the session is created attached to that project. A projectless

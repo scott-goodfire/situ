@@ -34,8 +34,7 @@ class CreateEvaluationTool(BaseSituTool[SituToolDeps, CreateEvaluationResult]):
         repos = ctx.deps.get_repos()
         project_id = ctx.deps.require_project_id()
         session_id = ctx.deps.session_id
-        resolved_evaluation_id = evaluation_id or _next_evaluation_id(
-            repos=repos,
+        resolved_evaluation_id = evaluation_id or repos.evaluations.next_id(
             project_id=project_id,
         )
         evaluation = repos.evaluations.create(
@@ -55,12 +54,3 @@ class CreateEvaluationTool(BaseSituTool[SituToolDeps, CreateEvaluationResult]):
         )
         ctx.deps.publish_record(record=evaluation, event=event)
         return CreateEvaluationResult(success=True, evaluation=evaluation.model_dump())
-
-
-def _next_evaluation_id(
-    *,
-    repos: Any,
-    project_id: str,
-) -> str:
-    count = len(repos.evaluations.list_for_project(project_id=project_id)) + 1
-    return f"eval_{project_id}_agent_{count:03d}"

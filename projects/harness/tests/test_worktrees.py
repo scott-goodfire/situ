@@ -56,7 +56,7 @@ def test_worktree_manager_creates_detached_worktree_for_clean_repo(
     worktree = WorktreeManager(
         workspace_path=repo / "pkg",
         worktrees_dir=tmp_path / "worktrees",
-    ).prepare(experiment_id="exp_0001")
+    ).prepare(experiment_id="E1")
 
     assert worktree.base_commit == base_commit
     assert worktree.workspace_path == worktree.worktree_root / "pkg"
@@ -72,12 +72,12 @@ def test_worktree_manager_reuses_nested_workspace_path_without_double_append(
     first = WorktreeManager(
         workspace_path=repo / "pkg",
         worktrees_dir=tmp_path / "worktrees",
-    ).prepare(experiment_id="exp_0001")
+    ).prepare(experiment_id="E1")
     second = WorktreeManager(
         workspace_path=repo / "pkg",
         worktrees_dir=tmp_path / "worktrees",
     ).prepare(
-        experiment_id="exp_0001",
+        experiment_id="E1",
         existing_worktree_path=str(first.workspace_path),
         existing_base_commit=first.base_commit,
     )
@@ -95,7 +95,7 @@ def test_worktree_manager_rejects_dirty_base_repo(tmp_path: Path) -> None:
         WorktreeManager(
             workspace_path=repo,
             worktrees_dir=tmp_path / "worktrees",
-        ).prepare(experiment_id="exp_0001")
+        ).prepare(experiment_id="E1")
 
 
 def test_worktree_manager_inspect_preserves_unstaged_status_paths(tmp_path: Path) -> None:
@@ -121,14 +121,14 @@ def test_harness_prepares_experiment_task_checkout_and_records_final_state(
     )
     workspace = app.repos.workspaces.ensure()
     project = app.repos.projects.create(
-        project_id="project_0001",
+        project_id="P1",
         workspace_id=workspace.id,
         title="Try candidate",
         objective="Improve the checked value.",
         research_context="Run the local checks.",
     )
     session = app.repos.sessions.create(
-        session_id="session_0001",
+        session_id="S1",
         workspace_id=workspace.id,
         project_id=project.id,
     )
@@ -139,7 +139,7 @@ def test_harness_prepares_experiment_task_checkout_and_records_final_state(
         display_name="Scientist",
     )
     task = app.repos.tasks.create(
-        task_id="task_project_0001_001",
+        task_id="T1",
         project_id=project.id,
         created_in_session_id=session.id,
         title="Try candidate edit",

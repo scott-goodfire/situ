@@ -4,6 +4,12 @@ from collections.abc import Sequence
 from typing import Any
 
 from ...core.db.serialization import json_dumps, json_loads, utc_now
+from ...core.ids import (
+    RECORD_ID_PREFIXES,
+    canonical_record_id_number,
+    ensure_canonical_record_id,
+    next_canonical_record_id,
+)
 from ...records import (
     TaskKind,
     TaskPriority,
@@ -17,6 +23,8 @@ from ...records import (
 )
 from ..base import BaseRepository
 from .command import CreateTask, UpdateTask
+
+TASK_ID_PREFIX = RECORD_ID_PREFIXES["task"]
 
 PRIORITY_ORDER_SQL = """
 CASE priority
@@ -72,6 +80,11 @@ class TasksRepository(BaseRepository):
         payload: dict[str, Any] | None = None,
         available_at: str | None = None,
     ) -> TaskRecord:
+        ensure_canonical_record_id(
+            record_id=task_id,
+            prefix=TASK_ID_PREFIX,
+            noun="task",
+        )
         command = CreateTask(
             task_id=task_id,
             project_id=project_id,
@@ -359,9 +372,16 @@ class TasksRepository(BaseRepository):
         )
 
     def next_id(self, *, project_id: str) -> str:
-        count = len(self.list_for_project(project_id=project_id)) + 1
-        return f"task_{project_id}_{count:03d}"
+        rows = self.db.fetchall("SELECT id FROM tasks")
+        return next_canonical_record_id(
+            existing_ids=(str(row["id"]) for row in rows),
+            prefix=TASK_ID_PREFIX,
+        )
 
     def _project_id_for_session(self, session_id: str) -> str | None:
         row = self.db.fetchone("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
         return row["project_id"] if row else None
+
+
+def canonical_task_id_number(task_id: str) -> int | None:
+    return canonical_record_id_number(record_id=task_id, prefix=TASK_ID_PREFIX)

@@ -25,8 +25,8 @@ def test_critic_review_world_seeds_linked_review_task(
         review_tasks = [task for task in board["tasks"] if task["kind"] == "review"]
 
         assert len(review_tasks) == 1
-        assert review_tasks[0]["payload"]["experiment_id"] == "exp_critic_candidate"
-        assert board["experiments"][0]["id"] == "exp_critic_candidate"
+        assert review_tasks[0]["payload"]["experiment_id"] == "E1"
+        assert board["experiments"][0]["id"] == "E1"
         assert board["measurements"]
         assert review_tasks[0]["payload"]["measurement_ids"]
         assert any(

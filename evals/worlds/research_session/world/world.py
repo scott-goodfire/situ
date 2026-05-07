@@ -12,18 +12,18 @@ from evals.framework.models import EvalEvent
 from evals.worlds.research_session.models import ResearchSessionSeed
 
 WORKSPACE_ID = "workspace_eval"
-PROJECT_ID = "project_eval"
-SESSION_ID = "session_eval_0001"
+PROJECT_ID = "P1"
+SESSION_ID = "S1"
 SCIENTIST_AGENT_ID = f"agent_{PROJECT_ID}_scientist"
-HYPOTHESIS_ID = "hyp_eval_component_a"
-EXPERIMENT_ID = "exp_eval_component_a"
-ARTIFACT_ID = "artifact_eval_raw_output"
-ANALYSIS_ID = "analysis_eval_codebase_map"
-TASK_ID = "task_eval_baseline"
-BASELINE_ID = "baseline_eval_default"
-BASELINE_EVALUATION_ID = "eval_eval_baseline"
-COMPONENT_A_EXPERIMENT_ID = "exp_eval_component_a"
-COMPONENT_C_EXPERIMENT_ID = "exp_eval_component_c"
+HYPOTHESIS_ID = "H1"
+EXPERIMENT_ID = "E1"
+ARTIFACT_ID = "F1"
+ANALYSIS_ID = "A1"
+TASK_ID = "T1"
+BASELINE_ID = "B1"
+BASELINE_EVALUATION_ID = "V1"
+COMPONENT_A_EXPERIMENT_ID = "E1"
+COMPONENT_C_EXPERIMENT_ID = "E2"
 
 RESEARCH_CONTEXT_BODY = (
     "Use local eval scripts and compare score, latency_ms, and safety notes. "
@@ -303,7 +303,7 @@ def _create_experiment_with_result(
         summary=summary,
         status="closed",
     )
-    evaluation_id = f"eval_{experiment_id}"
+    evaluation_id = _evaluation_id_for_experiment(experiment_id)
     repos.evaluations.create(
         evaluation_id=evaluation_id,
         project_id=PROJECT_ID,
@@ -402,6 +402,14 @@ def _create_baseline_measurement(
             "raw": {"shape": "standard"},
         },
     )
+
+
+def _evaluation_id_for_experiment(experiment_id: str) -> str:
+    if experiment_id == COMPONENT_A_EXPERIMENT_ID:
+        return "V2"
+    if experiment_id == COMPONENT_C_EXPERIMENT_ID:
+        return "V3"
+    raise ValueError(f"unknown eval fixture experiment id: {experiment_id}")
 
 
 def _metric_values(

@@ -101,8 +101,8 @@ tools when an agent needs a focused slice such as hypotheses, baselines,
 experiments, evaluations, measurements, activities, or artifacts.
 When the harness has already selected a specific record for an agent to work
 on, pass the record ID rather than the full record. For example, a Scientist or
-Researcher assigned `task_444` should be prompted to call
-`get_task(task_id="task_444")`; the task body, payload, links, dependencies,
+Researcher assigned `T444` should be prompted to call
+`get_task(task_id="T444")`; the task body, payload, links, dependencies,
 and comments should be obtained through that explicit read. This keeps context
 acquisition visible in traces and avoids making prompt construction the hidden
 source of truth.
@@ -123,6 +123,26 @@ current repo path. The first slice should expose ordinary coding-agent tools
 such as `ls`, `read_file`, `write_file`, `edit_file`, `glob`, `grep`, and
 `execute`. Agents use those tools to inspect the project and run native
 commands described in `--context`.
+
+## Runtime Skills
+
+Runtime agent skills are reusable methods exposed to Situ's own Manager,
+Researcher, Scientist, and Critic agents. They are separate from `.agents/skills`,
+which are repository-maintenance workflows for developer agents working on
+Situ itself.
+
+Runtime skills should use progressive disclosure: the base role prompt and
+toolset list can advertise available skills, but full methodology should be
+loaded through an explicit tool call such as `load_skill(skill_name=...)`.
+This keeps traces readable and avoids turning every role prompt into a large
+manual.
+
+Skills should teach how to perform a kind of work, not replace product records.
+For example, a web-research skill can describe source selection and synthesis,
+but the durable output still belongs in `Analysis`, task comments,
+`Hypothesis`, or other Situ records. Manager and Researcher skills are in
+scope for the current slice. Scientist and Critic skills are deferred until
+their core tool loops are stable.
 
 Command output should be preserved as plaintext evidence. Situ should not
 deterministically parse arbitrary stdout into metrics or signals in the tool

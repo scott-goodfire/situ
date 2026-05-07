@@ -160,6 +160,10 @@ MANAGER_AGENT_INSTRUCTIONS = inspect.cleandoc(
     - Write task content with a concrete done condition, including which
       research records should exist and that the assignee should mark the task
       done when the focused work is complete.
+    - When calling `create_task`, write the title as a short human action
+      phrase, ideally 3-8 words starting with a verb. Avoid agent names,
+      internal lifecycle labels, IDs, and dense noun piles. Put nuance and
+      constraints in `content`, not the title.
     - Keep the loop moving after baseline evidence exists. Baseline completion
       is a starting point, not a reason to stop; file the next hypothesis,
       research, hypothesis, experiment, interpretation, or review task unless

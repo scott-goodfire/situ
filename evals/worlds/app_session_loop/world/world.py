@@ -21,7 +21,7 @@ from evals.worlds.repo_bootstrap.world.world import (
     HYPOTHESIS_ID,
 )
 
-SESSION_ID = "session_app_loop_0001"
+SESSION_ID = "S1"
 
 
 class AppSessionLoopWorld:

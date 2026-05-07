@@ -292,17 +292,9 @@ def baseline_score(deps: SituToolDeps, project_id: str) -> float | None:
             measurements = repos.measurements.list_for_evaluation(evaluation_id=evaluation.id)
             for measurement in reversed(measurements):
                 value = _score_from_payload(measurement.payload)
-                if value is not None:
-                    return value
+            if value is not None:
+                return value
 
-    baseline_id = f"exp_{project_id}_baseline"
-    activities = repos.experiment_activities.list_for_experiment(experiment_id=baseline_id)
-    for activity in reversed(activities):
-        if activity.payload.get("activity_type") != "result" and "signals" not in activity.payload:
-            continue
-        value = _score_from_payload(activity.payload)
-        if value is not None:
-            return value
     return None
 
 

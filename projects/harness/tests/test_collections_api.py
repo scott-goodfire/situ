@@ -45,19 +45,19 @@ def test_collections_bootstrap_returns_research_objects_and_events(
     app.setup_complete({})
     workspace = app.repos.workspaces.ensure()
     project = app.repos.projects.create(
-        project_id="project_0001",
+        project_id="P1",
         workspace_id=workspace.id,
         title="Improve score",
         objective="Improve score.",
         research_context="Run local evals. Expected signals: score. Baseline and variants.",
     )
     session = app.repos.sessions.create(
-        session_id="session_0001",
+        session_id="S1",
         workspace_id=workspace.id,
         project_id=project.id,
     )
     app.repos.hypotheses.create(
-        hypothesis_id="hyp_0001",
+        hypothesis_id="H1",
         project_id=project.id,
         created_in_session_id=session.id,
         title="Component A helps",
@@ -65,21 +65,21 @@ def test_collections_bootstrap_returns_research_objects_and_events(
         status="active",
     )
     app.repos.experiments.create(
-        experiment_id="exp_session_0001_a",
+        experiment_id="E1",
         project_id=project.id,
         created_in_session_id=session.id,
         title="Try component A",
         summary="Candidate eval.",
     )
     baseline = app.repos.baselines.create(
-        baseline_id="baseline_project_0001_default",
+        baseline_id="B1",
         project_id=project.id,
         created_in_session_id=session.id,
         title="Current workspace baseline",
         summary="Reference behavior before candidate changes.",
     )
     evaluation = app.repos.evaluations.create(
-        evaluation_id="eval_session_0001_baseline",
+        evaluation_id="V1",
         project_id=project.id,
         created_in_session_id=session.id,
         title="Baseline project eval",
@@ -87,7 +87,7 @@ def test_collections_bootstrap_returns_research_objects_and_events(
         associated_baseline_id=baseline.id,
     )
     analysis = app.repos.analyses.create(
-        analysis_id="analysis_0001",
+        analysis_id="A1",
         project_id=project.id,
         created_in_session_id=session.id,
         title="Codebase map",
@@ -96,7 +96,7 @@ def test_collections_bootstrap_returns_research_objects_and_events(
         status="active",
     )
     activity = app.repos.experiment_activities.add(
-        experiment_id="exp_session_0001_a",
+        experiment_id="E1",
         created_in_session_id=session.id,
         actor="worker",
         kind="comment",
@@ -128,7 +128,7 @@ def test_collections_bootstrap_returns_research_objects_and_events(
     event = app.record_event(
         event_type="experiment.completed",
         message="Completed baseline measurement",
-        session_id="session_0001",
+        session_id="S1",
         payload={"measurement_id": measurement.id},
     )
 
@@ -137,19 +137,19 @@ def test_collections_bootstrap_returns_research_objects_and_events(
     assert bootstrap.cursor == event.id
     assert [item.id for item in bootstrap.workspaces] == [workspace.id]
     assert [project.id for project in bootstrap.projects] == [project.id]
-    assert [session.id for session in bootstrap.sessions] == ["session_0001"]
-    assert [hypothesis.id for hypothesis in bootstrap.hypotheses] == ["hyp_0001"]
+    assert [session.id for session in bootstrap.sessions] == ["S1"]
+    assert [hypothesis.id for hypothesis in bootstrap.hypotheses] == ["H1"]
     assert [item.id for item in bootstrap.baselines] == [
-        "baseline_project_0001_default"
+        "B1"
     ]
     assert [experiment.id for experiment in bootstrap.experiments] == [
-        "exp_session_0001_a"
+        "E1"
     ]
     assert [item.id for item in bootstrap.evaluations] == [
-        "eval_session_0001_baseline"
+        "V1"
     ]
     assert [item.id for item in bootstrap.measurements] == [measurement.id]
-    assert [item.id for item in bootstrap.analyses] == ["analysis_0001"]
+    assert [item.id for item in bootstrap.analyses] == ["A1"]
     assert [item.id for item in bootstrap.experiment_activities] == [activity.id]
     assert [item.id for item in bootstrap.analysis_activities] == [
         analysis_activity.id

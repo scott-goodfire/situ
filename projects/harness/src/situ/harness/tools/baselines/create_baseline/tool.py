@@ -28,8 +28,7 @@ class CreateBaselineTool(BaseSituTool[SituToolDeps, CreateBaselineResult]):
         repos = ctx.deps.get_repos()
         project_id = ctx.deps.require_project_id()
         session_id = ctx.deps.session_id
-        resolved_baseline_id = baseline_id or _next_baseline_id(
-            repos=repos,
+        resolved_baseline_id = baseline_id or repos.baselines.next_id(
             project_id=project_id,
         )
         baseline = repos.baselines.create(
@@ -47,12 +46,3 @@ class CreateBaselineTool(BaseSituTool[SituToolDeps, CreateBaselineResult]):
         )
         ctx.deps.publish_record(record=baseline, event=event)
         return CreateBaselineResult(success=True, baseline=baseline.model_dump())
-
-
-def _next_baseline_id(
-    *,
-    repos: Any,
-    project_id: str,
-) -> str:
-    count = len(repos.baselines.list_for_project(project_id=project_id)) + 1
-    return f"baseline_{project_id}_agent_{count:03d}"

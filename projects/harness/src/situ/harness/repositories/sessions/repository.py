@@ -3,9 +3,16 @@ from __future__ import annotations
 from typing import Any
 
 from ...core.db.serialization import utc_now
+from ...core.ids import (
+    RECORD_ID_PREFIXES,
+    ensure_canonical_record_id,
+    next_canonical_record_id,
+)
 from ...records import SessionRecord, SessionStatus, parse_session_status
 from ..base import BaseRepository
 from .command import CreateSession, UpdateSessionProject, UpdateSessionStatus
+
+SESSION_ID_PREFIX = RECORD_ID_PREFIXES["session"]
 
 
 def _session_row(row: Any) -> SessionRecord:
@@ -27,6 +34,11 @@ class SessionsRepository(BaseRepository):
         workspace_id: str,
         project_id: str | None = None,
     ) -> SessionRecord:
+        ensure_canonical_record_id(
+            record_id=session_id,
+            prefix=SESSION_ID_PREFIX,
+            noun="session",
+        )
         command = CreateSession(
             session_id=session_id,
             workspace_id=workspace_id,
@@ -120,3 +132,10 @@ class SessionsRepository(BaseRepository):
             "SELECT * FROM sessions ORDER BY updated_at DESC LIMIT 1"
         )
         return _session_row(row) if row else None
+
+    def next_id(self) -> str:
+        rows = self.db.fetchall("SELECT id FROM sessions")
+        return next_canonical_record_id(
+            existing_ids=(str(row["id"]) for row in rows),
+            prefix=SESSION_ID_PREFIX,
+        )

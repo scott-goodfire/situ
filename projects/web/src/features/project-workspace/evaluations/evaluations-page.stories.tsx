@@ -43,7 +43,7 @@ export const List: Story = {
 export const Detail: Story = {
   args: {
     data: evaluationPageData(),
-    path: "/projects/support-agent-demo/evaluations/eval_0002",
+    path: "/projects/support-agent-demo/evaluations/V2",
   },
 };
 
@@ -145,7 +145,7 @@ function evaluationPageData(): ProjectWorkspaceData {
     },
     sessions: [
       {
-        id: "session_0001",
+        id: "S1",
         workspace_id: "workspace_demo",
         project_id: "support-agent-demo",
         status: "active",
@@ -156,7 +156,7 @@ function evaluationPageData(): ProjectWorkspaceData {
     hypotheses: [],
     experiments: [
       {
-        id: "exp_0002",
+        id: "E2",
         project_id: "support-agent-demo",
         status: "active",
         title: "Try retrieval filtering",
@@ -167,7 +167,7 @@ function evaluationPageData(): ProjectWorkspaceData {
     ],
     evaluations: [
       {
-        id: "eval_0001",
+        id: "V1",
         project_id: "support-agent-demo",
         status: "closed",
         title: "Baseline support eval",
@@ -177,12 +177,12 @@ function evaluationPageData(): ProjectWorkspaceData {
         updated_at: "2026-01-01T00:03:00Z",
       },
       {
-        id: "eval_0002",
+        id: "V2",
         project_id: "support-agent-demo",
         status: "active",
         title: "Retrieval filtering candidate",
-        summary: "Candidate measurement for exp_0002.",
-        associated_experiment_id: "exp_0002",
+        summary: "Candidate measurement for E2.",
+        associated_experiment_id: "E2",
         created_at: "2026-01-01T00:05:00Z",
         updated_at: "2026-01-01T00:08:00Z",
       },
@@ -200,7 +200,7 @@ function evaluationPageData(): ProjectWorkspaceData {
     evaluationActivities: [
       {
         id: 1,
-        evaluation_id: "eval_0001",
+        evaluation_id: "V1",
         actor: "agent",
         kind: "result",
         body: "Baseline: resolution_rate 61.0%, latency 1830ms, hallucination_rate 2.4%.",
@@ -209,7 +209,7 @@ function evaluationPageData(): ProjectWorkspaceData {
       },
       {
         id: 2,
-        evaluation_id: "eval_0002",
+        evaluation_id: "V2",
         actor: "agent",
         kind: "result",
         body: "Candidate: resolution_rate 64.8%, latency 1910ms. Needs reproduction before treating as accepted.",
@@ -219,13 +219,13 @@ function evaluationPageData(): ProjectWorkspaceData {
     ],
     artifacts: [
       {
-        id: "artifact_0001",
+        id: "F1",
         project_id: "support-agent-demo",
         associated_entity_kind: "evaluation",
-        associated_entity_id: "eval_0002",
+        associated_entity_id: "V2",
         kind: "log",
         title: "Candidate stdout",
-        path: "artifacts/eval_0002/stdout.txt",
+        path: "artifacts/V2/stdout.txt",
         created_at: "2026-01-01T00:08:01Z",
       },
     ],
