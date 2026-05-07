@@ -1,10 +1,28 @@
 from __future__ import annotations
 
+import os
+
 from pydantic_ai import RunContext
 
 from ....api.project_board import ProjectBoardService
 from ...common import SituToolDeps, BaseSituTool
 from .models import GetProjectBoardResult
+
+
+def _resolve_cap(env_var: str, default: int) -> int:
+    raw = os.environ.get(env_var)
+    if raw is None:
+        return default
+    try:
+        return max(1, int(raw))
+    except ValueError:
+        return default
+
+
+def _tail(items, cap: int) -> list:
+    if len(items) <= cap:
+        return items
+    return items[-cap:]
 
 
 class GetProjectBoardTool(BaseSituTool[SituToolDeps, GetProjectBoardResult]):
@@ -20,7 +38,15 @@ class GetProjectBoardTool(BaseSituTool[SituToolDeps, GetProjectBoardResult]):
         Load the current project board: project, analyses, hypotheses,
         baselines, experiments, evaluations, measurements, links, activities,
         artifacts, agents, tasks, and events.
+
+        For long-running sessions where activity and event lists grow large,
+        this tool returns only the most recent items in those lists. Use
+        focused list_* and get_* tools (e.g. list_measurements,
+        list_evaluation_activities, get_task) for older or filtered slices.
         """
+        events_cap = _resolve_cap("SITU_BOARD_EVENTS_CAP", 60)
+        activities_cap = _resolve_cap("SITU_BOARD_ACTIVITIES_CAP", 40)
+
         board = ProjectBoardService(repos=ctx.deps.get_repos()).get_project_board(
             session_id=ctx.deps.session_id
         )
@@ -44,20 +70,27 @@ class GetProjectBoardTool(BaseSituTool[SituToolDeps, GetProjectBoardResult]):
                 dependency.model_dump() for dependency in board.task_dependencies
             ],
             task_entity_links=[link.model_dump() for link in board.task_entity_links],
-            task_activities=[activity.model_dump() for activity in board.task_activities],
+            task_activities=[
+                activity.model_dump()
+                for activity in _tail(board.task_activities, activities_cap)
+            ],
             analyses=[analysis.model_dump() for analysis in board.analyses],
             analysis_activities=[
-                activity.model_dump() for activity in board.analysis_activities
+                activity.model_dump()
+                for activity in _tail(board.analysis_activities, activities_cap)
             ],
             hypothesis_activities=[
-                activity.model_dump() for activity in board.hypothesis_activities
+                activity.model_dump()
+                for activity in _tail(board.hypothesis_activities, activities_cap)
             ],
             experiment_activities=[
-                activity.model_dump() for activity in board.experiment_activities
+                activity.model_dump()
+                for activity in _tail(board.experiment_activities, activities_cap)
             ],
             evaluation_activities=[
-                activity.model_dump() for activity in board.evaluation_activities
+                activity.model_dump()
+                for activity in _tail(board.evaluation_activities, activities_cap)
             ],
             artifacts=[artifact.model_dump() for artifact in board.artifacts],
-            events=[event.model_dump() for event in board.events],
+            events=[event.model_dump() for event in _tail(board.events, events_cap)],
         )

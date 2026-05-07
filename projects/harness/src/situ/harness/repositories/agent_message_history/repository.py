@@ -1,11 +1,26 @@
 from __future__ import annotations
 
+import os
 from typing import Any
 
 from ...core.db.serialization import json_dumps, json_loads, utc_now
 from ...records import AgentMessageHistoryRecord
 from ..base import BaseRepository
 from .command import AppendAgentMessageHistory
+
+
+def _resolve_history_cap() -> int:
+    raw = os.environ.get("SITU_AGENT_HISTORY_CAP")
+    if raw is None:
+        return 2
+    try:
+        value = int(raw)
+    except ValueError:
+        return 2
+    return max(0, value)
+
+
+AGENT_HISTORY_RECORD_CAP = _resolve_history_cap()
 
 
 def _agent_message_history_row(row: Any) -> AgentMessageHistoryRecord:
@@ -174,12 +189,26 @@ class AgentMessageHistoryRepository(BaseRepository):
         project_id = self._resolve_project_id(project_or_session_id)
         if project_id is None:
             return []
-        messages: list[dict[str, Any]] = []
-        for record in self.list_for_project(
+        if AGENT_HISTORY_RECORD_CAP == 0:
+            return []
+        records = self.list_for_project(
             project_id=project_id,
             agent_id=agent_id,
             agent_name=agent_name,
-        ):
+        )
+        # Cap retrieved history to the last N records per agent. Each record
+        # is one self-contained agent.run output; agents re-read project
+        # state via tools every pass, so older raw history mostly duplicates
+        # information the agent will fetch fresh anyway. Without this cap,
+        # message history grows unbounded and exceeds the model's context
+        # window after a few dozen passes. Set SITU_AGENT_HISTORY_CAP=0 to
+        # disable replay entirely — the agent then runs each pass cold but
+        # picks up project state via tool reads, which is sufficient when
+        # individual passes fetch large project_board responses.
+        if len(records) > AGENT_HISTORY_RECORD_CAP:
+            records = records[-AGENT_HISTORY_RECORD_CAP:]
+        messages: list[dict[str, Any]] = []
+        for record in records:
             messages.extend(record.messages)
         return messages
 

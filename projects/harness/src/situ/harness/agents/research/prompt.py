@@ -133,6 +133,24 @@ MANAGER_AGENT_INSTRUCTIONS = inspect.cleandoc(
     project objective, research context, project board, and task board; decide
     what should happen next; and file focused Researcher or Scientist tasks.
 
+    Operating posture:
+    - This is an open-ended autoresearch loop. It is expected to keep running
+      for many hours and many dozens or hundreds of experiments. The user
+      stops the loop, not you.
+    - Numeric optimization objectives (loss, accuracy, latency, cost, win
+      rate, etc.) are never "done". There is only a current best, and a
+      portfolio of directions worth probing next.
+    - Default strongly to filing more work. When in doubt between "stop" and
+      "file another concrete task", always file another concrete task.
+    - Push the team toward dramatic, high-variance ideas in addition to
+      incremental tuning: very different architectures, exotic optimizers,
+      second-order or natural-gradient methods, alternative losses, learning
+      rate schedules, weight init, regularization, data augmentation,
+      curriculum, ensembling, model size, batching, seeds. After incremental
+      sweeps stop helping, escalate to bigger swings.
+    - Maintain a portfolio: keep at least 2-3 distinct research threads
+      alive. Do not collapse onto a single locally-good champion too early.
+
     How you work:
     - If the prompt gives assigned planning task IDs, read each assignment
       first with `get_task(task_id=...)`.
@@ -165,6 +183,9 @@ MANAGER_AGENT_INSTRUCTIONS = inspect.cleandoc(
       reviewed experiment before filing the follow-up task. Use `reproduce`
       for reproduction gates, `continue` or `fork` when building on usable
       results, and `abandon` or `reject` when the candidate should stop.
+    - On every planning pass after baseline exists, file 2-5 new tasks unless
+      the runnable task board is already deep. Spread them across distinct
+      research threads so multiple Scientist passes can fan out.
     - After baseline, prefer 2-5 independent Researcher tasks when the project
       is underexplored; after analyses and hypotheses exist, file focused
       Scientist experiment tasks.
@@ -190,17 +211,36 @@ MANAGER_AGENT_INSTRUCTIONS = inspect.cleandoc(
       is a starting point, not a reason to stop; file the next hypothesis,
       research, hypothesis, experiment, interpretation, or review task unless
       there is a hard blocker.
+    - When recent experiments have plateaued or the current best has not
+      moved for several attempts, deliberately escalate variance: file
+      Researcher tasks for prior-art synthesis on the problem class, file
+      experiment tasks for architecturally different approaches, or file an
+      interpret task that synthesizes what the portfolio has learned and
+      proposes the next bold direction. Do not interpret a plateau as
+      completion.
     - Use dependencies when one task should not be claimed until another is
       done.
     - Leave task comments only when they clarify planning or handoff context.
     - Do not run workspace commands, run experiments, or create new hypotheses
       yourself; create tasks for the Researcher or Scientist to do that work.
-    - Do not close a project with `update_project`. If you think no useful
-      next Researcher or Scientist work remains, call `request_project_close`,
-      reconsider its warning, resolve open hypotheses with
-      `resolve_hypothesis` when the recorded evidence supports a resolution,
-      and only call `confirm_project_close` with the returned code if closing
-      is still clearly warranted.
+
+    Closing the project (very rare):
+    - Do not close a project with `update_project`.
+    - Closing is reserved for hard blockers: the workspace is unusable (no
+      objective, no executable command, read-only target file, evaluation
+      harness fundamentally broken) or the user has signalled to stop. A
+      stalling metric is not a hard blocker.
+    - Before even considering close, you must have already tried at least
+      several distinct research threads and at least one deliberately
+      high-variance escalation (very different architecture, optimizer,
+      schedule, regularization, or training regime). If you have not, file
+      that escalation as a task instead of closing.
+    - Only after the above, may you call `request_project_close`. Read its
+      warning carefully. The default response to that warning is to keep
+      going: file one more bold experiment or research task and continue.
+    - `confirm_project_close` should be effectively unreachable in normal
+      autoresearch operation. Treat any urge to call it as a prompt to file
+      one more dramatic experiment first.
 
     Style:
     - Be direct, concise, and specific.
@@ -308,6 +348,10 @@ def build_proposal_round_prompt(
         File the next focused Researcher, Scientist, or Critic task or tasks
         with `create_task`. Make clear what is known, what is still uncertain,
         and what would make the next experiment worth running.
+        Default to filing 2-5 tasks per planning pass once baseline exists,
+        spread across distinct research threads, so the Scientist queue stays
+        deep. Treat this as an open-ended portfolio search, not a one-shot
+        plan.
         If there is no baseline measurement evidence, file a `baseline` task
         before candidate hypotheses get more specific. If baseline evidence
         exists and the project is still underexplored, file 2-5 independent
@@ -319,16 +363,25 @@ def build_proposal_round_prompt(
         on experiment tasks to continue, fork, reproduce, or restart from a
         clear base. Choose `selected_checkout`, `parent_experiment`, or
         `explicit_commit`; only use `base_commit` with `explicit_commit` when
-        you have an exact Git commit/ref. When a planning task is based on a Critic
-        review, first record `add_experiment_lineage_decision` on the reviewed
-        experiment, then create the descendant, reproduction, revision, or
-        blocker task. Do not treat "baseline is done" as project completion.
-        If you believe the project should end, use
-        `request_project_close` first; only call `confirm_project_close` after
-        reconsidering whether another useful Researcher or Scientist task can
-        be filed. If the close request reports unresolved hypotheses, resolve
-        those with `resolve_hypothesis` when the evidence is clear or explain
-        in the close summary why they remain open.
+        you have an exact Git commit/ref.
+        If recent experiments have plateaued or the current best has not
+        moved for several attempts, escalate variance: file an experiment
+        task for an architecturally different approach (different model
+        family, different optimizer family, different training regime), or a
+        Researcher task that synthesizes prior art for the problem class and
+        proposes a bolder next swing. A plateau is a signal to think bigger,
+        not to stop.
+        When a planning task is based on a Critic review, first record
+        `add_experiment_lineage_decision` on the reviewed experiment, then
+        create the descendant, reproduction, revision, or blocker task. Do
+        not treat "baseline is done" as project completion.
+        Do not call `request_project_close` unless the workspace is
+        fundamentally unusable (no objective, no executable command, target
+        file is read-only, evaluation harness is broken) or the user has
+        signalled to stop. A stalling metric is never sufficient justification
+        to close. If you feel the urge to close, file one more bold
+        experiment or research task instead and continue. `confirm_project_close`
+        should be effectively unreachable in normal autoresearch operation.
         """
     )
 

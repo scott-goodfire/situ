@@ -83,6 +83,11 @@ class WorktreeManager:
             self._require_existing_worktree(worktree_root)
         else:
             worktree_root.parent.mkdir(parents=True, exist_ok=True)
+            # Prune stale registrations whose directories were deleted out
+            # of band (e.g. by `situ clear` or manual cleanup). Without this,
+            # `git worktree add` fails with "missing but already registered"
+            # if the same path was used by a previous run.
+            self._git_output(git_root, "worktree", "prune")
             self._run_git(
                 git_root,
                 "worktree",

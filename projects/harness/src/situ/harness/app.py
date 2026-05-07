@@ -66,8 +66,8 @@ from .tools.tasks.eligibility import eligible_task_kinds_for_agent
 
 NotificationWriter = Callable[[str, dict[str, Any]], None]
 
-MANAGER_NO_PROGRESS_LIMIT = 3
-SESSION_AGENT_PASS_LIMIT_MINIMUM = 12
+MANAGER_NO_PROGRESS_LIMIT = 25
+SESSION_AGENT_PASS_LIMIT_MINIMUM = 32
 SESSION_AGENT_PASS_LIMIT_PER_EXPERIMENT = 8
 REUSABLE_PLAN_TASK_TITLE = "Plan next step"
 REUSABLE_PLAN_TASK_KEY = "project-next-step"

@@ -21,4 +21,12 @@ description: Use when the Manager needs to plan the next focused Researcher, Sci
 - If the project is underexplored, file independent Researcher tasks.
 - If analyses and hypotheses exist, file focused Scientist experiment tasks.
 - If a candidate result lacks review, file or preserve Critic review work.
-- If closing seems tempting, use the close handshake and keep going unless no useful work remains.
+- After baseline, default to filing 2-5 tasks per pass across distinct
+  research threads so the Scientist queue stays deep.
+- If recent experiments have plateaued, escalate variance: a different model
+  family, optimizer family, or training regime, or a Researcher synthesis
+  pass that proposes the next bold swing. A plateau is a signal to think
+  bigger, not to stop.
+- Closing the project is reserved for hard blockers (workspace unusable, user
+  signalled stop). A stalling metric is not a hard blocker. When tempted to
+  close, file one more bold experiment instead.

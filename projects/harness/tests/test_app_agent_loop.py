@@ -304,17 +304,14 @@ def test_session_loop_retries_manager_before_no_progress_close(
     assert tasks[0].status == TaskStatus.DONE
     assert tasks[0].payload["planning_pass_count"] == MANAGER_NO_PROGRESS_LIMIT
     planning_activities = app.repos.task_activities.list_for_task(task_id=tasks[0].id)
+    expected_activity_types = ["planning_task_queued", "planning_task_completed"]
+    for _ in range(MANAGER_NO_PROGRESS_LIMIT - 1):
+        expected_activity_types.append("planning_task_requeued")
+        expected_activity_types.append("planning_task_completed")
     assert [
         activity.payload["activity_type"]
         for activity in planning_activities
-    ] == [
-        "planning_task_queued",
-        "planning_task_completed",
-        "planning_task_requeued",
-        "planning_task_completed",
-        "planning_task_requeued",
-        "planning_task_completed",
-    ]
+    ] == expected_activity_types
     assert planning_activities[-1].body == (
         "Completed planning pass: no runnable task filed"
     )
