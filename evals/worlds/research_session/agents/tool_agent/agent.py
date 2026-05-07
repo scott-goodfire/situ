@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import inspect
+from typing import Any
 
 from pydantic_ai import Agent
 from pydantic_ai import FunctionToolset
@@ -42,7 +43,7 @@ def run_research_tool_agent(args: ResearchToolEvalInput) -> ResearchToolEvalOutp
     try:
         deps = SituToolDeps(
             session_id=SESSION_ID,
-            agent_id=SCIENTIST_AGENT_ID if args.seed != "projectless" else None,
+            agent_id=_agent_id(args),
             repos=world.repos,
             repo_path=str(world.repo_path),
             worker_manager=_EvalWorkerManager(),
@@ -87,6 +88,12 @@ def _build_toolset(toolset: str) -> FunctionToolset[SituToolDeps]:
     return build_research_toolset()
 
 
+def _agent_id(args: ResearchToolEvalInput) -> str | None:
+    if args.seed == "projectless" or args.toolset == "manager":
+        return None
+    return SCIENTIST_AGENT_ID
+
+
 class _EvalWorkerManager(WorkerManager):
     def __init__(self) -> None:
         pass
@@ -94,7 +101,7 @@ class _EvalWorkerManager(WorkerManager):
     def run_experiment(
         self,
         params: ExperimentRunParams,
-        on_progress,
+        on_progress: Any,
     ) -> ExperimentRunResult:
         on_progress(
             {

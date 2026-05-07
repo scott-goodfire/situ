@@ -113,7 +113,15 @@ TRAIN_PY = inspect.cleandoc(
     '''
 )
 
+GITIGNORE = inspect.cleandoc(
+    """
+    __pycache__/
+    *.py[cod]
+    """
+)
+
 FIXTURE_FILES = {
+    ".gitignore": GITIGNORE,
     "README.md": README_MD,
     "program.md": PROGRAM_MD,
     "prepare.py": PREPARE_PY,

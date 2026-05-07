@@ -41,8 +41,6 @@ mise run start -- ~/sandbox/some-repo \
   --context "Run make eval from the repo root. It prints the metrics and checks that matter."
 ```
 
-See `examples/micrograd-sandbox/` for a concrete external-repo smoke test.
-
 ## Commands
 
 ```bash
@@ -118,7 +116,5 @@ projects/tui                  TypeScript Ink TUI
 shared/python/protocol        Pydantic protocol source of truth
 shared/typescript/protocol    generated TypeScript protocol types
 shared/typescript/rpc-client  JSON-RPC stdio client
-workers/local_command_worker  legacy JSON-RPC worker scaffold
-examples/micrograd-sandbox    external workspace smoke-test recipe
 protocol/json-schema          generated JSON Schema contracts
 ```
