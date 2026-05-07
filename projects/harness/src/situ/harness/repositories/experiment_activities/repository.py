@@ -57,17 +57,17 @@ class ExperimentActivitiesRepository(BaseRepository):
                 utc_now(),
             ),
         )
-        record = self.get_by_id(int(cursor.lastrowid))
+        record = self.get_by_id(activity_id=int(cursor.lastrowid))
         if record is None:
             raise RuntimeError("experiment activity was not persisted")
         return record
 
-    def get_by_id(self, activity_id: int) -> ExperimentActivityRecord | None:
+    def get_by_id(self, *, activity_id: int) -> ExperimentActivityRecord | None:
         row = self.db.fetchone("SELECT * FROM experiment_activities WHERE id = ?", (activity_id,))
         return _experiment_activity_row(row) if row else None
 
-    def get(self, activity_id: int) -> ExperimentActivityRecord | None:
-        return self.get_by_id(activity_id)
+    def get(self, *, activity_id: int) -> ExperimentActivityRecord | None:
+        return self.get_by_id(activity_id=activity_id)
 
     def list_all(self) -> list[ExperimentActivityRecord]:
         return [
@@ -75,7 +75,7 @@ class ExperimentActivitiesRepository(BaseRepository):
             for row in self.db.fetchall("SELECT * FROM experiment_activities ORDER BY id")
         ]
 
-    def list_for_experiment(self, experiment_id: str) -> list[ExperimentActivityRecord]:
+    def list_for_experiment(self, *, experiment_id: str) -> list[ExperimentActivityRecord]:
         return [
             _experiment_activity_row(row)
             for row in self.db.fetchall(
@@ -84,7 +84,7 @@ class ExperimentActivitiesRepository(BaseRepository):
             )
         ]
 
-    def list_for_project(self, project_id: str) -> list[ExperimentActivityRecord]:
+    def list_for_project(self, *, project_id: str) -> list[ExperimentActivityRecord]:
         return [
             _experiment_activity_row(row)
             for row in self.db.fetchall(
@@ -99,7 +99,11 @@ class ExperimentActivitiesRepository(BaseRepository):
             )
         ]
 
-    def list_for_session(self, session_id: str) -> list[ExperimentActivityRecord]:
+    def list_for_session(self, *, session_id: str) -> list[ExperimentActivityRecord]:
         session = self.db.fetchone("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
         project_id = session["project_id"] if session else None
-        return self.list_for_project(project_id) if project_id is not None else []
+        return (
+            self.list_for_project(project_id=project_id)
+            if project_id is not None
+            else []
+        )

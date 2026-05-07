@@ -22,7 +22,7 @@ class GetProjectBoardTool(BaseSituTool[SituToolDeps, GetProjectBoardResult]):
         artifacts, agents, tasks, and events.
         """
         board = ProjectBoardService(repos=ctx.deps.get_repos()).get_project_board(
-            ctx.deps.session_id
+            session_id=ctx.deps.session_id
         )
         return GetProjectBoardResult(
             success=True,

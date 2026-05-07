@@ -12,9 +12,7 @@ def configure_eval_observability() -> None:
     if _CONFIGURED:
         return
 
-    secrets = SituSecrets()
-    secrets.require_logfire_token()
-    secrets.apply_sdk_environment()
+    SituSecrets().require_eval_environment()
 
     logfire.configure(
         send_to_logfire="always",

@@ -25,15 +25,15 @@ class ListMeasurementsTool(BaseSituTool[SituToolDeps, ListMeasurementsResult]):
         """List measurements by evaluation, baseline, experiment, or project."""
         repos = ctx.deps.get_repos()
         if evaluation_id is not None:
-            measurements = repos.measurements.list_for_evaluation(evaluation_id)
+            measurements = repos.measurements.list_for_evaluation(evaluation_id=evaluation_id)
         elif baseline_id is not None:
-            measurements = repos.measurements.list_for_baseline(baseline_id)
+            measurements = repos.measurements.list_for_baseline(baseline_id=baseline_id)
         elif experiment_id is not None:
-            measurements = repos.measurements.list_for_experiment(experiment_id)
+            measurements = repos.measurements.list_for_experiment(experiment_id=experiment_id)
         else:
             resolved_project_id = project_id or ctx.deps.current_project_id()
             measurements = (
-                repos.measurements.list_for_project(resolved_project_id)
+                repos.measurements.list_for_project(project_id=resolved_project_id)
                 if resolved_project_id is not None
                 else []
             )

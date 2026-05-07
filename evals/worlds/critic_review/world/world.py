@@ -68,7 +68,7 @@ class CriticReviewWorld:
 
     def project_board(self) -> dict[str, Any]:
         return ProjectBoardService(repos=self.repos).get_project_board(
-            SESSION_ID
+            session_id=SESSION_ID
         ).model_dump(mode="json")
 
     def workspace_files(self) -> dict[str, str]:
@@ -120,7 +120,7 @@ class CriticReviewWorld:
             payload={"activity_type": "interpretation"},
         )
         task = self.repos.tasks.create(
-            task_id=self.repos.tasks.next_id(PROJECT_ID),
+            task_id=self.repos.tasks.next_id(project_id=PROJECT_ID),
             project_id=PROJECT_ID,
             created_in_session_id=SESSION_ID,
             title=_review_task_title(seed),
@@ -165,7 +165,7 @@ def _add_baseline_context(repos: Repositories, seed: CriticReviewSeed) -> list[i
         return [
             measurement.id
             for measurement in repos.measurements.list_for_evaluation(
-                BASELINE_EVALUATION_ID
+                evaluation_id=BASELINE_EVALUATION_ID
             )
         ]
 
@@ -209,7 +209,7 @@ def _add_baseline_context(repos: Repositories, seed: CriticReviewSeed) -> list[i
     return [
         measurement.id
         for measurement in repos.measurements.list_for_evaluation(
-            BASELINE_EVALUATION_ID
+            evaluation_id=BASELINE_EVALUATION_ID
         )
     ]
 

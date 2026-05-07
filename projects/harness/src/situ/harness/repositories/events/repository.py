@@ -58,22 +58,22 @@ class EventsRepository(BaseRepository):
                 utc_now(),
             ),
         )
-        record = self.get_by_id(int(cursor.lastrowid))
+        record = self.get_by_id(event_id=int(cursor.lastrowid))
         if record is None:
             raise RuntimeError("event was not persisted")
         return record
 
-    def get_by_id(self, event_id: int) -> EventRecord | None:
+    def get_by_id(self, *, event_id: int) -> EventRecord | None:
         row = self.db.fetchone("SELECT * FROM events WHERE id = ?", (event_id,))
         return _event_row(row) if row else None
 
-    def get(self, event_id: int) -> EventRecord | None:
-        return self.get_by_id(event_id)
+    def get(self, *, event_id: int) -> EventRecord | None:
+        return self.get_by_id(event_id=event_id)
 
     def list_all(self) -> list[EventRecord]:
         return [_event_row(row) for row in self.db.fetchall("SELECT * FROM events ORDER BY id")]
 
-    def list_for_session(self, session_id: str) -> list[EventRecord]:
+    def list_for_session(self, *, session_id: str) -> list[EventRecord]:
         return [
             _event_row(row)
             for row in self.db.fetchall(
@@ -82,7 +82,7 @@ class EventsRepository(BaseRepository):
             )
         ]
 
-    def list_for_project(self, project_id: str) -> list[EventRecord]:
+    def list_for_project(self, *, project_id: str) -> list[EventRecord]:
         return [
             _event_row(row)
             for row in self.db.fetchall(

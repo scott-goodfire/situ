@@ -113,8 +113,8 @@ export function SecretSetupPrompt({
             <PaneSection title="OpenAI API key" chrome="none">
               <Text>Situ needs an OpenAI API key before it can run agents.</Text>
               <Text dimColor>
-                You can provide SITU_OPENAI_KEY in the environment or save a
-                local key for future sessions on this machine.
+                This local runtime uses the key saved in Situ's secret store for
+                future sessions on this machine.
               </Text>
               <ChoicePrompt
                 title="Continue"

@@ -44,7 +44,10 @@ class TaskDependenciesRepository(BaseRepository):
                 utc_now(),
             ),
         )
-        record = self.get(command.task_id, command.blocked_by_task_id)
+        record = self.get(
+            task_id=command.task_id,
+            blocked_by_task_id=command.blocked_by_task_id,
+        )
         if record is None:
             raise RuntimeError(
                 "task dependency was not persisted: "
@@ -54,6 +57,7 @@ class TaskDependenciesRepository(BaseRepository):
 
     def get(
         self,
+        *,
         task_id: str,
         blocked_by_task_id: str,
     ) -> TaskDependencyRecord | None:
@@ -74,7 +78,7 @@ class TaskDependenciesRepository(BaseRepository):
             )
         ]
 
-    def list_for_task(self, task_id: str) -> list[TaskDependencyRecord]:
+    def list_for_task(self, *, task_id: str) -> list[TaskDependencyRecord]:
         return [
             _task_dependency_row(row)
             for row in self.db.fetchall(
@@ -87,7 +91,7 @@ class TaskDependenciesRepository(BaseRepository):
             )
         ]
 
-    def list_for_project(self, project_id: str) -> list[TaskDependencyRecord]:
+    def list_for_project(self, *, project_id: str) -> list[TaskDependencyRecord]:
         return [
             _task_dependency_row(row)
             for row in self.db.fetchall(

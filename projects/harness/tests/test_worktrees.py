@@ -128,7 +128,7 @@ def test_harness_prepares_experiment_task_checkout_and_records_final_state(
         research_context="Run the local checks.",
     )
     session = app.repos.sessions.create(
-        "session_0001",
+        session_id="session_0001",
         workspace_id=workspace.id,
         project_id=project.id,
     )
@@ -168,10 +168,10 @@ def test_harness_prepares_experiment_task_checkout_and_records_final_state(
     assert prepared.experiment.worktree_path == prepared.repo_path
     assert prepared.experiment.base_commit == _git(repo, "rev-parse", "HEAD")
     assert app.repos.task_entity_links.get(
-        task.id,
-        "experiment",
-        prepared.experiment.id,
-        "produces",
+        task_id=task.id,
+        entity_kind="experiment",
+        entity_id=prepared.experiment.id,
+        relationship="produces",
     )
 
     (Path(prepared.repo_path) / "pkg" / "module.py").write_text("VALUE = 2\n")
@@ -183,10 +183,10 @@ def test_harness_prepares_experiment_task_checkout_and_records_final_state(
         workspace_repo_path=workspace.repo_path,
     )
 
-    completed = app.repos.experiments.get(prepared.experiment.id)
+    completed = app.repos.experiments.get(experiment_id=prepared.experiment.id)
     assert completed is not None
     assert completed.status == "closed"
-    activities = app.repos.experiment_activities.list_for_experiment(completed.id)
+    activities = app.repos.experiment_activities.list_for_experiment(experiment_id=completed.id)
     assert activities[-1].payload["activity_type"] == "workspace_state"
     assert activities[-1].payload["worktree"]["dirty"] is True
 

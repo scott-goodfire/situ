@@ -113,7 +113,7 @@ def _claim_next_task(world: CriticFollowupWorld) -> TaskRecord | None:
     )
     if task is None:
         return None
-    world.repos.agents.update(agent.id, status=AgentStatus.ACTIVE)
+    world.repos.agents.update(agent_id=agent.id, status=AgentStatus.ACTIVE)
     world.emit_event(
         "task.claimed",
         f"Claimed task {task.id}",
@@ -131,15 +131,15 @@ def _finish_task(
     status: TaskStatus,
     result_summary: str,
 ) -> None:
-    task = world.repos.tasks.get(task_id)
+    task = world.repos.tasks.get(task_id=task_id)
     if task is None:
         return
     if task.status in {TaskStatus.DONE, TaskStatus.ABANDONED, TaskStatus.FAILED}:
         if task.assignee_id is not None:
-            world.repos.agents.update(task.assignee_id, status=AgentStatus.IDLE)
+            world.repos.agents.update(agent_id=task.assignee_id, status=AgentStatus.IDLE)
         return
     updated = world.repos.tasks.update(
-        task.id,
+        task_id=task.id,
         status=status,
         result_summary=result_summary,
         completed_in_session_id=SESSION_ID,
@@ -147,7 +147,7 @@ def _finish_task(
     if updated is None:
         return
     if updated.assignee_id is not None:
-        world.repos.agents.update(updated.assignee_id, status=AgentStatus.IDLE)
+        world.repos.agents.update(agent_id=updated.assignee_id, status=AgentStatus.IDLE)
     world.emit_event(
         f"task.{updated.status.value}",
         f"Finished task {updated.id}",

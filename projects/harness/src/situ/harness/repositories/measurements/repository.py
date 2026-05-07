@@ -53,20 +53,20 @@ class MeasurementsRepository(BaseRepository):
                 utc_now(),
             ),
         )
-        record = self.get_by_id(int(cursor.lastrowid))
+        record = self.get_by_id(measurement_id=int(cursor.lastrowid))
         if record is None:
             raise RuntimeError("measurement was not persisted")
         return record
 
-    def get_by_id(self, measurement_id: int) -> MeasurementRecord | None:
+    def get_by_id(self, *, measurement_id: int) -> MeasurementRecord | None:
         row = self.db.fetchone(
             "SELECT * FROM measurements WHERE id = ?",
             (measurement_id,),
         )
         return _measurement_row(row) if row else None
 
-    def get(self, measurement_id: int) -> MeasurementRecord | None:
-        return self.get_by_id(measurement_id)
+    def get(self, *, measurement_id: int) -> MeasurementRecord | None:
+        return self.get_by_id(measurement_id=measurement_id)
 
     def list_all(self) -> list[MeasurementRecord]:
         return [
@@ -74,7 +74,7 @@ class MeasurementsRepository(BaseRepository):
             for row in self.db.fetchall("SELECT * FROM measurements ORDER BY id")
         ]
 
-    def list_for_evaluation(self, evaluation_id: str) -> list[MeasurementRecord]:
+    def list_for_evaluation(self, *, evaluation_id: str) -> list[MeasurementRecord]:
         return [
             _measurement_row(row)
             for row in self.db.fetchall(
@@ -83,7 +83,7 @@ class MeasurementsRepository(BaseRepository):
             )
         ]
 
-    def list_for_baseline(self, baseline_id: str) -> list[MeasurementRecord]:
+    def list_for_baseline(self, *, baseline_id: str) -> list[MeasurementRecord]:
         return [
             _measurement_row(row)
             for row in self.db.fetchall(
@@ -98,7 +98,7 @@ class MeasurementsRepository(BaseRepository):
             )
         ]
 
-    def list_for_experiment(self, experiment_id: str) -> list[MeasurementRecord]:
+    def list_for_experiment(self, *, experiment_id: str) -> list[MeasurementRecord]:
         return [
             _measurement_row(row)
             for row in self.db.fetchall(
@@ -113,7 +113,7 @@ class MeasurementsRepository(BaseRepository):
             )
         ]
 
-    def list_for_project(self, project_id: str) -> list[MeasurementRecord]:
+    def list_for_project(self, *, project_id: str) -> list[MeasurementRecord]:
         return [
             _measurement_row(row)
             for row in self.db.fetchall(
@@ -128,7 +128,11 @@ class MeasurementsRepository(BaseRepository):
             )
         ]
 
-    def list_for_session(self, session_id: str) -> list[MeasurementRecord]:
+    def list_for_session(self, *, session_id: str) -> list[MeasurementRecord]:
         session = self.db.fetchone("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
         project_id = session["project_id"] if session else None
-        return self.list_for_project(project_id) if project_id is not None else []
+        return (
+            self.list_for_project(project_id=project_id)
+            if project_id is not None
+            else []
+        )

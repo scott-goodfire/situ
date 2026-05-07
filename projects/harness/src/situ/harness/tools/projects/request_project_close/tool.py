@@ -38,7 +38,7 @@ class RequestProjectCloseTool(
         """
         repos = ctx.deps.get_repos()
         resolved_project_id = project_id or ctx.deps.require_project_id()
-        project = repos.projects.get(resolved_project_id)
+        project = repos.projects.get(project_id=resolved_project_id)
         if project is None:
             raise ValueError(f"project not found: {resolved_project_id}")
 

@@ -52,7 +52,7 @@ def test_collections_bootstrap_returns_research_objects_and_events(
         research_context="Run local evals. Expected signals: score. Baseline and variants.",
     )
     session = app.repos.sessions.create(
-        "session_0001",
+        session_id="session_0001",
         workspace_id=workspace.id,
         project_id=project.id,
     )

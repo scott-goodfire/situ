@@ -23,7 +23,7 @@ class GetProjectTool(BaseSituTool[SituToolDeps, GetProjectResult]):
         repos = ctx.deps.get_repos()
         resolved_project_id = project_id or ctx.deps.current_project_id()
         project = (
-            repos.projects.get(resolved_project_id)
+            repos.projects.get(project_id=resolved_project_id)
             if resolved_project_id is not None
             else None
         )

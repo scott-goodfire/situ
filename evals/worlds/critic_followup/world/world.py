@@ -80,7 +80,7 @@ class CriticFollowupWorld:
 
     def project_board(self) -> dict[str, Any]:
         return ProjectBoardService(repos=self.repos).get_project_board(
-            SESSION_ID
+            session_id=SESSION_ID
         ).model_dump(mode="json")
 
     def workspace_files(self) -> dict[str, str]:
@@ -153,7 +153,7 @@ class CriticFollowupWorld:
             },
         )
         review_task = self.repos.tasks.create(
-            task_id=self.repos.tasks.next_id(PROJECT_ID),
+            task_id=self.repos.tasks.next_id(project_id=PROJECT_ID),
             project_id=PROJECT_ID,
             created_in_session_id=SESSION_ID,
             title=f"Completed Critic review for {experiment.title}",
@@ -174,7 +174,7 @@ class CriticFollowupWorld:
             display_name="Critic",
         )
         self.repos.tasks.update(
-            review_task.id,
+            task_id=review_task.id,
             assignee_id=critic.id,
             status=TaskStatus.DONE,
             result_summary="Critic review recorded.",
@@ -194,7 +194,7 @@ class CriticFollowupWorld:
             )
 
         plan_task = self.repos.tasks.create(
-            task_id=self.repos.tasks.next_id(PROJECT_ID),
+            task_id=self.repos.tasks.next_id(project_id=PROJECT_ID),
             project_id=PROJECT_ID,
             created_in_session_id=SESSION_ID,
             title=f"Plan after {_review_verdict(seed)} Critic review",

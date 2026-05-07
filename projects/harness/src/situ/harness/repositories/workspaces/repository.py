@@ -17,7 +17,7 @@ def _workspace_row(row: Any) -> WorkspaceRecord:
 
 
 class WorkspacesRepository(BaseRepository):
-    def get(self, workspace_id: str | None = None) -> WorkspaceRecord | None:
+    def get(self, *, workspace_id: str | None = None) -> WorkspaceRecord | None:
         row = self.db.fetchone(
             "SELECT * FROM workspaces WHERE id = ?",
             (workspace_id or self.db.workspace_id,),

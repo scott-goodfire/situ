@@ -34,7 +34,7 @@ class CreateTaskTool(BaseSituTool[SituToolDeps, CreateTaskResult]):
         repos = ctx.deps.get_repos()
         project_id = ctx.deps.require_project_id()
         session_id = ctx.deps.session_id
-        resolved_task_id = task_id or repos.tasks.next_id(project_id)
+        resolved_task_id = task_id or repos.tasks.next_id(project_id=project_id)
         task = repos.tasks.create(
             task_id=resolved_task_id,
             project_id=project_id,

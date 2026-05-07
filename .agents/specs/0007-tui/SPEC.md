@@ -92,9 +92,9 @@ the app server.
 Interactive `tui` should behave like a small fullscreen state machine:
 
 - Loading: connect to the app, subscribe, and bootstrap state.
-- Secret setup: when required model provider credentials are missing, ask the
-  user to paste the provider key, save it to local Situ runtime state, and only
-  then continue.
+- Secret setup: when required local model provider credentials are missing, ask
+  the user to paste the provider key, save it to local Situ runtime state, and
+  only then continue.
 - Onboarding: gather the objective and research context when CLI inputs did not
   provide them.
 - Launching: call `session.start` and wait for the created records.
@@ -151,7 +151,7 @@ For the current implementation slice, setup is resolved before the live
 observability screen through CLI-provided objective/context or interactive TUI
 onboarding:
 
-- Required model provider secret when it is not already available.
+- Required local model provider secret when it is not already available.
 - Objective
 - Research context: how progress is judged, relevant evals, tools, metrics,
   dashboards, logs, artifacts, and in-scope experiment types
@@ -163,6 +163,10 @@ directions, or guidance in the first slice.
 Provider secrets are not research context. The TUI may collect them as setup
 prerequisites, but it must not render, log, or persist them as session,
 activity, event, or artifact content.
+
+The TUI secret check reads the local Situ secret store only. Situ-scoped eval
+environment secrets such as `SITU_OPENAI_KEY` and `SITU_LOGFIRE_TOKEN` are not
+local runtime credentials and must not bypass TUI secret onboarding.
 
 ## Observability Visualizations
 

@@ -75,7 +75,7 @@ class ConfirmProjectCloseTool(
             )
 
         pop_pending_project_close(confirmation_code)
-        project = repos.projects.update(pending.project_id, status=ProjectStatus.CLOSED)
+        project = repos.projects.update(project_id=pending.project_id, status=ProjectStatus.CLOSED)
         if project is None:
             raise ValueError(f"project not found: {pending.project_id}")
 

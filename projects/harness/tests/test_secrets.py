@@ -20,14 +20,16 @@ def test_local_secret_store_saves_openai_key_with_owner_only_permissions(
     store = LocalSecretStore(home=home)
 
     store.set_openai_key("  sk-local-test  ")
+    store.set_logfire_token("  logfire-local-test  ")
 
     assert store.get_openai_key() == "sk-local-test"
+    assert store.get_logfire_token() == "logfire-local-test"
     assert SituSecrets().openai_key_source(home=home) == "local"
-    assert SituSecrets().openai_key_value(home=home) == "sk-local-test"
+    assert SituSecrets().local_openai_key_value(home=home) == "sk-local-test"
     assert stat.S_IMODE(os.stat(store.path).st_mode) == 0o600
 
 
-def test_situ_openai_key_env_overrides_local_secret(
+def test_situ_openai_key_env_does_not_override_local_secret(
     tmp_path: Path,
     monkeypatch,
 ) -> None:
@@ -38,8 +40,43 @@ def test_situ_openai_key_env_overrides_local_secret(
 
     secrets = SituSecrets()
 
-    assert secrets.openai_key_source(home=home) == "environment"
-    assert secrets.openai_key_value(home=home) == "sk-env-test"
+    assert secrets.openai_key_source(home=home) == "local"
+    assert secrets.local_openai_key_value(home=home) == "sk-local-test"
+    assert secrets.eval_openai_key_value() == "sk-env-test"
+
+
+def test_local_runtime_ignores_situ_env_when_local_secret_is_missing(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    home = tmp_path / "situ-home"
+    monkeypatch.setenv("SITU_OPENAI_KEY", "sk-env-test")
+
+    secrets = SituSecrets()
+
+    assert secrets.openai_key_source(home=home) == "missing"
+    assert secrets.local_openai_key_value(home=home) is None
+
+
+def test_local_sdk_environment_uses_only_local_secret_store(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    home = tmp_path / "situ-home"
+    store = LocalSecretStore(home=home)
+    store.set_openai_key("sk-local-test")
+    store.set_logfire_token("logfire-local-test")
+    monkeypatch.setenv("SITU_OPENAI_KEY", "sk-env-test")
+    monkeypatch.setenv("SITU_LOGFIRE_TOKEN", "logfire-env-test")
+    monkeypatch.setenv("OPENAI_API_KEY", "provider-openai-test")
+    monkeypatch.setenv("LOGFIRE_TOKEN", "provider-logfire-test")
+
+    SituSecrets().apply_local_sdk_environment(home=home)
+
+    assert os.environ["OPENAI_API_KEY"] == "sk-local-test"
+    assert os.environ["LOGFIRE_TOKEN"] == "logfire-local-test"
 
 
 def test_harness_secret_rpc_saves_openai_key_without_ledger_events(
@@ -71,7 +108,45 @@ def test_harness_secret_rpc_saves_openai_key_without_ledger_events(
     assert saved.openai_key_source == "local"
     assert present.openai_key_configured is True
     assert present.openai_key_source == "local"
-    assert LocalSecretStore(home=tmp_path / "home").get_openai_key() == "sk-rpc-test"
+    assert (
+        LocalSecretStore(home=tmp_path / "home").get_openai_key()
+        == "sk-rpc-test"
+    )
     assert os.environ["OPENAI_API_KEY"] == "sk-rpc-test"
     assert app.repos.events.list_all() == []
     assert notifications == []
+
+
+def test_eval_environment_requires_situ_openai_key_and_logfire_token(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("SITU_OPENAI_KEY", raising=False)
+    monkeypatch.delenv("SITU_LOGFIRE_TOKEN", raising=False)
+    LocalSecretStore(home=tmp_path / "situ-home").set_openai_key("sk-local-test")
+
+    secrets = SituSecrets()
+
+    try:
+        secrets.require_eval_environment()
+    except RuntimeError as error:
+        assert "SITU_LOGFIRE_TOKEN" in str(error)
+    else:
+        raise AssertionError("Expected missing eval Logfire token to fail.")
+
+    monkeypatch.setenv("SITU_LOGFIRE_TOKEN", "logfire-env-test")
+    secrets = SituSecrets()
+    try:
+        secrets.require_eval_environment()
+    except RuntimeError as error:
+        assert "SITU_OPENAI_KEY" in str(error)
+    else:
+        raise AssertionError("Expected missing eval OpenAI key to fail.")
+
+    monkeypatch.setenv("SITU_OPENAI_KEY", "openai-env-test")
+    secrets = SituSecrets()
+    secrets.require_eval_environment()
+
+    assert os.environ["LOGFIRE_TOKEN"] == "logfire-env-test"
+    assert os.environ["OPENAI_API_KEY"] == "openai-env-test"

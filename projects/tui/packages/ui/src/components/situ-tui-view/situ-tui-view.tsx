@@ -1,5 +1,4 @@
 import type {
-  AgentRecord,
   EventRecord,
   EvaluationActivityRecord,
   EvaluationRecord,
@@ -27,7 +26,6 @@ export function SituTuiView({
   dashboardMessage,
   project,
   session,
-  agents,
   tasks,
   experimentCount,
   maxExperiments,
@@ -47,7 +45,6 @@ export function SituTuiView({
   dashboardMessage: DashboardControlMessage | undefined;
   project: ProjectRecord | undefined;
   session: SessionRecord | undefined;
-  agents: AgentRecord[];
   tasks: TaskRecord[];
   experimentCount: number;
   maxExperiments: number;
@@ -69,7 +66,6 @@ export function SituTuiView({
       dashboardMessage={dashboardMessage}
       project={project}
       session={session}
-      agents={agents}
       tasks={tasks}
       experimentCount={experimentCount}
       maxExperiments={maxExperiments}

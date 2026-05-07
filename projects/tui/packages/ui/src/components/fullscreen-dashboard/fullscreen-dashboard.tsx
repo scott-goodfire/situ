@@ -2,7 +2,6 @@ import lodash from "lodash";
 import { Text, useInput, useStdin } from "ink";
 import { useEffect, useState } from "react";
 import type {
-  AgentRecord,
   EventRecord,
   EvaluationActivityRecord,
   EvaluationRecord,
@@ -61,7 +60,6 @@ export function FullscreenDashboard({
   dashboardMessage,
   project,
   session,
-  agents,
   tasks,
   experimentCount,
   maxExperiments,
@@ -83,7 +81,6 @@ export function FullscreenDashboard({
   dashboardMessage: DashboardControlMessage | undefined;
   project: ProjectRecord | undefined;
   session: SessionRecord | undefined;
-  agents: AgentRecord[];
   tasks: TaskRecord[];
   experimentCount: number;
   maxExperiments: number;
@@ -144,7 +141,6 @@ export function FullscreenDashboard({
   });
   const allDashboardTasks = buildDashboardTasks({
     tasks,
-    agents,
     hypotheses,
     experiments,
     evaluations,
@@ -1026,7 +1022,6 @@ type ActivityFeedRow = {
 
 function buildDashboardTasks({
   tasks,
-  agents,
   hypotheses,
   experiments,
   evaluations,
@@ -1034,15 +1029,12 @@ function buildDashboardTasks({
   evaluationActivities,
 }: {
   tasks: TaskRecord[];
-  agents: AgentRecord[];
   hypotheses: HypothesisRecord[];
   experiments: ExperimentRecord[];
   evaluations: EvaluationRecord[];
   experimentActivities: ExperimentActivityRecord[];
   evaluationActivities: EvaluationActivityRecord[];
 }): DashboardTask[] {
-  void agents;
-
   if (tasks.length > 0) {
     const taskRows = tasks.map((task) => taskFromTaskRecord({ task }));
 

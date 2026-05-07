@@ -73,7 +73,7 @@ def _run_experiment_impl(
     payload: RunExperimentPayload,
 ) -> RunExperimentResult:
     repos = deps.get_repos()
-    session = repos.sessions.get(deps.session_id)
+    session = repos.sessions.get(session_id=deps.session_id)
     if session is None:
         raise ValueError(f"session not found: {deps.session_id}")
     if session.project_id is None:
@@ -88,7 +88,7 @@ def _run_experiment_impl(
         or _next_experiment_id(deps=deps)
     )
 
-    experiment = repos.experiments.get(experiment_id)
+    experiment = repos.experiments.get(experiment_id=experiment_id)
     if experiment is None:
         experiment = repos.experiments.create(
             experiment_id=experiment_id,
@@ -129,7 +129,7 @@ def _run_experiment_impl(
         },
     )
 
-    active = repos.experiments.update(experiment_id, status="active") or experiment
+    active = repos.experiments.update(experiment_id=experiment_id, status="active") or experiment
     event = deps.record_event(
         "experiment.started",
         f"Started experiment {experiment_id}",
@@ -177,7 +177,7 @@ def _run_experiment_impl(
             payload={"activity_type": "concern", "concern_kind": kind},
         )
 
-    linked_hypotheses = repos.hypothesis_experiment_links.list_for_experiment(experiment_id)
+    linked_hypotheses = repos.hypothesis_experiment_links.list_for_experiment(experiment_id=experiment_id)
     for link in linked_hypotheses:
         _record_hypothesis_activity(
             deps,
@@ -191,7 +191,7 @@ def _run_experiment_impl(
             },
         )
 
-    closed = repos.experiments.update(experiment_id, status="closed") or active
+    closed = repos.experiments.update(experiment_id=experiment_id, status="closed") or active
     event = deps.record_event(
         "experiment.completed",
         f"Completed experiment {experiment_id}",
@@ -281,22 +281,22 @@ def _next_experiment_id(
 ) -> str:
     repos = deps.get_repos()
     project_id = deps.require_project_id()
-    return repos.experiments.next_id(project_id)
+    return repos.experiments.next_id(project_id=project_id)
 
 
 def baseline_score(deps: SituToolDeps, project_id: str) -> float | None:
     repos = deps.get_repos()
-    for baseline in reversed(repos.baselines.list_for_project(project_id)):
-        evaluations = repos.evaluations.list_for_baseline(baseline.id)
+    for baseline in reversed(repos.baselines.list_for_project(project_id=project_id)):
+        evaluations = repos.evaluations.list_for_baseline(baseline_id=baseline.id)
         for evaluation in reversed(evaluations):
-            measurements = repos.measurements.list_for_evaluation(evaluation.id)
+            measurements = repos.measurements.list_for_evaluation(evaluation_id=evaluation.id)
             for measurement in reversed(measurements):
                 value = _score_from_payload(measurement.payload)
                 if value is not None:
                     return value
 
     baseline_id = f"exp_{project_id}_baseline"
-    activities = repos.experiment_activities.list_for_experiment(baseline_id)
+    activities = repos.experiment_activities.list_for_experiment(experiment_id=baseline_id)
     for activity in reversed(activities):
         if activity.payload.get("activity_type") != "result" and "signals" not in activity.payload:
             continue

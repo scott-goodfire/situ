@@ -26,12 +26,12 @@ class ListExperimentActivitiesTool(
         repos = ctx.deps.get_repos()
         if experiment_id is not None:
             activities = repos.experiment_activities.list_for_experiment(
-                experiment_id
+                experiment_id=experiment_id
             )
         else:
             resolved_project_id = project_id or ctx.deps.current_project_id()
             activities = (
-                repos.experiment_activities.list_for_project(resolved_project_id)
+                repos.experiment_activities.list_for_project(project_id=resolved_project_id)
                 if resolved_project_id is not None
                 else []
             )

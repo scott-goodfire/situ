@@ -92,16 +92,14 @@ async function startLiveStack(): Promise<LiveStack> {
   const workspace = join(root, "workspace");
   const home = join(root, "home");
   mkdirSync(workspace, { recursive: true });
-  mkdirSync(home, { recursive: true });
+  writeSituSecrets({ home, openaiKey });
   writeTinyEval(workspace);
 
   const env = {
-    ...process.env,
+    ...withoutRuntimeSecrets(process.env),
     HOME: home,
     SITU_APP_ROOT: REPO_ROOT,
     SITU_WORKSPACE: workspace,
-    SITU_OPENAI_KEY: openaiKey,
-    OPENAI_API_KEY: openaiKey,
   };
 
   const sessionServer = startProcess({
@@ -153,6 +151,30 @@ function requireOpenAIKey(): string {
     );
   }
   return key;
+}
+
+function writeSituSecrets({
+  home,
+  openaiKey,
+}: {
+  home: string;
+  openaiKey: string;
+}): void {
+  mkdirSync(home, { recursive: true, mode: 0o700 });
+  writeFileSync(
+    join(home, "secrets.json"),
+    `${JSON.stringify({ openai_key: openaiKey }, null, 2)}\n`,
+    { mode: 0o600 },
+  );
+}
+
+function withoutRuntimeSecrets(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+  const next = { ...env };
+  delete next.SITU_OPENAI_KEY;
+  delete next.OPENAI_API_KEY;
+  delete next.SITU_LOGFIRE_TOKEN;
+  delete next.LOGFIRE_TOKEN;
+  return next;
 }
 
 function writeTinyEval(workspace: string): void {

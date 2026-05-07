@@ -73,17 +73,17 @@ class ArtifactsRepository(BaseRepository):
                 utc_now(),
             ),
         )
-        record = self.get_by_id(command.artifact_id)
+        record = self.get_by_id(artifact_id=command.artifact_id)
         if record is None:
             raise RuntimeError(f"artifact was not persisted: {command.artifact_id}")
         return record
 
-    def get_by_id(self, artifact_id: str) -> ArtifactRecord | None:
+    def get_by_id(self, *, artifact_id: str) -> ArtifactRecord | None:
         row = self.db.fetchone("SELECT * FROM artifacts WHERE id = ?", (artifact_id,))
         return _artifact_row(row) if row else None
 
-    def get(self, artifact_id: str) -> ArtifactRecord | None:
-        return self.get_by_id(artifact_id)
+    def get(self, *, artifact_id: str) -> ArtifactRecord | None:
+        return self.get_by_id(artifact_id=artifact_id)
 
     def list_all(self) -> list[ArtifactRecord]:
         return [
@@ -91,7 +91,7 @@ class ArtifactsRepository(BaseRepository):
             for row in self.db.fetchall("SELECT * FROM artifacts ORDER BY created_at")
         ]
 
-    def list_for_experiment(self, experiment_id: str) -> list[ArtifactRecord]:
+    def list_for_experiment(self, *, experiment_id: str) -> list[ArtifactRecord]:
         return [
             _artifact_row(row)
             for row in self.db.fetchall(
@@ -105,7 +105,7 @@ class ArtifactsRepository(BaseRepository):
             )
         ]
 
-    def list_for_project(self, project_id: str) -> list[ArtifactRecord]:
+    def list_for_project(self, *, project_id: str) -> list[ArtifactRecord]:
         return [
             _artifact_row(row)
             for row in self.db.fetchall(
@@ -114,7 +114,11 @@ class ArtifactsRepository(BaseRepository):
             )
         ]
 
-    def list_for_session(self, session_id: str) -> list[ArtifactRecord]:
+    def list_for_session(self, *, session_id: str) -> list[ArtifactRecord]:
         session = self.db.fetchone("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
         project_id = session["project_id"] if session else None
-        return self.list_for_project(project_id) if project_id is not None else []
+        return (
+            self.list_for_project(project_id=project_id)
+            if project_id is not None
+            else []
+        )

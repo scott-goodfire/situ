@@ -68,15 +68,15 @@ class ExperimentsRepository(BaseRepository):
                 now,
             ),
         )
-        record = self.get_by_id(command.experiment_id)
+        record = self.get_by_id(experiment_id=command.experiment_id)
         if record is None:
             raise RuntimeError(f"experiment was not persisted: {command.experiment_id}")
         return record
 
     def update(
         self,
-        experiment_id: str,
         *,
+        experiment_id: str,
         title: str | None = None,
         summary: str | None = None,
         status: WorkStatus | str | None = None,
@@ -96,7 +96,7 @@ class ExperimentsRepository(BaseRepository):
             worktree_path=worktree_path,
             base_commit=base_commit,
         )
-        current = self.get_by_id(command.experiment_id)
+        current = self.get_by_id(experiment_id=command.experiment_id)
         if current is None:
             return None
 
@@ -125,14 +125,14 @@ class ExperimentsRepository(BaseRepository):
                 command.experiment_id,
             ),
         )
-        return self.get_by_id(command.experiment_id)
+        return self.get_by_id(experiment_id=command.experiment_id)
 
-    def get_by_id(self, experiment_id: str) -> ExperimentRecord | None:
+    def get_by_id(self, *, experiment_id: str) -> ExperimentRecord | None:
         row = self.db.fetchone("SELECT * FROM experiments WHERE id = ?", (experiment_id,))
         return _experiment_row(row) if row else None
 
-    def get(self, experiment_id: str) -> ExperimentRecord | None:
-        return self.get_by_id(experiment_id)
+    def get(self, *, experiment_id: str) -> ExperimentRecord | None:
+        return self.get_by_id(experiment_id=experiment_id)
 
     def list_all(self) -> list[ExperimentRecord]:
         return [
@@ -140,7 +140,7 @@ class ExperimentsRepository(BaseRepository):
             for row in self.db.fetchall("SELECT * FROM experiments ORDER BY created_at")
         ]
 
-    def list_for_project(self, project_id: str) -> list[ExperimentRecord]:
+    def list_for_project(self, *, project_id: str) -> list[ExperimentRecord]:
         return [
             _experiment_row(row)
             for row in self.db.fetchall(
@@ -149,11 +149,15 @@ class ExperimentsRepository(BaseRepository):
             )
         ]
 
-    def list_for_session(self, session_id: str) -> list[ExperimentRecord]:
+    def list_for_session(self, *, session_id: str) -> list[ExperimentRecord]:
         session = self.db.fetchone("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
         project_id = session["project_id"] if session else None
-        return self.list_for_project(project_id) if project_id is not None else []
+        return (
+            self.list_for_project(project_id=project_id)
+            if project_id is not None
+            else []
+        )
 
-    def next_id(self, project_id: str) -> str:
-        count = len(self.list_for_project(project_id)) + 1
+    def next_id(self, *, project_id: str) -> str:
+        count = len(self.list_for_project(project_id=project_id)) + 1
         return f"exp_{project_id}_agent_{count:03d}"

@@ -64,7 +64,7 @@ class AgentMessageHistoryRepository(BaseRepository):
                 utc_now(),
             ),
         )
-        record = self.get(int(cursor.lastrowid))
+        record = self.get(history_id=int(cursor.lastrowid))
         if record is None:
             raise RuntimeError("agent message history was not persisted")
         return record
@@ -94,17 +94,17 @@ class AgentMessageHistoryRepository(BaseRepository):
             conversation_id=conversation_id,
         )
 
-    def get_by_id(self, history_id: int) -> AgentMessageHistoryRecord | None:
+    def get_by_id(self, *, history_id: int) -> AgentMessageHistoryRecord | None:
         row = self.db.fetchone("SELECT * FROM agent_message_history WHERE id = ?", (history_id,))
         return _agent_message_history_row(row) if row else None
 
-    def get(self, history_id: int) -> AgentMessageHistoryRecord | None:
-        return self.get_by_id(history_id)
+    def get(self, *, history_id: int) -> AgentMessageHistoryRecord | None:
+        return self.get_by_id(history_id=history_id)
 
     def list_for_project(
         self,
-        project_id: str,
         *,
+        project_id: str,
         agent_id: str | None = None,
         agent_name: str | None = None,
     ) -> list[AgentMessageHistoryRecord]:
@@ -144,8 +144,8 @@ class AgentMessageHistoryRepository(BaseRepository):
 
     def list_for_session(
         self,
-        session_id: str,
         *,
+        session_id: str,
         agent_id: str | None = None,
         agent_name: str | None = None,
     ) -> list[AgentMessageHistoryRecord]:
@@ -153,7 +153,7 @@ class AgentMessageHistoryRepository(BaseRepository):
         if project_id is None:
             return []
         return self.list_for_project(
-            project_id,
+            project_id=project_id,
             agent_id=agent_id,
             agent_name=agent_name,
         )
@@ -166,8 +166,8 @@ class AgentMessageHistoryRepository(BaseRepository):
 
     def get_message_history(
         self,
-        project_or_session_id: str,
         *,
+        project_or_session_id: str,
         agent_id: str | None = None,
         agent_name: str | None = None,
     ) -> list[dict[str, Any]]:
@@ -176,7 +176,7 @@ class AgentMessageHistoryRepository(BaseRepository):
             return []
         messages: list[dict[str, Any]] = []
         for record in self.list_for_project(
-            project_id,
+            project_id=project_id,
             agent_id=agent_id,
             agent_name=agent_name,
         ):
@@ -185,14 +185,14 @@ class AgentMessageHistoryRepository(BaseRepository):
 
     def get_message_history_json(
         self,
-        project_or_session_id: str,
         *,
+        project_or_session_id: str,
         agent_id: str | None = None,
         agent_name: str | None = None,
     ) -> bytes:
         return json_dumps(
             self.get_message_history(
-                project_or_session_id,
+                project_or_session_id=project_or_session_id,
                 agent_id=agent_id,
                 agent_name=agent_name,
             )
@@ -200,8 +200,8 @@ class AgentMessageHistoryRepository(BaseRepository):
 
     def get_model_message_history(
         self,
-        project_or_session_id: str,
         *,
+        project_or_session_id: str,
         agent_id: str | None = None,
         agent_name: str | None = None,
     ) -> list[Any]:
@@ -210,7 +210,7 @@ class AgentMessageHistoryRepository(BaseRepository):
         return list(
             ModelMessagesTypeAdapter.validate_json(
                 self.get_message_history_json(
-                    project_or_session_id,
+                    project_or_session_id=project_or_session_id,
                     agent_id=agent_id,
                     agent_name=agent_name,
                 )

@@ -30,7 +30,7 @@ class ListHypothesesTool(BaseSituTool[SituToolDeps, ListHypothesesResult]):
         repos = ctx.deps.get_repos()
         resolved_project_id = project_id or ctx.deps.current_project_id()
         hypotheses = (
-            repos.hypotheses.list_for_project(resolved_project_id)
+            repos.hypotheses.list_for_project(project_id=resolved_project_id)
             if resolved_project_id is not None
             else []
         )

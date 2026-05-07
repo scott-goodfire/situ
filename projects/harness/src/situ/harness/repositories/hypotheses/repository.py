@@ -60,15 +60,15 @@ class HypothesesRepository(BaseRepository):
                 now,
             ),
         )
-        record = self.get_by_id(command.hypothesis_id)
+        record = self.get_by_id(hypothesis_id=command.hypothesis_id)
         if record is None:
             raise RuntimeError(f"hypothesis was not persisted: {command.hypothesis_id}")
         return record
 
     def update(
         self,
-        hypothesis_id: str,
         *,
+        hypothesis_id: str,
         title: str | None = None,
         summary: str | None = None,
         status: WorkStatus | str | None = None,
@@ -84,7 +84,7 @@ class HypothesesRepository(BaseRepository):
             summary=summary,
             status=checked_status,
         )
-        current = self.get_by_id(command.hypothesis_id)
+        current = self.get_by_id(hypothesis_id=command.hypothesis_id)
         if current is None:
             return None
         self.db.execute(
@@ -101,14 +101,14 @@ class HypothesesRepository(BaseRepository):
                 command.hypothesis_id,
             ),
         )
-        return self.get_by_id(command.hypothesis_id)
+        return self.get_by_id(hypothesis_id=command.hypothesis_id)
 
-    def get_by_id(self, hypothesis_id: str) -> HypothesisRecord | None:
+    def get_by_id(self, *, hypothesis_id: str) -> HypothesisRecord | None:
         row = self.db.fetchone("SELECT * FROM hypotheses WHERE id = ?", (hypothesis_id,))
         return _hypothesis_row(row) if row else None
 
-    def get(self, hypothesis_id: str) -> HypothesisRecord | None:
-        return self.get_by_id(hypothesis_id)
+    def get(self, *, hypothesis_id: str) -> HypothesisRecord | None:
+        return self.get_by_id(hypothesis_id=hypothesis_id)
 
     def list_all(self) -> list[HypothesisRecord]:
         return [
@@ -116,7 +116,7 @@ class HypothesesRepository(BaseRepository):
             for row in self.db.fetchall("SELECT * FROM hypotheses ORDER BY created_at")
         ]
 
-    def list_for_project(self, project_id: str) -> list[HypothesisRecord]:
+    def list_for_project(self, *, project_id: str) -> list[HypothesisRecord]:
         return [
             _hypothesis_row(row)
             for row in self.db.fetchall(
@@ -129,7 +129,11 @@ class HypothesesRepository(BaseRepository):
             )
         ]
 
-    def list_for_session(self, session_id: str) -> list[HypothesisRecord]:
+    def list_for_session(self, *, session_id: str) -> list[HypothesisRecord]:
         session = self.db.fetchone("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
         project_id = session["project_id"] if session else None
-        return self.list_for_project(project_id) if project_id is not None else []
+        return (
+            self.list_for_project(project_id=project_id)
+            if project_id is not None
+            else []
+        )

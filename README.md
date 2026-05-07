@@ -75,24 +75,10 @@ The Python harness now initializes:
 - DBOS for durable agent execution state
 - Logfire for Pydantic AI / DBOS / harness traces
 
-The default agent runtime requires an Situ-scoped OpenAI key. Runtime
-execution should fail loudly if the key is missing rather than falling back to a
-deterministic model.
-
-To send traces to Logfire, set a write token in your shell or local env file:
-
-```bash
-export SITU_LOGFIRE_TOKEN="..."
-```
-
-To use OpenAI-backed Pydantic AI planning:
-
-```bash
-export SITU_OPENAI_KEY="..."
-```
-
-When `SITU_OPENAI_KEY` is present, Situ uses its code default model,
-currently `openai:gpt-5.5`.
+The default local agent runtime requires a saved local OpenAI key in Situ's
+secret store. The TUI prompts for it on first run and saves it under
+`~/.situ/secrets.json`. Local app, TUI, web, and manual headless execution do
+not use `SITU_OPENAI_KEY` or `SITU_LOGFIRE_TOKEN` as runtime credentials.
 
 DBOS stores its system database beside Situ project state by default:
 
@@ -102,8 +88,8 @@ DBOS stores its system database beside Situ project state by default:
 
 Non-secret runtime defaults, including model names, Logfire service names, DBOS
 settings, and local state paths, live in typed code config rather than user env
-vars. The intended user-facing env vars are only `SITU_LOGFIRE_TOKEN` and
-`SITU_OPENAI_KEY`.
+vars. The intended user-facing env vars are only eval launch secrets:
+`SITU_LOGFIRE_TOKEN` and `SITU_OPENAI_KEY`.
 
 ## Evals
 
@@ -118,8 +104,9 @@ mise run evals:json
 
 The first suite uses a mocked micrograd world with baseline, A/B/C variants, an
 A+C combination, and one suspicious result. Evals require `SITU_OPENAI_KEY`
-for real LLM calls and `SITU_LOGFIRE_TOKEN` so eval executions are sent to Logfire with
-`service_name=situ-evals`.
+for real LLM calls and `SITU_LOGFIRE_TOKEN` so eval executions are sent to
+Logfire with `service_name=situ-evals`. Evals do not fall back to the saved
+local runtime key.
 
 ## Layout
 

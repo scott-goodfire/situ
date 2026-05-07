@@ -29,7 +29,23 @@ def test_agent_runtime_requires_openai_key(
     monkeypatch.setattr(agent_runtime, "configure_dbos", lambda _project_dir: None)
     monkeypatch.setattr(agent_runtime, "launch_dbos", lambda: None)
 
-    with pytest.raises(RuntimeError, match="SITU_OPENAI_KEY"):
+    with pytest.raises(RuntimeError, match="saved local OpenAI key"):
+        agent_runtime.AgentRuntime(tmp_path)
+
+
+def test_agent_runtime_rejects_situ_openai_key_without_local_secret(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("SITU_OPENAI_KEY", "sk-env-test")
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.setattr(agent_runtime, "configure_observability", lambda _project_dir: None)
+    monkeypatch.setattr(agent_runtime, "configure_dbos", lambda _project_dir: None)
+    monkeypatch.setattr(agent_runtime, "launch_dbos", lambda: None)
+
+    with pytest.raises(RuntimeError, match="saved local OpenAI key"):
         agent_runtime.AgentRuntime(tmp_path)
 
 

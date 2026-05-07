@@ -6,6 +6,7 @@ from tempfile import TemporaryDirectory
 from typing import Any
 
 from situ.harness.app import HarnessApp
+from situ.harness.config import LocalSecretStore, SituSecrets
 from situ.harness.core.dbos.runtime import reset_dbos_for_tests
 
 from evals.harness.models import EvalEvent
@@ -42,14 +43,16 @@ class AppSessionLoopWorld:
         self.session_id = SESSION_ID
         self.workspace = self.app.repos.workspaces.ensure()
         self.project = self.app.repos.projects.create(
-            project_id=self.app.repos.projects.next_id(self.workspace.id),
+            project_id=self.app.repos.projects.next_id(
+                workspace_id=self.workspace.id,
+            ),
             workspace_id=self.workspace.id,
             title="Improve validation bits per byte",
             objective=args.objective,
             research_context=args.research_context,
         )
         self.session = self.app.repos.sessions.create(
-            self.session_id,
+            session_id=self.session_id,
             workspace_id=self.workspace.id,
             project_id=self.project.id,
         )
@@ -71,6 +74,7 @@ class AppSessionLoopWorld:
         )
 
     def run(self) -> None:
+        self._install_eval_runtime_secrets()
         self.app._execute_session(
             self.session_id,
             max_experiments=self.args.max_experiments,
@@ -83,9 +87,16 @@ class AppSessionLoopWorld:
             self._tmp.cleanup()
 
     def project_board(self) -> dict[str, Any]:
-        return self.app.project_board_api.get_project_board(self.session_id).model_dump(
-            mode="json"
-        )
+        return self.app.project_board_api.get_project_board(
+            session_id=self.session_id
+        ).model_dump(mode="json")
+
+    def _install_eval_runtime_secrets(self) -> None:
+        secrets = SituSecrets()
+        secrets.require_eval_environment()
+        store = LocalSecretStore(home=self.app.context.home)
+        store.set_openai_key(secrets.require_eval_openai_key())
+        store.set_logfire_token(secrets.require_eval_logfire_token())
 
     def events(self) -> list[EvalEvent]:
         return [
@@ -99,7 +110,7 @@ class AppSessionLoopWorld:
                     **event.payload,
                 },
             )
-            for event in self.app.repos.events.list_for_session(self.session_id)
+            for event in self.app.repos.events.list_for_session(session_id=self.session_id)
         ]
 
     def workspace_files(self) -> dict[str, str]:

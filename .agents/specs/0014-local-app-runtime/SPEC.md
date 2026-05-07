@@ -31,10 +31,9 @@ windows created or resumed through clients.
 - Requires a healthy app server.
 - Connects to the app server and scopes requests to the selected workspace.
 - Before starting or resuming agent execution, verifies that the required model
-  provider secret is available from either a Situ-scoped environment override or
-  the local Situ secret store. If the secret is missing in an interactive TUI
-  launch, asks the user for it inside the fullscreen setup flow and saves it
-  locally before continuing.
+  provider secret is available from the local Situ secret store. If the secret
+  is missing in an interactive TUI launch, asks the user for it inside the
+  fullscreen setup flow and saves it locally before continuing.
 - For a default fresh-session launch, refuses a dirty Git-backed workspace
   before opening the fullscreen TUI, onboarding, or creating project/session
   records. Dirty means tracked or untracked changes anywhere in the Git repo
@@ -101,8 +100,13 @@ Local secrets are private runtime configuration, not product ledger data. The
 app may store user-provided provider secrets under the local Situ home with
 owner-only file permissions. Stored secrets must not be written to the canonical
 SQLite product database, events, collection updates, app/session discovery
-records, worker payloads, or observability attributes. A Situ-scoped environment
-secret remains a valid override for non-interactive and development use.
+records, worker payloads, or observability attributes.
+
+Local app, TUI, web, and manual headless execution use the local Situ secret
+store as their provider-secret source. They must not treat `SITU_OPENAI_KEY` or
+`SITU_LOGFIRE_TOKEN` as local runtime credentials. Those Situ-scoped environment
+secrets belong to eval execution, where they are required so evals fail clearly
+instead of silently reusing a developer's saved local runtime credentials.
 
 ## Runtime Boundary
 
@@ -161,8 +165,10 @@ The browser remains a client. It should not own workers or session lifecycle.
 - Starting `situ tui` without a required model provider secret shows secret
   onboarding before creating or resuming agent work, saves a submitted secret
   locally, and then continues to the normal setup/session flow.
-- Headless or non-interactive execution uses a Situ-scoped environment secret or
-  the local secret store and otherwise fails clearly without prompting.
+- Headless or non-interactive local execution uses the local secret store and
+  otherwise fails clearly without prompting.
+- Eval execution requires `SITU_OPENAI_KEY` and `SITU_LOGFIRE_TOKEN` from the
+  launch environment and does not fall back to the local secret store.
 - Confirming onboarding or providing setup inputs creates a fresh project and
   fresh attached session unless `--resume` or `--attach` is explicit.
 - The default session start stores a non-null `project_id` on the session and a

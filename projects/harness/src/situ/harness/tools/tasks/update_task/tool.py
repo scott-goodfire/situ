@@ -32,7 +32,7 @@ class UpdateTaskTool(BaseSituTool[SituToolDeps, UpdateTaskResult]):
     ) -> UpdateTaskResult:
         """Update task coordination fields and lifecycle status."""
         task = ctx.deps.get_repos().tasks.update(
-            task_id,
+            task_id=task_id,
             title=title,
             content=content,
             status=status,

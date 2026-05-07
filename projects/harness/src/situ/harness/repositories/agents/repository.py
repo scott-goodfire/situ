@@ -71,7 +71,7 @@ class AgentsRepository(BaseRepository):
                 now,
             ),
         )
-        record = self.get(command.agent_id)
+        record = self.get(agent_id=command.agent_id)
         if record is None:
             raise RuntimeError(f"agent was not persisted: {command.agent_id}")
         return record
@@ -86,10 +86,10 @@ class AgentsRepository(BaseRepository):
         created_in_session_id: str | None = None,
     ) -> AgentRecord:
         checked_kind = parse_agent_kind(kind)
-        existing = self.get_for_project_kind(project_id, checked_kind)
+        existing = self.get_for_project_kind(project_id=project_id, kind=checked_kind)
         if existing is not None:
             if model_name is not None and existing.model_name != model_name:
-                return self.update(existing.id, model_name=model_name) or existing
+                return self.update(agent_id=existing.id, model_name=model_name) or existing
             return existing
         return self.create(
             agent_id=f"agent_{project_id}_{checked_kind.value}",
@@ -123,8 +123,8 @@ class AgentsRepository(BaseRepository):
 
     def update(
         self,
-        agent_id: str,
         *,
+        agent_id: str,
         display_name: str | None = None,
         model_name: str | None = None,
         status: AgentStatus | str | None = None,
@@ -136,7 +136,7 @@ class AgentsRepository(BaseRepository):
             model_name=model_name,
             status=checked_status,
         )
-        current = self.get(command.agent_id)
+        current = self.get(agent_id=command.agent_id)
         if current is None:
             return None
         self.db.execute(
@@ -153,14 +153,15 @@ class AgentsRepository(BaseRepository):
                 command.agent_id,
             ),
         )
-        return self.get(command.agent_id)
+        return self.get(agent_id=command.agent_id)
 
-    def get(self, agent_id: str) -> AgentRecord | None:
+    def get(self, *, agent_id: str) -> AgentRecord | None:
         row = self.db.fetchone("SELECT * FROM agents WHERE id = ?", (agent_id,))
         return _agent_row(row) if row else None
 
     def get_for_project_kind(
         self,
+        *,
         project_id: str,
         kind: AgentKind | str,
     ) -> AgentRecord | None:
@@ -178,18 +179,19 @@ class AgentsRepository(BaseRepository):
 
     def get_for_session_kind(
         self,
+        *,
         session_id: str,
         kind: AgentKind | str,
     ) -> AgentRecord | None:
         project_id = self._project_id_for_session(session_id)
         if project_id is None:
             return None
-        return self.get_for_project_kind(project_id, kind)
+        return self.get_for_project_kind(project_id=project_id, kind=kind)
 
     def list_all(self) -> list[AgentRecord]:
         return [_agent_row(row) for row in self.db.fetchall("SELECT * FROM agents ORDER BY created_at")]
 
-    def list_for_project(self, project_id: str) -> list[AgentRecord]:
+    def list_for_project(self, *, project_id: str) -> list[AgentRecord]:
         return [
             _agent_row(row)
             for row in self.db.fetchall(
@@ -198,9 +200,13 @@ class AgentsRepository(BaseRepository):
             )
         ]
 
-    def list_for_session(self, session_id: str) -> list[AgentRecord]:
+    def list_for_session(self, *, session_id: str) -> list[AgentRecord]:
         project_id = self._project_id_for_session(session_id)
-        return self.list_for_project(project_id) if project_id is not None else []
+        return (
+            self.list_for_project(project_id=project_id)
+            if project_id is not None
+            else []
+        )
 
     def _project_id_for_session(self, session_id: str) -> str | None:
         row = self.db.fetchone("SELECT project_id FROM sessions WHERE id = ?", (session_id,))

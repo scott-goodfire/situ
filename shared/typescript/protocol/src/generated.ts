@@ -319,7 +319,7 @@ export interface SecretsStatusParams {
 
 export interface SecretsStatusResult {
   openai_key_configured: boolean;
-  openai_key_source: "environment" | "local" | "missing";
+  openai_key_source: "local" | "missing";
 }
 
 export interface SecretsSetOpenAIKeyParams {

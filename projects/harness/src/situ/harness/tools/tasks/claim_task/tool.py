@@ -28,7 +28,7 @@ class ClaimTaskTool(BaseSituTool[SituToolDeps, ClaimTaskResult]):
         resolved_agent_id = agent_id or ctx.deps.agent_id
         if resolved_agent_id is None:
             raise ValueError("agent_id is required when tool deps do not identify the current agent")
-        agent = repos.agents.get(resolved_agent_id)
+        agent = repos.agents.get(agent_id=resolved_agent_id)
         if agent is None:
             raise ValueError(f"agent not found: {resolved_agent_id}")
         eligible_kinds = eligible_task_kinds_for_agent(agent.kind)
@@ -50,7 +50,7 @@ class ClaimTaskTool(BaseSituTool[SituToolDeps, ClaimTaskResult]):
         if task is None:
             return ClaimTaskResult(success=True, task=None)
 
-        updated_agent = repos.agents.update(agent.id, status=AgentStatus.ACTIVE) or agent
+        updated_agent = repos.agents.update(agent_id=agent.id, status=AgentStatus.ACTIVE) or agent
         event = ctx.deps.record_event(
             "task.claimed",
             f"Claimed task {task.id}",

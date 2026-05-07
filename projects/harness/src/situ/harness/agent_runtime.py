@@ -47,13 +47,13 @@ class AgentRuntime:
     def __init__(self, project_dir: Path, *, database_path: Path | None = None) -> None:
         self.project_dir = project_dir
         self.database_path = database_path or project_dir.parent.parent / "situ.sqlite"
-        configure_observability(project_dir)
-        configure_dbos(project_dir)
-
         secrets = SituSecrets()
         secrets_home = project_dir.parent.parent
-        secrets.apply_sdk_environment(home=secrets_home)
-        secrets.require_openai_key(home=secrets_home)
+        secrets.require_local_openai_key(home=secrets_home)
+        secrets.apply_local_sdk_environment(home=secrets_home)
+
+        configure_observability(project_dir)
+        configure_dbos(project_dir)
 
         self.model_name = DEFAULTS.agent_model
         self.agent: Agent[SituToolDeps, AgentPlan] = Agent(
@@ -133,7 +133,7 @@ class AgentRuntime:
         project_id = None
         agent_id = None
         if session_id is not None and repos is not None:
-            session = repos.sessions.get(session_id)
+            session = repos.sessions.get(session_id=session_id)
             project_id = session.project_id if session is not None else None
             if project_id is not None:
                 agent = repos.agents.ensure_project_agent(
@@ -145,12 +145,12 @@ class AgentRuntime:
                 )
                 agent_id = agent.id
                 stored_messages = repos.agent_message_history.get_message_history(
-                    project_id,
+                    project_or_session_id=project_id,
                     agent_id=agent.id,
                 )
                 if stored_messages:
                     message_history = repos.agent_message_history.get_model_message_history(
-                        project_id,
+                        project_or_session_id=project_id,
                         agent_id=agent.id,
                     )
                 else:
@@ -210,7 +210,7 @@ class AgentRuntime:
         project_id = None
         agent = None
         if repos is not None:
-            session = repos.sessions.get(session_id)
+            session = repos.sessions.get(session_id=session_id)
             project_id = session.project_id if session is not None else None
             if project_id is not None:
                 agent = repos.agents.ensure_project_agent(
@@ -238,12 +238,12 @@ class AgentRuntime:
         )
         if repos is not None and project_id is not None:
             stored_messages = repos.agent_message_history.get_message_history(
-                project_id,
+                project_or_session_id=project_id,
                 agent_id=agent_id,
             )
             if stored_messages:
                 message_history = repos.agent_message_history.get_model_message_history(
-                    project_id,
+                    project_or_session_id=project_id,
                     agent_id=agent_id,
                 )
             else:
@@ -298,7 +298,7 @@ class AgentRuntime:
         project_id = None
         agent = None
         if repos is not None:
-            session = repos.sessions.get(session_id)
+            session = repos.sessions.get(session_id=session_id)
             project_id = session.project_id if session is not None else None
             if project_id is not None:
                 agent = repos.agents.ensure_project_agent(
@@ -327,12 +327,12 @@ class AgentRuntime:
         )
         if repos is not None and project_id is not None:
             stored_messages = repos.agent_message_history.get_message_history(
-                project_id,
+                project_or_session_id=project_id,
                 agent_id=agent_id,
             )
             if stored_messages:
                 message_history = repos.agent_message_history.get_model_message_history(
-                    project_id,
+                    project_or_session_id=project_id,
                     agent_id=agent_id,
                 )
             else:
@@ -383,7 +383,7 @@ class AgentRuntime:
         project_id = None
         agent = None
         if repos is not None:
-            session = repos.sessions.get(session_id)
+            session = repos.sessions.get(session_id=session_id)
             project_id = session.project_id if session is not None else None
             if project_id is not None:
                 agent = repos.agents.ensure_project_agent(
@@ -411,12 +411,12 @@ class AgentRuntime:
         )
         if repos is not None and project_id is not None:
             stored_messages = repos.agent_message_history.get_message_history(
-                project_id,
+                project_or_session_id=project_id,
                 agent_id=agent_id,
             )
             if stored_messages:
                 message_history = repos.agent_message_history.get_model_message_history(
-                    project_id,
+                    project_or_session_id=project_id,
                     agent_id=agent_id,
                 )
             else:

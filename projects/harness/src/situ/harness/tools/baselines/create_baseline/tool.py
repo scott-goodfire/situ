@@ -54,5 +54,5 @@ def _next_baseline_id(
     repos: Any,
     project_id: str,
 ) -> str:
-    count = len(repos.baselines.list_for_project(project_id)) + 1
+    count = len(repos.baselines.list_for_project(project_id=project_id)) + 1
     return f"baseline_{project_id}_agent_{count:03d}"

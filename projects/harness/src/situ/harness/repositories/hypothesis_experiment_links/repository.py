@@ -40,7 +40,10 @@ class HypothesisExperimentLinksRepository(BaseRepository):
                 utc_now(),
             ),
         )
-        record = self.get(command.hypothesis_id, command.experiment_id)
+        record = self.get(
+            hypothesis_id=command.hypothesis_id,
+            experiment_id=command.experiment_id,
+        )
         if record is None:
             raise RuntimeError(
                 "hypothesis/experiment link was not persisted: "
@@ -50,6 +53,7 @@ class HypothesisExperimentLinksRepository(BaseRepository):
 
     def get(
         self,
+        *,
         hypothesis_id: str,
         experiment_id: str,
     ) -> HypothesisExperimentLinkRecord | None:
@@ -70,7 +74,11 @@ class HypothesisExperimentLinksRepository(BaseRepository):
             )
         ]
 
-    def list_for_hypothesis(self, hypothesis_id: str) -> list[HypothesisExperimentLinkRecord]:
+    def list_for_hypothesis(
+        self,
+        *,
+        hypothesis_id: str,
+    ) -> list[HypothesisExperimentLinkRecord]:
         return [
             _hypothesis_experiment_link_row(row)
             for row in self.db.fetchall(
@@ -83,7 +91,11 @@ class HypothesisExperimentLinksRepository(BaseRepository):
             )
         ]
 
-    def list_for_experiment(self, experiment_id: str) -> list[HypothesisExperimentLinkRecord]:
+    def list_for_experiment(
+        self,
+        *,
+        experiment_id: str,
+    ) -> list[HypothesisExperimentLinkRecord]:
         return [
             _hypothesis_experiment_link_row(row)
             for row in self.db.fetchall(

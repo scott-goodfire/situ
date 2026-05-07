@@ -65,17 +65,17 @@ class TaskActivitiesRepository(BaseRepository):
                 utc_now(),
             ),
         )
-        record = self.get_by_id(int(cursor.lastrowid))
+        record = self.get_by_id(activity_id=int(cursor.lastrowid))
         if record is None:
             raise RuntimeError("task activity was not persisted")
         return record
 
-    def get_by_id(self, activity_id: int) -> TaskActivityRecord | None:
+    def get_by_id(self, *, activity_id: int) -> TaskActivityRecord | None:
         row = self.db.fetchone("SELECT * FROM task_activities WHERE id = ?", (activity_id,))
         return _task_activity_row(row) if row else None
 
-    def get(self, activity_id: int) -> TaskActivityRecord | None:
-        return self.get_by_id(activity_id)
+    def get(self, *, activity_id: int) -> TaskActivityRecord | None:
+        return self.get_by_id(activity_id=activity_id)
 
     def list_all(self) -> list[TaskActivityRecord]:
         return [
@@ -83,7 +83,7 @@ class TaskActivitiesRepository(BaseRepository):
             for row in self.db.fetchall("SELECT * FROM task_activities ORDER BY id")
         ]
 
-    def list_for_task(self, task_id: str) -> list[TaskActivityRecord]:
+    def list_for_task(self, *, task_id: str) -> list[TaskActivityRecord]:
         return [
             _task_activity_row(row)
             for row in self.db.fetchall(
@@ -92,7 +92,7 @@ class TaskActivitiesRepository(BaseRepository):
             )
         ]
 
-    def list_for_project(self, project_id: str) -> list[TaskActivityRecord]:
+    def list_for_project(self, *, project_id: str) -> list[TaskActivityRecord]:
         return [
             _task_activity_row(row)
             for row in self.db.fetchall(

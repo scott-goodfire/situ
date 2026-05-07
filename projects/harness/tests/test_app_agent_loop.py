@@ -21,9 +21,9 @@ def test_session_loop_replans_after_baseline_before_closing(
 
     app._execute_session(session_id, max_experiments=1)
 
-    session = app.repos.sessions.get(session_id)
-    tasks = app.repos.tasks.list_for_session(session_id)
-    experiments = app.repos.experiments.list_for_session(session_id)
+    session = app.repos.sessions.get(session_id=session_id)
+    tasks = app.repos.tasks.list_for_session(session_id=session_id)
+    experiments = app.repos.experiments.list_for_session(session_id=session_id)
 
     assert session is not None
     assert session.status == "closed"
@@ -51,7 +51,7 @@ def test_session_loop_replans_after_baseline_before_closing(
         activity
         for experiment in experiments
         for activity in app.repos.experiment_activities.list_for_experiment(
-            experiment.id
+            experiment_id=experiment.id
         )
         if activity.payload.get("activity_type") == "critic_review"
     ]
@@ -61,7 +61,7 @@ def test_session_loop_replans_after_baseline_before_closing(
         event.type == "session.completed"
         and "experiment budget" in event.message.lower()
         and event.associated_project_id == project_id
-        for event in app.repos.events.list_for_session(session_id)
+        for event in app.repos.events.list_for_session(session_id=session_id)
     )
 
 
@@ -75,7 +75,7 @@ def test_baseline_only_work_does_not_create_critic_review(
 
     app._execute_session(session_id, max_experiments=1)
 
-    tasks = app.repos.tasks.list_for_session(session_id)
+    tasks = app.repos.tasks.list_for_session(session_id=session_id)
 
     assert runtime.critic_calls == 0
     assert not [task for task in tasks if task.kind == TaskKind.REVIEW]
@@ -97,7 +97,7 @@ def test_experiment_review_task_links_evaluations_and_measurements(
         source_task_id="task_source_experiment",
     )
 
-    links = app.repos.task_entity_links.list_for_task(task.id)
+    links = app.repos.task_entity_links.list_for_task(task_id=task.id)
     linked = {(link.entity_kind, link.entity_id) for link in links}
 
     assert task.payload["evaluation_ids"] == [evaluation_id]
@@ -130,7 +130,7 @@ def test_experiment_review_task_is_not_duplicated_for_same_experiment(
 
     review_tasks = [
         task
-        for task in app.repos.tasks.list_for_session(session_id)
+        for task in app.repos.tasks.list_for_session(session_id=session_id)
         if task.kind == TaskKind.REVIEW
         and task.payload.get("experiment_id") == experiment_id
     ]
@@ -248,8 +248,8 @@ def test_session_loop_retries_manager_before_no_progress_close(
 
     app._execute_session(session_id, max_experiments=1)
 
-    session = app.repos.sessions.get(session_id)
-    tasks = app.repos.tasks.list_for_session(session_id)
+    session = app.repos.sessions.get(session_id=session_id)
+    tasks = app.repos.tasks.list_for_session(session_id=session_id)
 
     assert session is not None
     assert session.status == "closed"
@@ -261,7 +261,7 @@ def test_session_loop_retries_manager_before_no_progress_close(
         event.type == "session.completed"
         and "no runnable researcher, scientist, or critic task"
         in event.message.lower()
-        for event in app.repos.events.list_for_session(session_id)
+        for event in app.repos.events.list_for_session(session_id=session_id)
     )
 
 
@@ -275,8 +275,8 @@ def test_session_loop_closes_immediately_when_project_is_closed_by_manager(
 
     app._execute_session(session_id, max_experiments=10)
 
-    session = app.repos.sessions.get(session_id)
-    tasks = app.repos.tasks.list_for_session(session_id)
+    session = app.repos.sessions.get(session_id=session_id)
+    tasks = app.repos.tasks.list_for_session(session_id=session_id)
 
     assert session is not None
     assert session.status == "closed"
@@ -287,7 +287,7 @@ def test_session_loop_closes_immediately_when_project_is_closed_by_manager(
         event.type == "session.completed"
         and "manager confirmation" in event.message.lower()
         and event.associated_project_id == project_id
-        for event in app.repos.events.list_for_session(session_id)
+        for event in app.repos.events.list_for_session(session_id=session_id)
     )
 
 
@@ -301,8 +301,8 @@ def test_session_loop_runs_researcher_tasks_before_scientist_work(
 
     app._execute_session(session_id, max_experiments=1)
 
-    tasks = app.repos.tasks.list_for_session(session_id)
-    analyses = app.repos.analyses.list_for_session(session_id)
+    tasks = app.repos.tasks.list_for_session(session_id=session_id)
+    analyses = app.repos.analyses.list_for_session(session_id=session_id)
 
     assert runtime.researcher_calls == 1
     assert runtime.scientist_calls == 0
@@ -310,7 +310,7 @@ def test_session_loop_runs_researcher_tasks_before_scientist_work(
     assert any(task.kind == TaskKind.RESEARCH and task.status == TaskStatus.DONE for task in tasks)
     assert any(
         event.type == "session.researcher_completed"
-        for event in app.repos.events.list_for_session(session_id)
+        for event in app.repos.events.list_for_session(session_id=session_id)
     )
 
 
@@ -324,16 +324,16 @@ def test_failed_experiment_task_still_records_worktree_state(
 
     app._execute_session(session_id, max_experiments=1)
 
-    session = app.repos.sessions.get(session_id)
-    tasks = app.repos.tasks.list_for_session(session_id)
-    experiments = app.repos.experiments.list_for_session(session_id)
+    session = app.repos.sessions.get(session_id=session_id)
+    tasks = app.repos.tasks.list_for_session(session_id=session_id)
+    experiments = app.repos.experiments.list_for_session(session_id=session_id)
 
     assert session is not None
     assert session.status == "closed"
     assert experiments
     assert tasks[-1].status == TaskStatus.FAILED
     assert runtime.scientist_repo_path is not None
-    activities = app.repos.experiment_activities.list_for_experiment(experiments[0].id)
+    activities = app.repos.experiment_activities.list_for_experiment(experiment_id=experiments[0].id)
     assert activities[-1].payload["activity_type"] == "workspace_state"
     assert activities[-1].payload["worktree"]["dirty"] is True
     assert activities[-1].payload["worktree"]["changes"] == [
@@ -341,7 +341,7 @@ def test_failed_experiment_task_still_records_worktree_state(
     ]
     assert any(
         event.type == "session.failed"
-        for event in app.repos.events.list_for_session(session_id)
+        for event in app.repos.events.list_for_session(session_id=session_id)
     )
 
 
@@ -356,12 +356,12 @@ class BaselineThenExperimentRuntime:
         self.plan_calls += 1
         repos = kwargs["repos"]
         session_id = kwargs["session_id"]
-        project_id = repos.sessions.get(session_id).project_id
+        project_id = repos.sessions.get(session_id=session_id).project_id
         assert project_id is not None
 
         if self.plan_calls == 1:
             repos.tasks.create(
-                task_id=repos.tasks.next_id(project_id),
+                task_id=repos.tasks.next_id(project_id=project_id),
                 project_id=project_id,
                 created_in_session_id=session_id,
                 title="Establish baseline",
@@ -373,7 +373,7 @@ class BaselineThenExperimentRuntime:
             return ResearchAgentOutput(summary="filed baseline")
 
         repos.tasks.create(
-            task_id=repos.tasks.next_id(project_id),
+            task_id=repos.tasks.next_id(project_id=project_id),
             project_id=project_id,
             created_in_session_id=session_id,
             title="Try candidate",
@@ -388,9 +388,9 @@ class BaselineThenExperimentRuntime:
         repos = kwargs["repos"]
         session_id = kwargs["session_id"]
         assigned_task_ids = kwargs["assigned_task_ids"]
-        task = repos.tasks.get(assigned_task_ids[0])
+        task = repos.tasks.get(task_id=assigned_task_ids[0])
         assert task is not None
-        project_id = repos.sessions.get(session_id).project_id
+        project_id = repos.sessions.get(session_id=session_id).project_id
         assert project_id is not None
 
         self.scientist_task_kinds.append(task.kind.value)
@@ -433,7 +433,7 @@ class BaselineThenExperimentRuntime:
         assert repo_path is not None
         (Path(repo_path) / "README.md").write_text("candidate workspace\n")
         repos.experiments.update(
-            experiment_id,
+            experiment_id=experiment_id,
             title="Try candidate",
             summary="Candidate result.",
             status="closed",
@@ -443,7 +443,7 @@ class BaselineThenExperimentRuntime:
     def run_review(self, **kwargs: Any) -> ResearchAgentOutput:
         self.critic_calls += 1
         repos = kwargs["repos"]
-        task = repos.tasks.get(kwargs["assigned_task_ids"][0])
+        task = repos.tasks.get(task_id=kwargs["assigned_task_ids"][0])
         assert task is not None
         experiment_id = task.payload["experiment_id"]
         repos.experiment_activities.add(
@@ -470,11 +470,11 @@ class BaselineOnlyRuntime:
         self.plan_calls += 1
         repos = kwargs["repos"]
         session_id = kwargs["session_id"]
-        project_id = repos.sessions.get(session_id).project_id
+        project_id = repos.sessions.get(session_id=session_id).project_id
         assert project_id is not None
         if self.plan_calls == 1:
             repos.tasks.create(
-                task_id=repos.tasks.next_id(project_id),
+                task_id=repos.tasks.next_id(project_id=project_id),
                 project_id=project_id,
                 created_in_session_id=session_id,
                 title="Establish baseline only",
@@ -488,7 +488,7 @@ class BaselineOnlyRuntime:
     def run_session(self, **kwargs: Any) -> ResearchAgentOutput:
         repos = kwargs["repos"]
         session_id = kwargs["session_id"]
-        project_id = repos.sessions.get(session_id).project_id
+        project_id = repos.sessions.get(session_id=session_id).project_id
         assert project_id is not None
         baseline = repos.baselines.create(
             baseline_id="baseline_project_0001_default",
@@ -543,9 +543,9 @@ class CloseProjectRuntime:
         self.plan_calls += 1
         repos = kwargs["repos"]
         session_id = kwargs["session_id"]
-        project_id = repos.sessions.get(session_id).project_id
+        project_id = repos.sessions.get(session_id=session_id).project_id
         assert project_id is not None
-        repos.projects.update(project_id, status="closed")
+        repos.projects.update(project_id=project_id, status="closed")
         return ResearchAgentOutput(summary="confirmed close")
 
     def run_session(self, **_kwargs: Any) -> ResearchAgentOutput:
@@ -563,11 +563,11 @@ class ResearcherThenNoProgressRuntime:
         self.plan_calls += 1
         repos = kwargs["repos"]
         session_id = kwargs["session_id"]
-        project_id = repos.sessions.get(session_id).project_id
+        project_id = repos.sessions.get(session_id=session_id).project_id
         assert project_id is not None
         if self.plan_calls == 1:
             repos.tasks.create(
-                task_id=repos.tasks.next_id(project_id),
+                task_id=repos.tasks.next_id(project_id=project_id),
                 project_id=project_id,
                 created_in_session_id=session_id,
                 title="Research codebase knobs",
@@ -583,7 +583,7 @@ class ResearcherThenNoProgressRuntime:
         self.researcher_calls += 1
         repos = kwargs["repos"]
         session_id = kwargs["session_id"]
-        project_id = repos.sessions.get(session_id).project_id
+        project_id = repos.sessions.get(session_id=session_id).project_id
         assert project_id is not None
         repos.analyses.create(
             analysis_id="analysis_project_0001_001",
@@ -610,10 +610,10 @@ class FailingExperimentRuntime:
         self.plan_calls += 1
         repos = kwargs["repos"]
         session_id = kwargs["session_id"]
-        project_id = repos.sessions.get(session_id).project_id
+        project_id = repos.sessions.get(session_id=session_id).project_id
         assert project_id is not None
         repos.tasks.create(
-            task_id=repos.tasks.next_id(project_id),
+            task_id=repos.tasks.next_id(project_id=project_id),
             project_id=project_id,
             created_in_session_id=session_id,
             title="Try candidate",
@@ -654,7 +654,7 @@ def _app_with_initial_plan(tmp_path: Path) -> tuple[HarnessApp, str, str]:
         research_context="Run local evals.",
     )
     session = app.repos.sessions.create(
-        "session_0001",
+        session_id="session_0001",
         workspace_id=workspace_record.id,
         project_id=project.id,
     )

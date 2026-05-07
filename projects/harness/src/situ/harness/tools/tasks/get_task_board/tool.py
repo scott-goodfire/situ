@@ -31,31 +31,31 @@ class GetTaskBoardTool(BaseSituTool[SituToolDeps, GetTaskBoardResult]):
                 task_entity_links=[],
                 task_activities=[],
             )
-        tasks = repos.tasks.list_for_project(target_project_id)
+        tasks = repos.tasks.list_for_project(project_id=target_project_id)
         task_ids = {task.id for task in tasks}
         return GetTaskBoardResult(
             success=True,
             agents=[
                 agent.model_dump()
-                for agent in repos.agents.list_for_project(target_project_id)
+                for agent in repos.agents.list_for_project(project_id=target_project_id)
             ],
             tasks=[task.model_dump() for task in tasks],
             task_dependencies=[
                 dependency.model_dump()
                 for dependency in repos.task_dependencies.list_for_project(
-                    target_project_id
+                    project_id=target_project_id
                 )
                 if dependency.task_id in task_ids
                 or dependency.blocked_by_task_id in task_ids
             ],
             task_entity_links=[
                 link.model_dump()
-                for link in repos.task_entity_links.list_for_project(target_project_id)
+                for link in repos.task_entity_links.list_for_project(project_id=target_project_id)
                 if link.task_id in task_ids
             ],
             task_activities=[
                 activity.model_dump()
                 for task_id in task_ids
-                for activity in repos.task_activities.list_for_task(task_id)
+                for activity in repos.task_activities.list_for_task(task_id=task_id)
             ],
         )

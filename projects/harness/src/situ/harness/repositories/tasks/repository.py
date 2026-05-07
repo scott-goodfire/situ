@@ -114,15 +114,15 @@ class TasksRepository(BaseRepository):
                 now,
             ),
         )
-        record = self.get(command.task_id)
+        record = self.get(task_id=command.task_id)
         if record is None:
             raise RuntimeError(f"task was not persisted: {command.task_id}")
         return record
 
     def update(
         self,
-        task_id: str,
         *,
+        task_id: str,
         title: str | None = None,
         content: str | None = None,
         status: TaskStatus | str | None = None,
@@ -137,7 +137,7 @@ class TasksRepository(BaseRepository):
         claimed_in_session_id: str | None = None,
         completed_in_session_id: str | None = None,
     ) -> TaskRecord | None:
-        current = self.get(task_id)
+        current = self.get(task_id=task_id)
         if current is None:
             return None
         checked_status = parse_task_status(status) if status is not None else None
@@ -233,7 +233,7 @@ class TasksRepository(BaseRepository):
                 command.task_id,
             ),
         )
-        return self.get(command.task_id)
+        return self.get(task_id=command.task_id)
 
     def claim(
         self,
@@ -281,7 +281,7 @@ class TasksRepository(BaseRepository):
                 TaskStatus.DONE.value,
             ),
         )
-        return self.get(task_id) if cursor.rowcount == 1 else None
+        return self.get(task_id=task_id) if cursor.rowcount == 1 else None
 
     def claim_next(
         self,
@@ -325,7 +325,7 @@ class TasksRepository(BaseRepository):
                 return claimed
         return None
 
-    def get(self, task_id: str) -> TaskRecord | None:
+    def get(self, *, task_id: str) -> TaskRecord | None:
         row = self.db.fetchone("SELECT * FROM tasks WHERE id = ?", (task_id,))
         return _task_row(row) if row else None
 
@@ -337,7 +337,7 @@ class TasksRepository(BaseRepository):
             )
         ]
 
-    def list_for_project(self, project_id: str) -> list[TaskRecord]:
+    def list_for_project(self, *, project_id: str) -> list[TaskRecord]:
         return [
             _task_row(row)
             for row in self.db.fetchall(
@@ -350,12 +350,16 @@ class TasksRepository(BaseRepository):
             )
         ]
 
-    def list_for_session(self, session_id: str) -> list[TaskRecord]:
+    def list_for_session(self, *, session_id: str) -> list[TaskRecord]:
         project_id = self._project_id_for_session(session_id)
-        return self.list_for_project(project_id) if project_id is not None else []
+        return (
+            self.list_for_project(project_id=project_id)
+            if project_id is not None
+            else []
+        )
 
-    def next_id(self, project_id: str) -> str:
-        count = len(self.list_for_project(project_id)) + 1
+    def next_id(self, *, project_id: str) -> str:
+        count = len(self.list_for_project(project_id=project_id)) + 1
         return f"task_{project_id}_{count:03d}"
 
     def _project_id_for_session(self, session_id: str) -> str | None:

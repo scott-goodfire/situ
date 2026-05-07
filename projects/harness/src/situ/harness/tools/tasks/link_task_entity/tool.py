@@ -26,7 +26,7 @@ class LinkTaskEntityTool(BaseSituTool[SituToolDeps, LinkTaskEntityResult]):
     ) -> LinkTaskEntityResult:
         """Link a task to a produced or referenced ledger entity."""
         repos = ctx.deps.get_repos()
-        task = repos.tasks.get(task_id)
+        task = repos.tasks.get(task_id=task_id)
         if task is None:
             raise ValueError(f"task not found: {task_id}")
         link = repos.task_entity_links.create(

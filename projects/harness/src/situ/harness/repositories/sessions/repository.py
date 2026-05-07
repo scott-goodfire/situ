@@ -22,8 +22,8 @@ def _session_row(row: Any) -> SessionRecord:
 class SessionsRepository(BaseRepository):
     def create(
         self,
-        session_id: str,
         *,
+        session_id: str,
         workspace_id: str,
         project_id: str | None = None,
     ) -> SessionRecord:
@@ -48,46 +48,48 @@ class SessionsRepository(BaseRepository):
                 now,
             ),
         )
-        record = self.get_by_id(command.session_id)
+        record = self.get_by_id(session_id=command.session_id)
         if record is None:
             raise RuntimeError(f"session was not persisted: {command.session_id}")
         return record
 
     def update_status(
         self,
+        *,
         session_id: str,
         status: SessionStatus | str,
     ) -> SessionRecord | None:
         checked_status = parse_session_status(status=status)
         command = UpdateSessionStatus(session_id=session_id, status=checked_status)
-        if self.get_by_id(command.session_id) is None:
+        if self.get_by_id(session_id=command.session_id) is None:
             return None
         self.db.execute(
             "UPDATE sessions SET status = ?, updated_at = ? WHERE id = ?",
             (command.status.value, utc_now(), command.session_id),
         )
-        return self.get_by_id(command.session_id)
+        return self.get_by_id(session_id=command.session_id)
 
     def update_project(
         self,
+        *,
         session_id: str,
         project_id: str | None,
     ) -> SessionRecord | None:
         command = UpdateSessionProject(session_id=session_id, project_id=project_id)
-        if self.get_by_id(command.session_id) is None:
+        if self.get_by_id(session_id=command.session_id) is None:
             return None
         self.db.execute(
             "UPDATE sessions SET project_id = ?, updated_at = ? WHERE id = ?",
             (command.project_id, utc_now(), command.session_id),
         )
-        return self.get_by_id(command.session_id)
+        return self.get_by_id(session_id=command.session_id)
 
-    def get_by_id(self, session_id: str) -> SessionRecord | None:
+    def get_by_id(self, *, session_id: str) -> SessionRecord | None:
         row = self.db.fetchone("SELECT * FROM sessions WHERE id = ?", (session_id,))
         return _session_row(row) if row else None
 
-    def get(self, session_id: str) -> SessionRecord | None:
-        return self.get_by_id(session_id)
+    def get(self, *, session_id: str) -> SessionRecord | None:
+        return self.get_by_id(session_id=session_id)
 
     def list_all(self) -> list[SessionRecord]:
         return [
@@ -95,7 +97,7 @@ class SessionsRepository(BaseRepository):
             for row in self.db.fetchall("SELECT * FROM sessions ORDER BY created_at")
         ]
 
-    def list_for_workspace(self, workspace_id: str) -> list[SessionRecord]:
+    def list_for_workspace(self, *, workspace_id: str) -> list[SessionRecord]:
         return [
             _session_row(row)
             for row in self.db.fetchall(
@@ -104,7 +106,7 @@ class SessionsRepository(BaseRepository):
             )
         ]
 
-    def list_for_project(self, project_id: str) -> list[SessionRecord]:
+    def list_for_project(self, *, project_id: str) -> list[SessionRecord]:
         return [
             _session_row(row)
             for row in self.db.fetchall(

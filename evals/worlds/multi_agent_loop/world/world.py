@@ -131,7 +131,7 @@ class MultiAgentLoopWorld:
         source_kind: str,
     ) -> None:
         task = self.repos.tasks.create(
-            task_id=self.repos.tasks.next_id(PROJECT_ID),
+            task_id=self.repos.tasks.next_id(project_id=PROJECT_ID),
             project_id=PROJECT_ID,
             created_in_session_id=SESSION_ID,
             title=title,

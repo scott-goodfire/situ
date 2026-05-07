@@ -26,12 +26,12 @@ class ListEvaluationActivitiesTool(
         repos = ctx.deps.get_repos()
         if evaluation_id is not None:
             activities = repos.evaluation_activities.list_for_evaluation(
-                evaluation_id
+                evaluation_id=evaluation_id
             )
         else:
             resolved_project_id = project_id or ctx.deps.current_project_id()
             activities = (
-                repos.evaluation_activities.list_for_project(resolved_project_id)
+                repos.evaluation_activities.list_for_project(project_id=resolved_project_id)
                 if resolved_project_id is not None
                 else []
             )

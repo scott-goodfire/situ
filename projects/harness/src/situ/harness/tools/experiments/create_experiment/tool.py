@@ -34,9 +34,9 @@ class CreateExperimentTool(BaseSituTool[SituToolDeps, CreateExperimentResult]):
         resolved_experiment_id = (
             experiment_id
             or ctx.deps.active_experiment_id
-            or repos.experiments.next_id(project_id)
+            or repos.experiments.next_id(project_id=project_id)
         )
-        existing = repos.experiments.get(resolved_experiment_id)
+        existing = repos.experiments.get(experiment_id=resolved_experiment_id)
         if existing is not None and experiment_id is None:
             next_status = (
                 existing.status
@@ -45,7 +45,7 @@ class CreateExperimentTool(BaseSituTool[SituToolDeps, CreateExperimentResult]):
             )
             experiment = (
                 repos.experiments.update(
-                    resolved_experiment_id,
+                    experiment_id=resolved_experiment_id,
                     title=title,
                     summary=summary,
                     status=next_status,

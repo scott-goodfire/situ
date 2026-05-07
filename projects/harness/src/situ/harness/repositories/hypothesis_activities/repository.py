@@ -57,17 +57,17 @@ class HypothesisActivitiesRepository(BaseRepository):
                 utc_now(),
             ),
         )
-        record = self.get_by_id(int(cursor.lastrowid))
+        record = self.get_by_id(activity_id=int(cursor.lastrowid))
         if record is None:
             raise RuntimeError("hypothesis activity was not persisted")
         return record
 
-    def get_by_id(self, activity_id: int) -> HypothesisActivityRecord | None:
+    def get_by_id(self, *, activity_id: int) -> HypothesisActivityRecord | None:
         row = self.db.fetchone("SELECT * FROM hypothesis_activities WHERE id = ?", (activity_id,))
         return _hypothesis_activity_row(row) if row else None
 
-    def get(self, activity_id: int) -> HypothesisActivityRecord | None:
-        return self.get_by_id(activity_id)
+    def get(self, *, activity_id: int) -> HypothesisActivityRecord | None:
+        return self.get_by_id(activity_id=activity_id)
 
     def list_all(self) -> list[HypothesisActivityRecord]:
         return [
@@ -75,7 +75,7 @@ class HypothesisActivitiesRepository(BaseRepository):
             for row in self.db.fetchall("SELECT * FROM hypothesis_activities ORDER BY id")
         ]
 
-    def list_for_hypothesis(self, hypothesis_id: str) -> list[HypothesisActivityRecord]:
+    def list_for_hypothesis(self, *, hypothesis_id: str) -> list[HypothesisActivityRecord]:
         return [
             _hypothesis_activity_row(row)
             for row in self.db.fetchall(
@@ -84,7 +84,7 @@ class HypothesisActivitiesRepository(BaseRepository):
             )
         ]
 
-    def list_for_project(self, project_id: str) -> list[HypothesisActivityRecord]:
+    def list_for_project(self, *, project_id: str) -> list[HypothesisActivityRecord]:
         return [
             _hypothesis_activity_row(row)
             for row in self.db.fetchall(
@@ -99,7 +99,11 @@ class HypothesisActivitiesRepository(BaseRepository):
             )
         ]
 
-    def list_for_session(self, session_id: str) -> list[HypothesisActivityRecord]:
+    def list_for_session(self, *, session_id: str) -> list[HypothesisActivityRecord]:
         session = self.db.fetchone("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
         project_id = session["project_id"] if session else None
-        return self.list_for_project(project_id) if project_id is not None else []
+        return (
+            self.list_for_project(project_id=project_id)
+            if project_id is not None
+            else []
+        )

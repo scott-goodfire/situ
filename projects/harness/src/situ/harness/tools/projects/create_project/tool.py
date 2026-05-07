@@ -28,7 +28,7 @@ class CreateProjectTool(BaseSituTool[SituToolDeps, CreateProjectResult]):
         """Create a workspace project and optionally attach it to the current run."""
         repos = ctx.deps.get_repos()
         workspace = repos.workspaces.ensure()
-        resolved_project_id = project_id or repos.projects.next_id(workspace.id)
+        resolved_project_id = project_id or repos.projects.next_id(workspace_id=workspace.id)
         project = repos.projects.create(
             project_id=resolved_project_id,
             workspace_id=workspace.id,
@@ -38,7 +38,7 @@ class CreateProjectTool(BaseSituTool[SituToolDeps, CreateProjectResult]):
             status=ProjectStatus.ACTIVE,
         )
         session = (
-            repos.sessions.update_project(ctx.deps.session_id, project.id)
+            repos.sessions.update_project(session_id=ctx.deps.session_id, project_id=project.id)
             if attach_to_current_run
             else None
         )

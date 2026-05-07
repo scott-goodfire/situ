@@ -57,10 +57,10 @@ class TaskEntityLinksRepository(BaseRepository):
             ),
         )
         record = self.get(
-            command.task_id,
-            command.entity_kind,
-            command.entity_id,
-            command.relationship,
+            task_id=command.task_id,
+            entity_kind=command.entity_kind,
+            entity_id=command.entity_id,
+            relationship=command.relationship,
         )
         if record is None:
             raise RuntimeError(f"task entity link was not persisted: {command.task_id}")
@@ -68,6 +68,7 @@ class TaskEntityLinksRepository(BaseRepository):
 
     def get(
         self,
+        *,
         task_id: str,
         entity_kind: TaskEntityKind | str,
         entity_id: str,
@@ -91,7 +92,7 @@ class TaskEntityLinksRepository(BaseRepository):
             )
         ]
 
-    def list_for_task(self, task_id: str) -> list[TaskEntityLinkRecord]:
+    def list_for_task(self, *, task_id: str) -> list[TaskEntityLinkRecord]:
         return [
             _task_entity_link_row(row)
             for row in self.db.fetchall(
@@ -104,7 +105,7 @@ class TaskEntityLinksRepository(BaseRepository):
             )
         ]
 
-    def list_for_project(self, project_id: str) -> list[TaskEntityLinkRecord]:
+    def list_for_project(self, *, project_id: str) -> list[TaskEntityLinkRecord]:
         return [
             _task_entity_link_row(row)
             for row in self.db.fetchall(

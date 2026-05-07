@@ -76,15 +76,15 @@ class AnalysesRepository(BaseRepository):
                 now,
             ),
         )
-        record = self.get_by_id(command.analysis_id)
+        record = self.get_by_id(analysis_id=command.analysis_id)
         if record is None:
             raise RuntimeError(f"analysis was not persisted: {command.analysis_id}")
         return record
 
     def update(
         self,
-        analysis_id: str,
         *,
+        analysis_id: str,
         status: WorkStatus | str | None = None,
         title: str | None = None,
         summary: str | None = None,
@@ -103,7 +103,7 @@ class AnalysesRepository(BaseRepository):
             content=content,
             supersedes_analysis_id=supersedes_analysis_id,
         )
-        current = self.get_by_id(command.analysis_id)
+        current = self.get_by_id(analysis_id=command.analysis_id)
         if current is None:
             return None
 
@@ -132,14 +132,14 @@ class AnalysesRepository(BaseRepository):
                 command.analysis_id,
             ),
         )
-        return self.get_by_id(command.analysis_id)
+        return self.get_by_id(analysis_id=command.analysis_id)
 
-    def get_by_id(self, analysis_id: str) -> AnalysisRecord | None:
+    def get_by_id(self, *, analysis_id: str) -> AnalysisRecord | None:
         row = self.db.fetchone("SELECT * FROM analyses WHERE id = ?", (analysis_id,))
         return _analysis_row(row) if row else None
 
-    def get(self, analysis_id: str) -> AnalysisRecord | None:
-        return self.get_by_id(analysis_id)
+    def get(self, *, analysis_id: str) -> AnalysisRecord | None:
+        return self.get_by_id(analysis_id=analysis_id)
 
     def list_all(self) -> list[AnalysisRecord]:
         return [
@@ -147,7 +147,7 @@ class AnalysesRepository(BaseRepository):
             for row in self.db.fetchall("SELECT * FROM analyses ORDER BY created_at")
         ]
 
-    def list_for_project(self, project_id: str) -> list[AnalysisRecord]:
+    def list_for_project(self, *, project_id: str) -> list[AnalysisRecord]:
         return [
             _analysis_row(row)
             for row in self.db.fetchall(
@@ -160,7 +160,11 @@ class AnalysesRepository(BaseRepository):
             )
         ]
 
-    def list_for_session(self, session_id: str) -> list[AnalysisRecord]:
+    def list_for_session(self, *, session_id: str) -> list[AnalysisRecord]:
         session = self.db.fetchone("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
         project_id = session["project_id"] if session else None
-        return self.list_for_project(project_id) if project_id is not None else []
+        return (
+            self.list_for_project(project_id=project_id)
+            if project_id is not None
+            else []
+        )

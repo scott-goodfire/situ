@@ -68,6 +68,17 @@ The trade-off is more directories. Accepted.
 - Split broad `models.py`, `records.py`, `repositories.py`, `utils.py`,
   `helpers.py`, or `evaluators.py` files immediately when they cross concept
   boundaries.
+- In Python backend code, prefer keyword-only public function and method
+  parameters for application semantics. Use `*` in signatures for repository,
+  service, runtime, tool, and helper APIs once a call has more than a trivial
+  object identity or scalar value. Calls should read as
+  `get_task(task_id=task_id)`, `create_task(project_id=..., title=...)`, and
+  `record_event(event_type=..., message=...)`.
+- Positional arguments are acceptable only when the argument is genuinely
+  conventional and unambiguous: `self`, `cls`, single-value protocol hooks,
+  Python dunder methods, framework-required call signatures, tiny local
+  callbacks, or standard-library-like helpers where positional usage is the
+  idiom. Prefer clarity over terseness at module boundaries.
 
 ## Canonical layouts
 
@@ -324,6 +335,12 @@ projects/web/
   unrelated functions.
 - Imports reaching past `__init__.py` into a leaf file when the public
   re-export would suffice.
+- Public backend APIs that accept several positional business arguments when
+  keyword-only parameters would make call sites clearer and safer.
+- Call sites like `get_task(task_id)` or `create_task(project_id, title, body)`
+  in application code when `get_task(task_id=task_id)` or
+  `create_task(project_id=..., title=..., content=...)` would avoid argument
+  order ambiguity.
 - A multi-table current-state composition modeled as a repository when it
   should be an API service.
 - Frontend selectors scattered inside feature page folders
@@ -341,5 +358,7 @@ projects/web/
 - Does every concept have its own directory?
 - Is the leaf file named after its role, not after its directory?
 - Does `__init__.py` cleanly describe the public surface?
+- Are backend module-boundary calls explicit with kwargs rather than relying on
+  positional argument order?
 - Can a future contributor add a sibling concept by copying an existing
   directory's shape?

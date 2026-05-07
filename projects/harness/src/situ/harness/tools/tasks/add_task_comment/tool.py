@@ -26,7 +26,7 @@ class AddTaskCommentTool(BaseSituTool[SituToolDeps, AddTaskCommentResult]):
     ) -> AddTaskCommentResult:
         """Add a human-readable task activity comment."""
         repos = ctx.deps.get_repos()
-        task = repos.tasks.get(task_id)
+        task = repos.tasks.get(task_id=task_id)
         if task is None:
             raise ValueError(f"task not found: {task_id}")
         activity = repos.task_activities.add(

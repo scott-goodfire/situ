@@ -14,15 +14,15 @@ class CollectionsService(BaseModel):
     repos: Repositories
 
     def bootstrap(self, *, workspace_id: str | None = None) -> CollectionsBootstrapSchema:
-        workspace = self.repos.workspaces.get(workspace_id)
+        workspace = self.repos.workspaces.get(workspace_id=workspace_id)
         projects = (
-            self.repos.projects.list_for_workspace(workspace.id)
+            self.repos.projects.list_for_workspace(workspace_id=workspace.id)
             if workspace is not None
             else self.repos.projects.list_all()
         )
         project_ids = {project.id for project in projects}
         sessions = (
-            self.repos.sessions.list_for_workspace(workspace.id)
+            self.repos.sessions.list_for_workspace(workspace_id=workspace.id)
             if workspace is not None
             else self.repos.sessions.list_all()
         )

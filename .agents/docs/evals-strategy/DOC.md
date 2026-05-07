@@ -53,6 +53,8 @@ Follow Pydantic Evals and Logfire defaults where they fit:
   per-run send-mode override.
 - Load only eval secrets from user environment: `SITU_OPENAI_KEY` for the
   model call and `SITU_LOGFIRE_TOKEN` for Logfire export.
+- Do not fall back to the local Situ secret store for eval credentials; saved
+  local runtime secrets are intentionally separate from eval launch secrets.
 - Keep model names, service names, environments, retry defaults, and timeouts
   in typed code config unless they become real product settings.
 - Use `Dataset.evaluate_sync` for the local synchronous runner.

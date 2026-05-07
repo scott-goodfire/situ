@@ -58,5 +58,5 @@ def _next_analysis_id(
     repos: Any,
     project_id: str,
 ) -> str:
-    count = len(repos.analyses.list_for_project(project_id)) + 1
+    count = len(repos.analyses.list_for_project(project_id=project_id)) + 1
     return f"analysis_{project_id}_agent_{count:03d}"

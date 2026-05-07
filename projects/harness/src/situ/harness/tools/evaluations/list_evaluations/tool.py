@@ -31,13 +31,13 @@ class ListEvaluationsTool(BaseSituTool[SituToolDeps, ListEvaluationsResult]):
         )
         repos = ctx.deps.get_repos()
         if baseline_id is not None:
-            evaluations = repos.evaluations.list_for_baseline(baseline_id)
+            evaluations = repos.evaluations.list_for_baseline(baseline_id=baseline_id)
         elif experiment_id is not None:
-            evaluations = repos.evaluations.list_for_experiment(experiment_id)
+            evaluations = repos.evaluations.list_for_experiment(experiment_id=experiment_id)
         else:
             resolved_project_id = project_id or ctx.deps.current_project_id()
             evaluations = (
-                repos.evaluations.list_for_project(resolved_project_id)
+                repos.evaluations.list_for_project(project_id=resolved_project_id)
                 if resolved_project_id is not None
                 else []
             )

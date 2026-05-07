@@ -102,7 +102,7 @@ def repos(tmp_path: Path) -> Repositories:
         ),
     )
     repositories.sessions.create(
-        "session_0001",
+        session_id="session_0001",
         workspace_id=workspace.id,
         project_id=project.id,
     )
@@ -290,7 +290,7 @@ def test_create_project_tool_creates_and_attaches_project(repos: Repositories) -
     )
     fresh = Repositories.create(db)
     workspace = fresh.workspaces.ensure()
-    fresh.sessions.create("session_fresh", workspace_id=workspace.id)
+    fresh.sessions.create(session_id="session_fresh", workspace_id=workspace.id)
     deps = SituToolDeps(session_id="session_fresh", repos=fresh)
 
     created = invoke_situ_tool_sync(
@@ -358,7 +358,7 @@ def test_project_close_requires_request_and_confirmation(
     assert direct_close.error is not None
     assert direct_close.error.code == "project_close_requires_confirmation"
     assert "request_project_close" in direct_close.error.message
-    assert repos.projects.get("project_0001").status == "active"
+    assert repos.projects.get(project_id="project_0001").status == "active"
 
     request = invoke_situ_tool_sync(
         tool=RequestProjectCloseTool(),
@@ -370,7 +370,7 @@ def test_project_close_requires_request_and_confirmation(
     assert request.success is True
     assert request.confirmation_required is True
     assert request.confirmation_code is not None
-    assert repos.projects.get("project_0001").status == "active"
+    assert repos.projects.get(project_id="project_0001").status == "active"
 
     bad_confirm = invoke_situ_tool_sync(
         tool=ConfirmProjectCloseTool(),
@@ -395,7 +395,7 @@ def test_project_close_requires_request_and_confirmation(
         "project.close_confirmation_required",
         "project.closed",
     ]
-    activities = repos.task_activities.list_for_task(plan.id)
+    activities = repos.task_activities.list_for_task(task_id=plan.id)
     assert [activity.payload["activity_type"] for activity in activities] == [
         "project_close_requested",
         "project_close_confirmed",
@@ -681,7 +681,7 @@ def test_evaluation_tools_create_update_list_and_add_results(
         deps=deps,
         evaluation_id="eval_project_0001_agent_001",
     )
-    measurements = repos.measurements.list_for_evaluation("eval_project_0001_agent_001")
+    measurements = repos.measurements.list_for_evaluation(evaluation_id="eval_project_0001_agent_001")
 
     assert listed.success is True
     assert [evaluation["id"] for evaluation in listed.evaluations] == [
@@ -1033,7 +1033,7 @@ def test_run_experiment_tool_executes_worker_and_records_activity(
     assert result.result is not None
     assert result.result["status"] == "completed"
     assert result.concerns == []
-    activities = repos.experiment_activities.list_for_experiment(result.experiment["id"])
+    activities = repos.experiment_activities.list_for_experiment(experiment_id=result.experiment["id"])
     assert [activity.payload.get("activity_type") for activity in activities] == [
         "plan",
         "result",
@@ -1045,7 +1045,7 @@ def test_create_experiment_tool_reuses_active_experiment_context(
     repos: Repositories,
 ) -> None:
     existing = repos.experiments.update(
-        "exp_session_0001_a",
+        experiment_id="exp_session_0001_a",
         status="active",
         worktree_path="/tmp/situ-worktree",
         base_commit="abc123",
@@ -1071,7 +1071,7 @@ def test_create_experiment_tool_reuses_active_experiment_context(
     assert result.experiment["id"] == existing.id
     assert result.experiment["status"] == "active"
     assert result.experiment["worktree_path"] == "/tmp/situ-worktree"
-    assert len(repos.experiments.list_for_project("project_0001")) == 1
+    assert len(repos.experiments.list_for_project(project_id="project_0001")) == 1
     assert "experiment.updated" in [event["type"] for event in emitted]
 
 

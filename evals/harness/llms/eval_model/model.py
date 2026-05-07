@@ -9,6 +9,4 @@ def eval_model_name() -> str:
 
 
 def ensure_eval_model_credentials() -> None:
-    secrets = SituSecrets()
-    secrets.require_openai_key()
-    secrets.apply_sdk_environment()
+    SituSecrets().require_eval_environment()

@@ -63,5 +63,5 @@ def _next_artifact_id(
     repos: Any,
     project_id: str,
 ) -> str:
-    count = len(repos.artifacts.list_for_project(project_id)) + 1
+    count = len(repos.artifacts.list_for_project(project_id=project_id)) + 1
     return f"artifact_{project_id}_{count:03d}"

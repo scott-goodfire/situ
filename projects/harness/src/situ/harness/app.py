@@ -157,7 +157,7 @@ class HarnessApp:
     def secrets_set_openai_key(self, params: dict[str, Any]) -> dict[str, Any]:
         secret = SecretsSetOpenAIKeyParams.model_validate(params)
         LocalSecretStore(home=self.context.home).set_openai_key(secret.openai_key)
-        SituSecrets().apply_sdk_environment(home=self.context.home)
+        SituSecrets().apply_local_sdk_environment(home=self.context.home)
         return SecretsSetOpenAIKeyResult().model_dump()
 
     def collections_bootstrap(self, params: dict[str, Any]) -> dict[str, Any]:
@@ -185,13 +185,13 @@ class HarnessApp:
             project_ids = {
                 project.id
                 for project in self.repos.projects.list_for_workspace(
-                    self.context.workspace_id
+                    workspace_id=self.context.workspace_id
                 )
             }
             session_ids = {
                 session.id
                 for session in self.repos.sessions.list_for_workspace(
-                    self.context.workspace_id
+                    workspace_id=self.context.workspace_id
                 )
             }
             for event in self.repos.events.list_all():
@@ -219,7 +219,7 @@ class HarnessApp:
         project = self._project_from_start(start, workspace_id=workspace.id)
 
         session = self.repos.sessions.create(
-            session_id,
+            session_id=session_id,
             workspace_id=workspace.id,
             project_id=project.id,
         )
@@ -264,11 +264,11 @@ class HarnessApp:
 
     def session_resume(self, params: dict[str, Any]) -> dict[str, Any]:
         resume = SessionResumeParams.model_validate(params)
-        session = self.repos.sessions.get(resume.session_id)
+        session = self.repos.sessions.get(session_id=resume.session_id)
         if session is None:
             raise RuntimeError(f"session not found: {resume.session_id}")
 
-        session = self.repos.sessions.update_status(resume.session_id, "active") or session
+        session = self.repos.sessions.update_status(session_id=resume.session_id, status="active") or session
         event = self.record_event(
             "session.resumed",
             f"Resumed {resume.session_id}",
@@ -307,7 +307,7 @@ class HarnessApp:
 
     def session_status(self, params: dict[str, Any]) -> dict[str, Any]:
         status = SessionStatusParams.model_validate(params)
-        session = self.repos.sessions.get(status.session_id)
+        session = self.repos.sessions.get(session_id=status.session_id)
         return SessionStatusResult(
             session=session.model_dump() if session is not None else None
         ).model_dump()
@@ -353,7 +353,7 @@ class HarnessApp:
     ) -> ProjectRecord:
         requested_project_id = getattr(start, "project_id", None)
         if requested_project_id:
-            project = self.repos.projects.get(requested_project_id)
+            project = self.repos.projects.get(project_id=requested_project_id)
             if project is None:
                 raise RuntimeError(f"project not found: {requested_project_id}")
             if project.workspace_id != workspace_id:
@@ -374,7 +374,7 @@ class HarnessApp:
             or "Untitled project"
         )
         return self.repos.projects.create(
-            project_id=self.repos.projects.next_id(workspace_id),
+            project_id=self.repos.projects.next_id(workspace_id=workspace_id),
             workspace_id=workspace_id,
             title=title,
             objective=objective,
@@ -388,7 +388,7 @@ class HarnessApp:
             (AgentKind.SCIENTIST, "Scientist"),
             (AgentKind.CRITIC, "Critic"),
         ):
-            existing = self.repos.agents.get_for_project_kind(project_id, kind)
+            existing = self.repos.agents.get_for_project_kind(project_id=project_id, kind=kind)
             agent = self.repos.agents.ensure_project_agent(
                 project_id=project_id,
                 created_in_session_id=session_id,
@@ -416,7 +416,7 @@ class HarnessApp:
         source_kind: str,
     ) -> None:
         task = self.repos.tasks.create(
-            task_id=self.repos.tasks.next_id(project_id),
+            task_id=self.repos.tasks.next_id(project_id=project_id),
             project_id=project_id,
             created_in_session_id=session_id,
             title=title,
@@ -449,13 +449,13 @@ class HarnessApp:
         if existing_review_task is not None:
             return existing_review_task
 
-        experiment = self.repos.experiments.get(experiment_id)
-        evaluations = self.repos.evaluations.list_for_experiment(experiment_id)
+        experiment = self.repos.experiments.get(experiment_id=experiment_id)
+        evaluations = self.repos.evaluations.list_for_experiment(experiment_id=experiment_id)
         measurements = [
             measurement
             for evaluation in evaluations
             for measurement in self.repos.measurements.list_for_evaluation(
-                evaluation.id
+                evaluation_id=evaluation.id
             )
         ]
         title = (
@@ -464,7 +464,7 @@ class HarnessApp:
             else f"Review {experiment_id}"
         )
         task = self.repos.tasks.create(
-            task_id=self.repos.tasks.next_id(project_id),
+            task_id=self.repos.tasks.next_id(project_id=project_id),
             project_id=project_id,
             created_in_session_id=session_id,
             title=title,
@@ -539,7 +539,7 @@ class HarnessApp:
         project_id: str,
         experiment_id: str,
     ) -> TaskRecord | None:
-        for task in self.repos.tasks.list_for_project(project_id):
+        for task in self.repos.tasks.list_for_project(project_id=project_id):
             if (
                 task.kind == TaskKind.REVIEW
                 and task.payload.get("experiment_id") == experiment_id
@@ -553,7 +553,7 @@ class HarnessApp:
         session_id: str,
         agent_kind: AgentKind,
     ) -> TaskRecord | None:
-        session = self.repos.sessions.get(session_id)
+        session = self.repos.sessions.get(session_id=session_id)
         if session is None or session.project_id is None:
             return None
         agent = self.repos.agents.ensure_project_agent(
@@ -570,7 +570,7 @@ class HarnessApp:
         )
         if task is None:
             return None
-        updated_agent = self.repos.agents.update(agent.id, status=AgentStatus.ACTIVE) or agent
+        updated_agent = self.repos.agents.update(agent_id=agent.id, status=AgentStatus.ACTIVE) or agent
         event = self.record_event(
             "task.claimed",
             f"Claimed task {task.id}",
@@ -590,12 +590,12 @@ class HarnessApp:
         status: TaskStatus,
         result_summary: str,
     ) -> None:
-        current = self.repos.tasks.get(task.id) or task
+        current = self.repos.tasks.get(task_id=task.id) or task
         terminal_statuses = {TaskStatus.DONE, TaskStatus.ABANDONED, TaskStatus.FAILED}
         if current.status in terminal_statuses:
             if current.assignee_id is not None:
                 updated_agent = self.repos.agents.update(
-                    current.assignee_id,
+                    agent_id=current.assignee_id,
                     status=AgentStatus.IDLE,
                 )
                 if updated_agent is not None:
@@ -607,7 +607,7 @@ class HarnessApp:
                     )
             return
         updated_task = self.repos.tasks.update(
-            task.id,
+            task_id=task.id,
             status=status,
             result_summary=current.result_summary or result_summary,
             completed_in_session_id=session_id,
@@ -615,7 +615,7 @@ class HarnessApp:
         if updated_task is None:
             return
         updated_agent = (
-            self.repos.agents.update(updated_task.assignee_id, status=AgentStatus.IDLE)
+            self.repos.agents.update(agent_id=updated_task.assignee_id, status=AgentStatus.IDLE)
             if updated_task.assignee_id is not None
             else None
         )
@@ -637,7 +637,7 @@ class HarnessApp:
         active_task: TaskRecord | None = None
         try:
             workspace = self.repos.workspaces.get()
-            session = self.repos.sessions.get(session_id)
+            session = self.repos.sessions.get(session_id=session_id)
             if workspace is None or session is None:
                 raise RuntimeError("missing workspace setup")
 
@@ -659,7 +659,7 @@ class HarnessApp:
                 workspace=workspace.repo_path,
             ):
                 while True:
-                    session = self.repos.sessions.get(session_id)
+                    session = self.repos.sessions.get(session_id=session_id)
                     if session is None or session.status == SessionStatus.CLOSED:
                         return
                     if (
@@ -958,9 +958,9 @@ class HarnessApp:
         workspace_repo_path: str,
     ) -> PreparedExperimentTask:
         experiment_id = _experiment_id_from_task(task) or self.repos.experiments.next_id(
-            task.project_id
+            project_id=task.project_id
         )
-        existing = self.repos.experiments.get(experiment_id)
+        existing = self.repos.experiments.get(experiment_id=experiment_id)
         worktree = WorktreeManager(
             workspace_path=Path(workspace_repo_path),
             worktrees_dir=self.context.project_dir / "worktrees" / task.project_id,
@@ -992,7 +992,7 @@ class HarnessApp:
         else:
             experiment = (
                 self.repos.experiments.update(
-                    experiment_id,
+                    experiment_id=experiment_id,
                     status=WorkStatus.ACTIVE,
                     worktree_path=str(worktree.workspace_path),
                     base_commit=worktree.base_commit,
@@ -1009,7 +1009,7 @@ class HarnessApp:
         )
         updated_task = (
             self.repos.tasks.update(
-                task.id,
+                task_id=task.id,
                 payload={
                     **task.payload,
                     "experiment_id": experiment.id,
@@ -1048,7 +1048,7 @@ class HarnessApp:
         session_id: str,
         workspace_repo_path: str,
     ) -> None:
-        experiment = self.repos.experiments.get(experiment_id)
+        experiment = self.repos.experiments.get(experiment_id=experiment_id)
         if experiment is None:
             return
 
@@ -1077,7 +1077,7 @@ class HarnessApp:
             },
         )
         closed = self.repos.experiments.update(
-            experiment.id,
+            experiment_id=experiment.id,
             status=WorkStatus.CLOSED,
         ) or experiment
         event = self.record_event(
@@ -1095,10 +1095,10 @@ class HarnessApp:
         self.publish_record(closed, cursor=event.id)
 
     def _experiment_count(self, session_id: str) -> int:
-        return len(self.repos.experiments.list_for_session(session_id))
+        return len(self.repos.experiments.list_for_session(session_id=session_id))
 
     def _project_is_closed(self, project_id: str) -> bool:
-        project = self.repos.projects.get(project_id)
+        project = self.repos.projects.get(project_id=project_id)
         return project is not None and project.status == ProjectStatus.CLOSED
 
     def _close_session(
@@ -1109,7 +1109,7 @@ class HarnessApp:
         message: str,
         payload: dict[str, Any] | None = None,
     ) -> None:
-        session = self.repos.sessions.update_status(session_id, "closed")
+        session = self.repos.sessions.update_status(session_id=session_id, status="closed")
         event = self.record_event(
             event_type,
             message,
@@ -1121,9 +1121,9 @@ class HarnessApp:
             self.publish_record(session, cursor=event.id)
 
     def _setup_from_records(self, session_id: str) -> dict[str, str]:
-        session = self.repos.sessions.get(session_id)
+        session = self.repos.sessions.get(session_id=session_id)
         project = (
-            self.repos.projects.get(session.project_id)
+            self.repos.projects.get(project_id=session.project_id)
             if session is not None and session.project_id is not None
             else None
         )

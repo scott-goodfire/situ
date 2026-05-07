@@ -42,7 +42,7 @@ class UpdateProjectTool(BaseSituTool[SituToolDeps, UpdateProjectResult]):
                 ),
             )
         project = repos.projects.update(
-            resolved_project_id,
+            project_id=resolved_project_id,
             title=title,
             objective=objective,
             research_context=research_context,

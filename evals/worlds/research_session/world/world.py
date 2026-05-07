@@ -80,7 +80,9 @@ class ResearchSessionWorld:
         return record.model_dump()
 
     def project_board(self) -> dict[str, Any]:
-        graph = ProjectBoardService(repos=self.repos).get_project_board(SESSION_ID)
+        graph = ProjectBoardService(repos=self.repos).get_project_board(
+            session_id=SESSION_ID
+        )
         return {
             "workspace": graph.workspace.model_dump() if graph.workspace is not None else None,
             "project": graph.project.model_dump() if graph.project is not None else None,
@@ -145,7 +147,7 @@ def _build_repos(
             research_context=RESEARCH_CONTEXT_BODY,
         )
         project_id = project.id
-    repos.sessions.create(SESSION_ID, workspace_id=workspace.id, project_id=project_id)
+    repos.sessions.create(session_id=SESSION_ID, workspace_id=workspace.id, project_id=project_id)
     if project_id is not None:
         repos.agents.ensure_session_agent(
             session_id=SESSION_ID,

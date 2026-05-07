@@ -53,7 +53,7 @@ class SetupCompleteResult(BaseModel):
     workspace: WorkspaceRecord
 
 
-OpenAIKeySource = Literal["environment", "local", "missing"]
+OpenAIKeySource = Literal["local", "missing"]
 
 
 class SecretsStatusParams(BaseModel):

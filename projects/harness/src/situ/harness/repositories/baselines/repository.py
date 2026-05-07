@@ -60,15 +60,15 @@ class BaselinesRepository(BaseRepository):
                 now,
             ),
         )
-        record = self.get_by_id(command.baseline_id)
+        record = self.get_by_id(baseline_id=command.baseline_id)
         if record is None:
             raise RuntimeError(f"baseline was not persisted: {command.baseline_id}")
         return record
 
     def update(
         self,
-        baseline_id: str,
         *,
+        baseline_id: str,
         title: str | None = None,
         summary: str | None = None,
         status: WorkStatus | str | None = None,
@@ -84,7 +84,7 @@ class BaselinesRepository(BaseRepository):
             summary=summary,
             status=checked_status,
         )
-        current = self.get_by_id(command.baseline_id)
+        current = self.get_by_id(baseline_id=command.baseline_id)
         if current is None:
             return None
 
@@ -102,14 +102,14 @@ class BaselinesRepository(BaseRepository):
                 command.baseline_id,
             ),
         )
-        return self.get_by_id(command.baseline_id)
+        return self.get_by_id(baseline_id=command.baseline_id)
 
-    def get_by_id(self, baseline_id: str) -> BaselineRecord | None:
+    def get_by_id(self, *, baseline_id: str) -> BaselineRecord | None:
         row = self.db.fetchone("SELECT * FROM baselines WHERE id = ?", (baseline_id,))
         return _baseline_row(row) if row else None
 
-    def get(self, baseline_id: str) -> BaselineRecord | None:
-        return self.get_by_id(baseline_id)
+    def get(self, *, baseline_id: str) -> BaselineRecord | None:
+        return self.get_by_id(baseline_id=baseline_id)
 
     def list_all(self) -> list[BaselineRecord]:
         return [
@@ -117,7 +117,7 @@ class BaselinesRepository(BaseRepository):
             for row in self.db.fetchall("SELECT * FROM baselines ORDER BY created_at")
         ]
 
-    def list_for_project(self, project_id: str) -> list[BaselineRecord]:
+    def list_for_project(self, *, project_id: str) -> list[BaselineRecord]:
         return [
             _baseline_row(row)
             for row in self.db.fetchall(
@@ -126,7 +126,11 @@ class BaselinesRepository(BaseRepository):
             )
         ]
 
-    def list_for_session(self, session_id: str) -> list[BaselineRecord]:
+    def list_for_session(self, *, session_id: str) -> list[BaselineRecord]:
         session = self.db.fetchone("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
         project_id = session["project_id"] if session else None
-        return self.list_for_project(project_id) if project_id is not None else []
+        return (
+            self.list_for_project(project_id=project_id)
+            if project_id is not None
+            else []
+        )

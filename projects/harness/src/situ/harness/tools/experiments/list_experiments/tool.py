@@ -30,7 +30,7 @@ class ListExperimentsTool(BaseSituTool[SituToolDeps, ListExperimentsResult]):
         repos = ctx.deps.get_repos()
         resolved_project_id = project_id or ctx.deps.current_project_id()
         experiments = (
-            repos.experiments.list_for_project(resolved_project_id)
+            repos.experiments.list_for_project(project_id=resolved_project_id)
             if resolved_project_id is not None
             else []
         )

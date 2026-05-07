@@ -52,6 +52,10 @@ to call a generic activity writer to record benchmark evidence.
 - Tool arguments and returns should be typed Pydantic models or concrete
   Pydantic-compatible primitives. Avoid unstructured catch-all payloads unless
   the domain object itself has a payload field.
+- Agent-facing examples and prompts should show explicit keyword arguments for
+  record reads and mutations: `get_task(task_id=task_id)`, not
+  `get_task(task_id)`. This mirrors the Python backend's keyword-only API
+  style and keeps IDs self-describing in traces.
 - Prefer model-shaped tool names:
   `get_project_board`, `get_project`, `get_task`, `list_hypotheses`,
   `create_experiment`, `link_hypothesis_experiment`.

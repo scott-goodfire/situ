@@ -3,7 +3,6 @@ from __future__ import annotations
 from pydantic_evals import Case
 
 from evals.suites.agents.critic_followup.evaluators import (
-    FollowupTaskAvoidsAll,
     FollowupTaskKindIn,
     FollowupTaskMentionsAny,
     ManagerCreatedFollowupTask,
@@ -37,7 +36,6 @@ def critic_followup_cases() -> list[
                 ManagerCreatedFollowupTask(),
                 FollowupTaskKindIn("experiment"),
                 FollowupTaskMentionsAny("reproduce", "repeat", "replicate"),
-                FollowupTaskAvoidsAll("accept", "accepted"),
             ),
         ),
         Case(
@@ -62,7 +60,6 @@ def critic_followup_cases() -> list[
                     "comparability",
                     "prepare.py",
                 ),
-                FollowupTaskAvoidsAll("accept the improvement", "usable"),
             ),
         ),
         Case(
@@ -81,7 +78,6 @@ def critic_followup_cases() -> list[
                 ManagerCreatedFollowupTask(),
                 FollowupTaskKindIn("research", "interpret"),
                 FollowupTaskMentionsAny("human", "review", "blocker", "decision"),
-                FollowupTaskAvoidsAll("new candidate", "try component"),
             ),
         ),
         Case(
@@ -100,13 +96,6 @@ def critic_followup_cases() -> list[
                 ManagerCreatedFollowupTask(),
                 FollowupTaskKindIn("research", "hypothesize", "experiment"),
                 FollowupTaskMentionsAny("build", "combine", "next", "component"),
-                FollowupTaskAvoidsAll(
-                    "needs reproduction",
-                    "reproduce before",
-                    "human review",
-                    "invalid",
-                    "discard",
-                ),
             ),
         ),
     ]

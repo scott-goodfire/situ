@@ -57,5 +57,5 @@ def _next_hypothesis_id(
     repos: Any,
     project_id: str,
 ) -> str:
-    count = len(repos.hypotheses.list_for_project(project_id)) + 1
+    count = len(repos.hypotheses.list_for_project(project_id=project_id)) + 1
     return f"hyp_{project_id}_agent_{count:03d}"

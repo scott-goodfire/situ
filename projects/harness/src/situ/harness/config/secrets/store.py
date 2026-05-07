@@ -7,6 +7,7 @@ from typing import Any
 
 from ..defaults import DEFAULTS
 
+LOGFIRE_TOKEN_NAME = "logfire_token"
 OPENAI_KEY_NAME = "openai_key"
 
 
@@ -16,18 +17,30 @@ class LocalSecretStore:
         self.path = self.home / "secrets.json"
 
     def get_openai_key(self) -> str | None:
-        value = self._read().get(OPENAI_KEY_NAME)
+        return self._get_secret(OPENAI_KEY_NAME)
+
+    def set_openai_key(self, value: str) -> None:
+        self._set_secret(OPENAI_KEY_NAME, value, label="OpenAI key")
+
+    def get_logfire_token(self) -> str | None:
+        return self._get_secret(LOGFIRE_TOKEN_NAME)
+
+    def set_logfire_token(self, value: str) -> None:
+        self._set_secret(LOGFIRE_TOKEN_NAME, value, label="Logfire token")
+
+    def _get_secret(self, name: str) -> str | None:
+        value = self._read().get(name)
         if not isinstance(value, str):
             return None
         stripped = value.strip()
         return stripped or None
 
-    def set_openai_key(self, value: str) -> None:
+    def _set_secret(self, name: str, value: str, *, label: str) -> None:
         stripped = value.strip()
         if not stripped:
-            raise ValueError("OpenAI key cannot be empty.")
+            raise ValueError(f"{label} cannot be empty.")
         secrets = self._read()
-        secrets[OPENAI_KEY_NAME] = stripped
+        secrets[name] = stripped
         self._write(secrets)
 
     def _read(self) -> dict[str, Any]:

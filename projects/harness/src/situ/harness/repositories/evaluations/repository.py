@@ -68,15 +68,15 @@ class EvaluationsRepository(BaseRepository):
                 now,
             ),
         )
-        record = self.get_by_id(command.evaluation_id)
+        record = self.get_by_id(evaluation_id=command.evaluation_id)
         if record is None:
             raise RuntimeError(f"evaluation was not persisted: {command.evaluation_id}")
         return record
 
     def update(
         self,
-        evaluation_id: str,
         *,
+        evaluation_id: str,
         title: str | None = None,
         summary: str | None = None,
         status: WorkStatus | str | None = None,
@@ -96,7 +96,7 @@ class EvaluationsRepository(BaseRepository):
             associated_baseline_id=associated_baseline_id,
             associated_experiment_id=associated_experiment_id,
         )
-        current = self.get_by_id(command.evaluation_id)
+        current = self.get_by_id(evaluation_id=command.evaluation_id)
         if current is None:
             return None
         next_associated_baseline_id = current.associated_baseline_id
@@ -129,14 +129,14 @@ class EvaluationsRepository(BaseRepository):
                 command.evaluation_id,
             ),
         )
-        return self.get_by_id(command.evaluation_id)
+        return self.get_by_id(evaluation_id=command.evaluation_id)
 
-    def get_by_id(self, evaluation_id: str) -> EvaluationRecord | None:
+    def get_by_id(self, *, evaluation_id: str) -> EvaluationRecord | None:
         row = self.db.fetchone("SELECT * FROM evaluations WHERE id = ?", (evaluation_id,))
         return _evaluation_row(row) if row else None
 
-    def get(self, evaluation_id: str) -> EvaluationRecord | None:
-        return self.get_by_id(evaluation_id)
+    def get(self, *, evaluation_id: str) -> EvaluationRecord | None:
+        return self.get_by_id(evaluation_id=evaluation_id)
 
     def list_all(self) -> list[EvaluationRecord]:
         return [
@@ -144,7 +144,7 @@ class EvaluationsRepository(BaseRepository):
             for row in self.db.fetchall("SELECT * FROM evaluations ORDER BY created_at")
         ]
 
-    def list_for_project(self, project_id: str) -> list[EvaluationRecord]:
+    def list_for_project(self, *, project_id: str) -> list[EvaluationRecord]:
         return [
             _evaluation_row(row)
             for row in self.db.fetchall(
@@ -157,12 +157,16 @@ class EvaluationsRepository(BaseRepository):
             )
         ]
 
-    def list_for_session(self, session_id: str) -> list[EvaluationRecord]:
+    def list_for_session(self, *, session_id: str) -> list[EvaluationRecord]:
         session = self.db.fetchone("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
         project_id = session["project_id"] if session else None
-        return self.list_for_project(project_id) if project_id is not None else []
+        return (
+            self.list_for_project(project_id=project_id)
+            if project_id is not None
+            else []
+        )
 
-    def list_for_experiment(self, experiment_id: str) -> list[EvaluationRecord]:
+    def list_for_experiment(self, *, experiment_id: str) -> list[EvaluationRecord]:
         return [
             _evaluation_row(row)
             for row in self.db.fetchall(
@@ -175,7 +179,7 @@ class EvaluationsRepository(BaseRepository):
             )
         ]
 
-    def list_for_baseline(self, baseline_id: str) -> list[EvaluationRecord]:
+    def list_for_baseline(self, *, baseline_id: str) -> list[EvaluationRecord]:
         return [
             _evaluation_row(row)
             for row in self.db.fetchall(

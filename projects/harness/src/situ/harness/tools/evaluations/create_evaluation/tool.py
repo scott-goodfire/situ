@@ -62,5 +62,5 @@ def _next_evaluation_id(
     repos: Any,
     project_id: str,
 ) -> str:
-    count = len(repos.evaluations.list_for_project(project_id)) + 1
+    count = len(repos.evaluations.list_for_project(project_id=project_id)) + 1
     return f"eval_{project_id}_agent_{count:03d}"

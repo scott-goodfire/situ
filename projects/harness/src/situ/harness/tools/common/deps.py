@@ -80,7 +80,7 @@ class SituToolDeps(BaseModel):
         return WorkerManager(Path(self.repo_path), app_root=self.app_root)
 
     def require_project_id(self) -> str:
-        session = self.get_repos().sessions.get(self.session_id)
+        session = self.get_repos().sessions.get(session_id=self.session_id)
         if session is None:
             raise ValueError(f"session not found: {self.session_id}")
         if session.project_id is None:
@@ -92,7 +92,7 @@ class SituToolDeps(BaseModel):
     def current_project_id(self) -> str | None:
         if self.project_id is not None:
             return self.project_id
-        session = self.get_repos().sessions.get(self.session_id)
+        session = self.get_repos().sessions.get(session_id=self.session_id)
         return session.project_id if session is not None else None
 
     def record_event(

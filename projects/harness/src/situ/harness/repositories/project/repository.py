@@ -59,21 +59,21 @@ class ProjectRepository(BaseRepository):
                 now,
             ),
         )
-        record = self.get(command.project_id)
+        record = self.get(project_id=command.project_id)
         if record is None:
             raise RuntimeError(f"project was not persisted: {command.project_id}")
         return record
 
     def update(
         self,
-        project_id: str,
         *,
+        project_id: str,
         title: str | None = None,
         objective: str | None = None,
         research_context: str | None = None,
         status: ProjectStatus | str | None = None,
     ) -> ProjectRecord | None:
-        current = self.get(project_id)
+        current = self.get(project_id=project_id)
         if current is None:
             return None
         command = UpdateProject(
@@ -107,9 +107,9 @@ class ProjectRepository(BaseRepository):
                 command.project_id,
             ),
         )
-        return self.get(command.project_id)
+        return self.get(project_id=command.project_id)
 
-    def get(self, project_id: str) -> ProjectRecord | None:
+    def get(self, *, project_id: str) -> ProjectRecord | None:
         row = self.db.fetchone("SELECT * FROM projects WHERE id = ?", (project_id,))
         return _project_row(row) if row else None
 
@@ -119,7 +119,7 @@ class ProjectRepository(BaseRepository):
             for row in self.db.fetchall("SELECT * FROM projects ORDER BY created_at")
         ]
 
-    def list_for_workspace(self, workspace_id: str) -> list[ProjectRecord]:
+    def list_for_workspace(self, *, workspace_id: str) -> list[ProjectRecord]:
         return [
             _project_row(row)
             for row in self.db.fetchall(
@@ -128,6 +128,6 @@ class ProjectRepository(BaseRepository):
             )
         ]
 
-    def next_id(self, workspace_id: str) -> str:
-        count = len(self.list_for_workspace(workspace_id)) + 1
+    def next_id(self, *, workspace_id: str) -> str:
+        count = len(self.list_for_workspace(workspace_id=workspace_id)) + 1
         return f"project_{workspace_id}_{count:03d}"
