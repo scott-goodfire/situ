@@ -34,6 +34,7 @@ import type {
   SecretsStatusParams,
   SecretsStatusResult,
   TaskActivityRecord,
+  TaskEntityLinkRecord,
   TaskRecord,
 } from "@situ/protocol";
 import { useLiveQuery } from "@tanstack/react-db";
@@ -119,6 +120,13 @@ export function SituTui() {
   );
   const tasksQuery = useLiveQuery(
     (query) => query.from({ task: collections.tasks }).select(({ task }) => task),
+    [collections],
+  );
+  const taskEntityLinksQuery = useLiveQuery(
+    (query) =>
+      query
+        .from({ link: collections.taskEntityLinks })
+        .select(({ link }) => link),
     [collections],
   );
   const taskActivitiesQuery = useLiveQuery(
@@ -211,6 +219,13 @@ export function SituTui() {
   const tasks = useMemo(
     () => sortByCreated({ records: (tasksQuery.data ?? []) as TaskRecord[] }),
     [tasksQuery.data],
+  );
+  const taskEntityLinks = useMemo(
+    () =>
+      sortByCreated({
+        records: (taskEntityLinksQuery.data ?? []) as TaskEntityLinkRecord[],
+      }),
+    [taskEntityLinksQuery.data],
   );
   const taskActivities = useMemo(
     () =>
@@ -379,6 +394,10 @@ export function SituTui() {
   });
   const projectTaskActivities = taskActivitiesForProject({
     activities: taskActivities,
+    projectId: activeProjectId,
+  });
+  const projectTaskEntityLinks = taskEntityLinksForProject({
+    links: taskEntityLinks,
     projectId: activeProjectId,
   });
   const projectExperiments = experimentsForProject({
@@ -603,6 +622,7 @@ export function SituTui() {
       hypotheses={projectHypotheses}
       experiments={projectExperiments}
       evaluations={projectEvaluations}
+      taskEntityLinks={projectTaskEntityLinks}
       taskActivities={projectTaskActivities}
       hypothesisActivities={projectHypothesisActivities}
       experimentActivities={projectExperimentActivities}
@@ -1085,6 +1105,23 @@ function taskActivitiesForProject({
   return lodash.filter(
     activities,
     (activity: TaskActivityRecord) => activity.project_id === projectId,
+  );
+}
+
+function taskEntityLinksForProject({
+  links,
+  projectId,
+}: {
+  links: TaskEntityLinkRecord[];
+  projectId: string | undefined;
+}): TaskEntityLinkRecord[] {
+  if (!projectId) {
+    return [];
+  }
+
+  return lodash.filter(
+    links,
+    (link: TaskEntityLinkRecord) => link.project_id === projectId,
   );
 }
 

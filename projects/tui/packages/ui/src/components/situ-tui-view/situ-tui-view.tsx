@@ -9,6 +9,7 @@ import type {
   ProjectRecord,
   SessionRecord,
   TaskActivityRecord,
+  TaskEntityLinkRecord,
   TaskRecord,
 } from "@situ/protocol";
 import {
@@ -32,6 +33,7 @@ export function SituTuiView({
   hypotheses,
   experiments,
   evaluations,
+  taskEntityLinks = [],
   taskActivities,
   hypothesisActivities,
   experimentActivities,
@@ -51,6 +53,7 @@ export function SituTuiView({
   hypotheses: HypothesisRecord[];
   experiments: ExperimentRecord[];
   evaluations: EvaluationRecord[];
+  taskEntityLinks?: TaskEntityLinkRecord[];
   taskActivities: TaskActivityRecord[];
   hypothesisActivities: HypothesisActivityRecord[];
   experimentActivities: ExperimentActivityRecord[];
@@ -72,6 +75,7 @@ export function SituTuiView({
       hypotheses={hypotheses}
       experiments={experiments}
       evaluations={evaluations}
+      taskEntityLinks={taskEntityLinks}
       taskActivities={taskActivities}
       hypothesisActivities={hypothesisActivities}
       experimentActivities={experimentActivities}

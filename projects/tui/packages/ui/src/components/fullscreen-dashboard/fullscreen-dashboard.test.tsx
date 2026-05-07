@@ -1,11 +1,16 @@
 import { expect, test } from "bun:test";
-import type { ExperimentRecord, TaskRecord } from "@situ/protocol";
+import type {
+  ExperimentRecord,
+  TaskEntityLinkRecord,
+  TaskRecord,
+} from "@situ/protocol";
 import { renderInk } from "../../testing/ink-render.js";
 import {
   FullscreenDashboard,
   readableDashboardTaskTitle,
   readableExperimentDashboardTitle,
   taskLabelFromId,
+  taskOutputLineForDashboard,
   wrapTaskTitleForDashboard,
   type DashboardTask,
 } from "./fullscreen-dashboard.js";
@@ -88,6 +93,136 @@ test("dashboard frame reserves the last terminal column", async () => {
   }
 });
 
+test("task output links render as a flat row", async () => {
+  const instance = renderInk(
+    <FullscreenDashboard
+      workspace="/tmp/support-agent"
+      statusLine="active session"
+      dashboardMessage={undefined}
+      project={undefined}
+      session={undefined}
+      tasks={[
+        taskRecord({
+          id: "T8",
+          title: "Test edit-aware scoring",
+          kind: "experiment",
+          status: "in_progress",
+        }),
+      ]}
+      experimentCount={0}
+      maxExperiments={6}
+      hypotheses={[]}
+      experiments={[]}
+      evaluations={[]}
+      taskEntityLinks={[
+        taskEntityLinkRecord({
+          taskId: "T8",
+          entityKind: "experiment",
+          entityId: "EX3",
+        }),
+        taskEntityLinkRecord({
+          taskId: "T8",
+          entityKind: "evaluation",
+          entityId: "EV4",
+        }),
+        taskEntityLinkRecord({
+          taskId: "T8",
+          entityKind: "artifact",
+          entityId: "ART2",
+        }),
+      ]}
+      taskActivities={[]}
+      hypothesisActivities={[]}
+      experimentActivities={[]}
+      evaluationActivities={[]}
+      events={[]}
+      onDashboardCommand={() => {}}
+      terminalSize={{ columns: 112, rows: 28 }}
+    />,
+  );
+
+  try {
+    await waitForFrame();
+
+    const frame = instance.lastFrame() ?? "";
+    expect(frame).toContain("● [T8] Test edit-aware scoring");
+    expect(frame).toContain("│ → EX3 EV4 ART2");
+    expect(frame).not.toContain("│     → EX3 EV4 ART2");
+  } finally {
+    instance.unmount();
+  }
+});
+
+test("done tasks sort latest first and collapse duplicate older titles", async () => {
+  const instance = renderInk(
+    <FullscreenDashboard
+      workspace="/tmp/support-agent"
+      statusLine="active session"
+      dashboardMessage={undefined}
+      project={undefined}
+      session={undefined}
+      tasks={[
+        taskRecord({
+          id: "T1",
+          title: "Record baseline eval",
+          kind: "baseline",
+          status: "done",
+          completedAt: "2026-01-01T00:00:03Z",
+        }),
+        taskRecord({
+          id: "T2",
+          title: "Plan after Researcher task completion",
+          kind: "plan",
+          status: "done",
+          completedAt: "2026-01-01T00:00:05Z",
+        }),
+        taskRecord({
+          id: "T3",
+          title: "Plan after Researcher task completion",
+          kind: "plan",
+          status: "done",
+          completedAt: "2026-01-01T00:00:06Z",
+        }),
+        taskRecord({
+          id: "T4",
+          title: "Validate final candidate",
+          kind: "review",
+          status: "done",
+          completedAt: "2026-01-01T00:00:07Z",
+        }),
+      ]}
+      experimentCount={0}
+      maxExperiments={6}
+      hypotheses={[]}
+      experiments={[]}
+      evaluations={[]}
+      taskActivities={[]}
+      hypothesisActivities={[]}
+      experimentActivities={[]}
+      evaluationActivities={[]}
+      events={[]}
+      onDashboardCommand={() => {}}
+      terminalSize={{ columns: 112, rows: 28 }}
+    />,
+  );
+
+  try {
+    await waitForFrame();
+
+    const frame = instance.lastFrame() ?? "";
+    const validateIndex = frame.indexOf("● [T4] Validate final candidate");
+    const planIndex = frame.indexOf("● [T3] Plan next step");
+    const baselineIndex = frame.indexOf("● [T1] Record baseline eval");
+    expect(validateIndex).toBeGreaterThanOrEqual(0);
+    expect(planIndex).toBeGreaterThan(validateIndex);
+    expect(baselineIndex).toBeGreaterThan(planIndex);
+    expect(frame).not.toContain("● [T2] Plan next step");
+    expect(frame).toContain("+ 1 older done task");
+  } finally {
+    instance.unmount();
+  }
+});
+
 test("wrapTaskTitleForDashboard wraps before truncating", () => {
   expect(
     wrapTaskTitleForDashboard({
@@ -96,6 +231,15 @@ test("wrapTaskTitleForDashboard wraps before truncating", () => {
       maxLines: 2,
     }),
   ).toEqual(["Test cheap edit-aware", "scoring if vocabulary…"]);
+});
+
+test("taskOutputLineForDashboard truncates link rows with a hidden count", () => {
+  expect(
+    taskOutputLineForDashboard({
+      labels: ["EX3", "EV4", "ART2", "A7"],
+      width: 12,
+    }),
+  ).toBe("→ EX3 EV4 +2");
 });
 
 test("readableDashboardTaskTitle prefixes non-action task titles by task kind", () => {
@@ -110,6 +254,18 @@ test("readableDashboardTaskTitle prefixes non-action task titles by task kind", 
   expect(readableDashboardTaskTitle({ task })).toBe(
     "Research Dev-only miss instrumentation",
   );
+});
+
+test("readableDashboardTaskTitle humanizes repeated planning continuation titles", () => {
+  const task: DashboardTask = {
+    id: "T2",
+    title: "Plan after Researcher task completion",
+    status: "done",
+    kind: "task",
+    taskKind: "plan",
+  };
+
+  expect(readableDashboardTaskTitle({ task })).toBe("Plan next step");
 });
 
 test("readableExperimentDashboardTitle includes compact lineage context", () => {
@@ -131,16 +287,20 @@ test("taskLabelFromId only accepts canonical task ids", () => {
 });
 
 function taskRecord({
+  id = "T1",
   title,
   kind,
   status,
+  completedAt,
 }: {
+  id?: string;
   title: string;
   kind: TaskRecord["kind"];
   status: TaskRecord["status"];
+  completedAt?: string;
 }): TaskRecord {
   return {
-    id: "T1",
+    id,
     project_id: "P1",
     created_in_session_id: "S1",
     title,
@@ -160,8 +320,27 @@ function taskRecord({
     claimed_in_session_id: undefined,
     claimed_at: undefined,
     completed_in_session_id: undefined,
-    completed_at: undefined,
-    updated_at: "2026-01-01T00:00:00Z",
+    completed_at: completedAt,
+    updated_at: completedAt ?? "2026-01-01T00:00:00Z",
+  };
+}
+
+function taskEntityLinkRecord({
+  taskId,
+  entityKind,
+  entityId,
+}: {
+  taskId: string;
+  entityKind: TaskEntityLinkRecord["entity_kind"];
+  entityId: string;
+}): TaskEntityLinkRecord {
+  return {
+    project_id: "P1",
+    task_id: taskId,
+    entity_kind: entityKind,
+    entity_id: entityId,
+    relationship: "created",
+    created_at: "2026-01-01T00:00:01Z",
   };
 }
 

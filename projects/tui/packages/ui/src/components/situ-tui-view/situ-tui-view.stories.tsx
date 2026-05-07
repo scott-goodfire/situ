@@ -11,6 +11,7 @@ import type {
   ProjectRecord,
   SessionRecord,
   TaskActivityRecord,
+  TaskEntityLinkRecord,
   TaskRecord,
 } from "@situ/protocol";
 import { SituTuiView } from "./situ-tui-view.js";
@@ -38,6 +39,7 @@ import {
   runningHypothesisActivities,
   runningSession,
   runningTaskActivities,
+  runningTaskEntityLinks,
   runningTasks,
   storyWorkspace,
   suspiciousEvaluationActivities,
@@ -88,6 +90,7 @@ export const stories = [
         hypotheses={[activeHypothesis]}
         experiments={runningExperiments}
         evaluations={runningEvaluations}
+        taskEntityLinks={runningTaskEntityLinks}
         taskActivities={runningTaskActivities}
         hypothesisActivities={runningHypothesisActivities}
         experimentActivities={runningExperimentActivities}
@@ -132,6 +135,7 @@ export const stories = [
         hypotheses={[activeHypothesis]}
         experiments={completedExperiments}
         evaluations={completedEvaluations}
+        taskEntityLinks={runningTaskEntityLinks}
         taskActivities={completedTaskActivities}
         hypothesisActivities={runningHypothesisActivities}
         experimentActivities={runningExperimentActivities}
@@ -173,6 +177,7 @@ type StorySituTuiViewProps = {
   hypotheses: HypothesisRecord[];
   experiments: ExperimentRecord[];
   evaluations: EvaluationRecord[];
+  taskEntityLinks?: TaskEntityLinkRecord[];
   taskActivities: TaskActivityRecord[];
   hypothesisActivities: HypothesisActivityRecord[];
   experimentActivities: ExperimentActivityRecord[];
@@ -189,6 +194,7 @@ function StorySituTuiView({
   hypotheses,
   experiments,
   evaluations,
+  taskEntityLinks = [],
   taskActivities,
   hypothesisActivities,
   experimentActivities,
@@ -213,6 +219,7 @@ function StorySituTuiView({
       hypotheses={hypotheses}
       experiments={experiments}
       evaluations={evaluations}
+      taskEntityLinks={taskEntityLinks}
       taskActivities={taskActivities}
       hypothesisActivities={hypothesisActivities}
       experimentActivities={experimentActivities}

@@ -12,6 +12,7 @@ import type {
   ProjectRecord,
   SessionRecord,
   TaskActivityRecord,
+  TaskEntityLinkRecord,
   TaskRecord,
 } from "@situ/protocol";
 import {
@@ -54,6 +55,12 @@ export type DashboardTask = {
   taskLabel?: string;
   taskKind?: TaskRecord["kind"];
   tone?: DashboardTaskTone;
+  linkedOutputLabels?: string[];
+  createdAt?: string;
+  availableAt?: string;
+  claimedAt?: string | null;
+  completedAt?: string | null;
+  updatedAt?: string;
 };
 
 export function FullscreenDashboard({
@@ -68,6 +75,7 @@ export function FullscreenDashboard({
   hypotheses,
   experiments,
   evaluations,
+  taskEntityLinks = [],
   taskActivities,
   hypothesisActivities,
   experimentActivities,
@@ -89,6 +97,7 @@ export function FullscreenDashboard({
   hypotheses: HypothesisRecord[];
   experiments: ExperimentRecord[];
   evaluations: EvaluationRecord[];
+  taskEntityLinks?: TaskEntityLinkRecord[];
   taskActivities: TaskActivityRecord[];
   hypothesisActivities: HypothesisActivityRecord[];
   experimentActivities: ExperimentActivityRecord[];
@@ -148,6 +157,7 @@ export function FullscreenDashboard({
     hypotheses,
     experiments,
     evaluations,
+    taskEntityLinks,
     experimentActivities,
     evaluationActivities,
   });
@@ -494,7 +504,13 @@ function filterDashboardTasks({
   }
 
   const needle = query.toLowerCase();
-  return tasks.filter((task) => task.title.toLowerCase().includes(needle));
+  return tasks.filter(
+    (task) =>
+      readableDashboardTaskTitle({ task }).toLowerCase().includes(needle) ||
+      (task.linkedOutputLabels ?? []).some((label) =>
+        label.toLowerCase().includes(needle),
+      ),
+  );
 }
 
 function filterActivityRows({
@@ -753,9 +769,9 @@ function TaskBoard({
   columnWidths: [number, number, number];
   maxRowsPerColumn: number;
 }) {
-  const todoTasks = tasks.filter((task) => task.status === "todo");
-  const inProgressTasks = tasks.filter((task) => task.status === "in-progress");
-  const doneTasks = tasks.filter((task) => task.status === "done");
+  const todoTasks = tasksForTaskColumn({ tasks, status: "todo" });
+  const inProgressTasks = tasksForTaskColumn({ tasks, status: "in-progress" });
+  const doneTasks = tasksForTaskColumn({ tasks, status: "done" });
 
   return (
     <LayoutBox direction="row" height={height}>
@@ -766,6 +782,7 @@ function TaskBoard({
         width={columnWidths[0]}
         height={height}
         maxRows={maxRowsPerColumn}
+        collapseOlderDoneTasks={false}
       />
       <TaskColumnDivider height={height} />
       <TaskColumn
@@ -775,6 +792,7 @@ function TaskBoard({
         width={columnWidths[1]}
         height={height}
         maxRows={maxRowsPerColumn}
+        collapseOlderDoneTasks={false}
       />
       <TaskColumnDivider height={height} />
       <TaskColumn
@@ -784,9 +802,115 @@ function TaskBoard({
         width={columnWidths[2]}
         height={height}
         maxRows={maxRowsPerColumn}
+        collapseOlderDoneTasks
       />
     </LayoutBox>
   );
+}
+
+function tasksForTaskColumn({
+  tasks,
+  status,
+}: {
+  tasks: DashboardTask[];
+  status: DashboardTaskStatus;
+}): DashboardTask[] {
+  const columnTasks = tasks.filter((task) => task.status === status);
+
+  if (status === "done") {
+    return lodash.orderBy(
+      columnTasks,
+      [
+        (task) => taskDoneTimestampMillis({ task }),
+        (task) => readableDashboardTaskTitle({ task }).toLowerCase(),
+        (task) => task.id,
+      ],
+      ["desc", "asc", "asc"],
+    );
+  }
+
+  return lodash.orderBy(
+    columnTasks,
+    [
+      (task) => priorityRankForDashboardTask({ task }),
+      (task) => taskActiveTimestampMillis({ task }),
+      (task) => readableDashboardTaskTitle({ task }).toLowerCase(),
+      (task) => task.id,
+    ],
+    ["asc", "asc", "asc", "asc"],
+  );
+}
+
+function taskDoneTimestampMillis({ task }: { task: DashboardTask }): number {
+  return timestampMillisOrZero({
+    isoTimestamp: task.completedAt ?? task.updatedAt ?? task.createdAt,
+  });
+}
+
+function taskActiveTimestampMillis({ task }: { task: DashboardTask }): number {
+  return timestampMillisOrZero({
+    isoTimestamp:
+      task.claimedAt ?? task.availableAt ?? task.createdAt ?? task.updatedAt,
+  });
+}
+
+function collapseRepeatedDoneTasks({
+  tasks,
+}: {
+  tasks: DashboardTask[];
+}): { tasks: DashboardTask[]; hiddenCount: number } {
+  const visibleTasks: DashboardTask[] = [];
+  const seenKeys = new Set<string>();
+  let hiddenCount = 0;
+
+  for (const task of tasks) {
+    const key = repeatedDoneTaskKey({ task });
+    if (!key) {
+      visibleTasks.push(task);
+      continue;
+    }
+
+    if (seenKeys.has(key)) {
+      hiddenCount += 1;
+      continue;
+    }
+
+    seenKeys.add(key);
+    visibleTasks.push(task);
+  }
+
+  return { tasks: visibleTasks, hiddenCount };
+}
+
+function repeatedDoneTaskKey({
+  task,
+}: {
+  task: DashboardTask;
+}): string | undefined {
+  if (task.status !== "done") {
+    return undefined;
+  }
+
+  if ((task.linkedOutputLabels?.length ?? 0) > 0) {
+    return undefined;
+  }
+
+  return readableDashboardTaskTitle({ task }).toLowerCase();
+}
+
+function hiddenTaskLabel({
+  count,
+  collapseOlderDoneTasks,
+}: {
+  count: number;
+  collapseOlderDoneTasks: boolean;
+}): string {
+  if (!collapseOlderDoneTasks) {
+    return `+ ${count} more`;
+  }
+
+  const noun = count === 1 ? "task" : "tasks";
+  return `+ ${count} older done ${noun}`;
 }
 
 function TaskColumn({
@@ -796,6 +920,7 @@ function TaskColumn({
   width,
   height,
   maxRows,
+  collapseOlderDoneTasks,
 }: {
   title: string;
   tasks: DashboardTask[];
@@ -803,14 +928,21 @@ function TaskColumn({
   width: number;
   height: number;
   maxRows: number;
+  collapseOlderDoneTasks: boolean;
 }) {
   const rowWidth = width;
+  const preparedTasks = collapseOlderDoneTasks
+    ? collapseRepeatedDoneTasks({ tasks })
+    : { tasks, hiddenCount: 0 };
   const visibleTaskRows = visibleTaskRowsForColumn({
-    tasks,
+    tasks: preparedTasks.tasks,
     width: rowWidth,
     maxRows,
+    hiddenTaskCountAfterList: preparedTasks.hiddenCount,
   });
-  const hiddenTaskCount = Math.max(0, tasks.length - visibleTaskRows.length);
+  const hiddenTaskCount =
+    preparedTasks.hiddenCount +
+    Math.max(0, preparedTasks.tasks.length - visibleTaskRows.length);
   const taskBodyRowCount = lodash.sumBy(
     visibleTaskRows,
     (task) => taskRowLineCount({ task, width: rowWidth }),
@@ -837,7 +969,13 @@ function TaskColumn({
       ))}
       {hiddenTaskCount > 0 && (
         <Text dimColor>
-          {fitRow({ value: `+ ${hiddenTaskCount} more`, width: rowWidth })}
+          {fitRow({
+            value: hiddenTaskLabel({
+              count: hiddenTaskCount,
+              collapseOlderDoneTasks,
+            }),
+            width: rowWidth,
+          })}
         </Text>
       )}
       {Array.from({ length: blankRowCount }, (_, index) => (
@@ -875,6 +1013,10 @@ function TaskRows({
   const leadingWidth = 2 + labelText.length;
   const titleWidth = Math.max(0, width - leadingWidth);
   const titleLines = taskTitleLines({ task, width });
+  const outputLine = taskOutputLineForDashboard({
+    labels: task.linkedOutputLabels ?? [],
+    width,
+  });
 
   if (width <= leadingWidth) {
     return <Text color={glyphColor}>{fitRow({ value: glyph, width })}</Text>;
@@ -894,18 +1036,52 @@ function TaskRows({
           )}
         </Text>
       ))}
+      {outputLine && (
+        <Text key={`${task.id}:outputs`} dimColor>
+          {fitRow({ value: outputLine, width })}
+        </Text>
+      )}
     </>
   );
+}
+
+export function taskOutputLineForDashboard({
+  labels,
+  width,
+}: {
+  labels: string[];
+  width: number;
+}): string | undefined {
+  const visibleLabels = lodash.uniq(labels.filter(Boolean));
+  if (visibleLabels.length === 0 || width <= 2) {
+    return undefined;
+  }
+
+  for (let labelCount = visibleLabels.length; labelCount >= 0; labelCount -= 1) {
+    const shownLabels = visibleLabels.slice(0, labelCount);
+    const hiddenCount = visibleLabels.length - shownLabels.length;
+    const hiddenLabel = hiddenCount > 0 ? `+${hiddenCount}` : undefined;
+    const lineLabels = hiddenLabel ? [...shownLabels, hiddenLabel] : shownLabels;
+    const line = `→ ${lineLabels.join(" ")}`.trimEnd();
+
+    if (lineLabels.length > 0 && line.length <= width) {
+      return line;
+    }
+  }
+
+  return fitRow({ value: `→ ${visibleLabels[0] ?? ""}`, width });
 }
 
 function visibleTaskRowsForColumn({
   tasks,
   width,
   maxRows,
+  hiddenTaskCountAfterList = 0,
 }: {
   tasks: DashboardTask[];
   width: number;
   maxRows: number;
+  hiddenTaskCountAfterList?: number;
 }): DashboardTask[] {
   const visibleTasks: DashboardTask[] = [];
   let usedRows = 0;
@@ -913,7 +1089,8 @@ function visibleTaskRowsForColumn({
   for (const task of tasks) {
     const rowCount = taskRowLineCount({ task, width });
     const remainingTaskCount = tasks.length - visibleTasks.length - 1;
-    const reservedMoreRowCount = remainingTaskCount > 0 ? 1 : 0;
+    const hiddenTaskCount = remainingTaskCount + hiddenTaskCountAfterList;
+    const reservedMoreRowCount = hiddenTaskCount > 0 ? 1 : 0;
 
     if (usedRows + rowCount + reservedMoreRowCount > maxRows) {
       break;
@@ -933,7 +1110,12 @@ function taskRowLineCount({
   task: DashboardTask;
   width: number;
 }): number {
-  return taskTitleLines({ task, width }).length;
+  const outputLine = taskOutputLineForDashboard({
+    labels: task.linkedOutputLabels ?? [],
+    width,
+  });
+
+  return taskTitleLines({ task, width }).length + (outputLine ? 1 : 0);
 }
 
 function taskTitleLines({
@@ -1107,6 +1289,7 @@ function buildDashboardTasks({
   hypotheses,
   experiments,
   evaluations,
+  taskEntityLinks,
   experimentActivities,
   evaluationActivities,
 }: {
@@ -1114,11 +1297,14 @@ function buildDashboardTasks({
   hypotheses: HypothesisRecord[];
   experiments: ExperimentRecord[];
   evaluations: EvaluationRecord[];
+  taskEntityLinks: TaskEntityLinkRecord[];
   experimentActivities: ExperimentActivityRecord[];
   evaluationActivities: EvaluationActivityRecord[];
 }): DashboardTask[] {
   if (tasks.length > 0) {
-    const taskRows = tasks.map((task) => taskFromTaskRecord({ task }));
+    const taskRows = tasks.map((task) =>
+      taskFromTaskRecord({ task, taskEntityLinks }),
+    );
 
     return lodash.orderBy(
       taskRows,
@@ -1144,6 +1330,8 @@ function buildDashboardTasks({
       title: hypothesis.title,
       status: "todo" as const,
       kind: "hypothesis" as const,
+      createdAt: hypothesis.created_at,
+      updatedAt: hypothesis.updated_at,
     }));
 
   return lodash.orderBy(
@@ -1155,8 +1343,10 @@ function buildDashboardTasks({
 
 function taskFromTaskRecord({
   task,
+  taskEntityLinks,
 }: {
   task: TaskRecord;
+  taskEntityLinks: TaskEntityLinkRecord[];
 }): DashboardTask {
   return {
     id: `task:${task.id}`,
@@ -1166,7 +1356,128 @@ function taskFromTaskRecord({
     taskLabel: taskLabelFromId({ id: task.id }),
     taskKind: task.kind,
     tone: toneForTaskRecord({ task }),
+    linkedOutputLabels: linkedOutputLabelsForTask({ task, taskEntityLinks }),
+    createdAt: task.created_at,
+    availableAt: task.available_at,
+    claimedAt: task.claimed_at,
+    completedAt: task.completed_at,
+    updatedAt: task.updated_at,
   };
+}
+
+const TASK_OUTPUT_ENTITY_KIND_ORDER: TaskEntityLinkRecord["entity_kind"][] = [
+  "experiment",
+  "evaluation",
+  "artifact",
+  "analysis",
+  "hypothesis",
+  "baseline",
+];
+
+const TASK_OUTPUT_ENTITY_PREFIX_BY_KIND: Partial<
+  Record<TaskEntityLinkRecord["entity_kind"], string>
+> = {
+  analysis: "A",
+  baseline: "B",
+  hypothesis: "H",
+  experiment: "EX",
+  evaluation: "EV",
+  artifact: "ART",
+};
+
+function linkedOutputLabelsForTask({
+  task,
+  taskEntityLinks,
+}: {
+  task: TaskRecord;
+  taskEntityLinks: TaskEntityLinkRecord[];
+}): string[] {
+  const linkRows = taskEntityLinks
+    .filter((link) => link.task_id === task.id)
+    .map((link) => ({
+      link,
+      label: taskOutputLabelFromLink({ link }),
+      rank: taskOutputEntityKindRank({ entityKind: link.entity_kind }),
+      createdAtMillis: timestampMillisOrZero({ isoTimestamp: link.created_at }),
+    }))
+    .filter(
+      (
+        row,
+      ): row is {
+        link: TaskEntityLinkRecord;
+        label: string;
+        rank: number;
+        createdAtMillis: number;
+      } => row.label !== undefined,
+    );
+  const sortedRows = lodash.orderBy(
+    linkRows,
+    [(row) => row.rank, (row) => row.createdAtMillis, (row) => row.label],
+    ["asc", "asc", "asc"],
+  );
+  const labels: string[] = [];
+  const seenLabels = new Set<string>();
+
+  for (const row of sortedRows) {
+    if (seenLabels.has(row.label)) {
+      continue;
+    }
+
+    seenLabels.add(row.label);
+    labels.push(row.label);
+  }
+
+  return labels;
+}
+
+function taskOutputEntityKindRank({
+  entityKind,
+}: {
+  entityKind: TaskEntityLinkRecord["entity_kind"];
+}): number {
+  const rank = TASK_OUTPUT_ENTITY_KIND_ORDER.indexOf(entityKind);
+  if (rank >= 0) {
+    return rank;
+  }
+
+  return TASK_OUTPUT_ENTITY_KIND_ORDER.length;
+}
+
+function taskOutputLabelFromLink({
+  link,
+}: {
+  link: TaskEntityLinkRecord;
+}): string | undefined {
+  const prefix = TASK_OUTPUT_ENTITY_PREFIX_BY_KIND[link.entity_kind];
+  if (!prefix) {
+    return undefined;
+  }
+
+  const entityId = link.entity_id.trim();
+  if (!entityId) {
+    return undefined;
+  }
+
+  const canonicalLabel = entityId.toUpperCase();
+  if (canonicalEntityLabelMatchesPrefix({ label: canonicalLabel, prefix })) {
+    return canonicalLabel;
+  }
+
+  if (/^[1-9]\d*$/.test(entityId)) {
+    return `${prefix}${entityId}`;
+  }
+
+  return undefined;
+}
+
+function canonicalEntityLabelMatchesPrefix({
+  label,
+  prefix,
+}: {
+  label: string;
+  prefix: string;
+}): boolean {
+  return new RegExp(`^${lodash.escapeRegExp(prefix)}[1-9]\\d*$`).test(label);
 }
 
 function statusForTaskRecord({
@@ -1237,6 +1548,8 @@ function taskFromExperiment({
     status: statusForRecord({ status: experiment.status }),
     kind: tone === "warning" ? "concern" : "experiment",
     tone,
+    createdAt: experiment.created_at,
+    updatedAt: experiment.updated_at,
   };
 }
 
@@ -1288,6 +1601,8 @@ function taskFromEvaluation({
     status: statusForRecord({ status: evaluation.status }),
     kind: tone === "warning" ? "concern" : "evaluation",
     tone,
+    createdAt: evaluation.created_at,
+    updatedAt: evaluation.updated_at,
   };
 }
 
@@ -1823,11 +2138,21 @@ export function wrapTaskTitleForDashboard({
 }
 
 function normalizeTaskTitle({ title }: { title: string }): string {
-  return title
+  const normalizedTitle = title
     .replace(/\s+/g, " ")
     .replace(/^(task|todo|to do|in progress|done)\s*[:.-]\s*/i, "")
     .replace(/^(manager|researcher|scientist|critic)\s*[:.-]\s*/i, "")
     .trim();
+
+  return humanReadableWorkflowTaskTitle({ title: normalizedTitle });
+}
+
+function humanReadableWorkflowTaskTitle({ title }: { title: string }): string {
+  if (/^plan after .+ (task completion|review)$/i.test(title)) {
+    return "Plan next step";
+  }
+
+  return title;
 }
 
 function startsWithActionVerb({ title }: { title: string }): boolean {
@@ -1971,4 +2296,16 @@ function timestampMillis({ isoTimestamp }: { isoTimestamp: string }): number {
   }
 
   return timestamp;
+}
+
+function timestampMillisOrZero({
+  isoTimestamp,
+}: {
+  isoTimestamp: string | null | undefined;
+}): number {
+  if (!isoTimestamp) {
+    return 0;
+  }
+
+  return timestampMillis({ isoTimestamp });
 }

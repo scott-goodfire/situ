@@ -10,6 +10,7 @@ import type {
   ProjectRecord,
   SessionRecord,
   TaskActivityRecord,
+  TaskEntityLinkRecord,
   TaskRecord,
 } from "@situ/protocol";
 
@@ -315,6 +316,45 @@ export const runningTaskActivities = [
   }),
 ];
 
+export const runningTaskEntityLinks = [
+  taskEntityLinkRecord({
+    overrides: {
+      task_id: "T1",
+      entity_kind: "experiment",
+      entity_id: baselineExperiment.id,
+      relationship: "produces",
+      created_at: "2026-01-01T00:00:03Z",
+    },
+  }),
+  taskEntityLinkRecord({
+    overrides: {
+      task_id: "T1",
+      entity_kind: "evaluation",
+      entity_id: baselineEvaluation.id,
+      relationship: "reviews",
+      created_at: "2026-01-01T00:00:03Z",
+    },
+  }),
+  taskEntityLinkRecord({
+    overrides: {
+      task_id: "T2",
+      entity_kind: "experiment",
+      entity_id: runningExperiment.id,
+      relationship: "produces",
+      created_at: "2026-01-01T00:00:05Z",
+    },
+  }),
+  taskEntityLinkRecord({
+    overrides: {
+      task_id: "T2",
+      entity_kind: "evaluation",
+      entity_id: runningEvaluation.id,
+      relationship: "reviews",
+      created_at: "2026-01-01T00:00:06Z",
+    },
+  }),
+];
+
 export const suspiciousExperimentActivities = [
   ...runningExperimentActivities,
   experimentActivityRecord({
@@ -577,6 +617,22 @@ function taskActivityRecord({
     body: "Task activity recorded.",
     payload: {},
     created_at: "2026-01-01T00:00:02Z",
+    ...overrides,
+  };
+}
+
+function taskEntityLinkRecord({
+  overrides = {},
+}: {
+  overrides?: Partial<TaskEntityLinkRecord>;
+}): TaskEntityLinkRecord {
+  return {
+    project_id: storyProjectId,
+    task_id: "T1",
+    entity_kind: "evaluation",
+    entity_id: "EV1",
+    relationship: "created",
+    created_at: "2026-01-01T00:00:03Z",
     ...overrides,
   };
 }

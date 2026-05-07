@@ -17,6 +17,7 @@ import {
   runningHypothesisActivities,
   runningSession,
   runningTaskActivities,
+  runningTaskEntityLinks,
   runningTasks,
   storyWorkspace,
 } from "../../fixtures/story-data.js";
@@ -114,6 +115,7 @@ function StoryFullscreenDashboard({
       hypotheses={[activeHypothesis]}
       experiments={runningExperiments}
       evaluations={runningEvaluations}
+      taskEntityLinks={runningTaskEntityLinks}
       taskActivities={runningTaskActivities}
       hypothesisActivities={runningHypothesisActivities}
       experimentActivities={runningExperimentActivities}

@@ -74,6 +74,12 @@ work items, for example
 `✓ [T1] Record baseline eval`. The short task ID should be visible on task
 rows so humans and agents can refer to a task without copying a long database
 identifier. Other metadata may be secondary or hidden on the main screen.
+When a task is linked to durable outputs, the main board should show a compact
+flat link row under that task, such as `→ EX3 EV4 ART2`, without opening a
+separate task detail view or indenting the link row under the title text. The
+done column should prefer the latest completed work first and collapse repeated
+or older done rows into a compact `+ N older done tasks` line when they would
+make the live board noisy.
 Until durable tasks are fully wired, the TUI may derive task-like rows from
 existing hypotheses, experiments, evaluations, and concern activities as a
 fallback.
