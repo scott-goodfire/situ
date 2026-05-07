@@ -56,7 +56,7 @@ def test_worktree_manager_creates_detached_worktree_for_clean_repo(
     worktree = WorktreeManager(
         workspace_path=repo / "pkg",
         worktrees_dir=tmp_path / "worktrees",
-    ).prepare(experiment_id="E1")
+    ).prepare(experiment_id="EX1")
 
     assert worktree.base_commit == base_commit
     assert worktree.workspace_path == worktree.worktree_root / "pkg"
@@ -72,12 +72,12 @@ def test_worktree_manager_reuses_nested_workspace_path_without_double_append(
     first = WorktreeManager(
         workspace_path=repo / "pkg",
         worktrees_dir=tmp_path / "worktrees",
-    ).prepare(experiment_id="E1")
+    ).prepare(experiment_id="EX1")
     second = WorktreeManager(
         workspace_path=repo / "pkg",
         worktrees_dir=tmp_path / "worktrees",
     ).prepare(
-        experiment_id="E1",
+        experiment_id="EX1",
         existing_worktree_path=str(first.workspace_path),
         existing_base_commit=first.base_commit,
     )
@@ -95,7 +95,7 @@ def test_worktree_manager_rejects_dirty_base_repo(tmp_path: Path) -> None:
         WorktreeManager(
             workspace_path=repo,
             worktrees_dir=tmp_path / "worktrees",
-        ).prepare(experiment_id="E1")
+        ).prepare(experiment_id="EX1")
 
 
 def test_worktree_manager_inspect_preserves_unstaged_status_paths(tmp_path: Path) -> None:

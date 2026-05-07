@@ -172,7 +172,7 @@ function analysesPageData(): ProjectWorkspaceData {
         status: "closed",
         title: "Synthesis: prompt decomposition saturated",
         summary: "Prompt decomposition is closed; further splits don't help the billing slice.",
-        content: "Reviewed E3 results across 3 reproductions; gains are within noise.",
+        content: "Reviewed EX3 results across 3 reproductions; gains are within noise.",
         created_at: "2026-01-01T00:04:00Z",
         updated_at: "2026-01-01T00:06:00Z",
       },

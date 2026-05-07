@@ -24,13 +24,13 @@ Database(temp_path, workspace_id="workspace_test", repo_path="/tmp/project")
 repos = Repositories.create(db)
 workspace = repos.workspaces.ensure()
 project = repos.projects.create(
-    project_id="project_test",
+    project_id="P1",
     workspace_id=workspace.id,
     title="Test project",
     objective="Improve the target behavior.",
     research_context="Run local evals and compare score.",
 )
-repos.sessions.create("session_test", workspace_id=workspace.id, project_id=project.id)
+repos.sessions.create("S1", workspace_id=workspace.id, project_id=project.id)
 repos.analyses.create(...)
 repos.hypotheses.create(...)
 repos.experiments.create(...)

@@ -18,7 +18,7 @@ SESSION_ID = "S1"
 SCIENTIST_AGENT_ID = f"agent_{PROJECT_ID}_scientist"
 HYPOTHESIS_ID = "H1"
 BASELINE_ID = "B1"
-BASELINE_EVALUATION_ID = "V1"
+BASELINE_EVALUATION_ID = "EV1"
 
 RESEARCH_CONTEXT_BODY = (
     "You are observing a tiny local autoresearch-style repo. Inspect "

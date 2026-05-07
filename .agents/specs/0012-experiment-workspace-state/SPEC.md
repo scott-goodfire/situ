@@ -101,6 +101,10 @@ experiment that isolation cannot begin from the selected checkout.
 The first slice does not need a complete promotion or cleanup workflow.
 Accepted candidates can be inspected from their worktree path, and rejected
 candidates can remain as disposable local checkouts until cleanup is added.
+Lineage-aware portfolio search extends this by making candidate code states
+durable bases for later experiments without applying them to the user's
+selected checkout; see
+[0015-experiment-lineage-portfolio-search/SPEC.md](../0015-experiment-lineage-portfolio-search/SPEC.md).
 
 ## Comparability Rules
 

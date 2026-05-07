@@ -37,12 +37,13 @@ runs inside a workspace, and may attach to zero or one project.
 
 Human-facing persisted records should have compact, referenceable IDs. The
 current canonical forms are `P<N>` for projects, `S<N>` for sessions, `A<N>`
-for analyses, `H<N>` for hypotheses, `B<N>` for baselines, `E<N>` for
-experiments, `V<N>` for evaluations, `F<N>` for artifacts, and `T<N>` for
+for analyses, `H<N>` for hypotheses, `B<N>` for baselines, `EX<N>` for
+experiments, `EV<N>` for evaluations, `ART<N>` for artifacts, and `T<N>` for
 tasks. These IDs should be short enough for terminal rows, activity text, agent
 prompts, and user steering. This is a hard local-state cutover: older long-form
 IDs such as `project_...`, `session_0001`, `hyp_...`, `exp_...`, and
-`eval_...` are not part of the supported product model.
+`eval_...`, plus their analysis, baseline, artifact, and task variants, are
+not part of the supported product model.
 
 Workspace IDs are the exception. A workspace ID may remain an internal,
 path-derived stable identifier because the workspace is the repo-path boundary,
@@ -157,6 +158,14 @@ One concrete attempt: a change, probe, analysis, or testable intervention.
 In the autoresearch loop, an experiment is also the PR-shaped candidate: the
 applied version of a hypothesis or idea whose workspace state, evaluation
 evidence, and review trail can be inspected together.
+
+When Situ is running lineage-aware autoresearch, an experiment may also record
+which prior candidate or base commit it builds on, the durable candidate commit
+it produced, and the research thread it belongs to. That lineage context stays
+lightweight and experiment-shaped; do not introduce a separate Variant,
+Branch, Promotion, or Champion model until multiple runtime paths require that
+shape. See
+[0015-experiment-lineage-portfolio-search/SPEC.md](../0015-experiment-lineage-portfolio-search/SPEC.md).
 
 Experiments should also be status-light: open, active, or closed. Details such
 as failure, suspiciousness, reproduction, or interpretation should be expressed

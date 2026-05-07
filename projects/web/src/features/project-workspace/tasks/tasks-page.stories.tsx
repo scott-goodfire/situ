@@ -239,7 +239,7 @@ function tasksPageData(): ProjectWorkspaceData {
         project_id: "P1",
         task_id: "T3",
         entity_kind: "experiment",
-        entity_id: "E2",
+        entity_id: "EX2",
         relationship: "produces",
         created_at: "2026-01-01T00:05:00Z",
       },

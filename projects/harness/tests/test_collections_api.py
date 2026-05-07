@@ -65,7 +65,7 @@ def test_collections_bootstrap_returns_research_objects_and_events(
         status="active",
     )
     app.repos.experiments.create(
-        experiment_id="E1",
+        experiment_id="EX1",
         project_id=project.id,
         created_in_session_id=session.id,
         title="Try component A",
@@ -79,7 +79,7 @@ def test_collections_bootstrap_returns_research_objects_and_events(
         summary="Reference behavior before candidate changes.",
     )
     evaluation = app.repos.evaluations.create(
-        evaluation_id="V1",
+        evaluation_id="EV1",
         project_id=project.id,
         created_in_session_id=session.id,
         title="Baseline project eval",
@@ -96,7 +96,7 @@ def test_collections_bootstrap_returns_research_objects_and_events(
         status="active",
     )
     activity = app.repos.experiment_activities.add(
-        experiment_id="E1",
+        experiment_id="EX1",
         created_in_session_id=session.id,
         actor="worker",
         kind="comment",
@@ -143,10 +143,10 @@ def test_collections_bootstrap_returns_research_objects_and_events(
         "B1"
     ]
     assert [experiment.id for experiment in bootstrap.experiments] == [
-        "E1"
+        "EX1"
     ]
     assert [item.id for item in bootstrap.evaluations] == [
-        "V1"
+        "EV1"
     ]
     assert [item.id for item in bootstrap.measurements] == [measurement.id]
     assert [item.id for item in bootstrap.analyses] == ["A1"]

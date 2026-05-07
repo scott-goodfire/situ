@@ -77,7 +77,7 @@ test("readableDashboardTaskTitle prefixes non-action task titles by task kind", 
 
 test("taskLabelFromId only accepts canonical task ids", () => {
   expect(taskLabelFromId({ id: "T7" })).toBe("[T7]");
-  expect(taskLabelFromId({ id: "task_0007" })).toBeUndefined();
+  expect(taskLabelFromId({ id: "task-0007" })).toBeUndefined();
 });
 
 function taskRecord({

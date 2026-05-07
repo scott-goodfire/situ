@@ -98,7 +98,7 @@ Examples:
 
 - `A improved over baseline, but only on the easy slice.`
 - `A+C looks promising; C explains most of the observed lift.`
-- `The large improvement in E4 is suspicious because eval scope changed.`
+- `The large improvement in EX4 is suspicious because eval scope changed.`
 
 ## Critic Reviews
 
@@ -223,7 +223,7 @@ size_bytes?
 created_at
 ```
 
-Artifact IDs should use the compact `F<N>` form when the harness creates them.
+Artifact IDs should use the compact `ART<N>` form when the harness creates them.
 Artifacts may still attach to projects, hypotheses, baselines, experiments,
 evaluations, measurements, or activities through the generic association
 fields.

@@ -10,17 +10,17 @@ type Row = {
 
 const rows: Row[] = [
   {
-    id: "E1",
+    id: "EX1",
     status: "completed",
     note: "Baseline evidence recorded.",
   },
   {
-    id: "E2",
+    id: "EX2",
     status: "running",
     note: "Testing retrieval filtering on cancellation tickets.",
   },
   {
-    id: "E3",
+    id: "EX3",
     status: "concern",
     note: "Result shape changed after an eval-adjacent file moved.",
   },

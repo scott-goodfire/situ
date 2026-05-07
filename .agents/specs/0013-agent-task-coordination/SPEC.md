@@ -51,7 +51,7 @@ the task.
 
 Task IDs should be compact enough to cite in the TUI, logs, and agent prompts.
 Task IDs use the `T<N>` shape and participate in the same compact-ID posture as
-projects `P<N>`, sessions `S<N>`, hypotheses `H<N>`, experiments `E<N>`, and
+projects `P<N>`, sessions `S<N>`, hypotheses `H<N>`, experiments `EX<N>`, and
 the other human-facing research records. This is a hard local-state cutover:
 older long-form task IDs are not part of the supported model.
 
@@ -151,6 +151,13 @@ from its results. The completed experiment is pending review until a Critic
 critic_review`. The Manager should use that review, plus the underlying
 evaluation and measurement evidence, when deciding whether to reproduce,
 revise, combine, discard, or continue from the candidate.
+
+For lineage-aware autoresearch, the Manager should also decide which research
+thread and base state the next experiment should use. It should not assume
+there is one global champion candidate. It may continue a promising thread,
+fork from a prior candidate, reproduce a suspicious result, abandon a stale
+thread, or restart from baseline to avoid greedy hill-climbing. See
+[0015-experiment-lineage-portfolio-search/SPEC.md](../0015-experiment-lineage-portfolio-search/SPEC.md).
 
 When the claimed Scientist task is an `experiment`, Situ should create or reuse
 a managed worktree for the linked experiment before invoking the Scientist. The

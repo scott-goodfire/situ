@@ -178,7 +178,7 @@ function agentPageData(): ProjectWorkspaceData {
     ],
     experiments: [
       {
-        id: "E2",
+        id: "EX2",
         project_id: "support-agent-demo",
         status: "active",
         title: "Try retrieval filtering",
@@ -189,12 +189,12 @@ function agentPageData(): ProjectWorkspaceData {
     ],
     evaluations: [
       {
-        id: "V2",
+        id: "EV2",
         project_id: "support-agent-demo",
         status: "active",
         title: "Retrieval filtering candidate",
-        summary: "Candidate measurement for E2.",
-        associated_experiment_id: "E2",
+        summary: "Candidate measurement for EX2.",
+        associated_experiment_id: "EX2",
         created_at: "2026-01-01T00:05:00Z",
         updated_at: "2026-01-01T00:09:00Z",
       },
@@ -209,7 +209,7 @@ function agentPageData(): ProjectWorkspaceData {
     hypothesisExperimentLinks: [
       {
         hypothesis_id: "H1",
-        experiment_id: "E2",
+        experiment_id: "EX2",
         created_at: "2026-01-01T00:04:00Z",
       },
     ],
@@ -227,7 +227,7 @@ function agentPageData(): ProjectWorkspaceData {
     experimentActivities: [
       {
         id: 1,
-        experiment_id: "E2",
+        experiment_id: "EX2",
         actor: "research-agent",
         kind: "comment",
         body: "Applied filtering only to retrieval selection; graders and fixtures were unchanged.",
@@ -236,7 +236,7 @@ function agentPageData(): ProjectWorkspaceData {
       },
       {
         id: 2,
-        experiment_id: "E2",
+        experiment_id: "EX2",
         actor: "worker",
         kind: "comment",
         body: "Ran the candidate eval and preserved stdout as an artifact.",
@@ -247,7 +247,7 @@ function agentPageData(): ProjectWorkspaceData {
     evaluationActivities: [
       {
         id: 1,
-        evaluation_id: "V2",
+        evaluation_id: "EV2",
         actor: "research-agent",
         kind: "result",
         body: "Candidate: resolution_rate 64.8%, latency 1910ms. Needs reproduction before treating as accepted.",
@@ -256,7 +256,7 @@ function agentPageData(): ProjectWorkspaceData {
       },
       {
         id: 2,
-        evaluation_id: "V2",
+        evaluation_id: "EV2",
         actor: "research-agent",
         kind: "result",
         body: "Concern: the best result is not reproduced yet.",

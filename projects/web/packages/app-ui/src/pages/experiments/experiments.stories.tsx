@@ -23,7 +23,7 @@ type Story = StoryObj<typeof ExperimentsView>;
 
 const EXPERIMENTS: ExperimentRecord[] = [
   {
-    id: "E1",
+    id: "EX1",
     project_id: "proj_0001",
     status: "closed",
     title: "Baseline support eval",
@@ -32,7 +32,7 @@ const EXPERIMENTS: ExperimentRecord[] = [
     updated_at: "2026-01-01T00:03:00Z",
   },
   {
-    id: "E2",
+    id: "EX2",
     project_id: "proj_0001",
     status: "active",
     title: "Try retrieval filtering",
@@ -41,7 +41,7 @@ const EXPERIMENTS: ExperimentRecord[] = [
     updated_at: "2026-01-01T00:08:00Z",
   },
   {
-    id: "E3",
+    id: "EX3",
     project_id: "proj_0001",
     status: "open",
     title: "Try prompt decomposition",

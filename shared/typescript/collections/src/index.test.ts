@@ -48,7 +48,7 @@ describe("situ collections", () => {
       hypothesis_experiment_links: [
         {
           hypothesis_id: "H1",
-          experiment_id: "E1",
+          experiment_id: "EX1",
           created_at: "2026-01-01T00:00:01Z",
         },
       ],
@@ -87,10 +87,10 @@ describe("situ collections", () => {
     expect(collections.baselines.get("B1")?.status).toBe(
       "closed",
     );
-    expect(collections.experiments.get("E1")?.status).toBe(
+    expect(collections.experiments.get("EX1")?.status).toBe(
       "closed",
     );
-    expect(collections.evaluations.get("V1")?.status).toBe(
+    expect(collections.evaluations.get("EV1")?.status).toBe(
       "closed",
     );
     expect(collections.analyses.get("A1")?.status).toBe("open");
@@ -101,8 +101,8 @@ describe("situ collections", () => {
     expect(collections.taskDependencies.get("T2:T1")?.blocked_by_task_id).toBe(
       "T1",
     );
-    expect(collections.taskEntityLinks.get("T1:evaluation:V1:created")?.entity_id).toBe(
-      "V1",
+    expect(collections.taskEntityLinks.get("T1:evaluation:EV1:created")?.entity_id).toBe(
+      "EV1",
     );
     expect(collections.taskActivities.get("1")?.task_id).toBe("T1");
     expect(collections.analysisActivities.get("1")?.kind).toBe("comment");
@@ -192,9 +192,9 @@ describe("situ collections", () => {
       collections,
       upsert: upsert({
         collection: "experiments",
-        key: "E1",
+        key: "EX1",
         record: experimentRecord({
-          overrides: { id: "E1", status: "active" },
+          overrides: { id: "EX1", status: "active" },
         }),
       }),
     });
@@ -202,9 +202,9 @@ describe("situ collections", () => {
       collections,
       upsert: upsert({
         collection: "evaluations",
-        key: "V2",
+        key: "EV2",
         record: evaluationRecord({
-          overrides: { id: "V2", status: "active" },
+          overrides: { id: "EV2", status: "active" },
         }),
       }),
     });
@@ -304,8 +304,8 @@ describe("situ collections", () => {
     expect(collections.baselines.get("B1")?.status).toBe(
       "active",
     );
-    expect(collections.experiments.get("E1")?.status).toBe("active");
-    expect(collections.evaluations.get("V2")?.status).toBe("active");
+    expect(collections.experiments.get("EX1")?.status).toBe("active");
+    expect(collections.evaluations.get("EV2")?.status).toBe("active");
     expect(collections.measurements.get("6")?.payload.metrics).toEqual({
       score: { value: 0.73 },
     });
@@ -433,7 +433,7 @@ function experimentRecord({
   overrides?: Partial<ExperimentRecord>;
 }): ExperimentRecord {
   return {
-    id: "E1",
+    id: "EX1",
     project_id: PROJECT_ID,
     created_in_session_id: SESSION_ID,
     status: "closed",
@@ -469,7 +469,7 @@ function evaluationRecord({
   overrides?: Partial<EvaluationRecord>;
 }): EvaluationRecord {
   return {
-    id: "V1",
+    id: "EV1",
     project_id: PROJECT_ID,
     created_in_session_id: SESSION_ID,
     status: "closed",
@@ -490,7 +490,7 @@ function measurementRecord({
 }): MeasurementRecord {
   return {
     id: 1,
-    evaluation_id: "V1",
+    evaluation_id: "EV1",
     created_in_session_id: SESSION_ID,
     actor: "agent",
     body: "Baseline result recorded.",
@@ -595,7 +595,7 @@ function taskEntityLinkRecord({
     project_id: PROJECT_ID,
     task_id: "T1",
     entity_kind: "evaluation",
-    entity_id: "V1",
+    entity_id: "EV1",
     relationship: "created",
     created_at: "2026-01-01T00:00:02Z",
     ...overrides,
@@ -629,7 +629,7 @@ function experimentActivityRecord({
 }): ExperimentActivityRecord {
   return {
     id: 1,
-    experiment_id: "E1",
+    experiment_id: "EX1",
     created_in_session_id: SESSION_ID,
     actor: "worker",
     kind: "comment",
@@ -665,7 +665,7 @@ function evaluationActivityRecord({
 }): EvaluationActivityRecord {
   return {
     id: 1,
-    evaluation_id: "V1",
+    evaluation_id: "EV1",
     created_in_session_id: SESSION_ID,
     actor: "agent",
     kind: "result",

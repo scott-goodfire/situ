@@ -45,18 +45,18 @@ def test_collection_routes_cover_publishable_records() -> None:
         (session_record(), "sessions", "S1"),
         (hypothesis_record(), "hypotheses", "H1"),
         (baseline_record(), "baselines", "B1"),
-        (experiment_record(), "experiments", "E1"),
-        (evaluation_record(), "evaluations", "V1"),
+        (experiment_record(), "experiments", "EX1"),
+        (evaluation_record(), "evaluations", "EV1"),
         (measurement_record(), "measurements", "7"),
         (analysis_record(), "analyses", "A1"),
         (
             HypothesisExperimentLinkRecord(
                 hypothesis_id="H1",
-                experiment_id="E1",
+                experiment_id="EX1",
                 created_at="now",
             ),
             "hypothesis_experiment_links",
-            "H1:E1",
+            "H1:EX1",
         ),
         (agent_record(), "agents", "agent_0001"),
         (task_record(), "tasks", "T1"),
@@ -68,14 +68,14 @@ def test_collection_routes_cover_publishable_records() -> None:
         (
             task_entity_link_record(),
             "task_entity_links",
-            "T1:evaluation:V1:created",
+            "T1:evaluation:EV1:created",
         ),
         (task_activity_record(), "task_activities", "5"),
         (analysis_activity_record(), "analysis_activities", "6"),
         (hypothesis_activity_record(), "hypothesis_activities", "1"),
         (experiment_activity_record(), "experiment_activities", "2"),
         (evaluation_activity_record(), "evaluation_activities", "4"),
-        (artifact_record(), "artifacts", "F1"),
+        (artifact_record(), "artifacts", "ART1"),
         (event_record(), "events", "3"),
     ]
 
@@ -86,7 +86,7 @@ def test_collection_routes_cover_publishable_records() -> None:
 
 
 def test_collection_publisher_emits_generic_upsert() -> None:
-    project_id = f"project_{uuid4().hex}"
+    project_id = f"P{uuid4().int}"
     notifications: list[tuple[str, dict]] = []
     register_project_notifications(
         project_id=project_id,
@@ -206,7 +206,7 @@ def task_entity_link_record() -> TaskEntityLinkRecord:
         project_id="P1",
         task_id="T1",
         entity_kind="evaluation",
-        entity_id="V1",
+        entity_id="EV1",
         relationship="created",
         created_at="now",
     )
@@ -242,7 +242,7 @@ def hypothesis_record() -> HypothesisRecord:
 
 def experiment_record() -> ExperimentRecord:
     return ExperimentRecord(
-        id="E1",
+        id="EX1",
         project_id="P1",
         created_in_session_id="S1",
         status="active",
@@ -268,7 +268,7 @@ def baseline_record() -> BaselineRecord:
 
 def evaluation_record() -> EvaluationRecord:
     return EvaluationRecord(
-        id="V1",
+        id="EV1",
         project_id="P1",
         created_in_session_id="S1",
         status="active",
@@ -326,7 +326,7 @@ def hypothesis_activity_record() -> HypothesisActivityRecord:
 def experiment_activity_record() -> ExperimentActivityRecord:
     return ExperimentActivityRecord(
         id=2,
-        experiment_id="E1",
+        experiment_id="EX1",
         created_in_session_id="S1",
         actor="agent",
         kind="comment",
@@ -339,7 +339,7 @@ def experiment_activity_record() -> ExperimentActivityRecord:
 def evaluation_activity_record() -> EvaluationActivityRecord:
     return EvaluationActivityRecord(
         id=4,
-        evaluation_id="V1",
+        evaluation_id="EV1",
         created_in_session_id="S1",
         actor="agent",
         kind="result",
@@ -352,7 +352,7 @@ def evaluation_activity_record() -> EvaluationActivityRecord:
 def measurement_record() -> MeasurementRecord:
     return MeasurementRecord(
         id=7,
-        evaluation_id="V1",
+        evaluation_id="EV1",
         created_in_session_id="S1",
         actor="agent",
         body="Baseline result.",
@@ -363,11 +363,11 @@ def measurement_record() -> MeasurementRecord:
 
 def artifact_record() -> ArtifactRecord:
     return ArtifactRecord(
-        id="F1",
+        id="ART1",
         project_id="P1",
         created_in_session_id="S1",
         associated_entity_kind="experiment",
-        associated_entity_id="E1",
+        associated_entity_id="EX1",
         kind="json",
         title="Raw output",
         path="artifacts/raw.json",

@@ -15,7 +15,7 @@ type AppRecord = {
   started_at: string;
 };
 
-type SessionRecord = {
+type SessionConnection = {
   project_id: string;
   workspace: string;
   pid: number;
@@ -47,7 +47,6 @@ const appRoot = resolve(process.env.SITU_APP_ROOT ?? repoRootFromImport());
 const token = randomBytes(24).toString("base64url");
 const startedAt = new Date().toISOString();
 const runtimes = new Map<string, RuntimeClient>();
-const workspaceToProject = new Map<string, string>();
 const clients = new Set<EventClient>();
 let appRecord: AppRecord | null = null;
 
@@ -321,7 +320,6 @@ async function ensureRuntime({ workspace }: { workspace: string }): Promise<Runt
     harness,
   };
   runtimes.set(projectId, runtime);
-  workspaceToProject.set(resolvedWorkspace, projectId);
   harness.onNotification({
     handler: (notification) => {
       broadcast({ projectId, notification });
@@ -413,7 +411,7 @@ function removeAppRecord(): void {
   rmSync(appPath(), { force: true });
 }
 
-function writeSessionRecord({ record }: { record: SessionRecord }): void {
+function writeSessionRecord({ record }: { record: SessionConnection }): void {
   const path = sessionPath({ projectId: record.project_id });
   mkdirSync(dirname(path), { recursive: true });
   writeFileSync(path, `${JSON.stringify(record, null, 2)}\n`);

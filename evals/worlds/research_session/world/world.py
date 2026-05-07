@@ -16,14 +16,14 @@ PROJECT_ID = "P1"
 SESSION_ID = "S1"
 SCIENTIST_AGENT_ID = f"agent_{PROJECT_ID}_scientist"
 HYPOTHESIS_ID = "H1"
-EXPERIMENT_ID = "E1"
-ARTIFACT_ID = "F1"
+EXPERIMENT_ID = "EX1"
+ARTIFACT_ID = "ART1"
 ANALYSIS_ID = "A1"
 TASK_ID = "T1"
 BASELINE_ID = "B1"
-BASELINE_EVALUATION_ID = "V1"
-COMPONENT_A_EXPERIMENT_ID = "E1"
-COMPONENT_C_EXPERIMENT_ID = "E2"
+BASELINE_EVALUATION_ID = "EV1"
+COMPONENT_A_EXPERIMENT_ID = "EX1"
+COMPONENT_C_EXPERIMENT_ID = "EX2"
 
 RESEARCH_CONTEXT_BODY = (
     "Use local eval scripts and compare score, latency_ms, and safety notes. "
@@ -406,9 +406,9 @@ def _create_baseline_measurement(
 
 def _evaluation_id_for_experiment(experiment_id: str) -> str:
     if experiment_id == COMPONENT_A_EXPERIMENT_ID:
-        return "V2"
+        return "EV2"
     if experiment_id == COMPONENT_C_EXPERIMENT_ID:
-        return "V3"
+        return "EV3"
     raise ValueError(f"unknown eval fixture experiment id: {experiment_id}")
 
 

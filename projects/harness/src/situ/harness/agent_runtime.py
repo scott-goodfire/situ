@@ -129,7 +129,7 @@ class AgentRuntime:
         setup_objective: str,
         setup_research_context: str,
         assigned_task_ids: Sequence[str] = (),
-        session_id: str | None = None,
+        session_id: str,
         repos: Repositories | None = None,
     ) -> AgentPlan:
         prompt = build_proposal_round_prompt(
@@ -141,7 +141,7 @@ class AgentRuntime:
         conversation_id = None
         project_id = None
         agent_id = None
-        if session_id is not None and repos is not None:
+        if repos is not None:
             session = repos.sessions.get(session_id=session_id)
             project_id = session.project_id if session is not None else None
             if project_id is not None:
@@ -166,7 +166,7 @@ class AgentRuntime:
                     conversation_id = f"situ:{project_id}:{agent.id}"
 
         tool_deps = SituToolDeps(
-            session_id=session_id or "session_unscoped",
+            session_id=session_id,
             agent_id=agent_id,
             workspace_id=workspace.get("id"),
             project_id=project_id,

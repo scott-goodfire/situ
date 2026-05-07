@@ -115,7 +115,7 @@ def repos(tmp_path: Path) -> Repositories:
         status="active",
     )
     repositories.experiments.create(
-        experiment_id="E1",
+        experiment_id="EX1",
         project_id=project.id,
         created_in_session_id="S1",
         title="Try component A",
@@ -134,7 +134,7 @@ def test_get_project_board_tool_reads_current_project_board(repos: Repositories)
         summary="Reference behavior before candidate changes.",
     )
     evaluation = repos.evaluations.create(
-        evaluation_id="V1",
+        evaluation_id="EV1",
         project_id="P1",
         created_in_session_id="S1",
         title="Baseline project eval",
@@ -159,10 +159,10 @@ def test_get_project_board_tool_reads_current_project_board(repos: Repositories)
         "B1"
     ]
     assert [experiment["id"] for experiment in result.experiments] == [
-        "E1"
+        "EX1"
     ]
     assert [measurement["evaluation_id"] for measurement in result.measurements] == [
-        "V1"
+        "EV1"
     ]
 
 
@@ -536,7 +536,7 @@ def test_experiment_tools_create_update_and_list(repos: Repositories) -> None:
     )
     assert created.success is True
     assert created.experiment is not None
-    assert created.experiment["id"] == "E2"
+    assert created.experiment["id"] == "EX2"
     assert created.experiment["project_id"] == "P1"
     assert created.experiment["created_in_session_id"] == "S1"
     assert created.experiment["status"] == "open"
@@ -544,7 +544,7 @@ def test_experiment_tools_create_update_and_list(repos: Repositories) -> None:
     updated = invoke_situ_tool_sync(
         tool=UpdateExperimentTool(),
         deps=deps,
-        experiment_id="E2",
+        experiment_id="EX2",
         status="closed",
         summary="Component C improved score but hurt latency.",
     )
@@ -555,8 +555,8 @@ def test_experiment_tools_create_update_and_list(repos: Repositories) -> None:
     listed = invoke_situ_tool_sync(tool=ListExperimentsTool(), deps=deps)
     assert listed.success is True
     assert [experiment["id"] for experiment in listed.experiments] == [
-        "E1",
-        "E2",
+        "EX1",
+        "EX2",
     ]
     assert [event["type"] for event in emitted] == [
         "experiment.created",
@@ -633,7 +633,7 @@ def test_evaluation_tools_create_update_list_and_add_results(
     )
     assert created.success is True
     assert created.evaluation is not None
-    assert created.evaluation["id"] == "V1"
+    assert created.evaluation["id"] == "EV1"
     assert created.evaluation["project_id"] == "P1"
     assert created.evaluation["created_in_session_id"] == "S1"
     assert created.evaluation["status"] == "open"
@@ -642,7 +642,7 @@ def test_evaluation_tools_create_update_list_and_add_results(
     result = invoke_situ_tool_sync(
         tool=AddEvaluationResultTool(),
         deps=deps,
-        evaluation_id="V1",
+        evaluation_id="EV1",
         result="Baseline command passed with score 0.71.",
         payload={"raw": "score=0.71", "metrics": {"score": 0.71}},
     )
@@ -662,7 +662,7 @@ def test_evaluation_tools_create_update_list_and_add_results(
     updated = invoke_situ_tool_sync(
         tool=UpdateEvaluationTool(),
         deps=deps,
-        evaluation_id="V1",
+        evaluation_id="EV1",
         status="closed",
         summary="Baseline result recorded.",
     )
@@ -679,13 +679,13 @@ def test_evaluation_tools_create_update_list_and_add_results(
     activities = invoke_situ_tool_sync(
         tool=ListEvaluationActivitiesTool(),
         deps=deps,
-        evaluation_id="V1",
+        evaluation_id="EV1",
     )
-    measurements = repos.measurements.list_for_evaluation(evaluation_id="V1")
+    measurements = repos.measurements.list_for_evaluation(evaluation_id="EV1")
 
     assert listed.success is True
     assert [evaluation["id"] for evaluation in listed.evaluations] == [
-        "V1"
+        "EV1"
     ]
     assert [measurement["id"] for measurement in listed_measurements.measurements] == [
         1
@@ -708,7 +708,7 @@ def test_work_tools_reject_invalid_statuses_with_agent_readable_errors(
     experiment_update = invoke_situ_tool_sync(
         tool=UpdateExperimentTool(),
         deps=deps,
-        experiment_id="E1",
+        experiment_id="EX1",
         status="completed",
     )
     hypothesis_update = invoke_situ_tool_sync(
@@ -763,13 +763,13 @@ def test_link_tool_links_hypothesis_and_experiment(repos: Repositories) -> None:
         tool=LinkHypothesisExperimentTool(),
         deps=deps,
         hypothesis_id="H1",
-        experiment_id="E1",
+        experiment_id="EX1",
     )
 
     assert result.success is True
     assert result.link is not None
     assert result.link["hypothesis_id"] == "H1"
-    assert result.link["experiment_id"] == "E1"
+    assert result.link["experiment_id"] == "EX1"
 
 
 def test_comment_tools_write_activity_records(repos: Repositories) -> None:
@@ -790,17 +790,17 @@ def test_comment_tools_write_activity_records(repos: Repositories) -> None:
     experiment_comment = invoke_situ_tool_sync(
         tool=AddExperimentCommentTool(),
         deps=deps,
-        experiment_id="E1",
+        experiment_id="EX1",
         comment="Component A improved score.",
         payload={"signals": [{"key": "score", "value": 0.73}]},
     )
     evaluation = repos.evaluations.create(
-        evaluation_id="V1",
+        evaluation_id="EV1",
         project_id="P1",
         created_in_session_id="S1",
         title="Candidate evaluation",
         summary="Candidate evidence for review.",
-        associated_experiment_id="E1",
+        associated_experiment_id="EX1",
     )
     measurement = repos.measurements.add(
         evaluation_id=evaluation.id,
@@ -811,7 +811,7 @@ def test_comment_tools_write_activity_records(repos: Repositories) -> None:
     experiment_review = invoke_situ_tool_sync(
         tool=AddExperimentReviewTool(),
         deps=deps,
-        experiment_id="E1",
+        experiment_id="EX1",
         review="The candidate needs reproduction before replanning trusts it.",
         verdict="needs_reproduction",
         recommended_next_step="reproduce",
@@ -823,11 +823,11 @@ def test_comment_tools_write_activity_records(repos: Repositories) -> None:
     bad_experiment_review = invoke_situ_tool_sync(
         tool=AddExperimentReviewTool(),
         deps=deps,
-        experiment_id="E1",
+        experiment_id="EX1",
         review="This cites missing evidence and should fail.",
         verdict="needs_reproduction",
         recommended_next_step="reproduce",
-        reviewed_evaluation_ids=["V404"],
+        reviewed_evaluation_ids=["EV404"],
         reviewed_measurement_ids=[999],
     )
 
@@ -851,7 +851,7 @@ def test_comment_tools_write_activity_records(repos: Repositories) -> None:
         "recommended_next_step": "reproduce",
         "evidence_summary": "One measurement improved, but there is no repeated run.",
         "concern_kinds": ["selection_on_noise"],
-        "reviewed_evaluation_ids": ["V1"],
+        "reviewed_evaluation_ids": ["EV1"],
         "reviewed_measurement_ids": [measurement.id],
     }
     assert bad_experiment_review.success is False
@@ -866,7 +866,7 @@ def test_comment_tools_write_activity_records(repos: Repositories) -> None:
     experiment_activities = invoke_situ_tool_sync(
         tool=ListExperimentActivitiesTool(),
         deps=deps,
-        experiment_id="E1",
+        experiment_id="EX1",
     )
 
     assert [activity["id"] for activity in hypothesis_activities.activities] == [1]
@@ -888,27 +888,27 @@ def test_artifact_tools_create_and_list_artifacts(repos: Repositories) -> None:
         title="raw eval output",
         path="artifacts/raw.json",
         associated_entity_kind="experiment",
-        associated_entity_id="E1",
+        associated_entity_id="EX1",
         media_type="application/json",
         size_bytes=120,
     )
     assert created.success is True
     assert created.artifact is not None
-    assert created.artifact["id"] == "F1"
+    assert created.artifact["id"] == "ART1"
     assert created.artifact["project_id"] == "P1"
     assert created.artifact["created_in_session_id"] == "S1"
     assert created.artifact["associated_entity_kind"] == "experiment"
-    assert created.artifact["associated_entity_id"] == "E1"
+    assert created.artifact["associated_entity_id"] == "EX1"
 
     listed = invoke_situ_tool_sync(
         tool=ListArtifactsTool(),
         deps=deps,
         associated_entity_kind="experiment",
-        associated_entity_id="E1",
+        associated_entity_id="EX1",
     )
     assert listed.success is True
     assert [artifact["id"] for artifact in listed.artifacts] == [
-        "F1"
+        "ART1"
     ]
 
 
@@ -1105,7 +1105,7 @@ def test_create_experiment_tool_reuses_active_experiment_context(
     repos: Repositories,
 ) -> None:
     existing = repos.experiments.update(
-        experiment_id="E1",
+        experiment_id="EX1",
         status="active",
         worktree_path="/tmp/situ-worktree",
         base_commit="abc123",

@@ -24,7 +24,7 @@ export const Deep: Story = {
     items: [
       { id: "p", label: "Project", href: "#" },
       { id: "h", label: "H1", href: "#" },
-      { id: "e", label: "E42", href: "#" },
+      { id: "e", label: "EX42", href: "#" },
       { id: "v", label: "evaluation" },
     ],
   },

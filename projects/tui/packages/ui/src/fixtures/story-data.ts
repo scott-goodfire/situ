@@ -58,7 +58,7 @@ export const activeHypothesis = hypothesisRecord({});
 
 const baselineExperiment = experimentRecord({
   overrides: {
-    id: "E1",
+    id: "EX1",
     status: "closed",
     title: "Record baseline",
     summary: "Baseline result recorded: score 0.61, latency 1830ms.",
@@ -67,7 +67,7 @@ const baselineExperiment = experimentRecord({
 
 export const runningExperiment = experimentRecord({
   overrides: {
-    id: "E2",
+    id: "EX2",
     status: "active",
     title: "Try retrieval filtering",
     summary: "Try retrieval filtering on cancellation-ticket failures.",
@@ -76,7 +76,7 @@ export const runningExperiment = experimentRecord({
 
 export const acceptedExperiment = experimentRecord({
   overrides: {
-    id: "E3",
+    id: "EX3",
     status: "closed",
     title: "Tighten tool-use discipline",
     summary: "Tighten tool-use discipline for billing tickets.",
@@ -85,7 +85,7 @@ export const acceptedExperiment = experimentRecord({
 
 export const suspiciousExperiment = experimentRecord({
   overrides: {
-    id: "E4",
+    id: "EX4",
     status: "closed",
     title: "Reported large improvement",
     summary: "Reported large improvement after eval fixture edit.",
@@ -94,7 +94,7 @@ export const suspiciousExperiment = experimentRecord({
 
 const baselineEvaluation = evaluationRecord({
   overrides: {
-    id: "V1",
+    id: "EV1",
     status: "closed",
     title: "Baseline project eval",
     summary: "Baseline result recorded before candidate changes.",
@@ -103,7 +103,7 @@ const baselineEvaluation = evaluationRecord({
 
 const runningEvaluation = evaluationRecord({
   overrides: {
-    id: "V2",
+    id: "EV2",
     status: "active",
     title: "Evaluate retrieval filtering",
     summary: "Run the normal support-agent eval after retrieval filtering.",
@@ -113,7 +113,7 @@ const runningEvaluation = evaluationRecord({
 
 const suspiciousEvaluation = evaluationRecord({
   overrides: {
-    id: "V3",
+    id: "EV3",
     status: "closed",
     title: "Evaluate reported large improvement",
     summary: "Candidate output is suspicious because eval fixtures changed.",
@@ -383,7 +383,7 @@ export const runningEvents = [
     overrides: {
       id: 2,
       type: "experiment.completed",
-      message: "Completed E1",
+      message: "Completed EX1",
       created_at: "2026-01-01T00:00:03Z",
     },
   }),
@@ -391,7 +391,7 @@ export const runningEvents = [
     overrides: {
       id: 3,
       type: "experiment.started",
-      message: "Started E2",
+      message: "Started EX2",
       created_at: "2026-01-01T00:00:05Z",
     },
   }),
@@ -403,7 +403,7 @@ export const suspiciousEvents = [
     overrides: {
       id: 4,
       type: "experiment.activity_recorded",
-      message: "Concern recorded for E4.",
+      message: "Concern recorded for EX4.",
       created_at: "2026-01-01T00:00:08Z",
     },
   }),
@@ -530,7 +530,7 @@ function experimentRecord({
   overrides?: Partial<ExperimentRecord>;
 }): ExperimentRecord {
   return {
-    id: "E1",
+    id: "EX1",
     project_id: storyProjectId,
     created_in_session_id: storySessionId,
     status: "open",
@@ -548,7 +548,7 @@ function evaluationRecord({
   overrides?: Partial<EvaluationRecord>;
 }): EvaluationRecord {
   return {
-    id: "V1",
+    id: "EV1",
     project_id: storyProjectId,
     created_in_session_id: storySessionId,
     status: "open",
@@ -606,7 +606,7 @@ function evaluationActivityRecord({
 }): EvaluationActivityRecord {
   return {
     id: 1,
-    evaluation_id: "V1",
+    evaluation_id: "EV1",
     created_in_session_id: storySessionId,
     actor: "agent",
     kind: "result",
@@ -624,7 +624,7 @@ function experimentActivityRecord({
 }): ExperimentActivityRecord {
   return {
     id: 1,
-    experiment_id: "E1",
+    experiment_id: "EX1",
     created_in_session_id: storySessionId,
     actor: "worker",
     kind: "comment",

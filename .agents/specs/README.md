@@ -19,6 +19,7 @@ Read in this order:
 12. [0012-experiment-workspace-state/SPEC.md](./0012-experiment-workspace-state/SPEC.md)
 13. [0013-agent-task-coordination/SPEC.md](./0013-agent-task-coordination/SPEC.md)
 14. [0014-local-app-runtime/SPEC.md](./0014-local-app-runtime/SPEC.md)
+15. [0015-experiment-lineage-portfolio-search/SPEC.md](./0015-experiment-lineage-portfolio-search/SPEC.md)
 
 ## Product Thesis
 

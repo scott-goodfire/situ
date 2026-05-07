@@ -405,7 +405,7 @@ class BaselineThenExperimentRuntime:
                 status="closed",
             )
             evaluation = repos.evaluations.create(
-                evaluation_id="V1",
+                evaluation_id="EV1",
                 project_id=project_id,
                 created_in_session_id=session_id,
                 title="Baseline",
@@ -499,7 +499,7 @@ class BaselineOnlyRuntime:
             status="closed",
         )
         evaluation = repos.evaluations.create(
-            evaluation_id="V1",
+            evaluation_id="EV1",
             project_id=project_id,
             created_in_session_id=session_id,
             title="Baseline",
@@ -681,7 +681,7 @@ def _seed_closed_experiment_with_measurement(
     workspace = app.repos.workspaces.get()
     assert workspace is not None
     experiment = app.repos.experiments.create(
-        experiment_id="E1",
+        experiment_id="EX1",
         project_id=project_id,
         created_in_session_id=session_id,
         title="Try candidate",
@@ -691,7 +691,7 @@ def _seed_closed_experiment_with_measurement(
         base_commit="test-base",
     )
     evaluation = app.repos.evaluations.create(
-        evaluation_id="V1",
+        evaluation_id="EV1",
         project_id=project_id,
         created_in_session_id=session_id,
         title="Candidate eval",

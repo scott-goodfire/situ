@@ -58,7 +58,7 @@ const HYPOTHESES: HypothesisRecord[] = [
 
 const EXPERIMENTS: ExperimentRecord[] = [
   {
-    id: "E2",
+    id: "EX2",
     project_id: "proj_0001",
     status: "active",
     title: "Try retrieval filtering",
@@ -80,7 +80,7 @@ const EVENTS: EventRecord[] = [
     id: 2,
     associated_session_id: "S1",
     type: "experiment.start",
-    message: "Started experiment E2",
+    message: "Started experiment EX2",
     created_at: "2026-01-01T00:04:00Z",
   },
 ];

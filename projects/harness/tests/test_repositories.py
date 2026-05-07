@@ -86,7 +86,7 @@ def create_hypothesis(repos: Repositories) -> HypothesisRecord:
 
 def create_experiment(
     repos: Repositories,
-    experiment_id: str = "E1",
+    experiment_id: str = "EX1",
 ) -> ExperimentRecord:
     project = create_project(repos)
     session = create_session(repos)
@@ -126,7 +126,7 @@ def create_evaluation(repos: Repositories) -> EvaluationRecord:
     session = create_session(repos)
     baseline = create_baseline(repos)
     return repos.evaluations.create(
-        evaluation_id="V1",
+        evaluation_id="EV1",
         project_id=project.id,
         created_in_session_id=session.id,
         title="Baseline project eval",
@@ -173,9 +173,9 @@ def test_repositories_generate_canonical_short_ids(repos: Repositories) -> None:
     assert repos.analyses.next_id(project_id=project.id) == "A1"
     assert repos.hypotheses.next_id(project_id=project.id) == "H1"
     assert repos.baselines.next_id(project_id=project.id) == "B1"
-    assert repos.experiments.next_id(project_id=project.id) == "E1"
-    assert repos.evaluations.next_id(project_id=project.id) == "V1"
-    assert repos.artifacts.next_id(project_id=project.id) == "F1"
+    assert repos.experiments.next_id(project_id=project.id) == "EX1"
+    assert repos.evaluations.next_id(project_id=project.id) == "EV1"
+    assert repos.artifacts.next_id(project_id=project.id) == "ART1"
     assert repos.tasks.next_id(project_id=project.id) == "T1"
 
     task = repos.tasks.create(
@@ -319,7 +319,7 @@ def test_hypotheses_repository_create_update_get_and_list(repos: Repositories) -
 def test_experiments_repository_create_update_get_and_list(repos: Repositories) -> None:
     experiment = create_experiment(repos)
 
-    assert experiment.id == "E1"
+    assert experiment.id == "EX1"
     assert experiment.project_id == "P1"
     assert experiment.created_in_session_id == "S1"
     assert experiment.status == "open"
@@ -328,23 +328,23 @@ def test_experiments_repository_create_update_get_and_list(repos: Repositories) 
     assert experiment.base_commit is None
 
     updated = repos.experiments.update(
-        experiment_id="E1",
+        experiment_id="EX1",
         status="closed",
         summary="A improved score.",
-        worktree_path="/tmp/worktree/E1",
+        worktree_path="/tmp/worktree/EX1",
         base_commit="abc123",
     )
     assert updated is not None
     assert updated.status == "closed"
     assert updated.summary == "A improved score."
-    assert updated.worktree_path == "/tmp/worktree/E1"
+    assert updated.worktree_path == "/tmp/worktree/EX1"
     assert updated.base_commit == "abc123"
-    assert repos.experiments.get(experiment_id="E1") == updated
+    assert repos.experiments.get(experiment_id="EX1") == updated
     assert [item.id for item in repos.experiments.list_for_project(project_id="P1")] == [
-        "E1"
+        "EX1"
     ]
     assert [item.id for item in repos.experiments.list_for_session(session_id="S1")] == [
-        "E1"
+        "EX1"
     ]
 
 
@@ -377,7 +377,7 @@ def test_baselines_repository_create_update_get_and_list(repos: Repositories) ->
 def test_evaluations_repository_create_update_get_and_list(repos: Repositories) -> None:
     evaluation = create_evaluation(repos)
 
-    assert evaluation.id == "V1"
+    assert evaluation.id == "EV1"
     assert evaluation.project_id == "P1"
     assert evaluation.created_in_session_id == "S1"
     assert evaluation.status == "open"
@@ -387,29 +387,29 @@ def test_evaluations_repository_create_update_get_and_list(repos: Repositories) 
 
     create_experiment(repos)
     updated = repos.evaluations.update(
-        evaluation_id="V1",
+        evaluation_id="EV1",
         status="closed",
         summary="Baseline result recorded.",
-        associated_experiment_id="E1",
+        associated_experiment_id="EX1",
     )
     assert updated is not None
     assert updated.status == "closed"
     assert updated.summary == "Baseline result recorded."
     assert updated.associated_baseline_id is None
-    assert updated.associated_experiment_id == "E1"
-    assert repos.evaluations.get(evaluation_id="V1") == updated
+    assert updated.associated_experiment_id == "EX1"
+    assert repos.evaluations.get(evaluation_id="EV1") == updated
     assert [item.id for item in repos.evaluations.list_for_project(project_id="P1")] == [
-        "V1"
+        "EV1"
     ]
     assert [item.id for item in repos.evaluations.list_for_session(session_id="S1")] == [
-        "V1"
+        "EV1"
     ]
-    assert [item.id for item in repos.evaluations.list_for_experiment(experiment_id="E1")] == [
-        "V1"
+    assert [item.id for item in repos.evaluations.list_for_experiment(experiment_id="EX1")] == [
+        "EV1"
     ]
 
     baseline_again = repos.evaluations.update(
-        evaluation_id="V1",
+        evaluation_id="EV1",
         associated_baseline_id="B1",
     )
     assert baseline_again is not None
@@ -417,7 +417,7 @@ def test_evaluations_repository_create_update_get_and_list(repos: Repositories) 
     assert baseline_again.associated_experiment_id is None
     assert [item.id for item in repos.evaluations.list_for_baseline(
         baseline_id="B1"
-    )] == ["V1"]
+    )] == ["EV1"]
 
 
 def test_analyses_repository_create_update_get_and_list(repos: Repositories) -> None:
@@ -466,13 +466,13 @@ def test_work_repositories_reject_invalid_agent_statuses(
 
     with pytest.raises(ValueError, match="invalid experiment status"):
         repos.experiments.update(
-            experiment_id="E1",
+            experiment_id="EX1",
             status="completed",
         )
 
     with pytest.raises(ValueError, match="Record result details"):
         repos.experiments.create(
-            experiment_id="E2",
+            experiment_id="EX2",
             project_id="P1",
             created_in_session_id="S1",
             title="Try component B",
@@ -488,7 +488,7 @@ def test_work_repositories_reject_invalid_agent_statuses(
 
     with pytest.raises(ValueError, match="invalid evaluation status"):
         repos.evaluations.create(
-            evaluation_id="V3",
+            evaluation_id="EV3",
             project_id="P1",
             created_in_session_id="S1",
             title="Bad evaluation",
@@ -509,7 +509,7 @@ def test_work_repositories_reject_invalid_agent_statuses(
 
     with pytest.raises(ValueError, match="exactly one measured subject"):
         repos.evaluations.create(
-            evaluation_id="V4",
+            evaluation_id="EV4",
             project_id="P1",
             created_in_session_id="S1",
             title="No subject",
@@ -551,7 +551,7 @@ def test_experiments_repository_accepts_work_status_enum(
 
     create_hypothesis(repos)
     experiment = repos.experiments.create(
-        experiment_id="E2",
+        experiment_id="EX2",
         project_id="P1",
         created_in_session_id="S1",
         title="Try component B",
@@ -560,7 +560,7 @@ def test_experiments_repository_accepts_work_status_enum(
     )
 
     updated = repos.experiments.update(
-        experiment_id="E2",
+        experiment_id="EX2",
         status=WorkStatus.CLOSED,
     )
 
@@ -576,17 +576,17 @@ def test_hypothesis_experiment_links_repository_create_and_list(
 
     link = repos.hypothesis_experiment_links.create(
         hypothesis_id="H1",
-        experiment_id="E1",
+        experiment_id="EX1",
     )
 
     assert link.hypothesis_id == "H1"
-    assert link.experiment_id == "E1"
+    assert link.experiment_id == "EX1"
     assert repos.hypothesis_experiment_links.get(
         hypothesis_id="H1",
-        experiment_id="E1",
+        experiment_id="EX1",
     ) == link
     assert repos.hypothesis_experiment_links.list_for_hypothesis(hypothesis_id="H1") == [link]
-    assert repos.hypothesis_experiment_links.list_for_experiment(experiment_id="E1") == [
+    assert repos.hypothesis_experiment_links.list_for_experiment(experiment_id="EX1") == [
         link
     ]
 
@@ -600,12 +600,12 @@ def test_hypothesis_activities_repository_add_and_list(repos: Repositories) -> N
         actor="agent",
         kind="comment",
         body="A looks worth trying.",
-        payload={"experiment_id": "E1"},
+        payload={"experiment_id": "EX1"},
     )
 
     assert activity.id == 1
     assert activity.created_in_session_id == "S1"
-    assert activity.payload == {"experiment_id": "E1"}
+    assert activity.payload == {"experiment_id": "EX1"}
     assert repos.hypothesis_activities.list_for_hypothesis(hypothesis_id="H1") == [activity]
     assert repos.hypothesis_activities.list_for_project(project_id="P1") == [activity]
 
@@ -614,7 +614,7 @@ def test_experiment_activities_repository_add_and_list(repos: Repositories) -> N
     create_experiment(repos)
 
     activity = repos.experiment_activities.add(
-        experiment_id="E1",
+        experiment_id="EX1",
         created_in_session_id="S1",
         actor="worker",
         kind="comment",
@@ -628,7 +628,7 @@ def test_experiment_activities_repository_add_and_list(repos: Repositories) -> N
     assert activity.id == 1
     assert activity.created_in_session_id == "S1"
     assert activity.kind == "comment"
-    assert repos.experiment_activities.list_for_experiment(experiment_id="E1") == [
+    assert repos.experiment_activities.list_for_experiment(experiment_id="EX1") == [
         activity
     ]
     assert repos.experiment_activities.list_for_project(project_id="P1") == [activity]
@@ -638,7 +638,7 @@ def test_evaluation_activities_repository_add_and_list(repos: Repositories) -> N
     create_evaluation(repos)
 
     activity = repos.evaluation_activities.add(
-        evaluation_id="V1",
+        evaluation_id="EV1",
         created_in_session_id="S1",
         actor="agent",
         kind="result",
@@ -653,13 +653,13 @@ def test_evaluation_activities_repository_add_and_list(repos: Repositories) -> N
     assert activity.created_in_session_id == "S1"
     assert activity.kind == "result"
     assert repos.evaluation_activities.list_for_evaluation(
-        evaluation_id="V1"
+        evaluation_id="EV1"
     ) == [activity]
     assert repos.evaluation_activities.list_for_project(project_id="P1") == [activity]
 
     with pytest.raises(ValueError, match="invalid evaluation activity kind"):
         repos.evaluation_activities.add(
-            evaluation_id="V1",
+            evaluation_id="EV1",
             created_in_session_id="S1",
             actor="agent",
             kind="comment",
@@ -671,14 +671,14 @@ def test_measurements_repository_add_and_list(repos: Repositories) -> None:
     measurement = create_measurement(repos)
 
     assert measurement.id == 1
-    assert measurement.evaluation_id == "V1"
+    assert measurement.evaluation_id == "EV1"
     assert measurement.created_in_session_id == "S1"
     assert measurement.actor == "agent"
     assert measurement.payload.metrics["score"].value == 0.71
     assert measurement.model_dump()["payload"] == {
         "metrics": {"score": {"value": 0.71}}
     }
-    assert repos.measurements.list_for_evaluation(evaluation_id="V1") == [
+    assert repos.measurements.list_for_evaluation(evaluation_id="EV1") == [
         measurement
     ]
     assert repos.measurements.list_for_baseline(baseline_id="B1") == [
@@ -711,14 +711,14 @@ def test_analysis_activities_repository_add_and_list(repos: Repositories) -> Non
 def test_artifacts_repository_create_and_list(repos: Repositories) -> None:
     create_experiment(repos)
     activity = repos.experiment_activities.add(
-        experiment_id="E1",
+        experiment_id="EX1",
         actor="worker",
         kind="comment",
         body="A improved score.",
     )
 
     artifact = repos.artifacts.create(
-        artifact_id="F1",
+        artifact_id="ART1",
         project_id="P1",
         created_in_session_id="S1",
         associated_entity_kind="experiment_activity",
@@ -730,12 +730,12 @@ def test_artifacts_repository_create_and_list(repos: Repositories) -> None:
         size_bytes=120,
     )
 
-    assert artifact.id == "F1"
+    assert artifact.id == "ART1"
     assert artifact.project_id == "P1"
     assert artifact.created_in_session_id == "S1"
     assert artifact.associated_entity_kind == "experiment_activity"
     assert artifact.associated_entity_id == str(activity.id)
-    assert repos.artifacts.get(artifact_id="F1") == artifact
+    assert repos.artifacts.get(artifact_id="ART1") == artifact
     assert repos.artifacts.list_for_project(project_id="P1") == [artifact]
     assert repos.artifacts.list_for_session(session_id="S1") == [artifact]
 
@@ -815,10 +815,10 @@ def test_current_state_api_composes_protocol_shaped_state(repos: Repositories) -
     analysis = create_analysis(repos)
     repos.hypothesis_experiment_links.create(
         hypothesis_id="H1",
-        experiment_id="E1",
+        experiment_id="EX1",
     )
     repos.experiment_activities.add(
-        experiment_id="E1",
+        experiment_id="EX1",
         actor="worker",
         kind="comment",
         body="A improved score.",
@@ -836,7 +836,7 @@ def test_current_state_api_composes_protocol_shaped_state(repos: Repositories) -
     )
     baseline = create_baseline(repos)
     repos.evaluations.create(
-        evaluation_id="V1",
+        evaluation_id="EV1",
         project_id="P1",
         created_in_session_id="S1",
         title="Baseline project eval",
@@ -844,14 +844,14 @@ def test_current_state_api_composes_protocol_shaped_state(repos: Repositories) -
         associated_baseline_id=baseline.id,
     )
     repos.measurements.add(
-        evaluation_id="V1",
+        evaluation_id="EV1",
         created_in_session_id="S1",
         actor="agent",
         body="Baseline result recorded.",
         payload={"activity_type": "result"},
     )
     repos.evaluation_activities.add(
-        evaluation_id="V1",
+        evaluation_id="EV1",
         created_in_session_id="S1",
         actor="agent",
         kind="result",
@@ -860,9 +860,9 @@ def test_current_state_api_composes_protocol_shaped_state(repos: Repositories) -
     )
     repos.events.add(
         event_type="experiment.completed",
-        message="Completed E1",
+        message="Completed EX1",
         session_id="S1",
-        payload={"experiment_id": "E1"},
+        payload={"experiment_id": "EX1"},
     )
 
     current_state = CurrentStateService(repos=repos).get()
@@ -875,10 +875,10 @@ def test_current_state_api_composes_protocol_shaped_state(repos: Repositories) -
         "B1"
     ]
     assert [experiment.id for experiment in current_state.experiments] == [
-        "E1"
+        "EX1"
     ]
     assert [evaluation.id for evaluation in current_state.evaluations] == [
-        "V1"
+        "EV1"
     ]
     assert [analysis.id for analysis in current_state.analyses] == ["A1"]
     assert [measurement.id for measurement in current_state.measurements] == [1]
@@ -899,7 +899,7 @@ def test_project_board_api_composes_project_board(repos: Repositories) -> None:
     analysis = create_analysis(repos)
     repos.hypothesis_experiment_links.create(
         hypothesis_id="H1",
-        experiment_id="E1",
+        experiment_id="EX1",
     )
     repos.hypothesis_activities.add(
         hypothesis_id="H1",
@@ -915,14 +915,14 @@ def test_project_board_api_composes_project_board(repos: Repositories) -> None:
         body="Mapped the codebase.",
     )
     repos.experiment_activities.add(
-        experiment_id="E1",
+        experiment_id="EX1",
         actor="worker",
         kind="comment",
         body="A improved score.",
     )
     baseline = create_baseline(repos)
     repos.evaluations.create(
-        evaluation_id="V1",
+        evaluation_id="EV1",
         project_id="P1",
         created_in_session_id="S1",
         title="Baseline project eval",
@@ -930,13 +930,13 @@ def test_project_board_api_composes_project_board(repos: Repositories) -> None:
         associated_baseline_id=baseline.id,
     )
     repos.measurements.add(
-        evaluation_id="V1",
+        evaluation_id="EV1",
         created_in_session_id="S1",
         actor="agent",
         body="Baseline result recorded.",
     )
     repos.evaluation_activities.add(
-        evaluation_id="V1",
+        evaluation_id="EV1",
         created_in_session_id="S1",
         actor="agent",
         kind="result",
@@ -958,10 +958,10 @@ def test_project_board_api_composes_project_board(repos: Repositories) -> None:
         "B1"
     ]
     assert [experiment.id for experiment in graph.experiments] == [
-        "E1"
+        "EX1"
     ]
     assert [evaluation.id for evaluation in graph.evaluations] == [
-        "V1"
+        "EV1"
     ]
     assert [analysis.id for analysis in graph.analyses] == ["A1"]
     assert [measurement.id for measurement in graph.measurements] == [1]

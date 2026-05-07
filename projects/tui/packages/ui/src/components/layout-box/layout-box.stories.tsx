@@ -14,7 +14,7 @@ export const stories = [
           <Text>S1 | active | experiments 3/5</Text>
         </PaneSection>
         <PaneSection title="Now">
-          <Text>E2 | active</Text>
+          <Text>EX2 | active</Text>
         </PaneSection>
       </LayoutBox>
     ),

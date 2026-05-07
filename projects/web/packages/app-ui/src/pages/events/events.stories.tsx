@@ -40,14 +40,14 @@ const EVENTS: EventRecord[] = [
     id: 3,
     associated_session_id: "S1",
     type: "experiment.start",
-    message: "Started experiment E2",
+    message: "Started experiment EX2",
     created_at: "2026-01-01T00:04:00Z",
   },
   {
     id: 4,
     associated_session_id: "S1",
     type: "evaluation.complete",
-    message: "Eval V2 completed: resolution_rate 64.8%",
+    message: "Eval EV2 completed: resolution_rate 64.8%",
     created_at: "2026-01-01T00:08:00Z",
   },
 ];

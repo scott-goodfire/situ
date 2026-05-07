@@ -9,9 +9,9 @@ RECORD_ID_PREFIXES = {
     "analysis": "A",
     "hypothesis": "H",
     "baseline": "B",
-    "experiment": "E",
-    "evaluation": "V",
-    "artifact": "F",
+    "experiment": "EX",
+    "evaluation": "EV",
+    "artifact": "ART",
     "task": "T",
 }
 

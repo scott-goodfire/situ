@@ -60,7 +60,7 @@ export const stories = [
     render: () => (
       <Box flexDirection="column" gap={1} width={72}>
         <PaneSection title="Now">
-          <Text>E2 | active</Text>
+          <Text>EX2 | active</Text>
         </PaneSection>
         <PaneSection title="Trust Checks" chrome="box" tone="warning" density="compact">
           <Text>concern | eval command changed during candidate run</Text>
