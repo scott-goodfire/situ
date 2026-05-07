@@ -82,7 +82,11 @@ def _run_experiment_impl(
         )
     project_id = session.project_id
 
-    experiment_id = payload.experiment_id or _next_experiment_id(deps=deps)
+    experiment_id = (
+        payload.experiment_id
+        or deps.active_experiment_id
+        or _next_experiment_id(deps=deps)
+    )
 
     experiment = repos.experiments.get(experiment_id)
     if experiment is None:
@@ -277,8 +281,7 @@ def _next_experiment_id(
 ) -> str:
     repos = deps.get_repos()
     project_id = deps.require_project_id()
-    count = len(repos.experiments.list_for_project(project_id)) + 1
-    return f"exp_{project_id}_agent_{count:03d}"
+    return repos.experiments.next_id(project_id)
 
 
 def baseline_score(deps: SituToolDeps, project_id: str) -> float | None:

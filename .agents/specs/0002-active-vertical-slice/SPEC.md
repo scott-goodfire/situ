@@ -46,7 +46,8 @@ Then Situ:
   and create hypotheses when useful.
 - Requires the agent to establish baseline measurement evidence before treating
   candidate experiments as comparable.
-- Lets the agent call harness tools to run concrete experiments.
+- Runs concrete experiment-task work in managed Git worktrees so candidate code
+  edits and worker commands do not mutate the user's selected checkout.
 - Records measurement evidence, experiment results, concerns, interpretations,
   and decisions as inspectable ledger entries.
 - Renders a live terminal dashboard.
@@ -87,6 +88,8 @@ code are launched from the Situ repository.
 - Workspace state inspection around baseline and candidate measurements, so
   dirty starts, changed eval/test files, dependency changes, generated files,
   branch, commit, and eval command are visible when interpreting results
+- Managed detached worktrees for Scientist `experiment` tasks, with a clean base
+  workspace required before candidate execution starts
 - Pydantic AI `DBOSAgent` as the agent durability boundary
 - Durable restart/resume
 - `~/.situ/situ.sqlite` as the product SQLite source of truth

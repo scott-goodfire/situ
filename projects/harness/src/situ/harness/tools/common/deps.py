@@ -30,6 +30,7 @@ class SituToolDeps(BaseModel):
     project_dir: Path | None = None
     database_path: Path | None = None
     repo_path: str | None = None
+    active_experiment_id: str | None = None
     app_root: Path | None = None
     repos: Repositories | None = Field(default=None, exclude=True)
     worker_manager: WorkerManager | None = Field(default=None, exclude=True)

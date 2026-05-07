@@ -156,6 +156,8 @@ class AgentRuntime:
         app_root: Path | None = None,
         repos: Repositories | None = None,
         active_task: dict[str, Any] | None = None,
+        repo_path: str | None = None,
+        active_experiment_id: str | None = None,
     ) -> AgentPlan:
         prompt = build_session_run_prompt(
             setup_objective=setup_objective,
@@ -184,6 +186,7 @@ class AgentRuntime:
             agent_id = f"agent_{project_id}_scientist"
         if agent_id is None:
             agent_id = f"agent_{session_id}_scientist"
+        execution_repo_path = repo_path or workspace.get("repo_path")
         tool_deps = SituToolDeps(
             session_id=session_id,
             agent_id=agent_id,
@@ -191,8 +194,9 @@ class AgentRuntime:
             project_id=project_id,
             project_dir=self.project_dir,
             database_path=self.database_path,
-            repo_path=workspace.get("repo_path"),
+            repo_path=execution_repo_path,
             app_root=app_root,
+            active_experiment_id=active_experiment_id,
         )
         if repos is not None and project_id is not None:
             stored_messages = repos.agent_message_history.get_message_history(
@@ -209,7 +213,7 @@ class AgentRuntime:
 
         with span(
             "situ.agent.session",
-            workspace=workspace.get("repo_path", ""),
+            workspace=execution_repo_path or "",
             objective=setup_objective,
             session_id=session_id,
         ):

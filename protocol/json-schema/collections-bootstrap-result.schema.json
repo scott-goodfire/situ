@@ -654,6 +654,30 @@
           "title": "Summary",
           "type": "string"
         },
+        "worktree_path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Worktree Path"
+        },
+        "base_commit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Base Commit"
+        },
         "created_at": {
           "title": "Created At",
           "type": "string"

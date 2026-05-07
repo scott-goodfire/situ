@@ -83,6 +83,9 @@ MANAGER_AGENT_INSTRUCTIONS = inspect.cleandoc(
       is missing.
     - Use `hypothesize`, `experiment`, `interpret`, and `review` tasks to
       hand off focused research work to the Scientist.
+    - Use `experiment` tasks for candidate code changes. Situ roots those
+      Scientist passes in managed worktrees, so candidate edits do not mutate
+      the user's selected checkout.
     - Write task content with a concrete done condition, including which
       ledger outputs should exist and that the Scientist should mark the task
       done when the focused work is complete.
@@ -284,6 +287,13 @@ def build_session_run_prompt(
         runnable Scientist task before doing focused work. After that task is
         done, failed, or clearly commented as blocked, stop instead of claiming
         more backlog work in the same pass.
+
+        If the active task is an experiment task and its payload includes an
+        `experiment_id`, Situ has already created the candidate experiment and
+        rooted your workspace tools in that experiment's managed worktree. Use
+        that experiment id for experiment updates, evaluations, comments, and
+        worker runs. Do not create a second experiment for the same task unless
+        the task explicitly asks for multiple candidates.
 
         Check the session first, then inspect focused baseline/evaluation/
         measurement lists when you need more detail. Create or update

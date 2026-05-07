@@ -105,6 +105,13 @@ is triggered by a runnable Scientist task. Each LLM pass should stay focused:
 the Manager handles one planning task, and the Scientist handles one claimed
 work task.
 
+When the claimed Scientist task is an `experiment`, Situ should create or reuse
+a managed worktree for the linked experiment before invoking the Scientist. The
+Scientist's workspace tools and worker execution for that pass should be rooted
+in that worktree. This keeps candidate code edits isolated while the task,
+experiment, measurements, activities, and events remain project-owned ledger
+records.
+
 Baseline completion must not close the session by itself. The Manager should be
 prompted to keep planning after a Scientist task completes. A single Manager
 pass that creates no runnable next work is not enough to stop the loop; the

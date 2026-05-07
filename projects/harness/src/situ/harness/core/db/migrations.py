@@ -51,6 +51,8 @@ CREATE TABLE IF NOT EXISTS experiments (
   status TEXT NOT NULL,
   title TEXT NOT NULL,
   summary TEXT NOT NULL,
+  worktree_path TEXT,
+  base_commit TEXT,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
@@ -424,6 +426,13 @@ def upgrade_schema(connection: sqlite3.Connection) -> None:
         connection.execute(
             "UPDATE evaluation_activities SET kind = 'result' WHERE kind = 'comment'"
         )
+
+    if table_exists(connection, "experiments"):
+        experiment_columns = table_columns(connection, "experiments")
+        if "worktree_path" not in experiment_columns:
+            connection.execute("ALTER TABLE experiments ADD COLUMN worktree_path TEXT")
+        if "base_commit" not in experiment_columns:
+            connection.execute("ALTER TABLE experiments ADD COLUMN base_commit TEXT")
 
 
 def migrate_baseline_like_evaluations(connection: sqlite3.Connection) -> None:

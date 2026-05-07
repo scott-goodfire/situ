@@ -30,6 +30,10 @@ windows created or resumed through clients.
 
 - Requires a healthy app server.
 - Connects to the app server and scopes requests to the selected workspace.
+- For a default fresh-session launch, refuses a dirty Git-backed workspace
+  before opening the fullscreen TUI, onboarding, or creating project/session
+  records. Dirty means tracked or untracked changes anywhere in the Git repo
+  that contains the selected workspace.
 - Opens the fullscreen TUI shell, gathers onboarding answers when objective or
   context are not already supplied, then starts a fresh project and fresh
   attached session.
@@ -67,8 +71,8 @@ Per-project runtime state remains under:
 ```
 
 This directory may hold runtime-only files such as DBOS state, logs, temporary
-run artifacts, and compatibility metadata. The first cutover keeps DBOS SQLite
-per project, for example:
+run artifacts, managed experiment worktrees, and compatibility metadata. The
+first cutover keeps DBOS SQLite per project, for example:
 
 ```text
 ~/.situ/projects/<project-id>/dbos.sqlite
@@ -76,6 +80,17 @@ per project, for example:
 
 Do not combine DBOS into the canonical product database until the app runtime
 has a clear multi-project DBOS story. Product state should converge first.
+
+Managed experiment worktrees may live under the project runtime directory, for
+example:
+
+```text
+~/.situ/projects/<project-id-or-workspace-id>/worktrees/<project-id>/<experiment-id>/
+```
+
+They are execution checkouts, not product state. The canonical database should
+record enough path and base-commit information to inspect them, but deleting a
+worktree must not delete the experiment record.
 
 ## Runtime Boundary
 
@@ -127,6 +142,8 @@ The browser remains a client. It should not own workers or session lifecycle.
 ## Review Criteria
 
 - Starting `situ app` does not create a session.
+- Starting `situ tui` for a dirty Git-backed workspace exits with a clear error
+  before the fullscreen TUI opens or a project/session is created.
 - Starting `situ tui` without setup inputs shows onboarding before creating a
   project/session.
 - Confirming onboarding or providing setup inputs creates a fresh project and

@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import subprocess
 from pathlib import Path
 from typing import Any
+
+import pytest
 
 from situ.harness.agents import ResearchAgentOutput
 from situ.harness.app import HarnessApp, MANAGER_NO_PROGRESS_LIMIT
@@ -26,6 +29,15 @@ def test_session_loop_replans_after_baseline_before_closing(
     assert session.status == "closed"
     assert runtime.plan_calls == 2
     assert runtime.scientist_task_kinds == ["baseline", "experiment"]
+    assert runtime.scientist_repo_paths[0] != runtime.scientist_repo_paths[1]
+    assert runtime.scientist_repo_paths[1] is not None
+    assert Path(runtime.scientist_repo_paths[1]).is_dir()
+    workspace = app.repos.workspaces.get()
+    assert workspace is not None
+    assert (Path(workspace.repo_path) / "README.md").read_text() == "test workspace\n"
+    assert (
+        Path(runtime.scientist_repo_paths[1]) / "README.md"
+    ).read_text() == "candidate workspace\n"
     assert [experiment.title for experiment in experiments] == ["Try candidate"]
     assert {
         task.title: task.status for task in tasks if task.kind != TaskKind.PLAN
@@ -101,6 +113,45 @@ def test_default_session_start_creates_fresh_project_per_session(
     ]
 
 
+def test_session_start_refuses_dirty_git_workspace_before_creating_records(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    _git(workspace, "init")
+    (workspace / "dirty.txt").write_text("dirty\n")
+    app = HarnessApp(
+        workspace,
+        app_root=Path.cwd(),
+        project_home=tmp_path / "home",
+        notify=lambda _method, _params: None,
+    )
+    monkeypatch.setattr(
+        app,
+        "_start_session_thread",
+        lambda **_kwargs: pytest.fail("session thread should not start"),
+    )
+
+    with pytest.raises(
+        RuntimeError,
+        match="workspace must be clean before starting a Situ session",
+    ):
+        app.session_start(
+            {
+                "objective": "Improve score",
+                "research_context": "Run local evals.",
+                "max_experiments": 1,
+            }
+        )
+
+    assert app.repos.projects.list_all() == []
+    assert app.repos.sessions.list_all() == []
+    assert not [
+        event for event in app.repos.events.list_all() if event.type == "session.started"
+    ]
+
+
 def test_session_loop_retries_manager_before_no_progress_close(
     tmp_path: Path,
     monkeypatch,
@@ -157,6 +208,7 @@ class BaselineThenExperimentRuntime:
     def __init__(self) -> None:
         self.plan_calls = 0
         self.scientist_task_kinds: list[str] = []
+        self.scientist_repo_paths: list[str | None] = []
 
     def plan_session(self, **kwargs: Any) -> ResearchAgentOutput:
         self.plan_calls += 1
@@ -198,6 +250,7 @@ class BaselineThenExperimentRuntime:
         assert project_id is not None
 
         self.scientist_task_kinds.append(task["kind"])
+        self.scientist_repo_paths.append(kwargs.get("repo_path"))
         if task["kind"] == "baseline":
             baseline = repos.baselines.create(
                 baseline_id="baseline_project_0001_default",
@@ -231,10 +284,12 @@ class BaselineThenExperimentRuntime:
             )
             return ResearchAgentOutput(summary="baseline done")
 
-        repos.experiments.create(
-            experiment_id="exp_candidate",
-            project_id=project_id,
-            created_in_session_id=session_id,
+        experiment_id = task["payload"]["experiment_id"]
+        repo_path = kwargs["repo_path"]
+        assert repo_path is not None
+        (Path(repo_path) / "README.md").write_text("candidate workspace\n")
+        repos.experiments.update(
+            experiment_id,
             title="Try candidate",
             summary="Candidate result.",
             status="closed",
@@ -278,6 +333,10 @@ class CloseProjectRuntime:
 def _app_with_initial_plan(tmp_path: Path) -> tuple[HarnessApp, str, str]:
     workspace = tmp_path / "workspace"
     workspace.mkdir()
+    _git(workspace, "init")
+    (workspace / "README.md").write_text("test workspace\n")
+    _git(workspace, "add", ".")
+    _commit(workspace, "initial")
     app = HarnessApp(
         workspace,
         app_root=Path.cwd(),
@@ -310,3 +369,27 @@ def _app_with_initial_plan(tmp_path: Path) -> tuple[HarnessApp, str, str]:
         source_kind="system",
     )
     return app, session.id, project.id
+
+
+def _git(cwd: Path, *args: str) -> str:
+    result = subprocess.run(
+        ["git", *args],
+        cwd=cwd,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return result.stdout.strip()
+
+
+def _commit(cwd: Path, message: str) -> None:
+    _git(
+        cwd,
+        "-c",
+        "user.email=situ@example.test",
+        "-c",
+        "user.name=Situ Test",
+        "commit",
+        "-m",
+        message,
+    )

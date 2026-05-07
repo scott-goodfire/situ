@@ -7,6 +7,7 @@ from pathlib import Path
 
 from ..._shared import apply_session_env
 from ....core.paths import resolve_app_root, resolve_workspace
+from ....core.worktrees import require_clean_if_git_workspace
 from ...local_session import base_env, read_live_app
 
 
@@ -24,6 +25,16 @@ def launch_app_tui(
     if not workspace.is_dir():
         print(f"workspace does not exist or is not a directory: {workspace}", file=sys.stderr)
         return 1
+
+    if mode == "start":
+        try:
+            require_clean_if_git_workspace(
+                workspace,
+                action="starting a Situ session",
+            )
+        except RuntimeError as error:
+            print(str(error), file=sys.stderr)
+            return 1
 
     app = read_live_app()
     if app is None:

@@ -267,15 +267,21 @@ def test_experiments_repository_create_update_get_and_list(repos: Repositories) 
     assert experiment.created_in_session_id == "session_0001"
     assert experiment.status == "open"
     assert experiment.title == "Try component A"
+    assert experiment.worktree_path is None
+    assert experiment.base_commit is None
 
     updated = repos.experiments.update(
         "exp_session_0001_a",
         status="closed",
         summary="A improved score.",
+        worktree_path="/tmp/worktree/exp_session_0001_a",
+        base_commit="abc123",
     )
     assert updated is not None
     assert updated.status == "closed"
     assert updated.summary == "A improved score."
+    assert updated.worktree_path == "/tmp/worktree/exp_session_0001_a"
+    assert updated.base_commit == "abc123"
     assert repos.experiments.get("exp_session_0001_a") == updated
     assert [item.id for item in repos.experiments.list_for_project("project_0001")] == [
         "exp_session_0001_a"

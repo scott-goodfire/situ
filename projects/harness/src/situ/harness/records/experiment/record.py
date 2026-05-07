@@ -34,5 +34,7 @@ class ExperimentRecord(DbRecord):
     status: WorkStatus
     title: str
     summary: str
+    worktree_path: str | None = None
+    base_commit: str | None = None
     created_at: str
     updated_at: str

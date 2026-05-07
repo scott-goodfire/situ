@@ -96,8 +96,9 @@ RESEARCH_TOOLSET_INSTRUCTIONS = inspect.cleandoc(
     affect comparability.
 
     To inspect files or run project-native commands, use the workspace console
-    tools. Keep Situ responsible for the ledger and the workspace tools
-    responsible for bash/filesystem interaction.
+    tools. During an active experiment task, those tools are rooted in the
+    managed experiment worktree. Keep Situ responsible for the ledger and the
+    workspace tools responsible for bash/filesystem interaction.
     """
 )
 
@@ -127,7 +128,9 @@ WORKSPACE_EXECUTE_DESCRIPTION = inspect.cleandoc(
     package-manager commands, and quick environment probes. Treat the returned
     output as plaintext evidence. Do not deterministically parse metrics from
     it inside the tool layer; when the output matters, record the raw text and
-    a concise LLM interpretation with `add_evaluation_result`.
+    a concise LLM interpretation with `add_evaluation_result`. When an
+    experiment task is active, this command runs inside that experiment's
+    managed worktree.
     """
 )
 

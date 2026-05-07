@@ -73,6 +73,8 @@ export interface ExperimentRecord {
   status: "open" | "active" | "closed";
   title: string;
   summary: string;
+  worktree_path?: string | null;
+  base_commit?: string | null;
   created_at: string;
   updated_at: string;
 }

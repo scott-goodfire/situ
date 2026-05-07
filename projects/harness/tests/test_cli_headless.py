@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import sqlite3
+import subprocess
 from pathlib import Path
 from typing import Any
 
@@ -464,25 +465,21 @@ def test_tui_uses_existing_app_server(
     calls: list[dict[str, Any]] = []
     monkeypatch.delenv("SITU_PROJECT_ID", raising=False)
 
-    class Completed:
-        returncode = 0
-
-    def fake_run(
-        command: list[str],
+    def fake_run_tui(
         *,
-        cwd: Path,
+        app_root: Path,
         env: dict[str, str],
-    ) -> Completed:
-        calls.append({"command": command, "cwd": cwd, "env": env})
-        return Completed()
+    ) -> int:
+        calls.append({"app_root": app_root, "env": env})
+        return 0
 
     monkeypatch.setattr(
         "situ.harness.cli.commands._shared.tui.read_live_app",
         lambda: {"url": "http://127.0.0.1:1", "token": "token"},
     )
     monkeypatch.setattr(
-        "situ.harness.cli.commands._shared.tui.subprocess.run",
-        fake_run,
+        "situ.harness.cli.commands._shared.tui.run_tui",
+        fake_run_tui,
     )
 
     code = cli.main(["tui", str(workspace)])
@@ -493,3 +490,42 @@ def test_tui_uses_existing_app_server(
     assert calls[0]["env"]["SITU_APP_TOKEN"] == "token"
     assert calls[0]["env"]["SITU_WORKSPACE"] == str(workspace)
     assert "SITU_PROJECT_ID" not in calls[0]["env"]
+
+
+def test_tui_refuses_dirty_git_workspace_before_launch(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    _git(workspace, "init")
+    (workspace / "dirty.txt").write_text("dirty\n")
+
+    monkeypatch.setattr(
+        "situ.harness.cli.commands._shared.tui.read_live_app",
+        lambda: pytest.fail("app discovery should not run for a dirty workspace"),
+    )
+    monkeypatch.setattr(
+        "situ.harness.cli.commands._shared.tui.run_tui",
+        lambda **_kwargs: pytest.fail("TUI should not launch"),
+    )
+
+    code = cli.main(["tui", str(workspace)])
+
+    captured = capsys.readouterr()
+    assert code == 1
+    assert captured.out == ""
+    assert "workspace must be clean before starting a Situ session" in captured.err
+    assert "dirty.txt" in captured.err
+
+
+def _git(cwd: Path, *args: str) -> str:
+    result = subprocess.run(
+        ["git", *args],
+        cwd=cwd,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return result.stdout.strip()

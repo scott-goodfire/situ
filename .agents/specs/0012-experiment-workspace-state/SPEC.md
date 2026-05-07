@@ -51,23 +51,38 @@ The first slice should classify changed paths coarsely:
 The classification does not have to be perfect. It exists to make obvious trust
 risks visible and to guide human review.
 
-## Run Branch Strategy
+## Managed Worktree Strategy
 
-Situ should prefer isolated experiment branches over mutating the user's
-mainline branch.
+Situ should run candidate experiment work in managed Git worktrees rather than
+mutating the user's selected workspace checkout.
 
-Suggested branch shape:
+The durable session and project ledger remain app-owned. A worktree is an
+execution checkout for one candidate experiment, not the source of truth for the
+research record. Deleting or preserving a worktree must not decide whether the
+experiment happened; the ledger does.
 
-```text
-situ/<session-or-run-id>
-```
+Before a Scientist handles an `experiment` task, Situ should:
 
-Using git in this way is experiment bookkeeping, not a claim that a candidate is
-ready to ship. Accepted candidates can remain as branch commits for later
-review. Rejected candidates can be reset to the prior accepted state.
+- Require the base workspace's Git repo to be clean, including untracked files.
+- Record the base commit used for the candidate.
+- Create or reuse a managed detached worktree for that experiment.
+- Run the Scientist's workspace tools and worker commands with that worktree as
+  their workspace root.
+- Record the final worktree state as experiment evidence.
 
-The first slice may guide the agent toward this workflow before fully owning the
-branch lifecycle in typed tools.
+Baseline, planning, interpretation, and review work may still inspect the
+selected workspace directly. Candidate code edits, project-native commands, and
+worker execution for an experiment task should happen in the experiment
+worktree.
+
+The default fresh-session launch should also reject dirty Git-backed
+workspaces before opening the TUI or creating product records. This keeps users
+from answering onboarding questions only to discover at the first candidate
+experiment that isolation cannot begin from the selected checkout.
+
+The first slice does not need a complete promotion or cleanup workflow.
+Accepted candidates can be inspected from their worktree path, and rejected
+candidates can remain as disposable local checkouts until cleanup is added.
 
 ## Comparability Rules
 
@@ -92,12 +107,18 @@ comparable.
 - Flagging dirty starts, eval/test changes, dependency changes, generated file
   clutter, and changed test counts as concerns.
 - Showing concern comments in the live session.
-- Guiding agents to use an isolated branch for autonomous candidate work.
+- Creating managed worktrees for Scientist `experiment` tasks.
+- Running experiment-task workspace tools and workers inside the managed
+  worktree.
+- Failing an experiment task before execution when the base workspace is dirty
+  or not a Git repo.
 
 ## Deferred
 
-- A full branch manager that automatically creates, switches, commits, resets,
-  stashes, and cherry-picks on behalf of the user.
+- Promotion of accepted candidates back into the user's selected checkout.
+- Automatic cleanup of completed or abandoned managed worktrees.
+- A full branch manager that commits, resets, stashes, cherry-picks, or merges
+  on behalf of the user.
 - Sandboxed virtualenv recreation per experiment.
 - Docker or containerized execution.
 - Perfect language-aware classification of changed files.

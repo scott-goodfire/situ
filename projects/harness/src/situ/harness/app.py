@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import threading
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable
 
@@ -37,16 +38,20 @@ from .core.notifications import (
 )
 from .core.observability import span
 from .core.project_context import ProjectContext
+from .core.worktrees import WorktreeManager, require_clean_if_git_workspace
 from .records import (
     AgentKind,
     AgentStatus,
     EventRecord,
+    ExperimentRecord,
     ProjectRecord,
     ProjectStatus,
     SessionStatus,
+    TaskEntityKind,
     TaskKind,
     TaskRecord,
     TaskStatus,
+    WorkStatus,
 )
 from .records.base import DbRecord
 from .repositories import Repositories
@@ -57,6 +62,13 @@ NotificationWriter = Callable[[str, dict[str, Any]], None]
 MANAGER_NO_PROGRESS_LIMIT = 3
 SESSION_AGENT_PASS_LIMIT_MINIMUM = 12
 SESSION_AGENT_PASS_LIMIT_PER_EXPERIMENT = 8
+
+
+@dataclass(frozen=True, slots=True)
+class PreparedExperimentTask:
+    task: TaskRecord
+    experiment: ExperimentRecord
+    repo_path: str
 
 
 class HarnessApp:
@@ -175,6 +187,10 @@ class HarnessApp:
 
     def session_start(self, params: dict[str, Any]) -> dict[str, Any]:
         start = SessionStartParams.model_validate(params)
+        require_clean_if_git_workspace(
+            self.context.repo_root,
+            action="starting a Situ session",
+        )
         workspace = self.repos.workspaces.ensure()
         session_id = self.sessions_api.next_session_id().session_id
         project = self._project_from_start(start, workspace_id=workspace.id)
@@ -580,6 +596,20 @@ class HarnessApp:
                         active_task = scientist_task
                         no_progress_plans = 0
                         agent_passes += 1
+                        prepared_experiment: PreparedExperimentTask | None = None
+                        execution_repo_path = workspace.repo_path
+                        active_experiment_id: str | None = None
+                        if scientist_task.kind == TaskKind.EXPERIMENT:
+                            prepared_experiment = self._prepare_experiment_task(
+                                task=scientist_task,
+                                session_id=session_id,
+                                workspace_repo_path=workspace.repo_path,
+                            )
+                            scientist_task = prepared_experiment.task
+                            active_task = scientist_task
+                            execution_repo_path = prepared_experiment.repo_path
+                            active_experiment_id = prepared_experiment.experiment.id
+
                         result = runtime.run_session(
                             workspace=workspace.model_dump(),
                             setup_objective=setup.get("objective", ""),
@@ -592,6 +622,8 @@ class HarnessApp:
                             app_root=self.app_root,
                             repos=self.repos,
                             active_task=scientist_task.model_dump(),
+                            repo_path=execution_repo_path,
+                            active_experiment_id=active_experiment_id,
                         )
                         completion_summary = result.summary
                         self._finish_claimed_task(
@@ -600,6 +632,12 @@ class HarnessApp:
                             status=TaskStatus.DONE,
                             result_summary=result.summary,
                         )
+                        if prepared_experiment is not None:
+                            self._complete_experiment_task(
+                                experiment_id=prepared_experiment.experiment.id,
+                                session_id=session_id,
+                                workspace_repo_path=workspace.repo_path,
+                            )
                         self.record_event(
                             "session.agent_completed",
                             result.summary,
@@ -678,6 +716,150 @@ class HarnessApp:
                 payload={"error": str(error)},
             )
 
+    def _prepare_experiment_task(
+        self,
+        *,
+        task: TaskRecord,
+        session_id: str,
+        workspace_repo_path: str,
+    ) -> PreparedExperimentTask:
+        experiment_id = _experiment_id_from_task(task) or self.repos.experiments.next_id(
+            task.project_id
+        )
+        existing = self.repos.experiments.get(experiment_id)
+        worktree = WorktreeManager(
+            workspace_path=Path(workspace_repo_path),
+            worktrees_dir=self.context.project_dir / "worktrees" / task.project_id,
+        ).prepare(
+            experiment_id=experiment_id,
+            existing_worktree_path=existing.worktree_path if existing is not None else None,
+            existing_base_commit=existing.base_commit if existing is not None else None,
+        )
+
+        if existing is None:
+            experiment = self.repos.experiments.create(
+                experiment_id=experiment_id,
+                project_id=task.project_id,
+                created_in_session_id=session_id,
+                title=task.title,
+                summary=task.content,
+                status=WorkStatus.ACTIVE,
+                worktree_path=str(worktree.workspace_path),
+                base_commit=worktree.base_commit,
+            )
+            event = self.record_event(
+                "experiment.created",
+                f"Created experiment {experiment.id}",
+                session_id=session_id,
+                project_id=task.project_id,
+                payload={"experiment_id": experiment.id},
+            )
+            self.publish_record(experiment, cursor=event.id)
+        else:
+            experiment = (
+                self.repos.experiments.update(
+                    experiment_id,
+                    status=WorkStatus.ACTIVE,
+                    worktree_path=str(worktree.workspace_path),
+                    base_commit=worktree.base_commit,
+                )
+                or existing
+            )
+
+        link = self.repos.task_entity_links.create(
+            project_id=task.project_id,
+            task_id=task.id,
+            entity_kind=TaskEntityKind.EXPERIMENT,
+            entity_id=experiment.id,
+            relationship="produces",
+        )
+        updated_task = (
+            self.repos.tasks.update(
+                task.id,
+                payload={
+                    **task.payload,
+                    "experiment_id": experiment.id,
+                    "worktree_path": str(worktree.workspace_path),
+                    "base_commit": worktree.base_commit,
+                },
+            )
+            or task
+        )
+        event = self.record_event(
+            "experiment.worktree_ready",
+            f"Prepared worktree for {experiment.id}",
+            session_id=session_id,
+            project_id=task.project_id,
+            payload={
+                "experiment_id": experiment.id,
+                "task_id": task.id,
+                "worktree_path": str(worktree.workspace_path),
+                "worktree_root": str(worktree.worktree_root),
+                "base_commit": worktree.base_commit,
+            },
+        )
+        self.publish_record(experiment, cursor=event.id)
+        self.publish_record(link, cursor=event.id)
+        self.publish_record(updated_task, cursor=event.id)
+        return PreparedExperimentTask(
+            task=updated_task,
+            experiment=experiment,
+            repo_path=str(worktree.workspace_path),
+        )
+
+    def _complete_experiment_task(
+        self,
+        *,
+        experiment_id: str,
+        session_id: str,
+        workspace_repo_path: str,
+    ) -> None:
+        experiment = self.repos.experiments.get(experiment_id)
+        if experiment is None:
+            return
+
+        state: dict[str, object]
+        if experiment.worktree_path is None:
+            state = {"error": "experiment has no worktree_path"}
+        else:
+            try:
+                state = WorktreeManager(
+                    workspace_path=Path(workspace_repo_path),
+                    worktrees_dir=self.context.project_dir / "worktrees" / experiment.project_id,
+                ).inspect(Path(experiment.worktree_path)).model_dump()
+            except RuntimeError as error:
+                state = {"error": str(error), "workspace": experiment.worktree_path}
+
+        activity = self.repos.experiment_activities.add(
+            experiment_id=experiment.id,
+            created_in_session_id=session_id,
+            actor="harness",
+            kind="comment",
+            body=f"Captured final worktree state for {experiment.id}.",
+            payload={
+                "activity_type": "workspace_state",
+                "base_commit": experiment.base_commit,
+                "worktree": state,
+            },
+        )
+        closed = self.repos.experiments.update(
+            experiment.id,
+            status=WorkStatus.CLOSED,
+        ) or experiment
+        event = self.record_event(
+            "experiment.worktree_completed",
+            f"Captured final worktree state for {experiment.id}",
+            session_id=session_id,
+            project_id=experiment.project_id,
+            payload={
+                "experiment_id": experiment.id,
+                "activity_id": activity.id,
+                "dirty": state.get("dirty") if isinstance(state, dict) else None,
+            },
+        )
+        self.publish_record(activity, cursor=event.id)
+        self.publish_record(closed, cursor=event.id)
+
     def _experiment_count(self, session_id: str) -> int:
         return len(self.repos.experiments.list_for_session(session_id))
 
@@ -733,6 +915,11 @@ class HarnessApp:
             daemon=True,
         )
         thread.start()
+
+
+def _experiment_id_from_task(task: TaskRecord) -> str | None:
+    experiment_id = task.payload.get("experiment_id")
+    return experiment_id if isinstance(experiment_id, str) and experiment_id else None
 
 
 class MethodNotFound(Exception):

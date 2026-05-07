@@ -994,6 +994,40 @@ def test_run_experiment_tool_executes_worker_and_records_activity(
     assert "worker.progress" in [event["type"] for event in emitted]
 
 
+def test_create_experiment_tool_reuses_active_experiment_context(
+    repos: Repositories,
+) -> None:
+    existing = repos.experiments.update(
+        "exp_session_0001_a",
+        status="active",
+        worktree_path="/tmp/situ-worktree",
+        base_commit="abc123",
+    )
+    assert existing is not None
+    emitted: list[dict[str, Any]] = []
+    deps = SituToolDeps(
+        session_id="session_0001",
+        repos=repos,
+        active_experiment_id=existing.id,
+        emit_event=_event_collector(emitted),
+    )
+
+    result = invoke_situ_tool_sync(
+        tool=CreateExperimentTool(),
+        deps=deps,
+        title="Refine existing candidate",
+        summary="Use the active experiment checkout.",
+    )
+
+    assert result.success is True
+    assert result.experiment is not None
+    assert result.experiment["id"] == existing.id
+    assert result.experiment["status"] == "active"
+    assert result.experiment["worktree_path"] == "/tmp/situ-worktree"
+    assert len(repos.experiments.list_for_project("project_0001")) == 1
+    assert "experiment.updated" in [event["type"] for event in emitted]
+
+
 class FakeWorkerManager(WorkerManager):
     def __init__(self) -> None:
         pass

@@ -11,6 +11,8 @@ class CreateExperiment(RepositoryCommand):
     title: str
     summary: str
     status: WorkStatus = WorkStatus.OPEN
+    worktree_path: str | None = None
+    base_commit: str | None = None
 
 
 class UpdateExperiment(RepositoryCommand):
@@ -18,3 +20,5 @@ class UpdateExperiment(RepositoryCommand):
     title: str | None = None
     summary: str | None = None
     status: WorkStatus | None = None
+    worktree_path: str | None = None
+    base_commit: str | None = None
