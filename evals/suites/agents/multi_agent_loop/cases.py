@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pydantic_evals import Case
 
-from evals.harness.evaluators import (
+from evals.framework.evaluators import (
     ChangedFilesDoNotInclude,
     ChangedFilesExactly,
     EventWasEmitted,
@@ -22,6 +22,7 @@ from evals.suites.agents.multi_agent_loop.evaluators import (
     ScientistCompletedBaselineTask,
     TaskClaimedByRole,
     UserUrgentTaskPreemptedBacklog,
+    WebSourceAnalysisRecorded,
 )
 from evals.worlds.multi_agent_loop import (
     MultiAgentLoopEvalInput,
@@ -226,6 +227,36 @@ def multi_agent_loop_cases() -> list[
                 ProjectBoardContains("urgent user task handled"),
                 UserUrgentTaskPreemptedBacklog(),
                 ChangedFilesDoNotInclude("prepare.py"),
+            ),
+        ),
+        Case(
+            name="manager_and_researcher_use_real_web_search",
+            inputs=MultiAgentLoopEvalInput(
+                case_id="manager_and_researcher_use_real_web_search",
+                seed="web_research_prior_art",
+            ),
+            metadata={"requires_real_llm": True, "requires_network": True},
+            evaluators=(
+                RoleToolWasCalled("manager", "get_task"),
+                RoleToolWasCalled("manager", "web_search"),
+                RoleToolWasCalled("manager", "create_task"),
+                RoleToolSucceeded("manager", "create_task"),
+                TaskClaimedByRole("researcher", task_kind="research"),
+                RoleToolWasCalled("researcher", "get_task"),
+                RoleToolWasCalled("researcher", "get_project_board"),
+                RoleToolWasCalled("researcher", "web_search"),
+                RoleToolWasCalled("researcher", "read_file"),
+                ToolArgsContain("read_file", "README.md"),
+                RoleToolWasCalled("researcher", "create_analysis"),
+                RoleToolSucceeded("researcher", "create_analysis"),
+                RoleToolWasCalled("researcher", "link_task_entity"),
+                RoleToolSucceeded("researcher", "link_task_entity"),
+                RoleToolWasCalled("researcher", "update_task"),
+                RoleToolSucceeded("researcher", "update_task"),
+                RoleToolWasCalled("scientist", "web_search", expected=False),
+                ProjectBoardContains("Web prior art for val_bpb variants"),
+                WebSourceAnalysisRecorded(),
+                ChangedFilesExactly(),
             ),
         ),
     ]

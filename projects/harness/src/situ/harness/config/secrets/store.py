@@ -22,11 +22,24 @@ class LocalSecretStore:
     def set_openai_key(self, value: str) -> None:
         self._set_secret(OPENAI_KEY_NAME, value, label="OpenAI key")
 
+    def unset_openai_key(self) -> bool:
+        return self._unset_secret(OPENAI_KEY_NAME)
+
     def get_logfire_token(self) -> str | None:
         return self._get_secret(LOGFIRE_TOKEN_NAME)
 
     def set_logfire_token(self, value: str) -> None:
         self._set_secret(LOGFIRE_TOKEN_NAME, value, label="Logfire token")
+
+    def unset_logfire_token(self) -> bool:
+        return self._unset_secret(LOGFIRE_TOKEN_NAME)
+
+    def clear(self) -> bool:
+        try:
+            self.path.unlink()
+        except FileNotFoundError:
+            return False
+        return True
 
     def _get_secret(self, name: str) -> str | None:
         value = self._read().get(name)
@@ -42,6 +55,18 @@ class LocalSecretStore:
         secrets = self._read()
         secrets[name] = stripped
         self._write(secrets)
+
+    def _unset_secret(self, name: str) -> bool:
+        secrets = self._read()
+        if name not in secrets:
+            return False
+
+        del secrets[name]
+        if secrets:
+            self._write(secrets)
+        else:
+            self.clear()
+        return True
 
     def _read(self) -> dict[str, Any]:
         try:

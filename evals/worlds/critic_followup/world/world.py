@@ -11,7 +11,7 @@ from situ.harness.records import (
 )
 from situ.harness.repositories import Repositories
 
-from evals.harness.models import EvalEvent
+from evals.framework.models import EvalEvent
 from evals.worlds.critic_followup.models import CriticFollowupSeed
 from evals.worlds.repo_bootstrap.world.world import (
     BASELINE_ID,

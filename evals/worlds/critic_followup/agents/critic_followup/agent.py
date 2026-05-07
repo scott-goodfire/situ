@@ -5,8 +5,8 @@ from situ.harness.records import AgentKind, AgentStatus, TaskRecord, TaskStatus
 from situ.harness.tools.common import SituToolDeps
 from situ.harness.tools.tasks.eligibility import eligible_task_kinds_for_agent
 
-from evals.harness.capture import ToolCallCaptureCapability
-from evals.harness.llms import eval_model_name
+from evals.framework.capture import ToolCallCaptureCapability
+from evals.framework.llms import eval_model_name
 from evals.worlds.critic_followup.models import (
     CriticFollowupEvalInput,
     CriticFollowupEvalOutput,

@@ -50,7 +50,7 @@ def test_eval_logfire_configuration_disables_scrubbing(monkeypatch) -> None:
 
 def _load_eval_observability_module() -> ModuleType:
     repo_root = Path(__file__).resolve().parents[3]
-    module_path = repo_root / "evals/harness/logfire/configure_eval_observability/configure.py"
+    module_path = repo_root / "evals/framework/logfire/configure_eval_observability/configure.py"
     spec = importlib.util.spec_from_file_location("situ_eval_logfire_configure", module_path)
     assert spec is not None
     assert spec.loader is not None

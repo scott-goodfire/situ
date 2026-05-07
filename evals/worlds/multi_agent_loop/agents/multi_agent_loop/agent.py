@@ -13,9 +13,12 @@ from situ.harness.records import AgentKind, AgentStatus, TaskKind, TaskRecord, T
 from situ.harness.tools.common import SituToolDeps
 from situ.harness.tools.tasks.eligibility import eligible_task_kinds_for_agent
 
-from evals.harness.capture import ToolCallCaptureCapability
-from evals.harness.llms import eval_model_name
-from evals.harness.models import CapturedToolCall
+from evals.framework.capture import (
+    ToolCallCaptureCapability,
+    captured_builtin_tool_calls_from_result,
+)
+from evals.framework.llms import eval_model_name
+from evals.framework.models import CapturedToolCall
 from evals.worlds.multi_agent_loop.models import (
     MultiAgentLoopEvalInput,
     MultiAgentLoopEvalOutput,
@@ -230,6 +233,7 @@ def _run_manager_pass(
             assigned_task_ids=[active_task.id] if active_task is not None else [],
         )
     )
+    capture.tool_calls.extend(captured_builtin_tool_calls_from_result(result))
     return result.output
 
 
@@ -253,6 +257,7 @@ def _run_scientist_pass(
             assigned_task_ids=[active_task.id],
         )
     )
+    capture.tool_calls.extend(captured_builtin_tool_calls_from_result(result))
     return result.output
 
 
@@ -275,6 +280,7 @@ def _run_researcher_pass(
             assigned_task_ids=[active_task.id],
         )
     )
+    capture.tool_calls.extend(captured_builtin_tool_calls_from_result(result))
     return result.output
 
 

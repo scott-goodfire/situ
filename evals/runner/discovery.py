@@ -6,7 +6,7 @@ from importlib import util
 from pathlib import Path
 from typing import Any
 
-from evals.harness import BaseSituEvalGroup
+from evals.framework import BaseSituEvalGroup
 
 
 def collect_eval_classes(path: Path) -> list[tuple[str, type[BaseSituEvalGroup[Any, Any]]]]:

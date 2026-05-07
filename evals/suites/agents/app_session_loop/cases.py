@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pydantic_evals import Case
 
-from evals.harness.evaluators import (
+from evals.framework.evaluators import (
     ChangedFilesDoNotInclude,
     EventWasEmitted,
     ProjectBoardContains,

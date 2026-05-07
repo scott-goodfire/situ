@@ -6,7 +6,7 @@ from pydantic_evals import Case, set_eval_attribute
 from pydantic_evals.dataset import increment_eval_metric
 from pydantic_evals.evaluators import Evaluator
 
-from evals.harness import BaseSituEvalGroup
+from evals.framework import BaseSituEvalGroup
 from evals.suites.agents.research_agent.research_session.cases import (
     research_session_planning_cases,
 )

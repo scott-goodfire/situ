@@ -26,6 +26,17 @@ windows created or resumed through clients.
 - Does not call `session.start`, `session.resume`, or any worker action by
   itself.
 
+`situ secrets`:
+
+- Manages local runtime provider secrets used by app, TUI, web, and manual
+  headless execution.
+- Supports redacted status, masked interactive setting, explicit per-secret
+  unset, and clearing all local runtime secrets.
+- Writes only to the local Situ secret store and must not print secret values
+  to stdout, stderr, events, product records, or observability attributes.
+- Does not manage eval launch secrets. Evals continue to require
+  `SITU_OPENAI_KEY` and `SITU_LOGFIRE_TOKEN` from the launch environment.
+
 `situ tui [workspace]`:
 
 - Requires a healthy app server.
@@ -52,9 +63,11 @@ windows created or resumed through clients.
 - Lists all known local projects and sessions from the canonical app state.
 - Does not start, resume, or attach a session on its own.
 
-The command vocabulary is `app`, `tui`, and `web`. Do not keep a `start`
-compatibility command; starting a project-backed session happens from the
-interactive `situ tui` flow after the app server is already running.
+The session-facing command vocabulary is `app`, `tui`, and `web`. Maintenance
+commands such as `secrets` may manage local runtime state without starting,
+resuming, or attaching sessions. Do not keep a `start` compatibility command;
+starting a project-backed session happens from the interactive `situ tui` flow
+after the app server is already running.
 
 ## State Contract
 
@@ -170,6 +183,10 @@ The browser remains a client. It should not own workers or session lifecycle.
   locally, and then continues to the normal setup/session flow.
 - Secret onboarding may also collect an optional local Logfire token. Skipping
   it must not block local agent execution.
+- `situ secrets status`, `situ secrets set openai`,
+  `situ secrets set logfire`, `situ secrets unset openai`,
+  `situ secrets unset logfire`, and `situ secrets clear` manage only local
+  runtime secrets and never reveal saved values.
 - Headless or non-interactive local execution uses the local secret store and
   otherwise fails clearly without prompting.
 - Eval execution requires `SITU_OPENAI_KEY` and `SITU_LOGFIRE_TOKEN` from the

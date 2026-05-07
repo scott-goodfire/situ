@@ -11,8 +11,8 @@ from situ.harness.core.workers import WorkerManager
 from situ.harness.tools import build_manager_toolset, build_research_toolset
 from situ.harness.tools.common import SituToolDeps
 from situ.protocol import ExperimentRunParams, ExperimentRunResult
-from evals.harness.capture import ToolCallCaptureCapability
-from evals.harness.llms import eval_model_name
+from evals.framework.capture import ToolCallCaptureCapability
+from evals.framework.llms import eval_model_name
 from evals.worlds.research_session.models import (
     ResearchToolEvalInput,
     ResearchToolEvalOutput,

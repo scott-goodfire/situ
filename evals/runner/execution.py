@@ -5,7 +5,7 @@ from uuid import uuid4
 
 from pydantic_evals.reporting import EvaluationReport
 
-from evals.harness import BaseSituEvalGroup
+from evals.framework import BaseSituEvalGroup
 from evals.runner.git import current_git_sha
 from evals.runner.retries import build_retry_config
 

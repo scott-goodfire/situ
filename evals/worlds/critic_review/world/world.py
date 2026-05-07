@@ -6,7 +6,7 @@ from situ.harness.api.project_board import ProjectBoardService
 from situ.harness.records import TaskEntityKind, TaskKind
 from situ.harness.repositories import Repositories
 
-from evals.harness.models import EvalEvent
+from evals.framework.models import EvalEvent
 from evals.worlds.critic_review.models import CriticReviewSeed
 from evals.worlds.repo_bootstrap.world.world import (
     BASELINE_EVALUATION_ID,

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from evals.harness.models import EvalModel
+from evals.framework.models import EvalModel
 
 MultiAgentLoopSeed = Literal[
     "empty_repo",
@@ -11,6 +11,7 @@ MultiAgentLoopSeed = Literal[
     "with_eval_surface_trap",
     "needs_analysis",
     "with_user_urgent_task",
+    "web_research_prior_art",
 ]
 
 

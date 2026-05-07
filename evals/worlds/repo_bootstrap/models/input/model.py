@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from evals.harness.models import EvalModel
+from evals.framework.models import EvalModel
 
 RepoBootstrapSeed = Literal[
     "empty_repo",

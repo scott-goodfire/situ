@@ -9,7 +9,7 @@ from typing import Any
 from situ.harness.api.project_board import ProjectBoardService
 from situ.harness.core.db import Database
 from situ.harness.repositories import Repositories
-from evals.harness.models import EvalEvent
+from evals.framework.models import EvalEvent
 from evals.worlds.repo_bootstrap.models import RepoBootstrapSeed
 
 WORKSPACE_ID = "workspace_repo_bootstrap"

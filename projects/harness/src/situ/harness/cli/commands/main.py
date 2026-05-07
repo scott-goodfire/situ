@@ -19,6 +19,7 @@ from ._shared.arguments import (
 from .app.command import run as app_run
 from .attach.command import run as attach_run
 from .resume.command import run as resume_run
+from .secrets.command import run as secrets_run
 from .tui.command import LATEST_SENTINEL, run as tui_run
 from .web.command import run as web_run
 
@@ -33,6 +34,41 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="start a new app server even when a healthy app record exists",
     )
+
+    secrets_parser = subparsers.add_parser(
+        "secrets",
+        help="manage local runtime secrets",
+    )
+    secrets_subparsers = secrets_parser.add_subparsers(
+        dest="secrets_command",
+        required=True,
+    )
+
+    secrets_status_parser = secrets_subparsers.add_parser(
+        "status",
+        help="show redacted local runtime secret status",
+    )
+    add_machine_json_argument(secrets_status_parser)
+
+    secrets_set_parser = secrets_subparsers.add_parser(
+        "set",
+        help="prompt for and save a local runtime secret",
+    )
+    secrets_set_parser.add_argument("secret_name", choices=("openai", "logfire"))
+    add_machine_json_argument(secrets_set_parser)
+
+    secrets_unset_parser = secrets_subparsers.add_parser(
+        "unset",
+        help="remove one local runtime secret",
+    )
+    secrets_unset_parser.add_argument("secret_name", choices=("openai", "logfire"))
+    add_machine_json_argument(secrets_unset_parser)
+
+    secrets_clear_parser = secrets_subparsers.add_parser(
+        "clear",
+        help="remove all local runtime secrets",
+    )
+    add_machine_json_argument(secrets_clear_parser)
 
     tui_parser = subparsers.add_parser("tui", help="open the TUI over the local app")
     add_workspace_argument(tui_parser)
@@ -144,6 +180,8 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "app":
         return app_run(args)
+    if args.command == "secrets":
+        return secrets_run(args)
     if args.command == "tui":
         return tui_run(args)
     if args.command == "resume":
@@ -169,6 +207,14 @@ def main(argv: list[str] | None = None) -> int:
 
     parser.error(f"unknown command: {args.command}")
     return 2
+
+
+def add_machine_json_argument(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="print machine-readable JSON",
+    )
 
 
 if __name__ == "__main__":

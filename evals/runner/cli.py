@@ -5,7 +5,7 @@ import logging
 import sys
 from pathlib import Path
 
-from evals.harness.logfire import configure_eval_observability
+from evals.framework.logfire import configure_eval_observability
 from evals.runner.discovery import collect_eval_classes
 from evals.runner.execution import run_evals
 from evals.runner.reporting import print_json, print_summary

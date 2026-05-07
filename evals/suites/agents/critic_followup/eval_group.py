@@ -6,7 +6,7 @@ from pydantic_evals import Case, set_eval_attribute
 from pydantic_evals.dataset import increment_eval_metric
 from pydantic_evals.evaluators import Evaluator
 
-from evals.harness import BaseSituEvalGroup
+from evals.framework import BaseSituEvalGroup
 from evals.suites.agents.critic_followup.cases import critic_followup_cases
 from evals.worlds.critic_followup import (
     CriticFollowupEvalInput,

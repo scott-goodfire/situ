@@ -5,7 +5,7 @@ from typing import Any, ClassVar
 from pydantic import BaseModel
 from pydantic_evals import Case
 
-from evals.harness import BaseSituEvalGroup
+from evals.framework import BaseSituEvalGroup
 from evals.runner.execution import run_evals
 
 

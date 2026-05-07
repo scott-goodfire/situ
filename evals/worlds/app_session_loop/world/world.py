@@ -9,7 +9,7 @@ from situ.harness.app import HarnessApp
 from situ.harness.config import LocalSecretStore, SituSecrets
 from situ.harness.core.dbos.runtime import reset_dbos_for_tests
 
-from evals.harness.models import EvalEvent
+from evals.framework.models import EvalEvent
 from evals.worlds.app_session_loop.models import (
     AppSessionLoopEvalInput,
     AppSessionLoopSeed,

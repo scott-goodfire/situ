@@ -4,7 +4,7 @@ from typing import Any
 
 from pydantic import Field
 
-from evals.harness.models import SituEvalOutput
+from evals.framework.models import SituEvalOutput
 
 
 class AppSessionLoopEvalOutput(SituEvalOutput):

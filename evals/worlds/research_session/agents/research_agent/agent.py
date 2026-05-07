@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from situ.harness.agents import ResearchAgent, ResearchAgentContext
 from situ.harness.tools.common import SituToolDeps
-from evals.harness.capture import ToolCallCaptureCapability
-from evals.harness.llms import eval_model_name
+from evals.framework.capture import ToolCallCaptureCapability
+from evals.framework.llms import eval_model_name
 from evals.worlds.research_session.models import (
     ResearchAgentEvalInput,
     ResearchAgentEvalOutput,

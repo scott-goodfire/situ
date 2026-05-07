@@ -50,6 +50,12 @@ mise run protocol:generate
 mise run dev:harness
 mise run dev:tui
 mise run start
+mise run secrets -- status
+mise run secrets -- set openai
+mise run secrets -- set logfire
+mise run secrets -- unset openai
+mise run secrets -- unset logfire
+mise run secrets -- clear
 mise run resume -- ~/sandbox/some-repo
 mise run attach -- ~/sandbox/some-repo
 mise run sessions -- ~/sandbox/some-repo --json
@@ -78,6 +84,10 @@ secret store. The TUI prompts for it on first run and saves it under
 `~/.situ/secrets.json`. The TUI can also save an optional local Logfire token
 there for local run traces. Local app, TUI, web, and manual headless execution
 do not use `SITU_OPENAI_KEY` or `SITU_LOGFIRE_TOKEN` as runtime credentials.
+Use `situ secrets status`, `situ secrets set openai`,
+`situ secrets set logfire`, `situ secrets unset openai`,
+`situ secrets unset logfire`, and `situ secrets clear` to manage those local
+runtime secrets without revealing saved values.
 
 DBOS stores its system database beside Situ project state by default:
 

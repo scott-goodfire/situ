@@ -28,10 +28,6 @@ run = "./commands/evals-json.sh"
 description = "Run the Situ TUI over the local app"
 run = "./commands/dev-tui.sh"
 
-[tasks."tui-ui:check"]
-description = "Run typechecks for the Situ TUI UI package"
-run = "./commands/tui-ui-check.sh"
-
 [tasks."tui:story"]
 description = "Render an Situ TUI story"
 run = "./commands/tui-story.sh"
@@ -43,6 +39,10 @@ run = "./commands/tui-snapshots.sh"
 [tasks.app]
 description = "Run the local Situ app server"
 run = "./commands/app.sh"
+
+[tasks.secrets]
+description = "Manage local Situ runtime secrets"
+run = "./commands/secrets.sh"
 
 [tasks.tui]
 description = "Open the Situ TUI over the local app"
@@ -72,17 +72,9 @@ run = "./commands/web.sh"
 description = "Run the Situ web Vite development server"
 run = "./commands/web-dev.sh"
 
-[tasks."web:dev"]
-description = "Run the Situ web Vite development server"
-run = "./commands/web-dev.sh"
-
 [tasks."web:smoke"]
 description = "Build and smoke-test the local Situ web host"
 run = "./commands/web-smoke.sh"
-
-[tasks."web-ui:check"]
-description = "Run typechecks for the Situ web UI package"
-run = "./commands/web-ui-check.sh"
 
 [tasks.storybook]
 description = "Run Storybook for the Situ web UI"

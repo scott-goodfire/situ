@@ -6,7 +6,7 @@ from pydantic_evals import Case, set_eval_attribute
 from pydantic_evals.dataset import increment_eval_metric
 from pydantic_evals.evaluators import Evaluator
 
-from evals.harness import BaseSituEvalGroup
+from evals.framework import BaseSituEvalGroup
 from evals.suites.agents.multi_agent_loop.cases import multi_agent_loop_cases
 from evals.worlds.multi_agent_loop import (
     MultiAgentLoopEvalInput,
@@ -35,6 +35,16 @@ class MultiAgentLoopEvalGroup(
         )
         increment_eval_metric("researcher_tool_calls", len(output.researcher_tool_calls))
         increment_eval_metric("scientist_tool_calls", len(output.scientist_tool_calls))
+        increment_eval_metric(
+            "web_search_tool_calls",
+            len(
+                [
+                    call
+                    for call in output.captured_tool_calls
+                    if call.tool_name == "web_search"
+                ]
+            ),
+        )
         increment_eval_metric("events", len(output.events))
         increment_eval_metric("tasks", len(output.project_board.get("tasks", [])))
         increment_eval_metric(

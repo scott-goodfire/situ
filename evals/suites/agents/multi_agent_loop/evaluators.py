@@ -382,6 +382,54 @@ class ResearcherHandoffRecorded(
         )
 
 
+class WebSourceAnalysisRecorded(
+    Evaluator[MultiAgentLoopEvalInput, MultiAgentLoopEvalOutput, Any]
+):
+    def evaluate(
+        self,
+        ctx: EvaluatorContext[
+            MultiAgentLoopEvalInput,
+            MultiAgentLoopEvalOutput,
+            Any,
+        ],
+    ) -> EvaluationReason:
+        graph = ctx.output.project_board
+        analyses = graph.get("analyses", [])
+        links = graph.get("task_entity_links", [])
+        matching = [
+            analysis
+            for analysis in analyses
+            if "web prior art for val_bpb variants"
+            in json.dumps(analysis, sort_keys=True).lower()
+        ]
+        source_backed = [
+            analysis
+            for analysis in matching
+            if "http" in json.dumps(analysis, sort_keys=True).lower()
+        ]
+        linked_entity_ids = {link.get("entity_id") for link in links}
+        linked = [
+            analysis
+            for analysis in source_backed
+            if analysis.get("id") in linked_entity_ids
+        ]
+        if linked:
+            return EvaluationReason(
+                value=True,
+                reason=(
+                    "Found source-backed web prior art analysis linked to a task: "
+                    f"{[analysis.get('id') for analysis in linked]}"
+                ),
+            )
+        return EvaluationReason(
+            value=False,
+            reason=(
+                "Missing linked source-backed web prior art analysis. "
+                f"Analyses: {analyses}; links: {links}"
+            ),
+        )
+
+
 class UserUrgentTaskPreemptedBacklog(
     Evaluator[MultiAgentLoopEvalInput, MultiAgentLoopEvalOutput, Any]
 ):

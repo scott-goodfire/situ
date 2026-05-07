@@ -28,6 +28,16 @@ def test_local_secret_store_saves_openai_key_with_owner_only_permissions(
     assert SituSecrets().local_openai_key_value(home=home) == "sk-local-test"
     assert stat.S_IMODE(os.stat(store.path).st_mode) == 0o600
 
+    assert store.unset_logfire_token() is True
+    assert store.get_openai_key() == "sk-local-test"
+    assert store.get_logfire_token() is None
+    assert store.unset_logfire_token() is False
+
+    assert store.clear() is True
+    assert store.get_openai_key() is None
+    assert store.path.exists() is False
+    assert store.clear() is False
+
 
 def test_situ_openai_key_env_does_not_override_local_secret(
     tmp_path: Path,
