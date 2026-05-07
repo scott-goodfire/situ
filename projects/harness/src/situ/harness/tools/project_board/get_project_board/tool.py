@@ -17,9 +17,9 @@ class GetProjectBoardTool(BaseSituTool[SituToolDeps, GetProjectBoardResult]):
         ctx: RunContext[SituToolDeps],
     ) -> GetProjectBoardResult:
         """
-        Load the current project board: project, active run provenance,
-        analyses, hypotheses, baselines, experiments, evaluations,
-        measurements, links, activities, artifacts, agents, tasks, and events.
+        Load the current project board: project, analyses, hypotheses,
+        baselines, experiments, evaluations, measurements, links, activities,
+        artifacts, agents, tasks, and events.
         """
         board = ProjectBoardService(repos=ctx.deps.get_repos()).get_project_board(
             ctx.deps.session_id
@@ -28,7 +28,6 @@ class GetProjectBoardTool(BaseSituTool[SituToolDeps, GetProjectBoardResult]):
             success=True,
             workspace=board.workspace.model_dump() if board.workspace is not None else None,
             project=board.project.model_dump() if board.project is not None else None,
-            session=board.session.model_dump() if board.session is not None else None,
             hypotheses=[hypothesis.model_dump() for hypothesis in board.hypotheses],
             baselines=[baseline.model_dump() for baseline in board.baselines],
             experiments=[experiment.model_dump() for experiment in board.experiments],

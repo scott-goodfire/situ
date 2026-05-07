@@ -314,6 +314,23 @@ export interface SetupCompleteResult {
   workspace: WorkspaceRecord;
 }
 
+export interface SecretsStatusParams {
+}
+
+export interface SecretsStatusResult {
+  openai_key_configured: boolean;
+  openai_key_source: "environment" | "local" | "missing";
+}
+
+export interface SecretsSetOpenAIKeyParams {
+  openai_key: string;
+}
+
+export interface SecretsSetOpenAIKeyResult {
+  openai_key_configured?: boolean;
+  openai_key_source?: "local";
+}
+
 export interface CollectionsBootstrapParams {
 }
 
@@ -430,5 +447,5 @@ export interface WorkerProgressParams {
   payload?: Record<string, unknown>;
 }
 
-export type ControlMethod = "harness.hello" | "setup.get" | "setup.complete" | "collections.bootstrap" | "collections.subscribe" | "events.subscribe" | "session.resume" | "session.start" | "session.status";
+export type ControlMethod = "harness.hello" | "setup.get" | "setup.complete" | "secrets.status" | "secrets.set_openai_key" | "collections.bootstrap" | "collections.subscribe" | "events.subscribe" | "session.resume" | "session.start" | "session.status";
 export type WorkerMethod = "worker.initialize" | "experiment.run";

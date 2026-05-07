@@ -52,30 +52,26 @@ class ResearchAgentContext(SituAgentContext[SituToolDeps]):
 class ManagerAgentContext(SituAgentContext[SituToolDeps]):
     setup_objective: str = ""
     setup_research_context: str = ""
-    current_state: dict[str, Any] = Field(default_factory=dict)
-    active_task: dict[str, Any] | None = None
+    assigned_task_ids: list[str] = Field(default_factory=list)
 
 
 class ScientistAgentContext(SituAgentContext[SituToolDeps]):
     setup_objective: str = ""
     setup_research_context: str = ""
-    current_state: dict[str, Any] = Field(default_factory=dict)
     max_experiments: int = 1
-    active_task: dict[str, Any] | None = None
+    assigned_task_ids: list[str] = Field(default_factory=list)
 
 
 class ResearcherAgentContext(SituAgentContext[SituToolDeps]):
     setup_objective: str = ""
     setup_research_context: str = ""
-    current_state: dict[str, Any] = Field(default_factory=dict)
-    active_task: dict[str, Any] | None = None
+    assigned_task_ids: list[str] = Field(default_factory=list)
 
 
 class CriticAgentContext(SituAgentContext[SituToolDeps]):
     setup_objective: str = ""
     setup_research_context: str = ""
-    current_state: dict[str, Any] = Field(default_factory=dict)
-    active_task: dict[str, Any] | None = None
+    assigned_task_ids: list[str] = Field(default_factory=list)
 
 
 class ResearchAgent(
@@ -127,8 +123,7 @@ class ManagerAgent(BaseSituAgent[ManagerAgentContext, ResearchAgentOutput]):
             user_prompt=build_proposal_round_prompt(
                 setup_objective=context.setup_objective,
                 setup_research_context=context.setup_research_context,
-                current_state=context.current_state,
-                active_task=context.active_task,
+                assigned_task_ids=context.assigned_task_ids,
             ),
         )
 
@@ -161,9 +156,8 @@ class ScientistAgent(BaseSituAgent[ScientistAgentContext, ResearchAgentOutput]):
             user_prompt=build_session_run_prompt(
                 setup_objective=context.setup_objective,
                 setup_research_context=context.setup_research_context,
-                current_state=context.current_state,
                 max_experiments=context.max_experiments,
-                active_task=context.active_task,
+                assigned_task_ids=context.assigned_task_ids,
             ),
         )
 
@@ -199,8 +193,7 @@ class ResearcherAgent(BaseSituAgent[ResearcherAgentContext, ResearchAgentOutput]
             user_prompt=build_researcher_run_prompt(
                 setup_objective=context.setup_objective,
                 setup_research_context=context.setup_research_context,
-                current_state=context.current_state,
-                active_task=context.active_task,
+                assigned_task_ids=context.assigned_task_ids,
             ),
         )
 
@@ -236,8 +229,7 @@ class CriticAgent(BaseSituAgent[CriticAgentContext, ResearchAgentOutput]):
             user_prompt=build_critic_review_prompt(
                 setup_objective=context.setup_objective,
                 setup_research_context=context.setup_research_context,
-                current_state=context.current_state,
-                active_task=context.active_task,
+                assigned_task_ids=context.assigned_task_ids,
             ),
         )
 

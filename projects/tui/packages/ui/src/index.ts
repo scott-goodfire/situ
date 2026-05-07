@@ -52,5 +52,6 @@ export {
   type PaneSectionProps,
   type PaneSectionTone,
 } from "./components/pane-section/pane-section.js";
+export { SecretSetupPrompt } from "./components/secret-setup-prompt/secret-setup-prompt.js";
 export { SteeringDoseResponse } from "./components/steering-dose-response/steering-dose-response.js";
 export { TokenFeatureMatrix } from "./components/token-feature-matrix/token-feature-matrix.js";

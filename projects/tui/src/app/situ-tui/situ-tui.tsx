@@ -30,6 +30,10 @@ import type {
   SessionResumeResult,
   SessionStartParams,
   SessionStartResult,
+  SecretsSetOpenAIKeyParams,
+  SecretsSetOpenAIKeyResult,
+  SecretsStatusParams,
+  SecretsStatusResult,
   TaskActivityRecord,
   TaskRecord,
 } from "@situ/protocol";
@@ -37,7 +41,9 @@ import { useLiveQuery } from "@tanstack/react-db";
 import {
   LoadingView,
   OnboardingPrompt,
+  SecretSetupPrompt,
   SituTuiView,
+  type CommandMessage,
   type DashboardCommand,
   type DashboardControlMessage,
   type OnboardingAnswers,
@@ -45,6 +51,8 @@ import {
 
 type Status =
   | { kind: "starting" }
+  | { kind: "secret"; message?: CommandMessage }
+  | { kind: "saving_secret" }
   | { kind: "onboarding" }
   | { kind: "launching" }
   | { kind: "running"; sessionId?: string }
@@ -339,44 +347,13 @@ export function SituTui() {
           collections,
           bootstrap,
         });
-
-        if (mode === "attach") {
-          const activeSession = latestActiveSession({ sessions: bootstrap.sessions });
-          if (!activeSession) {
-            throw new Error("No active session found. Start or resume Situ first.");
-          }
-
-          trackedSessionIdRef.current = activeSession.id;
-          setStatus({ kind: "running", sessionId: activeSession.id });
-          return;
-        }
-
-        if (mode === "resume") {
-          const resumeSession = sessionToResume({ sessions: bootstrap.sessions });
-          if (!resumeSession) {
-            throw new Error("No session found to resume.");
-          }
-
-          const result = await client.request<SessionResumeResult, SessionResumeParams>({
-            method: "session.resume",
-            params: {
-              session_id: resumeSession.id,
-              max_experiments: maxExperimentCount,
-            },
-          });
-          trackedSessionIdRef.current = result.session_id;
-          setStatus({ kind: "running", sessionId: result.session_id });
-          return;
-        }
-
-        if (shouldShowOnboarding()) {
-          setStatus({ kind: "onboarding" });
-          return;
-        }
-
-        await requestSessionStart({
+        await continueAfterBootstrap({
+          bootstrap,
           client,
-          params: sessionStartParams,
+          maxExperimentCount,
+          mode,
+          requireSecret: mode !== "attach",
+          sessionStartParams,
           setStatus,
           trackedSessionIdRef,
         });
@@ -479,6 +456,57 @@ export function SituTui() {
         });
       });
   };
+  const handleSecretSubmit = ({ openaiKey }: { openaiKey: string }) => {
+    const client = clientRef.current;
+    if (!client) {
+      setStatus({
+        kind: "failed",
+        message: "No local Situ session client is available.",
+      });
+      return;
+    }
+
+    const mode = sessionMode();
+    setStatus({ kind: "saving_secret" });
+    client
+      .request<SecretsSetOpenAIKeyResult, SecretsSetOpenAIKeyParams>({
+        method: "secrets.set_openai_key",
+        params: {
+          openai_key: openaiKey,
+        },
+      })
+      .then(() =>
+        client.request<CollectionsBootstrapResult, CollectionsBootstrapParams>({
+          method: "collections.bootstrap",
+          params: {},
+        }),
+      )
+      .then(async (bootstrap) => {
+        await applyBootstrap({
+          collections,
+          bootstrap,
+        });
+        await continueAfterBootstrap({
+          bootstrap,
+          client,
+          maxExperimentCount,
+          mode,
+          requireSecret: false,
+          sessionStartParams,
+          setStatus,
+          trackedSessionIdRef,
+        });
+      })
+      .catch((error: unknown) => {
+        setStatus({
+          kind: "secret",
+          message: {
+            tone: "red",
+            text: errorMessage({ error }),
+          },
+        });
+      });
+  };
 
   if (status.kind === "starting") {
     return (
@@ -487,6 +515,34 @@ export function SituTui() {
         title="Loading..."
         detail="Connecting to the local Situ app and loading workspace state."
         footerLabel="Loading workspace state... · q quit"
+        onExit={() => {
+          exit();
+        }}
+      />
+    );
+  }
+
+  if (status.kind === "secret") {
+    return (
+      <SecretSetupPrompt
+        workspace={workspace}
+        message={status.message}
+        onSubmit={handleSecretSubmit}
+        onExit={() => {
+          exit();
+        }}
+      />
+    );
+  }
+
+  if (status.kind === "saving_secret") {
+    return (
+      <LoadingView
+        workspace={workspace}
+        frameStatus="setup"
+        title="Saving OpenAI API key..."
+        detail="Writing the key to local Situ runtime state."
+        footerLabel="Saving key... - q quit"
         onExit={() => {
           exit();
         }}
@@ -634,6 +690,78 @@ async function requestSessionStart({
   });
   trackedSessionIdRef.current = result.session_id;
   setStatus({ kind: "running", sessionId: result.session_id });
+}
+
+async function continueAfterBootstrap({
+  bootstrap,
+  client,
+  maxExperimentCount,
+  mode,
+  requireSecret,
+  sessionStartParams,
+  setStatus,
+  trackedSessionIdRef,
+}: {
+  bootstrap: CollectionsBootstrapResult;
+  client: HttpJsonRpcClient;
+  maxExperimentCount: number;
+  mode: SessionMode;
+  requireSecret: boolean;
+  sessionStartParams: SessionStartParams;
+  setStatus: (status: Status) => void;
+  trackedSessionIdRef: { current: string | undefined };
+}): Promise<void> {
+  if (requireSecret) {
+    const status = await client.request<SecretsStatusResult, SecretsStatusParams>({
+      method: "secrets.status",
+      params: {},
+    });
+    if (!status.openai_key_configured) {
+      setStatus({ kind: "secret" });
+      return;
+    }
+  }
+
+  if (mode === "attach") {
+    const activeSession = latestActiveSession({ sessions: bootstrap.sessions });
+    if (!activeSession) {
+      throw new Error("No active session found. Start or resume Situ first.");
+    }
+
+    trackedSessionIdRef.current = activeSession.id;
+    setStatus({ kind: "running", sessionId: activeSession.id });
+    return;
+  }
+
+  if (mode === "resume") {
+    const resumeSession = sessionToResume({ sessions: bootstrap.sessions });
+    if (!resumeSession) {
+      throw new Error("No session found to resume.");
+    }
+
+    const result = await client.request<SessionResumeResult, SessionResumeParams>({
+      method: "session.resume",
+      params: {
+        session_id: resumeSession.id,
+        max_experiments: maxExperimentCount,
+      },
+    });
+    trackedSessionIdRef.current = result.session_id;
+    setStatus({ kind: "running", sessionId: result.session_id });
+    return;
+  }
+
+  if (shouldShowOnboarding()) {
+    setStatus({ kind: "onboarding" });
+    return;
+  }
+
+  await requestSessionStart({
+    client,
+    params: sessionStartParams,
+    setStatus,
+    trackedSessionIdRef,
+  });
 }
 
 function repoRootFromImport(): string {
@@ -786,6 +914,14 @@ function statusSummary({
 }): string {
   if (status.kind === "starting") {
     return "Connecting to local app...";
+  }
+
+  if (status.kind === "secret") {
+    return "Waiting for OpenAI API key...";
+  }
+
+  if (status.kind === "saving_secret") {
+    return "Saving OpenAI API key...";
   }
 
   if (status.kind === "onboarding") {

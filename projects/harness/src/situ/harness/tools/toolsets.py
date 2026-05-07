@@ -53,6 +53,7 @@ from .tasks import (
     AddTaskCommentTool,
     ClaimTaskTool,
     CreateTaskTool,
+    GetTaskTool,
     GetTaskBoardTool,
     LinkTaskEntityTool,
     UpdateTaskTool,
@@ -68,16 +69,18 @@ RESEARCH_TOOLSET_INSTRUCTIONS = inspect.cleandoc(
     and `update_project` when the project objective or research context needs
     refinement.
 
-    Use `get_project_board` when you need the current board: hypotheses,
-    analyses, baselines, experiments, evaluations, measurements, activities,
-    artifacts, and events.
+    If the prompt gives you task IDs, first read each assigned task with
+    `get_task(task_id=...)`. Use `get_project_board` when you need the current
+    board: hypotheses, analyses, baselines, experiments, evaluations,
+    measurements, activities, artifacts, and events.
     Use analysis tools for codebase/domain understanding before it becomes a
     hypothesis. Use the hypothesis, experiment, and evaluation tools to keep
     the research structure clear.
 
     Use task tools for coordination: inspect the task board, file focused work,
-    claim eligible work, leave task comments, update task status, and link
-    tasks to the ledger records they produce.
+    read assigned task IDs, leave task comments, update task status, and link
+    tasks to the ledger records they produce. Prefer explicit task IDs over
+    implicit task selection.
 
     Use comments for durable research judgment: an interpretation, a risk, a
     useful decision, raw command evidence, or a next step. Avoid comments that
@@ -112,6 +115,10 @@ RESEARCHER_TOOLSET_INSTRUCTIONS = inspect.cleandoc(
     before creating hypotheses when the finding is still broad, contextual, or
     exploratory.
 
+    If the prompt gives you an assigned task ID, call `get_task(task_id=...)`
+    before doing the work. Use the task content, payload, links, dependencies,
+    and comments returned by that explicit read as the focus for the pass.
+
     Researcher work should not create candidate experiments or record
     measurement results directly. Use task comments and task entity links to
     make handoffs clear, and mark the active research task done when the
@@ -123,8 +130,9 @@ MANAGER_TOOLSET_INSTRUCTIONS = inspect.cleandoc(
     """
     This toolset is the Situ manager surface.
 
-    Use it to inspect the current project board; create or update the project
-    when kickoff context requires it; file focused
+    If the prompt gives you an assigned planning task ID, call
+    `get_task(task_id=...)` first. Use this toolset to inspect the current
+    project board; create or update the project when kickoff context requires it; file focused
     tasks; add coordination comments; and update the current planning task. Do
     not use the manager pass to run experiments or write research outputs
     directly; file Researcher or Scientist tasks for that work.
@@ -142,7 +150,9 @@ CRITIC_TOOLSET_INSTRUCTIONS = inspect.cleandoc(
     This toolset is the Situ critic surface.
 
     Use it to review a completed candidate experiment as the proposed change.
-    Read the experiment, linked task, evaluations, measurements, artifacts,
+    If the prompt gives you an assigned review task ID, call
+    `get_task(task_id=...)` first. Read the experiment, linked task,
+    evaluations, measurements, artifacts,
     workspace-state activities, and prior concerns before writing judgment.
     Focus on whether the recorded evidence is decision-grade, suspicious,
     invalid, or needs reproduction.
@@ -183,6 +193,7 @@ def build_researcher_toolset() -> FunctionToolset[SituToolDeps]:
         tools=[
             GetProjectBoardTool().as_tool(),
             GetProjectTool().as_tool(),
+            GetTaskTool().as_tool(),
             GetTaskBoardTool().as_tool(),
             UpdateTaskTool().as_tool(),
             AddTaskCommentTool().as_tool(),
@@ -218,6 +229,7 @@ def build_scientist_toolset() -> FunctionToolset[SituToolDeps]:
             GetProjectTool().as_tool(),
             CreateProjectTool().as_tool(),
             UpdateProjectTool().as_tool(),
+            GetTaskTool().as_tool(),
             GetTaskBoardTool().as_tool(),
             CreateTaskTool().as_tool(),
             ClaimTaskTool().as_tool(),
@@ -272,6 +284,7 @@ def build_manager_toolset() -> FunctionToolset[SituToolDeps]:
             UpdateProjectTool().as_tool(),
             RequestProjectCloseTool().as_tool(),
             ConfirmProjectCloseTool().as_tool(),
+            GetTaskTool().as_tool(),
             GetTaskBoardTool().as_tool(),
             CreateTaskTool().as_tool(),
             ClaimTaskTool().as_tool(),
@@ -288,6 +301,7 @@ def build_critic_toolset() -> FunctionToolset[SituToolDeps]:
         tools=[
             GetProjectBoardTool().as_tool(),
             GetProjectTool().as_tool(),
+            GetTaskTool().as_tool(),
             GetTaskBoardTool().as_tool(),
             UpdateTaskTool().as_tool(),
             AddTaskCommentTool().as_tool(),

@@ -14,10 +14,11 @@ import type {
 } from "@situ/protocol";
 
 export const storyWorkspace = "/Users/situ/sandbox/support-agent";
-export const storyWorkspaceId = "workspace_0001";
 export const maxExperimentCount = 5;
-export const storyProjectId = "project_0001";
-export const storySessionId = "session_0001";
+
+const storyWorkspaceId = "workspace_0001";
+const storyProjectId = "project_0001";
+const storySessionId = "session_0001";
 
 export const activeProject = projectRecord({});
 
@@ -35,7 +36,7 @@ export const completedSession = sessionRecord({
   },
 });
 
-export const managerAgent = agentRecord({
+const managerAgent = agentRecord({
   overrides: {
     id: "agent_manager_0001",
     kind: "manager",
@@ -44,7 +45,7 @@ export const managerAgent = agentRecord({
   },
 });
 
-export const scientistAgent = agentRecord({
+const scientistAgent = agentRecord({
   overrides: {
     id: "agent_scientist_0001",
     kind: "scientist",
@@ -57,7 +58,7 @@ export const runningAgents = [managerAgent, scientistAgent];
 
 export const activeHypothesis = hypothesisRecord({});
 
-export const baselineExperiment = experimentRecord({
+const baselineExperiment = experimentRecord({
   overrides: {
     id: "exp_session_0001_baseline",
     status: "closed",
@@ -93,7 +94,7 @@ export const suspiciousExperiment = experimentRecord({
   },
 });
 
-export const baselineEvaluation = evaluationRecord({
+const baselineEvaluation = evaluationRecord({
   overrides: {
     id: "eval_session_0001_baseline",
     status: "closed",
@@ -102,7 +103,7 @@ export const baselineEvaluation = evaluationRecord({
   },
 });
 
-export const runningEvaluation = evaluationRecord({
+const runningEvaluation = evaluationRecord({
   overrides: {
     id: "eval_session_0001_retrieval_filter",
     status: "active",
@@ -112,7 +113,7 @@ export const runningEvaluation = evaluationRecord({
   },
 });
 
-export const suspiciousEvaluation = evaluationRecord({
+const suspiciousEvaluation = evaluationRecord({
   overrides: {
     id: "eval_session_0001_fixture_edit",
     status: "closed",

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 import inspect
-from typing import Any
 
 RESEARCH_AGENT_INSTRUCTIONS = inspect.cleandoc(
     """
@@ -13,7 +13,9 @@ RESEARCH_AGENT_INSTRUCTIONS = inspect.cleandoc(
     tried, what the evidence says, and what candidate should happen next.
 
     How you work:
-    - Start from the current project state before making claims.
+    - If the prompt gives assigned task IDs, read each assignment first with
+      `get_task(task_id=...)`.
+    - Start from explicit tool reads before making claims.
     - Use `get_project_board` for the whole current ledger. Use focused
       `list_*` tools such as `list_baselines`, `list_evaluations`, and
       `list_measurements` when you need a narrower evidence slice.
@@ -74,7 +76,9 @@ RESEARCHER_AGENT_INSTRUCTIONS = inspect.cleandoc(
     hypotheses, interpretations, and review comments.
 
     How you work:
-    - Start from the current project state before making claims.
+    - If the prompt gives assigned task IDs, read each assignment first with
+      `get_task(task_id=...)`.
+    - Start from explicit tool reads before making claims.
     - Use `get_project_board` for the whole current ledger and focused `list_*`
       tools when you need a narrower evidence slice.
     - Use read-only workspace inspection to understand code and project files.
@@ -83,7 +87,7 @@ RESEARCHER_AGENT_INSTRUCTIONS = inspect.cleandoc(
       synthesis. Update or supersede analyses when later evidence refines them.
     - Create or update `Hypothesis` records only when a claim is testable
       enough to guide a future Scientist experiment.
-    - Link the active task to analyses and hypotheses you create or rely on.
+    - Link the assigned task to analyses and hypotheses you create or rely on.
     - Leave comments only when they clarify research judgment, risk, or the
       next handoff.
     - When you complete the focused task, call `update_task` with status
@@ -114,6 +118,8 @@ MANAGER_AGENT_INSTRUCTIONS = inspect.cleandoc(
     what should happen next; and file focused Researcher or Scientist tasks.
 
     How you work:
+    - If the prompt gives assigned planning task IDs, read each assignment
+      first with `get_task(task_id=...)`.
     - Treat tasks as the coordination surface for agent work.
     - If the current run has no project but setup input is sufficient, create and
       attach one with `create_project`.
@@ -165,7 +171,8 @@ CRITIC_AGENT_INSTRUCTIONS = inspect.cleandoc(
     results.
 
     How you work:
-    - Start from the active review task and current project state.
+    - Read the assigned review task first with `get_task(task_id=...)`.
+    - Start from explicit tool reads before judging the result.
     - Treat the experiment as the PR-shaped candidate change.
     - Treat evaluations and measurements as evidence for that change.
     - Read experiment activities, evaluation activities, measurements,
@@ -231,22 +238,8 @@ def build_proposal_round_prompt(
     *,
     setup_objective: str,
     setup_research_context: str,
-    current_state: dict[str, Any],
-    active_task: dict[str, Any] | None = None,
+    assigned_task_ids: Sequence[str] = (),
 ) -> str:
-    project = current_state.get("project") or {}
-    objective_text = project.get("objective", "") or setup_objective
-    research_context_body = project.get("research_context", "") or setup_research_context
-    tasks = current_state.get("tasks", [])
-    task_dependencies = current_state.get("task_dependencies", [])
-    analyses = current_state.get("analyses", [])[-8:]
-    hypotheses = current_state.get("hypotheses", [])[-8:]
-    baselines = current_state.get("baselines", [])
-    recent_evaluations = current_state.get("evaluations", [])[-8:]
-    recent_measurements = current_state.get("measurements", [])[-8:]
-    task_activities = current_state.get("task_activities", [])[-8:]
-    recent_hypothesis_activity = current_state.get("hypothesis_activities", [])[-5:]
-    recent_experiment_activity = current_state.get("experiment_activities", [])[-5:]
     return inspect.cleandoc(
         f"""
         You are executing a Manager planning pass.
@@ -255,52 +248,14 @@ def build_proposal_round_prompt(
         Objective: {setup_objective}
         Research context: {setup_research_context}
 
-        Active planning task
-        {active_task}
+        Assigned planning task IDs
+        {_format_task_ids(assigned_task_ids)}
 
-        Project
-        {project}
-
-        Objective
-        {objective_text}
-
-        Research context
-        {research_context_body}
-
-        Current tasks
-        {tasks}
-
-        Task dependencies
-        {task_dependencies}
-
-        Recent analyses
-        {analyses}
-
-        Current hypotheses
-        {hypotheses}
-
-        Current baselines
-        {baselines}
-
-        Recent evaluations
-        {recent_evaluations}
-
-        Recent measurements
-        {recent_measurements}
-
-        Recent task activity
-        {task_activities}
-
-        Recent hypothesis activity
-        {recent_hypothesis_activity}
-
-        Recent experiment activity
-        {recent_experiment_activity}
-
-        Look over the project board and task board. File the next focused Researcher
-        or Scientist task or tasks with `create_task`. Make clear what is
-        known, what is still uncertain, and what would make the next experiment
-        worth running.
+        First call `get_task` for each assigned planning task ID. Then inspect
+        `get_project`, `get_project_board`, and `get_task_board` as needed.
+        File the next focused Researcher, Scientist, or Critic task or tasks
+        with `create_task`. Make clear what is known, what is still uncertain,
+        and what would make the next experiment worth running.
         If there is no baseline measurement evidence, file a `baseline` task
         before candidate hypotheses get more specific. If baseline evidence
         exists and the project is still underexplored, file 2-5 independent
@@ -320,21 +275,8 @@ def build_researcher_run_prompt(
     *,
     setup_objective: str,
     setup_research_context: str,
-    current_state: dict[str, Any],
-    active_task: dict[str, Any] | None = None,
+    assigned_task_ids: Sequence[str] = (),
 ) -> str:
-    project = current_state.get("project") or {}
-    objective_text = project.get("objective", "") or setup_objective
-    research_context_body = project.get("research_context", "") or setup_research_context
-    tasks = current_state.get("tasks", [])
-    task_dependencies = current_state.get("task_dependencies", [])
-    analyses = current_state.get("analyses", [])[-12:]
-    hypotheses = current_state.get("hypotheses", [])[-12:]
-    recent_evaluations = current_state.get("evaluations", [])[-8:]
-    recent_measurements = current_state.get("measurements", [])[-8:]
-    task_activities = current_state.get("task_activities", [])[-8:]
-    recent_analysis_activity = current_state.get("analysis_activities", [])[-8:]
-    recent_hypothesis_activity = current_state.get("hypothesis_activities", [])[-8:]
     return inspect.cleandoc(
         f"""
         You are executing a Researcher work pass.
@@ -343,48 +285,16 @@ def build_researcher_run_prompt(
         Objective: {setup_objective}
         Research context: {setup_research_context}
 
-        Project
-        {project}
+        Assigned research task IDs
+        {_format_task_ids(assigned_task_ids)}
 
-        Objective
-        {objective_text}
+        First call `get_task` for each assigned task ID. Use the returned task
+        content, payload, dependencies, links, and comments as the focus for
+        this pass. Then inspect `get_project_board` or focused `list_*` tools
+        as needed.
 
-        Research context
-        {research_context_body}
-
-        Active task claimed by the backend
-        {active_task}
-
-        Current tasks
-        {tasks}
-
-        Task dependencies
-        {task_dependencies}
-
-        Recent analyses
-        {analyses}
-
-        Current hypotheses
-        {hypotheses}
-
-        Recent evaluations
-        {recent_evaluations}
-
-        Recent measurements
-        {recent_measurements}
-
-        Recent task activity
-        {task_activities}
-
-        Recent analysis activity
-        {recent_analysis_activity}
-
-        Recent hypothesis activity
-        {recent_hypothesis_activity}
-
-        Continue the research from the live project state. A Researcher pass
-        handles at most one task. If an active task is provided, use its
-        content as the focus for this pass and do not claim a different task.
+        Continue the research from explicit tool reads. A Researcher pass
+        handles at most one assigned task. Do not claim a different task.
         Produce durable analyses first; create or update hypotheses only when
         they make the next empirical handoff clearer.
 
@@ -393,7 +303,7 @@ def build_researcher_run_prompt(
         leave a concise task result summary that helps the Manager create a
         Scientist experiment task.
 
-        Link the active task to important produced or referenced analyses and
+        Link the assigned task to important produced or referenced analyses and
         hypotheses with `link_task_entity`, and leave a concise
         `add_task_comment` when it helps the next pass understand what
         happened.
@@ -411,21 +321,8 @@ def build_critic_review_prompt(
     *,
     setup_objective: str,
     setup_research_context: str,
-    current_state: dict[str, Any],
-    active_task: dict[str, Any] | None = None,
+    assigned_task_ids: Sequence[str] = (),
 ) -> str:
-    project = current_state.get("project") or {}
-    objective_text = project.get("objective", "") or setup_objective
-    research_context_body = project.get("research_context", "") or setup_research_context
-    tasks = current_state.get("tasks", [])
-    task_entity_links = current_state.get("task_entity_links", [])
-    experiments = current_state.get("experiments", [])[-8:]
-    evaluations = current_state.get("evaluations", [])[-12:]
-    measurements = current_state.get("measurements", [])[-16:]
-    experiment_activities = current_state.get("experiment_activities", [])[-16:]
-    evaluation_activities = current_state.get("evaluation_activities", [])[-12:]
-    task_activities = current_state.get("task_activities", [])[-8:]
-    artifacts = current_state.get("artifacts", [])[-12:]
     return inspect.cleandoc(
         f"""
         You are executing a Critic review pass.
@@ -434,47 +331,16 @@ def build_critic_review_prompt(
         Objective: {setup_objective}
         Research context: {setup_research_context}
 
-        Project
-        {project}
+        Assigned review task IDs
+        {_format_task_ids(assigned_task_ids)}
 
-        Objective
-        {objective_text}
-
-        Research context
-        {research_context_body}
-
-        Active review task claimed by the backend
-        {active_task}
-
-        Current tasks
-        {tasks}
-
-        Task entity links
-        {task_entity_links}
-
-        Recent experiments
-        {experiments}
-
-        Recent evaluations
-        {evaluations}
-
-        Recent measurements
-        {measurements}
-
-        Recent experiment activity
-        {experiment_activities}
-
-        Recent evaluation activity
-        {evaluation_activities}
-
-        Recent task activity
-        {task_activities}
-
-        Recent artifacts
-        {artifacts}
+        First call `get_task` for each assigned review task ID. Use the task
+        payload and task entity links to identify the experiment and evidence
+        to review. Then inspect focused experiment, evaluation, measurement,
+        activity, artifact, and project-board readers as needed.
 
         Review the active experiment as a proposed change. Use the experiment
-        id from the active task payload or task entity links. If evaluation or
+        id from the assigned task payload or task entity links. If evaluation or
         measurement evidence is missing, record a review with verdict
         "needs_reproduction" or "human_review" rather than inventing evidence.
 
@@ -495,23 +361,9 @@ def build_session_run_prompt(
     *,
     setup_objective: str,
     setup_research_context: str,
-    current_state: dict[str, Any],
     max_experiments: int,
-    active_task: dict[str, Any] | None = None,
+    assigned_task_ids: Sequence[str] = (),
 ) -> str:
-    project = current_state.get("project") or {}
-    objective_text = project.get("objective", "") or setup_objective
-    research_context_body = project.get("research_context", "") or setup_research_context
-    tasks = current_state.get("tasks", [])
-    task_dependencies = current_state.get("task_dependencies", [])
-    analyses = current_state.get("analyses", [])[-8:]
-    hypotheses = current_state.get("hypotheses", [])[-8:]
-    baselines = current_state.get("baselines", [])
-    recent_evaluations = current_state.get("evaluations", [])[-8:]
-    recent_measurements = current_state.get("measurements", [])[-8:]
-    task_activities = current_state.get("task_activities", [])[-8:]
-    recent_hypothesis_activity = current_state.get("hypothesis_activities", [])[-8:]
-    recent_experiment_activity = current_state.get("experiment_activities", [])[-8:]
     return inspect.cleandoc(
         f"""
         You are executing a Scientist work pass.
@@ -523,60 +375,24 @@ def build_session_run_prompt(
         If the current run has no project but the setup input is sufficient,
         create and attach a project with `create_project`.
 
-        Project
-        {project}
-
-        Objective
-        {objective_text}
-
-        Research context
-        {research_context_body}
-
         Budget for this pass
         Run at most {max_experiments} experiments.
 
-        Active task claimed by the backend
-        {active_task}
+        Assigned Scientist task IDs
+        {_format_task_ids(assigned_task_ids)}
 
-        Current tasks
-        {tasks}
+        First call `get_task` for each assigned task ID. Use the returned task
+        content, payload, dependencies, links, and comments as the focus for
+        this pass. Then inspect `get_project_board` or focused baseline,
+        evaluation, measurement, hypothesis, experiment, activity, and artifact
+        readers as needed.
 
-        Task dependencies
-        {task_dependencies}
+        Continue the research from explicit tool reads. A Scientist work pass
+        handles at most one assigned task. Do not claim a different task. After
+        that task is done, failed, or clearly commented as blocked, stop instead
+        of claiming more backlog work in the same pass.
 
-        Recent analyses
-        {analyses}
-
-        Current hypotheses
-        {hypotheses}
-
-        Current baselines
-        {baselines}
-
-        Recent evaluations
-        {recent_evaluations}
-
-        Recent measurements
-        {recent_measurements}
-
-        Recent task activity
-        {task_activities}
-
-        Recent hypothesis activity
-        {recent_hypothesis_activity}
-
-        Recent experiment activity
-        {recent_experiment_activity}
-
-        Continue the research from the live project state. A Scientist work
-        pass handles at most one task. If an active task is provided, use its
-        content as the focus for this pass and do not claim a different task.
-        If no active task is provided, inspect the task board and claim one
-        runnable Scientist task before doing focused work. After that task is
-        done, failed, or clearly commented as blocked, stop instead of claiming
-        more backlog work in the same pass.
-
-        If the active task is an experiment task and its payload includes an
+        If the assigned task is an experiment task and its payload includes an
         `experiment_id`, Situ has already created the candidate experiment and
         rooted your workspace tools in that experiment's managed worktree. Use
         that experiment id for experiment updates, evaluations, comments, and
@@ -606,7 +422,7 @@ def build_session_run_prompt(
         dependencies, or generated files changed, and what the evaluation means
         for that experiment.
 
-        Link the active task to important produced or referenced ledger records
+        Link the assigned task to important produced or referenced ledger records
         with `link_task_entity`, and leave a concise `add_task_comment` when
         it helps the next pass understand what happened.
 
@@ -621,3 +437,9 @@ def build_session_run_prompt(
         human review. Do not invent results.
         """
     )
+
+
+def _format_task_ids(task_ids: Sequence[str]) -> str:
+    if not task_ids:
+        return "None provided."
+    return ", ".join(f"`{task_id}`" for task_id in task_ids)

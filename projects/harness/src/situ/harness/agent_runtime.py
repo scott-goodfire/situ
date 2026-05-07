@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
@@ -118,16 +119,14 @@ class AgentRuntime:
         workspace: dict[str, Any],
         setup_objective: str,
         setup_research_context: str,
-        current_state: dict[str, Any],
+        assigned_task_ids: Sequence[str] = (),
         session_id: str | None = None,
         repos: Repositories | None = None,
-        active_task: dict[str, Any] | None = None,
     ) -> AgentPlan:
         prompt = build_proposal_round_prompt(
             setup_objective=setup_objective,
             setup_research_context=setup_research_context,
-            current_state=current_state,
-            active_task=active_task,
+            assigned_task_ids=assigned_task_ids,
         )
         message_history = None
         conversation_id = None
@@ -196,17 +195,15 @@ class AgentRuntime:
         workspace: dict[str, Any],
         setup_objective: str,
         setup_research_context: str,
-        current_state: dict[str, Any],
         session_id: str,
+        assigned_task_ids: Sequence[str] = (),
         app_root: Path | None = None,
         repos: Repositories | None = None,
-        active_task: dict[str, Any] | None = None,
     ) -> AgentPlan:
         prompt = build_researcher_run_prompt(
             setup_objective=setup_objective,
             setup_research_context=setup_research_context,
-            current_state=current_state,
-            active_task=active_task,
+            assigned_task_ids=assigned_task_ids,
         )
         message_history = None
         conversation_id = None
@@ -282,21 +279,19 @@ class AgentRuntime:
         workspace: dict[str, Any],
         setup_objective: str,
         setup_research_context: str,
-        current_state: dict[str, Any],
         session_id: str,
         max_experiments: int,
+        assigned_task_ids: Sequence[str] = (),
         app_root: Path | None = None,
         repos: Repositories | None = None,
-        active_task: dict[str, Any] | None = None,
         repo_path: str | None = None,
         active_experiment_id: str | None = None,
     ) -> AgentPlan:
         prompt = build_session_run_prompt(
             setup_objective=setup_objective,
             setup_research_context=setup_research_context,
-            current_state=current_state,
             max_experiments=max_experiments,
-            active_task=active_task,
+            assigned_task_ids=assigned_task_ids,
         )
         message_history = None
         conversation_id = None
@@ -373,17 +368,15 @@ class AgentRuntime:
         workspace: dict[str, Any],
         setup_objective: str,
         setup_research_context: str,
-        current_state: dict[str, Any],
         session_id: str,
+        assigned_task_ids: Sequence[str] = (),
         app_root: Path | None = None,
         repos: Repositories | None = None,
-        active_task: dict[str, Any] | None = None,
     ) -> AgentPlan:
         prompt = build_critic_review_prompt(
             setup_objective=setup_objective,
             setup_research_context=setup_research_context,
-            current_state=current_state,
-            active_task=active_task,
+            assigned_task_ids=assigned_task_ids,
         )
         message_history = None
         conversation_id = None
