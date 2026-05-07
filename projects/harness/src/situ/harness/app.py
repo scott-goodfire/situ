@@ -865,7 +865,7 @@ class HarnessApp:
 
                     project_id = session.project_id
                     if project_id is None:
-                        completion_summary = "Stopped because the session has no project."
+                        completion_summary = "Stopped because the current run has no project."
                         break
                     self._enqueue_plan_task(
                         session_id=session_id,

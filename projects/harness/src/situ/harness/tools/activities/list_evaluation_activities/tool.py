@@ -19,18 +19,21 @@ class ListEvaluationActivitiesTool(
         *,
         ctx: RunContext[SituToolDeps],
         evaluation_id: str | None = None,
-        session_id: str | None = None,
+        project_id: str | None = None,
         **_kwargs: Any,
     ) -> ListEvaluationActivitiesResult:
-        """List evaluation activity by evaluation or session."""
+        """List evaluation activity by evaluation or project."""
         repos = ctx.deps.get_repos()
         if evaluation_id is not None:
             activities = repos.evaluation_activities.list_for_evaluation(
                 evaluation_id
             )
         else:
-            activities = repos.evaluation_activities.list_for_session(
-                session_id or ctx.deps.session_id
+            resolved_project_id = project_id or ctx.deps.current_project_id()
+            activities = (
+                repos.evaluation_activities.list_for_project(resolved_project_id)
+                if resolved_project_id is not None
+                else []
             )
 
         return ListEvaluationActivitiesResult(

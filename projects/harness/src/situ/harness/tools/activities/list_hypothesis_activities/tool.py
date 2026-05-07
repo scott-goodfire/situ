@@ -19,18 +19,21 @@ class ListHypothesisActivitiesTool(
         *,
         ctx: RunContext[SituToolDeps],
         hypothesis_id: str | None = None,
-        session_id: str | None = None,
+        project_id: str | None = None,
         **_kwargs: Any,
     ) -> ListHypothesisActivitiesResult:
-        """List hypothesis activity by hypothesis or session."""
+        """List hypothesis activity by hypothesis or project."""
         repos = ctx.deps.get_repos()
         if hypothesis_id is not None:
             activities = repos.hypothesis_activities.list_for_hypothesis(
                 hypothesis_id
             )
         else:
-            activities = repos.hypothesis_activities.list_for_session(
-                session_id or ctx.deps.session_id
+            resolved_project_id = project_id or ctx.deps.current_project_id()
+            activities = (
+                repos.hypothesis_activities.list_for_project(resolved_project_id)
+                if resolved_project_id is not None
+                else []
             )
 
         return ListHypothesisActivitiesResult(

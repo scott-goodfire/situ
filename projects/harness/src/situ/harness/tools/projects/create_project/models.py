@@ -7,4 +7,4 @@ from ...common import SituToolReturn
 
 class CreateProjectResult(SituToolReturn):
     project: dict[str, Any] | None = None
-    session: dict[str, Any] | None = None
+    attached_to_current_run: bool = False

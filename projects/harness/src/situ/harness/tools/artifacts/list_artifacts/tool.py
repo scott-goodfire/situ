@@ -17,7 +17,6 @@ class ListArtifactsTool(BaseSituTool[SituToolDeps, ListArtifactsResult]):
         *,
         ctx: RunContext[SituToolDeps],
         project_id: str | None = None,
-        session_id: str | None = None,
         experiment_id: str | None = None,
         associated_entity_kind: str | None = None,
         associated_entity_id: str | None = None,
@@ -29,11 +28,12 @@ class ListArtifactsTool(BaseSituTool[SituToolDeps, ListArtifactsResult]):
             artifacts = repos.artifacts.list_for_experiment(associated_entity_id)
         elif experiment_id is not None:
             artifacts = repos.artifacts.list_for_experiment(experiment_id)
-        elif project_id is not None:
-            artifacts = repos.artifacts.list_for_project(project_id)
         else:
-            artifacts = repos.artifacts.list_for_session(
-                session_id or ctx.deps.session_id
+            resolved_project_id = project_id or ctx.deps.current_project_id()
+            artifacts = (
+                repos.artifacts.list_for_project(resolved_project_id)
+                if resolved_project_id is not None
+                else []
             )
 
         return ListArtifactsResult(

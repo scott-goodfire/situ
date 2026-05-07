@@ -18,7 +18,6 @@ class ListEvaluationsTool(BaseSituTool[SituToolDeps, ListEvaluationsResult]):
         *,
         ctx: RunContext[SituToolDeps],
         project_id: str | None = None,
-        session_id: str | None = None,
         baseline_id: str | None = None,
         experiment_id: str | None = None,
         status: WorkStatus | None = None,
@@ -35,11 +34,12 @@ class ListEvaluationsTool(BaseSituTool[SituToolDeps, ListEvaluationsResult]):
             evaluations = repos.evaluations.list_for_baseline(baseline_id)
         elif experiment_id is not None:
             evaluations = repos.evaluations.list_for_experiment(experiment_id)
-        elif project_id is not None:
-            evaluations = repos.evaluations.list_for_project(project_id)
         else:
-            evaluations = repos.evaluations.list_for_session(
-                session_id or ctx.deps.session_id
+            resolved_project_id = project_id or ctx.deps.current_project_id()
+            evaluations = (
+                repos.evaluations.list_for_project(resolved_project_id)
+                if resolved_project_id is not None
+                else []
             )
 
         if checked_status is not None:

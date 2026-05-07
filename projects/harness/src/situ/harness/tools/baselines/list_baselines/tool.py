@@ -18,21 +18,22 @@ class ListBaselinesTool(BaseSituTool[SituToolDeps, ListBaselinesResult]):
         *,
         ctx: RunContext[SituToolDeps],
         project_id: str | None = None,
-        session_id: str | None = None,
         status: WorkStatus | None = None,
         **_kwargs: Any,
     ) -> ListBaselinesResult:
-        """List baselines for a project, defaulting to the current session."""
+        """List baselines for a project, defaulting to the current project."""
         checked_status = (
             parse_work_status(status=status, noun="baseline")
             if status is not None
             else None
         )
         repos = ctx.deps.get_repos()
-        if project_id is not None:
-            baselines = repos.baselines.list_for_project(project_id)
-        else:
-            baselines = repos.baselines.list_for_session(session_id or ctx.deps.session_id)
+        resolved_project_id = project_id or ctx.deps.current_project_id()
+        baselines = (
+            repos.baselines.list_for_project(resolved_project_id)
+            if resolved_project_id is not None
+            else []
+        )
 
         if checked_status is not None:
             baselines = [

@@ -153,8 +153,6 @@ def test_get_project_board_tool_reads_current_project_board(repos: Repositories)
     assert result.workspace is not None
     assert result.project is not None
     assert result.project["objective"] == "Improve score without hurting latency."
-    assert result.session is not None
-    assert result.session["id"] == "session_0001"
     assert [hypothesis["id"] for hypothesis in result.hypotheses] == ["hyp_0001"]
     assert [baseline["id"] for baseline in result.baselines] == [
         "baseline_project_0001_default"
@@ -259,7 +257,7 @@ def test_task_tools_coordinate_claims_comments_and_entity_links(
     assert board.task_entity_links[0]["entity_id"] == "hyp_0001"
 
 
-def test_get_project_tool_reads_current_session_project(
+def test_get_project_tool_reads_current_project(
     repos: Repositories,
 ) -> None:
     deps = SituToolDeps(session_id="session_0001", repos=repos)
@@ -292,8 +290,7 @@ def test_create_project_tool_creates_and_attaches_project(repos: Repositories) -
 
     assert created.success is True
     assert created.project is not None
-    assert created.session is not None
-    assert created.session["project_id"] == created.project["id"]
+    assert created.attached_to_current_run is True
     assert created.project["workspace_id"] == "workspace_fresh"
 
     updated = invoke_situ_tool_sync(

@@ -474,7 +474,7 @@ def research_tool_cases() -> list[Case[ResearchToolEvalInput, ResearchToolEvalOu
                 seed="with_experiment",
                 prompt=(
                     f"Please record a JSON artifact with create_artifact for "
-                    f"session {SESSION_ID} and experiment {EXPERIMENT_ID}. Use "
+                    f"the current project and experiment {EXPERIMENT_ID}. Use "
                     "title 'normalized cache raw output', path "
                     "'artifacts/normalized-cache.json', media_type "
                     "'application/json', and size_bytes 256."

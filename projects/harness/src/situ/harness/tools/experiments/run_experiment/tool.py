@@ -78,7 +78,7 @@ def _run_experiment_impl(
         raise ValueError(f"session not found: {deps.session_id}")
     if session.project_id is None:
         raise ValueError(
-            "current session has no project; create or attach a project first"
+            "current run has no project; create or attach a project first"
         )
     project_id = session.project_id
 

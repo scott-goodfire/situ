@@ -25,14 +25,11 @@ class UpdateProjectTool(BaseSituTool[SituToolDeps, UpdateProjectResult]):
         status: ProjectStatus | None = None,
         **_kwargs: Any,
     ) -> UpdateProjectResult:
-        """Update the project attached to the current session or a project by ID."""
+        """Update a project by ID or the current project."""
         repos = ctx.deps.get_repos()
-        resolved_project_id = project_id
+        resolved_project_id = project_id or ctx.deps.current_project_id()
         if resolved_project_id is None:
-            session = repos.sessions.get(ctx.deps.session_id)
-            resolved_project_id = session.project_id if session is not None else None
-        if resolved_project_id is None:
-            raise ValueError("project_id is required when the session has no project")
+            raise ValueError("project_id is required when the current run has no project")
         if status is not None and parse_project_status(status) == ProjectStatus.CLOSED:
             return self._failure(
                 code="project_close_requires_confirmation",

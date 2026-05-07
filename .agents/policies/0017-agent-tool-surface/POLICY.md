@@ -48,6 +48,9 @@ to call a generic activity writer to record benchmark evidence.
 - Prefer model-shaped tool names:
   `get_project_board`, `get_project`, `list_hypotheses`,
   `create_experiment`, `link_hypothesis_experiment`.
+- Agent-facing state readers should default to the current project. Do not
+  expose session/run selectors unless the tool is explicitly for inspecting run
+  history; session IDs are internal provenance for the harness.
 - Project objective and research context changes go through project-shaped
   tools such as `create_project` and `update_project`; do not expose separate
   objective or research-context CRUD tools.
@@ -83,6 +86,8 @@ to call a generic activity writer to record benchmark evidence.
   typed tools.
 - A generic context tool whose name exposes implementation perspective rather
   than product state.
+- Agent-facing tools that ask the model to pass a `session_id` for routine
+  project state reads.
 - Agent-facing tools that ask the model to choose internal activity kinds for
   routine collaboration.
 - Standalone objective or research-context tools. Those are Project fields, not

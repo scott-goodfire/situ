@@ -22,10 +22,10 @@ class CreateProjectTool(BaseSituTool[SituToolDeps, CreateProjectResult]):
         objective: str,
         research_context: str,
         project_id: str | None = None,
-        attach_to_session: bool = True,
+        attach_to_current_run: bool = True,
         **_kwargs: Any,
     ) -> CreateProjectResult:
-        """Create a workspace project and optionally attach the current session."""
+        """Create a workspace project and optionally attach it to the current run."""
         repos = ctx.deps.get_repos()
         workspace = repos.workspaces.ensure()
         resolved_project_id = project_id or repos.projects.next_id(workspace.id)
@@ -39,7 +39,7 @@ class CreateProjectTool(BaseSituTool[SituToolDeps, CreateProjectResult]):
         )
         session = (
             repos.sessions.update_project(ctx.deps.session_id, project.id)
-            if attach_to_session
+            if attach_to_current_run
             else None
         )
         event = ctx.deps.record_event(
@@ -53,5 +53,5 @@ class CreateProjectTool(BaseSituTool[SituToolDeps, CreateProjectResult]):
         return CreateProjectResult(
             success=True,
             project=project.model_dump(),
-            session=session.model_dump() if session is not None else None,
+            attached_to_current_run=session is not None,
         )

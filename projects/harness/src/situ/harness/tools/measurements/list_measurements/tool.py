@@ -20,10 +20,9 @@ class ListMeasurementsTool(BaseSituTool[SituToolDeps, ListMeasurementsResult]):
         baseline_id: str | None = None,
         experiment_id: str | None = None,
         project_id: str | None = None,
-        session_id: str | None = None,
         **_kwargs: Any,
     ) -> ListMeasurementsResult:
-        """List measurements by evaluation, baseline, experiment, project, or session."""
+        """List measurements by evaluation, baseline, experiment, or project."""
         repos = ctx.deps.get_repos()
         if evaluation_id is not None:
             measurements = repos.measurements.list_for_evaluation(evaluation_id)
@@ -31,11 +30,12 @@ class ListMeasurementsTool(BaseSituTool[SituToolDeps, ListMeasurementsResult]):
             measurements = repos.measurements.list_for_baseline(baseline_id)
         elif experiment_id is not None:
             measurements = repos.measurements.list_for_experiment(experiment_id)
-        elif project_id is not None:
-            measurements = repos.measurements.list_for_project(project_id)
         else:
-            measurements = repos.measurements.list_for_session(
-                session_id or ctx.deps.session_id
+            resolved_project_id = project_id or ctx.deps.current_project_id()
+            measurements = (
+                repos.measurements.list_for_project(resolved_project_id)
+                if resolved_project_id is not None
+                else []
             )
 
         return ListMeasurementsResult(

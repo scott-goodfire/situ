@@ -19,16 +19,19 @@ class ListAnalysisActivitiesTool(
         *,
         ctx: RunContext[SituToolDeps],
         analysis_id: str | None = None,
-        session_id: str | None = None,
+        project_id: str | None = None,
         **_kwargs: Any,
     ) -> ListAnalysisActivitiesResult:
-        """List analysis activity by analysis or session."""
+        """List analysis activity by analysis or project."""
         repos = ctx.deps.get_repos()
         if analysis_id is not None:
             activities = repos.analysis_activities.list_for_analysis(analysis_id)
         else:
-            activities = repos.analysis_activities.list_for_session(
-                session_id or ctx.deps.session_id
+            resolved_project_id = project_id or ctx.deps.current_project_id()
+            activities = (
+                repos.analysis_activities.list_for_project(resolved_project_id)
+                if resolved_project_id is not None
+                else []
             )
 
         return ListAnalysisActivitiesResult(

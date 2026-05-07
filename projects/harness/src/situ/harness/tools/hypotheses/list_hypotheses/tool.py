@@ -18,22 +18,22 @@ class ListHypothesesTool(BaseSituTool[SituToolDeps, ListHypothesesResult]):
         *,
         ctx: RunContext[SituToolDeps],
         project_id: str | None = None,
-        session_id: str | None = None,
         status: WorkStatus | None = None,
         **_kwargs: Any,
     ) -> ListHypothesesResult:
-        """List hypotheses for a project, defaulting to the current session's project."""
+        """List hypotheses for a project, defaulting to the current project."""
         checked_status = (
             parse_work_status(status=status, noun="hypothesis")
             if status is not None
             else None
         )
         repos = ctx.deps.get_repos()
-        if project_id is not None:
-            hypotheses = repos.hypotheses.list_for_project(project_id)
-        else:
-            target_session_id = session_id or ctx.deps.session_id
-            hypotheses = repos.hypotheses.list_for_session(target_session_id)
+        resolved_project_id = project_id or ctx.deps.current_project_id()
+        hypotheses = (
+            repos.hypotheses.list_for_project(resolved_project_id)
+            if resolved_project_id is not None
+            else []
+        )
         if checked_status is not None:
             hypotheses = [
                 hypothesis

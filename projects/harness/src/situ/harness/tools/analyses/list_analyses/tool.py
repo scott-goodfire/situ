@@ -18,21 +18,22 @@ class ListAnalysesTool(BaseSituTool[SituToolDeps, ListAnalysesResult]):
         *,
         ctx: RunContext[SituToolDeps],
         project_id: str | None = None,
-        session_id: str | None = None,
         status: WorkStatus | None = None,
         **_kwargs: Any,
     ) -> ListAnalysesResult:
-        """List analyses by project or status."""
+        """List analyses for a project, defaulting to the current project."""
         checked_status = (
             parse_work_status(status=status, noun="analysis")
             if status is not None
             else None
         )
         repos = ctx.deps.get_repos()
-        if project_id is not None:
-            analyses = repos.analyses.list_for_project(project_id)
-        else:
-            analyses = repos.analyses.list_for_session(session_id or ctx.deps.session_id)
+        resolved_project_id = project_id or ctx.deps.current_project_id()
+        analyses = (
+            repos.analyses.list_for_project(resolved_project_id)
+            if resolved_project_id is not None
+            else []
+        )
 
         if checked_status is not None:
             analyses = [

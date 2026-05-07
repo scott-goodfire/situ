@@ -82,7 +82,7 @@ class AgentMessageHistoryRepository(BaseRepository):
         project_id = self._project_id_for_session(session_id)
         if project_id is None:
             raise ValueError(
-                "session has no project; create or attach a project before recording agent messages"
+                "current run has no project; create or attach a project before recording agent messages"
             )
         return self.append_project_messages(
             project_id=project_id,

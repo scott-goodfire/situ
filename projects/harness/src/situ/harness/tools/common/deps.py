@@ -85,7 +85,7 @@ class SituToolDeps(BaseModel):
             raise ValueError(f"session not found: {self.session_id}")
         if session.project_id is None:
             raise ValueError(
-                "current session has no project; create or attach a project first"
+                "current run has no project; create or attach a project first"
             )
         return session.project_id
 

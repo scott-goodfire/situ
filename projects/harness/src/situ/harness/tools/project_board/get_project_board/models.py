@@ -10,7 +10,6 @@ from ...common import SituToolReturn
 class GetProjectBoardResult(SituToolReturn):
     workspace: dict[str, Any] | None = None
     project: dict[str, Any] | None = None
-    session: dict[str, Any] | None = None
     hypotheses: list[dict[str, Any]] = Field(default_factory=list)
     baselines: list[dict[str, Any]] = Field(default_factory=list)
     experiments: list[dict[str, Any]] = Field(default_factory=list)

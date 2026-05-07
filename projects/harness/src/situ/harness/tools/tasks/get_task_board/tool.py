@@ -17,15 +17,11 @@ class GetTaskBoardTool(BaseSituTool[SituToolDeps, GetTaskBoardResult]):
         *,
         ctx: RunContext[SituToolDeps],
         project_id: str | None = None,
-        session_id: str | None = None,
         **_kwargs: Any,
     ) -> GetTaskBoardResult:
         """Load agents, tasks, task dependencies, task links, and task activity."""
         repos = ctx.deps.get_repos()
-        target_project_id = project_id
-        if target_project_id is None:
-            session = repos.sessions.get(session_id or ctx.deps.session_id)
-            target_project_id = session.project_id if session is not None else None
+        target_project_id = project_id or ctx.deps.current_project_id()
         if target_project_id is None:
             return GetTaskBoardResult(
                 success=True,

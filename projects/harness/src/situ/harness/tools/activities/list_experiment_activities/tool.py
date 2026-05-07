@@ -19,18 +19,21 @@ class ListExperimentActivitiesTool(
         *,
         ctx: RunContext[SituToolDeps],
         experiment_id: str | None = None,
-        session_id: str | None = None,
+        project_id: str | None = None,
         **_kwargs: Any,
     ) -> ListExperimentActivitiesResult:
-        """List experiment activity by experiment or session."""
+        """List experiment activity by experiment or project."""
         repos = ctx.deps.get_repos()
         if experiment_id is not None:
             activities = repos.experiment_activities.list_for_experiment(
                 experiment_id
             )
         else:
-            activities = repos.experiment_activities.list_for_session(
-                session_id or ctx.deps.session_id
+            resolved_project_id = project_id or ctx.deps.current_project_id()
+            activities = (
+                repos.experiment_activities.list_for_project(resolved_project_id)
+                if resolved_project_id is not None
+                else []
             )
 
         return ListExperimentActivitiesResult(

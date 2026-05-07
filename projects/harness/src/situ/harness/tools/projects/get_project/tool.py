@@ -19,12 +19,9 @@ class GetProjectTool(BaseSituTool[SituToolDeps, GetProjectResult]):
         project_id: str | None = None,
         **_kwargs: Any,
     ) -> GetProjectResult:
-        """Read a project by ID or the project attached to the current session."""
+        """Read a project by ID or the current project."""
         repos = ctx.deps.get_repos()
-        resolved_project_id = project_id
-        if resolved_project_id is None:
-            session = repos.sessions.get(ctx.deps.session_id)
-            resolved_project_id = session.project_id if session is not None else None
+        resolved_project_id = project_id or ctx.deps.current_project_id()
         project = (
             repos.projects.get(resolved_project_id)
             if resolved_project_id is not None
