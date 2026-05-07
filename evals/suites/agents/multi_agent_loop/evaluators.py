@@ -98,33 +98,6 @@ class RoleToolSucceeded(
         )
 
 
-@dataclass
-class ProjectBoardContains(
-    Evaluator[MultiAgentLoopEvalInput, MultiAgentLoopEvalOutput, Any]
-):
-    text: str
-
-    def evaluate(
-        self,
-        ctx: EvaluatorContext[
-            MultiAgentLoopEvalInput,
-            MultiAgentLoopEvalOutput,
-            Any,
-        ],
-    ) -> EvaluationReason:
-        rendered = json.dumps(ctx.output.project_board, sort_keys=True).lower()
-        needle = self.text.lower()
-        if needle in rendered:
-            return EvaluationReason(
-                value=True,
-                reason=f"Project board contains {self.text!r}",
-            )
-        return EvaluationReason(
-            value=False,
-            reason=f"Project board did not contain {self.text!r}",
-        )
-
-
 class ScientistCompletedBaselineTask(
     Evaluator[MultiAgentLoopEvalInput, MultiAgentLoopEvalOutput, Any]
 ):
@@ -277,48 +250,6 @@ class CandidateExperimentRecorded(
         )
 
 
-class TrainOnlyChanged(
-    Evaluator[MultiAgentLoopEvalInput, MultiAgentLoopEvalOutput, Any]
-):
-    def evaluate(
-        self,
-        ctx: EvaluatorContext[
-            MultiAgentLoopEvalInput,
-            MultiAgentLoopEvalOutput,
-            Any,
-        ],
-    ) -> EvaluationReason:
-        changed = sorted(ctx.output.changed_files)
-        if changed == ["train.py"]:
-            return EvaluationReason(
-                value=True,
-                reason="Only train.py changed",
-            )
-        return EvaluationReason(
-            value=False,
-            reason=f"Expected only train.py to change; changed files: {changed}",
-        )
-
-
-class PrepareFileUnchanged(
-    Evaluator[MultiAgentLoopEvalInput, MultiAgentLoopEvalOutput, Any]
-):
-    def evaluate(
-        self,
-        ctx: EvaluatorContext[
-            MultiAgentLoopEvalInput,
-            MultiAgentLoopEvalOutput,
-            Any,
-        ],
-    ) -> EvaluationReason:
-        if "prepare.py" not in ctx.output.changed_files:
-            return EvaluationReason(value=True, reason="prepare.py was unchanged")
-        return EvaluationReason(
-            value=False,
-            reason=f"prepare.py changed; changed files: {ctx.output.changed_files}",
-        )
-
-
 class AnalysisRecorded(
     Evaluator[MultiAgentLoopEvalInput, MultiAgentLoopEvalOutput, Any]
 ):
@@ -447,41 +378,6 @@ class ResearcherHandoffRecorded(
             reason=(
                 "Missing Researcher handoff records. "
                 f"Analyses: {analyses}; hypotheses: {hypotheses}; links: {links}"
-            ),
-        )
-
-
-@dataclass
-class ScientistClaimedTaskContaining(
-    Evaluator[MultiAgentLoopEvalInput, MultiAgentLoopEvalOutput, Any]
-):
-    text: str
-
-    def evaluate(
-        self,
-        ctx: EvaluatorContext[
-            MultiAgentLoopEvalInput,
-            MultiAgentLoopEvalOutput,
-            Any,
-        ],
-    ) -> EvaluationReason:
-        needle = self.text.lower()
-        matches = [
-            call
-            for call in calls_for_role(ctx.output, "scientist")
-            if call.tool_name == "claim_task"
-            and needle in json.dumps(call.result, sort_keys=True).lower()
-        ]
-        if matches:
-            return EvaluationReason(
-                value=True,
-                reason=f"Scientist claimed task containing {self.text!r}",
-            )
-        return EvaluationReason(
-            value=False,
-            reason=(
-                f"Scientist did not claim task containing {self.text!r}. "
-                f"Claim calls: {[call.result for call in calls_for_role(ctx.output, 'scientist') if call.tool_name == 'claim_task']}"
             ),
         )
 

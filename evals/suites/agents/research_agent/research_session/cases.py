@@ -2,13 +2,15 @@ from __future__ import annotations
 
 from pydantic_evals import Case
 
-from evals.harness.evaluators import ContentContains, ToolArgsContain, ToolWasCalled
+from evals.harness.evaluators import (
+    ContentContains,
+    ProjectBoardContains,
+    ToolArgsContain,
+    ToolSucceeded,
+    ToolWasCalled,
+)
 from evals.worlds.research_session import ResearchAgentEvalInput, ResearchAgentEvalOutput
 from evals.worlds.research_session.world import HYPOTHESIS_ID
-from evals.suites.agents.research_agent.research_session.evaluators import (
-    ProjectBoardContains,
-    ToolSucceeded,
-)
 
 
 def research_session_planning_cases() -> list[

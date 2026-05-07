@@ -14,7 +14,7 @@ description: Use when querying Pydantic Logfire records/traces from this repo, e
 - Avoid dumping full `attributes` unless debugging a specific missing detail.
 - For Situ runs, query both `situ-harness` and `situ-evals` if the origin is
   unclear.
-- Report query access separately from local ledger evidence.
+- Report query access separately from local SQLite state evidence.
 
 ## Preflight
 
@@ -128,4 +128,4 @@ Include:
 - Services queried.
 - Trace ids found.
 - Any errors or suspicious spans.
-- Whether Logfire agreed with, added to, or contradicted the local ledger.
+- Whether Logfire agreed with, added to, or contradicted the local SQLite state.

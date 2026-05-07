@@ -2,16 +2,18 @@ from __future__ import annotations
 
 from pydantic_evals import Case
 
+from evals.harness.evaluators import (
+    ChangedFilesDoNotInclude,
+    EventWasEmitted,
+    ProjectBoardContains,
+)
 from evals.suites.agents.app_session_loop.evaluators import (
     BaselineThenFollowupWork,
     DoneTaskKindAtLeast,
-    EventWasEmitted,
     ExperimentCountAtLeast,
     ExperimentReviewRecorded,
-    NonPlanScientistTaskDone,
-    PrepareFileUnchanged,
+    ManagerCompletedAfterCriticReview,
     RecordCountAtLeast,
-    ProjectBoardContains,
     ReviewTaskLinksComplete,
     TaskDoneByAgentKind,
 )
@@ -42,28 +44,7 @@ def app_session_loop_cases() -> list[
                 DoneTaskKindAtLeast("baseline"),
                 BaselineThenFollowupWork(),
                 ProjectBoardContains("baseline"),
-                PrepareFileUnchanged(),
-            ),
-        ),
-        Case(
-            name="uses_existing_baseline_for_candidate_work",
-            inputs=AppSessionLoopEvalInput(
-                case_id="uses_existing_baseline_for_candidate_work",
-                seed="with_baseline_result",
-                max_experiments=1,
-            ),
-            metadata={"requires_real_llm": True},
-            evaluators=(
-                EventWasEmitted("task.done"),
-                EventWasEmitted("session.manager_completed"),
-                EventWasEmitted("session.agent_completed"),
-                EventWasEmitted("session.completed"),
-                DoneTaskKindAtLeast("plan"),
-                NonPlanScientistTaskDone(),
-                ExperimentCountAtLeast(1),
-                ProjectBoardContains("component_a"),
-                ProjectBoardContains("val_bpb"),
-                PrepareFileUnchanged(),
+                ChangedFilesDoNotInclude("prepare.py"),
             ),
         ),
         Case(
@@ -89,7 +70,25 @@ def app_session_loop_cases() -> list[
                 ProjectBoardContains("verdict"),
                 ProjectBoardContains("component_a"),
                 ProjectBoardContains("val_bpb"),
-                PrepareFileUnchanged(),
+                ChangedFilesDoNotInclude("prepare.py"),
+            ),
+        ),
+        Case(
+            name="manager_replans_after_critic_review",
+            inputs=AppSessionLoopEvalInput(
+                case_id="manager_replans_after_critic_review",
+                seed="with_baseline_result",
+                max_experiments=2,
+            ),
+            metadata={"requires_real_llm": True},
+            evaluators=(
+                EventWasEmitted("session.critic_completed"),
+                EventWasEmitted("session.manager_completed"),
+                ManagerCompletedAfterCriticReview(),
+                TaskDoneByAgentKind("review", "critic"),
+                DoneTaskKindAtLeast("plan", count=2),
+                ProjectBoardContains("critic_review"),
+                ChangedFilesDoNotInclude("prepare.py"),
             ),
         ),
         Case(
@@ -114,7 +113,7 @@ def app_session_loop_cases() -> list[
                 ExperimentCountAtLeast(1),
                 ProjectBoardContains("component_a"),
                 ProjectBoardContains("val_bpb"),
-                PrepareFileUnchanged(),
+                ChangedFilesDoNotInclude("prepare.py"),
             ),
         ),
     ]

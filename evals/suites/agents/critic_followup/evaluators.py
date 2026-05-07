@@ -178,35 +178,6 @@ class FollowupTaskMentionsAny(
 
 
 @dataclass
-class FollowupTaskAvoidsAll(
-    Evaluator[CriticFollowupEvalInput, CriticFollowupEvalOutput, Any]
-):
-    needles: tuple[str, ...]
-
-    def __init__(self, *needles: str) -> None:
-        self.needles = needles
-
-    def evaluate(
-        self,
-        ctx: EvaluatorContext[CriticFollowupEvalInput, CriticFollowupEvalOutput, Any],
-    ) -> EvaluationReason:
-        bad = [
-            task
-            for task in _manager_created_tasks(ctx.output)
-            if any(needle.lower() in _task_text(task) for needle in self.needles)
-        ]
-        if not bad:
-            return EvaluationReason(
-                value=True,
-                reason=f"Follow-up tasks avoided {self.needles}",
-            )
-        return EvaluationReason(
-            value=False,
-            reason=f"Follow-up tasks mentioned blocked text {self.needles}: {bad}",
-        )
-
-
-@dataclass
 class ProjectBoardContainsReviewVerdict(
     Evaluator[CriticFollowupEvalInput, CriticFollowupEvalOutput, Any]
 ):

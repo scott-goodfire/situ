@@ -12,7 +12,7 @@ evidence, and artifacts.
 ## Activity
 
 An activity is a timestamped, human-readable entry attached to a hypothesis, an
-experiment, an evaluation, a measurement, or another inspectable ledger record
+experiment, an evaluation, a measurement, or another inspectable research record
 when useful.
 
 It can describe:
@@ -41,7 +41,7 @@ created_at
 
 Activities should not be session-owned. The session that created an activity can
 be stored as optional `created_in_session_id` provenance. Ownership reaches the
-project through the parent ledger record.
+project through the parent research record.
 
 The body should be useful to humans. The payload can carry structured details
 for agents and views, such as `activity_type: result` or `activity_type:

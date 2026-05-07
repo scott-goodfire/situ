@@ -3,16 +3,16 @@ from __future__ import annotations
 from pydantic_evals import Case
 
 from evals.harness.evaluators import (
+    ChangedFilesDoNotInclude,
+    ProjectBoardContains,
     ToolArgsContain,
     ToolCallOrder,
     ToolResultContains,
+    ToolSucceeded,
     ToolWasCalled,
 )
 from evals.suites.agents.research_agent.repo_bootstrap.evaluators import (
     EvaluationResultLinkedToExperiment,
-    PrepareFileUnchanged,
-    ProjectBoardContains,
-    ToolSucceeded,
 )
 from evals.worlds.repo_bootstrap import (
     HYPOTHESIS_ID,
@@ -94,7 +94,7 @@ def repo_bootstrap_cases() -> list[
                 EvaluationResultLinkedToExperiment(),
                 ProjectBoardContains("component_a"),
                 ProjectBoardContains("val_bpb"),
-                PrepareFileUnchanged(),
+                ChangedFilesDoNotInclude("prepare.py"),
             ),
         ),
         Case(
@@ -116,7 +116,7 @@ def repo_bootstrap_cases() -> list[
                 ToolWasCalled("get_project_board"),
                 ToolWasCalled("read_file"),
                 ToolArgsContain("read_file", "prepare.py"),
-                PrepareFileUnchanged(),
+                ChangedFilesDoNotInclude("prepare.py"),
                 ProjectBoardContains("prepare.py"),
                 ProjectBoardContains("suspicious"),
             ),

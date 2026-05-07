@@ -22,6 +22,7 @@ def run_evals(
     git_sha = current_git_sha()
     results: list[tuple[str, EvaluationReport[Any, Any, Any]]] = []
     failures: list[str] = []
+    selected_case_count = 0
 
     for name, eval_class in eval_classes:
         eval_instance: BaseSituEvalGroup[Any, Any] | None = None
@@ -34,6 +35,7 @@ def run_evals(
                 if not dataset.cases:
                     continue
 
+            selected_case_count += len(dataset.cases)
             experiment_name = f"{dataset.name}-{git_sha}-{session_id}"
             report = dataset.evaluate_sync(
                 eval_instance.task,
@@ -58,5 +60,8 @@ def run_evals(
                     eval_instance.teardown()
                 except Exception as error:
                     failures.append(f"{name} teardown: {error}")
+
+    if case_filter and selected_case_count == 0:
+        failures.append(f"No eval cases matched --case {case_filter!r}")
 
     return results, failures

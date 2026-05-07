@@ -442,7 +442,13 @@ export function SituTui() {
         });
       });
   };
-  const handleSecretSubmit = ({ openaiKey }: { openaiKey: string }) => {
+  const handleSecretSubmit = ({
+    openaiKey,
+    logfireToken,
+  }: {
+    openaiKey: string;
+    logfireToken?: string;
+  }) => {
     const client = clientRef.current;
     if (!client) {
       setStatus({
@@ -459,6 +465,7 @@ export function SituTui() {
         method: "secrets.set_openai_key",
         params: {
           openai_key: openaiKey,
+          logfire_token: logfireToken,
         },
       })
       .then(() =>

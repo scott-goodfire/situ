@@ -513,7 +513,7 @@ function analysisRecord({
     status: "open",
     title: "Codebase map",
     summary: "Mapped the main backend primitives.",
-    content: "Records and repositories define the durable research ledger.",
+    content: "Records and repositories define the durable research records.",
     supersedes_analysis_id: undefined,
     created_at: "2026-01-01T00:00:01Z",
     updated_at: "2026-01-01T00:00:01Z",

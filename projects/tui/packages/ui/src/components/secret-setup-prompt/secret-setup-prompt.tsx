@@ -34,14 +34,21 @@ export function SecretSetupPrompt({
   workspace: string;
   isActive?: boolean;
   message?: CommandMessage;
-  onSubmit: ({ openaiKey }: { openaiKey: string }) => void;
+  onSubmit: ({
+    openaiKey,
+    logfireToken,
+  }: {
+    openaiKey: string;
+    logfireToken?: string;
+  }) => void;
   onExit: () => void;
   terminalSize?: TerminalSize;
 }) {
-  const [step, setStep] = useState<"intro" | "input">(() =>
-    message ? "input" : "intro",
+  const [step, setStep] = useState<"intro" | "openai" | "logfire">(() =>
+    message ? "openai" : "intro",
   );
-  const [draft, setDraft] = useState("");
+  const [openaiDraft, setOpenaiDraft] = useState("");
+  const [logfireDraft, setLogfireDraft] = useState("");
   const [localMessage, setLocalMessage] = useState<CommandMessage | undefined>(
     undefined,
   );
@@ -54,7 +61,7 @@ export function SecretSetupPrompt({
 
   useEffect(() => {
     if (message) {
-      setStep("input");
+      setStep("openai");
     }
   }, [message]);
 
@@ -80,7 +87,9 @@ export function SecretSetupPrompt({
           label={
             step === "intro"
               ? "Enter OK - Esc exits"
-              : "Enter saves - Esc clears/exits"
+              : step === "openai"
+                ? "Enter continues - Esc clears/exits"
+                : "Enter saves - Esc skips"
           }
           width={layout.width}
         />
@@ -90,7 +99,7 @@ export function SecretSetupPrompt({
         <LayoutBox width={layout.contentWidth}>
           <Text>
             {previewText({
-              value: "OpenAI API key required before agent execution",
+              value: "OpenAI required, Logfire optional",
               maxCharacters: Math.max(24, layout.contentWidth),
             })}
           </Text>
@@ -110,15 +119,15 @@ export function SecretSetupPrompt({
       >
         <LayoutBox width={layout.contentWidth} height={sectionHeight}>
           {step === "intro" ? (
-            <PaneSection title="OpenAI API key" chrome="none">
+            <PaneSection title="Local provider secrets" chrome="none">
               <Text>Situ needs an OpenAI API key before it can run agents.</Text>
               <Text dimColor>
-                This local runtime uses the key saved in Situ's secret store for
-                future sessions on this machine.
+                This local runtime uses secrets saved in Situ's secret store for
+                future sessions on this machine. Logfire is optional.
               </Text>
               <ChoicePrompt
                 title="Continue"
-                message="Press Enter to paste a key now."
+                message="Press Enter to paste local run secrets now."
                 options={[
                   {
                     label: "OK",
@@ -128,11 +137,11 @@ export function SecretSetupPrompt({
                 isActive={isActive}
                 onCancel={onExit}
                 onSelect={() => {
-                  setStep("input");
+                  setStep("openai");
                 }}
               />
             </PaneSection>
-          ) : (
+          ) : step === "openai" ? (
             <PaneSection title="OpenAI API key" chrome="none">
               <Text>Paste your OpenAI API key to run Situ agents.</Text>
               <Text dimColor>
@@ -140,14 +149,14 @@ export function SecretSetupPrompt({
                 sessions on this machine.
               </Text>
               <CommandInput
-                draft={draft}
+                draft={openaiDraft}
                 isActive={isActive}
                 mask="*"
                 message={localMessage ?? message}
                 onCancel={onExit}
                 onChange={({ value }) => {
                   setLocalMessage(undefined);
-                  setDraft(value);
+                  setOpenaiDraft(value);
                 }}
                 onSubmit={({ value }) => {
                   const openaiKey = value.trim();
@@ -158,7 +167,37 @@ export function SecretSetupPrompt({
                     });
                     return;
                   }
-                  onSubmit({ openaiKey });
+                  setOpenaiDraft(openaiKey);
+                  setLocalMessage(undefined);
+                  setStep("logfire");
+                }}
+              />
+            </PaneSection>
+          ) : (
+            <PaneSection title="Logfire token" chrome="none">
+              <Text>Paste a Logfire write token for local run traces.</Text>
+              <Text dimColor>
+                This is optional. Leave it blank to run without remote Logfire
+                export.
+              </Text>
+              <CommandInput
+                draft={logfireDraft}
+                isActive={isActive}
+                mask="*"
+                message={localMessage}
+                onCancel={() => {
+                  onSubmit({ openaiKey: openaiDraft });
+                }}
+                onChange={({ value }) => {
+                  setLocalMessage(undefined);
+                  setLogfireDraft(value);
+                }}
+                onSubmit={({ value }) => {
+                  const logfireToken = value.trim();
+                  onSubmit({
+                    openaiKey: openaiDraft,
+                    logfireToken: logfireToken || undefined,
+                  });
                 }}
               />
             </PaneSection>

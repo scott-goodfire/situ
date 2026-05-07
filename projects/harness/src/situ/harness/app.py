@@ -148,17 +148,28 @@ class HarnessApp:
 
     def secrets_status(self, params: dict[str, Any]) -> dict[str, Any]:
         SecretsStatusParams.model_validate(params)
-        source = SituSecrets().openai_key_source(home=self.context.home)
+        secrets = SituSecrets()
+        source = secrets.openai_key_source(home=self.context.home)
+        logfire_source = secrets.logfire_token_source(home=self.context.home)
         return SecretsStatusResult(
             openai_key_configured=source != "missing",
             openai_key_source=source,
+            logfire_token_configured=logfire_source != "missing",
+            logfire_token_source=logfire_source,
         ).model_dump()
 
     def secrets_set_openai_key(self, params: dict[str, Any]) -> dict[str, Any]:
         secret = SecretsSetOpenAIKeyParams.model_validate(params)
-        LocalSecretStore(home=self.context.home).set_openai_key(secret.openai_key)
+        store = LocalSecretStore(home=self.context.home)
+        store.set_openai_key(secret.openai_key)
+        if secret.logfire_token is not None and secret.logfire_token.strip():
+            store.set_logfire_token(secret.logfire_token)
         SituSecrets().apply_local_sdk_environment(home=self.context.home)
-        return SecretsSetOpenAIKeyResult().model_dump()
+        logfire_source = SituSecrets().logfire_token_source(home=self.context.home)
+        return SecretsSetOpenAIKeyResult(
+            logfire_token_configured=logfire_source != "missing",
+            logfire_token_source=logfire_source,
+        ).model_dump()
 
     def collections_bootstrap(self, params: dict[str, Any]) -> dict[str, Any]:
         CollectionsBootstrapParams.model_validate(params)
@@ -249,7 +260,7 @@ class HarnessApp:
             title="Plan the first research pass",
             content=(
                 "Read the session project, objective, research context, current "
-                "ledger state, and task board. File the next focused Researcher "
+                "project state, and task board. File the next focused Researcher "
                 "or Scientist task or tasks."
             ),
             source_kind="system",
@@ -717,7 +728,7 @@ class HarnessApp:
                                 content=(
                                     "A Critic review just completed. Review the "
                                     "experiment review activity, concerns, project "
-                                    "ledger, task board, and experiment budget. "
+                                    "project state, task board, and experiment budget. "
                                     "File the next focused Researcher or Scientist "
                                     "task so the research loop keeps moving."
                                 ),
@@ -810,7 +821,7 @@ class HarnessApp:
                             title="Plan after Researcher task completion",
                             content=(
                                 "A Researcher task just completed. Review the "
-                                "project ledger, task board, recent activity, "
+                                "project board and research records, task board, recent activity, "
                                 "analyses, and hypotheses. File the next focused "
                                 "Researcher or Scientist task so the research loop "
                                 "keeps moving."
@@ -892,7 +903,7 @@ class HarnessApp:
                                 title="Plan after Scientist task completion",
                                 content=(
                                     "A Scientist task just completed. Review the "
-                                    "project ledger, task board, recent activity, "
+                                    "project board and research records, task board, recent activity, "
                                     "and experiment budget. File the next focused "
                                     "Researcher or Scientist task so the research "
                                     "loop keeps moving."
@@ -922,7 +933,7 @@ class HarnessApp:
                         content=(
                             "The previous planning cycle did not leave a "
                             "runnable Researcher, Scientist, or Critic task. Re-read the project "
-                            "objective, ledger, and task board, then file one "
+                            "objective, project state, and task board, then file one "
                             "focused runnable Researcher or Scientist task unless "
                             "there is a hard blocker."
                         ),

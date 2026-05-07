@@ -1,7 +1,7 @@
 # Local App Runtime
 
 This spec defines the hard-cutover local runtime: one local Situ app process,
-one canonical product ledger, and multiple clients over that app.
+one canonical product state, and multiple clients over that app.
 
 ## Purpose
 
@@ -96,17 +96,20 @@ They are execution checkouts, not product state. The canonical database should
 record enough path and base-commit information to inspect them, but deleting a
 worktree must not delete the experiment record.
 
-Local secrets are private runtime configuration, not product ledger data. The
+Local secrets are private runtime configuration, not product state data. The
 app may store user-provided provider secrets under the local Situ home with
 owner-only file permissions. Stored secrets must not be written to the canonical
 SQLite product database, events, collection updates, app/session discovery
 records, worker payloads, or observability attributes.
 
 Local app, TUI, web, and manual headless execution use the local Situ secret
-store as their provider-secret source. They must not treat `SITU_OPENAI_KEY` or
-`SITU_LOGFIRE_TOKEN` as local runtime credentials. Those Situ-scoped environment
-secrets belong to eval execution, where they are required so evals fail clearly
-instead of silently reusing a developer's saved local runtime credentials.
+store as their provider-secret source. The local OpenAI key is required before
+agent execution. The local Logfire token is optional; when present, local runs
+may use it for SDK Logfire export, and when absent, local runs continue without
+remote Logfire export. Local runtime paths must not treat `SITU_OPENAI_KEY` or
+`SITU_LOGFIRE_TOKEN` as credentials. Those Situ-scoped environment secrets
+belong to eval execution, where they are required so evals fail clearly instead
+of silently reusing a developer's saved local runtime credentials.
 
 ## Runtime Boundary
 
@@ -117,7 +120,7 @@ TUI / Web / Headless client
   -> local Situ app server over HTTP/SSE
       -> project-scoped harness runtime
           -> workspace folder boundary
-          -> canonical product SQLite ledger
+          -> canonical product SQLite state database
           -> per-project DBOS runtime state
           -> workers and tools
 ```
@@ -135,7 +138,7 @@ harness subprocesses. Either implementation is valid if these guarantees hold:
 
 The web home exists because humans should be able to open one local URL and see
 their Situ projects. It should be backed by canonical app state, not a separate
-registry that can drift from the product ledger.
+registry that can drift from the product state.
 
 The home should show at least:
 
@@ -165,6 +168,8 @@ The browser remains a client. It should not own workers or session lifecycle.
 - Starting `situ tui` without a required model provider secret shows secret
   onboarding before creating or resuming agent work, saves a submitted secret
   locally, and then continues to the normal setup/session flow.
+- Secret onboarding may also collect an optional local Logfire token. Skipping
+  it must not block local agent execution.
 - Headless or non-interactive local execution uses the local secret store and
   otherwise fails clearly without prompting.
 - Eval execution requires `SITU_OPENAI_KEY` and `SITU_LOGFIRE_TOKEN` from the

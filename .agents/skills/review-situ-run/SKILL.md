@@ -1,6 +1,6 @@
 ---
 name: review-situ-run
-description: Use when reviewing or autopsying a completed or active Situ autoresearch run/session from a TUI screenshot, workspace path, session id, local .situ state, or Logfire traces. Covers locating the SQLite ledger, reconstructing tasks/experiments/evaluations/events, inspecting the actual workspace code the agent saw, checking diffs, using Logfire when available, and judging run quality.
+description: Use when reviewing or autopsying a completed or active Situ autoresearch run/session from a TUI screenshot, workspace path, session id, local .situ state, or Logfire traces. Covers locating the SQLite state database, reconstructing tasks/experiments/evaluations/events, inspecting the actual workspace code the agent saw, checking diffs, using Logfire when available, and judging run quality.
 ---
 
 # Review Situ Run
@@ -10,8 +10,8 @@ description: Use when reviewing or autopsying a completed or active Situ autores
 Reconstruct what happened in a Situ run from durable local evidence, then
 answer whether the agent loop did good work and what should improve next.
 
-Prefer the Situ ledger over screenshots. A screenshot is a pointer to the
-workspace path, session id, counts, and last event time; the ledger is the
+Prefer the Situ research records over screenshots. A screenshot is a pointer to the
+workspace path, session id, counts, and last event time; the SQLite state database is the
 source of truth.
 
 ## Inputs To Ask For Or Infer
@@ -27,9 +27,9 @@ source of truth.
 If the user provides a TUI screenshot, extract the workspace path and session
 id from it before asking follow-up questions.
 
-## Locate The Ledger
+## Locate The SQLite State
 
-Situ stores product state in the canonical SQLite ledger:
+Situ stores product state in the canonical SQLite state database:
 
 ```bash
 sqlite3 ~/.situ/situ.sqlite '.tables'
@@ -88,7 +88,7 @@ Record short notes under headings like:
 - `System Improvements`
 
 Do not put secrets in the scratchpad. It is fine to include local paths,
-session ids, task ids, trace ids, metrics, and concise snippets from ledger
+session ids, task ids, trace ids, metrics, and concise snippets from project state
 activities.
 
 ## Core Queries
@@ -241,7 +241,7 @@ git -C /path/to/workspace rev-parse HEAD
 ```
 
 Read the key source/eval files directly, usually including the harness,
-project instructions, editable target files, and any files the ledger says were
+project instructions, editable target files, and any files the SQLite state database says were
 read. For a dirty workspace, compare final files against the recorded baseline
 commit when available:
 
@@ -263,7 +263,7 @@ instead of running it.
 ## Logfire Check
 
 Use Logfire when available, especially for active or ambiguous runs. The local
-SQLite ledger tells what was recorded; Logfire can show model/tool spans,
+SQLite state database tells what was recorded; Logfire can show model/tool spans,
 errors, retries, missing tool calls, or why a long run appeared stuck.
 
 Follow `.agents/skills/query-logfire/SKILL.md` for record queries and
@@ -303,7 +303,7 @@ ORDER BY start_timestamp ASC
 LIMIT 100
 ```
 
-If query access is unavailable, say so and rely on the ledger plus workspace
+If query access is unavailable, say so and rely on the SQLite state database plus workspace
 evidence.
 
 ## Review Rubric
@@ -322,7 +322,7 @@ Judge the run on evidence, not vibes:
   end the run prematurely?
 - Observability: Could a human reconstruct the run from tasks, activities,
   events, artifacts, and workspace diff?
-- Reproducibility: Can the final metric be rerun and does it match the ledger
+- Reproducibility: Can the final metric be rerun and does it match the SQLite state database
   closely enough?
 
 ## Stage Walkthrough
@@ -366,7 +366,7 @@ and then the runtime still burns extra planning passes.
 
 Keep the answer concrete:
 
-- State where the ledger was found.
+- State where the SQLite state database was found.
 - Give the session time range and counts.
 - Summarize task flow in order.
 - List baseline and candidate metrics.

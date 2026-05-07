@@ -25,7 +25,7 @@ durable conclusions without inspectable support.
 
 - Measurement and activity records follow the ownership and relationship shape
   defined in the specs.
-- Interpretation activities cite relevant ledger records or artifacts when
+- Interpretation activities cite relevant research records or artifacts when
   possible.
 - Concern activities clearly explain what looks suspicious or invalid.
 - Activities are concise enough to scan in the TUI.

@@ -42,7 +42,7 @@ and concerns correctly?
   fine to also keep smaller manager-only and scientist-only cases, but they do
   not replace the full loop.
 - Bound evals by observable stopping conditions such as max planning passes,
-  max claimed tasks, or expected ledger outputs. Do not make them cheaper by
+  max claimed tasks, or expected research records. Do not make them cheaper by
   scripting the agent decision path.
 - Make eval execution fail clearly when required model credentials are missing.
 - Eval discovery and listing may run without model or Logfire credentials, but
@@ -53,7 +53,7 @@ and concerns correctly?
   cannot reasonably capture.
 - Keep eval runs opt-in from regular test commands unless the command name makes
   LLM/network usage explicit.
-- Record enough trace data, tool calls, events, and final ledger state to debug
+- Record enough trace data, tool calls, events, and final project state to debug
   a realistic failed run without re-running it immediately.
 
 ## Acceptable Fixtures
@@ -68,7 +68,7 @@ Fixture worlds may provide:
 Fixture worlds must not replace the model's decision-making path in an AI eval.
 They should preserve realistic sequencing when that sequencing is the behavior
 being evaluated, such as Manager planning, Scientist claiming work, workspace
-inspection, command execution, ledger writes, and Manager replanning.
+inspection, command execution, research-record writes, and Manager replanning.
 
 ## Red Flags
 

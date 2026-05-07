@@ -40,6 +40,11 @@ class SituSecrets(BaseSettings):
             return "local"
         return "missing"
 
+    def logfire_token_source(self, *, home: Path | None = None) -> OpenAIKeySource:
+        if LocalSecretStore(home=home).get_logfire_token() is not None:
+            return "local"
+        return "missing"
+
     def apply_local_sdk_environment(self, *, home: Path | None = None) -> None:
         self._set_or_remove_env(
             "LOGFIRE_TOKEN",

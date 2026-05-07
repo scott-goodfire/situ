@@ -3,12 +3,20 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
+from pydantic_ai import Agent, WebSearchTool
 from pydantic_ai.durable_exec.dbos import DBOSAgent
 
 from situ.harness.config import DEFAULTS, LocalSecretStore
 from situ.harness.agent_runtime import MANAGER_AGENT_NAME, AgentRuntime
 from situ.harness.agents.research.agent import RESEARCHER_AGENT_NAME, RESEARCH_AGENT_NAME
 from situ.harness.core.dbos.runtime import reset_dbos_for_tests
+
+
+def _agent_has_web_search(agent: Agent) -> bool:
+    return any(
+        isinstance(tool, WebSearchTool)
+        for tool in getattr(agent, "_cap_builtin_tools", ())
+    )
 
 
 @pytest.fixture(autouse=True)
@@ -40,7 +48,11 @@ def test_agent_runtime_wraps_research_agent_with_dbos_agent(
     assert runtime.manager_agent.model_settings == runtime.agent.model_settings
     assert isinstance(runtime.dbos_manager_agent, DBOSAgent)
     assert runtime.manager_agent.toolsets
+    assert _agent_has_web_search(runtime.manager_agent)
     assert runtime.researcher_agent.name == RESEARCHER_AGENT_NAME
     assert runtime.researcher_agent.model_settings == runtime.agent.model_settings
     assert isinstance(runtime.dbos_researcher_agent, DBOSAgent)
     assert runtime.researcher_agent.toolsets
+    assert _agent_has_web_search(runtime.researcher_agent)
+    assert not _agent_has_web_search(runtime.agent)
+    assert not _agent_has_web_search(runtime.critic_agent)

@@ -1,7 +1,7 @@
 import {
   metricSeriesFromSteeringDoseResponse,
   type SteeringDoseResponse as SteeringDoseResponseData,
-} from "@situ/chart-model";
+} from "../../chart-model";
 import { classNames } from "../../class-names";
 import { MetricTrend } from "../metric-trend/metric-trend";
 import * as s from "./steering-dose-response.css";

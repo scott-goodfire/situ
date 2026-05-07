@@ -4,7 +4,7 @@ import {
   toneForSignedValue,
   type ChartTone,
   type SignedContribution,
-} from "@situ/chart-model";
+} from "../../chart-model";
 import {
   Bar,
   BarChart,

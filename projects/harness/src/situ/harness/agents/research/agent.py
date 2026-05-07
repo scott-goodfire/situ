@@ -4,7 +4,7 @@ from collections.abc import Sequence
 from typing import Any
 
 from pydantic import BaseModel, Field
-from pydantic_ai import Agent, FunctionToolset
+from pydantic_ai import Agent, FunctionToolset, WebSearchTool
 from pydantic_ai.capabilities.abstract import AbstractCapability
 from pydantic_ai.models import Model
 
@@ -35,6 +35,10 @@ RESEARCH_AGENT_NAME = "situ-research-agent"
 RESEARCHER_AGENT_NAME = "situ-researcher-agent"
 MANAGER_AGENT_NAME = "situ-manager-agent"
 CRITIC_AGENT_NAME = "situ-critic-agent"
+
+
+def build_web_search_builtin_tools() -> list[WebSearchTool]:
+    return [WebSearchTool()]
 
 
 class ResearchAgentOutput(BaseModel):
@@ -141,6 +145,7 @@ class ManagerAgent(BaseSituAgent[ManagerAgentContext, ResearchAgentOutput]):
             output_type=ResearchAgentOutput,
             instructions=MANAGER_AGENT_INSTRUCTIONS,
             toolsets=[build_manager_toolset()],
+            builtin_tools=build_web_search_builtin_tools(),
             model_settings=DEFAULTS.model_settings(),
             capabilities=list(self.capabilities),
         )
@@ -214,6 +219,7 @@ class ResearcherAgent(BaseSituAgent[ResearcherAgentContext, ResearchAgentOutput]
                 build_researcher_toolset(),
                 build_workspace_readonly_toolset(),
             ],
+            builtin_tools=build_web_search_builtin_tools(),
             model_settings=DEFAULTS.model_settings(),
             capabilities=list(self.capabilities),
         )

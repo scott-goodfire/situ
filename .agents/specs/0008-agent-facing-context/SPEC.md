@@ -4,7 +4,7 @@ Situ should be useful to agents as well as humans.
 
 Agents should not have to infer durable research state from an ever-growing chat
 transcript. Situ should expose compact, current, machine-readable context.
-Agents should also not receive hidden expanded ledger context when they can
+Agents should also not receive hidden expanded project state context when they can
 read it explicitly. Role prompts should bootstrap the agent with the smallest
 useful assignment context: role, setup text, hard budgets, and record IDs such
 as task IDs. The agent should then call explicit tools such as
@@ -141,4 +141,4 @@ are reference material until their findings are copied, summarized, or resumed
 explicitly.
 Agents should read that working truth through tools. Prompt-injected project
 board slices are acceptable only as emergency fallback or for tiny bootstrap
-facts that are not durable ledger records.
+facts that are not durable research records.

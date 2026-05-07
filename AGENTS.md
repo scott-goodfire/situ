@@ -56,7 +56,7 @@ eval trace records.
 
 Use [.agents/skills/review-situ-run/SKILL.md](./.agents/skills/review-situ-run/SKILL.md)
 when reviewing a completed or active Situ run from a workspace path, session
-id, local ledger, code diff, and Logfire traces.
+id, local SQLite state, code diff, and Logfire traces.
 
 Routine command surface should eventually live in `mise.toml`, with reusable
 scripts in `commands/`, following the pattern from the reference Situ

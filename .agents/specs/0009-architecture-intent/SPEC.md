@@ -154,7 +154,7 @@ terminal UI      ---------->  TypeScript       ---------->  project harness runt
 Start with a narrow, durable core:
 
 - Workspace as the folder boundary
-- Project ledger with objective and research context fields
+- Project state with objective and research context fields
 - Sessions as execution/provenance windows attached to zero or one project
 - Project-owned agents, tasks, analyses, hypotheses, experiments, and evaluations
 - Activities (parent-scoped)

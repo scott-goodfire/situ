@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import type { SteeringDoseResponse as SteeringDoseResponseData } from "@situ/chart-model";
+import type { SteeringDoseResponse as SteeringDoseResponseData } from "../../chart-model";
 import { SteeringDoseResponse } from "./steering-dose-response";
 
 const response = {

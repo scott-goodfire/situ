@@ -62,7 +62,7 @@ from .workspace_state import InspectWorkspaceStateTool
 
 RESEARCH_TOOLSET_INSTRUCTIONS = inspect.cleandoc(
     """
-    This toolset is the Situ research ledger.
+    This toolset reads and writes Situ research records.
 
     On kickoff, make sure the current run has a project when the objective and
     research context are known. Use `create_project` if the run is projectless,
@@ -79,7 +79,7 @@ RESEARCH_TOOLSET_INSTRUCTIONS = inspect.cleandoc(
 
     Use task tools for coordination: inspect the task board, file focused work,
     read assigned task IDs, leave task comments, update task status, and link
-    tasks to the ledger records they produce. Prefer explicit task IDs over
+    tasks to the research records they produce. Prefer explicit task IDs over
     implicit task selection.
 
     Use comments for durable research judgment: an interpretation, a risk, a
@@ -101,7 +101,7 @@ RESEARCH_TOOLSET_INSTRUCTIONS = inspect.cleandoc(
 
     To inspect files or run project-native commands, use the workspace console
     tools. During an active experiment task, those tools are rooted in the
-    managed experiment worktree. Keep Situ responsible for the ledger and the
+    managed experiment worktree. Keep Situ responsible for project state and the
     workspace tools responsible for bash/filesystem interaction.
     """
 )
@@ -182,6 +182,12 @@ WORKSPACE_EXECUTE_DESCRIPTION = inspect.cleandoc(
     a concise LLM interpretation with `add_evaluation_result`. When an
     experiment task is active, this command runs inside that experiment's
     managed worktree.
+
+    Do not create scratch logs in the selected workspace. The command
+    environment includes `SITU_ARTIFACT_DIR` and `SITU_RUN_LOG` under Situ's
+    local runtime state for redirected output. If project instructions mention
+    `run.log`, treat it as scratch output and use `SITU_RUN_LOG` instead; the
+    workspace command backend also routes bare `run.log` references there.
     """
 )
 

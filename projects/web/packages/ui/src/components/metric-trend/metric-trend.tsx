@@ -5,7 +5,7 @@ import {
   toneForTrend,
   type ChartTone,
   type MetricSeries,
-} from "@situ/chart-model";
+} from "../../chart-model";
 import {
   CartesianGrid,
   Line,

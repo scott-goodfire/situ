@@ -50,7 +50,7 @@ Situ supervises the loop by tracking:
 - Objective
 - Evaluation context
 - Hypotheses
-- Experiment ledger
+- Experiment records
 - Hypothesis and experiment activity
 - Artifacts that back claims and results
 - Internal session/event timeline

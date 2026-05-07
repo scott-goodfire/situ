@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import type { BucketDatum } from "@situ/chart-model";
+import type { BucketDatum } from "../../chart-model";
 import { BucketBars } from "./bucket-bars";
 
 const experimentStatusBuckets = [

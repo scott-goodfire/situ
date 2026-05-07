@@ -4,14 +4,14 @@ from pydantic_evals import Case
 
 from evals.harness.evaluators import (
     EventWasEmitted,
+    ProjectBoardContains,
     ToolArgsContain,
     ToolResultContains,
+    ToolSucceeded,
     ToolWasCalled,
 )
 from evals.suites.tools.research_tools.evaluators import (
-    ProjectBoardContains,
     ProjectBoardHasLink,
-    ToolSucceeded,
 )
 from evals.worlds.research_session import (
     ARTIFACT_ID,
@@ -139,7 +139,8 @@ def research_tool_cases() -> list[Case[ResearchToolEvalInput, ResearchToolEvalOu
                     "map for evals', summary 'Mapped the current eval knobs.', "
                     "and content 'The main knobs are score, latency_ms, and "
                     "tests_passed.' Add an analysis comment that says "
-                    "'Use this map before forming hypotheses.' Then call "
+                    "'Use this map before forming hypotheses.' Update the "
+                    "analysis summary to 'Updated eval knob map.' Then call "
                     "list_analyses and list_analysis_activities to read both "
                     "records back."
                 ),
@@ -150,6 +151,8 @@ def research_tool_cases() -> list[Case[ResearchToolEvalInput, ResearchToolEvalOu
                 ToolSucceeded("create_analysis"),
                 ToolWasCalled("add_analysis_comment"),
                 ToolSucceeded("add_analysis_comment"),
+                ToolWasCalled("update_analysis"),
+                ToolSucceeded("update_analysis"),
                 ToolWasCalled("list_analyses"),
                 ToolSucceeded("list_analyses"),
                 ToolWasCalled("list_analysis_activities"),
@@ -277,7 +280,10 @@ def research_tool_cases() -> list[Case[ResearchToolEvalInput, ResearchToolEvalOu
                 prompt=(
                     "Please inspect existing baseline evidence. Call "
                     "list_baselines, then list_evaluations for that baseline, "
-                    "then list_measurements for that baseline. State the "
+                    "update the baseline summary to 'Baseline accepted for "
+                    "comparison' and update the evaluation status to 'closed' "
+                    "with summary 'Baseline evidence closed'. Then "
+                    "list_measurements for that baseline. State the "
                     "baseline id, evaluation id, and score you found."
                 ),
             ),
@@ -289,9 +295,37 @@ def research_tool_cases() -> list[Case[ResearchToolEvalInput, ResearchToolEvalOu
                 ToolWasCalled("list_evaluations"),
                 ToolSucceeded("list_evaluations"),
                 ToolResultContains("list_evaluations", BASELINE_EVALUATION_ID),
+                ToolWasCalled("update_baseline"),
+                ToolSucceeded("update_baseline"),
+                ToolWasCalled("update_evaluation"),
+                ToolSucceeded("update_evaluation"),
                 ToolWasCalled("list_measurements"),
                 ToolSucceeded("list_measurements"),
                 ToolResultContains("list_measurements", "0.71"),
+                ProjectBoardContains("Baseline accepted for comparison"),
+                ProjectBoardContains("Baseline evidence closed"),
+            ),
+        ),
+        Case(
+            name="run_experiment_records_worker_result",
+            inputs=ResearchToolEvalInput(
+                case_id="run_experiment_records_worker_result",
+                seed="with_hypothesis",
+                prompt=(
+                    f"Run one worker-backed experiment with run_experiment. "
+                    "Use title 'Worker component B run', summary 'Run component "
+                    "B through the worker path.', components ['B'], and link it "
+                    f"to hypothesis {HYPOTHESIS_ID}. Then report the result score."
+                ),
+            ),
+            metadata={"requires_real_llm": True},
+            evaluators=(
+                ToolWasCalled("run_experiment"),
+                ToolSucceeded("run_experiment"),
+                ToolResultContains("run_experiment", "0.72"),
+                ProjectBoardContains("Worker component B run"),
+                EventWasEmitted("experiment.completed"),
+                EventWasEmitted("worker.progress"),
             ),
         ),
         Case(
@@ -524,6 +558,33 @@ def research_tool_cases() -> list[Case[ResearchToolEvalInput, ResearchToolEvalOu
                 ToolSucceeded("list_artifacts"),
                 ToolResultContains("list_artifacts", ARTIFACT_ID),
                 ToolResultContains("list_artifacts", "component A raw eval output"),
+            ),
+        ),
+        Case(
+            name="project_close_handshake_flow",
+            inputs=ResearchToolEvalInput(
+                case_id="project_close_handshake_flow",
+                seed="with_baseline_result",
+                toolset="manager",
+                prompt=(
+                    "Use the explicit project-close handshake. First call "
+                    "request_project_close with reason 'No bounded next task', "
+                    "evidence_summary 'Baseline evidence is recorded', and "
+                    "remaining_work_assessment 'No useful follow-up remains'. "
+                    "Then call confirm_project_close with the returned "
+                    "confirmation_code and final_summary 'Closed after explicit "
+                    "confirmation'."
+                ),
+            ),
+            metadata={"requires_real_llm": True},
+            evaluators=(
+                ToolWasCalled("request_project_close"),
+                ToolSucceeded("request_project_close"),
+                ToolWasCalled("confirm_project_close"),
+                ToolSucceeded("confirm_project_close"),
+                EventWasEmitted("project.close_confirmation_required"),
+                EventWasEmitted("project.closed"),
+                ProjectBoardContains("closed"),
             ),
         ),
     ]

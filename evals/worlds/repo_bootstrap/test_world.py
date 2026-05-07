@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from situ.harness.tools.common import SituToolDeps
+from situ.harness.tools.workspace_state import InspectWorkspaceStateTool
+from situ.harness.tools.common import invoke_situ_tool_sync
 from evals.worlds.repo_bootstrap import (
     BASELINE_EVALUATION_ID,
     RepoBootstrapWorld,
@@ -18,10 +20,19 @@ def test_repo_bootstrap_world_runs_native_measurement() -> None:
         )
 
         result = deps.backend.execute("python train.py", timeout=5)
+        workspace_state = invoke_situ_tool_sync(
+            tool=InspectWorkspaceStateTool(),
+            deps=deps,
+            eval_command="python train.py",
+        )
 
         assert result.exit_code == 0
         assert "component: baseline" in result.output
         assert "val_bpb: 2.713" in result.output
+        assert workspace_state.success is True
+        assert workspace_state.workspace_state is not None
+        assert workspace_state.workspace_state["is_git_repo"] is True
+        assert workspace_state.workspace_state["dirty"] is False
         assert world.changed_files() == []
     finally:
         world.teardown()

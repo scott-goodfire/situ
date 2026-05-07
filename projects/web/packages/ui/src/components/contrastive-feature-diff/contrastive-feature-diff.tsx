@@ -1,7 +1,7 @@
 import {
   signedContributionsFromContrastiveFeatures,
   type ContrastiveFeatureSet,
-} from "@situ/chart-model";
+} from "../../chart-model";
 import { classNames } from "../../class-names";
 import { ContributionBars } from "../contribution-bars/contribution-bars";
 import * as s from "./contrastive-feature-diff.css";

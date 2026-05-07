@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import inspect
+import subprocess
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any
@@ -127,6 +128,7 @@ class RepoBootstrapWorld:
         self.workspace_path = self.root / "fixture-repo"
         self.workspace_path.mkdir(parents=True)
         self._write_fixture_repo()
+        self._init_git_repo()
 
         self.repos = _build_repos(self.root / "state", self.workspace_path)
         self.events: list[EvalEvent] = []
@@ -226,6 +228,13 @@ class RepoBootstrapWorld:
                 encoding="utf-8",
             )
 
+    def _init_git_repo(self) -> None:
+        _run_git(self.workspace_path, "init")
+        _run_git(self.workspace_path, "config", "user.email", "situ-eval@example.com")
+        _run_git(self.workspace_path, "config", "user.name", "Situ Eval")
+        _run_git(self.workspace_path, "add", ".")
+        _run_git(self.workspace_path, "commit", "-m", "fixture baseline")
+
 
 def _build_repos(path: Path, workspace_path: Path) -> Repositories:
     path.mkdir(parents=True)
@@ -254,6 +263,16 @@ def _build_repos(path: Path, workspace_path: Path) -> Repositories:
         model_name="eval:model",
     )
     return repos
+
+
+def _run_git(cwd: Path, *args: str) -> None:
+    subprocess.run(
+        ["git", *args],
+        cwd=cwd,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
 
 
 def _seed(repos: Repositories, seed: RepoBootstrapSeed) -> None:

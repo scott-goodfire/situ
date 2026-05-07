@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import type { HeatmapMatrix } from "@situ/chart-model";
+import type { HeatmapMatrix } from "../../chart-model";
 import { HeatmapGrid } from "./heatmap-grid";
 
 const patchingMatrix = {

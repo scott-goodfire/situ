@@ -4,22 +4,22 @@ import type { ProjectWorkspaceData } from "../../features/project-workspace/type
 import { tasksForProject } from "./query";
 
 describe("tasksForProject", () => {
-  test("filters tasks by the active ledger project id instead of the route id", () => {
+  test("filters tasks by the active project record id instead of the route id", () => {
     const routeProjectId = "cd826e9f8090d9b7";
-    const ledgerProjectId = "project_cd826e9f8090d9b7_004";
-    const otherLedgerProjectId = "project_cd826e9f8090d9b7_003";
+    const activeProjectRecordId = "project_cd826e9f8090d9b7_004";
+    const otherProjectRecordId = "project_cd826e9f8090d9b7_003";
     const data = {
       projectId: routeProjectId,
-      ledgerProjectId,
+      activeProjectRecordId,
       tasks: [
         taskRecord({
           id: "task_project_cd826e9f8090d9b7_004_001",
-          projectId: ledgerProjectId,
+          projectId: activeProjectRecordId,
           title: "Plan the resumed research pass",
         }),
         taskRecord({
           id: "task_project_cd826e9f8090d9b7_003_001",
-          projectId: otherLedgerProjectId,
+          projectId: otherProjectRecordId,
           title: "Previous session task",
         }),
       ],

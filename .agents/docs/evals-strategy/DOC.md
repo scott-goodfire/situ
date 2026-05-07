@@ -90,7 +90,7 @@ Good first targets:
   project-native measurement command, run it, and record plaintext baseline
   evidence before candidate experiments.
 - The multi-agent loop can run Manager planning, Task creation, Scientist task
-  claiming, focused work, ledger writes, Task completion, and Manager replanning
+  claiming, focused work, research-record writes, Task completion, and Manager replanning
   as one integrated workflow.
 - The planner explores simple variants before over-committing.
 - The planner combines promising hypothesis/experiment activity.
@@ -118,7 +118,7 @@ Initial worlds:
   focused tool affordance evals and full-agent `ResearchAgent` evals.
 - `repo_bootstrap`: a temporary local fixture repo shaped like a tiny
   autoresearch project. This world exercises the real `ResearchAgent` with both
-  Situ ledger tools and workspace tools, checking whether it can infer the
+  Situ research-record tools and workspace tools, checking whether it can infer the
   native measurement loop, establish baseline evaluation evidence, run bounded
   candidate measurements, and avoid modifying setup/evaluation-surface code.
 

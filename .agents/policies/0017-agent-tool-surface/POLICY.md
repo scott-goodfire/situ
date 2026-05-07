@@ -12,8 +12,8 @@ agents read or mutate Situ research state.
 
 ## Rule
 
-Situ ledger tools should feel like explicit operations over Situ product
-models and familiar research actions. Prefer concrete, inspectable tools such
+Situ research tools that read or write records should feel like explicit
+operations over Situ product models and familiar research actions. Prefer concrete, inspectable tools such
 as `get_project_board`, `get_project`, `get_task`, `create_hypothesis`,
 `update_experiment`, `add_experiment_comment`, and `add_evaluation_result` over
 abstract tools that ask the model to choose internal ontology details.
@@ -21,7 +21,7 @@ abstract tools that ask the model to choose internal ontology details.
 Agents should acquire working context through visible tool calls. Harness
 prompts may bootstrap role, assignment IDs, user-visible setup text, and hard
 budgets, but should not silently inject expanded project boards, task records,
-or recent ledger slices when an explicit read tool can provide them. The trace
+or recent project-state slices when an explicit read tool can provide them. The trace
 should show the agent reading the task, board, hypothesis, experiment, or
 evaluation it is about to use.
 
@@ -29,7 +29,15 @@ Workspace tools are separate. It is acceptable to use a maintained Pydantic AI
 console/filesystem toolset for ordinary coding-agent operations such as
 `read_file`, `grep`, `glob`, `edit_file`, and `execute`, provided those tools
 are backed by the current workspace root and do not write directly to Situ's
-research ledger.
+research records.
+
+Provider-native web search is separate from Situ research-record tools.
+Manager and Researcher agents may use web search for prior art, public docs,
+papers, package/API behavior, or domain context. Findings that influence the
+work should be captured in explicit Situ records, usually `Analysis` records or
+task comments with source names and URLs. Do not attach web search to Scientist
+or Critic by default; those roles should focus on workspace evidence,
+measurements, and review.
 
 The durable storage model can remain general. The agent-facing tool name should
 still describe the product action directly.
@@ -42,9 +50,9 @@ to call a generic activity writer to record benchmark evidence.
 
 ## Required Checks
 
-- Put each durable Situ ledger tool in its own ownership folder:
+- Put each durable Situ research-record tool in its own ownership folder:
   `tools/<domain>/<tool_name>/{tool.py,models.py,__init__.py}`.
-- Build Situ ledger tools by subclassing `BaseSituTool` and exposing
+- Build Situ research-record tools by subclassing `BaseSituTool` and exposing
   `.as_tool()` through a `FunctionToolset`.
 - Prefer maintained package toolsets over hand-rolled wrappers for generic
   workspace operations such as shell execution, file reads, file edits, glob,
@@ -110,7 +118,7 @@ to call a generic activity writer to record benchmark evidence.
 - A generic context tool whose name exposes implementation perspective rather
   than product state.
 - Prompts that include full `current_state`, project-board, active-task, or
-  recent-ledger blobs when the agent could read those records through explicit
+  recent project-state blobs when the agent could read those records through explicit
   tools.
 - Magic assignment readers such as `get_assigned_task()` when the harness can
   pass an explicit task ID and the agent can call `get_task(task_id=...)`.
@@ -134,7 +142,7 @@ to call a generic activity writer to record benchmark evidence.
   implementation rather than work?
 - Does the prompt provide only the minimum bootstrap context, with explicit IDs
   for records the agent should inspect?
-- Would the trace clearly show the agent reading the task and ledger records it
+- Would the trace clearly show the agent reading the task and research records it
   used before it mutates state?
 - Would the tool be straightforward to test through direct invocation?
 - Does the tool surface make it easier to add more model CRUD without

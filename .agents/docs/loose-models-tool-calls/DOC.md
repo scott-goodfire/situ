@@ -111,7 +111,7 @@ Useful examples:
 - Update project/session state
 
 The harness should own which tools exist and whether a call is allowed. The LLM
-can request or choose tool calls, but it should not bypass the harness ledger.
+can request or choose tool calls, but it should not bypass the harness project state.
 
 ## DBOS Role
 
@@ -124,8 +124,8 @@ The desired mental model:
 TUI / CLI starts session work
   -> Pydantic AI DBOSAgent runs
       -> agent requests typed Situ tools
-      -> tool implementation updates ledger/activity state
-  -> Situ ledger records result
+      -> tool implementation updates research records and activities
+  -> Situ records the result
 ```
 
 Avoid building a separate complex workflow engine in Situ unless the simple
@@ -209,7 +209,7 @@ When adding a new model, tool, workflow, or observability path, ask:
 - Can DBOS make this tool call durable without extra orchestration machinery?
 - Can hooks provide the needed observability without coupling the feature to
   logging code?
-- Does the harness still own the ledger, trust checks, and session state?
+- Does the harness still own the SQLite state database, trust checks, and session state?
 
 The bias should be: fewer rigid data models, more typed execution envelopes,
 more tool-call-shaped behavior, and hook-driven observability.
@@ -236,10 +236,10 @@ the reference backend:
   becomes too awkward.
 
 The session loop should now be agent/tool-shaped: the agent inspects session
-state, creates or updates experiments in the Situ ledger, runs
+state, creates or updates Situ experiment records, runs
 project-native commands through the workspace console tools, and records
 plaintext command evidence plus interpretation as experiment activity.
 
 Situ should not hide command execution behind deterministic stdout parsers.
-The worker is the Pydantic agent using its bash/filesystem toolkit; the ledger
-is the durable observability layer around that work.
+The worker is the Pydantic agent using its bash/filesystem toolkit; Situ's
+project state is the durable observability layer around that work.

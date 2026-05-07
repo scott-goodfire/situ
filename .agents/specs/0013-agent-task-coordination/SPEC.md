@@ -8,13 +8,13 @@ autoresearch work across the agents attached to a project.
 
 ## Intent
 
-The current ledger records durable research outputs: hypotheses, baselines,
+The current project state records durable research outputs: hypotheses, baselines,
 experiments, evaluations, measurements, activities, artifacts, and events.
 Coordination records show the handoff layer: which project agent decided what
 should happen next, what focused work is waiting, what is currently claimed,
 and what output a finished work item produced.
 
-Tasks fill that gap without replacing the research ledger. A completed
+Tasks fill that gap without replacing the research records. A completed
 hypothesize task may produce several hypothesis records. A completed baseline
 or experiment task may produce a baseline or experiment, evaluations,
 measurements, comments, and artifacts. The task explains the assignment and
@@ -28,7 +28,7 @@ Agents are durable project participants. The active slice uses four agent kinds:
 - `researcher` claims research tasks and produces durable understanding:
   analyses, hypotheses, and interpretations.
 - `scientist` claims baseline and experiment tasks and produces empirical
-  ledger output: experiments, evaluations, measurements, artifacts, and
+  research records: experiments, evaluations, measurements, artifacts, and
   experiment comments.
 - `critic` claims review tasks and checks completed candidate experiments as
   proposed changes. It reads experiment workspace state, evaluations,
@@ -68,7 +68,7 @@ Task statuses describe the coordination lifecycle:
 - `failed`
 
 Tasks may depend on other tasks through explicit dependency links. A task may
-link to produced or referenced ledger entities through explicit entity links.
+link to produced or referenced research records through explicit entity links.
 These links are what let the TUI answer "what did this task create?" without
 guessing from timestamps.
 
@@ -80,7 +80,7 @@ with optional structured payload for view or agent use.
 
 Task activities can record planning notes, claim notes, user steering,
 failure explanations, or completion context. Research evidence should still
-be recorded on the natural research ledger records and measurements rather than
+be recorded on the natural research records and measurements rather than
 hidden inside task activity.
 
 ## Wakeup Model
@@ -95,7 +95,7 @@ manager claims `plan`
   -> files Researcher or Scientist tasks
 researcher/scientist claims runnable work
   -> runs focused work
-  -> writes ledger outputs
+  -> writes research records
   -> marks task done or failed
 scientist experiment completion
   -> enqueue a `review` task linked to the experiment
@@ -149,8 +149,8 @@ When the claimed Scientist task is an `experiment`, Situ should create or reuse
 a managed worktree for the linked experiment before invoking the Scientist. The
 Scientist's workspace tools and worker execution for that pass should be rooted
 in that worktree. This keeps candidate code edits isolated while the task,
-experiment, measurements, activities, and events remain project-owned ledger
-records. Researcher tasks should not require managed experiment worktrees unless
+experiment, measurements, activities, and events remain project-owned records.
+Researcher tasks should not require managed experiment worktrees unless
 they are explicitly asked to run a candidate experiment.
 
 Baseline completion must not close the session by itself. The Manager should be
@@ -181,7 +181,7 @@ kind, priority, title, assignee when claimed, dependency state, recent task
 activity, and linked research outputs when present.
 
 The task board should complement the hypothesis and experiment views. It
-answers "what work is happening?" while the research ledger answers "what did
+answers "what work is happening?" while the research record answers "what did
 we learn?"
 
 ## Deferred
@@ -194,7 +194,7 @@ we learn?"
 ## Review Criteria
 
 - Tasks are project-scoped and visible through the same collection/event
-  pipeline as the rest of the ledger.
+  pipeline as the rest of the project state.
 - Agents are durable project records, not ad hoc names on task rows.
 - Researcher work produces durable analyses and hypotheses; Scientist work
   produces durable experiments and evaluations.
@@ -206,8 +206,8 @@ we learn?"
 - Session references on coordination records are provenance fields, not owners.
 - Task claims are atomic enough to prevent double-claiming.
 - Dependencies are explicit records rather than unvalidated JSON lists.
-- Task-to-ledger output links are explicit records.
+- Task-to-research record links are explicit records.
 - Task activities remain plain-language first and do not hide research
-  evidence that belongs on the research ledger or measurement evidence.
+  evidence that belongs on research records or measurement evidence.
 - Early project/session close requires the explicit request/confirm tool
   handshake, with an agent-readable warning on the request step.

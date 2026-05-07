@@ -9,12 +9,12 @@
   },
   "scripts": {
     "check": "tsc --noEmit -p tsconfig.json",
+    "test": "bun test src/**/*.test.ts",
     "storybook": "storybook dev -p 6006 --host 127.0.0.1",
     "storybook:build": "storybook build"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
-    "@situ/chart-model": "workspace:*",
     "@situ/web-design-tokens": "workspace:*",
     "@tanstack/react-table": "^8.21.3",
     "@vanilla-extract/css": "^1.20.1",

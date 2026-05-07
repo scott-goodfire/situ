@@ -86,7 +86,7 @@ For this slice:
 - `~/.situ/situ.sqlite` is the source of truth for durable product records,
   including workspaces, projects, sessions, objective/context, research objects,
   activities, artifacts, and events.
-- Per-project directories are runtime state, not separate product ledgers.
+- Per-project directories are runtime state, not separate product states.
 - The list should identify which projects have an active session when that can
   be determined from app state.
 - Project links should navigate to `/projects/<project-id>`.
@@ -97,7 +97,7 @@ For this slice:
   session started.
 - If the project is known but no active session is running, the page should show
   a clear disconnected state for that project. The local web host should not
-  read per-project SQLite product ledgers.
+  read per-project SQLite product states.
 - If the project has no active session and no durable records yet, the page
   should show the attach-only empty state for that project.
 
@@ -253,7 +253,7 @@ available on detail pages.
 The overview should not also show standalone recent evidence, recent experiment,
 or event sections. Internal events belong on the Events page. Evaluations are
 the evidence layer, not the primary workflow object. The evaluations route
-exists as an inspection path for the evidence ledger; it should not displace
+exists as an inspection path for the evidence records; it should not displace
 hypotheses from the overview.
 
 ## Agent Transcript Views
@@ -271,7 +271,7 @@ For this slice:
 - Transcript items should use human-readable labels such as "Recorded evidence"
   or "Updated experiment" instead of exposing raw activity payload names as the
   primary text.
-- Tool-call-shaped or ledger-update-shaped activity should be visually compact
+- Tool-call-shaped or record-update-shaped activity should be visually compact
   and expandable later, but the default view should emphasize what happened and
   which project record or research object it affected.
 - New transcript entries may animate subtly and auto-follow when the user is at

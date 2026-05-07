@@ -1,7 +1,7 @@
 # Testing Strategy
 
 This repo is still in an early slice, so testing should stay fast and focused
-while making the durable workspace/project/session ledger hard to break.
+while making the durable workspace/project/session state hard to break.
 
 ## Current Checks
 

@@ -24,6 +24,7 @@ class ResearchToolEvalInput(EvalModel):
     case_id: str
     seed: ResearchSessionSeed
     prompt: str
+    toolset: Literal["scientist", "manager"] = "scientist"
 
 
 class ResearchAgentEvalInput(EvalModel):

@@ -26,6 +26,7 @@ class ResearchToolsEvalGroup(
         set_eval_attribute("world", self.world_name)
         set_eval_attribute("case_id", args.case_id)
         set_eval_attribute("seed", args.seed)
+        set_eval_attribute("toolset", args.toolset)
         output = run_research_tool_agent(args)
         increment_eval_metric("tool_calls", len(output.captured_tool_calls))
         increment_eval_metric("events", len(output.events))

@@ -16,7 +16,7 @@ RESEARCH_AGENT_INSTRUCTIONS = inspect.cleandoc(
     - If the prompt gives assigned task IDs, read each assignment first with
       `get_task(task_id=...)`.
     - Start from explicit tool reads before making claims.
-    - Use `get_project_board` for the whole current ledger. Use focused
+    - Use `get_project_board` for the current project board. Use focused
       `list_*` tools such as `list_baselines`, `list_evaluations`, and
       `list_measurements` when you need a narrower evidence slice.
     - Treat the project objective and research context as the north star.
@@ -30,6 +30,10 @@ RESEARCH_AGENT_INSTRUCTIONS = inspect.cleandoc(
     - Use the workspace tools to inspect files and run project-native commands.
       Run ordinary evals/tests/benchmarks with `execute`; do not expect a
       special Situ eval script.
+    - Do not create scratch logs in the selected checkout. If workspace
+      instructions mention `run.log`, treat it as command scratch output: use
+      `SITU_RUN_LOG` or `SITU_ARTIFACT_DIR` and grep/tail that runtime path
+      instead of writing a new workspace file.
     - Use `inspect_workspace_state` before baseline interpretation and after
       candidate workspace changes. Include the eval command when known.
     - Before proposing candidate changes as comparable, establish a baseline
@@ -79,10 +83,14 @@ RESEARCHER_AGENT_INSTRUCTIONS = inspect.cleandoc(
     - If the prompt gives assigned task IDs, read each assignment first with
       `get_task(task_id=...)`.
     - Start from explicit tool reads before making claims.
-    - Use `get_project_board` for the whole current ledger and focused `list_*`
+    - Use `get_project_board` for the current project board and focused `list_*`
       tools when you need a narrower evidence slice.
     - Use read-only workspace inspection to understand code and project files.
       Do not edit files or run candidate experiments.
+    - Use web search for prior art, public documentation, papers, package/API
+      behavior, benchmark context, or comparable projects when external
+      evidence would improve the next hypothesis or handoff. Preserve source
+      names and URLs in the Analysis content when web findings matter.
     - Create `Analysis` records for reusable findings, diagnostics, or
       synthesis. Update or supersede analyses when later evidence refines them.
     - Create or update `Hypothesis` records only when a claim is testable
@@ -114,7 +122,7 @@ MANAGER_AGENT_INSTRUCTIONS = inspect.cleandoc(
 
     Situ is a local-first terminal observability layer for autoresearch
     projects and their live runs. Your job is to coordinate the work: read the
-    project objective, research context, project ledger, and task board; decide
+    project objective, research context, project board, and task board; decide
     what should happen next; and file focused Researcher or Scientist tasks.
 
     How you work:
@@ -123,6 +131,9 @@ MANAGER_AGENT_INSTRUCTIONS = inspect.cleandoc(
     - Treat tasks as the coordination surface for agent work.
     - If the current run has no project but setup input is sufficient, create and
       attach one with `create_project`.
+    - Use web search sparingly for high-level prior art, public documentation,
+      or domain context when it would materially change the task plan. Prefer
+      filing Researcher tasks to do deeper source synthesis.
     - File small, concrete tasks with clear content and a bounded kind.
     - Use `baseline` before candidate experimentation when baseline evidence
       is missing.
@@ -147,7 +158,7 @@ MANAGER_AGENT_INSTRUCTIONS = inspect.cleandoc(
       Scientist passes in managed worktrees, so candidate edits do not mutate
       the user's selected checkout.
     - Write task content with a concrete done condition, including which
-      ledger outputs should exist and that the assignee should mark the task
+      research records should exist and that the assignee should mark the task
       done when the focused work is complete.
     - Keep the loop moving after baseline evidence exists. Baseline completion
       is a starting point, not a reason to stop; file the next hypothesis,
@@ -430,7 +441,7 @@ def build_session_run_prompt(
         dependencies, or generated files changed, and what the evaluation means
         for that experiment.
 
-        Link the assigned task to important produced or referenced ledger records
+        Link the assigned task to important produced or referenced research records
         with `link_task_entity`, and leave a concise `add_task_comment` when
         it helps the next pass understand what happened.
 

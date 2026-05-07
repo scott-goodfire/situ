@@ -49,7 +49,7 @@ Then Situ:
 - Runs concrete experiment-task work in managed Git worktrees so candidate code
   edits and worker commands do not mutate the user's selected checkout.
 - Records measurement evidence, experiment results, concerns, interpretations,
-  and decisions as inspectable ledger entries.
+  and decisions as inspectable research records.
 - Renders a live terminal dashboard.
 
 The Situ install/dev root and the researched workspace are separate
@@ -64,19 +64,19 @@ code are launched from the Situ repository.
 - Sparse session setup inputs through objective/context
 - Local/private project context
 - Project-scoped objective and research context
-- Internal project ledger with session provenance
-- Analysis ledger
-- Hypothesis ledger
-- Baseline ledger
-- Experiment ledger
-- Evaluation ledger
-- Measurement evidence ledger
+- Internal project state with session provenance
+- Analysis records
+- Hypothesis records
+- Baseline records
+- Experiment records
+- Evaluation records
+- Measurement evidence records
 - Many-to-many hypothesis/experiment links
 - Analysis activity timeline
 - Hypothesis activity timeline
 - Experiment activity timeline
 - Measurement/evaluation evidence timeline
-- Agent message history ledger
+- Agent message history records
 - Comment activities, with results, concerns, plans, and interpretations carried
   in activity bodies and optional payload metadata
 - Minimal artifact references when useful

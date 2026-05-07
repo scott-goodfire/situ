@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import type { ContrastiveFeatureSet } from "@situ/chart-model";
+import type { ContrastiveFeatureSet } from "../../chart-model";
 import { ContrastiveFeatureDiff } from "./contrastive-feature-diff";
 
 const featureSet = {

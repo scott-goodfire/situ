@@ -17,7 +17,7 @@ or agent/worker flows.
 - [0007-slice-discipline/POLICY.md](./0007-slice-discipline/POLICY.md) - keep the current slice narrow but durable
 - [0008-docs-before-code/POLICY.md](./0008-docs-before-code/POLICY.md) - update specs before product-significant code
 - [0009-good-specs/POLICY.md](./0009-good-specs/POLICY.md) - define the writing bar for specs
-- [0010-activity-grounding/POLICY.md](./0010-activity-grounding/POLICY.md) - keep activities and measurement evidence grounded in ledger records and artifacts
+- [0010-activity-grounding/POLICY.md](./0010-activity-grounding/POLICY.md) - keep activities and measurement evidence grounded in research records and artifacts
 - [0011-repository-layer/POLICY.md](./0011-repository-layer/POLICY.md) - keep durable state repository-owned and API composition service-owned
 - [0012-module-organization/POLICY.md](./0012-module-organization/POLICY.md) - prefer flat entrypoints and generic filenames inside ownership folders
 - [0013-frontend-code-style/POLICY.md](./0013-frontend-code-style/POLICY.md) - prefer explicit, spacious, kebab-cased frontend code

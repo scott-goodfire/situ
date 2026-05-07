@@ -12,6 +12,7 @@ from .agents.research.agent import (
     RESEARCHER_AGENT_NAME,
     RESEARCH_AGENT_NAME,
     ResearchAgentOutput,
+    build_web_search_builtin_tools,
 )
 from .agents.research.prompt import (
     CRITIC_AGENT_INSTRUCTIONS,
@@ -78,6 +79,7 @@ class AgentRuntime:
                 build_researcher_toolset(),
                 build_workspace_readonly_toolset(),
             ],
+            builtin_tools=build_web_search_builtin_tools(),
             model_settings=DEFAULTS.model_settings(),
             name=RESEARCHER_AGENT_NAME,
         )
@@ -91,6 +93,7 @@ class AgentRuntime:
             output_type=AgentPlan,
             instructions=MANAGER_AGENT_INSTRUCTIONS,
             toolsets=[build_manager_toolset()],
+            builtin_tools=build_web_search_builtin_tools(),
             model_settings=DEFAULTS.model_settings(),
             name=MANAGER_AGENT_NAME,
         )

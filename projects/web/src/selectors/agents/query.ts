@@ -7,7 +7,7 @@ export function agentsForProject({
 }: {
   data: ProjectWorkspaceData;
 }): AgentRecord[] {
-  const projectId = data.ledgerProjectId ?? data.projectId;
+  const projectId = data.activeProjectRecordId ?? data.projectId;
 
   return filter(data.agents, (agent) => agent.project_id === projectId);
 }

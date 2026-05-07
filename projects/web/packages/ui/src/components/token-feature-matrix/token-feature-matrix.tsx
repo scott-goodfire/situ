@@ -1,7 +1,7 @@
 import {
   heatmapFromTokenFeatureMatrix,
   type TokenFeatureMatrix as TokenFeatureMatrixData,
-} from "@situ/chart-model";
+} from "../../chart-model";
 import { HeatmapGrid } from "../heatmap-grid/heatmap-grid";
 
 export function TokenFeatureMatrix({

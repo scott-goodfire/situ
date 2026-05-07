@@ -3,7 +3,10 @@ from __future__ import annotations
 from pydantic_evals import Case
 
 from evals.harness.evaluators import (
+    ChangedFilesDoNotInclude,
+    ChangedFilesExactly,
     EventWasEmitted,
+    ProjectBoardContains,
     ToolArgsContain,
     ToolResultContains,
     ToolWasCalled,
@@ -13,14 +16,11 @@ from evals.suites.agents.multi_agent_loop.evaluators import (
     BaselineEvaluationRecorded,
     CandidateExperimentRecorded,
     FollowupTaskCreatedAfterBaseline,
-    PrepareFileUnchanged,
     ResearcherHandoffRecorded,
     RoleToolSucceeded,
     RoleToolWasCalled,
-    ProjectBoardContains,
     ScientistCompletedBaselineTask,
     TaskClaimedByRole,
-    TrainOnlyChanged,
     UserUrgentTaskPreemptedBacklog,
 )
 from evals.worlds.multi_agent_loop import (
@@ -114,8 +114,8 @@ def multi_agent_loop_cases() -> list[
                 ProjectBoardContains("component_a"),
                 ProjectBoardContains("val_bpb"),
                 CandidateExperimentRecorded(),
-                TrainOnlyChanged(),
-                PrepareFileUnchanged(),
+                ChangedFilesExactly("train.py"),
+                ChangedFilesDoNotInclude("prepare.py"),
             ),
         ),
         Case(
@@ -148,8 +148,8 @@ def multi_agent_loop_cases() -> list[
                 EventWasEmitted("task.done"),
                 ProjectBoardContains("component_a"),
                 CandidateExperimentRecorded(),
-                TrainOnlyChanged(),
-                PrepareFileUnchanged(),
+                ChangedFilesExactly("train.py"),
+                ChangedFilesDoNotInclude("prepare.py"),
             ),
         ),
         Case(
@@ -173,7 +173,7 @@ def multi_agent_loop_cases() -> list[
                 RoleToolSucceeded("researcher", "update_task"),
                 ProjectBoardContains("prepare.py"),
                 ProjectBoardContains("suspicious"),
-                PrepareFileUnchanged(),
+                ChangedFilesDoNotInclude("prepare.py"),
             ),
         ),
         Case(
@@ -225,7 +225,7 @@ def multi_agent_loop_cases() -> list[
                 RoleToolSucceeded("researcher", "update_task"),
                 ProjectBoardContains("urgent user task handled"),
                 UserUrgentTaskPreemptedBacklog(),
-                PrepareFileUnchanged(),
+                ChangedFilesDoNotInclude("prepare.py"),
             ),
         ),
     ]

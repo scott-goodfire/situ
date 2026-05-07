@@ -1,7 +1,7 @@
 import {
   type BucketDatum,
   type ChartTone,
-} from "@situ/chart-model";
+} from "../../chart-model";
 import {
   Bar,
   BarChart,

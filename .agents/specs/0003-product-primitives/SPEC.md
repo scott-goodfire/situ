@@ -41,7 +41,7 @@ first, then the session is created attached to that project. A projectless
 session remains a valid low-level state while setup or triage is incomplete,
 but it is not the default user-facing start behavior.
 
-Projects own the durable research ledger and coordination state: agents, agent
+Projects own the durable research records and coordination state: agents, agent
 message history, tasks, task dependencies, task entity links, task activities,
 analyses, hypotheses, baselines, experiments, evaluations, measurements,
 research activities, hypothesis-experiment links, and artifacts. Those records
@@ -54,7 +54,7 @@ Sessions own lifecycle and runtime attachment state. Starting Situ creates a
 fresh session by default; resuming an existing session must be explicit. There
 is no stored "active session" pointer on the workspace; the most-recently-
 updated session is derived on demand. Agent and task records describe
-coordination and handoffs around the ledger work rather than replacing
+coordination and handoffs around the research-record work rather than replacing
 hypotheses, baselines, experiments, evaluations, measurements, activities,
 artifacts, or events.
 
@@ -93,7 +93,7 @@ The main unit of autoresearch work.
 
 A session belongs to one workspace (required `workspace_id` FK) and may attach
 to one project (`project_id`, nullable). It owns lifecycle status and runtime
-association, not the research ledger or coordination records. Each new default
+association, not the research records or coordination records. Each new default
 `situ tui [workspace]` start creates a new project and a new attached session.
 `situ tui --resume <session-id>` is the explicit action for continuing the same
 session id. There is no stored "active session" pointer on the workspace;
@@ -301,11 +301,11 @@ are enough. Put explanation in hypothesis or experiment activities.
 The main collaboration primitive.
 
 Activities are timeline entries attached to analyses, hypotheses, experiments,
-evaluations, measurements, tasks, or other inspectable ledger records when
+evaluations, measurements, tasks, or other inspectable research records when
 useful. They replace standalone finding, warning, and decision models in the
 first slice.
 
-Activities reach a project through their parent ledger record or associated
+Activities reach a project through their parent research record or associated
 entity, following the ownership rules for that entity. Activity rows do not
 carry their own `session_id` owner column. If a session created the activity,
 store that provenance as `created_in_session_id`.

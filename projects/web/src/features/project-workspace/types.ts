@@ -22,7 +22,7 @@ import type { ConnectionState } from "../run-monitor/connection-badge";
 
 export type ProjectWorkspaceData = {
   projectId: string;
-  ledgerProjectId?: string;
+  activeProjectRecordId?: string;
   workspace: string | undefined;
   connection: ConnectionState;
   project: ProjectRecord | undefined;

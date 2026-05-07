@@ -59,5 +59,5 @@ reasonably be represented as agent/tool behavior.
 - Could the behavior be expressed as an Situ tool called by a `DBOSAgent`?
 - Are the DBOS run inputs small, serializable, and stable across process
   restart?
-- Does the change preserve terminal observability through the ledger and
+- Does the change preserve terminal observability through the SQLite state database and
   activities rather than inventing a separate workflow UI?

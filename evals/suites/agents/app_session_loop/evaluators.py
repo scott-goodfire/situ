@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
 from typing import Any
 
@@ -10,48 +9,6 @@ from evals.worlds.app_session_loop import (
     AppSessionLoopEvalInput,
     AppSessionLoopEvalOutput,
 )
-
-
-@dataclass
-class EventWasEmitted(
-    Evaluator[AppSessionLoopEvalInput, AppSessionLoopEvalOutput, Any]
-):
-    event_type: str
-
-    def evaluate(
-        self,
-        ctx: EvaluatorContext[AppSessionLoopEvalInput, AppSessionLoopEvalOutput, Any],
-    ) -> EvaluationReason:
-        event_types = [event.event_type for event in ctx.output.events]
-        if self.event_type in event_types:
-            return EvaluationReason(value=True, reason=f"Event emitted: {self.event_type}")
-        return EvaluationReason(
-            value=False,
-            reason=f"Missing event {self.event_type}. Got {event_types}",
-        )
-
-
-@dataclass
-class ProjectBoardContains(
-    Evaluator[AppSessionLoopEvalInput, AppSessionLoopEvalOutput, Any]
-):
-    text: str
-
-    def evaluate(
-        self,
-        ctx: EvaluatorContext[AppSessionLoopEvalInput, AppSessionLoopEvalOutput, Any],
-    ) -> EvaluationReason:
-        rendered = json.dumps(ctx.output.project_board, sort_keys=True).lower()
-        needle = self.text.lower()
-        if needle in rendered:
-            return EvaluationReason(
-                value=True,
-                reason=f"Project board contains {self.text!r}",
-            )
-        return EvaluationReason(
-            value=False,
-            reason=f"Project board did not contain {self.text!r}",
-        )
 
 
 @dataclass
@@ -84,29 +41,6 @@ class DoneTaskKindAtLeast(
                 f"Expected at least {self.count} done {self.task_kind} task(s). "
                 f"Tasks: {ctx.output.project_board.get('tasks', [])}"
             ),
-        )
-
-
-class NonPlanScientistTaskDone(
-    Evaluator[AppSessionLoopEvalInput, AppSessionLoopEvalOutput, Any]
-):
-    def evaluate(
-        self,
-        ctx: EvaluatorContext[AppSessionLoopEvalInput, AppSessionLoopEvalOutput, Any],
-    ) -> EvaluationReason:
-        matches = [
-            task
-            for task in ctx.output.project_board.get("tasks", [])
-            if task.get("kind") != "plan" and task.get("status") == "done"
-        ]
-        if matches:
-            return EvaluationReason(
-                value=True,
-                reason=f"Found done Scientist task(s): {[task.get('id') for task in matches]}",
-            )
-        return EvaluationReason(
-            value=False,
-            reason=f"No done Scientist task. Tasks: {ctx.output.project_board.get('tasks', [])}",
         )
 
 
@@ -175,18 +109,33 @@ class ExperimentCountAtLeast(
         )
 
 
-class PrepareFileUnchanged(
+class ManagerCompletedAfterCriticReview(
     Evaluator[AppSessionLoopEvalInput, AppSessionLoopEvalOutput, Any]
 ):
     def evaluate(
         self,
         ctx: EvaluatorContext[AppSessionLoopEvalInput, AppSessionLoopEvalOutput, Any],
     ) -> EvaluationReason:
-        if "prepare.py" not in ctx.output.changed_files:
-            return EvaluationReason(value=True, reason="prepare.py was unchanged")
+        event_types = [event.event_type for event in ctx.output.events]
+        try:
+            critic_index = event_types.index("session.critic_completed")
+        except ValueError:
+            return EvaluationReason(
+                value=False,
+                reason=f"No Critic completion event. Got {event_types}",
+            )
+        for index, event_type in enumerate(
+            event_types[critic_index + 1 :],
+            start=critic_index + 1,
+        ):
+            if event_type == "session.manager_completed":
+                return EvaluationReason(
+                    value=True,
+                    reason=f"Manager completed after Critic at event index {index}",
+                )
         return EvaluationReason(
             value=False,
-            reason=f"prepare.py changed; changed files: {ctx.output.changed_files}",
+            reason=f"No Manager completion after Critic. Got {event_types}",
         )
 
 
@@ -303,24 +252,26 @@ class ReviewTaskLinksComplete(
             for task in ctx.output.project_board.get("tasks", [])
             if task.get("kind") == "review"
         ]
-        review_task_ids = {task.get("id") for task in review_tasks}
-        linked_kinds = {
-            link.get("entity_kind")
-            for link in links
-            if link.get("task_id") in review_task_ids
-            and link.get("relationship") == "reviews"
-        }
         expected = {"experiment", "evaluation", "measurement"}
-        if expected.issubset(linked_kinds):
-            return EvaluationReason(
-                value=True,
-                reason=f"Review task links include {sorted(expected)}",
-            )
+        for task in review_tasks:
+            linked_kinds = {
+                link.get("entity_kind")
+                for link in links
+                if link.get("task_id") == task.get("id")
+                and link.get("relationship") == "reviews"
+            }
+            if expected.issubset(linked_kinds):
+                return EvaluationReason(
+                    value=True,
+                    reason=(
+                        f"Review task {task.get('id')} links include "
+                        f"{sorted(expected)}"
+                    ),
+                )
         return EvaluationReason(
             value=False,
             reason=(
-                "Review task links did not include experiment, evaluation, "
-                f"and measurement. Got kinds: {sorted(linked_kinds)}; "
-                f"links: {links}"
+                "No single review task linked experiment, evaluation, and "
+                f"measurement evidence. Review tasks: {review_tasks}; links: {links}"
             ),
         )

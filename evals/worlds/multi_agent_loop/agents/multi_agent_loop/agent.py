@@ -135,7 +135,7 @@ def run_multi_agent_loop(args: MultiAgentLoopEvalInput) -> MultiAgentLoopEvalOut
                 world,
                 title="Plan after Scientist task completion",
                 content=(
-                    "A Scientist task just completed. Review the ledger, "
+                    "A Scientist task just completed. Review the project board, "
                     "task board, recent activity, and experiment budget. File "
                     "the next focused Researcher or Scientist task so the "
                     "research loop keeps moving."

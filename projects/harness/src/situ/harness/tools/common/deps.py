@@ -13,6 +13,7 @@ from ...core.notifications import emit_project_event
 from ...core.workers import WorkerManager
 from ...records.base import DbRecord
 from ...repositories import Repositories
+from .backend import SituLocalBackend, command_artifact_dir_for
 
 EventEmitter = Callable[
     [str, str, str | None, str | None, dict[str, Any] | None],
@@ -48,10 +49,16 @@ class SituToolDeps(BaseModel):
             raise RuntimeError("tool deps require repo_path for workspace tools")
 
         repo_path = Path(self.repo_path).resolve()
-        self._workspace_backend = LocalBackend(
+        self._workspace_backend = SituLocalBackend(
             root_dir=repo_path,
             allowed_directories=[str(repo_path)],
             enable_execute=True,
+            command_artifact_dir=command_artifact_dir_for(
+                project_dir=self.project_dir,
+                session_id=self.session_id,
+                agent_id=self.agent_id,
+                active_experiment_id=self.active_experiment_id,
+            ),
         )
         return self._workspace_backend
 

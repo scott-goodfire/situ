@@ -93,8 +93,8 @@ Interactive `tui` should behave like a small fullscreen state machine:
 
 - Loading: connect to the app, subscribe, and bootstrap state.
 - Secret setup: when required local model provider credentials are missing, ask
-  the user to paste the provider key, save it to local Situ runtime state, and
-  only then continue.
+  the user to paste the provider key, optionally accept a local Logfire token,
+  save submitted secrets to local Situ runtime state, and only then continue.
 - Onboarding: gather the objective and research context when CLI inputs did not
   provide them.
 - Launching: call `session.start` and wait for the created records.
@@ -152,6 +152,7 @@ observability screen through CLI-provided objective/context or interactive TUI
 onboarding:
 
 - Required local model provider secret when it is not already available.
+- Optional local Logfire token.
 - Objective
 - Research context: how progress is judged, relevant evals, tools, metrics,
   dashboards, logs, artifacts, and in-scope experiment types
@@ -166,7 +167,8 @@ activity, event, or artifact content.
 
 The TUI secret check reads the local Situ secret store only. Situ-scoped eval
 environment secrets such as `SITU_OPENAI_KEY` and `SITU_LOGFIRE_TOKEN` are not
-local runtime credentials and must not bypass TUI secret onboarding.
+local runtime credentials and must not bypass TUI secret onboarding. A missing
+local Logfire token must not block local runs.
 
 ## Observability Visualizations
 

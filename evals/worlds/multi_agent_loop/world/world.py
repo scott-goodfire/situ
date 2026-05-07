@@ -174,7 +174,7 @@ def _plan_task_title(seed: MultiAgentLoopSeed) -> str:
 def _plan_task_content(seed: MultiAgentLoopSeed) -> str:
     return {
         "empty_repo": (
-            "Read the project objective, research context, and empty ledger. "
+            "Read the project objective, research context, and empty project board. "
             "File the first focused Scientist task. If no baseline evaluation "
             "evidence exists, the task should establish baseline evidence with "
             "the project-native measurement command."

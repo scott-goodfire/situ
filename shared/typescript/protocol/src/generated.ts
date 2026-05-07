@@ -320,15 +320,20 @@ export interface SecretsStatusParams {
 export interface SecretsStatusResult {
   openai_key_configured: boolean;
   openai_key_source: "local" | "missing";
+  logfire_token_configured?: boolean;
+  logfire_token_source?: "local" | "missing";
 }
 
 export interface SecretsSetOpenAIKeyParams {
   openai_key: string;
+  logfire_token?: string | null;
 }
 
 export interface SecretsSetOpenAIKeyResult {
   openai_key_configured?: boolean;
   openai_key_source?: "local";
+  logfire_token_configured?: boolean;
+  logfire_token_source?: "local" | "missing";
 }
 
 export interface CollectionsBootstrapParams {

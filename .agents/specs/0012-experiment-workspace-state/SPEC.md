@@ -56,10 +56,10 @@ risks visible and to guide human review.
 Situ should run candidate experiment work in managed Git worktrees rather than
 mutating the user's selected workspace checkout.
 
-The durable session and project ledger remain app-owned. A worktree is an
+The durable session state and project research records remain app-owned. A worktree is an
 execution checkout for one candidate experiment, not the source of truth for the
 research record. Deleting or preserving a worktree must not decide whether the
-experiment happened; the ledger does.
+experiment happened; project records do.
 
 Before a Scientist handles an `experiment` task, Situ should:
 
@@ -69,6 +69,13 @@ Before a Scientist handles an `experiment` task, Situ should:
 - Run the Scientist's workspace tools and worker commands with that worktree as
   their workspace root.
 - Record the final worktree state as experiment evidence.
+
+Workspace command scratch output, such as redirected `run.log` files, should
+prefer the Situ project runtime directory rather than the selected checkout or
+managed worktree. The command, useful stdout/stderr, and artifact path should be
+recorded as measurement evidence when they matter. Scratch logs are runtime
+artifacts, not candidate source changes, and should not make the user's selected
+workspace dirty.
 
 When a project workspace is nested inside a larger Git repository, Situ should
 distinguish the managed worktree root from the nested workspace path given to
@@ -121,6 +128,8 @@ comparable.
 - Creating managed worktrees for Scientist `experiment` tasks.
 - Running experiment-task workspace tools and workers inside the managed
   worktree.
+- Keeping command scratch logs in Situ runtime artifact paths rather than
+  dirtying the selected checkout.
 - Reusing existing managed worktrees correctly when the selected workspace is a
   nested path under the Git root.
 - Recording final worktree state for successful and failed experiment tasks.

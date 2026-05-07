@@ -794,6 +794,20 @@ def test_comment_tools_write_activity_records(repos: Repositories) -> None:
         comment="Component A improved score.",
         payload={"signals": [{"key": "score", "value": 0.73}]},
     )
+    evaluation = repos.evaluations.create(
+        evaluation_id="eval_candidate",
+        project_id="project_0001",
+        created_in_session_id="session_0001",
+        title="Candidate evaluation",
+        summary="Candidate evidence for review.",
+        associated_experiment_id="exp_session_0001_a",
+    )
+    measurement = repos.measurements.add(
+        evaluation_id=evaluation.id,
+        created_in_session_id="session_0001",
+        actor="worker",
+        body="Candidate score=0.73.",
+    )
     experiment_review = invoke_situ_tool_sync(
         tool=AddExperimentReviewTool(),
         deps=deps,
@@ -803,8 +817,18 @@ def test_comment_tools_write_activity_records(repos: Repositories) -> None:
         recommended_next_step="reproduce",
         evidence_summary="One measurement improved, but there is no repeated run.",
         concern_kinds=["selection_on_noise"],
-        reviewed_evaluation_ids=["eval_candidate"],
-        reviewed_measurement_ids=[42],
+        reviewed_evaluation_ids=[evaluation.id],
+        reviewed_measurement_ids=[measurement.id],
+    )
+    bad_experiment_review = invoke_situ_tool_sync(
+        tool=AddExperimentReviewTool(),
+        deps=deps,
+        experiment_id="exp_session_0001_a",
+        review="This cites missing evidence and should fail.",
+        verdict="needs_reproduction",
+        recommended_next_step="reproduce",
+        reviewed_evaluation_ids=["eval_missing"],
+        reviewed_measurement_ids=[999],
     )
 
     assert hypothesis_comment.success is True
@@ -828,8 +852,11 @@ def test_comment_tools_write_activity_records(repos: Repositories) -> None:
         "evidence_summary": "One measurement improved, but there is no repeated run.",
         "concern_kinds": ["selection_on_noise"],
         "reviewed_evaluation_ids": ["eval_candidate"],
-        "reviewed_measurement_ids": [42],
+        "reviewed_measurement_ids": [measurement.id],
     }
+    assert bad_experiment_review.success is False
+    assert bad_experiment_review.error is not None
+    assert bad_experiment_review.error.code == "invalid_review_evaluation_ids"
 
     hypothesis_activities = invoke_situ_tool_sync(
         tool=ListHypothesisActivitiesTool(),
@@ -916,6 +943,39 @@ def test_workspace_toolset_uses_repo_path_backend(tmp_path: Path) -> None:
         "execute",
     }
     assert expected_tools.issubset(set(toolset.tools))
+
+
+def test_workspace_backend_routes_run_log_to_runtime_artifacts(tmp_path: Path) -> None:
+    workspace = tmp_path / "workspace"
+    project_dir = tmp_path / ".situ" / "projects" / "workspace"
+    workspace.mkdir()
+    deps = SituToolDeps(
+        session_id="session_0001",
+        agent_id="agent_0001",
+        project_dir=project_dir,
+        repo_path=str(workspace),
+    )
+
+    write_result = deps.backend.execute(
+        "printf 'score: 1\\n' > run.log 2>&1",
+        timeout=5,
+    )
+    read_result = deps.backend.execute("grep '^score:' run.log", timeout=5)
+
+    runtime_log = (
+        project_dir
+        / "artifacts"
+        / "commands"
+        / "session_0001"
+        / "agent_0001"
+        / "run.log"
+    )
+    assert write_result.exit_code == 0
+    assert read_result.exit_code == 0
+    assert runtime_log.read_text(encoding="utf-8") == "score: 1\n"
+    assert "score: 1" in read_result.output
+    assert "Routed run.log" in write_result.output
+    assert not (workspace / "run.log").exists()
 
 
 def test_research_toolset_includes_workspace_state_inspector() -> None:

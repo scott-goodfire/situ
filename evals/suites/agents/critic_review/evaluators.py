@@ -129,21 +129,85 @@ class CriticReviewReferencesEvidence(
         if review is None:
             return EvaluationReason(value=False, reason="No Critic review found")
         payload = review.get("payload") or {}
-        evaluation_ids = payload.get("reviewed_evaluation_ids") or []
-        measurement_ids = payload.get("reviewed_measurement_ids") or []
-        if evaluation_ids and measurement_ids:
+        evaluation_ids = {str(item) for item in payload.get("reviewed_evaluation_ids") or []}
+        measurement_ids = {
+            int(item)
+            for item in payload.get("reviewed_measurement_ids") or []
+            if isinstance(item, int | str) and str(item).isdigit()
+        }
+        if not evaluation_ids or not measurement_ids:
+            return EvaluationReason(
+                value=False,
+                reason=(
+                    "Review did not cite both evaluation and measurement evidence. "
+                    f"Payload: {payload}"
+                ),
+            )
+
+        evaluations_by_id = {
+            evaluation.get("id"): evaluation
+            for evaluation in ctx.output.project_board.get("evaluations", [])
+        }
+        measurements_by_id = {
+            int(measurement.get("id")): measurement
+            for measurement in ctx.output.project_board.get("measurements", [])
+            if measurement.get("id") is not None
+        }
+        missing_evaluations = sorted(
+            evaluation_id
+            for evaluation_id in evaluation_ids
+            if evaluation_id not in evaluations_by_id
+        )
+        missing_measurements = sorted(
+            measurement_id
+            for measurement_id in measurement_ids
+            if measurement_id not in measurements_by_id
+        )
+        if missing_evaluations or missing_measurements:
+            return EvaluationReason(
+                value=False,
+                reason=(
+                    "Review cited missing evidence. "
+                    f"missing_evaluations={missing_evaluations}, "
+                    f"missing_measurements={missing_measurements}"
+                ),
+            )
+
+        experiment_id = review.get("experiment_id")
+        review_tasks = [
+            task
+            for task in ctx.output.project_board.get("tasks", [])
+            if task.get("kind") == "review"
+            and (task.get("payload") or {}).get("experiment_id") == experiment_id
+        ]
+        task_evaluation_ids = {
+            str(evaluation_id)
+            for task in review_tasks
+            for evaluation_id in (task.get("payload") or {}).get("evaluation_ids", [])
+        }
+        task_measurement_ids = {
+            int(measurement_id)
+            for task in review_tasks
+            for measurement_id in (task.get("payload") or {}).get("measurement_ids", [])
+            if isinstance(measurement_id, int | str) and str(measurement_id).isdigit()
+        }
+        if evaluation_ids & task_evaluation_ids and measurement_ids & task_measurement_ids:
             return EvaluationReason(
                 value=True,
                 reason=(
-                    "Review referenced evidence: "
-                    f"evaluations={evaluation_ids}, measurements={measurement_ids}"
+                    "Review referenced linked task evidence: "
+                    f"evaluations={sorted(evaluation_ids)}, "
+                    f"measurements={sorted(measurement_ids)}"
                 ),
             )
         return EvaluationReason(
             value=False,
             reason=(
-                "Review did not cite both evaluation and measurement evidence. "
-                f"Payload: {payload}"
+                "Review evidence did not overlap the review task payload. "
+                f"review_evaluations={sorted(evaluation_ids)}, "
+                f"task_evaluations={sorted(task_evaluation_ids)}, "
+                f"review_measurements={sorted(measurement_ids)}, "
+                f"task_measurements={sorted(task_measurement_ids)}"
             ),
         )
 

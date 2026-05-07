@@ -240,7 +240,7 @@ def _initial_plan_content(seed: AppSessionLoopSeed) -> str:
             "experiment."
         )
     return (
-        "Read the project objective, research context, empty ledger state, and "
+        "Read the project objective, research context, empty project state, and "
         "task board. Since no baseline evidence exists, file exactly one "
         "BASELINE Scientist task first. Do not file a candidate experiment in "
         "this first planning pass. After baseline evidence exists, the loop "

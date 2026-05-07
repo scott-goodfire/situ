@@ -194,46 +194,46 @@ function scopedWorkspaceData({
   routeProjectId: string;
   session: SessionConnection;
 }): ProjectWorkspaceData {
-  const ledgerProjectId = currentLedgerProjectId({
+  const activeProjectRecordId = currentProjectRecordId({
     projects: liveSession.projects,
     routeProjectId,
     sessions: liveSession.sessions,
   });
-  const project = ledgerProjectId
-    ? liveSession.projects.find((record) => record.id === ledgerProjectId)
+  const project = activeProjectRecordId
+    ? liveSession.projects.find((record) => record.id === activeProjectRecordId)
     : undefined;
-  const sessions = ledgerProjectId
+  const sessions = activeProjectRecordId
     ? liveSession.sessions.filter(
-        (record) => record.project_id === ledgerProjectId,
+        (record) => record.project_id === activeProjectRecordId,
       )
     : [];
-  const agents = ledgerProjectId
-    ? liveSession.agents.filter((record) => record.project_id === ledgerProjectId)
+  const agents = activeProjectRecordId
+    ? liveSession.agents.filter((record) => record.project_id === activeProjectRecordId)
     : [];
-  const analyses = ledgerProjectId
-    ? liveSession.analyses.filter((record) => record.project_id === ledgerProjectId)
+  const analyses = activeProjectRecordId
+    ? liveSession.analyses.filter((record) => record.project_id === activeProjectRecordId)
     : [];
-  const hypotheses = ledgerProjectId
+  const hypotheses = activeProjectRecordId
     ? liveSession.hypotheses.filter(
-        (record) => record.project_id === ledgerProjectId,
+        (record) => record.project_id === activeProjectRecordId,
       )
     : [];
-  const experiments = ledgerProjectId
+  const experiments = activeProjectRecordId
     ? liveSession.experiments.filter(
-        (record) => record.project_id === ledgerProjectId,
+        (record) => record.project_id === activeProjectRecordId,
       )
     : [];
-  const evaluations = ledgerProjectId
+  const evaluations = activeProjectRecordId
     ? liveSession.evaluations.filter(
-        (record) => record.project_id === ledgerProjectId,
+        (record) => record.project_id === activeProjectRecordId,
       )
     : [];
-  const tasks = ledgerProjectId
-    ? liveSession.tasks.filter((record) => record.project_id === ledgerProjectId)
+  const tasks = activeProjectRecordId
+    ? liveSession.tasks.filter((record) => record.project_id === activeProjectRecordId)
     : [];
-  const artifacts = ledgerProjectId
+  const artifacts = activeProjectRecordId
     ? liveSession.artifacts.filter(
-        (record) => record.project_id === ledgerProjectId,
+        (record) => record.project_id === activeProjectRecordId,
       )
     : [];
   const taskIds = new Set(tasks.map((record) => record.id));
@@ -245,7 +245,7 @@ function scopedWorkspaceData({
 
   return {
     projectId: routeProjectId,
-    ledgerProjectId,
+    activeProjectRecordId,
     workspace: session.workspace,
     connection: liveSession.connection,
     project,
@@ -285,7 +285,7 @@ function scopedWorkspaceData({
     artifacts,
     events: liveSession.events.filter(
       (record) =>
-        record.associated_project_id === ledgerProjectId ||
+        record.associated_project_id === activeProjectRecordId ||
         Boolean(
           record.associated_session_id &&
             sessionIds.has(record.associated_session_id),
@@ -294,7 +294,7 @@ function scopedWorkspaceData({
   };
 }
 
-function currentLedgerProjectId({
+function currentProjectRecordId({
   projects,
   routeProjectId,
   sessions,

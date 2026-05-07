@@ -71,7 +71,7 @@ User runs `situ tui --resume <session-id>`
   |     `-- no  -> explain that there is no session to resume
 ```
 
-`resume` means continue the same session id and append to the same ledger.
+`resume` means continue the same session id and append to the same project state.
 Starting from prior findings in a new session should be a separate future
 `tui --from <session-id>` style flow, not implicit resume.
 

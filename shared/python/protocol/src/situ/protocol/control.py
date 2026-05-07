@@ -63,15 +63,20 @@ class SecretsStatusParams(BaseModel):
 class SecretsStatusResult(BaseModel):
     openai_key_configured: bool
     openai_key_source: OpenAIKeySource
+    logfire_token_configured: bool = False
+    logfire_token_source: OpenAIKeySource = "missing"
 
 
 class SecretsSetOpenAIKeyParams(BaseModel):
     openai_key: str
+    logfire_token: str | None = None
 
 
 class SecretsSetOpenAIKeyResult(BaseModel):
     openai_key_configured: bool = True
     openai_key_source: Literal["local"] = "local"
+    logfire_token_configured: bool = False
+    logfire_token_source: OpenAIKeySource = "missing"
 
 
 CollectionName = Literal[

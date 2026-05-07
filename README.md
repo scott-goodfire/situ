@@ -77,8 +77,9 @@ The Python harness now initializes:
 
 The default local agent runtime requires a saved local OpenAI key in Situ's
 secret store. The TUI prompts for it on first run and saves it under
-`~/.situ/secrets.json`. Local app, TUI, web, and manual headless execution do
-not use `SITU_OPENAI_KEY` or `SITU_LOGFIRE_TOKEN` as runtime credentials.
+`~/.situ/secrets.json`. The TUI can also save an optional local Logfire token
+there for local run traces. Local app, TUI, web, and manual headless execution
+do not use `SITU_OPENAI_KEY` or `SITU_LOGFIRE_TOKEN` as runtime credentials.
 
 DBOS stores its system database beside Situ project state by default:
 
@@ -106,7 +107,7 @@ The first suite uses a mocked micrograd world with baseline, A/B/C variants, an
 A+C combination, and one suspicious result. Evals require `SITU_OPENAI_KEY`
 for real LLM calls and `SITU_LOGFIRE_TOKEN` so eval executions are sent to
 Logfire with `service_name=situ-evals`. Evals do not fall back to the saved
-local runtime key.
+local runtime secrets.
 
 ## Layout
 

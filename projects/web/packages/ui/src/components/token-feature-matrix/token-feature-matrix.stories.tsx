@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import type { TokenFeatureMatrix as TokenFeatureMatrixData } from "@situ/chart-model";
+import type { TokenFeatureMatrix as TokenFeatureMatrixData } from "../../chart-model";
 import { TokenFeatureMatrix } from "./token-feature-matrix";
 
 const matrix = {

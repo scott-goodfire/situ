@@ -127,7 +127,7 @@ task is to query trace records for Situ harness or eval runs:
 ```
 
 Use the run-review skill when autopsying a completed or active Situ run from a
-TUI screenshot, workspace path, session id, local ledger, workspace diff, and
+TUI screenshot, workspace path, session id, local SQLite state, workspace diff, and
 Logfire traces:
 
 ```text
