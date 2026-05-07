@@ -40,9 +40,9 @@ class UpdateBaselineTool(BaseSituTool[SituToolDeps, UpdateBaselineResult]):
             raise ValueError(f"baseline not found: {baseline_id}")
 
         event = ctx.deps.record_event(
-            "baseline.updated",
-            f"Updated baseline {baseline.id}",
+            event_type="baseline.updated",
+            message=f"Updated baseline {baseline.id}",
             payload={"baseline_id": baseline.id},
         )
-        ctx.deps.publish_record(baseline, event=event)
+        ctx.deps.publish_record(record=baseline, event=event)
         return UpdateBaselineResult(success=True, baseline=baseline.model_dump())

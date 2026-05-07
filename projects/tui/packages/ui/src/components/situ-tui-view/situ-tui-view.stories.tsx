@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useApp } from "ink";
 import type {
-  AgentRecord,
   EventRecord,
   EvaluationActivityRecord,
   EvaluationRecord,
@@ -30,7 +29,6 @@ import {
   completedTaskActivities,
   completedTasks,
   maxExperimentCount,
-  runningAgents,
   runningEvaluationActivities,
   runningEvaluations,
   runningEvents,
@@ -63,7 +61,6 @@ export const stories = [
         statusLine="Connecting to local session..."
         project={activeProject}
         session={undefined}
-        agents={[]}
         tasks={[]}
         experimentCount={0}
         hypotheses={[]}
@@ -86,7 +83,6 @@ export const stories = [
         statusLine="session_0001 | active | experiments 3/5"
         project={activeProject}
         session={runningSession}
-        agents={runningAgents}
         tasks={runningTasks}
         experimentCount={runningExperiments.length}
         hypotheses={[activeHypothesis]}
@@ -109,7 +105,6 @@ export const stories = [
         statusLine="session_0001 | active | experiments 3/5"
         project={activeProject}
         session={runningSession}
-        agents={runningAgents}
         tasks={suspiciousTasks}
         experimentCount={suspiciousExperiments.length}
         hypotheses={[activeHypothesis]}
@@ -132,7 +127,6 @@ export const stories = [
         statusLine="session_0001 | closed | experiments 2/5"
         project={activeProject}
         session={completedSession}
-        agents={runningAgents}
         tasks={completedTasks}
         experimentCount={completedExperiments.length}
         hypotheses={[activeHypothesis]}
@@ -155,7 +149,6 @@ export const stories = [
         statusLine="Session session_0001 failed"
         project={activeProject}
         session={runningSession}
-        agents={runningAgents}
         tasks={suspiciousTasks}
         experimentCount={suspiciousExperiments.length}
         hypotheses={[activeHypothesis]}
@@ -175,7 +168,6 @@ type StorySituTuiViewProps = {
   statusLine: string;
   project: ProjectRecord | undefined;
   session: SessionRecord | undefined;
-  agents: AgentRecord[];
   tasks: TaskRecord[];
   experimentCount: number;
   hypotheses: HypothesisRecord[];
@@ -192,7 +184,6 @@ function StorySituTuiView({
   statusLine,
   project,
   session,
-  agents,
   tasks,
   experimentCount,
   hypotheses,
@@ -216,7 +207,6 @@ function StorySituTuiView({
       dashboardMessage={message}
       project={project}
       session={session}
-      agents={agents}
       tasks={tasks}
       experimentCount={experimentCount}
       maxExperiments={maxExperimentCount}

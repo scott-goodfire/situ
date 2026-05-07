@@ -65,8 +65,8 @@ class RequestProjectCloseTool(
             "result."
         )
         event = ctx.deps.record_event(
-            "project.close_confirmation_required",
-            message,
+            event_type="project.close_confirmation_required",
+            message=message,
             payload={
                 "project_id": project.id,
                 "task_id": active_task.id if active_task is not None else None,
@@ -93,7 +93,7 @@ class RequestProjectCloseTool(
                     "project_id": project.id,
                 },
             )
-            ctx.deps.publish_record(activity, event=event)
+            ctx.deps.publish_record(record=activity, event=event)
         return RequestProjectCloseResult(
             success=True,
             confirmation_required=True,

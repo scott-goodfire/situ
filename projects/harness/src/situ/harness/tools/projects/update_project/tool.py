@@ -51,9 +51,9 @@ class UpdateProjectTool(BaseSituTool[SituToolDeps, UpdateProjectResult]):
         if project is None:
             raise ValueError(f"project not found: {resolved_project_id}")
         event = ctx.deps.record_event(
-            "project.updated",
-            f"Updated project {project.id}",
+            event_type="project.updated",
+            message=f"Updated project {project.id}",
             payload={"project_id": project.id},
         )
-        ctx.deps.publish_record(project, event=event)
+        ctx.deps.publish_record(record=project, event=event)
         return UpdateProjectResult(success=True, project=project.model_dump())

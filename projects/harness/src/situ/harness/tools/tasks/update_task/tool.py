@@ -48,9 +48,9 @@ class UpdateTaskTool(BaseSituTool[SituToolDeps, UpdateTaskResult]):
             raise ValueError(f"task not found: {task_id}")
         event_type = f"task.{task.status.value}" if status is not None else "task.updated"
         event = ctx.deps.record_event(
-            event_type,
-            f"Updated task {task.id}",
+            event_type=event_type,
+            message=f"Updated task {task.id}",
             payload={"task_id": task.id, "status": task.status.value},
         )
-        ctx.deps.publish_record(task, event=event)
+        ctx.deps.publish_record(record=task, event=event)
         return UpdateTaskResult(success=True, task=task.model_dump())

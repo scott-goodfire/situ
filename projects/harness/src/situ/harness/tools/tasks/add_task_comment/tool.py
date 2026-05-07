@@ -40,9 +40,9 @@ class AddTaskCommentTool(BaseSituTool[SituToolDeps, AddTaskCommentResult]):
             payload=payload or {},
         )
         event = ctx.deps.record_event(
-            "task.comment_added",
-            comment,
+            event_type="task.comment_added",
+            message=comment,
             payload={"activity_id": activity.id, "task_id": task_id},
         )
-        ctx.deps.publish_record(activity, event=event)
+        ctx.deps.publish_record(record=activity, event=event)
         return AddTaskCommentResult(success=True, activity=activity.model_dump())

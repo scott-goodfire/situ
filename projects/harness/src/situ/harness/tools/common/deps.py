@@ -97,9 +97,9 @@ class SituToolDeps(BaseModel):
 
     def record_event(
         self,
+        *,
         event_type: str,
         message: str,
-        *,
         payload: dict[str, Any] | None = None,
     ) -> dict[str, Any] | None:
         associated_project_id = self.current_project_id()
@@ -112,8 +112,8 @@ class SituToolDeps(BaseModel):
                 payload=payload,
             )
             event_dump = event.model_dump()
-            emit_project_event(self.workspace_id or self.project_id, event_dump)
-            self.publish_record(event, cursor=event.id)
+            emit_project_event(project_id=self.workspace_id or self.project_id, event=event_dump)
+            self.publish_record(record=event, cursor=event.id)
             return event_dump
         event = self.emit_event(
             event_type,
@@ -127,8 +127,8 @@ class SituToolDeps(BaseModel):
 
     def publish_record(
         self,
-        record: DbRecord,
         *,
+        record: DbRecord,
         event: dict[str, Any] | None = None,
         cursor: int | None = None,
     ) -> None:

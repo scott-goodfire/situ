@@ -52,10 +52,10 @@ class ClaimTaskTool(BaseSituTool[SituToolDeps, ClaimTaskResult]):
 
         updated_agent = repos.agents.update(agent_id=agent.id, status=AgentStatus.ACTIVE) or agent
         event = ctx.deps.record_event(
-            "task.claimed",
-            f"Claimed task {task.id}",
+            event_type="task.claimed",
+            message=f"Claimed task {task.id}",
             payload={"task_id": task.id, "agent_id": agent.id},
         )
-        ctx.deps.publish_record(task, event=event)
-        ctx.deps.publish_record(updated_agent, event=event)
+        ctx.deps.publish_record(record=task, event=event)
+        ctx.deps.publish_record(record=updated_agent, event=event)
         return ClaimTaskResult(success=True, task=task.model_dump())

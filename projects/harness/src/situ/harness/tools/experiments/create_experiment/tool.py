@@ -53,11 +53,11 @@ class CreateExperimentTool(BaseSituTool[SituToolDeps, CreateExperimentResult]):
                 or existing
             )
             event = ctx.deps.record_event(
-                "experiment.updated",
-                f"Updated experiment {experiment.id}",
+                event_type="experiment.updated",
+                message=f"Updated experiment {experiment.id}",
                 payload={"experiment_id": experiment.id},
             )
-            ctx.deps.publish_record(experiment, event=event)
+            ctx.deps.publish_record(record=experiment, event=event)
             return CreateExperimentResult(
                 success=True,
                 experiment=experiment.model_dump(),
@@ -75,9 +75,9 @@ class CreateExperimentTool(BaseSituTool[SituToolDeps, CreateExperimentResult]):
             status=status,
         )
         event = ctx.deps.record_event(
-            "experiment.created",
-            f"Created experiment {experiment.id}",
+            event_type="experiment.created",
+            message=f"Created experiment {experiment.id}",
             payload={"experiment_id": experiment.id},
         )
-        ctx.deps.publish_record(experiment, event=event)
+        ctx.deps.publish_record(record=experiment, event=event)
         return CreateExperimentResult(success=True, experiment=experiment.model_dump())

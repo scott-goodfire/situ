@@ -35,9 +35,9 @@ class AddExperimentCommentTool(
             payload=payload or {},
         )
         event = ctx.deps.record_event(
-            "experiment.comment_added",
-            comment,
+            event_type="experiment.comment_added",
+            message=comment,
             payload={"activity_id": activity.id, "experiment_id": experiment_id},
         )
-        ctx.deps.publish_record(activity, event=event)
+        ctx.deps.publish_record(record=activity, event=event)
         return AddExperimentCommentResult(success=True, activity=activity.model_dump())

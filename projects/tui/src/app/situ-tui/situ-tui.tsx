@@ -11,7 +11,6 @@ import {
 } from "@situ/collections";
 import { HttpJsonRpcClient } from "@situ/rpc-client/http";
 import type {
-  AgentRecord,
   CollectionUpsertedParams,
   CollectionsBootstrapParams,
   CollectionsBootstrapResult,
@@ -118,11 +117,6 @@ export function SituTui() {
         .select(({ evaluation }) => evaluation),
     [collections],
   );
-  const agentsQuery = useLiveQuery(
-    (query) =>
-      query.from({ agent: collections.agents }).select(({ agent }) => agent),
-    [collections],
-  );
   const tasksQuery = useLiveQuery(
     (query) => query.from({ task: collections.tasks }).select(({ task }) => task),
     [collections],
@@ -213,10 +207,6 @@ export function SituTui() {
   const evaluations = useMemo(
     () => sortByCreated({ records: (evaluationsQuery.data ?? []) as EvaluationRecord[] }),
     [evaluationsQuery.data],
-  );
-  const agents = useMemo(
-    () => sortByCreated({ records: (agentsQuery.data ?? []) as AgentRecord[] }),
-    [agentsQuery.data],
   );
   const tasks = useMemo(
     () => sortByCreated({ records: (tasksQuery.data ?? []) as TaskRecord[] }),
@@ -383,10 +373,6 @@ export function SituTui() {
     session: latestSession,
   });
   const activeProjectId = latestSession?.project_id ?? activeProject?.id;
-  const projectAgents = agentsForProject({
-    agents,
-    projectId: activeProjectId,
-  });
   const projectTasks = tasksForProject({
     tasks,
     projectId: activeProjectId,
@@ -604,7 +590,6 @@ export function SituTui() {
       dashboardMessage={dashboardMessage}
       project={activeProject}
       session={latestSession}
-      agents={projectAgents}
       tasks={projectTasks}
       experimentCount={projectExperiments.length}
       maxExperiments={maxExperimentCount}
@@ -716,8 +701,9 @@ async function continueAfterBootstrap({
       method: "secrets.status",
       params: {},
     });
-    if (!status.openai_key_configured) {
-      setStatus({ kind: "secret" });
+    const secretGate = localOpenAISecretGate({ status });
+    if (!secretGate.configured) {
+      setStatus({ kind: "secret", message: secretGate.message });
       return;
     }
   }
@@ -762,6 +748,31 @@ async function continueAfterBootstrap({
     setStatus,
     trackedSessionIdRef,
   });
+}
+
+function localOpenAISecretGate({
+  status,
+}: {
+  status: SecretsStatusResult;
+}): { configured: boolean; message?: CommandMessage } {
+  const source = String(
+    (status as { openai_key_source?: unknown }).openai_key_source ?? "missing",
+  );
+  if (source === "local" && status.openai_key_configured) {
+    return { configured: true };
+  }
+
+  if (source !== "missing") {
+    return {
+      configured: false,
+      message: {
+        tone: "yellow",
+        text: "Local Situ runs ignore environment keys. Save an OpenAI API key locally to continue.",
+      },
+    };
+  }
+
+  return { configured: false };
 }
 
 function repoRootFromImport(): string {
@@ -1028,23 +1039,6 @@ function projectForSession({
   return lodash.find(
     projects,
     (project: ProjectRecord) => project.id === session.project_id,
-  );
-}
-
-function agentsForProject({
-  agents,
-  projectId,
-}: {
-  agents: AgentRecord[];
-  projectId: string | undefined;
-}): AgentRecord[] {
-  if (!projectId) {
-    return [];
-  }
-
-  return lodash.filter(
-    agents,
-    (agent: AgentRecord) => agent.project_id === projectId,
   );
 }
 

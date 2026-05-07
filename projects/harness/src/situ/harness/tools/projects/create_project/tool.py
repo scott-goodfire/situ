@@ -43,13 +43,13 @@ class CreateProjectTool(BaseSituTool[SituToolDeps, CreateProjectResult]):
             else None
         )
         event = ctx.deps.record_event(
-            "project.created",
-            f"Created project {project.id}",
+            event_type="project.created",
+            message=f"Created project {project.id}",
             payload={"project_id": project.id, "workspace_id": workspace.id},
         )
-        ctx.deps.publish_record(project, event=event)
+        ctx.deps.publish_record(record=project, event=event)
         if session is not None:
-            ctx.deps.publish_record(session, event=event)
+            ctx.deps.publish_record(record=session, event=event)
         return CreateProjectResult(
             success=True,
             project=project.model_dump(),

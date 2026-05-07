@@ -11,6 +11,7 @@ import pytest
 
 from situ.harness.app import HarnessApp
 from situ.harness.cli import commands as cli, headless
+from situ.harness.cli.local_session import base_env
 from situ.harness.core.project_context import ProjectContext
 
 
@@ -59,6 +60,28 @@ def test_status_json_reports_no_active_harness(
     assert payload["session"] is None
 
 
+def test_local_session_env_strips_eval_and_provider_secrets(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    app_root = tmp_path / "app"
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    monkeypatch.setenv("SITU_OPENAI_KEY", "situ-openai")
+    monkeypatch.setenv("SITU_LOGFIRE_TOKEN", "situ-logfire")
+    monkeypatch.setenv("OPENAI_API_KEY", "provider-openai")
+    monkeypatch.setenv("LOGFIRE_TOKEN", "provider-logfire")
+
+    env = base_env(app_root, workspace)
+
+    assert env["SITU_APP_ROOT"] == str(app_root)
+    assert env["SITU_WORKSPACE"] == str(workspace)
+    assert "SITU_OPENAI_KEY" not in env
+    assert "SITU_LOGFIRE_TOKEN" not in env
+    assert "OPENAI_API_KEY" not in env
+    assert "LOGFIRE_TOKEN" not in env
+
+
 def test_snapshot_json_reads_local_state_without_live_session(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
@@ -99,7 +122,7 @@ def test_events_json_lines_reads_local_events(
         project_home=project_home,
         notify=lambda _method, _params: None,
     )
-    app.record_event("system.ready", "Harness ready")
+    app.record_event(event_type="system.ready", message="Harness ready")
 
     code = cli.main(["events", str(workspace), "--json"])
 
@@ -136,7 +159,7 @@ def test_clear_removes_local_state_for_workspace(
         project_home=project_home,
         notify=lambda _method, _params: None,
     )
-    app.record_event("system.ready", "Harness ready")
+    app.record_event(event_type="system.ready", message="Harness ready")
     context = ProjectContext(repo_root=workspace, home=project_home)
 
     code = cli.main(["clear", str(workspace), "--json"])

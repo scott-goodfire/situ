@@ -40,9 +40,9 @@ class UpdateHypothesisTool(BaseSituTool[SituToolDeps, UpdateHypothesisResult]):
             raise ValueError(f"hypothesis not found: {hypothesis_id}")
 
         event = ctx.deps.record_event(
-            "hypothesis.updated",
-            f"Updated hypothesis {hypothesis.id}",
+            event_type="hypothesis.updated",
+            message=f"Updated hypothesis {hypothesis.id}",
             payload={"hypothesis_id": hypothesis.id},
         )
-        ctx.deps.publish_record(hypothesis, event=event)
+        ctx.deps.publish_record(record=hypothesis, event=event)
         return UpdateHypothesisResult(success=True, hypothesis=hypothesis.model_dump())

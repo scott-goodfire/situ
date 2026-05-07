@@ -97,10 +97,10 @@ def publish_record_upsert(
 ) -> None:
     route = collection_route_for_record(record)
     emit_collection_upsert(
-        project_id,
-        route.collection,
-        route.key(record),
-        record.model_dump(),
+        project_id=project_id,
+        collection=route.collection,
+        key=route.key(record),
+        record=record.model_dump(),
         cursor=cursor,
     )
 

@@ -35,9 +35,9 @@ class AddAnalysisCommentTool(
             payload=payload or {},
         )
         event = ctx.deps.record_event(
-            "analysis.comment_added",
-            comment,
+            event_type="analysis.comment_added",
+            message=comment,
             payload={"activity_id": activity.id, "analysis_id": analysis_id},
         )
-        ctx.deps.publish_record(activity, event=event)
+        ctx.deps.publish_record(record=activity, event=event)
         return AddAnalysisCommentResult(success=True, activity=activity.model_dump())

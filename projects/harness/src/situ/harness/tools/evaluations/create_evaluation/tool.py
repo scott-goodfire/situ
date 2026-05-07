@@ -49,11 +49,11 @@ class CreateEvaluationTool(BaseSituTool[SituToolDeps, CreateEvaluationResult]):
             status=status,
         )
         event = ctx.deps.record_event(
-            "evaluation.created",
-            f"Created evaluation {evaluation.id}",
+            event_type="evaluation.created",
+            message=f"Created evaluation {evaluation.id}",
             payload={"evaluation_id": evaluation.id},
         )
-        ctx.deps.publish_record(evaluation, event=event)
+        ctx.deps.publish_record(record=evaluation, event=event)
         return CreateEvaluationResult(success=True, evaluation=evaluation.model_dump())
 
 

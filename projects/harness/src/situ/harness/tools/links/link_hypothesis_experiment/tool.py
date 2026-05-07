@@ -29,9 +29,9 @@ class LinkHypothesisExperimentTool(
             experiment_id=experiment_id,
         )
         event = ctx.deps.record_event(
-            "hypothesis.experiment_linked",
-            f"Linked {hypothesis_id} to {experiment_id}",
+            event_type="hypothesis.experiment_linked",
+            message=f"Linked {hypothesis_id} to {experiment_id}",
             payload={"hypothesis_id": hypothesis_id, "experiment_id": experiment_id},
         )
-        ctx.deps.publish_record(link, event=event)
+        ctx.deps.publish_record(record=link, event=event)
         return LinkHypothesisExperimentResult(success=True, link=link.model_dump())

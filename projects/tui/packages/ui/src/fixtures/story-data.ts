@@ -54,8 +54,6 @@ const scientistAgent = agentRecord({
   },
 });
 
-export const runningAgents = [managerAgent, scientistAgent];
-
 export const activeHypothesis = hypothesisRecord({});
 
 const baselineExperiment = experimentRecord({

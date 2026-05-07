@@ -41,11 +41,11 @@ class CreateBaselineTool(BaseSituTool[SituToolDeps, CreateBaselineResult]):
             status=status,
         )
         event = ctx.deps.record_event(
-            "baseline.created",
-            f"Created baseline {baseline.id}",
+            event_type="baseline.created",
+            message=f"Created baseline {baseline.id}",
             payload={"baseline_id": baseline.id},
         )
-        ctx.deps.publish_record(baseline, event=event)
+        ctx.deps.publish_record(record=baseline, event=event)
         return CreateBaselineResult(success=True, baseline=baseline.model_dump())
 
 

@@ -40,9 +40,9 @@ class UpdateExperimentTool(BaseSituTool[SituToolDeps, UpdateExperimentResult]):
             raise ValueError(f"experiment not found: {experiment_id}")
 
         event = ctx.deps.record_event(
-            "experiment.updated",
-            f"Updated experiment {experiment.id}",
+            event_type="experiment.updated",
+            message=f"Updated experiment {experiment.id}",
             payload={"experiment_id": experiment.id},
         )
-        ctx.deps.publish_record(experiment, event=event)
+        ctx.deps.publish_record(record=experiment, event=event)
         return UpdateExperimentResult(success=True, experiment=experiment.model_dump())

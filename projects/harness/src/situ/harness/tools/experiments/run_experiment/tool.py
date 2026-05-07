@@ -99,8 +99,8 @@ def _run_experiment_impl(
             status="open",
         )
         event = deps.record_event(
-            "experiment.created",
-            f"Created experiment {experiment.id}",
+            event_type="experiment.created",
+            message=f"Created experiment {experiment.id}",
             payload={"experiment_id": experiment.id, "components": payload.components},
         )
         _upsert(deps, experiment, event)
@@ -111,8 +111,8 @@ def _run_experiment_impl(
             experiment_id=experiment_id,
         )
         event = deps.record_event(
-            "hypothesis.experiment_linked",
-            f"Linked {hypothesis_id} to {experiment_id}",
+            event_type="hypothesis.experiment_linked",
+            message=f"Linked {hypothesis_id} to {experiment_id}",
             payload=link.model_dump(),
         )
         _upsert(deps, link, event)
@@ -131,8 +131,8 @@ def _run_experiment_impl(
 
     active = repos.experiments.update(experiment_id=experiment_id, status="active") or experiment
     event = deps.record_event(
-        "experiment.started",
-        f"Started experiment {experiment_id}",
+        event_type="experiment.started",
+        message=f"Started experiment {experiment_id}",
         payload={"experiment_id": experiment_id},
     )
     _upsert(deps, active, event)
@@ -193,8 +193,8 @@ def _run_experiment_impl(
 
     closed = repos.experiments.update(experiment_id=experiment_id, status="closed") or active
     event = deps.record_event(
-        "experiment.completed",
-        f"Completed experiment {experiment_id}",
+        event_type="experiment.completed",
+        message=f"Completed experiment {experiment_id}",
         payload={"experiment_id": experiment_id, "concern_count": len(concerns)},
     )
     _upsert(deps, closed, event)
@@ -213,8 +213,8 @@ def _run_experiment_impl(
 def _record_worker_progress(deps: SituToolDeps, notification: dict[str, Any]) -> None:
     params = notification.get("params") or {}
     deps.record_event(
-        "worker.progress",
-        str(params.get("message", "worker progress")),
+        event_type="worker.progress",
+        message=str(params.get("message", "worker progress")),
         payload=params,
     )
 
@@ -236,8 +236,8 @@ def _record_experiment_activity(
         payload=payload,
     )
     event = deps.record_event(
-        "experiment.activity_recorded",
-        body,
+        event_type="experiment.activity_recorded",
+        message=body,
         payload={"activity_id": activity.id, "experiment_id": experiment_id},
     )
     _upsert(deps, activity, event)
@@ -260,8 +260,8 @@ def _record_hypothesis_activity(
         payload=payload,
     )
     event = deps.record_event(
-        "hypothesis.activity_recorded",
-        body,
+        event_type="hypothesis.activity_recorded",
+        message=body,
         payload={"activity_id": activity.id, "hypothesis_id": hypothesis_id},
     )
     _upsert(deps, activity, event)
@@ -272,7 +272,7 @@ def _upsert(
     record: DbRecord,
     event: dict[str, Any] | None,
 ) -> None:
-    deps.publish_record(record, event=event)
+    deps.publish_record(record=record, event=event)
 
 
 def _next_experiment_id(

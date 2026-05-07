@@ -89,10 +89,10 @@ def test_collection_publisher_emits_generic_upsert() -> None:
     project_id = f"project_{uuid4().hex}"
     notifications: list[tuple[str, dict]] = []
     register_project_notifications(
-        project_id,
-        lambda method, params: notifications.append((method, params)),
+        project_id=project_id,
+        writer=lambda method, params: notifications.append((method, params)),
     )
-    set_project_collections_subscribed(project_id, True)
+    set_project_collections_subscribed(project_id=project_id, subscribed=True)
 
     publish_record_upsert(
         project_id=project_id,

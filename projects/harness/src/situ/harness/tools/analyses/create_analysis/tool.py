@@ -45,11 +45,11 @@ class CreateAnalysisTool(BaseSituTool[SituToolDeps, CreateAnalysisResult]):
             supersedes_analysis_id=supersedes_analysis_id,
         )
         event = ctx.deps.record_event(
-            "analysis.created",
-            f"Created analysis {analysis.id}",
+            event_type="analysis.created",
+            message=f"Created analysis {analysis.id}",
             payload={"analysis_id": analysis.id},
         )
-        ctx.deps.publish_record(analysis, event=event)
+        ctx.deps.publish_record(record=analysis, event=event)
         return CreateAnalysisResult(success=True, analysis=analysis.model_dump())
 
 

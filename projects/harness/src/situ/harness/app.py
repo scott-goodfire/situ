@@ -99,7 +99,7 @@ class HarnessApp:
         self.app_root = app_root
         self._agent_runtime: AgentRuntime | None = None
         self.notify = notify
-        register_project_notifications(self.context.project_id, notify)
+        register_project_notifications(project_id=self.context.project_id, writer=notify)
         self.subscribed = False
         self.collection_subscribed = False
         self._session_setup: dict[str, dict[str, str]] = {}
@@ -139,11 +139,11 @@ class HarnessApp:
         SetupCompleteParams.model_validate(params)
         workspace = self.repos.workspaces.ensure()
         event = self.record_event(
-            "setup.completed",
-            "Configured workspace context",
+            event_type="setup.completed",
+            message="Configured workspace context",
             payload={"workspace_id": workspace.id},
         )
-        self.publish_record(workspace, cursor=event.id)
+        self.publish_record(record=workspace, cursor=event.id)
         return SetupCompleteResult(workspace=workspace.model_dump()).model_dump()
 
     def secrets_status(self, params: dict[str, Any]) -> dict[str, Any]:
@@ -168,7 +168,7 @@ class HarnessApp:
     def collections_subscribe(self, params: dict[str, Any]) -> dict[str, Any]:
         CollectionsSubscribeParams.model_validate(params)
         self.collection_subscribed = True
-        set_project_collections_subscribed(self.context.project_id, True)
+        set_project_collections_subscribed(project_id=self.context.project_id, subscribed=True)
         return CollectionsSubscribeResult(
             subscribed=True,
             cursor=self.collections_api.current_cursor(
@@ -179,7 +179,7 @@ class HarnessApp:
     def events_subscribe(self, params: dict[str, Any]) -> dict[str, Any]:
         subscribe = EventsSubscribeParams.model_validate(params)
         self.subscribed = True
-        set_project_events_subscribed(self.context.project_id, True)
+        set_project_events_subscribed(project_id=self.context.project_id, subscribed=True)
         replayed = 0
         if subscribe.replay_existing:
             project_ids = {
@@ -228,8 +228,8 @@ class HarnessApp:
             "research_context": project.research_context,
         }
         event = self.record_event(
-            "session.started",
-            f"Started {session_id}",
+            event_type="session.started",
+            message=f"Started {session_id}",
             session_id=session_id,
             project_id=project.id,
             payload={
@@ -239,9 +239,9 @@ class HarnessApp:
                 "research_context": project.research_context,
             },
         )
-        self.publish_record(workspace, cursor=event.id)
-        self.publish_record(project, cursor=event.id)
-        self.publish_record(session, cursor=event.id)
+        self.publish_record(record=workspace, cursor=event.id)
+        self.publish_record(record=project, cursor=event.id)
+        self.publish_record(record=session, cursor=event.id)
         self._ensure_project_agents(session_id=session_id, project_id=project.id)
         self._enqueue_plan_task(
             session_id=session_id,
@@ -270,11 +270,11 @@ class HarnessApp:
 
         session = self.repos.sessions.update_status(session_id=resume.session_id, status="active") or session
         event = self.record_event(
-            "session.resumed",
-            f"Resumed {resume.session_id}",
+            event_type="session.resumed",
+            message=f"Resumed {resume.session_id}",
             session_id=resume.session_id,
         )
-        self.publish_record(session, cursor=event.id)
+        self.publish_record(record=session, cursor=event.id)
 
         self._session_setup.setdefault(
             resume.session_id,
@@ -314,9 +314,9 @@ class HarnessApp:
 
     def record_event(
         self,
+        *,
         event_type: str,
         message: str,
-        *,
         session_id: str | None = None,
         project_id: str | None = None,
         payload: dict[str, Any] | None = None,
@@ -330,13 +330,13 @@ class HarnessApp:
         )
         if self.subscribed:
             self.notify("event.appended", {"event": event.model_dump()})
-        self.publish_record(event, cursor=event.id)
+        self.publish_record(record=event, cursor=event.id)
         return event
 
     def publish_record(
         self,
-        record: DbRecord,
         *,
+        record: DbRecord,
         cursor: int,
     ) -> None:
         publish_record_upsert(
@@ -398,13 +398,13 @@ class HarnessApp:
             if existing is not None:
                 continue
             event = self.record_event(
-                "agent.created",
-                f"Created {display_name} agent",
+                event_type="agent.created",
+                message=f"Created {display_name} agent",
                 session_id=session_id,
                 project_id=project_id,
                 payload={"agent_id": agent.id, "kind": agent.kind.value},
             )
-            self.publish_record(agent, cursor=event.id)
+            self.publish_record(record=agent, cursor=event.id)
 
     def _enqueue_plan_task(
         self,
@@ -426,13 +426,13 @@ class HarnessApp:
             source_kind=source_kind,
         )
         event = self.record_event(
-            "task.created",
-            f"Created task {task.id}",
+            event_type="task.created",
+            message=f"Created task {task.id}",
             session_id=session_id,
             project_id=project_id,
             payload={"task_id": task.id, "kind": task.kind.value},
         )
-        self.publish_record(task, cursor=event.id)
+        self.publish_record(record=task, cursor=event.id)
 
     def _enqueue_experiment_review_task(
         self,
@@ -518,8 +518,8 @@ class HarnessApp:
                 )
             )
         event = self.record_event(
-            "task.created",
-            f"Created review task {task.id}",
+            event_type="task.created",
+            message=f"Created review task {task.id}",
             session_id=session_id,
             project_id=project_id,
             payload={
@@ -528,9 +528,9 @@ class HarnessApp:
                 "experiment_id": experiment_id,
             },
         )
-        self.publish_record(task, cursor=event.id)
+        self.publish_record(record=task, cursor=event.id)
         for link in links:
-            self.publish_record(link, cursor=event.id)
+            self.publish_record(record=link, cursor=event.id)
         return task
 
     def _existing_experiment_review_task(
@@ -572,14 +572,14 @@ class HarnessApp:
             return None
         updated_agent = self.repos.agents.update(agent_id=agent.id, status=AgentStatus.ACTIVE) or agent
         event = self.record_event(
-            "task.claimed",
-            f"Claimed task {task.id}",
+            event_type="task.claimed",
+            message=f"Claimed task {task.id}",
             session_id=session_id,
             project_id=session.project_id,
             payload={"task_id": task.id, "agent_id": agent.id},
         )
-        self.publish_record(task, cursor=event.id)
-        self.publish_record(updated_agent, cursor=event.id)
+        self.publish_record(record=task, cursor=event.id)
+        self.publish_record(record=updated_agent, cursor=event.id)
         return task
 
     def _finish_claimed_task(
@@ -600,7 +600,7 @@ class HarnessApp:
                 )
                 if updated_agent is not None:
                     self.publish_record(
-                        updated_agent,
+                        record=updated_agent,
                         cursor=self.collections_api.current_cursor(
                             workspace_id=self.context.workspace_id
                         ),
@@ -620,8 +620,8 @@ class HarnessApp:
             else None
         )
         event = self.record_event(
-            f"task.{updated_task.status.value}",
-            f"Finished task {updated_task.id}",
+            event_type=f"task.{updated_task.status.value}",
+            message=f"Finished task {updated_task.id}",
             session_id=session_id,
             project_id=updated_task.project_id,
             payload={
@@ -629,9 +629,9 @@ class HarnessApp:
                 "status": updated_task.status.value,
             },
         )
-        self.publish_record(updated_task, cursor=event.id)
+        self.publish_record(record=updated_task, cursor=event.id)
         if updated_agent is not None:
-            self.publish_record(updated_agent, cursor=event.id)
+            self.publish_record(record=updated_agent, cursor=event.id)
 
     def _execute_session(self, session_id: str, max_experiments: int) -> None:
         active_task: TaskRecord | None = None
@@ -701,8 +701,8 @@ class HarnessApp:
                             result_summary=result.summary,
                         )
                         self.record_event(
-                            "session.critic_completed",
-                            result.summary,
+                            event_type="session.critic_completed",
+                            message=result.summary,
                             session_id=session_id,
                             project_id=critic_task.project_id,
                             payload=result.model_dump(),
@@ -753,8 +753,8 @@ class HarnessApp:
                         )
                         completion_summary = manager_result.summary
                         self.record_event(
-                            "session.manager_completed",
-                            manager_result.summary,
+                            event_type="session.manager_completed",
+                            message=manager_result.summary,
                             session_id=session_id,
                             project_id=manager_task.project_id,
                             payload=manager_result.model_dump(),
@@ -797,8 +797,8 @@ class HarnessApp:
                             result_summary=result.summary,
                         )
                         self.record_event(
-                            "session.researcher_completed",
-                            result.summary,
+                            event_type="session.researcher_completed",
+                            message=result.summary,
                             session_id=session_id,
                             project_id=researcher_task.project_id,
                             payload=result.model_dump(),
@@ -869,8 +869,8 @@ class HarnessApp:
                             result_summary=result.summary,
                         )
                         self.record_event(
-                            "session.agent_completed",
-                            result.summary,
+                            event_type="session.agent_completed",
+                            message=result.summary,
                             session_id=session_id,
                             project_id=scientist_task.project_id,
                             payload=result.model_dump(),
@@ -982,13 +982,13 @@ class HarnessApp:
                 base_commit=worktree.base_commit,
             )
             event = self.record_event(
-                "experiment.created",
-                f"Created experiment {experiment.id}",
+                event_type="experiment.created",
+                message=f"Created experiment {experiment.id}",
                 session_id=session_id,
                 project_id=task.project_id,
                 payload={"experiment_id": experiment.id},
             )
-            self.publish_record(experiment, cursor=event.id)
+            self.publish_record(record=experiment, cursor=event.id)
         else:
             experiment = (
                 self.repos.experiments.update(
@@ -1020,8 +1020,8 @@ class HarnessApp:
             or task
         )
         event = self.record_event(
-            "experiment.worktree_ready",
-            f"Prepared worktree for {experiment.id}",
+            event_type="experiment.worktree_ready",
+            message=f"Prepared worktree for {experiment.id}",
             session_id=session_id,
             project_id=task.project_id,
             payload={
@@ -1032,9 +1032,9 @@ class HarnessApp:
                 "base_commit": worktree.base_commit,
             },
         )
-        self.publish_record(experiment, cursor=event.id)
-        self.publish_record(link, cursor=event.id)
-        self.publish_record(updated_task, cursor=event.id)
+        self.publish_record(record=experiment, cursor=event.id)
+        self.publish_record(record=link, cursor=event.id)
+        self.publish_record(record=updated_task, cursor=event.id)
         return PreparedExperimentTask(
             task=updated_task,
             experiment=experiment,
@@ -1081,8 +1081,8 @@ class HarnessApp:
             status=WorkStatus.CLOSED,
         ) or experiment
         event = self.record_event(
-            "experiment.worktree_completed",
-            f"Captured final worktree state for {experiment.id}",
+            event_type="experiment.worktree_completed",
+            message=f"Captured final worktree state for {experiment.id}",
             session_id=session_id,
             project_id=experiment.project_id,
             payload={
@@ -1091,8 +1091,8 @@ class HarnessApp:
                 "dirty": state.get("dirty") if isinstance(state, dict) else None,
             },
         )
-        self.publish_record(activity, cursor=event.id)
-        self.publish_record(closed, cursor=event.id)
+        self.publish_record(record=activity, cursor=event.id)
+        self.publish_record(record=closed, cursor=event.id)
 
     def _experiment_count(self, session_id: str) -> int:
         return len(self.repos.experiments.list_for_session(session_id=session_id))
@@ -1111,14 +1111,14 @@ class HarnessApp:
     ) -> None:
         session = self.repos.sessions.update_status(session_id=session_id, status="closed")
         event = self.record_event(
-            event_type,
-            message,
+            event_type=event_type,
+            message=message,
             session_id=session_id,
             project_id=session.project_id if session is not None else None,
             payload=payload,
         )
         if session is not None:
-            self.publish_record(session, cursor=event.id)
+            self.publish_record(record=session, cursor=event.id)
 
     def _setup_from_records(self, session_id: str) -> dict[str, str]:
         session = self.repos.sessions.get(session_id=session_id)

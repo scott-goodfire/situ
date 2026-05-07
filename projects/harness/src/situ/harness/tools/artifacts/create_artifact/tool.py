@@ -50,11 +50,11 @@ class CreateArtifactTool(BaseSituTool[SituToolDeps, CreateArtifactResult]):
             size_bytes=size_bytes,
         )
         event = ctx.deps.record_event(
-            "artifact.created",
-            f"Created artifact {artifact.id}",
+            event_type="artifact.created",
+            message=f"Created artifact {artifact.id}",
             payload={"artifact_id": artifact.id},
         )
-        ctx.deps.publish_record(artifact, event=event)
+        ctx.deps.publish_record(record=artifact, event=event)
         return CreateArtifactResult(success=True, artifact=artifact.model_dump())
 
 

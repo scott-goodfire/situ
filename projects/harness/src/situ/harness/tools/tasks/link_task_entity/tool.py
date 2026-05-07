@@ -37,9 +37,9 @@ class LinkTaskEntityTool(BaseSituTool[SituToolDeps, LinkTaskEntityResult]):
             relationship=relationship,
         )
         event = ctx.deps.record_event(
-            "task.entity_linked",
-            f"Linked task {task_id} to {entity_kind}:{entity_id}",
+            event_type="task.entity_linked",
+            message=f"Linked task {task_id} to {entity_kind}:{entity_id}",
             payload=link.model_dump(),
         )
-        ctx.deps.publish_record(link, event=event)
+        ctx.deps.publish_record(record=link, event=event)
         return LinkTaskEntityResult(success=True, link=link.model_dump())

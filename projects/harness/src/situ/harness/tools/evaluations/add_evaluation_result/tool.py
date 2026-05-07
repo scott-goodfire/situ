@@ -54,16 +54,16 @@ class AddEvaluationResultTool(
             payload={**result_payload, "measurement_id": measurement.id},
         )
         event = ctx.deps.record_event(
-            "evaluation.result_added",
-            result,
+            event_type="evaluation.result_added",
+            message=result,
             payload={
                 "measurement_id": measurement.id,
                 "activity_id": activity.id,
                 "evaluation_id": evaluation_id,
             },
         )
-        ctx.deps.publish_record(measurement, event=event)
-        ctx.deps.publish_record(activity, event=event)
+        ctx.deps.publish_record(record=measurement, event=event)
+        ctx.deps.publish_record(record=activity, event=event)
         return AddEvaluationResult(
             success=True,
             measurement=measurement.model_dump(),

@@ -49,11 +49,11 @@ class CreateTaskTool(BaseSituTool[SituToolDeps, CreateTaskResult]):
             available_at=available_at,
         )
         event = ctx.deps.record_event(
-            "task.created",
-            f"Created task {task.id}",
+            event_type="task.created",
+            message=f"Created task {task.id}",
             payload={"task_id": task.id, "kind": task.kind.value},
         )
-        ctx.deps.publish_record(task, event=event)
+        ctx.deps.publish_record(record=task, event=event)
 
         dependencies = []
         for blocked_by_task_id in blocked_by_task_ids or []:
@@ -62,7 +62,7 @@ class CreateTaskTool(BaseSituTool[SituToolDeps, CreateTaskResult]):
                 task_id=task.id,
                 blocked_by_task_id=blocked_by_task_id,
             )
-            ctx.deps.publish_record(dependency, event=event)
+            ctx.deps.publish_record(record=dependency, event=event)
             dependencies.append(dependency.model_dump())
 
         return CreateTaskResult(

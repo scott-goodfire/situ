@@ -11,9 +11,18 @@ from pathlib import Path
 from ..config import DEFAULTS
 from ..core.project_context import ProjectContext
 
+LOCAL_RUNTIME_SECRET_ENV = (
+    "SITU_OPENAI_KEY",
+    "SITU_LOGFIRE_TOKEN",
+    "OPENAI_API_KEY",
+    "LOGFIRE_TOKEN",
+)
+
 
 def base_env(app_root: Path, workspace: Path | None = None) -> dict[str, str]:
     env = os.environ.copy()
+    for name in LOCAL_RUNTIME_SECRET_ENV:
+        env.pop(name, None)
     env["SITU_APP_ROOT"] = str(app_root)
     if workspace is not None:
         env["SITU_WORKSPACE"] = str(workspace)

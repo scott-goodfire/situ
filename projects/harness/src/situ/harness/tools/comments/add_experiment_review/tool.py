@@ -68,8 +68,8 @@ class AddExperimentReviewTool(
             payload=review_payload,
         )
         event = ctx.deps.record_event(
-            "experiment.review_added",
-            review,
+            event_type="experiment.review_added",
+            message=review,
             payload={
                 "activity_id": activity.id,
                 "experiment_id": experiment_id,
@@ -77,5 +77,5 @@ class AddExperimentReviewTool(
                 "recommended_next_step": recommended_next_step,
             },
         )
-        ctx.deps.publish_record(activity, event=event)
+        ctx.deps.publish_record(record=activity, event=event)
         return AddExperimentReviewResult(success=True, activity=activity.model_dump())

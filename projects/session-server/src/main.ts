@@ -310,7 +310,7 @@ async function ensureRuntime({ workspace }: { workspace: string }): Promise<Runt
     args: command.args,
     cwd: resolvedWorkspace,
     env: {
-      ...process.env,
+      ...localRuntimeEnv(process.env),
       SITU_APP_ROOT: appRoot,
       SITU_WORKSPACE: resolvedWorkspace,
     },
@@ -368,6 +368,15 @@ function harnessCommand(): { command: string; args: string[] } {
     command: "uv",
     args: ["run", "--package", "situ-harness", "situ-harness-stdio"],
   };
+}
+
+function localRuntimeEnv(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+  const next = { ...env };
+  delete next.SITU_OPENAI_KEY;
+  delete next.SITU_LOGFIRE_TOKEN;
+  delete next.OPENAI_API_KEY;
+  delete next.LOGFIRE_TOKEN;
+  return next;
 }
 
 function repoRootFromImport(): string {

@@ -46,9 +46,9 @@ class UpdateEvaluationTool(BaseSituTool[SituToolDeps, UpdateEvaluationResult]):
             raise ValueError(f"evaluation not found: {evaluation_id}")
 
         event = ctx.deps.record_event(
-            "evaluation.updated",
-            f"Updated evaluation {evaluation.id}",
+            event_type="evaluation.updated",
+            message=f"Updated evaluation {evaluation.id}",
             payload={"evaluation_id": evaluation.id},
         )
-        ctx.deps.publish_record(evaluation, event=event)
+        ctx.deps.publish_record(record=evaluation, event=event)
         return UpdateEvaluationResult(success=True, evaluation=evaluation.model_dump())

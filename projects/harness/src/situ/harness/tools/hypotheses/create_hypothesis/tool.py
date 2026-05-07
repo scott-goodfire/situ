@@ -44,11 +44,11 @@ class CreateHypothesisTool(BaseSituTool[SituToolDeps, CreateHypothesisResult]):
             status=status,
         )
         event = ctx.deps.record_event(
-            "hypothesis.created",
-            f"Created hypothesis {hypothesis.id}",
+            event_type="hypothesis.created",
+            message=f"Created hypothesis {hypothesis.id}",
             payload={"hypothesis_id": hypothesis.id},
         )
-        ctx.deps.publish_record(hypothesis, event=event)
+        ctx.deps.publish_record(record=hypothesis, event=event)
         return CreateHypothesisResult(success=True, hypothesis=hypothesis.model_dump())
 
 

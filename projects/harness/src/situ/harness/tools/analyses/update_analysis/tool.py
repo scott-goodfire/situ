@@ -39,9 +39,9 @@ class UpdateAnalysisTool(BaseSituTool[SituToolDeps, UpdateAnalysisResult]):
             raise ValueError(f"analysis not found: {analysis_id}")
 
         event = ctx.deps.record_event(
-            "analysis.updated",
-            f"Updated analysis {analysis.id}",
+            event_type="analysis.updated",
+            message=f"Updated analysis {analysis.id}",
             payload={"analysis_id": analysis.id},
         )
-        ctx.deps.publish_record(analysis, event=event)
+        ctx.deps.publish_record(record=analysis, event=event)
         return UpdateAnalysisResult(success=True, analysis=analysis.model_dump())

@@ -10,7 +10,6 @@ import {
   activeHypothesis,
   activeProject,
   maxExperimentCount,
-  runningAgents,
   runningEvaluationActivities,
   runningEvaluations,
   runningExperimentActivities,
@@ -109,7 +108,6 @@ function StoryFullscreenDashboard({
       dashboardMessage={message}
       project={activeProject}
       session={runningSession}
-      agents={runningAgents}
       tasks={runningTasks}
       experimentCount={runningExperiments.length}
       maxExperiments={maxExperimentCount}

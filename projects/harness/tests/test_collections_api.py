@@ -126,8 +126,8 @@ def test_collections_bootstrap_returns_research_objects_and_events(
         payload={"activity_type": "result", "metrics": {"score": 0.71}},
     )
     event = app.record_event(
-        "experiment.completed",
-        "Completed baseline measurement",
+        event_type="experiment.completed",
+        message="Completed baseline measurement",
         session_id="session_0001",
         payload={"measurement_id": measurement.id},
     )
@@ -179,7 +179,7 @@ def test_collections_subscribe_emits_event_upserts(
     )
 
     subscribe = CollectionsSubscribeResult.model_validate(app.collections_subscribe({}))
-    event = app.record_event("system.ready", "Harness ready")
+    event = app.record_event(event_type="system.ready", message="Harness ready")
 
     assert subscribe.subscribed is True
     assert subscribe.cursor == 0

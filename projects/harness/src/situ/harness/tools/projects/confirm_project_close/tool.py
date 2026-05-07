@@ -80,8 +80,8 @@ class ConfirmProjectCloseTool(
             raise ValueError(f"project not found: {pending.project_id}")
 
         event = ctx.deps.record_event(
-            "project.closed",
-            f"Closed project {project.id}: {final_summary}",
+            event_type="project.closed",
+            message=f"Closed project {project.id}: {final_summary}",
             payload={
                 "project_id": project.id,
                 "task_id": pending.task_id,
@@ -91,7 +91,7 @@ class ConfirmProjectCloseTool(
                 "final_summary": final_summary,
             },
         )
-        ctx.deps.publish_record(project, event=event)
+        ctx.deps.publish_record(record=project, event=event)
         if pending.task_id is not None:
             activity = repos.task_activities.add(
                 project_id=project.id,
@@ -106,7 +106,7 @@ class ConfirmProjectCloseTool(
                     "project_id": project.id,
                 },
             )
-            ctx.deps.publish_record(activity, event=event)
+            ctx.deps.publish_record(record=activity, event=event)
         return ConfirmProjectCloseResult(
             success=True,
             project=project.model_dump(),
