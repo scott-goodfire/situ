@@ -191,6 +191,63 @@ def test_repositories_generate_canonical_short_ids(repos: Repositories) -> None:
     assert repos.tasks.next_id(project_id=project.id) == "T2"
 
 
+def test_tasks_repository_requeue_moves_task_back_to_backlog(
+    repos: Repositories,
+) -> None:
+    project = create_project(repos)
+    session = create_session(repos)
+    manager = repos.agents.ensure_project_agent(
+        project_id=project.id,
+        created_in_session_id=session.id,
+        kind="manager",
+        display_name="Manager",
+    )
+    task = repos.tasks.create(
+        task_id="T1",
+        project_id=project.id,
+        created_in_session_id=session.id,
+        title="Plan next step",
+        content="File first work.",
+        kind="plan",
+        priority="high",
+        source_kind="system",
+        payload={"reuse_key": "project-next-step", "planning_pass_count": 1},
+    )
+    claimed = repos.tasks.claim(
+        task_id=task.id,
+        agent_id=manager.id,
+        eligible_kinds=["plan"],
+        claimed_in_session_id=session.id,
+    )
+    assert claimed is not None
+    done = repos.tasks.update(
+        task_id=task.id,
+        status="done",
+        result_summary="First pass completed.",
+        completed_in_session_id=session.id,
+    )
+    assert done is not None
+    assert done.status == "done"
+
+    requeued = repos.tasks.requeue(
+        task_id=task.id,
+        content="File the next runnable work.",
+        payload={"reuse_key": "project-next-step", "planning_pass_count": 2},
+    )
+
+    assert requeued is not None
+    assert requeued.id == task.id
+    assert requeued.status == "backlog"
+    assert requeued.assignee_id is None
+    assert requeued.claimed_in_session_id is None
+    assert requeued.claimed_at is None
+    assert requeued.completed_in_session_id is None
+    assert requeued.completed_at is None
+    assert requeued.result_summary is None
+    assert requeued.content == "File the next runnable work."
+    assert requeued.payload["planning_pass_count"] == 2
+
+
 def test_database_hard_resets_legacy_product_record_ids(tmp_path: Path) -> None:
     db_path = tmp_path / "situ.sqlite"
     db = Database(

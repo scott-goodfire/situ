@@ -10,8 +10,10 @@ from pydantic_ai_skills import SkillsToolset
 from situ.harness.config import DEFAULTS, LocalSecretStore
 from situ.harness.agent_runtime import MANAGER_AGENT_NAME, AgentRuntime
 from situ.harness.agent_skills import (
+    build_critic_skill_capabilities,
     build_manager_skill_capabilities,
     build_researcher_skill_capabilities,
+    build_scientist_skill_capabilities,
 )
 from situ.harness.agents.research.agent import RESEARCHER_AGENT_NAME, RESEARCH_AGENT_NAME
 from situ.harness.core.dbos.runtime import reset_dbos_for_tests
@@ -40,6 +42,37 @@ def _skill_names_from_toolset(toolset: object) -> set[str]:
     return names
 
 
+MANAGER_SKILLS = {
+    "planning-pass",
+    "source-grounding",
+    "task-decomposition",
+    "task-execution",
+}
+RESEARCHER_SKILLS = {
+    "codebase-map",
+    "hypothesize-task",
+    "hypothesis-handoff",
+    "interpret-task",
+    "prior-art-synthesis",
+    "research-task",
+    "source-grounding",
+    "task-execution",
+    "web-research",
+}
+SCIENTIST_SKILLS = {
+    "baseline-task",
+    "experiment-task",
+    "interpret-task",
+    "source-grounding",
+    "task-execution",
+}
+CRITIC_SKILLS = {
+    "review-task",
+    "source-grounding",
+    "task-execution",
+}
+
+
 @pytest.fixture(autouse=True)
 def _reset_dbos() -> None:
     reset_dbos_for_tests()
@@ -65,50 +98,34 @@ def test_agent_runtime_wraps_research_agent_with_dbos_agent(
     }
     assert isinstance(runtime.dbos_agent, DBOSAgent)
     assert runtime.agent.toolsets
+    assert not _agent_has_web_search(runtime.agent)
+    assert _agent_skill_names(runtime.agent) == SCIENTIST_SKILLS
     assert runtime.manager_agent.name == MANAGER_AGENT_NAME
     assert runtime.manager_agent.model_settings == runtime.agent.model_settings
     assert isinstance(runtime.dbos_manager_agent, DBOSAgent)
     assert runtime.manager_agent.toolsets
     assert _agent_has_web_search(runtime.manager_agent)
-    assert _agent_skill_names(runtime.manager_agent) == {
-        "planning-pass",
-        "source-grounding",
-        "task-decomposition",
-    }
+    assert _agent_skill_names(runtime.manager_agent) == MANAGER_SKILLS
     assert runtime.researcher_agent.name == RESEARCHER_AGENT_NAME
     assert runtime.researcher_agent.model_settings == runtime.agent.model_settings
     assert isinstance(runtime.dbos_researcher_agent, DBOSAgent)
     assert runtime.researcher_agent.toolsets
     assert _agent_has_web_search(runtime.researcher_agent)
-    assert _agent_skill_names(runtime.researcher_agent) == {
-        "codebase-map",
-        "hypothesis-handoff",
-        "prior-art-synthesis",
-        "source-grounding",
-        "web-research",
-    }
-    assert not _agent_has_web_search(runtime.agent)
-    assert not _agent_skill_names(runtime.agent)
+    assert _agent_skill_names(runtime.researcher_agent) == RESEARCHER_SKILLS
     assert not _agent_has_web_search(runtime.critic_agent)
-    assert not _agent_skill_names(runtime.critic_agent)
+    assert _agent_skill_names(runtime.critic_agent) == CRITIC_SKILLS
 
 
 def test_runtime_agent_skill_capabilities_discover_expected_skills() -> None:
     manager = build_manager_skill_capabilities()[0].toolset
     researcher = build_researcher_skill_capabilities()[0].toolset
+    scientist = build_scientist_skill_capabilities()[0].toolset
+    critic = build_critic_skill_capabilities()[0].toolset
 
-    assert set(manager.skills) == {
-        "planning-pass",
-        "source-grounding",
-        "task-decomposition",
-    }
-    assert set(researcher.skills) == {
-        "codebase-map",
-        "hypothesis-handoff",
-        "prior-art-synthesis",
-        "source-grounding",
-        "web-research",
-    }
+    assert set(manager.skills) == MANAGER_SKILLS
+    assert set(researcher.skills) == RESEARCHER_SKILLS
+    assert set(scientist.skills) == SCIENTIST_SKILLS
+    assert set(critic.skills) == CRITIC_SKILLS
     assert "resources/analysis-output-contract.md" in {
         resource.name for resource in researcher.get_skill("web-research").resources
     }

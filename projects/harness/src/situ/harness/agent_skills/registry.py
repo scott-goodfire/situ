@@ -21,6 +21,18 @@ def build_manager_skill_capabilities() -> list[AbstractCapability[Any]]:
     ]
 
 
+def build_scientist_skill_capabilities() -> list[AbstractCapability[Any]]:
+    return [
+        _build_skill_capability(
+            role="scientist",
+            directories=[
+                _SKILLS_ROOT / "shared",
+                _SKILLS_ROOT / "scientist",
+            ],
+        )
+    ]
+
+
 def build_researcher_skill_capabilities() -> list[AbstractCapability[Any]]:
     return [
         _build_skill_capability(
@@ -28,6 +40,18 @@ def build_researcher_skill_capabilities() -> list[AbstractCapability[Any]]:
             directories=[
                 _SKILLS_ROOT / "shared",
                 _SKILLS_ROOT / "researcher",
+            ],
+        )
+    ]
+
+
+def build_critic_skill_capabilities() -> list[AbstractCapability[Any]]:
+    return [
+        _build_skill_capability(
+            role="critic",
+            directories=[
+                _SKILLS_ROOT / "shared",
+                _SKILLS_ROOT / "critic",
             ],
         )
     ]

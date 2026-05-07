@@ -11,6 +11,23 @@ from evals.worlds.app_session_loop import (
 )
 
 
+def _done_planning_pass_count(tasks: list[dict[str, Any]]) -> int:
+    done_plans = [
+        task
+        for task in tasks
+        if task.get("kind") == "plan" and task.get("status") == "done"
+    ]
+    payload_counts: list[int] = []
+    for task in done_plans:
+        payload = task.get("payload") if isinstance(task.get("payload"), dict) else {}
+        raw_count = payload.get("planning_pass_count", 0)
+        try:
+            payload_counts.append(int(raw_count))
+        except (TypeError, ValueError):
+            continue
+    return max(payload_counts, default=len(done_plans))
+
+
 @dataclass
 class DoneTaskKindAtLeast(
     Evaluator[AppSessionLoopEvalInput, AppSessionLoopEvalOutput, Any]
@@ -44,6 +61,32 @@ class DoneTaskKindAtLeast(
         )
 
 
+@dataclass
+class PlanningPassCountAtLeast(
+    Evaluator[AppSessionLoopEvalInput, AppSessionLoopEvalOutput, Any]
+):
+    count: int = 1
+
+    def evaluate(
+        self,
+        ctx: EvaluatorContext[AppSessionLoopEvalInput, AppSessionLoopEvalOutput, Any],
+    ) -> EvaluationReason:
+        tasks = ctx.output.project_board.get("tasks", [])
+        pass_count = _done_planning_pass_count(tasks)
+        if pass_count >= self.count:
+            return EvaluationReason(
+                value=True,
+                reason=f"Found {pass_count} completed planning pass(es)",
+            )
+        return EvaluationReason(
+            value=False,
+            reason=(
+                f"Expected at least {self.count} completed planning pass(es). "
+                f"Tasks: {tasks}"
+            ),
+        )
+
+
 class BaselineThenFollowupWork(
     Evaluator[AppSessionLoopEvalInput, AppSessionLoopEvalOutput, Any]
 ):
@@ -64,17 +107,13 @@ class BaselineThenFollowupWork(
             in {"research", "hypothesize", "experiment", "interpret", "review"}
             and task.get("status") == "done"
         ]
-        done_plans = [
-            task
-            for task in tasks
-            if task.get("kind") == "plan" and task.get("status") == "done"
-        ]
-        if done_baseline and done_followup and len(done_plans) >= 2:
+        planning_pass_count = _done_planning_pass_count(tasks)
+        if done_baseline and done_followup and planning_pass_count >= 2:
             return EvaluationReason(
                 value=True,
                 reason=(
                     "Baseline completed and later follow-up agent work completed. "
-                    f"Plans: {[task.get('id') for task in done_plans]}; "
+                    f"planning passes: {planning_pass_count}; "
                     f"follow-ups: {[task.get('id') for task in done_followup]}"
                 ),
             )

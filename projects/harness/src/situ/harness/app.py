@@ -68,6 +68,8 @@ NotificationWriter = Callable[[str, dict[str, Any]], None]
 MANAGER_NO_PROGRESS_LIMIT = 3
 SESSION_AGENT_PASS_LIMIT_MINIMUM = 12
 SESSION_AGENT_PASS_LIMIT_PER_EXPERIMENT = 8
+REUSABLE_PLAN_TASK_TITLE = "Plan next step"
+REUSABLE_PLAN_TASK_KEY = "project-next-step"
 
 
 @dataclass(frozen=True, slots=True)
@@ -425,25 +427,84 @@ class HarnessApp:
         title: str,
         content: str,
         source_kind: str,
-    ) -> None:
-        task = self.repos.tasks.create(
-            task_id=self.repos.tasks.next_id(project_id=project_id),
-            project_id=project_id,
-            created_in_session_id=session_id,
-            title=title,
-            content=content,
-            kind=TaskKind.PLAN,
-            priority="high",
-            source_kind=source_kind,
-        )
+    ) -> TaskRecord:
+        previous = self._reusable_plan_task(project_id=project_id)
+        pass_count = _planning_pass_count(previous)
+        payload = {
+            **(previous.payload if previous is not None else {}),
+            "reuse_key": REUSABLE_PLAN_TASK_KEY,
+            "planning_pass_count": pass_count + 1,
+            "last_trigger_title": title,
+            "last_enqueued_in_session_id": session_id,
+        }
+        if previous is None:
+            task = self.repos.tasks.create(
+                task_id=self.repos.tasks.next_id(project_id=project_id),
+                project_id=project_id,
+                created_in_session_id=session_id,
+                title=REUSABLE_PLAN_TASK_TITLE,
+                content=content,
+                kind=TaskKind.PLAN,
+                priority="high",
+                source_kind=source_kind,
+                payload=payload,
+            )
+            event_type = "task.created"
+            event_message = f"Created task {task.id}"
+            activity_type = "planning_task_queued"
+        else:
+            task = self.repos.tasks.requeue(
+                task_id=previous.id,
+                title=REUSABLE_PLAN_TASK_TITLE,
+                content=content,
+                priority="high",
+                source_kind=source_kind,
+                payload=payload,
+            )
+            if task is None:
+                raise RuntimeError(f"planning task was not requeued: {previous.id}")
+            event_type = "task.requeued"
+            event_message = f"Requeued planning task {task.id}"
+            activity_type = "planning_task_requeued"
+
         event = self.record_event(
-            event_type="task.created",
-            message=f"Created task {task.id}",
+            event_type=event_type,
+            message=event_message,
             session_id=session_id,
             project_id=project_id,
-            payload={"task_id": task.id, "kind": task.kind.value},
+            payload={
+                "task_id": task.id,
+                "kind": task.kind.value,
+                "planning_pass_count": payload["planning_pass_count"],
+            },
+        )
+        activity = self.repos.task_activities.add(
+            project_id=project_id,
+            task_id=task.id,
+            created_in_session_id=session_id,
+            actor="system",
+            kind="comment",
+            body=f"Queued planning pass: {title}.",
+            payload={
+                "activity_type": activity_type,
+                "trigger_title": title,
+                "planning_pass_count": payload["planning_pass_count"],
+            },
         )
         self.publish_record(record=task, cursor=event.id)
+        self.publish_record(record=activity, cursor=event.id)
+        return task
+
+    def _reusable_plan_task(self, *, project_id: str) -> TaskRecord | None:
+        candidates = [
+            task
+            for task in self.repos.tasks.list_for_project(project_id=project_id)
+            if _is_reusable_plan_task(task)
+            and task.status not in {TaskStatus.ABANDONED, TaskStatus.FAILED}
+        ]
+        if not candidates:
+            return None
+        return sorted(candidates, key=lambda task: task.created_at)[0]
 
     def _enqueue_experiment_review_task(
         self,
@@ -640,7 +701,24 @@ class HarnessApp:
                 "status": updated_task.status.value,
             },
         )
+        activity = None
+        if _is_reusable_plan_task(updated_task):
+            activity = self.repos.task_activities.add(
+                project_id=updated_task.project_id,
+                task_id=updated_task.id,
+                created_in_session_id=session_id,
+                actor="system",
+                kind="comment",
+                body=f"Completed planning pass: {updated_task.result_summary or result_summary}",
+                payload={
+                    "activity_type": "planning_task_completed",
+                    "planning_pass_count": _planning_pass_count(updated_task),
+                    "status": updated_task.status.value,
+                },
+            )
         self.publish_record(record=updated_task, cursor=event.id)
+        if activity is not None:
+            self.publish_record(record=activity, cursor=event.id)
         if updated_agent is not None:
             self.publish_record(record=updated_agent, cursor=event.id)
 
@@ -1227,6 +1305,23 @@ class HarnessApp:
             daemon=True,
         )
         thread.start()
+
+
+def _planning_pass_count(task: TaskRecord | None) -> int:
+    if task is None:
+        return 0
+    raw_count = task.payload.get("planning_pass_count", 0)
+    try:
+        return int(raw_count)
+    except (TypeError, ValueError):
+        return 0
+
+
+def _is_reusable_plan_task(task: TaskRecord) -> bool:
+    return (
+        task.kind == TaskKind.PLAN
+        and task.payload.get("reuse_key") == REUSABLE_PLAN_TASK_KEY
+    )
 
 
 def _experiment_id_from_task(task: TaskRecord) -> str | None:

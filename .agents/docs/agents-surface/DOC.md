@@ -161,10 +161,26 @@ Current runtime skills are role-scoped:
 - `agent_skills/manager/` - Manager planning and task-decomposition methods.
 - `agent_skills/researcher/` - Researcher methods for codebase mapping, web
   research, prior-art synthesis, and hypothesis handoff.
+- `agent_skills/scientist/` - Scientist methods for baseline measurement,
+  experiment execution, and empirical interpretation.
+- `agent_skills/critic/` - Critic methods for experiment review.
 - `agent_skills/shared/` - methods usable by more than one runtime role.
 
 Do not add runtime skills to `.agents/skills/`. Do not add developer-agent
 maintenance workflows to `agent_skills/`.
+
+Each task kind should have a default runtime skill, or an explicit reason it
+does not need one yet:
+
+| Task kind | Default runtime skill |
+| --- | --- |
+| `plan` | `planning-pass` |
+| `research` | `research-task` |
+| `hypothesize` | `hypothesize-task` |
+| `baseline` | `baseline-task` |
+| `experiment` | `experiment-task` |
+| `interpret` | `interpret-task` |
+| `review` | `review-task` |
 
 Add or update a runtime skill when:
 

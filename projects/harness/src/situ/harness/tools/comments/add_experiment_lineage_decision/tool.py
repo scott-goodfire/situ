@@ -58,6 +58,24 @@ class AddExperimentLineageDecisionTool(
                     ),
                 )
 
+        if critic_review_activity_id is not None:
+            review_activity = repos.experiment_activities.get(
+                activity_id=critic_review_activity_id
+            )
+            if (
+                review_activity is None
+                or review_activity.experiment_id != experiment_id
+                or review_activity.payload.get("activity_type") != "critic_review"
+            ):
+                return self._failure(
+                    code="invalid_critic_review_activity",
+                    message=(
+                        "critic_review_activity_id must refer to a critic_review "
+                        f"activity on experiment {experiment_id}: "
+                        f"{critic_review_activity_id}"
+                    ),
+                )
+
         decision_payload = {
             "activity_type": "lineage_decision",
             "decision": decision,

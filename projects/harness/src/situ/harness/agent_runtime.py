@@ -8,8 +8,10 @@ from pydantic_ai import Agent
 from pydantic_ai.durable_exec.dbos import DBOSAgent
 
 from .agent_skills import (
+    build_critic_skill_capabilities,
     build_manager_skill_capabilities,
     build_researcher_skill_capabilities,
+    build_scientist_skill_capabilities,
 )
 from .agents.research.agent import (
     CRITIC_AGENT_NAME,
@@ -71,6 +73,7 @@ class AgentRuntime:
                 build_workspace_toolset(),
             ],
             model_settings=DEFAULTS.model_settings(),
+            capabilities=build_scientist_skill_capabilities(),
             name=RESEARCH_AGENT_NAME,
         )
         self.dbos_agent = DBOSAgent(self.agent, name=RESEARCH_AGENT_NAME)
@@ -114,6 +117,7 @@ class AgentRuntime:
                 build_workspace_readonly_toolset(),
             ],
             model_settings=DEFAULTS.model_settings(),
+            capabilities=build_critic_skill_capabilities(),
             name=CRITIC_AGENT_NAME,
         )
         self.dbos_critic_agent = DBOSAgent(

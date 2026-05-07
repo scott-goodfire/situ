@@ -79,6 +79,20 @@ link to produced or referenced research records through explicit entity links.
 These links are what let the TUI answer "what did this task create?" without
 guessing from timestamps.
 
+Generic replanning should reuse a canonical project planning task rather than
+creating a new durable task row for every wakeup. The repeated work is still a
+task: the task moves back to runnable state, gets claimed again by the Manager,
+and records each pass in task activity. This keeps the task board focused on
+durable work while preserving the planning history. The canonical title should
+read like a human work item such as "Plan next step"; trigger details such as
+"after Critic review" or "after Researcher completion" belong in the task
+content, activity, or payload, not as duplicate task titles.
+
+Separate `plan` tasks are still appropriate when the planning work has a
+distinct durable scope, such as planning a merge handoff, evaluation protocol,
+or rollback strategy. The runtime-owned wakeup loop should default to the
+reusable project-next-step planning task.
+
 ## Task Activity
 
 Task activities are the coordination timeline for a task. They use the same
@@ -110,7 +124,7 @@ critic claims `review`
   -> reviews experiment-level evidence
   -> writes an experiment review activity and any concern activity
 completion
-  -> enqueue next `plan` task when more planning is useful
+  -> requeue the reusable `plan` task when more planning is useful
 ```
 
 This keeps planning and execution visible through the same durable task

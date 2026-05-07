@@ -9,8 +9,10 @@ from pydantic_ai.capabilities.abstract import AbstractCapability
 from pydantic_ai.models import Model
 
 from ...agent_skills import (
+    build_critic_skill_capabilities,
     build_manager_skill_capabilities,
     build_researcher_skill_capabilities,
+    build_scientist_skill_capabilities,
 )
 from ...config import DEFAULTS
 from ...tools import (
@@ -117,7 +119,10 @@ class ResearchAgent(
             instructions=RESEARCH_AGENT_INSTRUCTIONS,
             toolsets=toolsets,
             model_settings=DEFAULTS.model_settings(),
-            capabilities=list(self.capabilities),
+            capabilities=[
+                *build_scientist_skill_capabilities(),
+                *self.capabilities,
+            ],
         )
 
 
@@ -191,7 +196,10 @@ class ScientistAgent(BaseSituAgent[ScientistAgentContext, ResearchAgentOutput]):
                 build_workspace_toolset(),
             ],
             model_settings=DEFAULTS.model_settings(),
-            capabilities=list(self.capabilities),
+            capabilities=[
+                *build_scientist_skill_capabilities(),
+                *self.capabilities,
+            ],
         )
 
 
@@ -267,5 +275,8 @@ class CriticAgent(BaseSituAgent[CriticAgentContext, ResearchAgentOutput]):
                 build_workspace_readonly_toolset(),
             ],
             model_settings=DEFAULTS.model_settings(),
-            capabilities=list(self.capabilities),
+            capabilities=[
+                *build_critic_skill_capabilities(),
+                *self.capabilities,
+            ],
         )

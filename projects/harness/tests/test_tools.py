@@ -855,6 +855,16 @@ def test_comment_tools_write_activity_records(repos: Repositories) -> None:
         reason="This cites a missing parent and should fail.",
         parent_experiment_id="EX404",
     )
+    bad_review_lineage_decision = invoke_situ_tool_sync(
+        tool=AddExperimentLineageDecisionTool(),
+        deps=deps,
+        experiment_id="EX1",
+        decision="reproduce",
+        reason="This cites a non-review activity and should fail.",
+        critic_review_activity_id=experiment_comment.activity["id"]
+        if experiment_comment.activity is not None
+        else None,
+    )
 
     assert hypothesis_comment.success is True
     assert hypothesis_comment.activity is not None
@@ -899,6 +909,9 @@ def test_comment_tools_write_activity_records(repos: Repositories) -> None:
     assert bad_lineage_decision.success is False
     assert bad_lineage_decision.error is not None
     assert bad_lineage_decision.error.code == "invalid_parent_experiment"
+    assert bad_review_lineage_decision.success is False
+    assert bad_review_lineage_decision.error is not None
+    assert bad_review_lineage_decision.error.code == "invalid_critic_review_activity"
 
     hypothesis_activities = invoke_situ_tool_sync(
         tool=ListHypothesisActivitiesTool(),

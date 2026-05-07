@@ -149,6 +149,12 @@ Add a runtime skill when a role needs reusable methodology that would otherwise
 inflate the role prompt or be repeated across tasks. Do not use runtime skills
 for repo-maintenance workflows; those belong in `.agents/skills/`.
 
+Task execution should be skill-addressable. Every bounded `TaskKind` should
+either have a default runtime skill that teaches the assignee how to complete
+that kind of work, or the spec/policy change adding the task kind should
+explain why no skill is needed yet. Default task-kind skills keep coordination
+visible without bloating role prompts.
+
 Command output should be preserved as plaintext evidence. Situ should not
 deterministically parse arbitrary stdout into metrics or signals in the tool
 layer. If output matters, the agent records the raw text or an LLM-written

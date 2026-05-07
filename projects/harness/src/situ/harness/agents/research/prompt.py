@@ -15,6 +15,8 @@ RESEARCH_AGENT_INSTRUCTIONS = inspect.cleandoc(
     How you work:
     - If the prompt gives assigned task IDs, read each assignment first with
       `get_task(task_id=...)`.
+    - If an available runtime skill matches the assigned task kind, load it
+      with `load_skill(skill_name=...)` before executing the task.
     - Start from explicit tool reads before making claims.
     - Use `get_project_board` for the current project board. Use focused
       `list_*` tools such as `list_baselines`, `list_evaluations`, and
@@ -82,6 +84,9 @@ RESEARCHER_AGENT_INSTRUCTIONS = inspect.cleandoc(
     How you work:
     - If the prompt gives assigned task IDs, read each assignment first with
       `get_task(task_id=...)`.
+    - If an available runtime skill matches the assigned task kind or research
+      method, load it with `load_skill(skill_name=...)` before executing the
+      task.
     - Start from explicit tool reads before making claims.
     - Use `get_project_board` for the current project board and focused `list_*`
       tools when you need a narrower evidence slice.
@@ -128,6 +133,8 @@ MANAGER_AGENT_INSTRUCTIONS = inspect.cleandoc(
     How you work:
     - If the prompt gives assigned planning task IDs, read each assignment
       first with `get_task(task_id=...)`.
+    - Load `planning-pass` or `task-decomposition` when the planning task would
+      benefit from the reusable method.
     - Treat tasks as the coordination surface for agent work.
     - If the current run has no project but setup input is sufficient, create and
       attach one with `create_project`.
@@ -205,6 +212,7 @@ CRITIC_AGENT_INSTRUCTIONS = inspect.cleandoc(
 
     How you work:
     - Read the assigned review task first with `get_task(task_id=...)`.
+    - Load `review-task` before writing an experiment review.
     - Start from explicit tool reads before judging the result.
     - Treat the experiment as the PR-shaped candidate change.
     - Treat evaluations and measurements as evidence for that change.
@@ -286,6 +294,8 @@ def build_proposal_round_prompt(
 
         First call `get_task` for each assigned planning task ID. Then inspect
         `get_project`, `get_project_board`, and `get_task_board` as needed.
+        Load `planning-pass` or `task-decomposition` when useful before filing
+        tasks.
         File the next focused Researcher, Scientist, or Critic task or tasks
         with `create_task`. Make clear what is known, what is still uncertain,
         and what would make the next experiment worth running.
@@ -332,6 +342,10 @@ def build_researcher_run_prompt(
         content, payload, dependencies, links, and comments as the focus for
         this pass. Then inspect `get_project_board` or focused `list_*` tools
         as needed.
+        Load the matching task-kind skill when useful: `research-task`,
+        `hypothesize-task`, or `interpret-task`. Load helper skills such as
+        `web-research`, `codebase-map`, `prior-art-synthesis`, or
+        `hypothesis-handoff` when they fit the task.
 
         Continue the research from explicit tool reads. A Researcher pass
         handles at most one assigned task. Do not claim a different task.
@@ -378,6 +392,7 @@ def build_critic_review_prompt(
         payload and task entity links to identify the experiment and evidence
         to review. Then inspect focused experiment, evaluation, measurement,
         activity, artifact, and project-board readers as needed.
+        Load `review-task` before writing the review.
 
         Review the active experiment as a proposed change. Use the experiment
         id from the assigned task payload or task entity links. If evaluation or
@@ -426,6 +441,8 @@ def build_session_run_prompt(
         this pass. Then inspect `get_project_board` or focused baseline,
         evaluation, measurement, hypothesis, experiment, activity, and artifact
         readers as needed.
+        Load the matching task-kind skill when useful: `baseline-task`,
+        `experiment-task`, or `interpret-task`.
 
         Continue the research from explicit tool reads. A Scientist work pass
         handles at most one assigned task. Do not claim a different task. After

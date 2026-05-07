@@ -139,6 +139,51 @@ def test_experiment_review_task_is_not_duplicated_for_same_experiment(
     assert len(review_tasks) == 1
 
 
+def test_reusable_plan_task_is_requeued_for_replanning(
+    tmp_path: Path,
+) -> None:
+    app, session_id, project_id = _app_with_initial_plan(tmp_path)
+
+    first = app._reusable_plan_task(project_id=project_id)
+    assert first is not None
+    done = app.repos.tasks.update(
+        task_id=first.id,
+        status=TaskStatus.DONE,
+        result_summary="First pass completed.",
+        completed_in_session_id=session_id,
+    )
+    assert done is not None
+    assert done.status == TaskStatus.DONE
+
+    second = app._enqueue_plan_task(
+        session_id=session_id,
+        project_id=project_id,
+        title="Plan after Researcher task completion",
+        content="Review the researcher output and file the next runnable task.",
+        source_kind="system",
+    )
+
+    plan_tasks = [
+        task
+        for task in app.repos.tasks.list_for_session(session_id=session_id)
+        if task.kind == TaskKind.PLAN
+    ]
+    activities = app.repos.task_activities.list_for_task(task_id=second.id)
+
+    assert second.id == first.id
+    assert second.title == "Plan next step"
+    assert second.status == TaskStatus.BACKLOG
+    assert second.result_summary is None
+    assert second.completed_at is None
+    assert second.payload["planning_pass_count"] == 2
+    assert second.payload["last_trigger_title"] == "Plan after Researcher task completion"
+    assert len(plan_tasks) == 1
+    assert [activity.payload["activity_type"] for activity in activities] == [
+        "planning_task_queued",
+        "planning_task_requeued",
+    ]
+
+
 def test_default_session_start_creates_fresh_project_per_session(
     tmp_path: Path,
     monkeypatch,
@@ -255,8 +300,24 @@ def test_session_loop_retries_manager_before_no_progress_close(
     assert session.status == "closed"
     assert runtime.plan_calls == MANAGER_NO_PROGRESS_LIMIT
     assert runtime.scientist_calls == 0
-    assert [task.kind for task in tasks] == [TaskKind.PLAN] * MANAGER_NO_PROGRESS_LIMIT
-    assert all(task.status == TaskStatus.DONE for task in tasks)
+    assert [task.kind for task in tasks] == [TaskKind.PLAN]
+    assert tasks[0].status == TaskStatus.DONE
+    assert tasks[0].payload["planning_pass_count"] == MANAGER_NO_PROGRESS_LIMIT
+    planning_activities = app.repos.task_activities.list_for_task(task_id=tasks[0].id)
+    assert [
+        activity.payload["activity_type"]
+        for activity in planning_activities
+    ] == [
+        "planning_task_queued",
+        "planning_task_completed",
+        "planning_task_requeued",
+        "planning_task_completed",
+        "planning_task_requeued",
+        "planning_task_completed",
+    ]
+    assert planning_activities[-1].body == (
+        "Completed planning pass: no runnable task filed"
+    )
     assert any(
         event.type == "session.completed"
         and "no runnable researcher, scientist, or critic task"

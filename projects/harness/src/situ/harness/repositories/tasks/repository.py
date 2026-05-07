@@ -248,6 +248,64 @@ class TasksRepository(BaseRepository):
         )
         return self.get(task_id=command.task_id)
 
+    def requeue(
+        self,
+        *,
+        task_id: str,
+        title: str | None = None,
+        content: str | None = None,
+        priority: TaskPriority | str | None = None,
+        source_kind: TaskSourceKind | str | None = None,
+        payload: dict[str, Any] | None = None,
+        available_at: str | None = None,
+    ) -> TaskRecord | None:
+        current = self.get(task_id=task_id)
+        if current is None:
+            return None
+        now = utc_now()
+        self.db.execute(
+            """
+            UPDATE tasks
+            SET title = ?,
+                content = ?,
+                status = ?,
+                priority = ?,
+                source_kind = ?,
+                assignee_id = NULL,
+                payload_json = ?,
+                pydantic_run_id = NULL,
+                conversation_id = NULL,
+                result_summary = NULL,
+                available_at = ?,
+                claimed_in_session_id = NULL,
+                claimed_at = NULL,
+                completed_in_session_id = NULL,
+                completed_at = NULL,
+                updated_at = ?
+            WHERE id = ?
+            """,
+            (
+                title if title is not None else current.title,
+                content if content is not None else current.content,
+                TaskStatus.BACKLOG.value,
+                (
+                    parse_task_priority(priority).value
+                    if priority is not None
+                    else current.priority.value
+                ),
+                (
+                    parse_task_source_kind(source_kind).value
+                    if source_kind is not None
+                    else current.source_kind.value
+                ),
+                json_dumps(payload if payload is not None else current.payload),
+                available_at or now,
+                now,
+                task_id,
+            ),
+        )
+        return self.get(task_id=task_id)
+
     def claim(
         self,
         *,

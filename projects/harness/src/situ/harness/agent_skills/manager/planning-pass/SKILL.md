@@ -7,12 +7,13 @@ description: Use when the Manager needs to plan the next focused Researcher, Sci
 
 ## Method
 
-1. Read every assigned planning task with `get_task(task_id=...)`.
-2. Read `get_project`, `get_project_board`, and `get_task_board` as needed.
-3. Identify the highest-value next uncertainty.
-4. File a small batch of concrete tasks, usually one to three.
-5. Use dependencies when work must happen in order.
-6. Keep task titles short and human-readable; put constraints in task content.
+1. Load `task-execution` if this planning pass has assigned task IDs.
+2. Read every assigned planning task with `get_task(task_id=...)`.
+3. Read `get_project`, `get_project_board`, and `get_task_board` as needed.
+4. Identify the highest-value next uncertainty.
+5. File a small batch of concrete tasks, usually one to three.
+6. Use dependencies when work must happen in order.
+7. Keep task titles short and human-readable; put constraints in task content.
 
 ## Task Choice
 

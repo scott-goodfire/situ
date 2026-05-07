@@ -120,6 +120,10 @@ to call a generic activity writer to record benchmark evidence.
   and task decomposition; a Researcher skill should help analysis, source
   synthesis, or hypothesis handoff. The skill must not blur role boundaries or
   grant record-writing behavior that the role's normal toolset does not have.
+- Every agent-executable `TaskKind` should have a default task-kind runtime
+  skill, or the change adding that task kind should explicitly explain why the
+  role prompt/toolset is enough. These skills should describe execution
+  procedure, expected durable records, links, and completion behavior.
 - Keep developer-agent skills and runtime-agent skills in separate trees:
   `.agents/skills/` for coding agents maintaining this repo, and
   `projects/harness/src/situ/harness/agent_skills/` for skills exposed to
@@ -157,6 +161,8 @@ to call a generic activity writer to record benchmark evidence.
   context.
 - Putting Situ runtime-agent skills in `.agents/skills/`, or putting
   developer-agent maintenance workflows in the harness runtime skill package.
+- Adding a task kind without a default runtime skill or an explicit reason the
+  task kind does not need one yet.
 
 ## Review Questions
 
