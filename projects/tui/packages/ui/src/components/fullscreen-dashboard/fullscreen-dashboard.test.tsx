@@ -130,6 +130,11 @@ test("task output links render as a flat row", async () => {
           entityKind: "artifact",
           entityId: "ART2",
         }),
+        taskEntityLinkRecord({
+          taskId: "T8",
+          entityKind: "measurement",
+          entityId: "M7",
+        }),
       ]}
       taskActivities={[]}
       hypothesisActivities={[]}
@@ -146,8 +151,8 @@ test("task output links render as a flat row", async () => {
 
     const frame = instance.lastFrame() ?? "";
     expect(frame).toContain("● [T8] Test edit-aware scoring");
-    expect(frame).toContain("│ → EX3 EV4 ART2");
-    expect(frame).not.toContain("│     → EX3 EV4 ART2");
+    expect(frame).toContain("│ → EX3 EV4 M7 ART2");
+    expect(frame).not.toContain("│     → EX3 EV4 M7 ART2");
   } finally {
     instance.unmount();
   }

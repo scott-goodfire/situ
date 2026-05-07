@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import argparse
 import subprocess
 from pathlib import Path
 
 import pytest
 
 from situ.harness.app import HarnessApp
+from situ.harness.cli.commands.apply.command import run as apply_patch_artifact
 from situ.harness.core.worktrees import WorktreeManager
 from situ.harness.records import AgentKind, TaskKind
 from situ.harness.tools.tasks.eligibility import eligible_task_kinds_for_agent
@@ -160,6 +162,7 @@ def test_worktree_manager_inspect_preserves_unstaged_status_paths(tmp_path: Path
 
 def test_harness_prepares_experiment_task_checkout_and_records_final_state(
     tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     repo = _repo(tmp_path)
     app = HarnessApp(
@@ -297,6 +300,23 @@ def test_harness_prepares_experiment_task_checkout_and_records_final_state(
     assert prepared_followup.experiment.research_thread == "optimizer"
     assert prepared_followup.experiment.base_commit == completed.candidate_commit
     assert (Path(prepared_followup.repo_path) / "pkg" / "module.py").read_text() == "VALUE = 2\n"
+
+    monkeypatch.setattr(
+        "situ.harness.cli.commands.apply.command.ProjectContext",
+        lambda _workspace: app.context,
+    )
+    assert (
+        apply_patch_artifact(
+            argparse.Namespace(
+                artifact_id=patch_artifacts[0].id,
+                workspace=str(repo),
+                branch=None,
+                force=False,
+            )
+        )
+        == 0
+    )
+    assert (repo / "pkg" / "module.py").read_text() == "VALUE = 2\n"
 
 
 def test_review_tasks_are_claimed_by_critic_not_researcher() -> None:

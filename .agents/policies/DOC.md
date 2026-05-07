@@ -35,6 +35,11 @@ or agent/worker flows.
 - [0025-runtime-skills/POLICY.md](./0025-runtime-skills/POLICY.md) - keep Situ runtime-agent skills separate from developer-agent skills and tied to explicit record tools
 - [0026-experiment-workspaces/POLICY.md](./0026-experiment-workspaces/POLICY.md) - run candidate experiment work in managed workspaces and preserve comparable code-state evidence
 - [0027-convention-policy-coverage/POLICY.md](./0027-convention-policy-coverage/POLICY.md) - require policy coverage for repeated backend conventions with three or more examples
+- [0028-protocol-generation/POLICY.md](./0028-protocol-generation/POLICY.md) - keep Python protocol models as the source of truth and generated TypeScript/JSON Schema in sync
+- [0029-typescript-workspace-packages/POLICY.md](./0029-typescript-workspace-packages/POLICY.md) - preserve TypeScript workspace package boundaries, exports, checks, and dependency direction
+- [0030-frontend-collections-selectors/POLICY.md](./0030-frontend-collections-selectors/POLICY.md) - keep frontend live state collection-backed and read-side derivations in selectors
+- [0031-ui-package-boundaries/POLICY.md](./0031-ui-package-boundaries/POLICY.md) - keep design tokens, reusable UI, app UI, and live app wiring in separate package layers
+- [0032-command-task-surface/POLICY.md](./0032-command-task-surface/POLICY.md) - keep routine workflows discoverable through strict command wrappers and mise tasks
 
 ## Review Style
 

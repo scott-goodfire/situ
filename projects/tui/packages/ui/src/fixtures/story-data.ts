@@ -347,6 +347,15 @@ export const runningTaskEntityLinks = [
   taskEntityLinkRecord({
     overrides: {
       task_id: "T2",
+      entity_kind: "measurement",
+      entity_id: "M2",
+      relationship: "reviews",
+      created_at: "2026-01-01T00:00:06Z",
+    },
+  }),
+  taskEntityLinkRecord({
+    overrides: {
+      task_id: "T2",
       entity_kind: "evaluation",
       entity_id: runningEvaluation.id,
       relationship: "reviews",

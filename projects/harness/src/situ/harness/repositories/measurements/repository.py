@@ -85,14 +85,20 @@ class MeasurementsRepository(BaseRepository):
     def list_all(self) -> list[MeasurementRecord]:
         return [
             _measurement_row(row)
-            for row in self.db.fetchall("SELECT * FROM measurements ORDER BY id")
+            for row in self.db.fetchall(
+                "SELECT * FROM measurements ORDER BY CAST(SUBSTR(id, 2) AS INTEGER)"
+            )
         ]
 
     def list_for_evaluation(self, *, evaluation_id: str) -> list[MeasurementRecord]:
         return [
             _measurement_row(row)
             for row in self.db.fetchall(
-                "SELECT * FROM measurements WHERE evaluation_id = ? ORDER BY id",
+                """
+                SELECT * FROM measurements
+                WHERE evaluation_id = ?
+                ORDER BY CAST(SUBSTR(id, 2) AS INTEGER)
+                """,
                 (evaluation_id,),
             )
         ]
@@ -106,7 +112,7 @@ class MeasurementsRepository(BaseRepository):
                 FROM measurements
                 JOIN evaluations ON evaluations.id = measurements.evaluation_id
                 WHERE evaluations.associated_baseline_id = ?
-                ORDER BY measurements.id
+                ORDER BY CAST(SUBSTR(measurements.id, 2) AS INTEGER)
                 """,
                 (baseline_id,),
             )
@@ -121,7 +127,7 @@ class MeasurementsRepository(BaseRepository):
                 FROM measurements
                 JOIN evaluations ON evaluations.id = measurements.evaluation_id
                 WHERE evaluations.associated_experiment_id = ?
-                ORDER BY measurements.id
+                ORDER BY CAST(SUBSTR(measurements.id, 2) AS INTEGER)
                 """,
                 (experiment_id,),
             )
@@ -136,7 +142,7 @@ class MeasurementsRepository(BaseRepository):
                 FROM measurements
                 JOIN evaluations ON evaluations.id = measurements.evaluation_id
                 WHERE evaluations.project_id = ?
-                ORDER BY measurements.id
+                ORDER BY CAST(SUBSTR(measurements.id, 2) AS INTEGER)
                 """,
                 (project_id,),
             )

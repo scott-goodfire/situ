@@ -1368,11 +1368,11 @@ function taskFromTaskRecord({
 const TASK_OUTPUT_ENTITY_KIND_ORDER: TaskEntityLinkRecord["entity_kind"][] = [
   "experiment",
   "evaluation",
+  "measurement",
   "artifact",
   "analysis",
   "hypothesis",
   "baseline",
-  "measurement",
 ];
 
 const TASK_OUTPUT_ENTITY_PREFIX_BY_KIND: Partial<

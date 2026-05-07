@@ -1283,7 +1283,7 @@ class HarnessApp:
                 f"could not resolve git root for experiment {experiment.id}"
             )
 
-        patch = _git_text(
+        patch = _git_stdout(
             Path(git_root),
             "diff",
             "--binary",
@@ -1484,6 +1484,10 @@ def _research_thread_from_task(task: TaskRecord) -> str | None:
 
 
 def _git_text(cwd: Path, *args: str) -> str:
+    return _git_stdout(cwd, *args).strip()
+
+
+def _git_stdout(cwd: Path, *args: str) -> str:
     result = subprocess.run(
         ["git", *args],
         cwd=cwd,
@@ -1494,7 +1498,7 @@ def _git_text(cwd: Path, *args: str) -> str:
     if result.returncode != 0:
         error = result.stderr.strip() or result.stdout.strip()
         raise RuntimeError(f"git {' '.join(args)} failed: {error}")
-    return result.stdout.strip()
+    return result.stdout
 
 
 def _git_lines(cwd: Path, *args: str) -> list[str]:
