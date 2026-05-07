@@ -4,6 +4,7 @@ from typing import Any
 
 from pydantic_ai import RunContext
 
+from ....records import WorkStatus
 from ...common import BaseSituTool, SituToolDeps
 from .._shared.close_handshake import (
     create_pending_project_close,
@@ -42,6 +43,14 @@ class RequestProjectCloseTool(
         if project is None:
             raise ValueError(f"project not found: {resolved_project_id}")
 
+        unresolved_hypotheses = [
+            hypothesis
+            for hypothesis in repos.hypotheses.list_for_project(project_id=project.id)
+            if hypothesis.status != WorkStatus.CLOSED
+        ]
+        unresolved_hypothesis_ids = [
+            hypothesis.id for hypothesis in unresolved_hypotheses
+        ]
         active_task = current_manager_plan_task(
             repos=repos,
             session_id=ctx.deps.session_id,
@@ -57,13 +66,22 @@ class RequestProjectCloseTool(
             evidence_summary=evidence_summary,
             remaining_work_assessment=remaining_work_assessment,
         )
-        message = (
+        base_message = (
             "Project close requires confirmation. Experiment budget or useful "
             "work may remain; try to keep going unless you are confident no "
             "useful next Scientist task exists. If you are still sure, call "
             "`confirm_project_close` with the confirmation code from this "
             "result."
         )
+        unresolved_message = (
+            " Unresolved hypotheses remain: "
+            f"{', '.join(unresolved_hypothesis_ids)}. Resolve them with "
+            "`resolve_hypothesis` or explain why they remain open before "
+            "confirming close."
+            if unresolved_hypothesis_ids
+            else ""
+        )
+        message = f"{base_message}{unresolved_message}"
         event = ctx.deps.record_event(
             event_type="project.close_confirmation_required",
             message=message,
@@ -73,6 +91,7 @@ class RequestProjectCloseTool(
                 "reason": reason,
                 "evidence_summary": evidence_summary,
                 "remaining_work_assessment": remaining_work_assessment,
+                "unresolved_hypothesis_ids": unresolved_hypothesis_ids,
             },
         )
         if active_task is not None:
@@ -91,6 +110,7 @@ class RequestProjectCloseTool(
                 payload={
                     "activity_type": "project_close_requested",
                     "project_id": project.id,
+                    "unresolved_hypothesis_ids": unresolved_hypothesis_ids,
                 },
             )
             ctx.deps.publish_record(record=activity, event=event)
@@ -100,4 +120,5 @@ class RequestProjectCloseTool(
             confirmation_code=pending.code,
             project=project.model_dump(),
             message=message,
+            unresolved_hypothesis_ids=unresolved_hypothesis_ids,
         )

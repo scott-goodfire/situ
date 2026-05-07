@@ -1,3 +1,11 @@
-from .record import HypothesisRecord
+from .record import (
+    HypothesisRecord,
+    HypothesisResolution,
+    parse_hypothesis_resolution,
+)
 
-__all__ = ["HypothesisRecord"]
+__all__ = [
+    "HypothesisRecord",
+    "HypothesisResolution",
+    "parse_hypothesis_resolution",
+]

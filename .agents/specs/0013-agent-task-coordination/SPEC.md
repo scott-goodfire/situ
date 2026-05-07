@@ -201,6 +201,11 @@ able to bypass this handshake. Once a project is confirmed closed, the runtime
 should close the active session immediately instead of burning additional
 planning passes.
 
+The close-request response should warn about unresolved hypotheses. The first
+slice should not hard-block close on unresolved hypotheses, but the Manager
+should either resolve them with hypothesis resolution activities or explain in
+the close summary why they remain open.
+
 ## TUI Shape
 
 The TUI should be able to show a compact board grouped by task status:

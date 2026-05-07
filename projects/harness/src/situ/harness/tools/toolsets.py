@@ -37,6 +37,7 @@ from .experiments import (
 from .hypotheses import (
     CreateHypothesisTool,
     ListHypothesesTool,
+    ResolveHypothesisTool,
     UpdateHypothesisTool,
 )
 from .common import SituToolDeps
@@ -135,8 +136,9 @@ MANAGER_TOOLSET_INSTRUCTIONS = inspect.cleandoc(
     `get_task(task_id=...)` first. Use this toolset to inspect the current
     project board; create or update the project when kickoff context requires it; file focused
     tasks; add coordination comments; and update the current planning task. Do
-    not use the manager pass to run experiments or write research outputs
-    directly; file Researcher or Scientist tasks for that work.
+    not use the manager pass to run experiments or create new research outputs
+    directly; file Researcher or Scientist tasks for that work. Hypothesis
+    resolution at close time is the narrow exception.
 
     When acting on a Critic review for a candidate experiment, record the
     portfolio decision on that experiment with
@@ -147,9 +149,11 @@ MANAGER_TOOLSET_INSTRUCTIONS = inspect.cleandoc(
 
     To end a project, use the explicit close handshake. First call
     `request_project_close`, read its warning, and try to keep going unless you
-    are confident no useful Scientist task remains. Only if closing is still
-    warranted should you call `confirm_project_close` with the returned code.
-    Do not try to close a project with `update_project`.
+    are confident no useful Scientist task remains. If the warning reports
+    unresolved hypotheses, resolve them with `resolve_hypothesis` or explain
+    why they should remain open. Only if closing is still warranted should you
+    call `confirm_project_close` with the returned code. Do not try to close a
+    project with `update_project`.
     """
 )
 
@@ -304,6 +308,7 @@ def build_manager_toolset() -> FunctionToolset[SituToolDeps]:
             ClaimTaskTool().as_tool(),
             UpdateTaskTool().as_tool(),
             AddTaskCommentTool().as_tool(),
+            ResolveHypothesisTool().as_tool(),
             AddExperimentLineageDecisionTool().as_tool(),
         ],
     )

@@ -148,6 +148,19 @@ Hypotheses should be lightweight and status-light. A hypothesis can be open,
 active, or closed. Whether it is promising, weakened, suspicious, or mostly
 supported should be explained through activities rather than status explosion.
 
+Closing a hypothesis requires an explicit resolution activity. The hypothesis
+row should remain status-light (`closed`), while the resolution activity says
+whether the project evidence made the hypothesis `supported`, `rejected`,
+`superseded`, or `inconclusive`. `supported` means supported enough for this
+project's next decision; it does not claim general truth. `superseded` should
+name the replacement hypothesis when there is one. Evidence such as linked
+experiments, evaluations, measurements, artifacts, or analyses should be cited
+in the activity payload or body.
+
+Routine hypothesis updates should not directly set a hypothesis to `closed`.
+Use the explicit resolution action so the activity trail explains what was
+learned before the status changes.
+
 Hypotheses are required to belong to a project (`project_id` FK, NOT NULL). If
 a session created the hypothesis, store that provenance as
 `created_in_session_id`.

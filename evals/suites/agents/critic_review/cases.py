@@ -7,6 +7,7 @@ from evals.suites.agents.critic_review.evaluators import (
     CriticReviewMentionsAny,
     CriticReviewRecorded,
     CriticReviewReferencesEvidence,
+    CriticToolArgsContain,
     CriticToolSucceeded,
     CriticToolWasCalled,
     CriticVerdictIn,
@@ -29,6 +30,8 @@ def critic_review_cases() -> list[Case[CriticReviewEvalInput, CriticReviewEvalOu
             metadata={"requires_real_llm": True},
             evaluators=(
                 CriticToolWasCalled("get_task"),
+                CriticToolWasCalled("load_skill"),
+                CriticToolArgsContain("load_skill", "review-task"),
                 CriticToolWasCalled("add_experiment_review"),
                 CriticToolSucceeded("add_experiment_review"),
                 ReviewTaskCompletedByCritic(),
@@ -53,6 +56,8 @@ def critic_review_cases() -> list[Case[CriticReviewEvalInput, CriticReviewEvalOu
             metadata={"requires_real_llm": True},
             evaluators=(
                 CriticToolWasCalled("get_task"),
+                CriticToolWasCalled("load_skill"),
+                CriticToolArgsContain("load_skill", "review-task"),
                 CriticToolWasCalled("add_experiment_review"),
                 CriticToolSucceeded("add_experiment_review"),
                 ReviewTaskCompletedByCritic(),
@@ -77,6 +82,8 @@ def critic_review_cases() -> list[Case[CriticReviewEvalInput, CriticReviewEvalOu
             metadata={"requires_real_llm": True},
             evaluators=(
                 CriticToolWasCalled("get_task"),
+                CriticToolWasCalled("load_skill"),
+                CriticToolArgsContain("load_skill", "review-task"),
                 CriticToolWasCalled("add_experiment_review"),
                 CriticToolSucceeded("add_experiment_review"),
                 ReviewTaskCompletedByCritic(),
@@ -102,6 +109,8 @@ def critic_review_cases() -> list[Case[CriticReviewEvalInput, CriticReviewEvalOu
             metadata={"requires_real_llm": True},
             evaluators=(
                 CriticToolWasCalled("get_task"),
+                CriticToolWasCalled("load_skill"),
+                CriticToolArgsContain("load_skill", "review-task"),
                 CriticToolWasCalled("add_experiment_review"),
                 CriticToolSucceeded("add_experiment_review"),
                 ReviewTaskCompletedByCritic(),
@@ -132,6 +141,8 @@ def critic_review_cases() -> list[Case[CriticReviewEvalInput, CriticReviewEvalOu
             metadata={"requires_real_llm": True},
             evaluators=(
                 CriticToolWasCalled("get_task"),
+                CriticToolWasCalled("load_skill"),
+                CriticToolArgsContain("load_skill", "review-task"),
                 CriticToolWasCalled("add_experiment_review"),
                 CriticToolSucceeded("add_experiment_review"),
                 ReviewTaskCompletedByCritic(),

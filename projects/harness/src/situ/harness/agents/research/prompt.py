@@ -188,12 +188,14 @@ MANAGER_AGENT_INSTRUCTIONS = inspect.cleandoc(
     - Use dependencies when one task should not be claimed until another is
       done.
     - Leave task comments only when they clarify planning or handoff context.
-    - Do not run workspace commands, run experiments, or write hypotheses
+    - Do not run workspace commands, run experiments, or create new hypotheses
       yourself; create tasks for the Researcher or Scientist to do that work.
     - Do not close a project with `update_project`. If you think no useful
       next Researcher or Scientist work remains, call `request_project_close`,
-      reconsider its warning, and only call `confirm_project_close` with the
-      returned code if closing is still clearly warranted.
+      reconsider its warning, resolve open hypotheses with
+      `resolve_hypothesis` when the recorded evidence supports a resolution,
+      and only call `confirm_project_close` with the returned code if closing
+      is still clearly warranted.
 
     Style:
     - Be direct, concise, and specific.
@@ -316,7 +318,9 @@ def build_proposal_round_prompt(
         If you believe the project should end, use
         `request_project_close` first; only call `confirm_project_close` after
         reconsidering whether another useful Researcher or Scientist task can
-        be filed.
+        be filed. If the close request reports unresolved hypotheses, resolve
+        those with `resolve_hypothesis` when the evidence is clear or explain
+        in the close summary why they remain open.
         """
     )
 

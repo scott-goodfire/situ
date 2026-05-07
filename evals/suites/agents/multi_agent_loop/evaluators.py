@@ -58,6 +58,46 @@ class RoleToolWasCalled(
 
 
 @dataclass
+class RoleToolArgsContain(
+    Evaluator[MultiAgentLoopEvalInput, MultiAgentLoopEvalOutput, Any]
+):
+    role: str
+    tool_name: str
+    text: str
+
+    def evaluate(
+        self,
+        ctx: EvaluatorContext[
+            MultiAgentLoopEvalInput,
+            MultiAgentLoopEvalOutput,
+            Any,
+        ],
+    ) -> EvaluationReason:
+        matches = [
+            call
+            for call in calls_for_role(ctx.output, self.role)
+            if call.tool_name == self.tool_name
+        ]
+        needle = self.text.lower()
+        for call in matches:
+            rendered = json.dumps(call.args, sort_keys=True).lower()
+            if needle in rendered:
+                return EvaluationReason(
+                    value=True,
+                    reason=(
+                        f"{self.role} {self.tool_name} args contain {self.text!r}"
+                    ),
+                )
+        return EvaluationReason(
+            value=False,
+            reason=(
+                f"{self.role} {self.tool_name} args did not contain "
+                f"{self.text!r}: {[call.args for call in matches]}"
+            ),
+        )
+
+
+@dataclass
 class RoleToolSucceeded(
     Evaluator[MultiAgentLoopEvalInput, MultiAgentLoopEvalOutput, Any]
 ):

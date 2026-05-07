@@ -61,6 +61,39 @@ class CriticToolWasCalled(
 
 
 @dataclass
+class CriticToolArgsContain(
+    Evaluator[CriticReviewEvalInput, CriticReviewEvalOutput, Any]
+):
+    tool_name: str
+    text: str
+
+    def evaluate(
+        self,
+        ctx: EvaluatorContext[CriticReviewEvalInput, CriticReviewEvalOutput, Any],
+    ) -> EvaluationReason:
+        matches = [
+            call
+            for call in ctx.output.critic_tool_calls
+            if call.tool_name == self.tool_name
+        ]
+        needle = self.text.lower()
+        for call in matches:
+            rendered = json.dumps(call.args, sort_keys=True).lower()
+            if needle in rendered:
+                return EvaluationReason(
+                    value=True,
+                    reason=f"Critic {self.tool_name} args contain {self.text!r}",
+                )
+        return EvaluationReason(
+            value=False,
+            reason=(
+                f"Critic {self.tool_name} args did not contain {self.text!r}: "
+                f"{[call.args for call in matches]}"
+            ),
+        )
+
+
+@dataclass
 class CriticToolSucceeded(
     Evaluator[CriticReviewEvalInput, CriticReviewEvalOutput, Any]
 ):

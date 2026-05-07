@@ -8,6 +8,7 @@ from situ.harness.repositories import Repositories
 from evals.framework.models import EvalEvent
 from evals.worlds.multi_agent_loop.models import MultiAgentLoopSeed
 from evals.worlds.repo_bootstrap.world.world import (
+    BASELINE_ID,
     PROJECT_ID,
     SESSION_ID,
     WORKSPACE_ID,
@@ -17,6 +18,8 @@ from evals.worlds.repo_bootstrap.world.world import (
 MANAGER_AGENT_ID = f"agent_{PROJECT_ID}_manager"
 RESEARCHER_AGENT_ID = f"agent_{PROJECT_ID}_researcher"
 SCIENTIST_AGENT_ID = f"agent_{PROJECT_ID}_scientist"
+INTERPRET_EXPERIMENT_ID = "EX1"
+INTERPRET_EVALUATION_ID = "EV2"
 
 
 class MultiAgentLoopWorld:
@@ -87,6 +90,8 @@ class MultiAgentLoopWorld:
         return self._repo_world.changed_files()
 
     def _seed_tasks(self) -> None:
+        if self.seed == "with_existing_experiment_result":
+            self._seed_existing_experiment_result()
         self._create_task(
             title=_plan_task_title(self.seed),
             content=_plan_task_content(self.seed),
@@ -120,6 +125,85 @@ class MultiAgentLoopWorld:
                 priority="urgent",
                 source_kind="user",
             )
+
+    def _seed_existing_experiment_result(self) -> None:
+        experiment = self.repos.experiments.create(
+            experiment_id=INTERPRET_EXPERIMENT_ID,
+            project_id=PROJECT_ID,
+            created_in_session_id=SESSION_ID,
+            title="Try component A",
+            summary=(
+                "Candidate changed train.py to use component_a and produced "
+                "a lower val_bpb than baseline."
+            ),
+            status="closed",
+            worktree_path=str(self.workspace_path),
+            base_commit="eval-fixture-base",
+            candidate_commit="eval-component-a",
+            research_thread="component-choice",
+        )
+        evaluation = self.repos.evaluations.create(
+            evaluation_id=INTERPRET_EVALUATION_ID,
+            project_id=PROJECT_ID,
+            created_in_session_id=SESSION_ID,
+            title="Component A validation check",
+            summary="Candidate measurement for interpretation.",
+            associated_experiment_id=experiment.id,
+            status="closed",
+        )
+        measurement = self.repos.measurements.add(
+            evaluation_id=evaluation.id,
+            created_in_session_id=SESSION_ID,
+            actor="scientist",
+            body=(
+                "Candidate command: `python train.py`\n\n"
+                "```text\n"
+                "component: component_a\n"
+                "val_bpb: 2.681\n"
+                "train_time_s: 0.19\n"
+                "status: ok\n"
+                "```\n\n"
+                "Interpretation: component_a improves val_bpb versus baseline "
+                "2.713, but needs synthesis before the next task."
+            ),
+            payload={
+                "command": "python train.py",
+                "metrics": {
+                    "val_bpb": {
+                        "value": 2.681,
+                        "direction": "lower_is_better",
+                    }
+                },
+                "comparison_baseline_id": BASELINE_ID,
+            },
+        )
+        self.repos.evaluation_activities.add(
+            evaluation_id=evaluation.id,
+            created_in_session_id=SESSION_ID,
+            actor="scientist",
+            kind="result",
+            body=measurement.body,
+            payload={
+                **measurement.payload.to_storage_dict(),
+                "measurement_id": measurement.id,
+            },
+        )
+        self.repos.experiment_activities.add(
+            experiment_id=experiment.id,
+            created_in_session_id=SESSION_ID,
+            actor="scientist",
+            kind="comment",
+            body=(
+                "Scientist interpretation: component_a is promising, but the "
+                "project needs an interpret pass to decide whether to reproduce, "
+                "continue, or fork."
+            ),
+            payload={"activity_type": "interpretation"},
+        )
+        self.repos.hypothesis_experiment_links.create(
+            hypothesis_id="H1",
+            experiment_id=experiment.id,
+        )
 
     def _create_task(
         self,
@@ -155,6 +239,7 @@ def _repo_bootstrap_seed(seed: MultiAgentLoopSeed):
     if seed in {
         "with_baseline_result",
         "with_eval_surface_trap",
+        "with_existing_experiment_result",
     }:
         return "with_baseline_result"
     return "empty_repo"
@@ -168,6 +253,7 @@ def _plan_task_title(seed: MultiAgentLoopSeed) -> str:
         "with_eval_surface_trap": "Plan eval-surface review",
         "needs_analysis": "Plan codebase analysis first pass",
         "with_user_urgent_task": "Plan around urgent user steering",
+        "with_existing_experiment_result": "Plan interpretation of component A",
         "web_research_prior_art": "Plan source-backed prior art research",
     }[seed]
 
@@ -223,6 +309,15 @@ def _plan_task_content(seed: MultiAgentLoopSeed) -> str:
             "Inspect the task board, preserve the urgent task as the next "
             "Scientist claim, and do not create a higher-priority task that "
             "would preempt the user's request."
+        ),
+        "with_existing_experiment_result": (
+            "Baseline and component_a experiment evidence already exist. File "
+            "one focused Researcher interpret task titled 'Interpret component A "
+            "result'. The task must compare baseline val_bpb 2.713 against "
+            "component_a val_bpb 2.681, create an Analysis titled 'Component A "
+            "result interpretation', link the task to the Analysis and central "
+            "experiment/evaluation evidence, and mark the task done. Do not "
+            "file a Scientist experiment task until this interpretation is done."
         ),
         "web_research_prior_art": (
             "Use web search yourself to get lightweight public context about "

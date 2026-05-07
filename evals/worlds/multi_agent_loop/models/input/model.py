@@ -11,6 +11,7 @@ MultiAgentLoopSeed = Literal[
     "with_eval_surface_trap",
     "needs_analysis",
     "with_user_urgent_task",
+    "with_existing_experiment_result",
     "web_research_prior_art",
 ]
 

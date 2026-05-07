@@ -4,7 +4,7 @@ from typing import Any
 
 from pydantic_ai import RunContext
 
-from ....records import WorkStatus
+from ....records import WorkStatus, parse_work_status
 from ...common import SituToolDeps, BaseSituTool
 from .models import CreateHypothesisResult
 
@@ -24,10 +24,23 @@ class CreateHypothesisTool(BaseSituTool[SituToolDeps, CreateHypothesisResult]):
         status: WorkStatus = WorkStatus.OPEN,
         **_kwargs: Any,
     ) -> CreateHypothesisResult:
-        """Create a hypothesis under the current project.
-
-        `status` must be `open`, `active`, or `closed`.
-        """
+        """Create a hypothesis under the current project."""
+        try:
+            checked_status = parse_work_status(status=status, noun="hypothesis")
+        except ValueError as error:
+            return self._failure(
+                code="invalid_hypothesis_status",
+                message=str(error),
+            )
+        if checked_status == WorkStatus.CLOSED:
+            return self._failure(
+                code="hypothesis_resolution_required",
+                message=(
+                    "Create hypotheses as open or active. To close a "
+                    "hypothesis, use resolve_hypothesis so the activity trail "
+                    "records supported, rejected, superseded, or inconclusive."
+                ),
+            )
         repos = ctx.deps.get_repos()
         project_id = ctx.deps.require_project_id()
         session_id = ctx.deps.session_id
@@ -40,7 +53,7 @@ class CreateHypothesisTool(BaseSituTool[SituToolDeps, CreateHypothesisResult]):
             created_in_session_id=session_id,
             title=title,
             summary=summary,
-            status=status,
+            status=checked_status,
         )
         event = ctx.deps.record_event(
             event_type="hypothesis.created",

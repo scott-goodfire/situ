@@ -54,6 +54,7 @@ from situ.harness.tools.experiments import (
 from situ.harness.tools.hypotheses import (
     CreateHypothesisTool,
     ListHypothesesTool,
+    ResolveHypothesisTool,
     UpdateHypothesisTool,
 )
 from situ.harness.tools.links import LinkHypothesisExperimentTool
@@ -371,6 +372,9 @@ def test_project_close_requires_request_and_confirmation(
     assert request.success is True
     assert request.confirmation_required is True
     assert request.confirmation_code is not None
+    assert request.unresolved_hypothesis_ids == ["H1"]
+    assert request.message is not None
+    assert "Unresolved hypotheses remain: H1" in request.message
     assert repos.projects.get(project_id="P1").status == "active"
 
     bad_confirm = invoke_situ_tool_sync(
@@ -401,6 +405,7 @@ def test_project_close_requires_request_and_confirmation(
         "project_close_requested",
         "project_close_confirmed",
     ]
+    assert activities[0].payload["unresolved_hypothesis_ids"] == ["H1"]
 
 
 def test_analysis_tools_create_update_list_and_comment(
@@ -519,6 +524,88 @@ def test_hypothesis_tools_create_update_and_list(repos: Repositories) -> None:
         "hypothesis.created",
         "hypothesis.updated",
     ]
+
+
+def test_resolve_hypothesis_closes_with_resolution_activity(
+    repos: Repositories,
+) -> None:
+    emitted: list[dict[str, Any]] = []
+    deps = SituToolDeps(
+        session_id="S1",
+        repos=repos,
+        emit_event=_event_collector(emitted),
+    )
+
+    result = invoke_situ_tool_sync(
+        tool=ResolveHypothesisTool(),
+        deps=deps,
+        hypothesis_id="H1",
+        resolution="supported",
+        summary="Component A is supported enough to continue.",
+        evidence_entity_ids=["EX1"],
+    )
+
+    assert result.success is True
+    assert result.hypothesis is not None
+    assert result.hypothesis["status"] == "closed"
+    assert result.activity is not None
+    assert result.activity["body"] == "Component A is supported enough to continue."
+    assert result.activity["payload"] == {
+        "activity_type": "hypothesis_resolution",
+        "resolution": "supported",
+        "evidence_entity_ids": ["EX1"],
+        "superseded_by_hypothesis_id": None,
+    }
+    assert [event["type"] for event in emitted] == ["hypothesis.resolved"]
+
+
+def test_resolve_hypothesis_validates_supersession_and_evidence(
+    repos: Repositories,
+) -> None:
+    deps = SituToolDeps(session_id="S1", repos=repos)
+    repos.hypotheses.create(
+        hypothesis_id="H2",
+        project_id="P1",
+        created_in_session_id="S1",
+        title="Component B helps",
+        summary="Component B may improve score.",
+    )
+
+    missing_superseding = invoke_situ_tool_sync(
+        tool=ResolveHypothesisTool(),
+        deps=deps,
+        hypothesis_id="H1",
+        resolution="superseded",
+        summary="Component B is the sharper version.",
+    )
+    invalid_evidence = invoke_situ_tool_sync(
+        tool=ResolveHypothesisTool(),
+        deps=deps,
+        hypothesis_id="H1",
+        resolution="supported",
+        summary="This cites missing evidence.",
+        evidence_entity_ids=["EX404"],
+    )
+    superseded = invoke_situ_tool_sync(
+        tool=ResolveHypothesisTool(),
+        deps=deps,
+        hypothesis_id="H1",
+        resolution="superseded",
+        summary="Component B is the sharper version.",
+        superseded_by_hypothesis_id="H2",
+        evidence_entity_ids=["H2"],
+    )
+
+    assert missing_superseding.success is False
+    assert missing_superseding.error is not None
+    assert missing_superseding.error.code == "missing_superseded_by_hypothesis"
+    assert invalid_evidence.success is False
+    assert invalid_evidence.error is not None
+    assert invalid_evidence.error.code == "invalid_evidence_entity"
+    assert superseded.success is True
+    assert superseded.activity is not None
+    assert superseded.activity["payload"]["resolution"] == "superseded"
+    assert superseded.activity["payload"]["superseded_by_hypothesis_id"] == "H2"
 
 
 def test_experiment_tools_create_update_and_list(repos: Repositories) -> None:
@@ -733,6 +820,19 @@ def test_work_tools_reject_invalid_statuses_with_agent_readable_errors(
         deps=deps,
         status="completed",
     )
+    hypothesis_close = invoke_situ_tool_sync(
+        tool=UpdateHypothesisTool(),
+        deps=deps,
+        hypothesis_id="H1",
+        status="closed",
+    )
+    closed_hypothesis_create = invoke_situ_tool_sync(
+        tool=CreateHypothesisTool(),
+        deps=deps,
+        title="Already resolved",
+        summary="This should use resolve_hypothesis instead.",
+        status="closed",
+    )
 
     assert experiment_update.success is False
     assert experiment_update.error is not None
@@ -743,6 +843,15 @@ def test_work_tools_reject_invalid_statuses_with_agent_readable_errors(
     assert hypothesis_update.success is False
     assert hypothesis_update.error is not None
     assert "invalid hypothesis status: 'completed'" in hypothesis_update.error.message
+
+    assert hypothesis_close.success is False
+    assert hypothesis_close.error is not None
+    assert hypothesis_close.error.code == "hypothesis_resolution_required"
+    assert "resolve_hypothesis" in hypothesis_close.error.message
+
+    assert closed_hypothesis_create.success is False
+    assert closed_hypothesis_create.error is not None
+    assert closed_hypothesis_create.error.code == "hypothesis_resolution_required"
 
     assert experiment_list.success is False
     assert experiment_list.error is not None

@@ -13,7 +13,11 @@ from .evaluation_activity import (
 )
 from .experiment import ExperimentRecord, WorkStatus, parse_work_status
 from .experiment_activity import ExperimentActivityKind, ExperimentActivityRecord
-from .hypothesis import HypothesisRecord
+from .hypothesis import (
+    HypothesisRecord,
+    HypothesisResolution,
+    parse_hypothesis_resolution,
+)
 from .hypothesis_activity import HypothesisActivityKind, HypothesisActivityRecord
 from .hypothesis_experiment_link import HypothesisExperimentLinkRecord
 from .measurement import MeasurementPayload, MeasurementRecord, MetricValue
@@ -56,6 +60,7 @@ __all__ = [
     "HypothesisActivityRecord",
     "HypothesisExperimentLinkRecord",
     "HypothesisRecord",
+    "HypothesisResolution",
     "MeasurementPayload",
     "MeasurementRecord",
     "MetricValue",
@@ -78,6 +83,7 @@ __all__ = [
     "parse_agent_kind",
     "parse_agent_status",
     "parse_evaluation_activity_kind",
+    "parse_hypothesis_resolution",
     "parse_project_status",
     "parse_session_status",
     "parse_task_entity_kind",
