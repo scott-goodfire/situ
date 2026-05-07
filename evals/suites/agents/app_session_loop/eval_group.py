@@ -39,6 +39,14 @@ class AppSessionLoopEvalGroup(
             output.signals.get("scientist_done_tasks") or 0,
         )
         increment_eval_metric(
+            "researcher_done_tasks",
+            output.signals.get("researcher_done_tasks") or 0,
+        )
+        increment_eval_metric(
+            "scientist_done_tasks_by_agent",
+            output.signals.get("scientist_done_tasks_by_agent") or 0,
+        )
+        increment_eval_metric(
             "experiments",
             len(output.session_graph.get("experiments", [])),
         )

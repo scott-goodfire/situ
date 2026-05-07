@@ -7,6 +7,7 @@ from evals.harness.models import EvalModel
 MultiAgentLoopSeed = Literal[
     "empty_repo",
     "with_baseline_result",
+    "researcher_handoff_to_scientist",
     "with_eval_surface_trap",
     "needs_analysis",
     "with_user_urgent_task",

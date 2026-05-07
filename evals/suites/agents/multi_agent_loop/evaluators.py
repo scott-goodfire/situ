@@ -210,7 +210,8 @@ class FollowupTaskCreatedAfterBaseline(
         followups = [
             task
             for task in ctx.output.session_graph.get("tasks", [])
-            if task.get("kind") in {"hypothesize", "experiment", "interpret", "review"}
+            if task.get("kind")
+            in {"research", "hypothesize", "experiment", "interpret", "review"}
         ]
         if followups:
             return EvaluationReason(
@@ -348,6 +349,105 @@ class AnalysisRecorded(
         return EvaluationReason(
             value=False,
             reason=f"Missing analysis/comment. Analyses: {analyses}; activities: {activities}",
+        )
+
+
+@dataclass
+class TaskClaimedByRole(
+    Evaluator[MultiAgentLoopEvalInput, MultiAgentLoopEvalOutput, Any]
+):
+    role: str
+    task_kind: str | None = None
+    title_contains: str | None = None
+
+    def evaluate(
+        self,
+        ctx: EvaluatorContext[
+            MultiAgentLoopEvalInput,
+            MultiAgentLoopEvalOutput,
+            Any,
+        ],
+    ) -> EvaluationReason:
+        agents_by_id = {
+            agent.get("id"): agent
+            for agent in ctx.output.session_graph.get("agents", [])
+        }
+        matches = []
+        for task in ctx.output.session_graph.get("tasks", []):
+            agent = agents_by_id.get(task.get("assignee_id"))
+            if agent is None or agent.get("kind") != self.role:
+                continue
+            if self.task_kind is not None and task.get("kind") != self.task_kind:
+                continue
+            if self.title_contains is not None and self.title_contains.lower() not in str(
+                task.get("title", "")
+            ).lower():
+                continue
+            matches.append(task)
+        if matches:
+            return EvaluationReason(
+                value=True,
+                reason=(
+                    f"{self.role} claimed matching task(s): "
+                    f"{[task.get('id') for task in matches]}"
+                ),
+            )
+        return EvaluationReason(
+            value=False,
+            reason=(
+                f"No task claimed by {self.role} matched kind={self.task_kind!r} "
+                f"title_contains={self.title_contains!r}. Tasks: "
+                f"{ctx.output.session_graph.get('tasks', [])}; agents: "
+                f"{ctx.output.session_graph.get('agents', [])}"
+            ),
+        )
+
+
+class ResearcherHandoffRecorded(
+    Evaluator[MultiAgentLoopEvalInput, MultiAgentLoopEvalOutput, Any]
+):
+    def evaluate(
+        self,
+        ctx: EvaluatorContext[
+            MultiAgentLoopEvalInput,
+            MultiAgentLoopEvalOutput,
+            Any,
+        ],
+    ) -> EvaluationReason:
+        graph = ctx.output.session_graph
+        analyses = graph.get("analyses", [])
+        hypotheses = graph.get("hypotheses", [])
+        links = graph.get("task_entity_links", [])
+        has_analysis = any(
+            "component a research map" in json.dumps(analysis, sort_keys=True).lower()
+            or "component_a" in json.dumps(analysis, sort_keys=True).lower()
+            for analysis in analyses
+        )
+        has_hypothesis = any(
+            "component a" in json.dumps(hypothesis, sort_keys=True).lower()
+            or "component_a" in json.dumps(hypothesis, sort_keys=True).lower()
+            for hypothesis in hypotheses
+        )
+        linked_entity_ids = {link.get("entity_id") for link in links}
+        has_link = any(
+            record.get("id") in linked_entity_ids
+            for record in [*analyses, *hypotheses]
+        )
+        if has_analysis and has_hypothesis and has_link:
+            return EvaluationReason(
+                value=True,
+                reason=(
+                    "Found Researcher analysis, hypothesis, and task link. "
+                    f"Analyses: {[item.get('id') for item in analyses]}; "
+                    f"hypotheses: {[item.get('id') for item in hypotheses]}"
+                ),
+            )
+        return EvaluationReason(
+            value=False,
+            reason=(
+                "Missing Researcher handoff records. "
+                f"Analyses: {analyses}; hypotheses: {hypotheses}; links: {links}"
+            ),
         )
 
 

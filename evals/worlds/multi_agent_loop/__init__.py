@@ -7,6 +7,7 @@ from evals.worlds.multi_agent_loop.models import (
 from evals.worlds.multi_agent_loop.world import (
     MANAGER_AGENT_ID,
     PROJECT_ID,
+    RESEARCHER_AGENT_ID,
     SCIENTIST_AGENT_ID,
     SESSION_ID,
     WORKSPACE_ID,
@@ -20,6 +21,7 @@ __all__ = [
     "MultiAgentLoopSeed",
     "MultiAgentLoopWorld",
     "PROJECT_ID",
+    "RESEARCHER_AGENT_ID",
     "SCIENTIST_AGENT_ID",
     "SESSION_ID",
     "WORKSPACE_ID",

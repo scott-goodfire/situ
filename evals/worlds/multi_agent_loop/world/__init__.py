@@ -1,6 +1,7 @@
 from .world import (
     MANAGER_AGENT_ID,
     PROJECT_ID,
+    RESEARCHER_AGENT_ID,
     SCIENTIST_AGENT_ID,
     SESSION_ID,
     WORKSPACE_ID,
@@ -11,6 +12,7 @@ __all__ = [
     "MANAGER_AGENT_ID",
     "MultiAgentLoopWorld",
     "PROJECT_ID",
+    "RESEARCHER_AGENT_ID",
     "SCIENTIST_AGENT_ID",
     "SESSION_ID",
     "WORKSPACE_ID",

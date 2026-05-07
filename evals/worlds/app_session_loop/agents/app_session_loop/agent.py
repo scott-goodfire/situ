@@ -47,6 +47,18 @@ def run_app_session_loop(args: AppSessionLoopEvalInput) -> AppSessionLoopEvalOut
                         and task.get("status") == "done"
                     ]
                 ),
+                "researcher_done_tasks": len(
+                    _done_tasks_for_agent_kind(
+                        session_graph=session_graph,
+                        agent_kind="researcher",
+                    )
+                ),
+                "scientist_done_tasks_by_agent": len(
+                    _done_tasks_for_agent_kind(
+                        session_graph=session_graph,
+                        agent_kind="scientist",
+                    )
+                ),
                 "experiments": len(session_graph.get("experiments", [])),
                 "evaluations": len(session_graph.get("evaluations", [])),
                 "changed_files": len(changed_files),
@@ -54,6 +66,23 @@ def run_app_session_loop(args: AppSessionLoopEvalInput) -> AppSessionLoopEvalOut
         )
     finally:
         world.teardown()
+
+
+def _done_tasks_for_agent_kind(
+    *,
+    session_graph: dict,
+    agent_kind: str,
+) -> list[dict]:
+    agents_by_id = {
+        agent.get("id"): agent
+        for agent in session_graph.get("agents", [])
+    }
+    return [
+        task
+        for task in session_graph.get("tasks", [])
+        if task.get("status") == "done"
+        and agents_by_id.get(task.get("assignee_id"), {}).get("kind") == agent_kind
+    ]
 
 
 def _render_content(*, session_graph: dict, events: list) -> str:

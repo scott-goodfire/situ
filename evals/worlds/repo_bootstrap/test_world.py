@@ -38,3 +38,16 @@ def test_repo_bootstrap_world_seeds_baseline_evaluation() -> None:
         assert "val_bpb: 2.713" in graph["evaluation_activities"][0]["body"]
     finally:
         world.teardown()
+
+
+def test_repo_bootstrap_world_can_seed_baseline_without_hypothesis() -> None:
+    world = RepoBootstrapWorld(seed="with_baseline_no_hypothesis")
+    try:
+        graph = world.session_graph()
+
+        assert [item["id"] for item in graph["evaluations"]] == [
+            BASELINE_EVALUATION_ID
+        ]
+        assert graph["hypotheses"] == []
+    finally:
+        world.teardown()

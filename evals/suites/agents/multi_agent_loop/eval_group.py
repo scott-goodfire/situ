@@ -33,6 +33,7 @@ class MultiAgentLoopEvalGroup(
             "final_manager_tool_calls",
             len(output.final_manager_tool_calls),
         )
+        increment_eval_metric("researcher_tool_calls", len(output.researcher_tool_calls))
         increment_eval_metric("scientist_tool_calls", len(output.scientist_tool_calls))
         increment_eval_metric("events", len(output.events))
         increment_eval_metric("tasks", len(output.session_graph.get("tasks", [])))

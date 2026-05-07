@@ -9,7 +9,7 @@ from situ.harness.agents import (
     ScientistAgent,
     ScientistAgentContext,
 )
-from situ.harness.records import AgentKind, AgentStatus, TaskRecord, TaskStatus
+from situ.harness.records import AgentKind, AgentStatus, TaskKind, TaskRecord, TaskStatus
 from situ.harness.tools.common import SituToolDeps
 from situ.harness.tools.tasks.eligibility import eligible_task_kinds_for_agent
 
@@ -58,30 +58,105 @@ def run_multi_agent_loop(args: MultiAgentLoopEvalInput) -> MultiAgentLoopEvalOut
                 result_summary=manager_outputs[-1].summary,
             )
 
-        researcher_outputs.append(
-            _run_researcher_pass(
-                world=world,
-                args=args,
-                capture=researcher_capture,
+        researcher_task = _claim_next_task(world, AgentKind.RESEARCHER)
+        if researcher_task is not None:
+            researcher_outputs.append(
+                _run_researcher_pass(
+                    world=world,
+                    args=args,
+                    capture=researcher_capture,
+                    active_task=researcher_task,
+                )
             )
-        )
+            _finish_task(
+                world,
+                task_id=researcher_task.id,
+                status=TaskStatus.DONE,
+                result_summary=researcher_outputs[-1].summary,
+            )
+            world.emit_event(
+                "session.researcher_completed",
+                researcher_outputs[-1].summary,
+                PROJECT_ID,
+                SESSION_ID,
+                researcher_outputs[-1].model_dump(),
+            )
+            _enqueue_plan_task(
+                world,
+                title="Plan after Researcher task completion",
+                content=(
+                    "A Researcher task just completed. Review analyses, "
+                    "hypotheses, task links, and the task board. File the next "
+                    "focused Researcher or Scientist task so the research loop "
+                    "keeps moving."
+                ),
+            )
+            manager_task = _claim_next_task(world, AgentKind.MANAGER)
+            if manager_task is not None:
+                manager_outputs.append(
+                    _run_manager_pass(
+                        world=world,
+                        args=args,
+                        capture=final_manager_capture,
+                        active_task=manager_task,
+                    )
+                )
+                _finish_task(
+                    world,
+                    task_id=manager_task.id,
+                    status=TaskStatus.DONE,
+                    result_summary=manager_outputs[-1].summary,
+                )
 
-        scientist_outputs.append(
-            _run_scientist_pass(
-                world=world,
-                args=args,
-                capture=scientist_capture,
+        scientist_task = _claim_next_task(world, AgentKind.SCIENTIST)
+        if scientist_task is not None:
+            scientist_outputs.append(
+                _run_scientist_pass(
+                    world=world,
+                    args=args,
+                    capture=scientist_capture,
+                    active_task=scientist_task,
+                )
             )
-        )
-
-        manager_outputs.append(
-            _run_manager_pass(
-                world=world,
-                args=args,
-                capture=final_manager_capture,
-                active_task=None,
+            _finish_task(
+                world,
+                task_id=scientist_task.id,
+                status=TaskStatus.DONE,
+                result_summary=scientist_outputs[-1].summary,
             )
-        )
+            world.emit_event(
+                "session.agent_completed",
+                scientist_outputs[-1].summary,
+                PROJECT_ID,
+                SESSION_ID,
+                scientist_outputs[-1].model_dump(),
+            )
+            _enqueue_plan_task(
+                world,
+                title="Plan after Scientist task completion",
+                content=(
+                    "A Scientist task just completed. Review the ledger, "
+                    "task board, recent activity, and experiment budget. File "
+                    "the next focused Researcher or Scientist task so the "
+                    "research loop keeps moving."
+                ),
+            )
+            manager_task = _claim_next_task(world, AgentKind.MANAGER)
+            if manager_task is not None:
+                manager_outputs.append(
+                    _run_manager_pass(
+                        world=world,
+                        args=args,
+                        capture=final_manager_capture,
+                        active_task=manager_task,
+                    )
+                )
+                _finish_task(
+                    world,
+                    task_id=manager_task.id,
+                    status=TaskStatus.DONE,
+                    result_summary=manager_outputs[-1].summary,
+                )
 
         session_graph = world.session_graph()
         combined_tool_calls = [
@@ -164,6 +239,7 @@ def _run_scientist_pass(
     world: MultiAgentLoopWorld,
     args: MultiAgentLoopEvalInput,
     capture: ToolCallCaptureCapability,
+    active_task: TaskRecord,
 ) -> ResearchAgentOutput:
     agent = ScientistAgent(
         model=eval_model_name(),
@@ -176,7 +252,7 @@ def _run_scientist_pass(
             setup_research_context=args.research_context,
             current_state=world.session_graph(),
             max_experiments=1,
-            active_task=None,
+            active_task=active_task.model_dump(),
         )
     )
     return result.output
@@ -187,6 +263,7 @@ def _run_researcher_pass(
     world: MultiAgentLoopWorld,
     args: MultiAgentLoopEvalInput,
     capture: ToolCallCaptureCapability,
+    active_task: TaskRecord,
 ) -> ResearchAgentOutput:
     agent = ResearcherAgent(
         model=eval_model_name(),
@@ -198,7 +275,7 @@ def _run_researcher_pass(
             setup_objective=args.objective,
             setup_research_context=args.research_context,
             current_state=world.session_graph(),
-            active_task=None,
+            active_task=active_task.model_dump(),
         )
     )
     return result.output
@@ -276,6 +353,31 @@ def _finish_task(
         PROJECT_ID,
         SESSION_ID,
         {"task_id": updated.id, "status": updated.status.value},
+    )
+
+
+def _enqueue_plan_task(
+    world: MultiAgentLoopWorld,
+    *,
+    title: str,
+    content: str,
+) -> None:
+    task = world.repos.tasks.create(
+        task_id=world.repos.tasks.next_id(PROJECT_ID),
+        project_id=PROJECT_ID,
+        created_in_session_id=SESSION_ID,
+        title=title,
+        content=content,
+        kind=TaskKind.PLAN,
+        priority="high",
+        source_kind="system",
+    )
+    world.emit_event(
+        "task.created",
+        f"Created task {task.id}",
+        PROJECT_ID,
+        SESSION_ID,
+        {"task_id": task.id, "kind": task.kind.value},
     )
 
 

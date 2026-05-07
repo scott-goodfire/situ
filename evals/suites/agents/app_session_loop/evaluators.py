@@ -126,7 +126,8 @@ class BaselineThenFollowupWork(
         done_followup = [
             task
             for task in tasks
-            if task.get("kind") in {"hypothesize", "experiment", "interpret", "review"}
+            if task.get("kind")
+            in {"research", "hypothesize", "experiment", "interpret", "review"}
             and task.get("status") == "done"
         ]
         done_plans = [
@@ -138,7 +139,7 @@ class BaselineThenFollowupWork(
             return EvaluationReason(
                 value=True,
                 reason=(
-                    "Baseline completed and later follow-up Scientist work completed. "
+                    "Baseline completed and later follow-up agent work completed. "
                     f"Plans: {[task.get('id') for task in done_plans]}; "
                     f"follow-ups: {[task.get('id') for task in done_followup]}"
                 ),
@@ -147,7 +148,7 @@ class BaselineThenFollowupWork(
             value=False,
             reason=(
                 "Expected baseline completion, Manager replan, and follow-up "
-                f"Scientist work. Tasks: {tasks}"
+                f"agent work. Tasks: {tasks}"
             ),
         )
 
@@ -186,4 +187,74 @@ class PrepareFileUnchanged(
         return EvaluationReason(
             value=False,
             reason=f"prepare.py changed; changed files: {ctx.output.changed_files}",
+        )
+
+
+@dataclass
+class TaskDoneByAgentKind(
+    Evaluator[AppSessionLoopEvalInput, AppSessionLoopEvalOutput, Any]
+):
+    task_kind: str
+    agent_kind: str
+    count: int = 1
+
+    def evaluate(
+        self,
+        ctx: EvaluatorContext[AppSessionLoopEvalInput, AppSessionLoopEvalOutput, Any],
+    ) -> EvaluationReason:
+        agents_by_id = {
+            agent.get("id"): agent
+            for agent in ctx.output.session_graph.get("agents", [])
+        }
+        matches = [
+            task
+            for task in ctx.output.session_graph.get("tasks", [])
+            if task.get("kind") == self.task_kind
+            and task.get("status") == "done"
+            and agents_by_id.get(task.get("assignee_id"), {}).get("kind")
+            == self.agent_kind
+        ]
+        if len(matches) >= self.count:
+            return EvaluationReason(
+                value=True,
+                reason=(
+                    f"Found {len(matches)} done {self.task_kind} task(s) "
+                    f"assigned to {self.agent_kind}: "
+                    f"{[task.get('id') for task in matches]}"
+                ),
+            )
+        return EvaluationReason(
+            value=False,
+            reason=(
+                f"Expected at least {self.count} done {self.task_kind} task(s) "
+                f"assigned to {self.agent_kind}. Tasks: "
+                f"{ctx.output.session_graph.get('tasks', [])}; agents: "
+                f"{ctx.output.session_graph.get('agents', [])}"
+            ),
+        )
+
+
+@dataclass
+class RecordCountAtLeast(
+    Evaluator[AppSessionLoopEvalInput, AppSessionLoopEvalOutput, Any]
+):
+    collection: str
+    count: int = 1
+
+    def evaluate(
+        self,
+        ctx: EvaluatorContext[AppSessionLoopEvalInput, AppSessionLoopEvalOutput, Any],
+    ) -> EvaluationReason:
+        records = ctx.output.session_graph.get(self.collection, [])
+        if len(records) >= self.count:
+            return EvaluationReason(
+                value=True,
+                reason=f"Found {len(records)} record(s) in {self.collection}",
+            )
+        return EvaluationReason(
+            value=False,
+            reason=(
+                f"Expected at least {self.count} record(s) in "
+                f"{self.collection}. Got: {records}"
+            ),
         )

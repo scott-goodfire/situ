@@ -255,15 +255,16 @@ def _build_repos(path: Path, workspace_path: Path) -> Repositories:
 
 
 def _seed(repos: Repositories, seed: RepoBootstrapSeed) -> None:
-    if seed == "with_baseline_result":
-        repos.hypotheses.create(
-            hypothesis_id=HYPOTHESIS_ID,
-            project_id=PROJECT_ID,
-            created_in_session_id=SESSION_ID,
-            title="Train.py variants can improve val_bpb",
-            summary="Try narrow train.py variants and compare against baseline.",
-            status="active",
-        )
+    if seed in {"with_baseline_no_hypothesis", "with_baseline_result"}:
+        if seed == "with_baseline_result":
+            repos.hypotheses.create(
+                hypothesis_id=HYPOTHESIS_ID,
+                project_id=PROJECT_ID,
+                created_in_session_id=SESSION_ID,
+                title="Train.py variants can improve val_bpb",
+                summary="Try narrow train.py variants and compare against baseline.",
+                status="active",
+            )
         baseline = repos.baselines.create(
             baseline_id=BASELINE_ID,
             project_id=PROJECT_ID,

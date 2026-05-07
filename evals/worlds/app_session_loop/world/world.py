@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import subprocess
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any
@@ -30,6 +31,7 @@ class AppSessionLoopWorld:
         self.workspace_path = self.root / "fixture-repo"
         self.workspace_path.mkdir(parents=True)
         self._write_fixture_repo()
+        self._init_git_repo()
 
         self.app = HarnessApp(
             self.workspace_path,
@@ -121,17 +123,25 @@ class AppSessionLoopWorld:
                 encoding="utf-8",
             )
 
+    def _init_git_repo(self) -> None:
+        _run_git(self.workspace_path, "init")
+        _run_git(self.workspace_path, "config", "user.email", "situ-eval@example.com")
+        _run_git(self.workspace_path, "config", "user.name", "Situ Eval")
+        _run_git(self.workspace_path, "add", ".")
+        _run_git(self.workspace_path, "commit", "-m", "fixture baseline")
+
     def _seed(self, seed: AppSessionLoopSeed) -> None:
-        if seed != "with_baseline_result":
+        if seed not in {"with_baseline_no_hypothesis", "with_baseline_result"}:
             return
-        self.app.repos.hypotheses.create(
-            hypothesis_id=HYPOTHESIS_ID,
-            project_id=self.project.id,
-            created_in_session_id=self.session_id,
-            title="Train.py variants can improve val_bpb",
-            summary="Try narrow train.py variants and compare against baseline.",
-            status="active",
-        )
+        if seed == "with_baseline_result":
+            self.app.repos.hypotheses.create(
+                hypothesis_id=HYPOTHESIS_ID,
+                project_id=self.project.id,
+                created_in_session_id=self.session_id,
+                title="Train.py variants can improve val_bpb",
+                summary="Try narrow train.py variants and compare against baseline.",
+                status="active",
+            )
         baseline = self.app.repos.baselines.create(
             baseline_id=BASELINE_ID,
             project_id=self.project.id,
@@ -189,6 +199,8 @@ class AppSessionLoopWorld:
 def _initial_plan_title(seed: AppSessionLoopSeed) -> str:
     if seed == "with_baseline_result":
         return "Plan candidate after existing baseline"
+    if seed == "with_baseline_no_hypothesis":
+        return "Plan researcher handoff after baseline"
     return "Plan first research pass"
 
 
@@ -201,6 +213,19 @@ def _initial_plan_content(seed: AppSessionLoopSeed) -> str:
             "recording raw output evidence, and confirming prepare.py remains "
             "unchanged."
         )
+    if seed == "with_baseline_no_hypothesis":
+        return (
+            "Baseline evidence already exists, but the project has no durable "
+            "analyses or hypotheses yet. First file exactly one Researcher "
+            "research task to inspect README.md, program.md, train.py, and "
+            "prepare.py; create an Analysis titled 'Component A research map'; "
+            "create a testable Hypothesis titled 'Component A lowers val_bpb'; "
+            "link the task to the produced records; and mark the task done. "
+            "Do not file a Scientist experiment task until the Researcher task "
+            "has completed. After that Researcher handoff exists, the loop "
+            "should plan and run a Scientist component_a train.py-only "
+            "experiment."
+        )
     return (
         "Read the project objective, research context, empty ledger state, and "
         "task board. Since no baseline evidence exists, file exactly one "
@@ -208,4 +233,14 @@ def _initial_plan_content(seed: AppSessionLoopSeed) -> str:
         "this first planning pass. After baseline evidence exists, the loop "
         "should continue and plan a component_a train.py-only candidate "
         "experiment rather than stopping."
+    )
+
+
+def _run_git(cwd: Path, *args: str) -> None:
+    subprocess.run(
+        ["git", *args],
+        cwd=cwd,
+        text=True,
+        capture_output=True,
+        check=True,
     )

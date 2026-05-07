@@ -6,6 +6,7 @@ from evals.harness.models import EvalModel
 
 RepoBootstrapSeed = Literal[
     "empty_repo",
+    "with_baseline_no_hypothesis",
     "with_baseline_result",
 ]
 
