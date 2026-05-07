@@ -14,6 +14,10 @@ from situ.protocol import (
     EventsSubscribeResult,
     HarnessHelloParams,
     HarnessHelloResult,
+    SecretsSetOpenAIKeyParams,
+    SecretsSetOpenAIKeyResult,
+    SecretsStatusParams,
+    SecretsStatusResult,
     SessionResumeParams,
     SessionResumeResult,
     SessionStartParams,
@@ -31,6 +35,7 @@ from .api.collections import CollectionsService, publish_record_upsert
 from .api.current_state import CurrentStateService
 from .api.project_board import ProjectBoardService
 from .api.sessions import SessionsService
+from .config import LocalSecretStore, SituSecrets
 from .core.db import Database
 from .core.notifications import (
     register_project_notifications,
@@ -104,6 +109,8 @@ class HarnessApp:
             "harness.hello": self.hello,
             "setup.get": self.setup_get,
             "setup.complete": self.setup_complete,
+            "secrets.status": self.secrets_status,
+            "secrets.set_openai_key": self.secrets_set_openai_key,
             "collections.bootstrap": self.collections_bootstrap,
             "collections.subscribe": self.collections_subscribe,
             "events.subscribe": self.events_subscribe,
@@ -138,6 +145,20 @@ class HarnessApp:
         )
         self.publish_record(workspace, cursor=event.id)
         return SetupCompleteResult(workspace=workspace.model_dump()).model_dump()
+
+    def secrets_status(self, params: dict[str, Any]) -> dict[str, Any]:
+        SecretsStatusParams.model_validate(params)
+        source = SituSecrets().openai_key_source(home=self.context.home)
+        return SecretsStatusResult(
+            openai_key_configured=source != "missing",
+            openai_key_source=source,
+        ).model_dump()
+
+    def secrets_set_openai_key(self, params: dict[str, Any]) -> dict[str, Any]:
+        secret = SecretsSetOpenAIKeyParams.model_validate(params)
+        LocalSecretStore(home=self.context.home).set_openai_key(secret.openai_key)
+        SituSecrets().apply_sdk_environment(home=self.context.home)
+        return SecretsSetOpenAIKeyResult().model_dump()
 
     def collections_bootstrap(self, params: dict[str, Any]) -> dict[str, Any]:
         CollectionsBootstrapParams.model_validate(params)

@@ -155,7 +155,7 @@ def multi_agent_loop_cases() -> list[
             evaluators=(
                 RoleToolWasCalled("manager", "create_task"),
                 RoleToolSucceeded("manager", "create_task"),
-                TaskClaimedByRole("researcher", task_kind="review"),
+                TaskClaimedByRole("researcher", task_kind="research"),
                 RoleToolWasCalled("researcher", "read_file"),
                 ToolArgsContain("read_file", "prepare.py"),
                 RoleToolWasCalled("researcher", "add_task_comment"),

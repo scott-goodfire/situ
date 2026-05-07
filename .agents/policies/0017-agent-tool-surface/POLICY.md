@@ -14,9 +14,16 @@ agents read or mutate Situ research state.
 
 Situ ledger tools should feel like explicit operations over Situ product
 models and familiar research actions. Prefer concrete, inspectable tools such
-as `get_project_board`, `get_project`, `create_hypothesis`, `update_experiment`,
-`add_experiment_comment`, and `add_evaluation_result` over abstract tools that
-ask the model to choose internal ontology details.
+as `get_project_board`, `get_project`, `get_task`, `create_hypothesis`,
+`update_experiment`, `add_experiment_comment`, and `add_evaluation_result` over
+abstract tools that ask the model to choose internal ontology details.
+
+Agents should acquire working context through visible tool calls. Harness
+prompts may bootstrap role, assignment IDs, user-visible setup text, and hard
+budgets, but should not silently inject expanded project boards, task records,
+or recent ledger slices when an explicit read tool can provide them. The trace
+should show the agent reading the task, board, hypothesis, experiment, or
+evaluation it is about to use.
 
 Workspace tools are separate. It is acceptable to use a maintained Pydantic AI
 console/filesystem toolset for ordinary coding-agent operations such as
@@ -46,11 +53,23 @@ to call a generic activity writer to record benchmark evidence.
   Pydantic-compatible primitives. Avoid unstructured catch-all payloads unless
   the domain object itself has a payload field.
 - Prefer model-shaped tool names:
-  `get_project_board`, `get_project`, `list_hypotheses`,
+  `get_project_board`, `get_project`, `get_task`, `list_hypotheses`,
   `create_experiment`, `link_hypothesis_experiment`.
 - Agent-facing state readers should default to the current project. Do not
   expose session/run selectors unless the tool is explicitly for inspecting run
   history; session IDs are internal provenance for the harness.
+- Prefer explicit ID-addressed reads when a specific record is already known.
+  For example, if the harness has claimed `task_444`, prompt the agent with
+  `task_444` and require `get_task(task_id="task_444")` instead of injecting
+  the task body or hiding the lookup behind a magic "current assignment"
+  reader.
+- Multi-record bootstrap context should be IDs and constraints, not full
+  records. For example, pass "assigned task ids: `task_1`, `task_5`,
+  `task_7`" and let the agent call `get_task` and `get_project_board` as
+  needed.
+- A tool may default to the current project for scoping, but record selection
+  should remain explicit when the agent is expected to act on a particular
+  task, hypothesis, experiment, evaluation, artifact, or analysis.
 - Project objective and research context changes go through project-shaped
   tools such as `create_project` and `update_project`; do not expose separate
   objective or research-context CRUD tools.
@@ -86,6 +105,11 @@ to call a generic activity writer to record benchmark evidence.
   typed tools.
 - A generic context tool whose name exposes implementation perspective rather
   than product state.
+- Prompts that include full `current_state`, project-board, active-task, or
+  recent-ledger blobs when the agent could read those records through explicit
+  tools.
+- Magic assignment readers such as `get_assigned_task()` when the harness can
+  pass an explicit task ID and the agent can call `get_task(task_id=...)`.
 - Agent-facing tools that ask the model to pass a `session_id` for routine
   project state reads.
 - Agent-facing tools that ask the model to choose internal activity kinds for
@@ -104,6 +128,10 @@ to call a generic activity writer to record benchmark evidence.
 - Does the tool map to a real product model or a familiar collaboration action?
 - Is the storage detail hidden when it would make the model reason about
   implementation rather than work?
+- Does the prompt provide only the minimum bootstrap context, with explicit IDs
+  for records the agent should inspect?
+- Would the trace clearly show the agent reading the task and ledger records it
+  used before it mutates state?
 - Would the tool be straightforward to test through direct invocation?
 - Does the tool surface make it easier to add more model CRUD without
   rethinking the architecture?

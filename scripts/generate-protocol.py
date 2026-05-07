@@ -40,6 +40,10 @@ from situ.protocol import (
     JsonRpcNotification,
     JsonRpcRequest,
     JsonRpcResponse,
+    SecretsSetOpenAIKeyParams,
+    SecretsSetOpenAIKeyResult,
+    SecretsStatusParams,
+    SecretsStatusResult,
     ProjectRecord,
     SessionRecord,
     SessionResumeParams,
@@ -100,6 +104,10 @@ MODELS: list[type[BaseModel]] = [
     SetupGetResult,
     SetupCompleteParams,
     SetupCompleteResult,
+    SecretsStatusParams,
+    SecretsStatusResult,
+    SecretsSetOpenAIKeyParams,
+    SecretsSetOpenAIKeyResult,
     CollectionsBootstrapParams,
     CollectionsBootstrapResult,
     CollectionsSubscribeParams,
@@ -140,7 +148,7 @@ def generate_typescript() -> str:
         lines.append("")
     lines.extend(
         [
-            'export type ControlMethod = "harness.hello" | "setup.get" | "setup.complete" | "collections.bootstrap" | "collections.subscribe" | "events.subscribe" | "session.resume" | "session.start" | "session.status";',
+            'export type ControlMethod = "harness.hello" | "setup.get" | "setup.complete" | "secrets.status" | "secrets.set_openai_key" | "collections.bootstrap" | "collections.subscribe" | "events.subscribe" | "session.resume" | "session.start" | "session.status";',
             'export type WorkerMethod = "worker.initialize" | "experiment.run";',
             "",
         ]

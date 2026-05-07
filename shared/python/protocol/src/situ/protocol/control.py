@@ -53,6 +53,27 @@ class SetupCompleteResult(BaseModel):
     workspace: WorkspaceRecord
 
 
+OpenAIKeySource = Literal["environment", "local", "missing"]
+
+
+class SecretsStatusParams(BaseModel):
+    pass
+
+
+class SecretsStatusResult(BaseModel):
+    openai_key_configured: bool
+    openai_key_source: OpenAIKeySource
+
+
+class SecretsSetOpenAIKeyParams(BaseModel):
+    openai_key: str
+
+
+class SecretsSetOpenAIKeyResult(BaseModel):
+    openai_key_configured: bool = True
+    openai_key_source: Literal["local"] = "local"
+
+
 CollectionName = Literal[
     "workspaces",
     "projects",

@@ -1,9 +1,9 @@
 import { Text, useInput, useStdin } from "ink";
+import { useState } from "react";
 import {
-  ChoicePrompt,
-  type ChoicePromptOption,
-  type ChoicePromptSelection,
-} from "../choice-prompt/choice-prompt.js";
+  CommandInput,
+  type CommandMessage,
+} from "../command-input/command-input.js";
 import { LayoutBox } from "../layout-box/layout-box.js";
 import { PaneSection } from "../pane-section/pane-section.js";
 import { previewText } from "../text-preview/text-preview.js";
@@ -22,37 +22,25 @@ import {
   type TerminalSize,
 } from "../fullscreen-dashboard/use-terminal-size.js";
 
-export function FramedChoicePrompt({
+export function SecretSetupPrompt({
   workspace,
-  frameStatus,
-  sectionLabel,
-  statusLine,
-  subtitle,
-  title,
-  message,
-  options,
-  initialIndex,
   isActive = true,
-  footerLabel,
-  onCancel,
-  onSelect,
+  message,
+  onSubmit,
+  onExit,
   terminalSize,
 }: {
   workspace: string;
-  frameStatus: string;
-  sectionLabel: string;
-  statusLine: string;
-  subtitle?: string;
-  title: string;
-  message?: string;
-  options: ChoicePromptOption[];
-  initialIndex?: number;
   isActive?: boolean;
-  footerLabel: string;
-  onCancel: () => void;
-  onSelect: ({ option, index }: ChoicePromptSelection) => void;
+  message?: CommandMessage;
+  onSubmit: ({ openaiKey }: { openaiKey: string }) => void;
+  onExit: () => void;
   terminalSize?: TerminalSize;
 }) {
+  const [draft, setDraft] = useState("");
+  const [localMessage, setLocalMessage] = useState<CommandMessage | undefined>(
+    undefined,
+  );
   const detectedTerminalSize = useTerminalSize();
   const effectiveTerminalSize = terminalSize ?? detectedTerminalSize;
   const layout = computeDashboardLayout({
@@ -65,75 +53,80 @@ export function FramedChoicePrompt({
       <SmallTerminalNotice
         width={layout.width}
         height={layout.height}
-        onCancel={onCancel}
+        onCancel={onExit}
       />
     );
   }
 
-  const promptHeight = Math.max(1, layout.height - layout.headerHeight - 3);
+  const sectionHeight = Math.max(1, layout.height - layout.headerHeight - 3);
 
   return (
     <DashboardFrame
-      title={frameTitle({ workspace, frameStatus })}
+      title={`SITU / ${workspaceName({ workspace })} / setup`}
       width={layout.width}
       height={layout.height}
       footer={
-        <DashboardFrameFooter label={footerLabel} width={layout.width} />
+        <DashboardFrameFooter
+          label="Enter saves - Esc clears/exits"
+          width={layout.width}
+        />
       }
     >
       <DashboardFrameSection width={layout.width} height={layout.headerHeight}>
-        <FramedChoiceHeader
-          width={layout.contentWidth}
-          statusLine={statusLine}
-          subtitle={subtitle}
-        />
+        <LayoutBox width={layout.contentWidth}>
+          <Text>
+            {previewText({
+              value: "OpenAI API key required before agent execution",
+              maxCharacters: Math.max(24, layout.contentWidth),
+            })}
+          </Text>
+          <Text dimColor>
+            {previewText({
+              value: workspace,
+              maxCharacters: Math.max(24, layout.contentWidth),
+            })}
+          </Text>
+        </LayoutBox>
       </DashboardFrameSection>
 
       <DashboardFrameSection
-        label={sectionLabel}
+        label="secret setup"
         width={layout.width}
-        height={promptHeight}
+        height={sectionHeight}
       >
-        <LayoutBox width={layout.contentWidth} height={promptHeight}>
-          <ChoicePrompt
-            title={title}
-            message={message}
-            options={options}
-            initialIndex={initialIndex}
-            isActive={isActive}
-            onCancel={onCancel}
-            onSelect={onSelect}
-          />
+        <LayoutBox width={layout.contentWidth} height={sectionHeight}>
+          <PaneSection title="OpenAI API key" chrome="none">
+            <Text>Paste your OpenAI API key to run Situ agents.</Text>
+            <Text dimColor>
+              It will be saved in local Situ runtime state and used for future
+              sessions on this machine.
+            </Text>
+            <CommandInput
+              draft={draft}
+              isActive={isActive}
+              mask="*"
+              message={localMessage ?? message}
+              onCancel={onExit}
+              onChange={({ value }) => {
+                setLocalMessage(undefined);
+                setDraft(value);
+              }}
+              onSubmit={({ value }) => {
+                const openaiKey = value.trim();
+                if (!openaiKey) {
+                  setLocalMessage({
+                    tone: "yellow",
+                    text: "Paste a key before continuing.",
+                  });
+                  return;
+                }
+                onSubmit({ openaiKey });
+              }}
+            />
+          </PaneSection>
         </LayoutBox>
       </DashboardFrameSection>
     </DashboardFrame>
-  );
-}
-
-function FramedChoiceHeader({
-  width,
-  statusLine,
-  subtitle,
-}: {
-  width: number;
-  statusLine: string;
-  subtitle: string | undefined;
-}) {
-  return (
-    <LayoutBox width={width}>
-      <Text>
-        {previewText({
-          value: statusLine,
-          maxCharacters: Math.max(24, width),
-        })}
-      </Text>
-      <Text dimColor>
-        {previewText({
-          value: subtitle ?? " ",
-          maxCharacters: Math.max(24, width),
-        })}
-      </Text>
-    </LayoutBox>
   );
 }
 
@@ -182,16 +175,6 @@ function SmallTerminalNotice({
       </PaneSection>
     </LayoutBox>
   );
-}
-
-function frameTitle({
-  workspace,
-  frameStatus,
-}: {
-  workspace: string;
-  frameStatus: string;
-}): string {
-  return `SITU / ${workspaceName({ workspace })} / ${frameStatus}`;
 }
 
 function workspaceName({ workspace }: { workspace: string }): string {

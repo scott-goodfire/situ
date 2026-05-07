@@ -1,4 +1,10 @@
 from .defaults import DEFAULTS, SituDefaults
-from .secrets import SituSecrets
+from .secrets import LocalSecretStore, OpenAIKeySource, SituSecrets
 
-__all__ = ["DEFAULTS", "SituDefaults", "SituSecrets"]
+__all__ = [
+    "DEFAULTS",
+    "LocalSecretStore",
+    "OpenAIKeySource",
+    "SituDefaults",
+    "SituSecrets",
+]

@@ -50,8 +50,9 @@ class AgentRuntime:
         configure_dbos(project_dir)
 
         secrets = SituSecrets()
-        secrets.apply_sdk_environment()
-        secrets.require_openai_key()
+        secrets_home = project_dir.parent.parent
+        secrets.apply_sdk_environment(home=secrets_home)
+        secrets.require_openai_key(home=secrets_home)
 
         self.model_name = DEFAULTS.agent_model
         self.agent: Agent[SituToolDeps, AgentPlan] = Agent(

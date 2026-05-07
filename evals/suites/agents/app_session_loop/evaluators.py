@@ -258,3 +258,33 @@ class RecordCountAtLeast(
                 f"{self.collection}. Got: {records}"
             ),
         )
+
+
+class ExperimentReviewRecorded(
+    Evaluator[AppSessionLoopEvalInput, AppSessionLoopEvalOutput, Any]
+):
+    def evaluate(
+        self,
+        ctx: EvaluatorContext[AppSessionLoopEvalInput, AppSessionLoopEvalOutput, Any],
+    ) -> EvaluationReason:
+        reviews = [
+            activity
+            for activity in ctx.output.project_board.get("experiment_activities", [])
+            if (activity.get("payload") or {}).get("activity_type") == "critic_review"
+        ]
+        if reviews:
+            return EvaluationReason(
+                value=True,
+                reason=(
+                    "Found Critic review activity ids: "
+                    f"{[item.get('id') for item in reviews]}"
+                ),
+            )
+        return EvaluationReason(
+            value=False,
+            reason=(
+                "Expected an experiment activity with payload.activity_type "
+                "critic_review. Activities: "
+                f"{ctx.output.project_board.get('experiment_activities', [])}"
+            ),
+        )

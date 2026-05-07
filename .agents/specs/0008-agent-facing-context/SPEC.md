@@ -4,6 +4,12 @@ Situ should be useful to agents as well as humans.
 
 Agents should not have to infer durable research state from an ever-growing chat
 transcript. Situ should expose compact, current, machine-readable context.
+Agents should also not receive hidden expanded ledger context when they can
+read it explicitly. Role prompts should bootstrap the agent with the smallest
+useful assignment context: role, setup text, hard budgets, and record IDs such
+as task IDs. The agent should then call explicit tools such as
+`get_task(task_id=...)`, `get_project_board`, and focused `list_*` readers to
+gather the state it uses.
 
 ## Agent Questions
 
@@ -93,6 +99,13 @@ Agent-facing read and write tools should stay close to the product models.
 Use `get_project_board` for the compact current board, and use explicit `list_*`
 tools when an agent needs a focused slice such as hypotheses, baselines,
 experiments, evaluations, measurements, activities, or artifacts.
+When the harness has already selected a specific record for an agent to work
+on, pass the record ID rather than the full record. For example, a Scientist or
+Researcher assigned `task_444` should be prompted to call
+`get_task(task_id="task_444")`; the task body, payload, links, dependencies,
+and comments should be obtained through that explicit read. This keeps context
+acquisition visible in traces and avoids making prompt construction the hidden
+source of truth.
 
 Agent-facing write tools should stay close to the product models:
 `create_hypothesis`, `update_hypothesis`, `create_baseline`,
@@ -126,3 +139,6 @@ should not be the only place where the research contract lives.
 Agents should treat the current project board as the working truth. Older runs
 are reference material until their findings are copied, summarized, or resumed
 explicitly.
+Agents should read that working truth through tools. Prompt-injected project
+board slices are acceptable only as emergency fallback or for tiny bootstrap
+facts that are not durable ledger records.

@@ -53,6 +53,12 @@ def run_app_session_loop(args: AppSessionLoopEvalInput) -> AppSessionLoopEvalOut
                         agent_kind="researcher",
                     )
                 ),
+                "critic_done_tasks": len(
+                    _done_tasks_for_agent_kind(
+                        project_board=project_board,
+                        agent_kind="critic",
+                    )
+                ),
                 "scientist_done_tasks_by_agent": len(
                     _done_tasks_for_agent_kind(
                         project_board=project_board,

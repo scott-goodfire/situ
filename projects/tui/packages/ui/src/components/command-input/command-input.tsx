@@ -8,6 +8,7 @@ export type CommandMessage = {
 export function CommandInput({
   draft,
   isActive = true,
+  mask,
   message,
   onCancel,
   onChange,
@@ -15,6 +16,7 @@ export function CommandInput({
 }: {
   draft: string;
   isActive?: boolean;
+  mask?: string;
   message: CommandMessage | undefined;
   onCancel?: () => void;
   onChange: ({ value }: { value: string }) => void;
@@ -59,16 +61,26 @@ export function CommandInput({
     onChange({ value: `${draft}${input}` });
   }, { isActive: isActive && canUseInput });
 
+  const renderedDraft = mask ? maskedDraft({ draft, mask }) : draft;
+
   return (
     <Box flexDirection="column">
       {message && <Text color={message.tone}>{message.text}</Text>}
       <Text>
         <Text color="cyan">{"> "}</Text>
-        {draft}
+        {renderedDraft}
         <Text inverse> </Text>
       </Text>
     </Box>
   );
+}
+
+function maskedDraft({ draft, mask }: { draft: string; mask: string }): string {
+  if (!draft) {
+    return "";
+  }
+
+  return mask.repeat(Math.min(draft.length, 64));
 }
 
 function hasControlCharacter({ input }: { input: string }): boolean {
