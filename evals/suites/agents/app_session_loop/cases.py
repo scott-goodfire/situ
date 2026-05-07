@@ -12,6 +12,7 @@ from evals.suites.agents.app_session_loop.evaluators import (
     PrepareFileUnchanged,
     RecordCountAtLeast,
     ProjectBoardContains,
+    ReviewTaskLinksComplete,
     TaskDoneByAgentKind,
 )
 from evals.worlds.app_session_loop import (
@@ -83,6 +84,7 @@ def app_session_loop_cases() -> list[
                 TaskDoneByAgentKind("review", "critic"),
                 ExperimentCountAtLeast(1),
                 ExperimentReviewRecorded(),
+                ReviewTaskLinksComplete(),
                 ProjectBoardContains("critic_review"),
                 ProjectBoardContains("verdict"),
                 ProjectBoardContains("component_a"),

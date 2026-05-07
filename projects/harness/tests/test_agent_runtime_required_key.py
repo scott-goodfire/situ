@@ -7,6 +7,14 @@ import pytest
 
 from situ.harness import agent_runtime
 from situ.harness.config import LocalSecretStore
+from situ.harness.core.dbos.runtime import reset_dbos_for_tests
+
+
+@pytest.fixture(autouse=True)
+def _reset_dbos() -> None:
+    reset_dbos_for_tests()
+    yield
+    reset_dbos_for_tests()
 
 
 def test_agent_runtime_requires_openai_key(

@@ -8,7 +8,7 @@ import pytest
 
 from situ.harness.agents import ResearchAgentOutput
 from situ.harness.app import HarnessApp, MANAGER_NO_PROGRESS_LIMIT
-from situ.harness.records import TaskKind, TaskStatus
+from situ.harness.records import TaskEntityKind, TaskKind, TaskStatus
 
 
 def test_session_loop_replans_after_baseline_before_closing(
@@ -63,6 +63,80 @@ def test_session_loop_replans_after_baseline_before_closing(
         and event.associated_project_id == project_id
         for event in app.repos.events.list_for_session(session_id)
     )
+
+
+def test_baseline_only_work_does_not_create_critic_review(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    app, session_id, _project_id = _app_with_initial_plan(tmp_path)
+    runtime = BaselineOnlyRuntime()
+    monkeypatch.setattr("situ.harness.app.AgentRuntime", lambda _project_dir: runtime)
+
+    app._execute_session(session_id, max_experiments=1)
+
+    tasks = app.repos.tasks.list_for_session(session_id)
+
+    assert runtime.critic_calls == 0
+    assert not [task for task in tasks if task.kind == TaskKind.REVIEW]
+    assert any(task.kind == TaskKind.BASELINE for task in tasks)
+
+
+def test_experiment_review_task_links_evaluations_and_measurements(
+    tmp_path: Path,
+) -> None:
+    app, session_id, project_id = _app_with_initial_plan(tmp_path)
+    experiment_id, evaluation_id, measurement_id = (
+        _seed_closed_experiment_with_measurement(app, session_id, project_id)
+    )
+
+    task = app._enqueue_experiment_review_task(
+        session_id=session_id,
+        project_id=project_id,
+        experiment_id=experiment_id,
+        source_task_id="task_source_experiment",
+    )
+
+    links = app.repos.task_entity_links.list_for_task(task.id)
+    linked = {(link.entity_kind, link.entity_id) for link in links}
+
+    assert task.payload["evaluation_ids"] == [evaluation_id]
+    assert task.payload["measurement_ids"] == [measurement_id]
+    assert (TaskEntityKind.EXPERIMENT, experiment_id) in linked
+    assert (TaskEntityKind.EVALUATION, evaluation_id) in linked
+    assert (TaskEntityKind.MEASUREMENT, str(measurement_id)) in linked
+
+
+def test_experiment_review_task_is_not_duplicated_for_same_experiment(
+    tmp_path: Path,
+) -> None:
+    app, session_id, project_id = _app_with_initial_plan(tmp_path)
+    experiment_id, _evaluation_id, _measurement_id = (
+        _seed_closed_experiment_with_measurement(app, session_id, project_id)
+    )
+
+    first = app._enqueue_experiment_review_task(
+        session_id=session_id,
+        project_id=project_id,
+        experiment_id=experiment_id,
+        source_task_id="task_source_experiment",
+    )
+    second = app._enqueue_experiment_review_task(
+        session_id=session_id,
+        project_id=project_id,
+        experiment_id=experiment_id,
+        source_task_id="task_source_experiment",
+    )
+
+    review_tasks = [
+        task
+        for task in app.repos.tasks.list_for_session(session_id)
+        if task.kind == TaskKind.REVIEW
+        and task.payload.get("experiment_id") == experiment_id
+    ]
+
+    assert second.id == first.id
+    assert len(review_tasks) == 1
 
 
 def test_default_session_start_creates_fresh_project_per_session(
@@ -313,13 +387,15 @@ class BaselineThenExperimentRuntime:
     def run_session(self, **kwargs: Any) -> ResearchAgentOutput:
         repos = kwargs["repos"]
         session_id = kwargs["session_id"]
-        task = kwargs["active_task"]
+        assigned_task_ids = kwargs["assigned_task_ids"]
+        task = repos.tasks.get(assigned_task_ids[0])
+        assert task is not None
         project_id = repos.sessions.get(session_id).project_id
         assert project_id is not None
 
-        self.scientist_task_kinds.append(task["kind"])
+        self.scientist_task_kinds.append(task.kind.value)
         self.scientist_repo_paths.append(kwargs.get("repo_path"))
-        if task["kind"] == "baseline":
+        if task.kind == "baseline":
             baseline = repos.baselines.create(
                 baseline_id="baseline_project_0001_default",
                 project_id=project_id,
@@ -352,7 +428,7 @@ class BaselineThenExperimentRuntime:
             )
             return ResearchAgentOutput(summary="baseline done")
 
-        experiment_id = task["payload"]["experiment_id"]
+        experiment_id = task.payload["experiment_id"]
         repo_path = kwargs["repo_path"]
         assert repo_path is not None
         (Path(repo_path) / "README.md").write_text("candidate workspace\n")
@@ -367,8 +443,9 @@ class BaselineThenExperimentRuntime:
     def run_review(self, **kwargs: Any) -> ResearchAgentOutput:
         self.critic_calls += 1
         repos = kwargs["repos"]
-        task = kwargs["active_task"]
-        experiment_id = task["payload"]["experiment_id"]
+        task = repos.tasks.get(kwargs["assigned_task_ids"][0])
+        assert task is not None
+        experiment_id = task.payload["experiment_id"]
         repos.experiment_activities.add(
             experiment_id=experiment_id,
             created_in_session_id=kwargs["session_id"],
@@ -382,6 +459,65 @@ class BaselineThenExperimentRuntime:
             },
         )
         return ResearchAgentOutput(summary="review done")
+
+
+class BaselineOnlyRuntime:
+    def __init__(self) -> None:
+        self.plan_calls = 0
+        self.critic_calls = 0
+
+    def plan_session(self, **kwargs: Any) -> ResearchAgentOutput:
+        self.plan_calls += 1
+        repos = kwargs["repos"]
+        session_id = kwargs["session_id"]
+        project_id = repos.sessions.get(session_id).project_id
+        assert project_id is not None
+        if self.plan_calls == 1:
+            repos.tasks.create(
+                task_id=repos.tasks.next_id(project_id),
+                project_id=project_id,
+                created_in_session_id=session_id,
+                title="Establish baseline only",
+                content="Run the baseline measurement.",
+                kind=TaskKind.BASELINE,
+                priority="high",
+                source_kind="manager",
+            )
+        return ResearchAgentOutput(summary="baseline plan")
+
+    def run_session(self, **kwargs: Any) -> ResearchAgentOutput:
+        repos = kwargs["repos"]
+        session_id = kwargs["session_id"]
+        project_id = repos.sessions.get(session_id).project_id
+        assert project_id is not None
+        baseline = repos.baselines.create(
+            baseline_id="baseline_project_0001_default",
+            project_id=project_id,
+            created_in_session_id=session_id,
+            title="Baseline",
+            summary="Reference behavior.",
+            status="closed",
+        )
+        evaluation = repos.evaluations.create(
+            evaluation_id="eval_baseline",
+            project_id=project_id,
+            created_in_session_id=session_id,
+            title="Baseline",
+            summary="Baseline evidence.",
+            associated_baseline_id=baseline.id,
+            status="closed",
+        )
+        repos.measurements.add(
+            evaluation_id=evaluation.id,
+            created_in_session_id=session_id,
+            actor="agent",
+            body="baseline result",
+        )
+        return ResearchAgentOutput(summary="baseline done")
+
+    def run_review(self, **_kwargs: Any) -> ResearchAgentOutput:
+        self.critic_calls += 1
+        return ResearchAgentOutput(summary="should not review baseline")
 
 
 class NoProgressRuntime:
@@ -535,6 +671,49 @@ def _app_with_initial_plan(tmp_path: Path) -> tuple[HarnessApp, str, str]:
         source_kind="system",
     )
     return app, session.id, project.id
+
+
+def _seed_closed_experiment_with_measurement(
+    app: HarnessApp,
+    session_id: str,
+    project_id: str,
+) -> tuple[str, str, int]:
+    workspace = app.repos.workspaces.get()
+    assert workspace is not None
+    experiment = app.repos.experiments.create(
+        experiment_id="exp_project_0001_candidate",
+        project_id=project_id,
+        created_in_session_id=session_id,
+        title="Try candidate",
+        summary="Candidate result.",
+        status="closed",
+        worktree_path=workspace.repo_path,
+        base_commit="test-base",
+    )
+    evaluation = app.repos.evaluations.create(
+        evaluation_id="eval_project_0001_candidate",
+        project_id=project_id,
+        created_in_session_id=session_id,
+        title="Candidate eval",
+        summary="Candidate evidence.",
+        associated_experiment_id=experiment.id,
+        status="closed",
+    )
+    measurement = app.repos.measurements.add(
+        evaluation_id=evaluation.id,
+        created_in_session_id=session_id,
+        actor="agent",
+        body="candidate result",
+    )
+    app.repos.evaluation_activities.add(
+        evaluation_id=evaluation.id,
+        created_in_session_id=session_id,
+        actor="agent",
+        kind="result",
+        body="candidate result",
+        payload={"measurement_id": measurement.id},
+    )
+    return experiment.id, evaluation.id, measurement.id
 
 
 def _git(cwd: Path, *args: str) -> str:

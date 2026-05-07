@@ -8,6 +8,7 @@ from evals.worlds.research_session.world.world import (
     PROJECT_ID,
     SCIENTIST_AGENT_ID,
     SESSION_ID,
+    TASK_ID,
     ResearchSessionWorld,
 )
 
@@ -21,5 +22,6 @@ __all__ = [
     "PROJECT_ID",
     "SCIENTIST_AGENT_ID",
     "SESSION_ID",
+    "TASK_ID",
     "ResearchSessionWorld",
 ]

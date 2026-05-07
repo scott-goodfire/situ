@@ -8,6 +8,14 @@ from pydantic_ai.durable_exec.dbos import DBOSAgent
 from situ.harness.config import DEFAULTS
 from situ.harness.agent_runtime import MANAGER_AGENT_NAME, AgentRuntime
 from situ.harness.agents.research.agent import RESEARCHER_AGENT_NAME, RESEARCH_AGENT_NAME
+from situ.harness.core.dbos.runtime import reset_dbos_for_tests
+
+
+@pytest.fixture(autouse=True)
+def _reset_dbos() -> None:
+    reset_dbos_for_tests()
+    yield
+    reset_dbos_for_tests()
 
 
 def test_agent_runtime_wraps_research_agent_with_dbos_agent(

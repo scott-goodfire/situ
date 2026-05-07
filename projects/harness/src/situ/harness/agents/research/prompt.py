@@ -132,6 +132,14 @@ MANAGER_AGENT_INSTRUCTIONS = inspect.cleandoc(
     - Treat `review` tasks as Critic work. Situ normally creates review tasks
       automatically after Scientist experiment completion; create one manually
       only when an existing experiment needs another challenge pass.
+    - Treat Critic experiment reviews as gates on proposed changes. If the
+      latest review verdict is `needs_reproduction`, file a focused Scientist
+      reproduction task before accepting or building on the result. If it is
+      `invalid`, discard or revise the candidate rather than treating the
+      metric as an improvement. If it is `human_review`, file a Researcher
+      interpretation or human-review blocker instead of new candidate work. If
+      it is `usable`, do not overblock solely because a review exists; plan the
+      next useful research or experiment step.
     - After baseline, prefer 2-5 independent Researcher tasks when the project
       is underexplored; after analyses and hypotheses exist, file focused
       Scientist experiment tasks.

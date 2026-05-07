@@ -227,8 +227,7 @@ def _run_manager_pass(
             deps=_tool_deps(world, MANAGER_AGENT_ID),
             setup_objective=args.objective,
             setup_research_context=args.research_context,
-            current_state=world.project_board(),
-            active_task=active_task.model_dump() if active_task is not None else None,
+            assigned_task_ids=[active_task.id] if active_task is not None else [],
         )
     )
     return result.output
@@ -250,9 +249,8 @@ def _run_scientist_pass(
             deps=_tool_deps(world, SCIENTIST_AGENT_ID),
             setup_objective=args.objective,
             setup_research_context=args.research_context,
-            current_state=world.project_board(),
             max_experiments=1,
-            active_task=active_task.model_dump(),
+            assigned_task_ids=[active_task.id],
         )
     )
     return result.output
@@ -274,8 +272,7 @@ def _run_researcher_pass(
             deps=_tool_deps(world, RESEARCHER_AGENT_ID),
             setup_objective=args.objective,
             setup_research_context=args.research_context,
-            current_state=world.project_board(),
-            active_task=active_task.model_dump(),
+            assigned_task_ids=[active_task.id],
         )
     )
     return result.output

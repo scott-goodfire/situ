@@ -21,6 +21,7 @@ from evals.worlds.research_session import (
     HYPOTHESIS_ID,
     PROJECT_ID,
     SESSION_ID,
+    TASK_ID,
     ResearchToolEvalInput,
     ResearchToolEvalOutput,
 )
@@ -44,6 +45,24 @@ def research_tool_cases() -> list[Case[ResearchToolEvalInput, ResearchToolEvalOu
                 ToolSucceeded("get_project_board"),
                 ToolResultContains("get_project_board", "Improve validation score"),
                 ToolResultContains("get_project_board", HYPOTHESIS_ID),
+            ),
+        ),
+        Case(
+            name="get_task_reads_explicit_task",
+            inputs=ResearchToolEvalInput(
+                case_id="get_task_reads_explicit_task",
+                seed="with_task",
+                prompt=(
+                    f"Please call get_task with task_id '{TASK_ID}', then state "
+                    "the task title and what command/evidence it asks for."
+                ),
+            ),
+            metadata={"requires_real_llm": True},
+            evaluators=(
+                ToolWasCalled("get_task"),
+                ToolSucceeded("get_task"),
+                ToolResultContains("get_task", TASK_ID),
+                ToolResultContains("get_task", "Establish baseline metrics"),
             ),
         ),
         Case(

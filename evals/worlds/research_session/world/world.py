@@ -19,6 +19,7 @@ HYPOTHESIS_ID = "hyp_eval_component_a"
 EXPERIMENT_ID = "exp_eval_component_a"
 ARTIFACT_ID = "artifact_eval_raw_output"
 ANALYSIS_ID = "analysis_eval_codebase_map"
+TASK_ID = "task_eval_baseline"
 BASELINE_ID = "baseline_eval_default"
 BASELINE_EVALUATION_ID = "eval_eval_baseline"
 COMPONENT_A_EXPERIMENT_ID = "exp_eval_component_a"
@@ -267,6 +268,19 @@ def _seed(repos: Repositories, seed: ResearchSessionSeed) -> None:
             path="artifacts/component-a.json",
             media_type="application/json",
             size_bytes=128,
+        )
+
+    if seed == "with_task":
+        repos.tasks.create(
+            task_id=TASK_ID,
+            project_id=PROJECT_ID,
+            created_in_session_id=SESSION_ID,
+            title="Establish baseline metrics",
+            content="Run the baseline command and record score and latency.",
+            kind="baseline",
+            priority="high",
+            source_kind="manager",
+            payload={"focus": "baseline score and latency"},
         )
 
 

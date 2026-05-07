@@ -442,8 +442,22 @@ class HarnessApp:
         experiment_id: str,
         source_task_id: str,
     ) -> TaskRecord:
+        existing_review_task = self._existing_experiment_review_task(
+            project_id=project_id,
+            experiment_id=experiment_id,
+        )
+        if existing_review_task is not None:
+            return existing_review_task
+
         experiment = self.repos.experiments.get(experiment_id)
         evaluations = self.repos.evaluations.list_for_experiment(experiment_id)
+        measurements = [
+            measurement
+            for evaluation in evaluations
+            for measurement in self.repos.measurements.list_for_evaluation(
+                evaluation.id
+            )
+        ]
         title = (
             f"Review {experiment.title}"
             if experiment is not None and experiment.title
@@ -471,6 +485,7 @@ class HarnessApp:
                 "experiment_id": experiment_id,
                 "source_task_id": source_task_id,
                 "evaluation_ids": [evaluation.id for evaluation in evaluations],
+                "measurement_ids": [measurement.id for measurement in measurements],
             },
         )
         links = [
@@ -492,6 +507,16 @@ class HarnessApp:
                     relationship="reviews",
                 )
             )
+        for measurement in measurements:
+            links.append(
+                self.repos.task_entity_links.create(
+                    project_id=project_id,
+                    task_id=task.id,
+                    entity_kind=TaskEntityKind.MEASUREMENT,
+                    entity_id=str(measurement.id),
+                    relationship="reviews",
+                )
+            )
         event = self.record_event(
             "task.created",
             f"Created review task {task.id}",
@@ -507,6 +532,20 @@ class HarnessApp:
         for link in links:
             self.publish_record(link, cursor=event.id)
         return task
+
+    def _existing_experiment_review_task(
+        self,
+        *,
+        project_id: str,
+        experiment_id: str,
+    ) -> TaskRecord | None:
+        for task in self.repos.tasks.list_for_project(project_id):
+            if (
+                task.kind == TaskKind.REVIEW
+                and task.payload.get("experiment_id") == experiment_id
+            ):
+                return task
+        return None
 
     def _claim_next_task(
         self,
@@ -649,13 +688,10 @@ class HarnessApp:
                             workspace=workspace.model_dump(),
                             setup_objective=setup.get("objective", ""),
                             setup_research_context=setup.get("research_context", ""),
-                            current_state=self.project_board_api.get_project_board(
-                                session_id
-                            ).model_dump(),
                             session_id=session_id,
+                            assigned_task_ids=[critic_task.id],
                             app_root=self.app_root,
                             repos=self.repos,
-                            active_task=critic_task.model_dump(),
                         )
                         completion_summary = result.summary
                         self._finish_claimed_task(
@@ -711,12 +747,9 @@ class HarnessApp:
                             workspace=workspace.model_dump(),
                             setup_objective=setup.get("objective", ""),
                             setup_research_context=setup.get("research_context", ""),
-                            current_state=self.project_board_api.get_project_board(
-                                session_id
-                            ).model_dump(),
+                            assigned_task_ids=[manager_task.id],
                             session_id=session_id,
                             repos=self.repos,
-                            active_task=manager_task.model_dump(),
                         )
                         completion_summary = manager_result.summary
                         self.record_event(
@@ -751,13 +784,10 @@ class HarnessApp:
                             workspace=workspace.model_dump(),
                             setup_objective=setup.get("objective", ""),
                             setup_research_context=setup.get("research_context", ""),
-                            current_state=self.project_board_api.get_project_board(
-                                session_id
-                            ).model_dump(),
                             session_id=session_id,
+                            assigned_task_ids=[researcher_task.id],
                             app_root=self.app_root,
                             repos=self.repos,
-                            active_task=researcher_task.model_dump(),
                         )
                         completion_summary = result.summary
                         self._finish_claimed_task(
@@ -816,14 +846,11 @@ class HarnessApp:
                                 workspace=workspace.model_dump(),
                                 setup_objective=setup.get("objective", ""),
                                 setup_research_context=setup.get("research_context", ""),
-                                current_state=self.project_board_api.get_project_board(
-                                    session_id
-                                ).model_dump(),
                                 session_id=session_id,
                                 max_experiments=remaining_experiments,
+                                assigned_task_ids=[scientist_task.id],
                                 app_root=self.app_root,
                                 repos=self.repos,
-                                active_task=scientist_task.model_dump(),
                                 repo_path=execution_repo_path,
                                 active_experiment_id=active_experiment_id,
                             )

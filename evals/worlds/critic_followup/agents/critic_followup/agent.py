@@ -1,98 +1,88 @@
 from __future__ import annotations
 
-from situ.harness.agents import CriticAgent, CriticAgentContext, ResearchAgentOutput
+from situ.harness.agents import ManagerAgent, ManagerAgentContext, ResearchAgentOutput
 from situ.harness.records import AgentKind, AgentStatus, TaskRecord, TaskStatus
 from situ.harness.tools.common import SituToolDeps
 from situ.harness.tools.tasks.eligibility import eligible_task_kinds_for_agent
 
 from evals.harness.capture import ToolCallCaptureCapability
 from evals.harness.llms import eval_model_name
-from evals.worlds.critic_review.models import (
-    CriticReviewEvalInput,
-    CriticReviewEvalOutput,
+from evals.worlds.critic_followup.models import (
+    CriticFollowupEvalInput,
+    CriticFollowupEvalOutput,
 )
-from evals.worlds.critic_review.world import CRITIC_AGENT_ID, CriticReviewWorld
+from evals.worlds.critic_followup.world import MANAGER_AGENT_ID, CriticFollowupWorld
 from evals.worlds.repo_bootstrap.world.world import PROJECT_ID, SESSION_ID, WORKSPACE_ID
 
 
-def run_critic_review(args: CriticReviewEvalInput) -> CriticReviewEvalOutput:
-    world = CriticReviewWorld(seed=args.seed)
+def run_critic_followup(args: CriticFollowupEvalInput) -> CriticFollowupEvalOutput:
+    world = CriticFollowupWorld(seed=args.seed)
     capture = ToolCallCaptureCapability()
-    critic_outputs: list[ResearchAgentOutput] = []
+    manager_outputs: list[ResearchAgentOutput] = []
     try:
-        review_task = _claim_next_task(world)
-        if review_task is not None:
-            critic_outputs.append(
-                _run_critic_pass(
+        plan_task = _claim_next_task(world)
+        if plan_task is not None:
+            manager_outputs.append(
+                _run_manager_pass(
                     world=world,
                     args=args,
                     capture=capture,
-                    active_task=review_task,
+                    active_task=plan_task,
                 )
             )
             _finish_task(
                 world,
-                task_id=review_task.id,
+                task_id=plan_task.id,
                 status=TaskStatus.DONE,
-                result_summary=critic_outputs[-1].summary,
+                result_summary=manager_outputs[-1].summary,
             )
             world.emit_event(
-                "session.critic_completed",
-                critic_outputs[-1].summary,
+                "session.manager_completed",
+                manager_outputs[-1].summary,
                 PROJECT_ID,
                 SESSION_ID,
-                critic_outputs[-1].model_dump(),
+                manager_outputs[-1].model_dump(),
             )
 
         project_board = world.project_board()
-        review_activity = _latest_review_activity(project_board)
-        return CriticReviewEvalOutput(
+        return CriticFollowupEvalOutput(
             content=_render_content(
-                critic_outputs=critic_outputs,
-                review_activity=review_activity,
+                manager_outputs=manager_outputs,
                 project_board=project_board,
             ),
             captured_tool_calls=list(capture.tool_calls),
-            critic_tool_calls=list(capture.tool_calls),
-            critic_outputs=[output.model_dump() for output in critic_outputs],
+            manager_tool_calls=list(capture.tool_calls),
+            manager_outputs=[output.model_dump() for output in manager_outputs],
             events=list(world.events),
             project_board=project_board,
             workspace_files=world.workspace_files(),
             changed_files=world.changed_files(),
-            review_activity=review_activity,
             signals={
-                "critic_tool_calls": len(capture.tool_calls),
-                "review_activities": len(_review_activities(project_board)),
-                "done_review_tasks": len(
-                    [
-                        task
-                        for task in project_board.get("tasks", [])
-                        if task.get("kind") == "review"
-                        and task.get("status") == "done"
-                    ]
-                ),
+                "manager_tool_calls": len(capture.tool_calls),
+                "manager_created_tasks": len(_manager_created_tasks(project_board)),
+                "events": len(world.events),
             },
         )
     finally:
         world.teardown()
 
 
-def _run_critic_pass(
+def _run_manager_pass(
     *,
-    world: CriticReviewWorld,
-    args: CriticReviewEvalInput,
+    world: CriticFollowupWorld,
+    args: CriticFollowupEvalInput,
     capture: ToolCallCaptureCapability,
     active_task: TaskRecord,
 ) -> ResearchAgentOutput:
-    agent = CriticAgent(
+    agent = ManagerAgent(
         model=eval_model_name(),
         capabilities=[capture],
     )
     result = agent.run_sync(
-        CriticAgentContext(
+        ManagerAgentContext(
             deps=SituToolDeps(
                 session_id=SESSION_ID,
-                agent_id=CRITIC_AGENT_ID,
+                agent_id=MANAGER_AGENT_ID,
                 workspace_id=WORKSPACE_ID,
                 project_id=PROJECT_ID,
                 repo_path=str(world.workspace_path),
@@ -107,12 +97,12 @@ def _run_critic_pass(
     return result.output
 
 
-def _claim_next_task(world: CriticReviewWorld) -> TaskRecord | None:
+def _claim_next_task(world: CriticFollowupWorld) -> TaskRecord | None:
     agent = world.repos.agents.ensure_project_agent(
         project_id=PROJECT_ID,
         created_in_session_id=SESSION_ID,
-        kind=AgentKind.CRITIC,
-        display_name="Critic",
+        kind=AgentKind.MANAGER,
+        display_name="Manager",
         model_name="eval:model",
     )
     task = world.repos.tasks.claim_next(
@@ -135,7 +125,7 @@ def _claim_next_task(world: CriticReviewWorld) -> TaskRecord | None:
 
 
 def _finish_task(
-    world: CriticReviewWorld,
+    world: CriticFollowupWorld,
     *,
     task_id: str,
     status: TaskStatus,
@@ -167,43 +157,40 @@ def _finish_task(
     )
 
 
-def _review_activities(project_board: dict) -> list[dict]:
+def _manager_created_tasks(project_board: dict) -> list[dict]:
     return [
-        activity
-        for activity in project_board.get("experiment_activities", [])
-        if (activity.get("payload") or {}).get("activity_type") == "critic_review"
+        task
+        for task in project_board.get("tasks", [])
+        if task.get("source_kind") == "manager"
+        and task.get("kind") != "plan"
+        and task.get("status") == "backlog"
     ]
-
-
-def _latest_review_activity(project_board: dict) -> dict | None:
-    reviews = _review_activities(project_board)
-    return reviews[-1] if reviews else None
 
 
 def _render_content(
     *,
-    critic_outputs: list[ResearchAgentOutput],
-    review_activity: dict | None,
+    manager_outputs: list[ResearchAgentOutput],
     project_board: dict,
 ) -> str:
     output_text = " ".join(
         part
-        for output in critic_outputs
+        for output in manager_outputs
         for part in [output.summary, output.next_focus, *output.risk_notes]
         if part
     )
-    review_text = ""
-    if review_activity is not None:
-        review_text = " ".join(
+    task_text = " ".join(
+        " ".join(
             [
-                review_activity.get("body", ""),
-                str(review_activity.get("payload", {})),
+                task.get("kind", ""),
+                task.get("title", ""),
+                task.get("content", ""),
+                str(task.get("payload", {})),
             ]
         )
-    return " ".join(
-        [
-            output_text,
-            review_text,
-            str(project_board.get("tasks", [])),
-        ]
-    ).strip()
+        for task in project_board.get("tasks", [])
+    )
+    review_text = " ".join(
+        " ".join([activity.get("body", ""), str(activity.get("payload", {}))])
+        for activity in project_board.get("experiment_activities", [])
+    )
+    return " ".join([output_text, task_text, review_text]).strip()

@@ -1,5 +1,6 @@
 import { Text, useInput, useStdin } from "ink";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { ChoicePrompt } from "../choice-prompt/choice-prompt.js";
 import {
   CommandInput,
   type CommandMessage,
@@ -37,6 +38,9 @@ export function SecretSetupPrompt({
   onExit: () => void;
   terminalSize?: TerminalSize;
 }) {
+  const [step, setStep] = useState<"intro" | "input">(() =>
+    message ? "input" : "intro",
+  );
   const [draft, setDraft] = useState("");
   const [localMessage, setLocalMessage] = useState<CommandMessage | undefined>(
     undefined,
@@ -47,6 +51,12 @@ export function SecretSetupPrompt({
     columns: effectiveTerminalSize.columns,
     rows: effectiveTerminalSize.rows,
   });
+
+  useEffect(() => {
+    if (message) {
+      setStep("input");
+    }
+  }, [message]);
 
   if (layout.mode === "too-small") {
     return (
@@ -67,7 +77,11 @@ export function SecretSetupPrompt({
       height={layout.height}
       footer={
         <DashboardFrameFooter
-          label="Enter saves - Esc clears/exits"
+          label={
+            step === "intro"
+              ? "Enter OK - Esc exits"
+              : "Enter saves - Esc clears/exits"
+          }
           width={layout.width}
         />
       }
@@ -95,35 +109,60 @@ export function SecretSetupPrompt({
         height={sectionHeight}
       >
         <LayoutBox width={layout.contentWidth} height={sectionHeight}>
-          <PaneSection title="OpenAI API key" chrome="none">
-            <Text>Paste your OpenAI API key to run Situ agents.</Text>
-            <Text dimColor>
-              It will be saved in local Situ runtime state and used for future
-              sessions on this machine.
-            </Text>
-            <CommandInput
-              draft={draft}
-              isActive={isActive}
-              mask="*"
-              message={localMessage ?? message}
-              onCancel={onExit}
-              onChange={({ value }) => {
-                setLocalMessage(undefined);
-                setDraft(value);
-              }}
-              onSubmit={({ value }) => {
-                const openaiKey = value.trim();
-                if (!openaiKey) {
-                  setLocalMessage({
-                    tone: "yellow",
-                    text: "Paste a key before continuing.",
-                  });
-                  return;
-                }
-                onSubmit({ openaiKey });
-              }}
-            />
-          </PaneSection>
+          {step === "intro" ? (
+            <PaneSection title="OpenAI API key" chrome="none">
+              <Text>Situ needs an OpenAI API key before it can run agents.</Text>
+              <Text dimColor>
+                You can provide SITU_OPENAI_KEY in the environment or save a
+                local key for future sessions on this machine.
+              </Text>
+              <ChoicePrompt
+                title="Continue"
+                message="Press Enter to paste a key now."
+                options={[
+                  {
+                    label: "OK",
+                    value: "ok",
+                  },
+                ]}
+                isActive={isActive}
+                onCancel={onExit}
+                onSelect={() => {
+                  setStep("input");
+                }}
+              />
+            </PaneSection>
+          ) : (
+            <PaneSection title="OpenAI API key" chrome="none">
+              <Text>Paste your OpenAI API key to run Situ agents.</Text>
+              <Text dimColor>
+                It will be saved in local Situ runtime state and used for future
+                sessions on this machine.
+              </Text>
+              <CommandInput
+                draft={draft}
+                isActive={isActive}
+                mask="*"
+                message={localMessage ?? message}
+                onCancel={onExit}
+                onChange={({ value }) => {
+                  setLocalMessage(undefined);
+                  setDraft(value);
+                }}
+                onSubmit={({ value }) => {
+                  const openaiKey = value.trim();
+                  if (!openaiKey) {
+                    setLocalMessage({
+                      tone: "yellow",
+                      text: "Paste a key before continuing.",
+                    });
+                    return;
+                  }
+                  onSubmit({ openaiKey });
+                }}
+              />
+            </PaneSection>
+          )}
         </LayoutBox>
       </DashboardFrameSection>
     </DashboardFrame>

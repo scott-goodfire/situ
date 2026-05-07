@@ -69,6 +69,7 @@ from situ.harness.tools.tasks import (
     AddTaskCommentTool,
     ClaimTaskTool,
     CreateTaskTool,
+    GetTaskTool,
     GetTaskBoardTool,
     LinkTaskEntityTool,
     UpdateTaskTool,
@@ -255,6 +256,18 @@ def test_task_tools_coordinate_claims_comments_and_entity_links(
         dependent.task["id"]
     ]
     assert board.task_entity_links[0]["entity_id"] == "hyp_0001"
+
+    task_detail = invoke_situ_tool_sync(
+        tool=GetTaskTool(),
+        deps=researcher_deps,
+        task_id=dependent.task["id"],
+    )
+    assert task_detail.success is True
+    assert task_detail.task is not None
+    assert task_detail.task["content"].startswith("Generate candidate")
+    assert task_detail.task_dependencies[0]["blocked_by_task_id"] == baseline.task["id"]
+    assert task_detail.task_entity_links[0]["entity_id"] == "hyp_0001"
+    assert task_detail.task_activities[0]["body"] == "Claimed after baseline finished."
 
 
 def test_get_project_tool_reads_current_project(

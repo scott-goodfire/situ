@@ -13,7 +13,6 @@
     "snapshots": "bun run src/stories/snapshot-runner.tsx --png"
   },
   "dependencies": {
-    "@situ/chart-model": "workspace:*",
     "@situ/protocol": "workspace:*",
     "lodash": "^4.18.1",
     "luxon": "^3.7.2"

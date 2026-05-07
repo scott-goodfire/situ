@@ -288,3 +288,39 @@ class ExperimentReviewRecorded(
                 f"{ctx.output.project_board.get('experiment_activities', [])}"
             ),
         )
+
+
+class ReviewTaskLinksComplete(
+    Evaluator[AppSessionLoopEvalInput, AppSessionLoopEvalOutput, Any]
+):
+    def evaluate(
+        self,
+        ctx: EvaluatorContext[AppSessionLoopEvalInput, AppSessionLoopEvalOutput, Any],
+    ) -> EvaluationReason:
+        links = ctx.output.project_board.get("task_entity_links", [])
+        review_tasks = [
+            task
+            for task in ctx.output.project_board.get("tasks", [])
+            if task.get("kind") == "review"
+        ]
+        review_task_ids = {task.get("id") for task in review_tasks}
+        linked_kinds = {
+            link.get("entity_kind")
+            for link in links
+            if link.get("task_id") in review_task_ids
+            and link.get("relationship") == "reviews"
+        }
+        expected = {"experiment", "evaluation", "measurement"}
+        if expected.issubset(linked_kinds):
+            return EvaluationReason(
+                value=True,
+                reason=f"Review task links include {sorted(expected)}",
+            )
+        return EvaluationReason(
+            value=False,
+            reason=(
+                "Review task links did not include experiment, evaluation, "
+                f"and measurement. Got kinds: {sorted(linked_kinds)}; "
+                f"links: {links}"
+            ),
+        )

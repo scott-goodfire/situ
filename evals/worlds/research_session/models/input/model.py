@@ -12,6 +12,7 @@ ResearchSessionSeed = Literal[
     "with_link",
     "with_comments",
     "with_artifact",
+    "with_task",
     "with_dirty_workspace",
     "needs_baseline",
     "with_baseline_result",

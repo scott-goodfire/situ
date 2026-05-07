@@ -1,5 +1,4 @@
 export { SituTuiView } from "./components/situ-tui-view/situ-tui-view.js";
-export { BucketBars } from "./components/bucket-bars/bucket-bars.js";
 export {
   ChoicePrompt,
   type ChoicePromptOption,
@@ -16,8 +15,6 @@ export {
   type DashboardControlMode,
   type DashboardControlMessage,
 } from "./components/dashboard-controls/dashboard-controls.js";
-export { ContrastiveFeatureDiff } from "./components/contrastive-feature-diff/contrastive-feature-diff.js";
-export { ContributionBars } from "./components/contribution-bars/contribution-bars.js";
 export {
   DashboardFrame,
   DashboardFrameFooter,
@@ -32,14 +29,12 @@ export {
   type DashboardTaskStatus,
   type DashboardTaskTone,
 } from "./components/fullscreen-dashboard/fullscreen-dashboard.js";
-export { HeatmapGrid } from "./components/heatmap-grid/heatmap-grid.js";
 export {
   LayoutBox,
   type LayoutBoxDirection,
   type LayoutBoxProps,
 } from "./components/layout-box/layout-box.js";
 export { LoadingView } from "./components/loading-view/loading-view.js";
-export { MetricTrend } from "./components/metric-trend/metric-trend.js";
 export {
   OnboardingPrompt,
   resolveOnboardingAnswers,
@@ -53,5 +48,3 @@ export {
   type PaneSectionTone,
 } from "./components/pane-section/pane-section.js";
 export { SecretSetupPrompt } from "./components/secret-setup-prompt/secret-setup-prompt.js";
-export { SteeringDoseResponse } from "./components/steering-dose-response/steering-dose-response.js";
-export { TokenFeatureMatrix } from "./components/token-feature-matrix/token-feature-matrix.js";
