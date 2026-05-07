@@ -13,6 +13,7 @@ CANONICAL_ID_TABLES = {
     "baselines": RECORD_ID_PREFIXES["baseline"],
     "experiments": RECORD_ID_PREFIXES["experiment"],
     "evaluations": RECORD_ID_PREFIXES["evaluation"],
+    "measurements": RECORD_ID_PREFIXES["measurement"],
     "artifacts": RECORD_ID_PREFIXES["artifact"],
     "tasks": RECORD_ID_PREFIXES["task"],
 }
@@ -231,7 +232,7 @@ CREATE TABLE IF NOT EXISTS evaluation_activities (
 );
 
 CREATE TABLE IF NOT EXISTS measurements (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id TEXT PRIMARY KEY,
   evaluation_id TEXT NOT NULL REFERENCES evaluations(id),
   created_in_session_id TEXT REFERENCES sessions(id),
   actor TEXT NOT NULL,
@@ -357,6 +358,11 @@ def has_stale_schema(connection: sqlite3.Connection) -> bool:
     evaluation_columns = table_columns(connection, "evaluations")
     if "project_id" not in evaluation_columns or "session_id" in evaluation_columns:
         return True
+
+    if table_exists(connection, "measurements"):
+        measurement_columns = table_column_types(connection, "measurements")
+        if measurement_columns.get("id", "").upper() != "TEXT":
+            return True
 
     analysis_columns = table_columns(connection, "analyses")
     if (
@@ -532,3 +538,12 @@ def table_columns(connection: sqlite3.Connection, table: str) -> set[str]:
     if not table_exists(connection, table):
         return set()
     return {row[1] for row in connection.execute(f"PRAGMA table_info({table})")}
+
+
+def table_column_types(connection: sqlite3.Connection, table: str) -> dict[str, str]:
+    if not table_exists(connection, table):
+        return {}
+    return {
+        str(row[1]): str(row[2])
+        for row in connection.execute(f"PRAGMA table_info({table})")
+    }

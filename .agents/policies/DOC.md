@@ -29,6 +29,12 @@ or agent/worker flows.
 - [0019-dbos-agent-execution/POLICY.md](./0019-dbos-agent-execution/POLICY.md) - prefer Pydantic AI DBOSAgent over custom agent workflow orchestration
 - [0020-experiment-comparability/POLICY.md](./0020-experiment-comparability/POLICY.md) - make workspace state, eval commands, and changed evaluation surfaces visible before trusting experiment results
 - [0021-model-formality/POLICY.md](./0021-model-formality/POLICY.md) - formalize identities, relationships, statuses, gates, and contracts while keeping semantic research content text-rich
+- [0022-durable-records/POLICY.md](./0022-durable-records/POLICY.md) - keep persisted product records storage-agnostic, typed where software needs guarantees, and text-rich where research semantics are flexible
+- [0023-api-services-schemas/POLICY.md](./0023-api-services-schemas/POLICY.md) - keep API services responsible for read-side composition and boundary-shaped schemas
+- [0024-eval-worlds-suites/POLICY.md](./0024-eval-worlds-suites/POLICY.md) - keep eval fixture worlds separate from behavior suites while preserving realistic model behavior
+- [0025-runtime-skills/POLICY.md](./0025-runtime-skills/POLICY.md) - keep Situ runtime-agent skills separate from developer-agent skills and tied to explicit record tools
+- [0026-experiment-workspaces/POLICY.md](./0026-experiment-workspaces/POLICY.md) - run candidate experiment work in managed workspaces and preserve comparable code-state evidence
+- [0027-convention-policy-coverage/POLICY.md](./0027-convention-policy-coverage/POLICY.md) - require policy coverage for repeated backend conventions with three or more examples
 
 ## Review Style
 

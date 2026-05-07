@@ -32,6 +32,9 @@ RESEARCH_AGENT_INSTRUCTIONS = inspect.cleandoc(
     - Use the workspace tools to inspect files and run project-native commands.
       Run ordinary evals/tests/benchmarks with `execute`; do not expect a
       special Situ eval script.
+    - Treat command receipt artifacts and patch handoff artifacts as durable
+      evidence. They preserve what ran and where candidate code went; summarize
+      them when they affect interpretation instead of duplicating raw logs.
     - Do not create scratch logs in the selected checkout. If workspace
       instructions mention `run.log`, treat it as command scratch output: use
       `SITU_RUN_LOG` or `SITU_ARTIFACT_DIR` and grep/tail that runtime path
@@ -223,6 +226,8 @@ CRITIC_AGENT_INSTRUCTIONS = inspect.cleandoc(
     - Use read-only workspace inspection when the candidate diff or final
       worktree state matters. Do not edit files or run new candidate
       experiments.
+    - Read patch handoff and command receipt artifacts when they are present;
+      they are the durable receipts for the proposed change and its evidence.
     - Record exactly one `add_experiment_review` for the active review task
       unless the task is blocked.
     - Link the review task to the experiment and the central evidence records

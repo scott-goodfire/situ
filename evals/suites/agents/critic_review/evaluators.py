@@ -164,9 +164,9 @@ class CriticReviewReferencesEvidence(
         payload = review.get("payload") or {}
         evaluation_ids = {str(item) for item in payload.get("reviewed_evaluation_ids") or []}
         measurement_ids = {
-            int(item)
+            str(item)
             for item in payload.get("reviewed_measurement_ids") or []
-            if isinstance(item, int | str) and str(item).isdigit()
+            if isinstance(item, str) and item.startswith("M")
         }
         if not evaluation_ids or not measurement_ids:
             return EvaluationReason(
@@ -182,7 +182,7 @@ class CriticReviewReferencesEvidence(
             for evaluation in ctx.output.project_board.get("evaluations", [])
         }
         measurements_by_id = {
-            int(measurement.get("id")): measurement
+            str(measurement.get("id")): measurement
             for measurement in ctx.output.project_board.get("measurements", [])
             if measurement.get("id") is not None
         }
@@ -219,10 +219,10 @@ class CriticReviewReferencesEvidence(
             for evaluation_id in (task.get("payload") or {}).get("evaluation_ids", [])
         }
         task_measurement_ids = {
-            int(measurement_id)
+            str(measurement_id)
             for task in review_tasks
             for measurement_id in (task.get("payload") or {}).get("measurement_ids", [])
-            if isinstance(measurement_id, int | str) and str(measurement_id).isdigit()
+            if isinstance(measurement_id, str) and measurement_id.startswith("M")
         }
         if evaluation_ids & task_evaluation_ids and measurement_ids & task_measurement_ids:
             return EvaluationReason(

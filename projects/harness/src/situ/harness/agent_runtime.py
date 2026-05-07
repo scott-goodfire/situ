@@ -177,6 +177,7 @@ class AgentRuntime:
             project_dir=self.project_dir,
             database_path=self.database_path,
             repo_path=workspace.get("repo_path"),
+            active_task_id=assigned_task_ids[0] if assigned_task_ids else None,
         )
 
         with span(
@@ -248,6 +249,7 @@ class AgentRuntime:
             database_path=self.database_path,
             repo_path=repo_path,
             app_root=app_root,
+            active_task_id=assigned_task_ids[0] if assigned_task_ids else None,
         )
         if repos is not None and project_id is not None:
             stored_messages = repos.agent_message_history.get_message_history(
@@ -336,6 +338,7 @@ class AgentRuntime:
             database_path=self.database_path,
             repo_path=execution_repo_path,
             app_root=app_root,
+            active_task_id=assigned_task_ids[0] if assigned_task_ids else None,
             active_experiment_id=active_experiment_id,
         )
         if repos is not None and project_id is not None:
@@ -421,6 +424,7 @@ class AgentRuntime:
             database_path=self.database_path,
             repo_path=repo_path,
             app_root=app_root,
+            active_task_id=assigned_task_ids[0] if assigned_task_ids else None,
         )
         if repos is not None and project_id is not None:
             stored_messages = repos.agent_message_history.get_message_history(

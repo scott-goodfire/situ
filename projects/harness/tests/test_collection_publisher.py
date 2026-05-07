@@ -47,7 +47,7 @@ def test_collection_routes_cover_publishable_records() -> None:
         (baseline_record(), "baselines", "B1"),
         (experiment_record(), "experiments", "EX1"),
         (evaluation_record(), "evaluations", "EV1"),
-        (measurement_record(), "measurements", "7"),
+        (measurement_record(), "measurements", "M7"),
         (analysis_record(), "analyses", "A1"),
         (
             HypothesisExperimentLinkRecord(
@@ -351,7 +351,7 @@ def evaluation_activity_record() -> EvaluationActivityRecord:
 
 def measurement_record() -> MeasurementRecord:
     return MeasurementRecord(
-        id=7,
+        id="M7",
         evaluation_id="EV1",
         created_in_session_id="S1",
         actor="agent",

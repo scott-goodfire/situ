@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import subprocess
 import threading
 from dataclasses import dataclass
 from pathlib import Path
@@ -585,7 +586,7 @@ class HarnessApp:
                     project_id=project_id,
                     task_id=task.id,
                     entity_kind=TaskEntityKind.MEASUREMENT,
-                    entity_id=str(measurement.id),
+                    entity_id=measurement.id,
                     relationship="reviews",
                 )
             )
@@ -1192,6 +1193,8 @@ class HarnessApp:
         state: dict[str, object]
         candidate_commit: str | None = None
         candidate_ref: str | None = None
+        patch_artifact_id: str | None = None
+        patch_error: str | None = None
         post_commit_state: dict[str, object] | None = None
         if experiment.worktree_path is None:
             state = {"error": "experiment has no worktree_path"}
@@ -1209,8 +1212,16 @@ class HarnessApp:
                 candidate_commit = candidate_state.candidate_commit
                 candidate_ref = candidate_state.candidate_ref
                 post_commit_state = candidate_state.post_commit_worktree.model_dump()
+                if candidate_commit is not None:
+                    patch_artifact_id = self._capture_experiment_patch_artifact(
+                        experiment=experiment,
+                        session_id=session_id,
+                        candidate_commit=candidate_commit,
+                        candidate_ref=candidate_ref,
+                    )
             except RuntimeError as error:
                 state = {"error": str(error), "workspace": experiment.worktree_path}
+                patch_error = str(error)
 
         activity_payload = {
             "activity_type": "workspace_state",
@@ -1219,6 +1230,10 @@ class HarnessApp:
             "candidate_ref": candidate_ref,
             "worktree": state,
         }
+        if patch_artifact_id is not None:
+            activity_payload["patch_artifact_id"] = patch_artifact_id
+        if patch_error is not None:
+            activity_payload["patch_error"] = patch_error
         if post_commit_state is not None:
             activity_payload["post_commit_worktree"] = post_commit_state
 
@@ -1249,6 +1264,122 @@ class HarnessApp:
         )
         self.publish_record(record=activity, cursor=event.id)
         self.publish_record(record=closed, cursor=event.id)
+
+    def _capture_experiment_patch_artifact(
+        self,
+        *,
+        experiment: ExperimentRecord,
+        session_id: str,
+        candidate_commit: str,
+        candidate_ref: str | None,
+    ) -> str | None:
+        if experiment.base_commit is None or experiment.worktree_path is None:
+            return None
+
+        worktree_path = Path(experiment.worktree_path)
+        git_root = _git_text(worktree_path, "rev-parse", "--show-toplevel")
+        if not git_root:
+            raise RuntimeError(
+                f"could not resolve git root for experiment {experiment.id}"
+            )
+
+        patch = _git_text(
+            Path(git_root),
+            "diff",
+            "--binary",
+            experiment.base_commit,
+            candidate_commit,
+        )
+        changed_files = _git_lines(
+            Path(git_root),
+            "diff",
+            "--name-only",
+            experiment.base_commit,
+            candidate_commit,
+        )
+        diff_stat = _git_text(
+            Path(git_root),
+            "diff",
+            "--stat",
+            experiment.base_commit,
+            candidate_commit,
+        )
+        if not patch.strip():
+            return None
+
+        artifact_id = self.repos.artifacts.next_id(project_id=experiment.project_id)
+        patch_dir = self.context.project_dir / "artifacts" / "patches" / experiment.project_id
+        patch_dir.mkdir(parents=True, exist_ok=True)
+        patch_path = patch_dir / f"{artifact_id}-{experiment.id}.patch"
+        patch_path.write_text(patch, encoding="utf-8")
+
+        artifact = self.repos.artifacts.create(
+            artifact_id=artifact_id,
+            project_id=experiment.project_id,
+            created_in_session_id=session_id,
+            associated_entity_kind="experiment",
+            associated_entity_id=experiment.id,
+            kind="patch",
+            title=f"Patch handoff from {experiment.id}",
+            path=_artifact_path_for_record(
+                artifact_path=patch_path,
+                project_dir=self.context.project_dir,
+            ),
+            media_type="text/x-patch",
+            size_bytes=patch_path.stat().st_size,
+        )
+        linked_tasks = self.repos.task_entity_links.list_for_entity(
+            entity_kind=TaskEntityKind.EXPERIMENT,
+            entity_id=experiment.id,
+        )
+        artifact_links = [
+            self.repos.task_entity_links.create(
+                project_id=experiment.project_id,
+                task_id=link.task_id,
+                entity_kind=TaskEntityKind.ARTIFACT,
+                entity_id=artifact.id,
+                relationship="produces",
+            )
+            for link in linked_tasks
+        ]
+        activity = self.repos.experiment_activities.add(
+            experiment_id=experiment.id,
+            created_in_session_id=session_id,
+            actor="harness",
+            kind="comment",
+            body=(
+                f"Captured patch artifact {artifact.id} from {experiment.id}. "
+                f"Apply explicitly with `situ apply {artifact.id}`."
+            ),
+            payload={
+                "activity_type": "patch_handoff",
+                "patch_status": "captured",
+                "artifact_id": artifact.id,
+                "base_commit": experiment.base_commit,
+                "candidate_commit": candidate_commit,
+                "candidate_ref": candidate_ref,
+                "changed_files": changed_files,
+                "diff_stat": diff_stat,
+                "apply_command": f"situ apply {artifact.id}",
+            },
+        )
+        event = self.record_event(
+            event_type="experiment.patch_captured",
+            message=f"Captured patch artifact {artifact.id} from {experiment.id}",
+            session_id=session_id,
+            project_id=experiment.project_id,
+            payload={
+                "experiment_id": experiment.id,
+                "artifact_id": artifact.id,
+                "changed_files": changed_files,
+                "candidate_commit": candidate_commit,
+            },
+        )
+        self.publish_record(record=artifact, cursor=event.id)
+        for link in artifact_links:
+            self.publish_record(record=link, cursor=event.id)
+        self.publish_record(record=activity, cursor=event.id)
+        return artifact.id
 
     def _experiment_count(self, session_id: str) -> int:
         return len(self.repos.experiments.list_for_session(session_id=session_id))
@@ -1350,6 +1481,32 @@ def _research_thread_from_task(task: TaskRecord) -> str | None:
     if not isinstance(research_thread, str) or not research_thread:
         research_thread = task.payload.get("thread")
     return research_thread if isinstance(research_thread, str) and research_thread else None
+
+
+def _git_text(cwd: Path, *args: str) -> str:
+    result = subprocess.run(
+        ["git", *args],
+        cwd=cwd,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        error = result.stderr.strip() or result.stdout.strip()
+        raise RuntimeError(f"git {' '.join(args)} failed: {error}")
+    return result.stdout.strip()
+
+
+def _git_lines(cwd: Path, *args: str) -> list[str]:
+    text = _git_text(cwd, *args)
+    return text.splitlines() if text else []
+
+
+def _artifact_path_for_record(*, artifact_path: Path, project_dir: Path) -> str:
+    try:
+        return str(artifact_path.relative_to(project_dir))
+    except ValueError:
+        return str(artifact_path)
 
 
 def _agent_display_name(agent_kind: AgentKind) -> str:

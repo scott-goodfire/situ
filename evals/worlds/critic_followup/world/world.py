@@ -187,7 +187,7 @@ class CriticFollowupWorld:
         for entity_kind, entity_id in (
             (TaskEntityKind.EXPERIMENT, experiment.id),
             (TaskEntityKind.EVALUATION, evaluation.id),
-            (TaskEntityKind.MEASUREMENT, str(measurement.id)),
+            (TaskEntityKind.MEASUREMENT, measurement.id),
         ):
             self.repos.task_entity_links.create(
                 project_id=PROJECT_ID,

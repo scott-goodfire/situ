@@ -104,7 +104,7 @@ def test_experiment_review_task_links_evaluations_and_measurements(
     assert task.payload["measurement_ids"] == [measurement_id]
     assert (TaskEntityKind.EXPERIMENT, experiment_id) in linked
     assert (TaskEntityKind.EVALUATION, evaluation_id) in linked
-    assert (TaskEntityKind.MEASUREMENT, str(measurement_id)) in linked
+    assert (TaskEntityKind.MEASUREMENT, measurement_id) in linked
 
 
 def test_experiment_review_task_is_not_duplicated_for_same_experiment(
@@ -738,7 +738,7 @@ def _seed_closed_experiment_with_measurement(
     app: HarnessApp,
     session_id: str,
     project_id: str,
-) -> tuple[str, str, int]:
+) -> tuple[str, str, str]:
     workspace = app.repos.workspaces.get()
     assert workspace is not None
     experiment = app.repos.experiments.create(

@@ -11,6 +11,7 @@ RECORD_ID_PREFIXES = {
     "baseline": "B",
     "experiment": "EX",
     "evaluation": "EV",
+    "measurement": "M",
     "artifact": "ART",
     "task": "T",
 }

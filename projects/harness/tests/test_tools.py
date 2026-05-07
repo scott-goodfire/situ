@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -776,9 +777,9 @@ def test_evaluation_tools_create_update_list_and_add_results(
         "EV1"
     ]
     assert [measurement["id"] for measurement in listed_measurements.measurements] == [
-        1
+        "M1"
     ]
-    assert [measurement.id for measurement in measurements] == [1]
+    assert [measurement.id for measurement in measurements] == ["M1"]
     assert [activity["id"] for activity in activities.activities] == [1]
     assert [event["type"] for event in emitted] == [
         "baseline.created",
@@ -944,7 +945,7 @@ def test_comment_tools_write_activity_records(repos: Repositories) -> None:
         verdict="needs_reproduction",
         recommended_next_step="reproduce",
         reviewed_evaluation_ids=["EV404"],
-        reviewed_measurement_ids=[999],
+        reviewed_measurement_ids=["M999"],
     )
     lineage_decision = invoke_situ_tool_sync(
         tool=AddExperimentLineageDecisionTool(),
@@ -1145,6 +1146,68 @@ def test_workspace_backend_routes_run_log_to_runtime_artifacts(tmp_path: Path) -
     assert "score: 1" in read_result.output
     assert "Routed run.log" in write_result.output
     assert not (workspace / "run.log").exists()
+
+
+def test_workspace_backend_records_command_receipt_artifacts(
+    tmp_path: Path,
+    repos: Repositories,
+) -> None:
+    workspace = tmp_path / "workspace"
+    project_dir = tmp_path / ".situ" / "projects" / "workspace"
+    workspace.mkdir()
+    _git(workspace, "init")
+    (workspace / "metric.txt").write_text("score: 1.5\n", encoding="utf-8")
+    _git(workspace, "add", ".")
+    _git(
+        workspace,
+        "-c",
+        "user.email=situ@example.test",
+        "-c",
+        "user.name=Situ Test",
+        "commit",
+        "-m",
+        "initial",
+    )
+    deps = SituToolDeps(
+        session_id="S1",
+        agent_id="agent_0001",
+        project_id="P1",
+        project_dir=project_dir,
+        repo_path=str(workspace),
+        active_task_id="T1",
+        repos=repos,
+    )
+    repos.tasks.create(
+        task_id="T1",
+        project_id="P1",
+        created_in_session_id="S1",
+        title="Run baseline",
+        content="Run the baseline command.",
+        kind="baseline",
+        source_kind="manager",
+    )
+
+    result = deps.backend.execute("cat metric.txt", timeout=5)
+
+    artifacts = repos.artifacts.list_for_project(project_id="P1")
+    assert result.exit_code == 0
+    assert len(artifacts) == 1
+    assert artifacts[0].kind == "command_receipt"
+    assert artifacts[0].associated_entity_kind == "task"
+    assert artifacts[0].associated_entity_id == "T1"
+    receipt = json.loads((project_dir / artifacts[0].path).read_text())
+    assert receipt["command"] == "cat metric.txt"
+    assert receipt["exit_code"] == 0
+    assert receipt["metrics"]["score"] == {
+        "value": 1.5,
+        "source": "stdout_heuristic",
+    }
+    assert repos.task_entity_links.get(
+        task_id="T1",
+        entity_kind="artifact",
+        entity_id=artifacts[0].id,
+        relationship="receipt",
+    )
 
 
 def test_research_toolset_includes_workspace_state_inspector() -> None:

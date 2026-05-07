@@ -16,8 +16,10 @@ from ._shared.arguments import (
     add_setup_arguments,
     add_workspace_argument,
 )
+from .apply.command import run as apply_run
 from .app.command import run as app_run
 from .attach.command import run as attach_run
+from .patches.command import run as patches_run
 from .resume.command import run as resume_run
 from .secrets.command import run as secrets_run
 from .tui.command import LATEST_SENTINEL, run as tui_run
@@ -132,6 +134,25 @@ def main(argv: list[str] | None = None) -> int:
         help="follow live events from the active local session",
     )
 
+    patches_parser = subparsers.add_parser("patches", help="list local patch artifacts")
+    add_workspace_argument(patches_parser)
+    add_json_argument(patches_parser)
+
+    apply_parser = subparsers.add_parser("apply", help="apply a Situ patch artifact")
+    apply_parser.add_argument("artifact_id", help="patch artifact id, such as ART3")
+    add_workspace_argument(apply_parser)
+    apply_parser.add_argument(
+        "--branch",
+        nargs="?",
+        const="",
+        help="create a branch before applying; defaults to situ/apply/<artifact-id>",
+    )
+    apply_parser.add_argument(
+        "--force",
+        action="store_true",
+        help="allow applying when the checkout is dirty",
+    )
+
     wait_parser = subparsers.add_parser("wait", help="wait for the active session to close")
     add_workspace_argument(wait_parser)
     add_json_argument(wait_parser)
@@ -198,6 +219,10 @@ def main(argv: list[str] | None = None) -> int:
         return headless_sessions(args)
     if args.command == "events":
         return headless_events(args)
+    if args.command == "patches":
+        return patches_run(args)
+    if args.command == "apply":
+        return apply_run(args)
     if args.command == "wait":
         return headless_wait(args)
     if args.command == "clear":

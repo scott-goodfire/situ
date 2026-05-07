@@ -124,13 +124,13 @@ export interface MeasurementPayload {
   artifact_ids?: string[];
   concerns?: Record<string, unknown>[];
   comparison_baseline_id?: string | null;
-  comparison_measurement_id?: number | null;
+  comparison_measurement_id?: string | null;
   comparison_metric_deltas?: Record<string, MetricValue>;
   [key: string]: unknown;
 }
 
 export interface MeasurementRecord {
-  id: number;
+  id: string;
   evaluation_id: string;
   created_in_session_id?: string | null;
   actor: string;

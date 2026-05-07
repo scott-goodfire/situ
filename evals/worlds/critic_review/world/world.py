@@ -160,7 +160,7 @@ class CriticReviewWorld:
         return task.id
 
 
-def _add_baseline_context(repos: Repositories, seed: CriticReviewSeed) -> list[int]:
+def _add_baseline_context(repos: Repositories, seed: CriticReviewSeed) -> list[str]:
     if seed != "selection_on_noise":
         return [
             measurement.id
@@ -217,7 +217,7 @@ def _add_baseline_context(repos: Repositories, seed: CriticReviewSeed) -> list[i
 def _add_candidate_measurements(
     repos: Repositories,
     seed: CriticReviewSeed,
-) -> list[int]:
+) -> list[str]:
     measurements = {
         "selection_on_noise": [
             (
@@ -283,7 +283,7 @@ def _add_candidate_measurements(
         ],
     }[seed]
 
-    ids: list[int] = []
+    ids: list[str] = []
     for title, val_bpb, note, command in measurements:
         body = (
             f"{title}\n\n"
@@ -333,7 +333,7 @@ def _link_review_evidence(
     task_id: str,
     experiment_id: str,
     evaluation_id: str,
-    measurement_ids: list[int],
+    measurement_ids: list[str],
 ) -> None:
     repos.task_entity_links.create(
         project_id=PROJECT_ID,
@@ -354,7 +354,7 @@ def _link_review_evidence(
             project_id=PROJECT_ID,
             task_id=task_id,
             entity_kind=TaskEntityKind.MEASUREMENT,
-            entity_id=str(measurement_id),
+            entity_id=measurement_id,
             relationship="reviews",
         )
 
@@ -513,8 +513,8 @@ def _review_task_title(seed: CriticReviewSeed) -> str:
 def _review_task_content(
     seed: CriticReviewSeed,
     *,
-    candidate_measurement_ids: list[int],
-    baseline_measurement_ids: list[int],
+    candidate_measurement_ids: list[str],
+    baseline_measurement_ids: list[str],
 ) -> str:
     evidence_line = (
         f"Candidate measurement ids: {candidate_measurement_ids}. "

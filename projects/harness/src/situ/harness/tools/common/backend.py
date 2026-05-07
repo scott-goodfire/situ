@@ -4,6 +4,7 @@ import os
 import re
 import shlex
 import threading
+from collections.abc import Callable
 from pathlib import Path
 
 from pydantic_ai_backends import LocalBackend
@@ -11,17 +12,22 @@ from pydantic_ai_backends.types import ExecuteResponse
 
 _ENV_LOCK = threading.Lock()
 _RUN_LOG_PATTERN = re.compile(r"(?<![\w./-])(?:\./)?run\.log(?![\w./-])")
+CommandReceiptRecorder = Callable[..., None]
 
 
 class SituLocalBackend(LocalBackend):
     def __init__(
         self,
         *,
+        root_dir: Path,
         command_artifact_dir: Path | None,
+        command_receipt_recorder: CommandReceiptRecorder | None = None,
         **kwargs: object,
     ) -> None:
-        super().__init__(**kwargs)
+        super().__init__(root_dir=root_dir, **kwargs)
+        self.workspace_root = root_dir
         self.command_artifact_dir = command_artifact_dir
+        self.command_receipt_recorder = command_receipt_recorder
 
     def execute(
         self,
@@ -55,6 +61,15 @@ class SituLocalBackend(LocalBackend):
                     else:
                         os.environ[name] = value
 
+        self._record_command_receipt(
+            command=command,
+            rewritten_command=rewritten_command,
+            timeout=timeout,
+            response=response,
+            command_artifact_dir=command_artifact_dir,
+            run_log_path=run_log_path,
+        )
+
         if rewritten_command == command:
             return response
 
@@ -66,6 +81,34 @@ class SituLocalBackend(LocalBackend):
             truncated=response.truncated,
         )
 
+    def _record_command_receipt(
+        self,
+        *,
+        command: str,
+        rewritten_command: str,
+        timeout: int | None,
+        response: ExecuteResponse,
+        command_artifact_dir: Path,
+        run_log_path: Path,
+    ) -> None:
+        recorder = self.command_receipt_recorder
+        if recorder is None:
+            return
+        try:
+            recorder(
+                command=command,
+                rewritten_command=rewritten_command,
+                cwd=str(self.workspace_root),
+                timeout=timeout,
+                output=response.output,
+                exit_code=response.exit_code,
+                truncated=response.truncated,
+                command_artifact_dir=str(command_artifact_dir),
+                run_log_path=str(run_log_path),
+            )
+        except Exception:
+            return
+
 
 def command_artifact_dir_for(
     *,
@@ -73,11 +116,12 @@ def command_artifact_dir_for(
     session_id: str,
     agent_id: str | None,
     active_experiment_id: str | None,
+    active_task_id: str | None = None,
 ) -> Path | None:
     if project_dir is None:
         return None
 
-    owner = active_experiment_id or agent_id or "unscoped"
+    owner = active_experiment_id or active_task_id or agent_id or "unscoped"
     return project_dir / "artifacts" / "commands" / session_id / owner
 
 

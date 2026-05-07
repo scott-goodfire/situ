@@ -35,7 +35,7 @@ class MeasurementPayload(BaseModel):
     artifact_ids: list[str] = Field(default_factory=list)
     concerns: list[dict[str, Any]] = Field(default_factory=list)
     comparison_baseline_id: str | None = None
-    comparison_measurement_id: int | None = None
+    comparison_measurement_id: str | None = None
     comparison_metric_deltas: dict[str, MetricValue] = Field(default_factory=dict)
 
     @field_validator("metrics", "comparison_metric_deltas", mode="before")
@@ -60,7 +60,7 @@ class MeasurementPayload(BaseModel):
 
 
 class MeasurementRecord(DbRecord):
-    id: int
+    id: str
     evaluation_id: str
     created_in_session_id: str | None = None
     actor: str

@@ -748,7 +748,7 @@ def test_evaluation_activities_repository_add_and_list(repos: Repositories) -> N
 def test_measurements_repository_add_and_list(repos: Repositories) -> None:
     measurement = create_measurement(repos)
 
-    assert measurement.id == 1
+    assert measurement.id == "M1"
     assert measurement.evaluation_id == "EV1"
     assert measurement.created_in_session_id == "S1"
     assert measurement.actor == "agent"
@@ -959,7 +959,7 @@ def test_current_state_api_composes_protocol_shaped_state(repos: Repositories) -
         "EV1"
     ]
     assert [analysis.id for analysis in current_state.analyses] == ["A1"]
-    assert [measurement.id for measurement in current_state.measurements] == [1]
+    assert [measurement.id for measurement in current_state.measurements] == ["M1"]
     assert [activity.kind for activity in current_state.analysis_activities] == [
         "comment"
     ]
@@ -1042,7 +1042,7 @@ def test_project_board_api_composes_project_board(repos: Repositories) -> None:
         "EV1"
     ]
     assert [analysis.id for analysis in graph.analyses] == ["A1"]
-    assert [measurement.id for measurement in graph.measurements] == [1]
+    assert [measurement.id for measurement in graph.measurements] == ["M1"]
     assert [activity.kind for activity in graph.analysis_activities] == ["comment"]
     assert [activity.kind for activity in graph.experiment_activities] == [
         "comment"

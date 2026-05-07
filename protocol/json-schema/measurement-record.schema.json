@@ -113,7 +113,7 @@
         "comparison_measurement_id": {
           "anyOf": [
             {
-              "type": "integer"
+              "type": "string"
             },
             {
               "type": "null"
@@ -198,7 +198,7 @@
   "properties": {
     "id": {
       "title": "Id",
-      "type": "integer"
+      "type": "string"
     },
     "evaluation_id": {
       "title": "Evaluation Id",

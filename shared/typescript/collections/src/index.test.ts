@@ -108,7 +108,7 @@ describe("situ collections", () => {
     expect(collections.analysisActivities.get("1")?.kind).toBe("comment");
     expect(collections.experimentActivities.get("1")?.kind).toBe("comment");
     expect(collections.evaluationActivities.get("1")?.kind).toBe("result");
-    expect(collections.measurements.get("1")?.payload.activity_type).toBe("result");
+    expect(collections.measurements.get("M1")?.payload.activity_type).toBe("result");
     expect(collections.events.get("1")?.type).toBe("session.started");
     expect(collections.events.get("2")?.type).toBe("experiment.completed");
   });
@@ -212,10 +212,10 @@ describe("situ collections", () => {
       collections,
       upsert: upsert({
         collection: "measurements",
-        key: "6",
+        key: "M6",
         record: measurementRecord({
           overrides: {
-            id: 6,
+            id: "M6",
             payload: { activity_type: "result", metrics: { score: { value: 0.73 } } },
           },
         }),
@@ -306,7 +306,7 @@ describe("situ collections", () => {
     );
     expect(collections.experiments.get("EX1")?.status).toBe("active");
     expect(collections.evaluations.get("EV2")?.status).toBe("active");
-    expect(collections.measurements.get("6")?.payload.metrics).toEqual({
+    expect(collections.measurements.get("M6")?.payload.metrics).toEqual({
       score: { value: 0.73 },
     });
     expect(collections.analyses.get("A1")?.status).toBe("active");
@@ -489,7 +489,7 @@ function measurementRecord({
   overrides?: Partial<MeasurementRecord>;
 }): MeasurementRecord {
   return {
-    id: 1,
+    id: "M1",
     evaluation_id: "EV1",
     created_in_session_id: SESSION_ID,
     actor: "agent",

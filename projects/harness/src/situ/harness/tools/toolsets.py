@@ -200,6 +200,8 @@ WORKSPACE_EXECUTE_DESCRIPTION = inspect.cleandoc(
     local runtime state for redirected output. If project instructions mention
     `run.log`, treat it as scratch output and use `SITU_RUN_LOG` instead; the
     workspace command backend also routes bare `run.log` references there.
+    Situ records a command receipt artifact for executed commands when project
+    state is available.
     """
 )
 

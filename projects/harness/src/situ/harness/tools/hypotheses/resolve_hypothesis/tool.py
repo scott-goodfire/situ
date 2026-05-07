@@ -198,19 +198,10 @@ def _evidence_entity_exists(
     if record_id.startswith("T"):
         task = repos.tasks.get(task_id=record_id)
         return task is not None and task.project_id == project_id
-    measurement_id = _measurement_id_from_evidence_id(record_id)
-    if measurement_id is not None:
-        measurement = repos.measurements.get(measurement_id=measurement_id)
+    if record_id.startswith("M"):
+        measurement = repos.measurements.get(measurement_id=record_id)
         if measurement is None:
             return False
         evaluation = repos.evaluations.get(evaluation_id=measurement.evaluation_id)
         return evaluation is not None and evaluation.project_id == project_id
     return False
-
-
-def _measurement_id_from_evidence_id(evidence_entity_id: str) -> int | None:
-    if evidence_entity_id.isdigit():
-        return int(evidence_entity_id)
-    if evidence_entity_id.startswith("M") and evidence_entity_id[1:].isdigit():
-        return int(evidence_entity_id[1:])
-    return None

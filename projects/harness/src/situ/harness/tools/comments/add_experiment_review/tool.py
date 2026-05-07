@@ -43,7 +43,7 @@ class AddExperimentReviewTool(
         evidence_summary: str = "",
         concern_kinds: list[str] | None = None,
         reviewed_evaluation_ids: list[str] | None = None,
-        reviewed_measurement_ids: list[int] | None = None,
+        reviewed_measurement_ids: list[str] | None = None,
         actor: str = "critic",
         payload: dict[str, Any] | None = None,
         **_kwargs: Any,
@@ -83,7 +83,7 @@ class AddExperimentReviewTool(
                 ),
             )
 
-        invalid_measurement_ids: list[int] = []
+        invalid_measurement_ids: list[str] = []
         for measurement_id in measurement_ids:
             measurement = repos.measurements.get(measurement_id=measurement_id)
             if measurement is None:

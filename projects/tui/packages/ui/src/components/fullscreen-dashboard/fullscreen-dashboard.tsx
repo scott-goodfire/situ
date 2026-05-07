@@ -1372,6 +1372,7 @@ const TASK_OUTPUT_ENTITY_KIND_ORDER: TaskEntityLinkRecord["entity_kind"][] = [
   "analysis",
   "hypothesis",
   "baseline",
+  "measurement",
 ];
 
 const TASK_OUTPUT_ENTITY_PREFIX_BY_KIND: Partial<
@@ -1382,6 +1383,7 @@ const TASK_OUTPUT_ENTITY_PREFIX_BY_KIND: Partial<
   hypothesis: "H",
   experiment: "EX",
   evaluation: "EV",
+  measurement: "M",
   artifact: "ART",
 };
 

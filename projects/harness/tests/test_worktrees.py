@@ -241,6 +241,30 @@ def test_harness_prepares_experiment_task_checkout_and_records_final_state(
     assert activities[-1].payload["worktree"]["dirty"] is True
     assert activities[-1].payload["candidate_commit"] == completed.candidate_commit
     assert activities[-1].payload["post_commit_worktree"]["dirty"] is False
+    patch_artifacts = [
+        artifact
+        for artifact in app.repos.artifacts.list_for_project(project_id=project.id)
+        if artifact.kind == "patch"
+    ]
+    assert len(patch_artifacts) == 1
+    assert activities[-1].payload["patch_artifact_id"] == patch_artifacts[0].id
+    patch_path = app.context.project_dir / patch_artifacts[0].path
+    patch_text = patch_path.read_text(encoding="utf-8")
+    assert "VALUE = 2" in patch_text
+    patch_activities = [
+        activity
+        for activity in activities
+        if activity.payload.get("activity_type") == "patch_handoff"
+    ]
+    assert len(patch_activities) == 1
+    assert patch_activities[0].payload["artifact_id"] == patch_artifacts[0].id
+    assert patch_activities[0].payload["changed_files"] == ["pkg/module.py"]
+    assert app.repos.task_entity_links.get(
+        task_id=task.id,
+        entity_kind="artifact",
+        entity_id=patch_artifacts[0].id,
+        relationship="produces",
+    )
 
     followup = app.repos.tasks.create(
         task_id="T2",

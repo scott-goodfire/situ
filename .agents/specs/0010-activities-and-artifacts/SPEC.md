@@ -207,6 +207,17 @@ They can include:
 Activities explain what happened. Artifacts preserve the thing that can be
 inspected later.
 
+Command-backed work should create receipt artifacts automatically when Situ can
+observe the command. A command receipt should preserve the command, working
+directory, exit code, output summary or log, best-effort metric hints, runtime
+artifact paths, and relevant git state. The measurement body remains the
+human-readable interpretation; the receipt is the durable raw evidence.
+
+Code-changing experiments should also create patch artifacts automatically when
+they produce a candidate commit. The patch artifact is a handoff receipt for
+humans and later agents: it points at the diff from base state to candidate
+state without applying it to the user's selected checkout.
+
 First-slice artifact shape:
 
 ```text
@@ -232,6 +243,10 @@ Artifacts always belong to a project. Use the generic associated entity fields
 instead of a widening set of nullable foreign keys. This keeps the record
 understandable without forcing the first slice to predict every artifact
 attachment target.
+
+For the first slice, structured artifact metadata may live in the artifact file
+itself or in the nearby activity payload. Do not add a separate artifact
+metadata table until querying those fields becomes necessary.
 
 ## Product Rule
 

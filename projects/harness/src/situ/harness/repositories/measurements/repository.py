@@ -3,9 +3,16 @@ from __future__ import annotations
 from typing import Any
 
 from ...core.db.serialization import json_dumps, json_loads, utc_now
+from ...core.ids import (
+    RECORD_ID_PREFIXES,
+    ensure_canonical_record_id,
+    next_canonical_record_id,
+)
 from ...records import MeasurementRecord
 from ..base import BaseRepository
 from .command import AddMeasurement
+
+MEASUREMENT_ID_PREFIX = RECORD_ID_PREFIXES["measurement"]
 
 
 def _measurement_row(row: Any) -> MeasurementRecord:
@@ -30,6 +37,12 @@ class MeasurementsRepository(BaseRepository):
         payload: dict[str, Any] | None = None,
         created_in_session_id: str | None = None,
     ) -> MeasurementRecord:
+        measurement_id = self.next_id()
+        ensure_canonical_record_id(
+            record_id=measurement_id,
+            prefix=MEASUREMENT_ID_PREFIX,
+            noun="measurement",
+        )
         command = AddMeasurement(
             evaluation_id=evaluation_id,
             created_in_session_id=created_in_session_id,
@@ -37,14 +50,15 @@ class MeasurementsRepository(BaseRepository):
             body=body,
             payload=payload or {},
         )
-        cursor = self.db.execute(
+        self.db.execute(
             """
             INSERT INTO measurements
-              (evaluation_id, created_in_session_id, actor, body, payload_json,
-               created_at)
-            VALUES (?, ?, ?, ?, ?, ?)
+              (id, evaluation_id, created_in_session_id, actor, body,
+               payload_json, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
             (
+                measurement_id,
                 command.evaluation_id,
                 command.created_in_session_id,
                 command.actor,
@@ -53,19 +67,19 @@ class MeasurementsRepository(BaseRepository):
                 utc_now(),
             ),
         )
-        record = self.get_by_id(measurement_id=int(cursor.lastrowid))
+        record = self.get_by_id(measurement_id=measurement_id)
         if record is None:
             raise RuntimeError("measurement was not persisted")
         return record
 
-    def get_by_id(self, *, measurement_id: int) -> MeasurementRecord | None:
+    def get_by_id(self, *, measurement_id: str) -> MeasurementRecord | None:
         row = self.db.fetchone(
             "SELECT * FROM measurements WHERE id = ?",
             (measurement_id,),
         )
         return _measurement_row(row) if row else None
 
-    def get(self, *, measurement_id: int) -> MeasurementRecord | None:
+    def get(self, *, measurement_id: str) -> MeasurementRecord | None:
         return self.get_by_id(measurement_id=measurement_id)
 
     def list_all(self) -> list[MeasurementRecord]:
@@ -135,4 +149,11 @@ class MeasurementsRepository(BaseRepository):
             self.list_for_project(project_id=project_id)
             if project_id is not None
             else []
+        )
+
+    def next_id(self) -> str:
+        rows = self.db.fetchall("SELECT id FROM measurements")
+        return next_canonical_record_id(
+            existing_ids=(str(row["id"]) for row in rows),
+            prefix=MEASUREMENT_ID_PREFIX,
         )

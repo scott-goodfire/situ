@@ -38,16 +38,17 @@ runs inside a workspace, and may attach to zero or one project.
 Human-facing persisted records should have compact, referenceable IDs. The
 current canonical forms are `P<N>` for projects, `S<N>` for sessions, `A<N>`
 for analyses, `H<N>` for hypotheses, `B<N>` for baselines, `EX<N>` for
-experiments, `EV<N>` for evaluations, `ART<N>` for artifacts, and `T<N>` for
-tasks. These IDs should be short enough for terminal rows, activity text, agent
-prompts, and user steering. This is a hard local-state cutover: older long-form
-IDs such as `project_...`, `session_0001`, `hyp_...`, `exp_...`, and
-`eval_...`, plus their analysis, baseline, artifact, and task variants, are
-not part of the supported product model.
+experiments, `EV<N>` for evaluations, `M<N>` for measurements, `ART<N>` for
+artifacts, and `T<N>` for tasks. These IDs should be short enough for terminal
+rows, activity text, agent prompts, and user steering. This is a hard
+local-state cutover: older long-form IDs such as `project_...`,
+`session_0001`, `hyp_...`, `exp_...`, and `eval_...`, plus their analysis,
+baseline, measurement, artifact, and task variants, are not part of the
+supported product model.
 
 Workspace IDs are the exception. A workspace ID may remain an internal,
 path-derived stable identifier because the workspace is the repo-path boundary,
-not the thing humans normally cite during a run. Activity, event, measurement,
+not the thing humans normally cite during a run. Activity, event,
 message-history, dependency, and link row IDs may remain storage-local or
 compound implementation identifiers when their parent record carries the
 human-facing reference.

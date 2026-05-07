@@ -80,6 +80,12 @@ Creating the candidate state must not update the user's selected checkout,
 default branch, or `main` branch. Internal candidate commits are research
 artifacts until the user explicitly exports or applies them.
 
+When a candidate commit exists, Situ should create a patch handoff artifact for
+the diff from the experiment base to that candidate. The patch artifact answers
+"where did the useful code go?" without silently merging it. Readiness is still
+derived from Critic review and Manager lineage decisions; a patch can be
+captured before it is ready to apply.
+
 ## Base Selection
 
 The default base for a new experiment should be chosen by Manager planning, not
@@ -186,6 +192,7 @@ Useful first views:
 - Experiments grouped by research thread.
 - Parent/child relationship when one experiment builds on another.
 - Base and candidate commit/ref for each candidate.
+- Patch handoff artifact when a candidate diff was captured.
 - Latest Critic verdict and latest lineage decision.
 - Thread-level hints such as promising, needs reproduction, stale, or abandoned,
   derived from activities rather than stored as a large status taxonomy.
@@ -198,6 +205,7 @@ changes applied to the user's selected checkout.
 - Recording experiment parentage.
 - Recording research-thread labels on experiments or experiment tasks.
 - Recording stable candidate commits/refs for code-changing experiments.
+- Recording patch artifacts for code-changing candidate experiments.
 - Preparing experiment worktrees from a selected base, not only the selected
   checkout's current `HEAD`.
 - Letting Manager planning choose whether to continue, fork, reproduce,
@@ -223,6 +231,8 @@ changes applied to the user's selected checkout.
   candidate state.
 - Candidate state is durable enough for later worktree creation and user
   inspection.
+- Code-changing candidates have an inspectable patch artifact before any human
+  apply/export step.
 - The user's selected checkout is not mutated by autonomous candidate
   continuation.
 - The Manager can keep more than one active research thread alive.
