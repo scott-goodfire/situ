@@ -21,6 +21,8 @@ class CreateExperimentTool(BaseSituTool[SituToolDeps, CreateExperimentResult]):
         title: str,
         summary: str,
         experiment_id: str | None = None,
+        parent_experiment_id: str | None = None,
+        research_thread: str | None = None,
         status: WorkStatus = WorkStatus.OPEN,
         **_kwargs: Any,
     ) -> CreateExperimentResult:
@@ -49,6 +51,8 @@ class CreateExperimentTool(BaseSituTool[SituToolDeps, CreateExperimentResult]):
                     title=title,
                     summary=summary,
                     status=next_status,
+                    parent_experiment_id=parent_experiment_id,
+                    research_thread=research_thread,
                 )
                 or existing
             )
@@ -73,6 +77,8 @@ class CreateExperimentTool(BaseSituTool[SituToolDeps, CreateExperimentResult]):
             title=title,
             summary=summary,
             status=status,
+            parent_experiment_id=parent_experiment_id,
+            research_thread=research_thread,
         )
         event = ctx.deps.record_event(
             event_type="experiment.created",

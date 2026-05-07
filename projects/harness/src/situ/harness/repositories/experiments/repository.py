@@ -25,6 +25,9 @@ def _experiment_row(row: Any) -> ExperimentRecord:
         summary=row["summary"],
         worktree_path=row["worktree_path"],
         base_commit=row["base_commit"],
+        candidate_commit=row["candidate_commit"],
+        parent_experiment_id=row["parent_experiment_id"],
+        research_thread=row["research_thread"],
         created_at=row["created_at"],
         updated_at=row["updated_at"],
     )
@@ -42,6 +45,9 @@ class ExperimentsRepository(BaseRepository):
         status: WorkStatus | str = WorkStatus.OPEN,
         worktree_path: str | None = None,
         base_commit: str | None = None,
+        candidate_commit: str | None = None,
+        parent_experiment_id: str | None = None,
+        research_thread: str | None = None,
     ) -> ExperimentRecord:
         ensure_canonical_record_id(
             record_id=experiment_id,
@@ -58,14 +64,18 @@ class ExperimentsRepository(BaseRepository):
             status=checked_status,
             worktree_path=worktree_path,
             base_commit=base_commit,
+            candidate_commit=candidate_commit,
+            parent_experiment_id=parent_experiment_id,
+            research_thread=research_thread,
         )
         now = utc_now()
         self.db.execute(
             """
             INSERT INTO experiments
               (id, project_id, created_in_session_id, status, title, summary,
-               worktree_path, base_commit, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+               worktree_path, base_commit, candidate_commit, parent_experiment_id,
+               research_thread, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 command.experiment_id,
@@ -76,6 +86,9 @@ class ExperimentsRepository(BaseRepository):
                 command.summary,
                 command.worktree_path,
                 command.base_commit,
+                command.candidate_commit,
+                command.parent_experiment_id,
+                command.research_thread,
                 now,
                 now,
             ),
@@ -94,6 +107,9 @@ class ExperimentsRepository(BaseRepository):
         status: WorkStatus | str | None = None,
         worktree_path: str | None = None,
         base_commit: str | None = None,
+        candidate_commit: str | None = None,
+        parent_experiment_id: str | None = None,
+        research_thread: str | None = None,
     ) -> ExperimentRecord | None:
         checked_status = (
             parse_work_status(status=status, noun="experiment")
@@ -107,6 +123,9 @@ class ExperimentsRepository(BaseRepository):
             status=checked_status,
             worktree_path=worktree_path,
             base_commit=base_commit,
+            candidate_commit=candidate_commit,
+            parent_experiment_id=parent_experiment_id,
+            research_thread=research_thread,
         )
         current = self.get_by_id(experiment_id=command.experiment_id)
         if current is None:
@@ -120,6 +139,9 @@ class ExperimentsRepository(BaseRepository):
                 status = ?,
                 worktree_path = ?,
                 base_commit = ?,
+                candidate_commit = ?,
+                parent_experiment_id = ?,
+                research_thread = ?,
                 updated_at = ?
             WHERE id = ?
             """,
@@ -133,6 +155,21 @@ class ExperimentsRepository(BaseRepository):
                     else current.worktree_path
                 ),
                 command.base_commit if command.base_commit is not None else current.base_commit,
+                (
+                    command.candidate_commit
+                    if command.candidate_commit is not None
+                    else current.candidate_commit
+                ),
+                (
+                    command.parent_experiment_id
+                    if command.parent_experiment_id is not None
+                    else current.parent_experiment_id
+                ),
+                (
+                    command.research_thread
+                    if command.research_thread is not None
+                    else current.research_thread
+                ),
                 utc_now(),
                 command.experiment_id,
             ),

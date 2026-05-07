@@ -26,7 +26,7 @@ import { PaneSection } from "../pane-section/pane-section.js";
 import { previewText } from "../text-preview/text-preview.js";
 import {
   MIN_DASHBOARD_HEIGHT,
-  MIN_DASHBOARD_WIDTH,
+  MIN_DASHBOARD_TERMINAL_WIDTH,
   computeDashboardLayout,
 } from "./dashboard-layout.js";
 import {
@@ -130,6 +130,8 @@ export function FullscreenDashboard({
       <ExpandTerminalNotice
         width={layout.width}
         height={layout.height}
+        terminalWidth={layout.terminalWidth}
+        terminalHeight={layout.terminalHeight}
         onDashboardCommand={onDashboardCommand}
       />
     );
@@ -983,10 +985,14 @@ function ActivityFeed({
 function ExpandTerminalNotice({
   width,
   height,
+  terminalWidth,
+  terminalHeight,
   onDashboardCommand,
 }: {
   width: number;
   height: number;
+  terminalWidth: number;
+  terminalHeight: number;
   onDashboardCommand: ({ command }: { command: DashboardCommand }) => void;
 }) {
   const noticeWidth = Math.max(44, Math.min(width, 72));
@@ -1005,9 +1011,9 @@ function ExpandTerminalNotice({
         width={noticeWidth}
       >
         <Text>
-          {`Situ needs at least ${MIN_DASHBOARD_WIDTH}x${MIN_DASHBOARD_HEIGHT} to render.`}
+          {`Situ needs at least ${MIN_DASHBOARD_TERMINAL_WIDTH}x${MIN_DASHBOARD_HEIGHT} to render.`}
         </Text>
-        <Text dimColor>Current size {width}x{height}</Text>
+        <Text dimColor>Current size {terminalWidth}x{terminalHeight}</Text>
         <Text dimColor>Press q to quit.</Text>
         <SmallTerminalControls onDashboardCommand={onDashboardCommand} />
       </PaneSection>

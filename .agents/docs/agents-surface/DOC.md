@@ -66,8 +66,18 @@ Current docs:
 
 ## Skills
 
-Skills are repeatable workflows for agents. Use them when a future agent should
-follow a specific procedure, such as adding and linting specs and policies.
+This repo has two different skill families. Keep them separate.
+
+### Developer Agent Skills
+
+Developer agent skills live in `.agents/skills/`. They are repeatable workflows
+for Codex or another coding agent maintaining this repository. Use them when a
+future developer agent should follow a specific procedure, such as adding and
+linting specs and policies.
+
+Do not put Situ runtime-agent methodology here. `.agents/skills/` is loaded by
+the coding agent working on the repo, not by Situ's Manager, Researcher,
+Scientist, or Critic agents while an autoresearch run is executing.
 
 Use the spec/policy maintenance skill after changing specs, policies, docs, or
 skills:
@@ -127,9 +137,49 @@ task is to query trace records for Situ harness or eval runs:
 ```
 
 Use the run-review skill when autopsying a completed or active Situ run from a
-TUI screenshot, workspace path, session id, local SQLite state, workspace diff, and
-Logfire traces:
+TUI screenshot, workspace path, session id, local SQLite state, workspace diff,
+and Logfire traces:
 
 ```text
 .agents/skills/review-situ-run/SKILL.md
 ```
+
+### Runtime Agent Skills
+
+Runtime agent skills live in:
+
+```text
+projects/harness/src/situ/harness/agent_skills/
+```
+
+These are exposed through Pydantic AI skills to Situ's own runtime agents.
+Use them when Manager, Researcher, Scientist, or Critic should be able to load
+reusable methodology during a run with `load_skill(skill_name=...)`.
+
+Current runtime skills are role-scoped:
+
+- `agent_skills/manager/` - Manager planning and task-decomposition methods.
+- `agent_skills/researcher/` - Researcher methods for codebase mapping, web
+  research, prior-art synthesis, and hypothesis handoff.
+- `agent_skills/shared/` - methods usable by more than one runtime role.
+
+Do not add runtime skills to `.agents/skills/`. Do not add developer-agent
+maintenance workflows to `agent_skills/`.
+
+Add or update a runtime skill when:
+
+- the method is reusable across runs, not just a one-off prompt tweak;
+- the method is too detailed to keep in the role prompt;
+- the skill teaches how to do work, while durable output still goes through
+  normal Situ tools such as `create_analysis`, `create_hypothesis`,
+  `create_task`, `add_task_comment`, or `link_task_entity`;
+- the role should explicitly load the method in traces.
+
+Prefer progressive disclosure. The base role prompt may advertise skill names
+and descriptions, but full instructions should stay in the skill and be loaded
+with `load_skill(skill_name=...)`.
+
+When adding a runtime skill, update the role registry in
+`projects/harness/src/situ/harness/agent_skills/registry.py`, keep package data
+including markdown resources in `projects/harness/pyproject.toml`, and add or
+update tests/evals that prove the intended role can discover or load the skill.

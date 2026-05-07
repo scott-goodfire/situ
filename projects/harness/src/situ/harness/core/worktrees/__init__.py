@@ -1,4 +1,5 @@
 from .manager import (
+    CandidateState,
     ExperimentWorktree,
     WorktreeManager,
     WorktreeState,
@@ -6,6 +7,7 @@ from .manager import (
 )
 
 __all__ = [
+    "CandidateState",
     "ExperimentWorktree",
     "WorktreeManager",
     "WorktreeState",

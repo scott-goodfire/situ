@@ -200,6 +200,9 @@ class ExperimentRecord(BaseModel):
     summary: str
     worktree_path: str | None = None
     base_commit: str | None = None
+    candidate_commit: str | None = None
+    parent_experiment_id: str | None = None
+    research_thread: str | None = None
     created_at: str
     updated_at: str
 

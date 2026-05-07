@@ -10,7 +10,7 @@ import { PaneSection } from "../pane-section/pane-section.js";
 import { previewText } from "../text-preview/text-preview.js";
 import {
   MIN_DASHBOARD_HEIGHT,
-  MIN_DASHBOARD_WIDTH,
+  MIN_DASHBOARD_TERMINAL_WIDTH,
   computeDashboardLayout,
 } from "../fullscreen-dashboard/dashboard-layout.js";
 import {
@@ -70,6 +70,8 @@ export function SecretSetupPrompt({
       <SmallTerminalNotice
         width={layout.width}
         height={layout.height}
+        terminalWidth={layout.terminalWidth}
+        terminalHeight={layout.terminalHeight}
         onCancel={onExit}
       />
     );
@@ -211,10 +213,14 @@ export function SecretSetupPrompt({
 function SmallTerminalNotice({
   width,
   height,
+  terminalWidth,
+  terminalHeight,
   onCancel,
 }: {
   width: number;
   height: number;
+  terminalWidth: number;
+  terminalHeight: number;
   onCancel: () => void;
 }) {
   const { isRawModeSupported } = useStdin();
@@ -246,9 +252,9 @@ function SmallTerminalNotice({
         width={noticeWidth}
       >
         <Text>
-          {`Situ needs at least ${MIN_DASHBOARD_WIDTH}x${MIN_DASHBOARD_HEIGHT} to render.`}
+          {`Situ needs at least ${MIN_DASHBOARD_TERMINAL_WIDTH}x${MIN_DASHBOARD_HEIGHT} to render.`}
         </Text>
-        <Text dimColor>Current size {width}x{height}</Text>
+        <Text dimColor>Current size {terminalWidth}x{terminalHeight}</Text>
         <Text dimColor>Press q or Escape to exit.</Text>
       </PaneSection>
     </LayoutBox>

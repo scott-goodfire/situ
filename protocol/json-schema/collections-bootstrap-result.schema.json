@@ -680,6 +680,42 @@
           "default": null,
           "title": "Base Commit"
         },
+        "candidate_commit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Candidate Commit"
+        },
+        "parent_experiment_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parent Experiment Id"
+        },
+        "research_thread": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Research Thread"
+        },
         "created_at": {
           "title": "Created At",
           "type": "string"

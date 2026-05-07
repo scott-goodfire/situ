@@ -75,6 +75,9 @@ export interface ExperimentRecord {
   summary: string;
   worktree_path?: string | null;
   base_commit?: string | null;
+  candidate_commit?: string | null;
+  parent_experiment_id?: string | null;
+  research_thread?: string | null;
   created_at: string;
   updated_at: string;
 }

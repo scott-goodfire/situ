@@ -2,11 +2,16 @@ export const MIN_DASHBOARD_WIDTH = 88;
 export const MIN_DASHBOARD_HEIGHT = 26;
 export const DEFAULT_DASHBOARD_WIDTH = 112;
 export const DEFAULT_DASHBOARD_HEIGHT = 34;
+export const DASHBOARD_TERMINAL_GUTTER_COLUMNS = 1;
+export const MIN_DASHBOARD_TERMINAL_WIDTH =
+  MIN_DASHBOARD_WIDTH + DASHBOARD_TERMINAL_GUTTER_COLUMNS;
 
 export type DashboardLayoutMode = "full" | "too-small";
 
 export type DashboardLayout = {
   mode: DashboardLayoutMode;
+  terminalWidth: number;
+  terminalHeight: number;
   width: number;
   height: number;
   contentWidth: number;
@@ -26,10 +31,13 @@ export function computeDashboardLayout({
   columns: number | undefined;
   rows: number | undefined;
 }): DashboardLayout {
-  const width = Math.max(1, columns ?? DEFAULT_DASHBOARD_WIDTH);
-  const height = Math.max(1, rows ?? DEFAULT_DASHBOARD_HEIGHT);
+  const terminalWidth = Math.max(1, columns ?? DEFAULT_DASHBOARD_WIDTH);
+  const terminalHeight = Math.max(1, rows ?? DEFAULT_DASHBOARD_HEIGHT);
+  const width = Math.max(1, terminalWidth - DASHBOARD_TERMINAL_GUTTER_COLUMNS);
+  const height = terminalHeight;
   const mode =
-    width < MIN_DASHBOARD_WIDTH || height < MIN_DASHBOARD_HEIGHT
+    terminalWidth < MIN_DASHBOARD_TERMINAL_WIDTH ||
+    terminalHeight < MIN_DASHBOARD_HEIGHT
       ? "too-small"
       : "full";
   const contentWidth = Math.max(1, width - 4);
@@ -56,6 +64,8 @@ export function computeDashboardLayout({
 
   return {
     mode,
+    terminalWidth,
+    terminalHeight,
     width,
     height,
     contentWidth,

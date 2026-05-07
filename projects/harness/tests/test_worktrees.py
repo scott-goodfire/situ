@@ -64,6 +64,54 @@ def test_worktree_manager_creates_detached_worktree_for_clean_repo(
     assert _git(worktree.worktree_root, "branch", "--show-current") == ""
 
 
+def test_worktree_manager_can_prepare_from_selected_base_commit(
+    tmp_path: Path,
+) -> None:
+    repo = _repo(tmp_path)
+    first_commit = _git(repo, "rev-parse", "HEAD")
+    (repo / "pkg" / "module.py").write_text("VALUE = 2\n")
+    _git(repo, "add", ".")
+    _commit(repo, "second")
+
+    worktree = WorktreeManager(
+        workspace_path=repo / "pkg",
+        worktrees_dir=tmp_path / "worktrees",
+    ).prepare(
+        experiment_id="EX1",
+        requested_base_commit=first_commit,
+    )
+
+    assert worktree.base_commit == first_commit
+    assert (worktree.workspace_path / "module.py").read_text() == "VALUE = 1\n"
+
+
+def test_worktree_manager_captures_candidate_commit_and_ref(
+    tmp_path: Path,
+) -> None:
+    repo = _repo(tmp_path)
+    base_commit = _git(repo, "rev-parse", "HEAD")
+    worktree = WorktreeManager(
+        workspace_path=repo / "pkg",
+        worktrees_dir=tmp_path / "worktrees",
+    ).prepare(experiment_id="EX1")
+    (worktree.workspace_path / "module.py").write_text("VALUE = 2\n")
+
+    candidate = WorktreeManager(
+        workspace_path=repo / "pkg",
+        worktrees_dir=tmp_path / "worktrees",
+    ).capture_candidate_state(
+        worktree.workspace_path,
+        experiment_id="EX1",
+        base_commit=base_commit,
+    )
+
+    assert candidate.worktree.dirty is True
+    assert candidate.candidate_commit is not None
+    assert candidate.candidate_ref == "refs/situ/experiments/EX1"
+    assert candidate.post_commit_worktree.dirty is False
+    assert _git(repo, "rev-parse", "refs/situ/experiments/EX1") == candidate.candidate_commit
+
+
 def test_worktree_manager_reuses_nested_workspace_path_without_double_append(
     tmp_path: Path,
 ) -> None:
@@ -186,9 +234,45 @@ def test_harness_prepares_experiment_task_checkout_and_records_final_state(
     completed = app.repos.experiments.get(experiment_id=prepared.experiment.id)
     assert completed is not None
     assert completed.status == "closed"
+    assert completed.candidate_commit is not None
+    assert _git(repo, "rev-parse", "refs/situ/experiments/EX1") == completed.candidate_commit
     activities = app.repos.experiment_activities.list_for_experiment(experiment_id=completed.id)
     assert activities[-1].payload["activity_type"] == "workspace_state"
     assert activities[-1].payload["worktree"]["dirty"] is True
+    assert activities[-1].payload["candidate_commit"] == completed.candidate_commit
+    assert activities[-1].payload["post_commit_worktree"]["dirty"] is False
+
+    followup = app.repos.tasks.create(
+        task_id="T2",
+        project_id=project.id,
+        created_in_session_id=session.id,
+        title="Continue candidate edit",
+        content="Build from the accepted component edit.",
+        kind=TaskKind.EXPERIMENT,
+        source_kind="manager",
+        payload={
+            "parent_experiment_id": completed.id,
+            "research_thread": "optimizer",
+        },
+    )
+    claimed_followup = app.repos.tasks.claim(
+        task_id=followup.id,
+        agent_id=scientist.id,
+        eligible_kinds=eligible_task_kinds_for_agent(AgentKind.SCIENTIST),
+        claimed_in_session_id=session.id,
+    )
+    assert claimed_followup is not None
+
+    prepared_followup = app._prepare_experiment_task(
+        task=claimed_followup,
+        session_id=session.id,
+        workspace_repo_path=workspace.repo_path,
+    )
+
+    assert prepared_followup.experiment.parent_experiment_id == completed.id
+    assert prepared_followup.experiment.research_thread == "optimizer"
+    assert prepared_followup.experiment.base_commit == completed.candidate_commit
+    assert (Path(prepared_followup.repo_path) / "pkg" / "module.py").read_text() == "VALUE = 2\n"
 
 
 def test_review_tasks_are_claimed_by_critic_not_researcher() -> None:

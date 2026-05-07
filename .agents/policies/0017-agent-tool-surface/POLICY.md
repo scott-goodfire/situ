@@ -120,6 +120,13 @@ to call a generic activity writer to record benchmark evidence.
   and task decomposition; a Researcher skill should help analysis, source
   synthesis, or hypothesis handoff. The skill must not blur role boundaries or
   grant record-writing behavior that the role's normal toolset does not have.
+- Keep developer-agent skills and runtime-agent skills in separate trees:
+  `.agents/skills/` for coding agents maintaining this repo, and
+  `projects/harness/src/situ/harness/agent_skills/` for skills exposed to
+  Situ's runtime agents.
+- Runtime skills that ship markdown resources should be included as package
+  data and covered by a deterministic discovery test. Realistic evals should
+  assert `load_skill` calls when the behavior depends on skill use.
 - Tool names should avoid obsolete or overly generic phrasing like
   `record_finding` or `record_activity` when a product-model operation is
   clearer. A compact context reader is acceptable in the slim slice, but prefer
@@ -148,6 +155,8 @@ to call a generic activity writer to record benchmark evidence.
 - Tool folders that collect many unrelated tools in one `tool.py`.
 - Comment tools that silently write to the wrong session or omit the session
   context.
+- Putting Situ runtime-agent skills in `.agents/skills/`, or putting
+  developer-agent maintenance workflows in the harness runtime skill package.
 
 ## Review Questions
 
@@ -160,5 +169,7 @@ to call a generic activity writer to record benchmark evidence.
 - Would the trace clearly show the agent reading the task and research records it
   used before it mutates state?
 - Would the tool be straightforward to test through direct invocation?
+- If this change adds a skill, is it in the correct skill family and covered by
+  the appropriate deterministic test or realistic eval?
 - Does the tool surface make it easier to add more model CRUD without
   rethinking the architecture?

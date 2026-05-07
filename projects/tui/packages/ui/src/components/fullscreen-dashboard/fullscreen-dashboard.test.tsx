@@ -45,7 +45,43 @@ test("task title wrapping uses one space after the status glyph", async () => {
     const frame = instance.lastFrame() ?? "";
     expect(frame).toContain("● [T1] Research Dev-only");
     expect(frame).not.toContain("●  [T1] Research Dev-only");
-    expect(frame).toContain("instrumentation and…");
+    expect(frame).toContain("instrumentation and smalles…");
+  } finally {
+    instance.unmount();
+  }
+});
+
+test("dashboard frame reserves the last terminal column", async () => {
+  const instance = renderInk(
+    <FullscreenDashboard
+      workspace="/tmp/support-agent"
+      statusLine="active session"
+      dashboardMessage={undefined}
+      project={undefined}
+      session={undefined}
+      tasks={[]}
+      experimentCount={0}
+      maxExperiments={6}
+      hypotheses={[]}
+      experiments={[]}
+      evaluations={[]}
+      taskActivities={[]}
+      hypothesisActivities={[]}
+      experimentActivities={[]}
+      evaluationActivities={[]}
+      events={[]}
+      onDashboardCommand={() => {}}
+      terminalSize={{ columns: 100, rows: 28 }}
+    />,
+  );
+
+  try {
+    await waitForFrame();
+
+    const frame = instance.lastFrame() ?? "";
+    const topBorder = frame.split("\n").find((line) => line.startsWith("┌"));
+    expect(topBorder?.length).toBe(99);
+    expect(topBorder?.endsWith("┐")).toBe(true);
   } finally {
     instance.unmount();
   }

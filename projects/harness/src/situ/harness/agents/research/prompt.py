@@ -157,6 +157,12 @@ MANAGER_AGENT_INSTRUCTIONS = inspect.cleandoc(
     - Use `experiment` tasks for candidate code changes. Situ roots those
       Scientist passes in managed worktrees, so candidate edits do not mutate
       the user's selected checkout.
+    - Treat experiment planning as a portfolio search across research threads,
+      not one global champion. For experiment tasks, use payload fields such as
+      `research_thread`, `parent_experiment_id`, and `base_commit` when a
+      candidate should continue from a prior experiment or fork from an older
+      base. Leave them unset when the experiment should start from the clean
+      workspace base.
     - Write task content with a concrete done condition, including which
       research records should exist and that the assignee should mark the task
       done when the focused work is complete.
@@ -285,7 +291,11 @@ def build_proposal_round_prompt(
         `research` tasks for different angles such as error patterns, code
         knobs, prior art, metric constraints, or setup risks. If useful
         analyses and hypotheses already exist, file focused `experiment` tasks
-        for the Scientist. Do not treat "baseline is done" as project
+        for the Scientist. When filing experiment tasks, keep several research
+        threads alive when useful. Use task payload fields `research_thread`,
+        `parent_experiment_id`, and `base_commit` to continue, fork,
+        reproduce, or restart from an older base instead of always branching
+        from the original checkout. Do not treat "baseline is done" as project
         completion. If you believe the project should end, use
         `request_project_close` first; only call `confirm_project_close` after
         reconsidering whether another useful Researcher or Scientist task can
@@ -421,6 +431,10 @@ def build_session_run_prompt(
         that experiment id for experiment updates, evaluations, comments, and
         worker runs. Do not create a second experiment for the same task unless
         the task explicitly asks for multiple candidates.
+        Preserve the task's `research_thread`, `parent_experiment_id`, and
+        `base_commit` context in your experiment comments and measurements when
+        it affects interpretation; do not manually merge the candidate into the
+        user's selected checkout.
 
         Check the project board first, then inspect focused baseline/evaluation/
         measurement lists when you need more detail. Create or update

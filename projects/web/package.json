@@ -37,6 +37,6 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vanilla-extract/vite-plugin": "^5.2.2",
-    "vite": "^8.0.10"
+    "vite": "^8.0.11"
   }
 }

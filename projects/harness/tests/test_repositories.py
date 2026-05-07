@@ -326,6 +326,9 @@ def test_experiments_repository_create_update_get_and_list(repos: Repositories) 
     assert experiment.title == "Try component A"
     assert experiment.worktree_path is None
     assert experiment.base_commit is None
+    assert experiment.candidate_commit is None
+    assert experiment.parent_experiment_id is None
+    assert experiment.research_thread is None
 
     updated = repos.experiments.update(
         experiment_id="EX1",
@@ -333,12 +336,16 @@ def test_experiments_repository_create_update_get_and_list(repos: Repositories) 
         summary="A improved score.",
         worktree_path="/tmp/worktree/EX1",
         base_commit="abc123",
+        candidate_commit="def456",
+        research_thread="optimizer",
     )
     assert updated is not None
     assert updated.status == "closed"
     assert updated.summary == "A improved score."
     assert updated.worktree_path == "/tmp/worktree/EX1"
     assert updated.base_commit == "abc123"
+    assert updated.candidate_commit == "def456"
+    assert updated.research_thread == "optimizer"
     assert repos.experiments.get(experiment_id="EX1") == updated
     assert [item.id for item in repos.experiments.list_for_project(project_id="P1")] == [
         "EX1"
@@ -346,6 +353,20 @@ def test_experiments_repository_create_update_get_and_list(repos: Repositories) 
     assert [item.id for item in repos.experiments.list_for_session(session_id="S1")] == [
         "EX1"
     ]
+
+    child = repos.experiments.create(
+        experiment_id="EX2",
+        project_id="P1",
+        created_in_session_id="S1",
+        title="Continue component A",
+        summary="Build on the prior candidate.",
+        parent_experiment_id="EX1",
+        research_thread="optimizer",
+        base_commit="def456",
+    )
+    assert child.parent_experiment_id == "EX1"
+    assert child.research_thread == "optimizer"
+    assert child.base_commit == "def456"
 
 
 def test_baselines_repository_create_update_get_and_list(repos: Repositories) -> None:

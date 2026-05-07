@@ -129,7 +129,8 @@ commands described in `--context`.
 Runtime agent skills are reusable methods exposed to Situ's own Manager,
 Researcher, Scientist, and Critic agents. They are separate from `.agents/skills`,
 which are repository-maintenance workflows for developer agents working on
-Situ itself.
+Situ itself. Runtime agent skills live under
+`projects/harness/src/situ/harness/agent_skills/`.
 
 Runtime skills should use progressive disclosure: the base role prompt and
 toolset list can advertise available skills, but full methodology should be
@@ -143,6 +144,10 @@ but the durable output still belongs in `Analysis`, task comments,
 `Hypothesis`, or other Situ records. Manager and Researcher skills are in
 scope for the current slice. Scientist and Critic skills are deferred until
 their core tool loops are stable.
+
+Add a runtime skill when a role needs reusable methodology that would otherwise
+inflate the role prompt or be repeated across tasks. Do not use runtime skills
+for repo-maintenance workflows; those belong in `.agents/skills/`.
 
 Command output should be preserved as plaintext evidence. Situ should not
 deterministically parse arbitrary stdout into metrics or signals in the tool

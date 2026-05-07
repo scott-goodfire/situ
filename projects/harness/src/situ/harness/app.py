@@ -972,6 +972,37 @@ class HarnessApp:
             project_id=task.project_id
         )
         existing = self.repos.experiments.get(experiment_id=experiment_id)
+        parent_experiment_id = (
+            existing.parent_experiment_id
+            if existing is not None and existing.parent_experiment_id is not None
+            else _parent_experiment_id_from_task(task)
+        )
+        parent_experiment = None
+        if parent_experiment_id is not None:
+            parent_experiment = self.repos.experiments.get(
+                experiment_id=parent_experiment_id
+            )
+            if parent_experiment is None or parent_experiment.project_id != task.project_id:
+                raise RuntimeError(
+                    f"experiment task references unknown parent experiment: "
+                    f"{parent_experiment_id}"
+                )
+        research_thread = (
+            existing.research_thread
+            if existing is not None and existing.research_thread is not None
+            else _research_thread_from_task(task)
+            or (parent_experiment.research_thread if parent_experiment is not None else None)
+        )
+        requested_base_commit = (
+            existing.base_commit
+            if existing is not None and existing.base_commit is not None
+            else _base_commit_from_task(task)
+            or (
+                parent_experiment.candidate_commit or parent_experiment.base_commit
+                if parent_experiment is not None
+                else None
+            )
+        )
         worktree = WorktreeManager(
             workspace_path=Path(workspace_repo_path),
             worktrees_dir=self.context.project_dir / "worktrees" / task.project_id,
@@ -979,6 +1010,7 @@ class HarnessApp:
             experiment_id=experiment_id,
             existing_worktree_path=existing.worktree_path if existing is not None else None,
             existing_base_commit=existing.base_commit if existing is not None else None,
+            requested_base_commit=requested_base_commit,
         )
 
         if existing is None:
@@ -991,6 +1023,8 @@ class HarnessApp:
                 status=WorkStatus.ACTIVE,
                 worktree_path=str(worktree.workspace_path),
                 base_commit=worktree.base_commit,
+                parent_experiment_id=parent_experiment_id,
+                research_thread=research_thread,
             )
             event = self.record_event(
                 event_type="experiment.created",
@@ -1007,6 +1041,8 @@ class HarnessApp:
                     status=WorkStatus.ACTIVE,
                     worktree_path=str(worktree.workspace_path),
                     base_commit=worktree.base_commit,
+                    parent_experiment_id=parent_experiment_id,
+                    research_thread=research_thread,
                 )
                 or existing
             )
@@ -1026,6 +1062,16 @@ class HarnessApp:
                     "experiment_id": experiment.id,
                     "worktree_path": str(worktree.workspace_path),
                     "base_commit": worktree.base_commit,
+                    **(
+                        {"parent_experiment_id": parent_experiment_id}
+                        if parent_experiment_id is not None
+                        else {}
+                    ),
+                    **(
+                        {"research_thread": research_thread}
+                        if research_thread is not None
+                        else {}
+                    ),
                 },
             )
             or task
@@ -1041,6 +1087,8 @@ class HarnessApp:
                 "worktree_path": str(worktree.workspace_path),
                 "worktree_root": str(worktree.worktree_root),
                 "base_commit": worktree.base_commit,
+                "parent_experiment_id": parent_experiment_id,
+                "research_thread": research_thread,
             },
         )
         self.publish_record(record=experiment, cursor=event.id)
@@ -1064,16 +1112,37 @@ class HarnessApp:
             return
 
         state: dict[str, object]
+        candidate_commit: str | None = None
+        candidate_ref: str | None = None
+        post_commit_state: dict[str, object] | None = None
         if experiment.worktree_path is None:
             state = {"error": "experiment has no worktree_path"}
         else:
             try:
-                state = WorktreeManager(
+                candidate_state = WorktreeManager(
                     workspace_path=Path(workspace_repo_path),
                     worktrees_dir=self.context.project_dir / "worktrees" / experiment.project_id,
-                ).inspect(Path(experiment.worktree_path)).model_dump()
+                ).capture_candidate_state(
+                    Path(experiment.worktree_path),
+                    experiment_id=experiment.id,
+                    base_commit=experiment.base_commit,
+                )
+                state = candidate_state.worktree.model_dump()
+                candidate_commit = candidate_state.candidate_commit
+                candidate_ref = candidate_state.candidate_ref
+                post_commit_state = candidate_state.post_commit_worktree.model_dump()
             except RuntimeError as error:
                 state = {"error": str(error), "workspace": experiment.worktree_path}
+
+        activity_payload = {
+            "activity_type": "workspace_state",
+            "base_commit": experiment.base_commit,
+            "candidate_commit": candidate_commit,
+            "candidate_ref": candidate_ref,
+            "worktree": state,
+        }
+        if post_commit_state is not None:
+            activity_payload["post_commit_worktree"] = post_commit_state
 
         activity = self.repos.experiment_activities.add(
             experiment_id=experiment.id,
@@ -1081,15 +1150,12 @@ class HarnessApp:
             actor="harness",
             kind="comment",
             body=f"Captured final worktree state for {experiment.id}.",
-            payload={
-                "activity_type": "workspace_state",
-                "base_commit": experiment.base_commit,
-                "worktree": state,
-            },
+            payload=activity_payload,
         )
         closed = self.repos.experiments.update(
             experiment_id=experiment.id,
             status=WorkStatus.CLOSED,
+            candidate_commit=candidate_commit,
         ) or experiment
         event = self.record_event(
             event_type="experiment.worktree_completed",
@@ -1100,6 +1166,7 @@ class HarnessApp:
                 "experiment_id": experiment.id,
                 "activity_id": activity.id,
                 "dirty": state.get("dirty") if isinstance(state, dict) else None,
+                "candidate_commit": candidate_commit,
             },
         )
         self.publish_record(record=activity, cursor=event.id)
@@ -1165,6 +1232,29 @@ class HarnessApp:
 def _experiment_id_from_task(task: TaskRecord) -> str | None:
     experiment_id = task.payload.get("experiment_id")
     return experiment_id if isinstance(experiment_id, str) and experiment_id else None
+
+
+def _parent_experiment_id_from_task(task: TaskRecord) -> str | None:
+    parent_experiment_id = task.payload.get("parent_experiment_id")
+    if not isinstance(parent_experiment_id, str) or not parent_experiment_id:
+        parent_experiment_id = task.payload.get("base_experiment_id")
+    return (
+        parent_experiment_id
+        if isinstance(parent_experiment_id, str) and parent_experiment_id
+        else None
+    )
+
+
+def _base_commit_from_task(task: TaskRecord) -> str | None:
+    base_commit = task.payload.get("base_commit")
+    return base_commit if isinstance(base_commit, str) and base_commit else None
+
+
+def _research_thread_from_task(task: TaskRecord) -> str | None:
+    research_thread = task.payload.get("research_thread")
+    if not isinstance(research_thread, str) or not research_thread:
+        research_thread = task.payload.get("thread")
+    return research_thread if isinstance(research_thread, str) and research_thread else None
 
 
 def _agent_display_name(agent_kind: AgentKind) -> str:

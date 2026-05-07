@@ -13,6 +13,9 @@ class CreateExperiment(RepositoryCommand):
     status: WorkStatus = WorkStatus.OPEN
     worktree_path: str | None = None
     base_commit: str | None = None
+    candidate_commit: str | None = None
+    parent_experiment_id: str | None = None
+    research_thread: str | None = None
 
 
 class UpdateExperiment(RepositoryCommand):
@@ -22,3 +25,6 @@ class UpdateExperiment(RepositoryCommand):
     status: WorkStatus | None = None
     worktree_path: str | None = None
     base_commit: str | None = None
+    candidate_commit: str | None = None
+    parent_experiment_id: str | None = None
+    research_thread: str | None = None

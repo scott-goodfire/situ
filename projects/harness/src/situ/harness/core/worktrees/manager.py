@@ -31,6 +31,14 @@ class WorktreeState:
         }
 
 
+@dataclass(frozen=True, slots=True)
+class CandidateState:
+    worktree: WorktreeState
+    candidate_commit: str | None
+    candidate_ref: str | None
+    post_commit_worktree: WorktreeState
+
+
 def require_clean_if_git_workspace(workspace_path: Path, *, action: str) -> None:
     git_root = _git_root_or_none(workspace_path.resolve())
     if git_root is None:
@@ -49,14 +57,22 @@ class WorktreeManager:
         experiment_id: str,
         existing_worktree_path: str | None = None,
         existing_base_commit: str | None = None,
+        requested_base_commit: str | None = None,
     ) -> ExperimentWorktree:
         git_root = self._git_root(self.workspace_path)
         relative_workspace = self._relative_workspace(git_root)
         _require_clean_git_root(git_root, action="starting an isolated experiment")
 
-        base_commit = existing_base_commit or self._git_text(git_root, "rev-parse", "HEAD")
+        base_commit = (
+            existing_base_commit
+            or requested_base_commit
+            or self._git_text(git_root, "rev-parse", "HEAD")
+        )
         if not base_commit:
             raise RuntimeError("could not resolve git HEAD for experiment worktree")
+        resolved_base_commit = self._git_text(git_root, "rev-parse", base_commit)
+        if not resolved_base_commit:
+            raise RuntimeError(f"could not resolve base commit for experiment: {base_commit}")
 
         worktree_root = (
             self._existing_worktree_root(existing_worktree_path)
@@ -73,11 +89,11 @@ class WorktreeManager:
                 "add",
                 "--detach",
                 str(worktree_root),
-                base_commit,
+                resolved_base_commit,
             )
 
         return ExperimentWorktree(
-            base_commit=base_commit,
+            base_commit=resolved_base_commit,
             git_root=git_root,
             worktree_root=worktree_root,
             workspace_path=worktree_root / relative_workspace,
@@ -102,6 +118,53 @@ class WorktreeManager:
             commit=commit,
             dirty=bool(changes),
             changes=changes,
+        )
+
+    def capture_candidate_state(
+        self,
+        workspace_path: Path,
+        *,
+        experiment_id: str,
+        base_commit: str | None,
+    ) -> CandidateState:
+        worktree = self.inspect(workspace_path)
+        workspace = workspace_path.resolve()
+
+        if worktree.dirty:
+            self._run_git(workspace, "add", "-A")
+            self._run_git(
+                workspace,
+                "-c",
+                "user.email=situ@example.local",
+                "-c",
+                "user.name=Situ",
+                "commit",
+                "-m",
+                f"situ candidate {experiment_id}",
+            )
+
+        post_commit_worktree = self.inspect(workspace_path)
+        head_commit = self._git_text(workspace, "rev-parse", "HEAD")
+        resolved_base_commit = (
+            self._git_text(workspace, "rev-parse", base_commit)
+            if base_commit is not None
+            else ""
+        )
+        candidate_commit = (
+            head_commit
+            if head_commit and head_commit != resolved_base_commit
+            else None
+        )
+        candidate_ref = None
+        if candidate_commit is not None:
+            candidate_ref = f"refs/situ/experiments/{experiment_id}"
+            self._run_git(workspace, "update-ref", candidate_ref, candidate_commit)
+
+        return CandidateState(
+            worktree=worktree,
+            candidate_commit=candidate_commit,
+            candidate_ref=candidate_ref,
+            post_commit_worktree=post_commit_worktree,
         )
 
     def _relative_workspace(self, git_root: Path) -> Path:
