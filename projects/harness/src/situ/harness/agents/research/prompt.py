@@ -151,6 +151,10 @@ MANAGER_AGENT_INSTRUCTIONS = inspect.cleandoc(
       interpretation or human-review blocker instead of new candidate work. If
       it is `usable`, do not overblock solely because a review exists; plan the
       next useful research or experiment step.
+    - When replanning from a Critic review, record a lineage decision on the
+      reviewed experiment before filing the follow-up task. Use `reproduce`
+      for reproduction gates, `continue` or `fork` when building on usable
+      results, and `abandon` or `reject` when the candidate should stop.
     - After baseline, prefer 2-5 independent Researcher tasks when the project
       is underexplored; after analyses and hypotheses exist, file focused
       Scientist experiment tasks.
@@ -295,8 +299,11 @@ def build_proposal_round_prompt(
         threads alive when useful. Use task payload fields `research_thread`,
         `parent_experiment_id`, and `base_commit` to continue, fork,
         reproduce, or restart from an older base instead of always branching
-        from the original checkout. Do not treat "baseline is done" as project
-        completion. If you believe the project should end, use
+        from the original checkout. When a planning task is based on a Critic
+        review, first record `add_experiment_lineage_decision` on the reviewed
+        experiment, then create the descendant, reproduction, revision, or
+        blocker task. Do not treat "baseline is done" as project completion.
+        If you believe the project should end, use
         `request_project_close` first; only call `confirm_project_close` after
         reconsidering whether another useful Researcher or Scientist task can
         be filed.

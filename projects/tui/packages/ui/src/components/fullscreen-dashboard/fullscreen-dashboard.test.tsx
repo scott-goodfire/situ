@@ -1,9 +1,10 @@
 import { expect, test } from "bun:test";
-import type { TaskRecord } from "@situ/protocol";
+import type { ExperimentRecord, TaskRecord } from "@situ/protocol";
 import { renderInk } from "../../testing/ink-render.js";
 import {
   FullscreenDashboard,
   readableDashboardTaskTitle,
+  readableExperimentDashboardTitle,
   taskLabelFromId,
   wrapTaskTitleForDashboard,
   type DashboardTask,
@@ -111,6 +112,19 @@ test("readableDashboardTaskTitle prefixes non-action task titles by task kind", 
   );
 });
 
+test("readableExperimentDashboardTitle includes compact lineage context", () => {
+  expect(
+    readableExperimentDashboardTitle({
+      experiment: experimentRecord({
+        title: "Try component A",
+        parentExperimentId: "EX1",
+        researchThread: "component_a",
+        candidateCommit: "abcdef123456",
+      }),
+    }),
+  ).toBe("Try component A [thread component_a | parent EX1 | cand abcdef1]");
+});
+
 test("taskLabelFromId only accepts canonical task ids", () => {
   expect(taskLabelFromId({ id: "T7" })).toBe("[T7]");
   expect(taskLabelFromId({ id: "task-0007" })).toBeUndefined();
@@ -147,6 +161,34 @@ function taskRecord({
     claimed_at: undefined,
     completed_in_session_id: undefined,
     completed_at: undefined,
+    updated_at: "2026-01-01T00:00:00Z",
+  };
+}
+
+function experimentRecord({
+  title,
+  parentExperimentId,
+  researchThread,
+  candidateCommit,
+}: {
+  title: string;
+  parentExperimentId: string | undefined;
+  researchThread: string | undefined;
+  candidateCommit: string | undefined;
+}): ExperimentRecord {
+  return {
+    id: "EX2",
+    project_id: "P1",
+    created_in_session_id: "S1",
+    title,
+    summary: "Candidate experiment.",
+    status: "closed",
+    worktree_path: undefined,
+    base_commit: "base1234",
+    candidate_commit: candidateCommit,
+    parent_experiment_id: parentExperimentId,
+    research_thread: researchThread,
+    created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
   };
 }

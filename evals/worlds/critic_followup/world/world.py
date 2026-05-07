@@ -25,6 +25,8 @@ MANAGER_AGENT_ID = f"agent_{PROJECT_ID}_manager"
 CRITIC_AGENT_ID = f"agent_{PROJECT_ID}_critic"
 FOLLOWUP_EXPERIMENT_ID = "EX1"
 FOLLOWUP_EVALUATION_ID = "EV2"
+FOLLOWUP_CANDIDATE_COMMIT = "eval-fixture-candidate-component-a"
+FOLLOWUP_RESEARCH_THREAD = "component_a"
 
 
 class CriticFollowupWorld:
@@ -99,6 +101,8 @@ class CriticFollowupWorld:
             status="closed",
             worktree_path=str(self.workspace_path),
             base_commit="eval-fixture-base",
+            candidate_commit=FOLLOWUP_CANDIDATE_COMMIT,
+            research_thread=FOLLOWUP_RESEARCH_THREAD,
         )
         evaluation = self.repos.evaluations.create(
             evaluation_id=FOLLOWUP_EVALUATION_ID,
@@ -206,6 +210,8 @@ class CriticFollowupWorld:
                 "experiment_id": experiment.id,
                 "review_verdict": _review_verdict(seed),
                 "review_task_id": review_task.id,
+                "candidate_commit": experiment.candidate_commit,
+                "research_thread": experiment.research_thread,
             },
         )
         self.emit_event(
@@ -338,14 +344,19 @@ def _review_body(seed: CriticFollowupSeed) -> str:
 def _plan_task_content(seed: CriticFollowupSeed) -> str:
     common = (
         "Read the completed Critic review activity for the candidate experiment "
-        f"{FOLLOWUP_EXPERIMENT_ID}, then create exactly one next task. "
+        f"{FOLLOWUP_EXPERIMENT_ID}, then record a lineage decision on that "
+        "experiment before creating exactly one next task. "
     )
     return common + {
         "needs_reproduction": (
-            "Because the verdict is needs_reproduction, file a Scientist "
-            "experiment task to reproduce the candidate with the same command "
-            "and comparable workspace state. Do not accept or build on the "
-            "candidate until reproduction exists."
+            "Because the verdict is needs_reproduction, record decision "
+            "`reproduce`, then file a Scientist experiment task to reproduce "
+            "the candidate with the same command and comparable workspace "
+            "state. The task payload must include "
+            f"parent_experiment_id={FOLLOWUP_EXPERIMENT_ID}, "
+            f"research_thread={FOLLOWUP_RESEARCH_THREAD}, and "
+            f"base_commit={FOLLOWUP_CANDIDATE_COMMIT}. Do not accept or build "
+            "on the candidate until reproduction exists."
         ),
         "invalid": (
             "Because the verdict is invalid, do not accept the reported "
@@ -358,8 +369,11 @@ def _plan_task_content(seed: CriticFollowupSeed) -> str:
             "decision before new Scientist candidate work."
         ),
         "usable": (
-            "Because the verdict is usable, do not create a reproduction-only "
-            "or blocking review task. File the next useful Researcher or "
-            "Scientist task that builds on or combines the accepted result."
+            "Because the verdict is usable, record decision `continue`, then "
+            "file the next useful Scientist experiment task that builds on or "
+            "combines the accepted result. The task payload must include "
+            f"parent_experiment_id={FOLLOWUP_EXPERIMENT_ID}, "
+            f"research_thread={FOLLOWUP_RESEARCH_THREAD}, and "
+            f"base_commit={FOLLOWUP_CANDIDATE_COMMIT}."
         ),
     }[seed]

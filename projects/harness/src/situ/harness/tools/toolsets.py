@@ -18,6 +18,7 @@ from .analyses import CreateAnalysisTool, ListAnalysesTool, UpdateAnalysisTool
 from .comments import (
     AddAnalysisCommentTool,
     AddExperimentCommentTool,
+    AddExperimentLineageDecisionTool,
     AddExperimentReviewTool,
     AddHypothesisCommentTool,
 )
@@ -136,6 +137,13 @@ MANAGER_TOOLSET_INSTRUCTIONS = inspect.cleandoc(
     tasks; add coordination comments; and update the current planning task. Do
     not use the manager pass to run experiments or write research outputs
     directly; file Researcher or Scientist tasks for that work.
+
+    When acting on a Critic review for a candidate experiment, record the
+    portfolio decision on that experiment with
+    `add_experiment_lineage_decision` before creating the next task. Put the
+    same `research_thread`, `parent_experiment_id`, and `base_commit` context
+    into descendant Scientist experiment tasks when they should continue,
+    fork, or reproduce prior work.
 
     To end a project, use the explicit close handshake. First call
     `request_project_close`, read its warning, and try to keep going unless you
@@ -296,6 +304,7 @@ def build_manager_toolset() -> FunctionToolset[SituToolDeps]:
             ClaimTaskTool().as_tool(),
             UpdateTaskTool().as_tool(),
             AddTaskCommentTool().as_tool(),
+            AddExperimentLineageDecisionTool().as_tool(),
         ],
     )
 

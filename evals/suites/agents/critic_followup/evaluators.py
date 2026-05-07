@@ -22,6 +22,15 @@ def _manager_created_tasks(output: CriticFollowupEvalOutput) -> list[dict[str, A
     ]
 
 
+def _lineage_decisions(output: CriticFollowupEvalOutput) -> list[dict[str, Any]]:
+    return [
+        activity
+        for activity in output.project_board.get("experiment_activities", [])
+        if (activity.get("payload") or {}).get("activity_type")
+        == "lineage_decision"
+    ]
+
+
 def _task_text(task: dict[str, Any]) -> str:
     return json.dumps(
         {
@@ -174,6 +183,79 @@ class FollowupTaskMentionsAny(
         return EvaluationReason(
             value=False,
             reason=f"No follow-up task mentioned {self.needles}. Tasks: {tasks}",
+        )
+
+
+@dataclass
+class LineageDecisionRecorded(
+    Evaluator[CriticFollowupEvalInput, CriticFollowupEvalOutput, Any]
+):
+    decision: str
+    experiment_id: str
+
+    def evaluate(
+        self,
+        ctx: EvaluatorContext[CriticFollowupEvalInput, CriticFollowupEvalOutput, Any],
+    ) -> EvaluationReason:
+        decisions = [
+            activity
+            for activity in _lineage_decisions(ctx.output)
+            if activity.get("experiment_id") == self.experiment_id
+            and (activity.get("payload") or {}).get("decision") == self.decision
+        ]
+        if decisions:
+            return EvaluationReason(
+                value=True,
+                reason=(
+                    f"Found lineage decision {self.decision!r} on "
+                    f"{self.experiment_id}"
+                ),
+            )
+        return EvaluationReason(
+            value=False,
+            reason=(
+                f"No lineage decision {self.decision!r} on {self.experiment_id}. "
+                f"Lineage activities: {_lineage_decisions(ctx.output)}"
+            ),
+        )
+
+
+@dataclass
+class FollowupTaskCarriesLineagePayload(
+    Evaluator[CriticFollowupEvalInput, CriticFollowupEvalOutput, Any]
+):
+    parent_experiment_id: str
+    research_thread: str
+    base_commit: str
+
+    def evaluate(
+        self,
+        ctx: EvaluatorContext[CriticFollowupEvalInput, CriticFollowupEvalOutput, Any],
+    ) -> EvaluationReason:
+        expected = {
+            "parent_experiment_id": self.parent_experiment_id,
+            "research_thread": self.research_thread,
+            "base_commit": self.base_commit,
+        }
+        matches = [
+            task
+            for task in _manager_created_tasks(ctx.output)
+            if all((task.get("payload") or {}).get(key) == value for key, value in expected.items())
+        ]
+        if matches:
+            return EvaluationReason(
+                value=True,
+                reason=(
+                    "Follow-up task carries lineage payload: "
+                    f"{[task.get('id') for task in matches]}"
+                ),
+            )
+        return EvaluationReason(
+            value=False,
+            reason=(
+                f"No follow-up task carried lineage payload {expected}. "
+                f"Tasks: {_manager_created_tasks(ctx.output)}"
+            ),
         )
 
 

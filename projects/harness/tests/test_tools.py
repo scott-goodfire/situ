@@ -34,6 +34,7 @@ from situ.harness.tools.baselines import (
 from situ.harness.tools.comments import (
     AddAnalysisCommentTool,
     AddExperimentCommentTool,
+    AddExperimentLineageDecisionTool,
     AddExperimentReviewTool,
     AddHypothesisCommentTool,
 )
@@ -779,6 +780,12 @@ def test_comment_tools_write_activity_records(repos: Repositories) -> None:
         repos=repos,
         emit_event=_event_collector(emitted),
     )
+    repos.experiments.update(
+        experiment_id="EX1",
+        base_commit="base123456",
+        candidate_commit="candidate789",
+        research_thread="component_a",
+    )
 
     hypothesis_comment = invoke_situ_tool_sync(
         tool=AddHypothesisCommentTool(),
@@ -830,6 +837,24 @@ def test_comment_tools_write_activity_records(repos: Repositories) -> None:
         reviewed_evaluation_ids=["EV404"],
         reviewed_measurement_ids=[999],
     )
+    lineage_decision = invoke_situ_tool_sync(
+        tool=AddExperimentLineageDecisionTool(),
+        deps=deps,
+        experiment_id="EX1",
+        decision="reproduce",
+        reason="Reproduce before continuing this branch.",
+        critic_review_activity_id=experiment_review.activity["id"]
+        if experiment_review.activity is not None
+        else None,
+    )
+    bad_lineage_decision = invoke_situ_tool_sync(
+        tool=AddExperimentLineageDecisionTool(),
+        deps=deps,
+        experiment_id="EX1",
+        decision="fork",
+        reason="This cites a missing parent and should fail.",
+        parent_experiment_id="EX404",
+    )
 
     assert hypothesis_comment.success is True
     assert hypothesis_comment.activity is not None
@@ -857,6 +882,23 @@ def test_comment_tools_write_activity_records(repos: Repositories) -> None:
     assert bad_experiment_review.success is False
     assert bad_experiment_review.error is not None
     assert bad_experiment_review.error.code == "invalid_review_evaluation_ids"
+    assert lineage_decision.success is True
+    assert lineage_decision.activity is not None
+    assert lineage_decision.activity["actor"] == "manager"
+    assert lineage_decision.activity["payload"] == {
+        "activity_type": "lineage_decision",
+        "decision": "reproduce",
+        "research_thread": "component_a",
+        "parent_experiment_id": None,
+        "base_commit": "base123456",
+        "candidate_commit": "candidate789",
+        "critic_review_activity_id": experiment_review.activity["id"]
+        if experiment_review.activity is not None
+        else None,
+    }
+    assert bad_lineage_decision.success is False
+    assert bad_lineage_decision.error is not None
+    assert bad_lineage_decision.error.code == "invalid_parent_experiment"
 
     hypothesis_activities = invoke_situ_tool_sync(
         tool=ListHypothesisActivitiesTool(),
@@ -870,11 +912,16 @@ def test_comment_tools_write_activity_records(repos: Repositories) -> None:
     )
 
     assert [activity["id"] for activity in hypothesis_activities.activities] == [1]
-    assert [activity["id"] for activity in experiment_activities.activities] == [1, 2]
+    assert [activity["id"] for activity in experiment_activities.activities] == [
+        1,
+        2,
+        3,
+    ]
     assert [event["type"] for event in emitted] == [
         "hypothesis.comment_added",
         "experiment.comment_added",
         "experiment.review_added",
+        "experiment.lineage_decision_added",
     ]
 
 

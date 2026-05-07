@@ -4,7 +4,9 @@ from pydantic_evals import Case
 
 from evals.suites.agents.critic_followup.evaluators import (
     FollowupTaskKindIn,
+    FollowupTaskCarriesLineagePayload,
     FollowupTaskMentionsAny,
+    LineageDecisionRecorded,
     ManagerCreatedFollowupTask,
     ManagerToolSucceeded,
     ManagerToolWasCalled,
@@ -13,6 +15,11 @@ from evals.suites.agents.critic_followup.evaluators import (
 from evals.worlds.critic_followup import (
     CriticFollowupEvalInput,
     CriticFollowupEvalOutput,
+)
+from evals.worlds.critic_followup.world import (
+    FOLLOWUP_CANDIDATE_COMMIT,
+    FOLLOWUP_EXPERIMENT_ID,
+    FOLLOWUP_RESEARCH_THREAD,
 )
 
 
@@ -30,11 +37,22 @@ def critic_followup_cases() -> list[
             evaluators=(
                 ManagerToolWasCalled("get_task"),
                 ManagerToolWasCalled("get_project_board"),
+                ManagerToolWasCalled("add_experiment_lineage_decision"),
+                ManagerToolSucceeded("add_experiment_lineage_decision"),
                 ManagerToolWasCalled("create_task"),
                 ManagerToolSucceeded("create_task"),
                 ProjectBoardContainsReviewVerdict("needs_reproduction"),
+                LineageDecisionRecorded(
+                    decision="reproduce",
+                    experiment_id=FOLLOWUP_EXPERIMENT_ID,
+                ),
                 ManagerCreatedFollowupTask(),
                 FollowupTaskKindIn("experiment"),
+                FollowupTaskCarriesLineagePayload(
+                    parent_experiment_id=FOLLOWUP_EXPERIMENT_ID,
+                    research_thread=FOLLOWUP_RESEARCH_THREAD,
+                    base_commit=FOLLOWUP_CANDIDATE_COMMIT,
+                ),
                 FollowupTaskMentionsAny("reproduce", "repeat", "replicate"),
             ),
         ),
@@ -90,11 +108,22 @@ def critic_followup_cases() -> list[
             evaluators=(
                 ManagerToolWasCalled("get_task"),
                 ManagerToolWasCalled("get_project_board"),
+                ManagerToolWasCalled("add_experiment_lineage_decision"),
+                ManagerToolSucceeded("add_experiment_lineage_decision"),
                 ManagerToolWasCalled("create_task"),
                 ManagerToolSucceeded("create_task"),
                 ProjectBoardContainsReviewVerdict("usable"),
+                LineageDecisionRecorded(
+                    decision="continue",
+                    experiment_id=FOLLOWUP_EXPERIMENT_ID,
+                ),
                 ManagerCreatedFollowupTask(),
-                FollowupTaskKindIn("research", "hypothesize", "experiment"),
+                FollowupTaskKindIn("experiment"),
+                FollowupTaskCarriesLineagePayload(
+                    parent_experiment_id=FOLLOWUP_EXPERIMENT_ID,
+                    research_thread=FOLLOWUP_RESEARCH_THREAD,
+                    base_commit=FOLLOWUP_CANDIDATE_COMMIT,
+                ),
                 FollowupTaskMentionsAny("build", "combine", "next", "component"),
             ),
         ),

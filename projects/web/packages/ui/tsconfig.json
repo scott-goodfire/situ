@@ -4,7 +4,8 @@
     "jsx": "react-jsx",
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "rootDir": "."
+    "rootDir": ".",
+    "types": ["bun"]
   },
   "include": ["src/**/*.ts", "src/**/*.tsx"]
 }

@@ -1233,11 +1233,39 @@ function taskFromExperiment({
 
   return {
     id: `experiment:${experiment.id}`,
-    title: experiment.title,
+    title: readableExperimentDashboardTitle({ experiment }),
     status: statusForRecord({ status: experiment.status }),
     kind: tone === "warning" ? "concern" : "experiment",
     tone,
   };
+}
+
+export function readableExperimentDashboardTitle({
+  experiment,
+}: {
+  experiment: ExperimentRecord;
+}): string {
+  const lineage = [
+    experiment.research_thread
+      ? `thread ${experiment.research_thread}`
+      : undefined,
+    experiment.parent_experiment_id
+      ? `parent ${experiment.parent_experiment_id}`
+      : undefined,
+    experiment.candidate_commit
+      ? `cand ${shortCommitRef({ value: experiment.candidate_commit })}`
+      : undefined,
+  ].filter((value): value is string => Boolean(value));
+
+  if (lineage.length === 0) {
+    return experiment.title;
+  }
+
+  return `${experiment.title} [${lineage.join(" | ")}]`;
+}
+
+function shortCommitRef({ value }: { value: string }): string {
+  return value.length > 7 ? value.slice(0, 7) : value;
 }
 
 function taskFromEvaluation({
