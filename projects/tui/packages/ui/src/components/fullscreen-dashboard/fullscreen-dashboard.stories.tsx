@@ -4,6 +4,7 @@ import { FullscreenDashboard } from "./fullscreen-dashboard.js";
 import type {
   DashboardCommand,
   DashboardControlMessage,
+  DashboardControlMode,
 } from "../dashboard-controls/dashboard-controls.js";
 import {
   activeHypothesis,
@@ -55,6 +56,28 @@ export const stories = [
     ),
   },
   {
+    id: "fullscreen-dashboard/help",
+    title: "Fullscreen Dashboard",
+    name: "help",
+    render: () => (
+      <StoryFullscreenDashboard
+        initialControlMode="help"
+        terminalSize={{ columns: 112, rows: 34 }}
+      />
+    ),
+  },
+  {
+    id: "fullscreen-dashboard/search",
+    title: "Fullscreen Dashboard",
+    name: "search",
+    render: () => (
+      <StoryFullscreenDashboard
+        initialControlMode="search"
+        terminalSize={{ columns: 112, rows: 34 }}
+      />
+    ),
+  },
+  {
     id: "fullscreen-dashboard/too-small",
     title: "Fullscreen Dashboard",
     name: "too small",
@@ -70,7 +93,7 @@ function StoryFullscreenDashboard({
   initialControlMode = "idle",
   terminalSize,
 }: {
-  initialControlMode?: "idle" | "commands";
+  initialControlMode?: DashboardControlMode;
   terminalSize: { columns: number; rows: number };
 }) {
   const { exit } = useApp();

@@ -367,6 +367,155 @@ function DashboardCommandPane({
   );
 }
 
+const HELP_BINDINGS: Array<{ keys: string; description: string }> = [
+  { keys: "?", description: "Toggle this help overlay" },
+  { keys: "/", description: "Search & filter tasks and activity" },
+  { keys: ":", description: "Open the commands palette" },
+  { keys: "Esc", description: "Close overlay or clear active filter" },
+  { keys: "Enter", description: "Select / apply (in palette or search)" },
+  { keys: "↑ ↓", description: "Move within prompts" },
+  { keys: "q", description: "Quit the dashboard" },
+];
+
+function HelpPane({
+  width,
+  height,
+  onClose,
+}: {
+  width: number;
+  height: number;
+  onClose: () => void;
+}) {
+  const { isRawModeSupported } = useStdin();
+  const canUseInput = Boolean(process.stdin.isTTY) && isRawModeSupported;
+
+  useInput(
+    (input, key) => {
+      if (key.escape || input === "?") {
+        onClose();
+      }
+    },
+    { isActive: canUseInput },
+  );
+
+  const keyColumnWidth = HELP_BINDINGS.reduce(
+    (currentMax, binding) => Math.max(currentMax, binding.keys.length),
+    0,
+  );
+
+  return (
+    <LayoutBox width={width} height={height}>
+      <Text bold>Keyboard controls</Text>
+      {HELP_BINDINGS.map((binding) => (
+        <Text key={binding.keys}>
+          <Text color="cyan">{binding.keys.padEnd(keyColumnWidth)}</Text>
+          <Text>  {binding.description}</Text>
+        </Text>
+      ))}
+      <Text> </Text>
+      <Text dimColor>
+        Search filters apply to task titles and activity bodies (case-insensitive).
+      </Text>
+    </LayoutBox>
+  );
+}
+
+function SearchPane({
+  width,
+  height,
+  query,
+  onQueryChange,
+  onSubmit,
+  onCancel,
+}: {
+  width: number;
+  height: number;
+  query: string;
+  onQueryChange: ({ query }: { query: string }) => void;
+  onSubmit: () => void;
+  onCancel: () => void;
+}) {
+  const { isRawModeSupported } = useStdin();
+  const canUseInput = Boolean(process.stdin.isTTY) && isRawModeSupported;
+
+  useInput(
+    (input, key) => {
+      if (key.escape) {
+        onCancel();
+        return;
+      }
+
+      if (key.return) {
+        onSubmit();
+        return;
+      }
+
+      if (key.backspace || key.delete) {
+        onQueryChange({ query: query.slice(0, -1) });
+        return;
+      }
+
+      if (key.ctrl || key.meta || key.upArrow || key.downArrow) {
+        return;
+      }
+
+      if (input) {
+        onQueryChange({ query: query + input });
+      }
+    },
+    { isActive: canUseInput },
+  );
+
+  return (
+    <LayoutBox width={width} height={height}>
+      <Text>
+        <Text color="cyan">/ </Text>
+        <Text bold>{query}</Text>
+        <Text inverse> </Text>
+      </Text>
+      <Text> </Text>
+      <Text dimColor>
+        Filters tasks and activity live. Enter applies the filter and returns to the dashboard.
+        Esc clears the filter.
+      </Text>
+    </LayoutBox>
+  );
+}
+
+function filterDashboardTasks({
+  tasks,
+  query,
+}: {
+  tasks: DashboardTask[];
+  query: string;
+}): DashboardTask[] {
+  if (query.length === 0) {
+    return tasks;
+  }
+
+  const needle = query.toLowerCase();
+  return tasks.filter((task) => task.title.toLowerCase().includes(needle));
+}
+
+function filterActivityRows({
+  rows,
+  query,
+}: {
+  rows: ActivityFeedRow[];
+  query: string;
+}): ActivityFeedRow[] {
+  if (query.length === 0) {
+    return rows;
+  }
+
+  const needle = query.toLowerCase();
+  return rows.filter(
+    (row) =>
+      row.body.toLowerCase().includes(needle) ||
+      row.label.toLowerCase().includes(needle),
+  );
+}
+
 function DashboardHeader({
   width,
   workspace,
