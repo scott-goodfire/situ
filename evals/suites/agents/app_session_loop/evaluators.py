@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from typing import Any
 
@@ -312,5 +313,153 @@ class ReviewTaskLinksComplete(
             reason=(
                 "No single review task linked experiment, evaluation, and "
                 f"measurement evidence. Review tasks: {review_tasks}; links: {links}"
+            ),
+        )
+
+
+class CommandReceiptArtifactCaptured(
+    Evaluator[AppSessionLoopEvalInput, AppSessionLoopEvalOutput, Any]
+):
+    def evaluate(
+        self,
+        ctx: EvaluatorContext[AppSessionLoopEvalInput, AppSessionLoopEvalOutput, Any],
+    ) -> EvaluationReason:
+        artifacts = [
+            artifact
+            for artifact in ctx.output.project_board.get("artifacts", [])
+            if artifact.get("kind") == "command_receipt"
+        ]
+        links = ctx.output.project_board.get("task_entity_links", [])
+        linked_artifact_ids = {
+            link.get("entity_id")
+            for link in links
+            if link.get("entity_kind") == "artifact"
+            and link.get("relationship") == "receipt"
+        }
+        for artifact in artifacts:
+            artifact_id = artifact.get("id")
+            receipt_text = ctx.output.artifact_files.get(str(artifact_id), "")
+            try:
+                receipt = json.loads(receipt_text)
+            except json.JSONDecodeError:
+                continue
+            rendered = json.dumps(receipt, sort_keys=True).lower()
+            if (
+                artifact_id in linked_artifact_ids
+                and receipt.get("exit_code") == 0
+                and "python train.py" in rendered
+                and "val_bpb" in rendered
+                and "component_a" in rendered
+            ):
+                return EvaluationReason(
+                    value=True,
+                    reason=(
+                        "Found linked command receipt artifact with candidate "
+                        f"measurement evidence: {artifact_id}"
+                    ),
+                )
+        return EvaluationReason(
+            value=False,
+            reason=(
+                "Expected a linked command_receipt artifact containing "
+                "candidate python train.py output with val_bpb/component_a. "
+                f"Artifacts: {artifacts}; links: {links}; "
+                f"artifact_files: {sorted(ctx.output.artifact_files)}"
+            ),
+        )
+
+
+class PatchHandoffArtifactCaptured(
+    Evaluator[AppSessionLoopEvalInput, AppSessionLoopEvalOutput, Any]
+):
+    def evaluate(
+        self,
+        ctx: EvaluatorContext[AppSessionLoopEvalInput, AppSessionLoopEvalOutput, Any],
+    ) -> EvaluationReason:
+        artifacts = [
+            artifact
+            for artifact in ctx.output.project_board.get("artifacts", [])
+            if artifact.get("kind") == "patch"
+        ]
+        links = ctx.output.project_board.get("task_entity_links", [])
+        produced_artifact_ids = {
+            link.get("entity_id")
+            for link in links
+            if link.get("entity_kind") == "artifact"
+            and link.get("relationship") == "produces"
+        }
+        activities = ctx.output.project_board.get("experiment_activities", [])
+        handoffs = [
+            activity
+            for activity in activities
+            if (activity.get("payload") or {}).get("activity_type") == "patch_handoff"
+        ]
+        handoff_artifact_ids = {
+            (activity.get("payload") or {}).get("artifact_id")
+            for activity in handoffs
+        }
+        for artifact in artifacts:
+            artifact_id = artifact.get("id")
+            patch = ctx.output.artifact_files.get(str(artifact_id), "")
+            if (
+                artifact_id in produced_artifact_ids
+                and artifact_id in handoff_artifact_ids
+                and "diff --git a/train.py b/train.py" in patch
+                and "component_a" in patch
+                and "prepare.py" not in patch
+            ):
+                return EvaluationReason(
+                    value=True,
+                    reason=(
+                        "Found patch handoff artifact linked to the experiment "
+                        f"task: {artifact_id}"
+                    ),
+                )
+        return EvaluationReason(
+            value=False,
+            reason=(
+                "Expected patch artifact for train.py-only candidate with "
+                "patch_handoff activity and task link. "
+                f"Artifacts: {artifacts}; links: {links}; handoffs: {handoffs}; "
+                f"artifact_files: {sorted(ctx.output.artifact_files)}"
+            ),
+        )
+
+
+class ExperimentCandidateStateRecorded(
+    Evaluator[AppSessionLoopEvalInput, AppSessionLoopEvalOutput, Any]
+):
+    def evaluate(
+        self,
+        ctx: EvaluatorContext[AppSessionLoopEvalInput, AppSessionLoopEvalOutput, Any],
+    ) -> EvaluationReason:
+        experiments = ctx.output.project_board.get("experiments", [])
+        candidate_experiments = [
+            experiment
+            for experiment in experiments
+            if experiment.get("base_commit") and experiment.get("candidate_commit")
+        ]
+        workspace_state = [
+            activity
+            for activity in ctx.output.project_board.get("experiment_activities", [])
+            if (activity.get("payload") or {}).get("activity_type")
+            == "workspace_state"
+            and (activity.get("payload") or {}).get("candidate_commit")
+            and (activity.get("payload") or {}).get("patch_artifact_id")
+        ]
+        if candidate_experiments and workspace_state:
+            return EvaluationReason(
+                value=True,
+                reason=(
+                    "Found experiment base/candidate commits and workspace "
+                    f"state activity: {[item.get('id') for item in candidate_experiments]}"
+                ),
+            )
+        return EvaluationReason(
+            value=False,
+            reason=(
+                "Expected experiment candidate state and workspace_state "
+                f"activity with patch_artifact_id. Experiments: {experiments}; "
+                f"activities: {ctx.output.project_board.get('experiment_activities', [])}"
             ),
         )

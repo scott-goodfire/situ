@@ -91,6 +91,21 @@ class AppSessionLoopWorld:
             session_id=self.session_id
         ).model_dump(mode="json")
 
+    def artifact_files(self) -> dict[str, str]:
+        files: dict[str, str] = {}
+        for artifact in self.project_board().get("artifacts", []):
+            artifact_id = artifact.get("id")
+            artifact_path = artifact.get("path")
+            if not isinstance(artifact_id, str) or not isinstance(artifact_path, str):
+                continue
+            path = Path(artifact_path)
+            if not path.is_absolute():
+                path = self.app.context.project_dir / path
+            if not path.is_file():
+                continue
+            files[artifact_id] = path.read_text(encoding="utf-8", errors="replace")
+        return files
+
     def _install_eval_runtime_secrets(self) -> None:
         secrets = SituSecrets()
         secrets.require_eval_environment()
@@ -224,7 +239,9 @@ def _initial_plan_content(seed: AppSessionLoopSeed) -> str:
             "experiment task to try component_a by changing only train.py, "
             "running python train.py, creating experiment/evaluation records, "
             "recording raw output evidence, and confirming prepare.py remains "
-            "unchanged."
+            "unchanged. When calling create_task, set "
+            "base_selector='selected_checkout' for the experiment task; do not "
+            "put symbolic labels in base_commit."
         )
     if seed == "with_baseline_no_hypothesis":
         return (

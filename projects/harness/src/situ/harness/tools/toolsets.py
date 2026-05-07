@@ -143,9 +143,10 @@ MANAGER_TOOLSET_INSTRUCTIONS = inspect.cleandoc(
     When acting on a Critic review for a candidate experiment, record the
     portfolio decision on that experiment with
     `add_experiment_lineage_decision` before creating the next task. Put the
-    same `research_thread`, `parent_experiment_id`, and `base_commit` context
-    into descendant Scientist experiment tasks when they should continue,
-    fork, or reproduce prior work.
+    same `research_thread`, `parent_experiment_id`, and `base_selector`
+    context into descendant Scientist experiment tasks when they should
+    continue, fork, or reproduce prior work. Use `base_commit` only with
+    `base_selector="explicit_commit"` and an exact Git commit/ref.
 
     To end a project, use the explicit close handshake. First call
     `request_project_close`, read its warning, and try to keep going unless you

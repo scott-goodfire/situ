@@ -103,6 +103,12 @@ Experiment tasks that ask for code changes should be able to carry the chosen
 base information in structured payload. The harness should prepare the managed
 worktree from that chosen base and record the base on the experiment.
 
+Agents should choose bases through a small structured selector rather than
+inventing Git-like labels. The Manager may choose the selected checkout, a
+parent experiment candidate, or an explicit Git commit/ref. Only the explicit
+Git-ref path should use `base_commit`; arbitrary unknown base strings should
+fail visibly rather than silently falling back to another commit.
+
 If the chosen base cannot be resolved, the experiment should fail before the
 Scientist mutates code, and the failure should be visible as task and
 experiment activity.

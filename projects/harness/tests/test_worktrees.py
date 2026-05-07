@@ -197,6 +197,7 @@ def test_harness_prepares_experiment_task_checkout_and_records_final_state(
         content="Change module.py and run the local check.",
         kind=TaskKind.EXPERIMENT,
         source_kind="manager",
+        payload={"base_selector": "selected_checkout"},
     )
     claimed = app.repos.tasks.claim(
         task_id=task.id,
@@ -216,6 +217,7 @@ def test_harness_prepares_experiment_task_checkout_and_records_final_state(
     assert Path(prepared.repo_path).is_dir()
     assert prepared.task.payload["experiment_id"] == prepared.experiment.id
     assert prepared.task.payload["worktree_path"] == prepared.repo_path
+    assert prepared.task.payload["base_selector"] == "selected_checkout"
     assert prepared.experiment.worktree_path == prepared.repo_path
     assert prepared.experiment.base_commit == _git(repo, "rev-parse", "HEAD")
     assert app.repos.task_entity_links.get(

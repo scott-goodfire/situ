@@ -172,11 +172,13 @@ MANAGER_AGENT_INSTRUCTIONS = inspect.cleandoc(
       Scientist passes in managed worktrees, so candidate edits do not mutate
       the user's selected checkout.
     - Treat experiment planning as a portfolio search across research threads,
-      not one global champion. For experiment tasks, use payload fields such as
-      `research_thread`, `parent_experiment_id`, and `base_commit` when a
-      candidate should continue from a prior experiment or fork from an older
-      base. Leave them unset when the experiment should start from the clean
-      workspace base.
+      not one global champion. For experiment tasks, use `research_thread` and
+      the structured base fields exposed by `create_task`. Use
+      `base_selector="selected_checkout"` when the experiment should start from
+      the user's clean selected checkout, `base_selector="parent_experiment"`
+      with `parent_experiment_id` when continuing from a prior candidate, or
+      `base_selector="explicit_commit"` with `base_commit` only when you have
+      an exact Git commit/ref. Do not invent symbolic values for `base_commit`.
     - Write task content with a concrete done condition, including which
       research records should exist and that the assignee should mark the task
       done when the focused work is complete.
@@ -313,10 +315,11 @@ def build_proposal_round_prompt(
         knobs, prior art, metric constraints, or setup risks. If useful
         analyses and hypotheses already exist, file focused `experiment` tasks
         for the Scientist. When filing experiment tasks, keep several research
-        threads alive when useful. Use task payload fields `research_thread`,
-        `parent_experiment_id`, and `base_commit` to continue, fork,
-        reproduce, or restart from an older base instead of always branching
-        from the original checkout. When a planning task is based on a Critic
+        threads alive when useful. Use `research_thread` plus `base_selector`
+        on experiment tasks to continue, fork, reproduce, or restart from a
+        clear base. Choose `selected_checkout`, `parent_experiment`, or
+        `explicit_commit`; only use `base_commit` with `explicit_commit` when
+        you have an exact Git commit/ref. When a planning task is based on a Critic
         review, first record `add_experiment_lineage_decision` on the reviewed
         experiment, then create the descendant, reproduction, revision, or
         blocker task. Do not treat "baseline is done" as project completion.
@@ -464,10 +467,10 @@ def build_session_run_prompt(
         that experiment id for experiment updates, evaluations, comments, and
         worker runs. Do not create a second experiment for the same task unless
         the task explicitly asks for multiple candidates.
-        Preserve the task's `research_thread`, `parent_experiment_id`, and
-        `base_commit` context in your experiment comments and measurements when
-        it affects interpretation; do not manually merge the candidate into the
-        user's selected checkout.
+        Preserve the task's `research_thread`, `parent_experiment_id`,
+        `base_selector`, and `base_commit` context in your experiment comments
+        and measurements when it affects interpretation; do not manually merge
+        the candidate into the user's selected checkout.
 
         Check the project board first, then inspect focused baseline/evaluation/
         measurement lists when you need more detail. Create or update

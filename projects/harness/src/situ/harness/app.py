@@ -71,6 +71,11 @@ SESSION_AGENT_PASS_LIMIT_MINIMUM = 12
 SESSION_AGENT_PASS_LIMIT_PER_EXPERIMENT = 8
 REUSABLE_PLAN_TASK_TITLE = "Plan next step"
 REUSABLE_PLAN_TASK_KEY = "project-next-step"
+EXPERIMENT_BASE_SELECTORS = {
+    "selected_checkout",
+    "parent_experiment",
+    "explicit_commit",
+}
 
 
 @dataclass(frozen=True, slots=True)
@@ -1075,12 +1080,7 @@ class HarnessApp:
         requested_base_commit = (
             existing.base_commit
             if existing is not None and existing.base_commit is not None
-            else _base_commit_from_task(task)
-            or (
-                parent_experiment.candidate_commit or parent_experiment.base_commit
-                if parent_experiment is not None
-                else None
-            )
+            else _requested_base_commit_from_task(task, parent_experiment)
         )
         worktree = WorktreeManager(
             workspace_path=Path(workspace_repo_path),
@@ -1474,6 +1474,58 @@ def _parent_experiment_id_from_task(task: TaskRecord) -> str | None:
 def _base_commit_from_task(task: TaskRecord) -> str | None:
     base_commit = task.payload.get("base_commit")
     return base_commit if isinstance(base_commit, str) and base_commit else None
+
+
+def _base_selector_from_task(task: TaskRecord) -> str | None:
+    base_selector = task.payload.get("base_selector")
+    return base_selector if isinstance(base_selector, str) and base_selector else None
+
+
+def _requested_base_commit_from_task(
+    task: TaskRecord,
+    parent_experiment: ExperimentRecord | None,
+) -> str | None:
+    base_selector = _base_selector_from_task(task)
+    if base_selector is not None and base_selector not in EXPERIMENT_BASE_SELECTORS:
+        allowed = ", ".join(sorted(EXPERIMENT_BASE_SELECTORS))
+        raise RuntimeError(
+            f"invalid experiment base_selector: {base_selector!r}; use one of {allowed}"
+        )
+
+    if base_selector == "selected_checkout":
+        return None
+    if base_selector == "parent_experiment":
+        return _base_commit_from_parent_experiment(parent_experiment)
+    if base_selector == "explicit_commit":
+        base_commit = _base_commit_from_task(task)
+        if base_commit is None:
+            raise RuntimeError(
+                "experiment task selected explicit_commit base but did not provide base_commit"
+            )
+        return base_commit
+
+    base_commit = _base_commit_from_task(task)
+    if base_commit is not None:
+        return base_commit
+    if parent_experiment is not None:
+        return _base_commit_from_parent_experiment(parent_experiment)
+    return None
+
+
+def _base_commit_from_parent_experiment(
+    parent_experiment: ExperimentRecord | None,
+) -> str:
+    if parent_experiment is None:
+        raise RuntimeError(
+            "experiment task selected parent_experiment base but did not provide "
+            "parent_experiment_id"
+        )
+    base_commit = parent_experiment.candidate_commit or parent_experiment.base_commit
+    if base_commit is None:
+        raise RuntimeError(
+            f"parent experiment {parent_experiment.id} has no candidate or base commit"
+        )
+    return base_commit
 
 
 def _research_thread_from_task(task: TaskRecord) -> str | None:

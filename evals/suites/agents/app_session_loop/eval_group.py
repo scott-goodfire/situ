@@ -58,6 +58,14 @@ class AppSessionLoopEvalGroup(
             "evaluations",
             len(output.project_board.get("evaluations", [])),
         )
+        increment_eval_metric(
+            "artifacts",
+            len(output.project_board.get("artifacts", [])),
+        )
+        increment_eval_metric(
+            "artifact_files",
+            len(output.artifact_files),
+        )
         increment_eval_metric("changed_files", len(output.changed_files))
         return output
 

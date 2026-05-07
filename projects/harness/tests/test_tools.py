@@ -273,6 +273,37 @@ def test_task_tools_coordinate_claims_comments_and_entity_links(
     assert task_detail.task_activities[0]["body"] == "Claimed after baseline finished."
 
 
+def test_create_task_tool_accepts_structured_experiment_base_fields(
+    repos: Repositories,
+) -> None:
+    manager = repos.agents.ensure_project_agent(
+        project_id="P1",
+        created_in_session_id="S1",
+        kind="manager",
+        display_name="Manager",
+    )
+    deps = SituToolDeps(
+        session_id="S1",
+        agent_id=manager.id,
+        repos=repos,
+    )
+
+    result = invoke_situ_tool_sync(
+        tool=CreateTaskTool(),
+        deps=deps,
+        title="Try component A",
+        content="Change train.py only and run the primary measurement.",
+        kind="experiment",
+        research_thread="component-a",
+        base_selector="selected_checkout",
+    )
+
+    assert result.success is True
+    assert result.task is not None
+    assert result.task["payload"]["research_thread"] == "component-a"
+    assert result.task["payload"]["base_selector"] == "selected_checkout"
+
+
 def test_get_project_tool_reads_current_project(
     repos: Repositories,
 ) -> None:

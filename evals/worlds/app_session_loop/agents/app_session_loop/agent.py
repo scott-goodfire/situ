@@ -19,6 +19,7 @@ def run_app_session_loop(args: AppSessionLoopEvalInput) -> AppSessionLoopEvalOut
             content=content,
             events=events,
             project_board=project_board,
+            artifact_files=world.artifact_files(),
             workspace_files=world.workspace_files(),
             changed_files=changed_files,
             signals={
@@ -67,6 +68,7 @@ def run_app_session_loop(args: AppSessionLoopEvalInput) -> AppSessionLoopEvalOut
                 ),
                 "experiments": len(project_board.get("experiments", [])),
                 "evaluations": len(project_board.get("evaluations", [])),
+                "artifacts": len(project_board.get("artifacts", [])),
                 "changed_files": len(changed_files),
             },
         )
