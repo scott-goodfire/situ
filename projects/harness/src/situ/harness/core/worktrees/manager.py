@@ -59,7 +59,7 @@ class WorktreeManager:
             raise RuntimeError("could not resolve git HEAD for experiment worktree")
 
         worktree_root = (
-            Path(existing_worktree_path).expanduser().resolve()
+            self._existing_worktree_root(existing_worktree_path)
             if existing_worktree_path is not None
             else (self.worktrees_dir / experiment_id).resolve()
         )
@@ -109,6 +109,14 @@ class WorktreeManager:
             return self.workspace_path.relative_to(git_root)
         except ValueError:
             return Path(".")
+
+    def _existing_worktree_root(self, existing_worktree_path: str) -> Path:
+        existing = Path(existing_worktree_path).expanduser().resolve()
+        if not existing.exists():
+            raise RuntimeError(
+                f"experiment worktree path does not exist: {existing}"
+            )
+        return self._git_root(existing)
 
     def _require_existing_worktree(self, worktree_root: Path) -> None:
         result = self._git_output(worktree_root, "rev-parse", "--show-toplevel")

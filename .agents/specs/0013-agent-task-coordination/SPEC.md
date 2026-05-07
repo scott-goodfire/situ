@@ -22,10 +22,14 @@ completion summary; the produced records remain the inspectable research state.
 
 ## Agents
 
-Agents are durable project participants. The first slice uses two agent kinds:
+Agents are durable project participants. The first slice uses three agent kinds:
 
 - `manager` plans and files tasks.
-- `scientist` claims focused work and produces research ledger output.
+- `researcher` claims research tasks and produces durable understanding:
+  analyses, hypotheses, interpretations, and review comments.
+- `scientist` claims baseline and experiment tasks and produces empirical
+  ledger output: experiments, evaluations, measurements, artifacts, and
+  experiment comments.
 
 Additional kinds such as reviewer or specialist scientists can be added later
 without changing the task model. A task's eligible claimant is derived from
@@ -43,6 +47,8 @@ make the session the owner of the task.
 Task kinds should stay bounded and product-specific:
 
 - `plan` for manager planning passes
+- `research` for gathering, analyzing, and synthesizing reusable
+  project understanding before or between hypotheses
 - `baseline` for establishing measurement context
 - `hypothesize` for creating or refining hypotheses
 - `experiment` for focused candidate work
@@ -82,8 +88,8 @@ session starts
   -> enqueue a `plan` task
 manager claims `plan`
   -> reads project, session, and task state
-  -> files scientist tasks
-scientist claims runnable work
+  -> files Researcher or Scientist tasks
+researcher/scientist claims runnable work
   -> runs focused work
   -> writes ledger outputs
   -> marks task done or failed
@@ -98,26 +104,45 @@ start once the project exists. DBOS should still wrap runnable Pydantic AI
 agents; Situ should not add a separate workflow engine unless task-shaped
 agent/tool execution stops being enough.
 
-The runtime should treat Manager and Scientist as logically always-available
-workers. A Manager pass is triggered by session start, Scientist task
-completion, user steering, or lack of runnable Scientist work. A Scientist pass
-is triggered by a runnable Scientist task. Each LLM pass should stay focused:
-the Manager handles one planning task, and the Scientist handles one claimed
+The runtime should treat Manager, Researcher, and Scientist as logically
+always-available workers. A Manager pass is triggered by session start,
+Researcher or Scientist task completion, user steering, or lack of runnable
+execution work. Researcher and Scientist passes are triggered by runnable tasks
+eligible for their agent kind. Each LLM pass should stay focused: the Manager
+handles one planning task, and a Researcher or Scientist handles one claimed
 work task.
+
+The Manager should prefer fanout when the project state is underexplored. After
+baseline, it may file several independent `research` tasks covering different
+angles such as error patterns, codebase knobs, prior art, environment setup,
+or metric constraints. Once analyses and hypotheses exist, it should file
+focused `experiment` tasks for the Scientist. Researcher and Scientist work may
+alternate:
+
+```text
+manager -> researcher(s) -> manager -> scientist -> manager -> researcher -> scientist
+```
+
+Researcher tasks should generally produce `Analysis` records first and only
+promote claims into `Hypothesis` records when the next empirical work becomes
+clear. Scientist tasks should generally attach evidence to `Experiment` and
+`Evaluation` records rather than burying results in task comments.
 
 When the claimed Scientist task is an `experiment`, Situ should create or reuse
 a managed worktree for the linked experiment before invoking the Scientist. The
 Scientist's workspace tools and worker execution for that pass should be rooted
 in that worktree. This keeps candidate code edits isolated while the task,
 experiment, measurements, activities, and events remain project-owned ledger
-records.
+records. Researcher tasks should not require managed experiment worktrees unless
+they are explicitly asked to run a candidate experiment.
 
 Baseline completion must not close the session by itself. The Manager should be
-prompted to keep planning after a Scientist task completes. A single Manager
-pass that creates no runnable next work is not enough to stop the loop; the
-runtime may close only after a small no-progress guardrail such as three
-consecutive planning cycles with no runnable Scientist task, after the
-experiment budget is reached, after user stop, or after a fatal failure.
+prompted to keep planning after a Researcher or Scientist task completes. A
+single Manager pass that creates no runnable next work is not enough to stop the
+loop; the runtime may close only after a small no-progress guardrail such as
+three consecutive planning cycles with no runnable Researcher or Scientist
+task, after the experiment budget is reached, after user stop, or after a fatal
+failure.
 
 Project/session close is an explicit tool-mediated handshake, not a normal
 project update. A Manager that wants to end a project before the experiment
@@ -143,10 +168,10 @@ we learn?"
 
 ## Deferred
 
-- Parallel scientists
 - External human assignees as first-class participants
 - Cycles, sprints, estimates, labels, and broad issue-tracker workflows
 - A dedicated reviewer agent kind
+- True concurrent execution of multiple Researcher or Scientist passes
 - Complex DBOS workflow orchestration around the full session loop
 
 ## Review Criteria
@@ -154,6 +179,9 @@ we learn?"
 - Tasks are project-scoped and visible through the same collection/event
   pipeline as the rest of the ledger.
 - Agents are durable project records, not ad hoc names on task rows.
+- Researcher work produces durable analyses and hypotheses; Scientist work
+  produces durable experiments and evaluations.
+- Research tasks can be fanned out without requiring parallel code mutation.
 - Session references on coordination records are provenance fields, not owners.
 - Task claims are atomic enough to prevent double-claiming.
 - Dependencies are explicit records rather than unvalidated JSON lists.

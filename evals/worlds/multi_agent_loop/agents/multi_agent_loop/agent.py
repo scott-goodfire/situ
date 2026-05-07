@@ -4,6 +4,8 @@ from situ.harness.agents import (
     ManagerAgent,
     ManagerAgentContext,
     ResearchAgentOutput,
+    ResearcherAgent,
+    ResearcherAgentContext,
     ScientistAgent,
     ScientistAgentContext,
 )
@@ -21,6 +23,7 @@ from evals.worlds.multi_agent_loop.models import (
 from evals.worlds.multi_agent_loop.world import (
     MANAGER_AGENT_ID,
     PROJECT_ID,
+    RESEARCHER_AGENT_ID,
     SCIENTIST_AGENT_ID,
     SESSION_ID,
     WORKSPACE_ID,
@@ -31,9 +34,11 @@ from evals.worlds.multi_agent_loop.world import (
 def run_multi_agent_loop(args: MultiAgentLoopEvalInput) -> MultiAgentLoopEvalOutput:
     world = MultiAgentLoopWorld(seed=args.seed)
     manager_capture = ToolCallCaptureCapability()
+    researcher_capture = ToolCallCaptureCapability()
     scientist_capture = ToolCallCaptureCapability()
     final_manager_capture = ToolCallCaptureCapability()
     manager_outputs: list[ResearchAgentOutput] = []
+    researcher_outputs: list[ResearchAgentOutput] = []
     scientist_outputs: list[ResearchAgentOutput] = []
     try:
         manager_task = _claim_next_task(world, AgentKind.MANAGER)
@@ -52,6 +57,14 @@ def run_multi_agent_loop(args: MultiAgentLoopEvalInput) -> MultiAgentLoopEvalOut
                 status=TaskStatus.DONE,
                 result_summary=manager_outputs[-1].summary,
             )
+
+        researcher_outputs.append(
+            _run_researcher_pass(
+                world=world,
+                args=args,
+                capture=researcher_capture,
+            )
+        )
 
         scientist_outputs.append(
             _run_scientist_pass(
@@ -73,16 +86,25 @@ def run_multi_agent_loop(args: MultiAgentLoopEvalInput) -> MultiAgentLoopEvalOut
         session_graph = world.session_graph()
         combined_tool_calls = [
             *manager_capture.tool_calls,
+            *researcher_capture.tool_calls,
             *scientist_capture.tool_calls,
             *final_manager_capture.tool_calls,
         ]
         return MultiAgentLoopEvalOutput(
-            content=_render_content(manager_outputs, scientist_outputs),
+            content=_render_content(
+                manager_outputs,
+                researcher_outputs,
+                scientist_outputs,
+            ),
             captured_tool_calls=combined_tool_calls,
             manager_tool_calls=list(manager_capture.tool_calls),
+            researcher_tool_calls=list(researcher_capture.tool_calls),
             scientist_tool_calls=list(scientist_capture.tool_calls),
             final_manager_tool_calls=list(final_manager_capture.tool_calls),
             manager_outputs=[output.model_dump() for output in manager_outputs],
+            researcher_outputs=[
+                output.model_dump() for output in researcher_outputs
+            ],
             scientist_outputs=[output.model_dump() for output in scientist_outputs],
             events=list(world.events),
             session_graph=session_graph,
@@ -92,6 +114,7 @@ def run_multi_agent_loop(args: MultiAgentLoopEvalInput) -> MultiAgentLoopEvalOut
                 "tool_calls": len(combined_tool_calls),
                 "manager_tool_calls": len(manager_capture.tool_calls)
                 + len(final_manager_capture.tool_calls),
+                "researcher_tool_calls": len(researcher_capture.tool_calls),
                 "scientist_tool_calls": len(scientist_capture.tool_calls),
                 "events": len(world.events),
                 "tasks": len(session_graph.get("tasks", [])),
@@ -159,6 +182,28 @@ def _run_scientist_pass(
     return result.output
 
 
+def _run_researcher_pass(
+    *,
+    world: MultiAgentLoopWorld,
+    args: MultiAgentLoopEvalInput,
+    capture: ToolCallCaptureCapability,
+) -> ResearchAgentOutput:
+    agent = ResearcherAgent(
+        model=eval_model_name(),
+        capabilities=[capture],
+    )
+    result = agent.run_sync(
+        ResearcherAgentContext(
+            deps=_tool_deps(world, RESEARCHER_AGENT_ID),
+            setup_objective=args.objective,
+            setup_research_context=args.research_context,
+            current_state=world.session_graph(),
+            active_task=None,
+        )
+    )
+    return result.output
+
+
 def _tool_deps(world: MultiAgentLoopWorld, agent_id: str) -> SituToolDeps:
     return SituToolDeps(
         session_id=SESSION_ID,
@@ -179,7 +224,7 @@ def _claim_next_task(
         project_id=PROJECT_ID,
         created_in_session_id=SESSION_ID,
         kind=agent_kind,
-        display_name="Manager" if agent_kind is AgentKind.MANAGER else "Scientist",
+        display_name=_agent_display_name(agent_kind),
         model_name="eval:model",
     )
     task = world.repos.tasks.claim_next(
@@ -236,9 +281,10 @@ def _finish_task(
 
 def _render_content(
     manager_outputs: list[ResearchAgentOutput],
+    researcher_outputs: list[ResearchAgentOutput],
     scientist_outputs: list[ResearchAgentOutput],
 ) -> str:
-    outputs = [*manager_outputs, *scientist_outputs]
+    outputs = [*manager_outputs, *researcher_outputs, *scientist_outputs]
     parts: list[str] = []
     for output in outputs:
         parts.extend([output.summary, output.next_focus, *output.risk_notes])
@@ -251,6 +297,16 @@ def calls_for_role(
 ) -> list[CapturedToolCall]:
     if role == "manager":
         return [*output.manager_tool_calls, *output.final_manager_tool_calls]
+    if role == "researcher":
+        return list(output.researcher_tool_calls)
     if role == "scientist":
         return list(output.scientist_tool_calls)
     raise ValueError(f"unknown role: {role}")
+
+
+def _agent_display_name(agent_kind: AgentKind) -> str:
+    return {
+        AgentKind.MANAGER: "Manager",
+        AgentKind.RESEARCHER: "Researcher",
+        AgentKind.SCIENTIST: "Scientist",
+    }[agent_kind]

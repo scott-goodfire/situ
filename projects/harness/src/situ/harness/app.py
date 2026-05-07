@@ -226,8 +226,8 @@ class HarnessApp:
             title="Plan the first research pass",
             content=(
                 "Read the session project, objective, research context, current "
-                "ledger state, and task board. File the next focused scientist "
-                "task or tasks."
+                "ledger state, and task board. File the next focused Researcher "
+                "or Scientist task or tasks."
             ),
             source_kind="system",
         )
@@ -361,6 +361,7 @@ class HarnessApp:
     def _ensure_project_agents(self, *, session_id: str, project_id: str) -> None:
         for kind, display_name in (
             (AgentKind.MANAGER, "Manager"),
+            (AgentKind.RESEARCHER, "Researcher"),
             (AgentKind.SCIENTIST, "Scientist"),
         ):
             existing = self.repos.agents.get_for_project_kind(project_id, kind)
@@ -422,7 +423,7 @@ class HarnessApp:
             project_id=session.project_id,
             created_in_session_id=session_id,
             kind=agent_kind,
-            display_name="Manager" if agent_kind is AgentKind.MANAGER else "Scientist",
+            display_name=_agent_display_name(agent_kind),
         )
         task = self.repos.tasks.claim_next(
             project_id=session.project_id,
@@ -588,6 +589,56 @@ class HarnessApp:
                             )
                             break
 
+                    researcher_task = self._claim_next_task(
+                        session_id=session_id,
+                        agent_kind=AgentKind.RESEARCHER,
+                    )
+                    if researcher_task is not None:
+                        active_task = researcher_task
+                        no_progress_plans = 0
+                        agent_passes += 1
+                        result = runtime.run_research(
+                            workspace=workspace.model_dump(),
+                            setup_objective=setup.get("objective", ""),
+                            setup_research_context=setup.get("research_context", ""),
+                            current_state=self.sessions_api.get_session(
+                                session_id
+                            ).model_dump(),
+                            session_id=session_id,
+                            app_root=self.app_root,
+                            repos=self.repos,
+                            active_task=researcher_task.model_dump(),
+                        )
+                        completion_summary = result.summary
+                        self._finish_claimed_task(
+                            task=researcher_task,
+                            session_id=session_id,
+                            status=TaskStatus.DONE,
+                            result_summary=result.summary,
+                        )
+                        self.record_event(
+                            "session.researcher_completed",
+                            result.summary,
+                            session_id=session_id,
+                            project_id=researcher_task.project_id,
+                            payload=result.model_dump(),
+                        )
+                        active_task = None
+                        self._enqueue_plan_task(
+                            session_id=session_id,
+                            project_id=researcher_task.project_id,
+                            title="Plan after Researcher task completion",
+                            content=(
+                                "A Researcher task just completed. Review the "
+                                "project ledger, task board, recent activity, "
+                                "analyses, and hypotheses. File the next focused "
+                                "Researcher or Scientist task so the research loop "
+                                "keeps moving."
+                            ),
+                            source_kind="system",
+                        )
+                        continue
+
                     scientist_task = self._claim_next_task(
                         session_id=session_id,
                         agent_kind=AgentKind.SCIENTIST,
@@ -610,21 +661,29 @@ class HarnessApp:
                             execution_repo_path = prepared_experiment.repo_path
                             active_experiment_id = prepared_experiment.experiment.id
 
-                        result = runtime.run_session(
-                            workspace=workspace.model_dump(),
-                            setup_objective=setup.get("objective", ""),
-                            setup_research_context=setup.get("research_context", ""),
-                            current_state=self.sessions_api.get_session(
-                                session_id
-                            ).model_dump(),
-                            session_id=session_id,
-                            max_experiments=remaining_experiments,
-                            app_root=self.app_root,
-                            repos=self.repos,
-                            active_task=scientist_task.model_dump(),
-                            repo_path=execution_repo_path,
-                            active_experiment_id=active_experiment_id,
-                        )
+                        try:
+                            result = runtime.run_session(
+                                workspace=workspace.model_dump(),
+                                setup_objective=setup.get("objective", ""),
+                                setup_research_context=setup.get("research_context", ""),
+                                current_state=self.sessions_api.get_session(
+                                    session_id
+                                ).model_dump(),
+                                session_id=session_id,
+                                max_experiments=remaining_experiments,
+                                app_root=self.app_root,
+                                repos=self.repos,
+                                active_task=scientist_task.model_dump(),
+                                repo_path=execution_repo_path,
+                                active_experiment_id=active_experiment_id,
+                            )
+                        finally:
+                            if prepared_experiment is not None:
+                                self._complete_experiment_task(
+                                    experiment_id=prepared_experiment.experiment.id,
+                                    session_id=session_id,
+                                    workspace_repo_path=workspace.repo_path,
+                                )
                         completion_summary = result.summary
                         self._finish_claimed_task(
                             task=scientist_task,
@@ -632,12 +691,6 @@ class HarnessApp:
                             status=TaskStatus.DONE,
                             result_summary=result.summary,
                         )
-                        if prepared_experiment is not None:
-                            self._complete_experiment_task(
-                                experiment_id=prepared_experiment.experiment.id,
-                                session_id=session_id,
-                                workspace_repo_path=workspace.repo_path,
-                            )
                         self.record_event(
                             "session.agent_completed",
                             result.summary,
@@ -661,8 +714,8 @@ class HarnessApp:
                                 "A Scientist task just completed. Review the "
                                 "project ledger, task board, recent activity, "
                                 "and experiment budget. File the next focused "
-                                "Scientist task so the research loop keeps "
-                                "moving."
+                                "Researcher or Scientist task so the research "
+                                "loop keeps moving."
                             ),
                             source_kind="system",
                         )
@@ -673,7 +726,7 @@ class HarnessApp:
                         completion_summary = (
                             "Stopped after "
                             f"{MANAGER_NO_PROGRESS_LIMIT} consecutive planning "
-                            "cycles produced no runnable Scientist task."
+                            "cycles produced no runnable Researcher or Scientist task."
                         )
                         break
 
@@ -687,10 +740,10 @@ class HarnessApp:
                         title="Continue planning the next research step",
                         content=(
                             "The previous planning cycle did not leave a "
-                            "runnable Scientist task. Re-read the project "
+                            "runnable Researcher or Scientist task. Re-read the project "
                             "objective, ledger, and task board, then file one "
-                            "focused runnable Scientist task unless there is a "
-                            "hard blocker."
+                            "focused runnable Researcher or Scientist task unless "
+                            "there is a hard blocker."
                         ),
                         source_kind="system",
                     )
@@ -920,6 +973,14 @@ class HarnessApp:
 def _experiment_id_from_task(task: TaskRecord) -> str | None:
     experiment_id = task.payload.get("experiment_id")
     return experiment_id if isinstance(experiment_id, str) and experiment_id else None
+
+
+def _agent_display_name(agent_kind: AgentKind) -> str:
+    return {
+        AgentKind.MANAGER: "Manager",
+        AgentKind.RESEARCHER: "Researcher",
+        AgentKind.SCIENTIST: "Scientist",
+    }[agent_kind]
 
 
 class MethodNotFound(Exception):

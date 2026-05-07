@@ -15,6 +15,7 @@ from evals.worlds.repo_bootstrap.world.world import (
 )
 
 MANAGER_AGENT_ID = f"agent_{PROJECT_ID}_manager"
+RESEARCHER_AGENT_ID = f"agent_{PROJECT_ID}_researcher"
 SCIENTIST_AGENT_ID = f"agent_{PROJECT_ID}_scientist"
 
 
@@ -27,6 +28,13 @@ class MultiAgentLoopWorld:
             created_in_session_id=SESSION_ID,
             kind="manager",
             display_name="Manager",
+            model_name="eval:model",
+        )
+        self.repos.agents.ensure_project_agent(
+            project_id=PROJECT_ID,
+            created_in_session_id=SESSION_ID,
+            kind="researcher",
+            display_name="Researcher",
             model_name="eval:model",
         )
         self.repos.agents.ensure_project_agent(

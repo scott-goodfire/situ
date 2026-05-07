@@ -70,6 +70,17 @@ Before a Scientist handles an `experiment` task, Situ should:
   their workspace root.
 - Record the final worktree state as experiment evidence.
 
+When a project workspace is nested inside a larger Git repository, Situ should
+distinguish the managed worktree root from the nested workspace path given to
+workspace tools. Reusing an experiment worktree must resolve the actual Git
+worktree root and then derive the nested workspace path from the original
+workspace's relative path; it must not append the relative path twice.
+
+Situ should capture final worktree state for an experiment task even when the
+Scientist pass fails. Failed experiments are still evidence: the dirty files,
+partial patch, and command context explain what happened and help the Manager
+decide whether to retry, abandon, or hand off more research.
+
 Baseline, planning, interpretation, and review work may still inspect the
 selected workspace directly. Candidate code edits, project-native commands, and
 worker execution for an experiment task should happen in the experiment
@@ -110,6 +121,9 @@ comparable.
 - Creating managed worktrees for Scientist `experiment` tasks.
 - Running experiment-task workspace tools and workers inside the managed
   worktree.
+- Reusing existing managed worktrees correctly when the selected workspace is a
+  nested path under the Git root.
+- Recording final worktree state for successful and failed experiment tasks.
 - Failing an experiment task before execution when the base workspace is dirty
   or not a Git repo.
 

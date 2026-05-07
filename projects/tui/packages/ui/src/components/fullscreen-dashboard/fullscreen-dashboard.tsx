@@ -628,39 +628,21 @@ function TaskRow({
 }) {
   const glyph = useTaskGlyph({ task, loaderKind });
   const glyphColor = glyphColorForTask({ task });
-  const markerWidth = 2;
-  const titleWidth = Math.max(0, width - markerWidth - 1);
+  const leadingWidth = 3;
+  const titleWidth = Math.max(0, width - leadingWidth);
 
-  if (width <= markerWidth) {
+  if (width <= leadingWidth) {
     return <Text color={glyphColor}>{fitRow({ value: glyph, width })}</Text>;
   }
 
   return (
     <Text>
       <Text color={glyphColor}>{glyph}</Text>
-      {markerPadding({ glyph, markerWidth })}{" "}
-      {fitRow({ value: task.title, width: titleWidth })}
+      {`  ${fitRow({ value: task.title, width: titleWidth })}`}
     </Text>
   );
 }
 
-function markerPadding({
-  glyph,
-  markerWidth,
-}: {
-  glyph: string;
-  markerWidth: number;
-}): string {
-  return " ".repeat(Math.max(0, markerWidth - glyphCellWidth({ glyph })));
-}
-
-function glyphCellWidth({ glyph }: { glyph: string }): number {
-  if (glyph === "⏺") {
-    return 2;
-  }
-
-  return 1;
-}
 
 function ActivityFeed({
   rows,
@@ -1329,11 +1311,11 @@ function useInProgressLoaderGlyph({
   }, [isActive]);
 
   if (!isActive) {
-    return "⏺";
+    return "●";
   }
 
   const frames = loaderFrames({ kind });
-  return frames[frameIndex % frames.length] ?? "⏺";
+  return frames[frameIndex % frames.length] ?? "●";
 }
 
 function loaderFrames({ kind }: { kind: DashboardTaskLoaderKind }): string[] {
@@ -1341,16 +1323,16 @@ function loaderFrames({ kind }: { kind: DashboardTaskLoaderKind }): string[] {
     return ["·", "*", "✢", "✳", "✻", "✶"];
   }
 
-  return ["⏺", "○"];
+  return ["●", "○"];
 }
 
 function glyphForTask({ task }: { task: DashboardTask }): string {
   if (task.status === "done") {
-    return "⏺";
+    return "●";
   }
 
   if (task.status === "in-progress") {
-    return "⏺";
+    return "●";
   }
 
   return "○";

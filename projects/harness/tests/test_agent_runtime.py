@@ -7,7 +7,7 @@ from pydantic_ai.durable_exec.dbos import DBOSAgent
 
 from situ.harness.config import DEFAULTS
 from situ.harness.agent_runtime import MANAGER_AGENT_NAME, AgentRuntime
-from situ.harness.agents.research.agent import RESEARCH_AGENT_NAME
+from situ.harness.agents.research.agent import RESEARCHER_AGENT_NAME, RESEARCH_AGENT_NAME
 
 
 def test_agent_runtime_wraps_research_agent_with_dbos_agent(
@@ -30,3 +30,7 @@ def test_agent_runtime_wraps_research_agent_with_dbos_agent(
     assert runtime.manager_agent.model_settings == runtime.agent.model_settings
     assert isinstance(runtime.dbos_manager_agent, DBOSAgent)
     assert runtime.manager_agent.toolsets
+    assert runtime.researcher_agent.name == RESEARCHER_AGENT_NAME
+    assert runtime.researcher_agent.model_settings == runtime.agent.model_settings
+    assert isinstance(runtime.dbos_researcher_agent, DBOSAgent)
+    assert runtime.researcher_agent.toolsets

@@ -3,6 +3,7 @@
     "AgentKind": {
       "enum": [
         "manager",
+        "researcher",
         "scientist"
       ],
       "title": "AgentKind",
@@ -1351,6 +1352,7 @@
     "TaskKind": {
       "enum": [
         "plan",
+        "research",
         "baseline",
         "hypothesize",
         "experiment",

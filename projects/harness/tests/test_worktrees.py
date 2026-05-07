@@ -64,6 +64,29 @@ def test_worktree_manager_creates_detached_worktree_for_clean_repo(
     assert _git(worktree.worktree_root, "branch", "--show-current") == ""
 
 
+def test_worktree_manager_reuses_nested_workspace_path_without_double_append(
+    tmp_path: Path,
+) -> None:
+    repo = _repo(tmp_path)
+
+    first = WorktreeManager(
+        workspace_path=repo / "pkg",
+        worktrees_dir=tmp_path / "worktrees",
+    ).prepare(experiment_id="exp_0001")
+    second = WorktreeManager(
+        workspace_path=repo / "pkg",
+        worktrees_dir=tmp_path / "worktrees",
+    ).prepare(
+        experiment_id="exp_0001",
+        existing_worktree_path=str(first.workspace_path),
+        existing_base_commit=first.base_commit,
+    )
+
+    assert second.worktree_root == first.worktree_root
+    assert second.workspace_path == first.workspace_path
+    assert second.workspace_path.exists()
+
+
 def test_worktree_manager_rejects_dirty_base_repo(tmp_path: Path) -> None:
     repo = _repo(tmp_path)
     (repo / "untracked.txt").write_text("dirty\n")

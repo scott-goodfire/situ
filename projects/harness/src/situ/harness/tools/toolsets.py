@@ -4,7 +4,7 @@ import inspect
 from typing import cast
 
 from pydantic_ai import FunctionToolset
-from pydantic_ai_backends import create_console_toolset
+from pydantic_ai_backends import READONLY_RULESET, create_console_toolset
 
 from .activities import (
     ListAnalysisActivitiesTool,
@@ -102,6 +102,22 @@ RESEARCH_TOOLSET_INSTRUCTIONS = inspect.cleandoc(
     """
 )
 
+RESEARCHER_TOOLSET_INSTRUCTIONS = inspect.cleandoc(
+    """
+    This toolset is the Situ researcher surface.
+
+    Use it to turn codebase/domain inspection, prior evidence, and evaluation
+    observations into durable analyses and hypotheses. Prefer `create_analysis`
+    before creating hypotheses when the finding is still broad, contextual, or
+    exploratory.
+
+    Researcher work should not create candidate experiments or record
+    measurement results directly. Use task comments and task entity links to
+    make handoffs clear, and mark the active research task done when the
+    focused analysis or hypothesis work is complete.
+    """
+)
+
 MANAGER_TOOLSET_INSTRUCTIONS = inspect.cleandoc(
     """
     This toolset is the Situ manager surface.
@@ -110,7 +126,7 @@ MANAGER_TOOLSET_INSTRUCTIONS = inspect.cleandoc(
     update the session project when kickoff context requires it; file focused
     tasks; add coordination comments; and update the current planning task. Do
     not use the manager pass to run experiments or write research outputs
-    directly; file scientist tasks for that work.
+    directly; file Researcher or Scientist tasks for that work.
 
     To end a project, use the explicit close handshake. First call
     `request_project_close`, read its warning, and try to keep going unless you
@@ -135,9 +151,42 @@ WORKSPACE_EXECUTE_DESCRIPTION = inspect.cleandoc(
 )
 
 
-def build_research_toolset() -> FunctionToolset[SituToolDeps]:
+def build_researcher_toolset() -> FunctionToolset[SituToolDeps]:
     return FunctionToolset[SituToolDeps](
-        id="situ.research.v1",
+        id="situ.researcher.v1",
+        instructions=RESEARCHER_TOOLSET_INSTRUCTIONS,
+        tools=[
+            GetSessionTool().as_tool(),
+            GetProjectTool().as_tool(),
+            GetTaskBoardTool().as_tool(),
+            UpdateTaskTool().as_tool(),
+            AddTaskCommentTool().as_tool(),
+            LinkTaskEntityTool().as_tool(),
+            InspectWorkspaceStateTool().as_tool(),
+            ListAnalysesTool().as_tool(),
+            CreateAnalysisTool().as_tool(),
+            UpdateAnalysisTool().as_tool(),
+            ListHypothesesTool().as_tool(),
+            CreateHypothesisTool().as_tool(),
+            UpdateHypothesisTool().as_tool(),
+            ListBaselinesTool().as_tool(),
+            ListExperimentsTool().as_tool(),
+            ListEvaluationsTool().as_tool(),
+            ListMeasurementsTool().as_tool(),
+            AddAnalysisCommentTool().as_tool(),
+            AddHypothesisCommentTool().as_tool(),
+            ListAnalysisActivitiesTool().as_tool(),
+            ListHypothesisActivitiesTool().as_tool(),
+            ListExperimentActivitiesTool().as_tool(),
+            ListEvaluationActivitiesTool().as_tool(),
+            ListArtifactsTool().as_tool(),
+        ],
+    )
+
+
+def build_scientist_toolset() -> FunctionToolset[SituToolDeps]:
+    return FunctionToolset[SituToolDeps](
+        id="situ.scientist.v1",
         instructions=RESEARCH_TOOLSET_INSTRUCTIONS,
         tools=[
             GetSessionTool().as_tool(),
@@ -183,6 +232,10 @@ def build_research_toolset() -> FunctionToolset[SituToolDeps]:
     )
 
 
+def build_research_toolset() -> FunctionToolset[SituToolDeps]:
+    return build_scientist_toolset()
+
+
 def build_manager_toolset() -> FunctionToolset[SituToolDeps]:
     return FunctionToolset[SituToolDeps](
         id="situ.manager.v1",
@@ -215,5 +268,17 @@ def build_workspace_toolset() -> FunctionToolset[SituToolDeps]:
             descriptions={
                 "execute": WORKSPACE_EXECUTE_DESCRIPTION,
             },
+        ),
+    )
+
+
+def build_workspace_readonly_toolset() -> FunctionToolset[SituToolDeps]:
+    return cast(
+        FunctionToolset[SituToolDeps],
+        create_console_toolset(
+            id="situ.workspace.readonly.v1",
+            include_execute=True,
+            permissions=READONLY_RULESET,
+            default_ignore_hidden=True,
         ),
     )

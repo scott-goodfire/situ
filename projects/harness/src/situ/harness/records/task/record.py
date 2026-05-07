@@ -10,6 +10,7 @@ from ..base import DbRecord
 
 class TaskKind(StrEnum):
     PLAN = "plan"
+    RESEARCH = "research"
     BASELINE = "baseline"
     HYPOTHESIZE = "hypothesize"
     EXPERIMENT = "experiment"

@@ -3,6 +3,7 @@
     "AgentKind": {
       "enum": [
         "manager",
+        "researcher",
         "scientist"
       ],
       "title": "AgentKind",

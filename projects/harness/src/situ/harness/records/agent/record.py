@@ -7,6 +7,7 @@ from ..base import DbRecord
 
 class AgentKind(StrEnum):
     MANAGER = "manager"
+    RESEARCHER = "researcher"
     SCIENTIST = "scientist"
 
 

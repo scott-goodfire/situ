@@ -42,6 +42,7 @@ class EvaluationActivityKind(StrEnum):
 
 class AgentKind(StrEnum):
     MANAGER = "manager"
+    RESEARCHER = "researcher"
     SCIENTIST = "scientist"
 
 
@@ -106,6 +107,7 @@ class MeasurementPayload(BaseModel):
 
 class TaskKind(StrEnum):
     PLAN = "plan"
+    RESEARCH = "research"
     BASELINE = "baseline"
     HYPOTHESIZE = "hypothesize"
     EXPERIMENT = "experiment"

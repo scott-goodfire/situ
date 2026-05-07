@@ -173,7 +173,7 @@ def test_session_loop_retries_manager_before_no_progress_close(
     assert all(task.status == TaskStatus.DONE for task in tasks)
     assert any(
         event.type == "session.completed"
-        and "no runnable scientist task" in event.message.lower()
+        and "no runnable researcher or scientist task" in event.message.lower()
         for event in app.repos.events.list_for_session(session_id)
     )
 
@@ -200,6 +200,60 @@ def test_session_loop_closes_immediately_when_project_is_closed_by_manager(
         event.type == "session.completed"
         and "manager confirmation" in event.message.lower()
         and event.associated_project_id == project_id
+        for event in app.repos.events.list_for_session(session_id)
+    )
+
+
+def test_session_loop_runs_researcher_tasks_before_scientist_work(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    app, session_id, _project_id = _app_with_initial_plan(tmp_path)
+    runtime = ResearcherThenNoProgressRuntime()
+    monkeypatch.setattr("situ.harness.app.AgentRuntime", lambda _project_dir: runtime)
+
+    app._execute_session(session_id, max_experiments=1)
+
+    tasks = app.repos.tasks.list_for_session(session_id)
+    analyses = app.repos.analyses.list_for_session(session_id)
+
+    assert runtime.researcher_calls == 1
+    assert runtime.scientist_calls == 0
+    assert [analysis.title for analysis in analyses] == ["Codebase knobs"]
+    assert any(task.kind == TaskKind.RESEARCH and task.status == TaskStatus.DONE for task in tasks)
+    assert any(
+        event.type == "session.researcher_completed"
+        for event in app.repos.events.list_for_session(session_id)
+    )
+
+
+def test_failed_experiment_task_still_records_worktree_state(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    app, session_id, _project_id = _app_with_initial_plan(tmp_path)
+    runtime = FailingExperimentRuntime()
+    monkeypatch.setattr("situ.harness.app.AgentRuntime", lambda _project_dir: runtime)
+
+    app._execute_session(session_id, max_experiments=1)
+
+    session = app.repos.sessions.get(session_id)
+    tasks = app.repos.tasks.list_for_session(session_id)
+    experiments = app.repos.experiments.list_for_session(session_id)
+
+    assert session is not None
+    assert session.status == "closed"
+    assert experiments
+    assert tasks[-1].status == TaskStatus.FAILED
+    assert runtime.scientist_repo_path is not None
+    activities = app.repos.experiment_activities.list_for_experiment(experiments[0].id)
+    assert activities[-1].payload["activity_type"] == "workspace_state"
+    assert activities[-1].payload["worktree"]["dirty"] is True
+    assert activities[-1].payload["worktree"]["changes"] == [
+        {"status": " M", "path": "README.md"}
+    ]
+    assert any(
+        event.type == "session.failed"
         for event in app.repos.events.list_for_session(session_id)
     )
 
@@ -328,6 +382,85 @@ class CloseProjectRuntime:
     def run_session(self, **_kwargs: Any) -> ResearchAgentOutput:
         self.scientist_calls += 1
         return ResearchAgentOutput(summary="should not run")
+
+
+class ResearcherThenNoProgressRuntime:
+    def __init__(self) -> None:
+        self.plan_calls = 0
+        self.researcher_calls = 0
+        self.scientist_calls = 0
+
+    def plan_session(self, **kwargs: Any) -> ResearchAgentOutput:
+        self.plan_calls += 1
+        repos = kwargs["repos"]
+        session_id = kwargs["session_id"]
+        project_id = repos.sessions.get(session_id).project_id
+        assert project_id is not None
+        if self.plan_calls == 1:
+            repos.tasks.create(
+                task_id=repos.tasks.next_id(project_id),
+                project_id=project_id,
+                created_in_session_id=session_id,
+                title="Research codebase knobs",
+                content="Create an analysis of likely codebase knobs.",
+                kind=TaskKind.RESEARCH,
+                priority="high",
+                source_kind="manager",
+            )
+            return ResearchAgentOutput(summary="filed research")
+        return ResearchAgentOutput(summary="no runnable task filed")
+
+    def run_research(self, **kwargs: Any) -> ResearchAgentOutput:
+        self.researcher_calls += 1
+        repos = kwargs["repos"]
+        session_id = kwargs["session_id"]
+        project_id = repos.sessions.get(session_id).project_id
+        assert project_id is not None
+        repos.analyses.create(
+            analysis_id="analysis_project_0001_001",
+            project_id=project_id,
+            created_in_session_id=session_id,
+            status="open",
+            title="Codebase knobs",
+            summary="The main knobs are scoring weights.",
+            content="Tune scoring weights before trying broader changes.",
+        )
+        return ResearchAgentOutput(summary="research done")
+
+    def run_session(self, **_kwargs: Any) -> ResearchAgentOutput:
+        self.scientist_calls += 1
+        return ResearchAgentOutput(summary="should not run")
+
+
+class FailingExperimentRuntime:
+    def __init__(self) -> None:
+        self.plan_calls = 0
+        self.scientist_repo_path: str | None = None
+
+    def plan_session(self, **kwargs: Any) -> ResearchAgentOutput:
+        self.plan_calls += 1
+        repos = kwargs["repos"]
+        session_id = kwargs["session_id"]
+        project_id = repos.sessions.get(session_id).project_id
+        assert project_id is not None
+        repos.tasks.create(
+            task_id=repos.tasks.next_id(project_id),
+            project_id=project_id,
+            created_in_session_id=session_id,
+            title="Try candidate",
+            content="Run one candidate experiment.",
+            kind=TaskKind.EXPERIMENT,
+            priority="high",
+            source_kind="manager",
+        )
+        return ResearchAgentOutput(summary="filed experiment")
+
+    def run_session(self, **kwargs: Any) -> ResearchAgentOutput:
+        repo_path = kwargs["repo_path"]
+        assert repo_path is not None
+        self.scientist_repo_path = repo_path
+        (Path(repo_path) / "README.md").write_text("partial candidate\n")
+        raise RuntimeError("candidate crashed")
 
 
 def _app_with_initial_plan(tmp_path: Path) -> tuple[HarnessApp, str, str]:

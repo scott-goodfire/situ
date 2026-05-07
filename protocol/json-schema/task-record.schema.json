@@ -3,6 +3,7 @@
     "TaskKind": {
       "enum": [
         "plan",
+        "research",
         "baseline",
         "hypothesize",
         "experiment",

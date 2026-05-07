@@ -160,7 +160,7 @@ export interface AgentRecord {
   id: string;
   project_id: string;
   created_in_session_id?: string | null;
-  kind: "manager" | "scientist";
+  kind: "manager" | "researcher" | "scientist";
   display_name: string;
   model_name?: string | null;
   status: "idle" | "active" | "closed";
@@ -174,7 +174,7 @@ export interface TaskRecord {
   created_in_session_id?: string | null;
   title: string;
   content: string;
-  kind: "plan" | "baseline" | "hypothesize" | "experiment" | "interpret" | "review";
+  kind: "plan" | "research" | "baseline" | "hypothesize" | "experiment" | "interpret" | "review";
   status: "backlog" | "in_progress" | "done" | "abandoned" | "failed";
   priority: "urgent" | "high" | "normal" | "low";
   source_kind: "manager" | "user" | "system";

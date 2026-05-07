@@ -4,12 +4,15 @@ from ...records import AgentKind, TaskKind, parse_agent_kind
 
 ELIGIBLE_TASK_KINDS: dict[AgentKind, tuple[TaskKind, ...]] = {
     AgentKind.MANAGER: (TaskKind.PLAN,),
-    AgentKind.SCIENTIST: (
-        TaskKind.BASELINE,
+    AgentKind.RESEARCHER: (
+        TaskKind.RESEARCH,
         TaskKind.HYPOTHESIZE,
-        TaskKind.EXPERIMENT,
         TaskKind.INTERPRET,
         TaskKind.REVIEW,
+    ),
+    AgentKind.SCIENTIST: (
+        TaskKind.BASELINE,
+        TaskKind.EXPERIMENT,
     ),
 }
 

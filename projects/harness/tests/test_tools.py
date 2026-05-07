@@ -169,20 +169,30 @@ def test_get_session_tool_reads_current_session_graph(repos: Repositories) -> No
 def test_task_tools_coordinate_claims_comments_and_entity_links(
     repos: Repositories,
 ) -> None:
-    agent = repos.agents.ensure_session_agent(
+    scientist = repos.agents.ensure_session_agent(
         session_id="session_0001",
         kind="scientist",
         display_name="Scientist",
     )
-    deps = SituToolDeps(
+    researcher = repos.agents.ensure_session_agent(
         session_id="session_0001",
-        agent_id=agent.id,
+        kind="researcher",
+        display_name="Researcher",
+    )
+    scientist_deps = SituToolDeps(
+        session_id="session_0001",
+        agent_id=scientist.id,
+        repos=repos,
+    )
+    researcher_deps = SituToolDeps(
+        session_id="session_0001",
+        agent_id=researcher.id,
         repos=repos,
     )
 
     baseline = invoke_situ_tool_sync(
         tool=CreateTaskTool(),
-        deps=deps,
+        deps=scientist_deps,
         title="Establish baseline",
         content="Run the baseline command and record evidence.",
         kind="baseline",
@@ -191,7 +201,7 @@ def test_task_tools_coordinate_claims_comments_and_entity_links(
     )
     dependent = invoke_situ_tool_sync(
         tool=CreateTaskTool(),
-        deps=deps,
+        deps=scientist_deps,
         title="Generate alternatives",
         content="Generate candidate hypotheses after baseline evidence exists.",
         kind="hypothesize",
@@ -202,7 +212,7 @@ def test_task_tools_coordinate_claims_comments_and_entity_links(
 
     first_claim = invoke_situ_tool_sync(
         tool=ClaimTaskTool(),
-        deps=deps,
+        deps=scientist_deps,
     )
     assert first_claim.success is True
     assert first_claim.task is not None
@@ -210,34 +220,34 @@ def test_task_tools_coordinate_claims_comments_and_entity_links(
 
     invoke_situ_tool_sync(
         tool=UpdateTaskTool(),
-        deps=deps,
+        deps=scientist_deps,
         task_id=baseline.task["id"],
         status="done",
         result_summary="Baseline evidence recorded.",
     )
     second_claim = invoke_situ_tool_sync(
         tool=ClaimTaskTool(),
-        deps=deps,
+        deps=researcher_deps,
     )
     assert second_claim.task is not None
     assert second_claim.task["id"] == dependent.task["id"]
 
     comment = invoke_situ_tool_sync(
         tool=AddTaskCommentTool(),
-        deps=deps,
+        deps=researcher_deps,
         task_id=dependent.task["id"],
-        actor_agent_id=agent.id,
+        actor_agent_id=researcher.id,
         comment="Claimed after baseline finished.",
     )
     link = invoke_situ_tool_sync(
         tool=LinkTaskEntityTool(),
-        deps=deps,
+        deps=researcher_deps,
         task_id=dependent.task["id"],
         entity_kind="hypothesis",
         entity_id="hyp_0001",
         relationship="referenced",
     )
-    board = invoke_situ_tool_sync(tool=GetTaskBoardTool(), deps=deps)
+    board = invoke_situ_tool_sync(tool=GetTaskBoardTool(), deps=researcher_deps)
 
     assert comment.activity is not None
     assert link.link is not None
