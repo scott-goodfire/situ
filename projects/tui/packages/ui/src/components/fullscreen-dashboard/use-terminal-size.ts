@@ -18,10 +18,19 @@ export function useTerminalSize(): TerminalSize {
 
   useEffect(() => {
     function updateSize() {
-      setSize(sizeFromStdout({ stdout }));
+      const nextSize = sizeFromStdout({ stdout });
+      setSize((currentSize) => {
+        if (
+          currentSize.columns === nextSize.columns &&
+          currentSize.rows === nextSize.rows
+        ) {
+          return currentSize;
+        }
+
+        return nextSize;
+      });
     }
 
-    updateSize();
     stdout.on("resize", updateSize);
 
     return () => {

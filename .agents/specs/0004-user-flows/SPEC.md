@@ -9,9 +9,14 @@ User runs `situ app`
 
 User runs `situ tui`
   |
-  |-- Existing local project context?
-  |     |-- yes -> create a fresh project and attached session by default
-  |     `-- no  -> use supplied objective/context or sparse defaults, then create a fresh project and attached session
+  |-- TUI connects to app and shows a brief fullscreen loading state
+  |
+  |-- Explicit objective/context supplied?
+  |     |-- yes -> create a fresh project and attached session
+  |     `-- no  -> show fullscreen onboarding questions
+  |
+  |-- User confirms onboarding answers
+  |     `-- create a fresh project and attached session
   |
   `-- TUI renders live session observability
 ```
@@ -20,6 +25,12 @@ The default runtime flow is two terminals: one app process for all sessions and
 one TUI client for the selected workspace. The TUI should not implicitly resume
 old research state or reuse an old project. The primary surface is `situ app`
 plus `situ tui`; there is no `situ start` compatibility command.
+
+Opening interactive `situ tui` should not immediately begin agent work when the
+user has not provided setup inputs. It should enter the fullscreen terminal
+surface, gather lightweight onboarding answers, and only call `session.start`
+after confirmation. CLI-provided objective/context may skip onboarding for
+automation and fast local smoke tests.
 
 ## Setup Inputs
 

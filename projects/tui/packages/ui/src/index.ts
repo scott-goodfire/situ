@@ -42,8 +42,14 @@ export {
   type LayoutBoxDirection,
   type LayoutBoxProps,
 } from "./components/layout-box/layout-box.js";
+export { LoadingView } from "./components/loading-view/loading-view.js";
 export { MetricTrend } from "./components/metric-trend/metric-trend.js";
 export { NowSection } from "./components/now-section/now-section.js";
+export {
+  OnboardingPrompt,
+  resolveOnboardingAnswers,
+  type OnboardingAnswers,
+} from "./components/onboarding-prompt/onboarding-prompt.js";
 export {
   PaneSection,
   type PaneSectionChrome,

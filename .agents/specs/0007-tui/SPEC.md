@@ -83,27 +83,31 @@ required size. The warning state should still allow the normal quit control.
 
 ## Start, Resume, And Attach
 
-`situ tui` starts a fresh session by default, even when older local sessions
-exist for the same project.
+`situ tui` starts a fresh project-backed session from the interactive terminal
+flow, even when older local sessions exist for the same workspace.
 
 The app server must already be running. Opening the TUI must not start or stop
 the app server.
 
-Interactive `tui` may show a compact preflight picker before any research work
-begins, but the default command intent is a new session. The first picker, when
-present, should offer:
+Interactive `tui` should behave like a small fullscreen state machine:
 
-- Start session
-- Exit
+- Loading: connect to the app, subscribe, and bootstrap state.
+- Onboarding: gather the objective and research context when CLI inputs did not
+  provide them.
+- Launching: call `session.start` and wait for the created records.
+- Dashboard: render live observability for the created/resumed/attached
+  session.
+- Error or empty states: explain what action is required without leaving the
+  fullscreen shell.
 
-The preflight picker is still part of the fullscreen TUI shell. It should
-render inside the same outer frame used by the running dashboard, with the
-picker occupying a framed section rather than appearing below a separate
-header box.
+These views should feel like pages inside the same terminal product, not
+separate prompt programs. They may reuse the dashboard frame shape, compact
+sections, and footer controls while swapping the center content.
 
-Selecting Start calls `session.start` and moves into the live dashboard.
-Selecting Exit closes the TUI without starting an agent run. This keeps opening
-the product surface distinct from beginning a long-running autoresearch loop.
+Confirming onboarding calls `session.start` and moves into the live dashboard.
+Exiting onboarding closes the TUI without starting an agent run. This keeps
+opening the product surface distinct from beginning a long-running autoresearch
+loop.
 
 `situ tui --resume <session-id>` explicitly resumes an existing session id.
 Compatibility commands may offer `situ resume`, defaulting to the latest local
@@ -141,15 +145,16 @@ change the dashboard's overall height.
 ## Setup
 
 For the current implementation slice, setup is resolved before the live
-observability screen through CLI-provided objective/context or sparse defaults:
+observability screen through CLI-provided objective/context or interactive TUI
+onboarding:
 
 - Objective
 - Research context: how progress is judged, relevant evals, tools, metrics,
   dashboards, logs, artifacts, and in-scope experiment types
 
-Avoid advanced setup screens for autonomy, budgets, directions, or guidance in
-the first slice. A future interactive terminal prompt can be added once the
-session lifecycle is stable.
+The onboarding should accept sparse plaintext and preserve it rather than
+forcing a rigid form. Avoid advanced setup screens for autonomy, budgets,
+directions, or guidance in the first slice.
 
 ## Observability Visualizations
 

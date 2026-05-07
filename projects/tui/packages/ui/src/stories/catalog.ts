@@ -12,8 +12,10 @@ import { stories as fullscreenDashboardStories } from "../components/fullscreen-
 import { stories as heatmapGridStories } from "../components/heatmap-grid/heatmap-grid.stories.js";
 import { stories as hypothesesSectionStories } from "../components/hypotheses-section/hypotheses-section.stories.js";
 import { stories as layoutBoxStories } from "../components/layout-box/layout-box.stories.js";
+import { stories as loadingViewStories } from "../components/loading-view/loading-view.stories.js";
 import { stories as metricTrendStories } from "../components/metric-trend/metric-trend.stories.js";
 import { stories as nowSectionStories } from "../components/now-section/now-section.stories.js";
+import { stories as onboardingPromptStories } from "../components/onboarding-prompt/onboarding-prompt.stories.js";
 import { stories as paneSectionStories } from "../components/pane-section/pane-section.stories.js";
 import { stories as reconnectSessionPromptStories } from "../components/reconnect-session-prompt/reconnect-session-prompt.stories.js";
 import { stories as sessionSectionStories } from "../components/session-section/session-section.stories.js";
@@ -34,12 +36,14 @@ export const allStories: TuiStory[] = [
   ...contributionBarsStories,
   ...heatmapGridStories,
   ...layoutBoxStories,
+  ...loadingViewStories,
   ...metricTrendStories,
   ...steeringDoseResponseStories,
   ...tokenFeatureMatrixStories,
   ...paneSectionStories,
   ...reconnectSessionPromptStories,
   ...startSessionPromptStories,
+  ...onboardingPromptStories,
   ...sessionSectionStories,
   ...nowSectionStories,
   ...hypothesesSectionStories,

@@ -1,5 +1,5 @@
 import lodash from "lodash";
-import { Text } from "ink";
+import { Text, useInput, useStdin } from "ink";
 import { useEffect, useState } from "react";
 import type {
   AgentRecord,
@@ -297,7 +297,7 @@ function DashboardHeader({
   const objectiveTitle = project?.objective ?? "No active objective";
   const contextLabel = project?.research_context ?? "No research context";
   const sessionState = session ? `${session.status} session` : "no session";
-  const sessionContext = session ? statusLine : "Waiting for a session";
+  const sessionContext = statusLine || "Waiting for a session";
   const activitySuffix = lastActivityLabel ? ` · ${lastActivityLabel}` : "";
   const statusContext = previewText({
     value: `${workspace} · ${sessionContext} · ${contextLabel}`,
@@ -718,13 +718,35 @@ function ExpandTerminalNotice({
         </Text>
         <Text dimColor>Current size {width}x{height}</Text>
         <Text dimColor>Press q to quit.</Text>
-        <DashboardControls
-          message={undefined}
-          onCommand={onDashboardCommand}
-        />
+        <SmallTerminalControls onDashboardCommand={onDashboardCommand} />
       </PaneSection>
     </LayoutBox>
   );
+}
+
+function SmallTerminalControls({
+  onDashboardCommand,
+}: {
+  onDashboardCommand: ({ command }: { command: DashboardCommand }) => void;
+}) {
+  const { isRawModeSupported } = useStdin();
+  const canUseInput = Boolean(process.stdin.isTTY) && isRawModeSupported;
+
+  useInput(
+    (input) => {
+      if (input === "?") {
+        onDashboardCommand({ command: "help" });
+        return;
+      }
+
+      if (input === "q") {
+        onDashboardCommand({ command: "quit" });
+      }
+    },
+    { isActive: canUseInput },
+  );
+
+  return <Text dimColor>? help · q quit</Text>;
 }
 
 function dashboardHeaderLabel({

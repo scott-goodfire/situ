@@ -2,6 +2,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { DateTime } from "luxon";
+import { renderInk } from "../testing/ink-render.js";
 import type { TuiStory } from "./story-types.js";
 
 type PngRenderer = {
@@ -22,9 +23,8 @@ async function main() {
     enableAnsiColor();
   }
 
-  const [{ Box, Text }, { render }, { allStories }] = await Promise.all([
+  const [{ Box, Text }, { allStories }] = await Promise.all([
     import("ink"),
-    import("ink-testing-library"),
     import("./catalog.js"),
   ]);
 
@@ -42,7 +42,7 @@ async function main() {
 
   try {
     for (const story of allStories) {
-      const instance = render(<SnapshotPreview story={story} />);
+      const instance = renderInk(<SnapshotPreview story={story} />);
 
       try {
         await waitForFrame();

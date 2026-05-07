@@ -7,12 +7,16 @@ export type CommandMessage = {
 
 export function CommandInput({
   draft,
+  isActive = true,
   message,
+  onCancel,
   onChange,
   onSubmit,
 }: {
   draft: string;
+  isActive?: boolean;
   message: CommandMessage | undefined;
+  onCancel?: () => void;
   onChange: ({ value }: { value: string }) => void;
   onSubmit: ({ value }: { value: string }) => void;
 }) {
@@ -20,12 +24,17 @@ export function CommandInput({
   const canUseInput = Boolean(process.stdin.isTTY) && isRawModeSupported;
 
   useInput((input, key) => {
-    if (key.return) {
+    if (key.return || input === "\r" || input === "\n") {
       onSubmit({ value: draft });
       return;
     }
 
     if (key.escape) {
+      if (!draft && onCancel) {
+        onCancel();
+        return;
+      }
+
       onChange({ value: "" });
       return;
     }
@@ -43,8 +52,12 @@ export function CommandInput({
       return;
     }
 
+    if (hasControlCharacter({ input })) {
+      return;
+    }
+
     onChange({ value: `${draft}${input}` });
-  }, { isActive: canUseInput });
+  }, { isActive: isActive && canUseInput });
 
   return (
     <Box flexDirection="column">
@@ -56,4 +69,8 @@ export function CommandInput({
       </Text>
     </Box>
   );
+}
+
+function hasControlCharacter({ input }: { input: string }): boolean {
+  return /[\x00-\x1F\x7F]/.test(input);
 }

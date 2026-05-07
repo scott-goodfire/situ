@@ -30,7 +30,9 @@ windows created or resumed through clients.
 
 - Requires a healthy app server.
 - Connects to the app server and scopes requests to the selected workspace.
-- Starts a fresh project and fresh attached session by default.
+- Opens the fullscreen TUI shell, gathers onboarding answers when objective or
+  context are not already supplied, then starts a fresh project and fresh
+  attached session.
 - Supports explicit resume, for example `situ tui --resume <session-id>`.
 - Supports explicit attach-only mode, for example `situ tui --attach`.
 - Does not spawn or stop the app server.
@@ -43,8 +45,8 @@ windows created or resumed through clients.
 - Does not start, resume, or attach a session on its own.
 
 The command vocabulary is `app`, `tui`, and `web`. Do not keep a `start`
-compatibility command; starting a project-backed session is the default
-behavior of `situ tui` after the app server is already running.
+compatibility command; starting a project-backed session happens from the
+interactive `situ tui` flow after the app server is already running.
 
 ## State Contract
 
@@ -125,8 +127,10 @@ The browser remains a client. It should not own workers or session lifecycle.
 ## Review Criteria
 
 - Starting `situ app` does not create a session.
-- Starting `situ tui` creates a fresh project and fresh attached session unless
-  `--resume` or `--attach` is explicit.
+- Starting `situ tui` without setup inputs shows onboarding before creating a
+  project/session.
+- Confirming onboarding or providing setup inputs creates a fresh project and
+  fresh attached session unless `--resume` or `--attach` is explicit.
 - The default session start stores a non-null `project_id` on the session and a
   `session.started` event associated to both records.
 - Closing the TUI does not stop the app server.

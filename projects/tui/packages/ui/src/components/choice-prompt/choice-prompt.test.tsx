@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { render } from "ink-testing-library";
+import { renderInk } from "../../testing/ink-render.js";
 import { ChoicePrompt, type ChoicePromptOption } from "./choice-prompt.js";
 
 const options = [
@@ -19,7 +19,7 @@ const options = [
 
 test("moves with arrow keys and selects highlighted option", async () => {
   const selections: string[] = [];
-  const instance = render(
+  const instance = renderInk(
     <ChoicePrompt
       title="Choose action"
       options={options}
@@ -48,7 +48,7 @@ test("moves with arrow keys and selects highlighted option", async () => {
 
 test("selects numbered shortcuts", async () => {
   const selections: string[] = [];
-  const instance = render(
+  const instance = renderInk(
     <ChoicePrompt
       title="Choose action"
       options={options}

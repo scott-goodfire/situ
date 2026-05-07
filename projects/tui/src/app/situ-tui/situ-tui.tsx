@@ -35,15 +35,17 @@ import type {
 } from "@situ/protocol";
 import { useLiveQuery } from "@tanstack/react-db";
 import {
+  LoadingView,
+  OnboardingPrompt,
   SituTuiView,
-  StartSessionPrompt,
   type DashboardCommand,
   type DashboardControlMessage,
+  type OnboardingAnswers,
 } from "@situ/tui-ui";
 
 type Status =
   | { kind: "starting" }
-  | { kind: "ready" }
+  | { kind: "onboarding" }
   | { kind: "launching" }
   | { kind: "running"; sessionId?: string }
   | { kind: "completed"; sessionId: string }
@@ -58,6 +60,14 @@ export function SituTui() {
   const root = useMemo(() => appRoot(), []);
   const workspace = useMemo(() => workspaceRoot({ root }), [root]);
   const maxExperimentCount = useMemo(() => maxExperiments(), []);
+  const onboardingDefaults = useMemo(
+    () =>
+      defaultOnboardingAnswers({
+        workspace,
+        maxExperimentCount,
+      }),
+    [maxExperimentCount, workspace],
+  );
   const sessionStartParams = useMemo(
     () =>
       initialSessionStartParams({
@@ -68,6 +78,7 @@ export function SituTui() {
   );
   const clientRef = useRef<HttpJsonRpcClient | undefined>(undefined);
   const trackedSessionIdRef = useRef<string | undefined>(undefined);
+  const autoExitScheduledRef = useRef(false);
   const projectsQuery = useLiveQuery(
     (query) =>
       query.from({ project: collections.projects }).select(({ project }) => project),
@@ -157,6 +168,32 @@ export function SituTui() {
     () => sortByCreated({ records: (sessionsQuery.data ?? []) as SessionRecord[] }),
     [sessionsQuery.data],
   );
+
+  useEffect(() => {
+    if (!shouldAutoExit() || autoExitScheduledRef.current) {
+      return;
+    }
+
+    const sessionId = trackedSessionIdRef.current;
+    if (!sessionId) {
+      return;
+    }
+
+    const session = lodash.find(
+      sessions,
+      (candidate: SessionRecord) => candidate.id === sessionId,
+    );
+    if (session?.status !== "closed") {
+      return;
+    }
+
+    autoExitScheduledRef.current = true;
+    setStatus({ kind: "completed", sessionId });
+    setTimeout(() => {
+      exitRef.current();
+    }, 1400);
+  }, [sessions]);
+
   const hypotheses = useMemo(
     () => sortByCreated({ records: (hypothesesQuery.data ?? []) as HypothesisRecord[] }),
     [hypothesesQuery.data],
@@ -230,16 +267,16 @@ export function SituTui() {
     });
     clientRef.current = client;
     trackedSessionIdRef.current = undefined;
+    autoExitScheduledRef.current = false;
 
-    let closeScheduled = false;
     let unsubscribe = () => {};
 
     const closeAfterCompletedSession = () => {
-      if (closeScheduled || !shouldAutoExit()) {
+      if (autoExitScheduledRef.current || !shouldAutoExit()) {
         return;
       }
 
-      closeScheduled = true;
+      autoExitScheduledRef.current = true;
       setTimeout(() => {
         unsubscribe();
         client.close();
@@ -332,13 +369,17 @@ export function SituTui() {
           return;
         }
 
-        setStatus({ kind: "launching" });
-        const result = await client.request<SessionStartResult, SessionStartParams>({
-          method: "session.start",
+        if (shouldShowOnboarding()) {
+          setStatus({ kind: "onboarding" });
+          return;
+        }
+
+        await requestSessionStart({
+          client,
           params: sessionStartParams,
+          setStatus,
+          trackedSessionIdRef,
         });
-        trackedSessionIdRef.current = result.session_id;
-        setStatus({ kind: "running", sessionId: result.session_id });
       })
       .catch((error: unknown) => {
         setStatus({
@@ -360,11 +401,10 @@ export function SituTui() {
     sessions,
     status,
   });
-  const activeProject =
-    projectForSession({
-      projects,
-      session: latestSession,
-    }) ?? latestActiveProject({ projects });
+  const activeProject = projectForSession({
+    projects,
+    session: latestSession,
+  });
   const activeProjectId = latestSession?.project_id ?? activeProject?.id;
   const projectAgents = agentsForProject({
     agents,
@@ -413,7 +453,7 @@ export function SituTui() {
     experimentCount: projectExperiments.length,
     maxExperiments: maxExperimentCount,
   });
-  const handleStartSession = () => {
+  const handleOnboardingSubmit = ({ answers }: { answers: OnboardingAnswers }) => {
     const client = clientRef.current;
     if (!client) {
       setStatus({
@@ -423,19 +463,15 @@ export function SituTui() {
       return;
     }
 
-    setStatus({ kind: "launching" });
-    client
-      .request<SessionStartResult, SessionStartParams>({
-        method: "session.start",
-        params: sessionStartParams,
-      })
-      .then((result) => {
-        trackedSessionIdRef.current = result.session_id;
-        setStatus({
-          kind: "running",
-          sessionId: result.session_id,
-        });
-      })
+    requestSessionStart({
+      client,
+      params: sessionStartParamsFromOnboarding({
+        answers,
+        maxExperimentCount,
+      }),
+      setStatus,
+      trackedSessionIdRef,
+    })
       .catch((error: unknown) => {
         setStatus({
           kind: "failed",
@@ -444,12 +480,60 @@ export function SituTui() {
       });
   };
 
-  if (status.kind === "ready") {
+  if (status.kind === "starting") {
     return (
-      <StartSessionPrompt
+      <LoadingView
         workspace={workspace}
-        params={sessionStartParams}
-        onStart={handleStartSession}
+        title="Loading..."
+        detail="Connecting to the local Situ app and loading workspace state."
+        footerLabel="Loading workspace state... · q quit"
+        onExit={() => {
+          exit();
+        }}
+      />
+    );
+  }
+
+  if (status.kind === "launching") {
+    return (
+      <LoadingView
+        workspace={workspace}
+        frameStatus="launching"
+        title="Starting session..."
+        detail="Creating a fresh project and session."
+        footerLabel="Starting session... · q quit"
+        onExit={() => {
+          exit();
+        }}
+      />
+    );
+  }
+
+  if (status.kind === "failed") {
+    return (
+      <LoadingView
+        workspace={workspace}
+        frameStatus="error"
+        title="Cannot continue"
+        detail={status.message}
+        footerLabel="q quit"
+        onExit={() => {
+          exit();
+        }}
+      />
+    );
+  }
+
+  if (status.kind === "onboarding") {
+    return (
+      <OnboardingPrompt
+        workspace={workspace}
+        defaults={onboardingDefaults}
+        initialAnswers={{
+          objective: process.env.SITU_OBJECTIVE ?? "",
+          researchContext: process.env.SITU_CONTEXT ?? "",
+        }}
+        onSubmit={handleOnboardingSubmit}
         onExit={() => {
           exit();
         }}
@@ -532,6 +616,26 @@ function handleDashboardCommand({
   });
 }
 
+async function requestSessionStart({
+  client,
+  params,
+  setStatus,
+  trackedSessionIdRef,
+}: {
+  client: HttpJsonRpcClient;
+  params: SessionStartParams;
+  setStatus: (status: Status) => void;
+  trackedSessionIdRef: { current: string | undefined };
+}): Promise<void> {
+  setStatus({ kind: "launching" });
+  const result = await client.request<SessionStartResult, SessionStartParams>({
+    method: "session.start",
+    params,
+  });
+  trackedSessionIdRef.current = result.session_id;
+  setStatus({ kind: "running", sessionId: result.session_id });
+}
+
 function repoRootFromImport(): string {
   const here = dirname(fileURLToPath(import.meta.url));
   return resolve(here, "../../../../..");
@@ -552,28 +656,90 @@ function initialSessionStartParams({
   workspace: string;
   maxExperimentCount: number;
 }): SessionStartParams {
+  return buildSessionStartParams({
+    objective: process.env.SITU_OBJECTIVE,
+    researchContext: process.env.SITU_CONTEXT,
+    defaultObjective: defaultObjective({ workspace }),
+    maxExperimentCount,
+  });
+}
+
+function sessionStartParamsFromOnboarding({
+  answers,
+  maxExperimentCount,
+}: {
+  answers: OnboardingAnswers;
+  maxExperimentCount: number;
+}): SessionStartParams {
+  return buildSessionStartParams({
+    objective: answers.objective,
+    researchContext: answers.researchContext,
+    defaultObjective: answers.objective,
+    maxExperimentCount,
+  });
+}
+
+function buildSessionStartParams({
+  objective,
+  researchContext,
+  defaultObjective,
+  maxExperimentCount,
+}: {
+  objective: string | undefined;
+  researchContext: string | undefined;
+  defaultObjective: string;
+  maxExperimentCount: number;
+}): SessionStartParams {
   return {
-    objective:
-      process.env.SITU_OBJECTIVE ??
-      `Explore autoresearch opportunities in ${workspace}`,
-    research_context: initialResearchContext(),
+    objective: objective?.trim() || defaultObjective,
+    research_context: initialResearchContext({ context: researchContext }),
     max_experiments: maxExperimentCount,
   };
 }
 
-function initialResearchContext(): string {
+function defaultOnboardingAnswers({
+  workspace,
+  maxExperimentCount,
+}: {
+  workspace: string;
+  maxExperimentCount: number;
+}): OnboardingAnswers & Pick<SessionStartParams, "max_experiments"> {
+  return {
+    objective: defaultObjective({ workspace }),
+    researchContext: defaultResearchContext(),
+    max_experiments: maxExperimentCount,
+  };
+}
+
+function defaultObjective({ workspace }: { workspace: string }): string {
+  return `Explore autoresearch opportunities in ${workspace}`;
+}
+
+function initialResearchContext({ context }: { context?: string }): string {
   const parts: string[] = [];
 
-  if (process.env.SITU_CONTEXT) {
-    parts.push(process.env.SITU_CONTEXT);
+  if (context?.trim()) {
+    parts.push(context.trim());
   }
 
-  parts.push(
-    "Use project-native tools, tests, evals, benchmarks, logs, and artifacts. " +
-      "Capture plaintext evidence, useful interpretations, concerns, and activities.",
-  );
+  parts.push(defaultResearchContext());
 
   return parts.join(" ");
+}
+
+function defaultResearchContext(): string {
+  return (
+    "Use project-native tools, tests, evals, benchmarks, logs, and artifacts. " +
+    "Capture plaintext evidence, useful interpretations, concerns, and activities."
+  );
+}
+
+function shouldShowOnboarding(): boolean {
+  if (process.env.SITU_TUI_SKIP_ONBOARDING === "1") {
+    return false;
+  }
+
+  return !process.env.SITU_OBJECTIVE?.trim() || !process.env.SITU_CONTEXT?.trim();
 }
 
 function sessionMode(): SessionMode {
@@ -622,8 +788,8 @@ function statusSummary({
     return "Connecting to local app...";
   }
 
-  if (status.kind === "ready") {
-    return "Ready to start";
+  if (status.kind === "onboarding") {
+    return "Waiting for setup answers...";
   }
 
   if (status.kind === "launching") {
@@ -727,19 +893,6 @@ function projectForSession({
     projects,
     (project: ProjectRecord) => project.id === session.project_id,
   );
-}
-
-function latestActiveProject({
-  projects,
-}: {
-  projects: ProjectRecord[];
-}): ProjectRecord | undefined {
-  const activeProjects = lodash.filter(
-    projects,
-    (project: ProjectRecord) => project.status === "active",
-  );
-
-  return sortByCreated({ records: activeProjects }).at(-1) ?? projects.at(-1);
 }
 
 function agentsForProject({
