@@ -64,7 +64,7 @@ what is happening without reading raw logs.
 That means Situ must make the work:
 
 - Observable
-- Reviewable enough for the current session
+- Reviewable enough for the current project
 - Locally private by default
 - Useful to both humans and agents
 

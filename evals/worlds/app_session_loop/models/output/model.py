@@ -8,6 +8,6 @@ from evals.harness.models import SituEvalOutput
 
 
 class AppSessionLoopEvalOutput(SituEvalOutput):
-    session_graph: dict[str, Any] = Field(default_factory=dict)
+    project_board: dict[str, Any] = Field(default_factory=dict)
     workspace_files: dict[str, str] = Field(default_factory=dict)
     changed_files: list[str] = Field(default_factory=list)

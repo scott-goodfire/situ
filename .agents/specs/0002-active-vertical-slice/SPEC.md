@@ -95,7 +95,7 @@ code are launched from the Situ repository.
 - `~/.situ/situ.sqlite` as the product SQLite source of truth
 
 The agent path should express active behavior through approved harness tools.
-Getting project/session context, creating analyses, creating hypotheses,
+Getting the project board, creating analyses, creating hypotheses,
 creating baselines, creating/running experiments, creating evaluations,
 recording measurements, linking hypotheses and experiments, attaching
 artifacts, and recording comments should have typed tool envelopes. Situ should

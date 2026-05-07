@@ -100,6 +100,30 @@ Examples:
 - `A+C looks promising; C explains most of the observed lift.`
 - `The large improvement in exp_004 is suspicious because eval scope changed.`
 
+## Critic Reviews
+
+A Critic review is an experiment activity that treats the experiment as the
+proposed change and the associated evaluations/measurements as evidence. It is
+not a separate first-class Review model in the current slice.
+
+The body should read like a concise PR review: what evidence was considered,
+what looks trustworthy or suspicious, and what should happen next. The payload
+may include stable review metadata while the shape is still evolving:
+
+```text
+activity_type: critic_review
+verdict: usable | concern | invalid | needs_reproduction | human_review
+reviewed_evaluation_ids
+reviewed_measurement_ids
+concern_kinds
+recommended_next_step
+```
+
+If the Critic finds a specific trust problem, it may also write a concern-shaped
+experiment activity or include concern metadata in the review payload. Raw
+command output and repeated runs should remain on measurements; the review is
+the judgment over the proposed change.
+
 ## Evaluations
 
 An evaluation is the lightweight container for measurement evidence. It exists

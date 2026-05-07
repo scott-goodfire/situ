@@ -99,7 +99,7 @@ class RoleToolSucceeded(
 
 
 @dataclass
-class SessionGraphContains(
+class ProjectBoardContains(
     Evaluator[MultiAgentLoopEvalInput, MultiAgentLoopEvalOutput, Any]
 ):
     text: str
@@ -112,16 +112,16 @@ class SessionGraphContains(
             Any,
         ],
     ) -> EvaluationReason:
-        rendered = json.dumps(ctx.output.session_graph, sort_keys=True).lower()
+        rendered = json.dumps(ctx.output.project_board, sort_keys=True).lower()
         needle = self.text.lower()
         if needle in rendered:
             return EvaluationReason(
                 value=True,
-                reason=f"Session graph contains {self.text!r}",
+                reason=f"Project board contains {self.text!r}",
             )
         return EvaluationReason(
             value=False,
-            reason=f"Session graph did not contain {self.text!r}",
+            reason=f"Project board did not contain {self.text!r}",
         )
 
 
@@ -136,7 +136,7 @@ class ScientistCompletedBaselineTask(
             Any,
         ],
     ) -> EvaluationReason:
-        tasks = ctx.output.session_graph.get("tasks", [])
+        tasks = ctx.output.project_board.get("tasks", [])
         completed = [
             task
             for task in tasks
@@ -164,9 +164,9 @@ class BaselineEvaluationRecorded(
             Any,
         ],
     ) -> EvaluationReason:
-        evaluations = ctx.output.session_graph.get("evaluations", [])
-        measurements = ctx.output.session_graph.get("measurements", [])
-        activities = ctx.output.session_graph.get("evaluation_activities", [])
+        evaluations = ctx.output.project_board.get("evaluations", [])
+        measurements = ctx.output.project_board.get("measurements", [])
+        activities = ctx.output.project_board.get("evaluation_activities", [])
         result_measurements = [
             measurement
             for measurement in measurements
@@ -209,7 +209,7 @@ class FollowupTaskCreatedAfterBaseline(
     ) -> EvaluationReason:
         followups = [
             task
-            for task in ctx.output.session_graph.get("tasks", [])
+            for task in ctx.output.project_board.get("tasks", [])
             if task.get("kind")
             in {"research", "hypothesize", "experiment", "interpret", "review"}
         ]
@@ -222,7 +222,7 @@ class FollowupTaskCreatedAfterBaseline(
             value=False,
             reason=(
                 "Manager did not create a post-baseline follow-up task. Tasks: "
-                f"{ctx.output.session_graph.get('tasks', [])}"
+                f"{ctx.output.project_board.get('tasks', [])}"
             ),
         )
 
@@ -238,7 +238,7 @@ class CandidateExperimentRecorded(
             Any,
         ],
     ) -> EvaluationReason:
-        graph = ctx.output.session_graph
+        graph = ctx.output.project_board
         experiments = graph.get("experiments", [])
         evaluations = graph.get("evaluations", [])
         activities = graph.get("evaluation_activities", [])
@@ -330,8 +330,8 @@ class AnalysisRecorded(
             Any,
         ],
     ) -> EvaluationReason:
-        analyses = ctx.output.session_graph.get("analyses", [])
-        activities = ctx.output.session_graph.get("analysis_activities", [])
+        analyses = ctx.output.project_board.get("analyses", [])
+        activities = ctx.output.project_board.get("analysis_activities", [])
         has_analysis = any(
             "codebase map" in json.dumps(analysis, sort_keys=True).lower()
             for analysis in analyses
@@ -370,10 +370,10 @@ class TaskClaimedByRole(
     ) -> EvaluationReason:
         agents_by_id = {
             agent.get("id"): agent
-            for agent in ctx.output.session_graph.get("agents", [])
+            for agent in ctx.output.project_board.get("agents", [])
         }
         matches = []
-        for task in ctx.output.session_graph.get("tasks", []):
+        for task in ctx.output.project_board.get("tasks", []):
             agent = agents_by_id.get(task.get("assignee_id"))
             if agent is None or agent.get("kind") != self.role:
                 continue
@@ -397,8 +397,8 @@ class TaskClaimedByRole(
             reason=(
                 f"No task claimed by {self.role} matched kind={self.task_kind!r} "
                 f"title_contains={self.title_contains!r}. Tasks: "
-                f"{ctx.output.session_graph.get('tasks', [])}; agents: "
-                f"{ctx.output.session_graph.get('agents', [])}"
+                f"{ctx.output.project_board.get('tasks', [])}; agents: "
+                f"{ctx.output.project_board.get('agents', [])}"
             ),
         )
 
@@ -414,7 +414,7 @@ class ResearcherHandoffRecorded(
             Any,
         ],
     ) -> EvaluationReason:
-        graph = ctx.output.session_graph
+        graph = ctx.output.project_board
         analyses = graph.get("analyses", [])
         hypotheses = graph.get("hypotheses", [])
         links = graph.get("task_entity_links", [])
@@ -497,7 +497,7 @@ class UserUrgentTaskPreemptedBacklog(
             Any,
         ],
     ) -> EvaluationReason:
-        tasks = ctx.output.session_graph.get("tasks", [])
+        tasks = ctx.output.project_board.get("tasks", [])
         urgent = [
             task
             for task in tasks

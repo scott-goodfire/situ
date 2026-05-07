@@ -11,30 +11,30 @@ def run_app_session_loop(args: AppSessionLoopEvalInput) -> AppSessionLoopEvalOut
     world = AppSessionLoopWorld(args)
     try:
         world.run()
-        session_graph = world.session_graph()
+        project_board = world.project_board()
         changed_files = world.changed_files()
         events = world.events()
-        content = _render_content(session_graph=session_graph, events=events)
+        content = _render_content(project_board=project_board, events=events)
         return AppSessionLoopEvalOutput(
             content=content,
             events=events,
-            session_graph=session_graph,
+            project_board=project_board,
             workspace_files=world.workspace_files(),
             changed_files=changed_files,
             signals={
                 "events": len(events),
-                "tasks": len(session_graph.get("tasks", [])),
+                "tasks": len(project_board.get("tasks", [])),
                 "done_tasks": len(
                     [
                         task
-                        for task in session_graph.get("tasks", [])
+                        for task in project_board.get("tasks", [])
                         if task.get("status") == "done"
                     ]
                 ),
                 "manager_done_tasks": len(
                     [
                         task
-                        for task in session_graph.get("tasks", [])
+                        for task in project_board.get("tasks", [])
                         if task.get("kind") == "plan"
                         and task.get("status") == "done"
                     ]
@@ -42,25 +42,25 @@ def run_app_session_loop(args: AppSessionLoopEvalInput) -> AppSessionLoopEvalOut
                 "scientist_done_tasks": len(
                     [
                         task
-                        for task in session_graph.get("tasks", [])
+                        for task in project_board.get("tasks", [])
                         if task.get("kind") != "plan"
                         and task.get("status") == "done"
                     ]
                 ),
                 "researcher_done_tasks": len(
                     _done_tasks_for_agent_kind(
-                        session_graph=session_graph,
+                        project_board=project_board,
                         agent_kind="researcher",
                     )
                 ),
                 "scientist_done_tasks_by_agent": len(
                     _done_tasks_for_agent_kind(
-                        session_graph=session_graph,
+                        project_board=project_board,
                         agent_kind="scientist",
                     )
                 ),
-                "experiments": len(session_graph.get("experiments", [])),
-                "evaluations": len(session_graph.get("evaluations", [])),
+                "experiments": len(project_board.get("experiments", [])),
+                "evaluations": len(project_board.get("evaluations", [])),
                 "changed_files": len(changed_files),
             },
         )
@@ -70,25 +70,25 @@ def run_app_session_loop(args: AppSessionLoopEvalInput) -> AppSessionLoopEvalOut
 
 def _done_tasks_for_agent_kind(
     *,
-    session_graph: dict,
+    project_board: dict,
     agent_kind: str,
 ) -> list[dict]:
     agents_by_id = {
         agent.get("id"): agent
-        for agent in session_graph.get("agents", [])
+        for agent in project_board.get("agents", [])
     }
     return [
         task
-        for task in session_graph.get("tasks", [])
+        for task in project_board.get("tasks", [])
         if task.get("status") == "done"
         and agents_by_id.get(task.get("assignee_id"), {}).get("kind") == agent_kind
     ]
 
 
-def _render_content(*, session_graph: dict, events: list) -> str:
-    tasks = session_graph.get("tasks", [])
-    experiments = session_graph.get("experiments", [])
-    evaluations = session_graph.get("evaluations", [])
+def _render_content(*, project_board: dict, events: list) -> str:
+    tasks = project_board.get("tasks", [])
+    experiments = project_board.get("experiments", [])
+    evaluations = project_board.get("evaluations", [])
     event_messages = [event.message for event in events[-8:]]
     task_summaries = [
         f"{task.get('kind')}:{task.get('status')}:{task.get('title')}"

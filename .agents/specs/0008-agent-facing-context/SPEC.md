@@ -18,6 +18,8 @@ An agent should be able to ask:
 - Which experiments relate to which hypotheses?
 - What result comments came back?
 - What concern comments apply?
+- Which candidate experiments have Critic reviews?
+- Are there experiments with recorded evidence that are still pending review?
 - What artifacts can be inspected?
 - What is running now?
 
@@ -64,16 +66,16 @@ time.
 Defer richer guidance and proposal-context commands until the basic loop is
 working. Agent-facing toolsets may expose explicit `list_*` tools for
 first-class research records when those tools make state inspection clearer
-than requiring agents to fetch the full session graph.
+than requiring agents to fetch the full project board.
 
-## Session Context
+## Project Board
 
-The compact session context, exposed to agents through tools such as
-`get_session`, should include:
+The compact project board, exposed to agents through `get_project_board`,
+should include:
 
-- Session objective
-- Session research context
-- Current session status
+- Project objective
+- Project research context
+- Current run status when useful
 - Active hypotheses
 - Recent experiments
 - Recent evaluations
@@ -82,12 +84,13 @@ The compact session context, exposed to agents through tools such as
 - Recent hypothesis activities
 - Recent experiment activities
 - Recent measurement evidence
+- Recent Critic reviews and pending review tasks
 - Recent concern/result/decision comments
 - Artifact references
 - Internal events when useful
 
 Agent-facing read and write tools should stay close to the product models.
-Use `get_session` for the compact current graph, and use explicit `list_*`
+Use `get_project_board` for the compact current board, and use explicit `list_*`
 tools when an agent needs a focused slice such as hypotheses, baselines,
 experiments, evaluations, measurements, activities, or artifacts.
 
@@ -95,7 +98,8 @@ Agent-facing write tools should stay close to the product models:
 `create_hypothesis`, `update_hypothesis`, `create_baseline`,
 `create_experiment`, `update_experiment`, `create_evaluation`,
 `update_evaluation`, `link_hypothesis_experiment`, `add_hypothesis_comment`,
-`add_experiment_comment`, and a result- or measurement-shaped evidence tool.
+`add_experiment_comment`, an experiment-review-shaped tool when Critic review
+is active, and a result- or measurement-shaped evidence tool.
 Analysis, hypothesis, experiment, and task collaboration is stored through
 comment-shaped activities. Measurement evidence carries human-readable result
 text plus optional payload metadata when a view or agent needs structured
@@ -119,6 +123,6 @@ the research implication rather than acting as the raw benchmark log.
 Situ owns durable research context. Agent prompts can be creative, but they
 should not be the only place where the research contract lives.
 
-Agents should treat only the selected session as current truth. Older sessions
+Agents should treat the current project board as the working truth. Older runs
 are reference material until their findings are copied, summarized, or resumed
 explicitly.

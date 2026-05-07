@@ -25,7 +25,7 @@ def test_app_session_loop_world_can_seed_baseline_without_hypothesis() -> None:
         )
     )
     try:
-        graph = world.session_graph()
+        graph = world.project_board()
 
         assert graph["hypotheses"] == []
         assert len(graph["evaluations"]) == 1

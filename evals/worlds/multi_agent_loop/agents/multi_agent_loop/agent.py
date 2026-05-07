@@ -158,7 +158,7 @@ def run_multi_agent_loop(args: MultiAgentLoopEvalInput) -> MultiAgentLoopEvalOut
                     result_summary=manager_outputs[-1].summary,
                 )
 
-        session_graph = world.session_graph()
+        project_board = world.project_board()
         combined_tool_calls = [
             *manager_capture.tool_calls,
             *researcher_capture.tool_calls,
@@ -182,7 +182,7 @@ def run_multi_agent_loop(args: MultiAgentLoopEvalInput) -> MultiAgentLoopEvalOut
             ],
             scientist_outputs=[output.model_dump() for output in scientist_outputs],
             events=list(world.events),
-            session_graph=session_graph,
+            project_board=project_board,
             workspace_files=world.workspace_files(),
             changed_files=world.changed_files(),
             signals={
@@ -192,17 +192,17 @@ def run_multi_agent_loop(args: MultiAgentLoopEvalInput) -> MultiAgentLoopEvalOut
                 "researcher_tool_calls": len(researcher_capture.tool_calls),
                 "scientist_tool_calls": len(scientist_capture.tool_calls),
                 "events": len(world.events),
-                "tasks": len(session_graph.get("tasks", [])),
+                "tasks": len(project_board.get("tasks", [])),
                 "done_tasks": len(
                     [
                         task
-                        for task in session_graph.get("tasks", [])
+                        for task in project_board.get("tasks", [])
                         if task.get("status") == "done"
                     ]
                 ),
-                "evaluations": len(session_graph.get("evaluations", [])),
+                "evaluations": len(project_board.get("evaluations", [])),
                 "evaluation_activities": len(
-                    session_graph.get("evaluation_activities", [])
+                    project_board.get("evaluation_activities", [])
                 ),
                 "changed_files": len(world.changed_files()),
             },
@@ -227,7 +227,7 @@ def _run_manager_pass(
             deps=_tool_deps(world, MANAGER_AGENT_ID),
             setup_objective=args.objective,
             setup_research_context=args.research_context,
-            current_state=world.session_graph(),
+            current_state=world.project_board(),
             active_task=active_task.model_dump() if active_task is not None else None,
         )
     )
@@ -250,7 +250,7 @@ def _run_scientist_pass(
             deps=_tool_deps(world, SCIENTIST_AGENT_ID),
             setup_objective=args.objective,
             setup_research_context=args.research_context,
-            current_state=world.session_graph(),
+            current_state=world.project_board(),
             max_experiments=1,
             active_task=active_task.model_dump(),
         )
@@ -274,7 +274,7 @@ def _run_researcher_pass(
             deps=_tool_deps(world, RESEARCHER_AGENT_ID),
             setup_objective=args.objective,
             setup_research_context=args.research_context,
-            current_state=world.session_graph(),
+            current_state=world.project_board(),
             active_task=active_task.model_dump(),
         )
     )

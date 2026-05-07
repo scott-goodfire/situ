@@ -160,7 +160,7 @@ export interface AgentRecord {
   id: string;
   project_id: string;
   created_in_session_id?: string | null;
-  kind: "manager" | "researcher" | "scientist";
+  kind: "manager" | "researcher" | "scientist" | "critic";
   display_name: string;
   model_name?: string | null;
   status: "idle" | "active" | "closed";

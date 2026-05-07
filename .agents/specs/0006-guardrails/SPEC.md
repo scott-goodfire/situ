@@ -47,6 +47,27 @@ When this happens:
 - Explain the reason in plain language.
 - Show the concern in the TUI.
 
+## Critic Review
+
+The Critic is the first-slice LLM reviewer for proposed experiment changes. It
+does not replace deterministic trust checks, and it should not mutate candidate
+code. It reviews an experiment after the Scientist has recorded candidate
+workspace state and evaluation evidence, then records an experiment activity
+that explains whether the evidence is usable, suspicious, invalid, or needs
+reproduction.
+
+The review should explicitly look for common autoresearch failure modes:
+
+- Seed hacking or cherry-picked random seeds.
+- Selection on noisy repeated measurements.
+- Adaptive overfitting to the same evaluation surface.
+- Greedy hill-climbing that discards a useful partial result too early.
+- Comparability breaks such as eval/test/dependency/toolchain changes.
+
+The Critic may flag concerns with payload metadata, but the body must stay
+human-readable. A Critic concern is evidence for the Manager and human, not a
+hardcoded policy engine by itself.
+
 ## Product Rule
 
 Metric movement is not enough. The dashboard must distinguish observed results

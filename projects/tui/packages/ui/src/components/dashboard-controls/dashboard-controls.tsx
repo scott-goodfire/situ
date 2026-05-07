@@ -8,7 +8,7 @@ import {
 } from "../choice-prompt/choice-prompt.js";
 
 export type DashboardCommand = "status" | "help" | "quit";
-export type DashboardControlMode = "idle" | "commands";
+export type DashboardControlMode = "idle" | "commands" | "help" | "search";
 
 export type DashboardControlMessage = {
   text: string;
@@ -66,7 +66,12 @@ export function DashboardControls({
   useInput(
     (input) => {
       if (input === "?") {
-        onCommand({ command: "help" });
+        setMode("help");
+        return;
+      }
+
+      if (input === "/") {
+        setMode("search");
         return;
       }
 
@@ -84,22 +89,17 @@ export function DashboardControls({
     },
   );
 
-  if (controlMode === "commands" && renderCommandsInPlace) {
+  if (controlMode !== "idle" && renderCommandsInPlace) {
+    const label = footerLabelForMode({ mode: controlMode });
+
     if (idleRenderer) {
-      return (
-        <>
-          {idleRenderer({
-            label: commandModeLabel(),
-            message,
-          })}
-        </>
-      );
+      return <>{idleRenderer({ label, message })}</>;
     }
 
     return (
       <Box flexDirection="column">
         {message && <Text color={message.tone}>{message.text}</Text>}
-        <Text dimColor>{commandModeLabel()}</Text>
+        <Text dimColor>{label}</Text>
       </Box>
     );
   }
@@ -132,11 +132,23 @@ export function DashboardControls({
 }
 
 function controlLabel(): string {
-  return "? help · : commands · q quit";
+  return "? help · / search · : commands · q quit";
 }
 
-function commandModeLabel(): string {
-  return "Enter selects · Esc closes commands";
+function footerLabelForMode({ mode }: { mode: DashboardControlMode }): string {
+  if (mode === "commands") {
+    return "Enter selects · Esc closes commands";
+  }
+
+  if (mode === "help") {
+    return "? or Esc closes help";
+  }
+
+  if (mode === "search") {
+    return "Type to filter · Enter applies · Esc clears";
+  }
+
+  return controlLabel();
 }
 
 export function DashboardCommandPicker({
@@ -165,7 +177,7 @@ export function DashboardCommandPicker({
           });
         }}
       />
-      {showHint && <Text dimColor>{commandModeLabel()}</Text>}
+      {showHint && <Text dimColor>{footerLabelForMode({ mode: "commands" })}</Text>}
     </Box>
   );
 }

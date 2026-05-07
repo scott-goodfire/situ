@@ -36,24 +36,24 @@ class MultiAgentLoopEvalGroup(
         increment_eval_metric("researcher_tool_calls", len(output.researcher_tool_calls))
         increment_eval_metric("scientist_tool_calls", len(output.scientist_tool_calls))
         increment_eval_metric("events", len(output.events))
-        increment_eval_metric("tasks", len(output.session_graph.get("tasks", [])))
+        increment_eval_metric("tasks", len(output.project_board.get("tasks", [])))
         increment_eval_metric(
             "done_tasks",
             len(
                 [
                     task
-                    for task in output.session_graph.get("tasks", [])
+                    for task in output.project_board.get("tasks", [])
                     if task.get("status") == "done"
                 ]
             ),
         )
         increment_eval_metric(
             "evaluations",
-            len(output.session_graph.get("evaluations", [])),
+            len(output.project_board.get("evaluations", [])),
         )
         increment_eval_metric(
             "evaluation_activities",
-            len(output.session_graph.get("evaluation_activities", [])),
+            len(output.project_board.get("evaluation_activities", [])),
         )
         increment_eval_metric("changed_files", len(output.changed_files))
         return output

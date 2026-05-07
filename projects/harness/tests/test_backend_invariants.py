@@ -12,7 +12,7 @@ from situ.protocol.control import CollectionName, CollectionsBootstrapResult
 from situ.harness.api.collections.publisher import COLLECTION_ROUTES
 from situ.harness.api.collections.schemas import CollectionsBootstrapSchema
 from situ.harness.api.current_state.schemas import CurrentStateSchema
-from situ.harness.api.sessions.schemas import SessionGraphSchema
+from situ.harness.api.project_board.schemas import ProjectBoardSchema
 from situ.harness.records import (
     AgentRecord,
     AnalysisActivityRecord,
@@ -37,7 +37,11 @@ from situ.harness.records import (
     WorkspaceRecord,
 )
 from situ.harness.records.base import DbRecord
-from situ.harness.tools import build_manager_toolset, build_research_toolset
+from situ.harness.tools import (
+    build_critic_toolset,
+    build_manager_toolset,
+    build_research_toolset,
+)
 from situ.harness.tools.common import BaseSituTool, SituToolReturn
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -127,7 +131,7 @@ def test_publishable_records_and_collection_surfaces_stay_aligned() -> None:
         "workspace",
         *(collection_names - {"workspaces"}),
     }
-    assert set(SessionGraphSchema.model_fields) == {
+    assert set(ProjectBoardSchema.model_fields) == {
         "workspace",
         "project",
         "session",
@@ -173,8 +177,10 @@ def test_situ_tool_folders_match_toolset_registration() -> None:
 
         tool_classes[tool_class.name] = tool_class
 
-    registered_tools = set(build_research_toolset().tools) | set(
-        build_manager_toolset().tools
+    registered_tools = (
+        set(build_research_toolset().tools)
+        | set(build_manager_toolset().tools)
+        | set(build_critic_toolset().tools)
     )
     assert registered_tools == set(tool_classes)
     assert "request_project_close" not in build_research_toolset().tools

@@ -7,7 +7,7 @@ from pydantic import Field
 from ...common import SituToolReturn
 
 
-class GetSessionResult(SituToolReturn):
+class GetProjectBoardResult(SituToolReturn):
     workspace: dict[str, Any] | None = None
     project: dict[str, Any] | None = None
     session: dict[str, Any] | None = None

@@ -82,8 +82,10 @@ class AppSessionLoopWorld:
         finally:
             self._tmp.cleanup()
 
-    def session_graph(self) -> dict[str, Any]:
-        return self.app.sessions_api.get_session(self.session_id).model_dump(mode="json")
+    def project_board(self) -> dict[str, Any]:
+        return self.app.project_board_api.get_project_board(self.session_id).model_dump(
+            mode="json"
+        )
 
     def events(self) -> list[EvalEvent]:
         return [

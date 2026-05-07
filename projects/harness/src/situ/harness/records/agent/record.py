@@ -9,6 +9,7 @@ class AgentKind(StrEnum):
     MANAGER = "manager"
     RESEARCHER = "researcher"
     SCIENTIST = "scientist"
+    CRITIC = "critic"
 
 
 class AgentStatus(StrEnum):

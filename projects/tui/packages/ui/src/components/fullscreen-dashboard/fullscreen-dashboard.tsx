@@ -102,6 +102,23 @@ export function FullscreenDashboard({
 }) {
   const [controlMode, setControlMode] =
     useState<DashboardControlMode>(initialControlMode);
+  const [searchQuery, setSearchQuery] = useState("");
+  const { isRawModeSupported: rawModeSupported } = useStdin();
+  const idleEscActive =
+    Boolean(process.stdin.isTTY) &&
+    rawModeSupported &&
+    controlMode === "idle" &&
+    searchQuery.length > 0;
+
+  useInput(
+    (_input, key) => {
+      if (key.escape) {
+        setSearchQuery("");
+      }
+    },
+    { isActive: idleEscActive },
+  );
+
   const detectedTerminalSize = useTerminalSize();
   const effectiveTerminalSize = terminalSize ?? detectedTerminalSize;
   const layout = computeDashboardLayout({
@@ -125,7 +142,7 @@ export function FullscreenDashboard({
     experimentActivities,
     evaluationActivities,
   });
-  const dashboardTasks = buildDashboardTasks({
+  const allDashboardTasks = buildDashboardTasks({
     tasks,
     agents,
     hypotheses,
@@ -134,7 +151,7 @@ export function FullscreenDashboard({
     experimentActivities,
     evaluationActivities,
   });
-  const activityRows = buildActivityRows({
+  const allActivityRows = buildActivityRows({
     tasks,
     hypotheses,
     experiments,
@@ -147,6 +164,15 @@ export function FullscreenDashboard({
     maxRows: layout.activityRows,
     width: layout.contentWidth,
   });
+  const dashboardTasks = filterDashboardTasks({
+    tasks: allDashboardTasks,
+    query: searchQuery,
+  });
+  const activityRows = filterActivityRows({
+    rows: allActivityRows,
+    query: searchQuery,
+  });
+  const filterActive = searchQuery.length > 0;
   const lastActivityLabel = lastActivitySummary({
     taskActivities,
     hypothesisActivities,
@@ -214,7 +240,7 @@ export function FullscreenDashboard({
       </DashboardFrameSection>
 
       <DashboardFrameSection
-        label="tasks"
+        label={sectionLabel({ base: "tasks", filterActive, query: searchQuery })}
         width={layout.width}
         height={layout.taskBoardHeight}
       >
@@ -228,11 +254,15 @@ export function FullscreenDashboard({
       </DashboardFrameSection>
 
       <DashboardFrameSection
-        label={controlMode === "commands" ? "commands" : "activity"}
+        label={activitySectionLabel({
+          mode: controlMode,
+          filterActive,
+          query: searchQuery,
+        })}
         width={layout.width}
         height={layout.activityHeight}
       >
-        {controlMode === "commands" ? (
+        {controlMode === "commands" && (
           <DashboardCommandPane
             width={layout.contentWidth}
             height={layout.activityHeight}
@@ -244,7 +274,34 @@ export function FullscreenDashboard({
               onDashboardCommand({ command });
             }}
           />
-        ) : (
+        )}
+        {controlMode === "help" && (
+          <HelpPane
+            width={layout.contentWidth}
+            height={layout.activityHeight}
+            onClose={() => {
+              setControlMode("idle");
+            }}
+          />
+        )}
+        {controlMode === "search" && (
+          <SearchPane
+            width={layout.contentWidth}
+            height={layout.activityHeight}
+            query={searchQuery}
+            onQueryChange={({ query }) => {
+              setSearchQuery(query);
+            }}
+            onSubmit={() => {
+              setControlMode("idle");
+            }}
+            onCancel={() => {
+              setSearchQuery("");
+              setControlMode("idle");
+            }}
+          />
+        )}
+        {controlMode === "idle" && (
           <ActivityFeed
             rows={activityRows}
             width={layout.contentWidth}
@@ -254,6 +311,37 @@ export function FullscreenDashboard({
       </DashboardFrameSection>
     </DashboardFrame>
   );
+}
+
+function sectionLabel({
+  base,
+  filterActive,
+  query,
+}: {
+  base: string;
+  filterActive: boolean;
+  query: string;
+}): string {
+  if (!filterActive) {
+    return base;
+  }
+
+  return `${base} · filtered: ${query}`;
+}
+
+function activitySectionLabel({
+  mode,
+  filterActive,
+  query,
+}: {
+  mode: DashboardControlMode;
+  filterActive: boolean;
+  query: string;
+}): string {
+  if (mode === "commands") return "commands";
+  if (mode === "help") return "help";
+  if (mode === "search") return "search";
+  return sectionLabel({ base: "activity", filterActive, query });
 }
 
 function DashboardCommandPane({

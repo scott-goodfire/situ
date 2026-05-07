@@ -189,3 +189,8 @@ def test_harness_prepares_experiment_task_checkout_and_records_final_state(
     activities = app.repos.experiment_activities.list_for_experiment(completed.id)
     assert activities[-1].payload["activity_type"] == "workspace_state"
     assert activities[-1].payload["worktree"]["dirty"] is True
+
+
+def test_review_tasks_are_claimed_by_critic_not_researcher() -> None:
+    assert TaskKind.REVIEW not in eligible_task_kinds_for_agent(AgentKind.RESEARCHER)
+    assert eligible_task_kinds_for_agent(AgentKind.CRITIC) == (TaskKind.REVIEW,)

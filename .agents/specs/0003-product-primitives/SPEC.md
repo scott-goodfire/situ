@@ -138,6 +138,9 @@ a session created the hypothesis, store that provenance as
 ## Experiment
 
 One concrete attempt: a change, probe, analysis, or testable intervention.
+In the autoresearch loop, an experiment is also the PR-shaped candidate: the
+applied version of a hypothesis or idea whose workspace state, evaluation
+evidence, and review trail can be inspected together.
 
 Experiments should also be status-light: open, active, or closed. Details such
 as failure, suspiciousness, reproduction, or interpretation should be expressed
@@ -152,6 +155,13 @@ for that candidate, such as a primary benchmark, reproduction track, latency
 smoke, or human review pass. Repeated runs of the same candidate check are
 measurements under one evaluation unless the check itself changes enough to
 deserve a separate measurement thread.
+
+After candidate evaluation evidence is recorded, a Critic may review the
+experiment as a whole. That review should attach to the experiment as an
+activity with payload metadata that can cite the reviewed evaluations and
+measurements. Do not introduce a separate ProposedChange, PullRequest, Review,
+or Verdict model until multiple runtime paths need to query or enforce that
+shape directly.
 
 Do not add `Variant` as a first-class model yet. Use experiment summaries,
 activity bodies, artifacts, and links to express baseline + A, baseline + B,

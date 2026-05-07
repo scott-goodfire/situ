@@ -113,7 +113,7 @@ infrastructure under the Python harness, not as a new product surface.
 
 For the current slice:
 
-- Pydantic AI may inspect compact, typed project/session context.
+- Pydantic AI may inspect the compact, typed project board.
 - DBOS should wrap agent execution through Pydantic AI `DBOSAgent`.
 - Logfire may observe harness, DBOS, and Pydantic AI spans.
 - The agent may request experiment execution through typed Situ tools.

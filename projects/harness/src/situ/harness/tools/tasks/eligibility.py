@@ -8,12 +8,12 @@ ELIGIBLE_TASK_KINDS: dict[AgentKind, tuple[TaskKind, ...]] = {
         TaskKind.RESEARCH,
         TaskKind.HYPOTHESIZE,
         TaskKind.INTERPRET,
-        TaskKind.REVIEW,
     ),
     AgentKind.SCIENTIST: (
         TaskKind.BASELINE,
         TaskKind.EXPERIMENT,
     ),
+    AgentKind.CRITIC: (TaskKind.REVIEW,),
 }
 
 

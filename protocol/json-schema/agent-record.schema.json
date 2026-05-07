@@ -4,7 +4,8 @@
       "enum": [
         "manager",
         "researcher",
-        "scientist"
+        "scientist",
+        "critic"
       ],
       "title": "AgentKind",
       "type": "string"

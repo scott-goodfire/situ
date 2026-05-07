@@ -83,7 +83,7 @@ Run the ResearchAgent repo-bootstrap evals:
 Run one case:
 
 ```bash
-./commands/evals.sh evals/suites/tools/research_tools/eval_group.py --case get_session --concurrency 1
+./commands/evals.sh evals/suites/tools/research_tools/eval_group.py --case get_project_board_reads_board --concurrency 1
 ```
 
 Run a full group in parallel after the targeted checks are stable:

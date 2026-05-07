@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 from situ.harness.api.current_state import CurrentStateService
+from situ.harness.api.project_board import ProjectBoardService
 from situ.harness.api.sessions import SessionsService
 from situ.harness.core.db import Database
 from situ.harness.records import (
@@ -837,7 +838,7 @@ def test_current_state_api_composes_protocol_shaped_state(repos: Repositories) -
     assert [event.type for event in current_state.events] == ["experiment.completed"]
 
 
-def test_sessions_api_composes_session_graph(repos: Repositories) -> None:
+def test_project_board_api_composes_project_board(repos: Repositories) -> None:
     create_experiment(repos)
     analysis = create_analysis(repos)
     repos.hypothesis_experiment_links.create(
@@ -886,7 +887,7 @@ def test_sessions_api_composes_session_graph(repos: Repositories) -> None:
         body="Baseline result recorded.",
     )
 
-    graph = SessionsService(repos=repos).get_session("session_0001")
+    graph = ProjectBoardService(repos=repos).get_project_board("session_0001")
 
     assert graph.workspace is not None
     assert graph.workspace.id == "workspace_test"

@@ -28,7 +28,7 @@ class AppSessionLoopEvalGroup(
         set_eval_attribute("seed", args.seed)
         output = run_app_session_loop(args)
         increment_eval_metric("events", len(output.events))
-        increment_eval_metric("tasks", len(output.session_graph.get("tasks", [])))
+        increment_eval_metric("tasks", len(output.project_board.get("tasks", [])))
         increment_eval_metric("done_tasks", output.signals.get("done_tasks") or 0)
         increment_eval_metric(
             "manager_done_tasks",
@@ -48,11 +48,11 @@ class AppSessionLoopEvalGroup(
         )
         increment_eval_metric(
             "experiments",
-            len(output.session_graph.get("experiments", [])),
+            len(output.project_board.get("experiments", [])),
         )
         increment_eval_metric(
             "evaluations",
-            len(output.session_graph.get("evaluations", [])),
+            len(output.project_board.get("evaluations", [])),
         )
         increment_eval_metric("changed_files", len(output.changed_files))
         return output

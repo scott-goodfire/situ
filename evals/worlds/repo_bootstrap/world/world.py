@@ -5,7 +5,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any
 
-from situ.harness.api.sessions import SessionsService
+from situ.harness.api.project_board import ProjectBoardService
 from situ.harness.core.db import Database
 from situ.harness.repositories import Repositories
 from evals.harness.models import EvalEvent
@@ -163,8 +163,8 @@ class RepoBootstrapWorld:
         self.events.append(event)
         return record.model_dump()
 
-    def session_graph(self) -> dict[str, Any]:
-        graph = SessionsService(repos=self.repos).get_session(SESSION_ID)
+    def project_board(self) -> dict[str, Any]:
+        graph = ProjectBoardService(repos=self.repos).get_project_board(SESSION_ID)
         return {
             "workspace": graph.workspace.model_dump() if graph.workspace is not None else None,
             "project": graph.project.model_dump() if graph.project is not None else None,

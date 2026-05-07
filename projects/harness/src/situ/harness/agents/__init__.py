@@ -1,4 +1,6 @@
 from .research import (
+    CriticAgent,
+    CriticAgentContext,
     ManagerAgent,
     ManagerAgentContext,
     ResearchAgent,
@@ -11,6 +13,8 @@ from .research import (
 )
 
 __all__ = [
+    "CriticAgent",
+    "CriticAgentContext",
     "ManagerAgent",
     "ManagerAgentContext",
     "ResearchAgent",

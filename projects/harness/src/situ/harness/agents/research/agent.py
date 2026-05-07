@@ -10,6 +10,7 @@ from pydantic_ai.models import Model
 
 from ...config import DEFAULTS
 from ...tools import (
+    build_critic_toolset,
     build_manager_toolset,
     build_research_toolset,
     build_researcher_toolset,
@@ -19,9 +20,11 @@ from ...tools import (
 from ...tools.common import SituToolDeps
 from ..common import SituAgentContext, SituAgentPrompt, BaseSituAgent
 from .prompt import (
+    CRITIC_AGENT_INSTRUCTIONS,
     MANAGER_AGENT_INSTRUCTIONS,
     RESEARCHER_AGENT_INSTRUCTIONS,
     RESEARCH_AGENT_INSTRUCTIONS,
+    build_critic_review_prompt,
     build_proposal_round_prompt,
     build_research_agent_user_prompt,
     build_researcher_run_prompt,
@@ -31,6 +34,7 @@ from .prompt import (
 RESEARCH_AGENT_NAME = "situ-research-agent"
 RESEARCHER_AGENT_NAME = "situ-researcher-agent"
 MANAGER_AGENT_NAME = "situ-manager-agent"
+CRITIC_AGENT_NAME = "situ-critic-agent"
 
 
 class ResearchAgentOutput(BaseModel):
@@ -61,6 +65,13 @@ class ScientistAgentContext(SituAgentContext[SituToolDeps]):
 
 
 class ResearcherAgentContext(SituAgentContext[SituToolDeps]):
+    setup_objective: str = ""
+    setup_research_context: str = ""
+    current_state: dict[str, Any] = Field(default_factory=dict)
+    active_task: dict[str, Any] | None = None
+
+
+class CriticAgentContext(SituAgentContext[SituToolDeps]):
     setup_objective: str = ""
     setup_research_context: str = ""
     current_state: dict[str, Any] = Field(default_factory=dict)
@@ -208,6 +219,43 @@ class ResearcherAgent(BaseSituAgent[ResearcherAgentContext, ResearchAgentOutput]
             instructions=RESEARCHER_AGENT_INSTRUCTIONS,
             toolsets=[
                 build_researcher_toolset(),
+                build_workspace_readonly_toolset(),
+            ],
+            model_settings=DEFAULTS.model_settings(),
+            capabilities=list(self.capabilities),
+        )
+
+
+class CriticAgent(BaseSituAgent[CriticAgentContext, ResearchAgentOutput]):
+    model: Model | str
+    capabilities: Sequence[AbstractCapability[Any]] = Field(default_factory=tuple)
+
+    def generate_prompt(self, context: CriticAgentContext) -> SituAgentPrompt:
+        return SituAgentPrompt(
+            instructions=CRITIC_AGENT_INSTRUCTIONS,
+            user_prompt=build_critic_review_prompt(
+                setup_objective=context.setup_objective,
+                setup_research_context=context.setup_research_context,
+                current_state=context.current_state,
+                active_task=context.active_task,
+            ),
+        )
+
+    def build_agent(
+        self,
+        *,
+        context: CriticAgentContext,
+        prompt: SituAgentPrompt,
+    ) -> Agent[SituToolDeps, ResearchAgentOutput]:
+        _ = (context, prompt)
+        return Agent[SituToolDeps, ResearchAgentOutput](
+            name=CRITIC_AGENT_NAME,
+            model=self.model,
+            deps_type=SituToolDeps,
+            output_type=ResearchAgentOutput,
+            instructions=CRITIC_AGENT_INSTRUCTIONS,
+            toolsets=[
+                build_critic_toolset(),
                 build_workspace_readonly_toolset(),
             ],
             model_settings=DEFAULTS.model_settings(),

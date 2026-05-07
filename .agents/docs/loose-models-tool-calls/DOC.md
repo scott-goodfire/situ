@@ -226,7 +226,7 @@ the reference backend:
   should reopen repositories from `project_id`, `project_dir`, and `repo_path`
   instead of carrying live connections.
 - Toolsets group related tools and carry tool-specific instructions. The
-  agent-facing surface should be explicit and model-shaped: `get_session`,
+  agent-facing surface should be explicit and model-shaped: `get_project_board`,
   hypothesis/experiment CRUD, hypothesis-experiment linking, comment tools, and
   artifact tools.
 - `AgentMessageHistoryRepository` stores Pydantic AI message history as the

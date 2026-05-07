@@ -50,7 +50,7 @@ def run_research_tool_agent(args: ResearchToolEvalInput) -> ResearchToolEvalOutp
             content=str(result.output),
             captured_tool_calls=list(capture.tool_calls),
             events=list(world.events),
-            session_graph=world.session_graph(),
+            project_board=world.project_board(),
             signals={
                 "tool_calls": len(capture.tool_calls),
                 "events": len(world.events),

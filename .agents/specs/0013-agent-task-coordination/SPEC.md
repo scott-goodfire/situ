@@ -22,18 +22,22 @@ completion summary; the produced records remain the inspectable research state.
 
 ## Agents
 
-Agents are durable project participants. The first slice uses three agent kinds:
+Agents are durable project participants. The active slice uses four agent kinds:
 
 - `manager` plans and files tasks.
 - `researcher` claims research tasks and produces durable understanding:
-  analyses, hypotheses, interpretations, and review comments.
+  analyses, hypotheses, and interpretations.
 - `scientist` claims baseline and experiment tasks and produces empirical
   ledger output: experiments, evaluations, measurements, artifacts, and
   experiment comments.
+- `critic` claims review tasks and checks completed candidate experiments as
+  proposed changes. It reads experiment workspace state, evaluations,
+  measurements, artifacts, and activities, then records experiment review and
+  concern activities.
 
-Additional kinds such as reviewer or specialist scientists can be added later
-without changing the task model. A task's eligible claimant is derived from
-its kind rather than stored as a separate assignee kind.
+Additional kinds such as specialist scientists can be added later without
+changing the task model. A task's eligible claimant is derived from its kind
+rather than stored as a separate assignee kind.
 
 ## Tasks
 
@@ -93,6 +97,11 @@ researcher/scientist claims runnable work
   -> runs focused work
   -> writes ledger outputs
   -> marks task done or failed
+scientist experiment completion
+  -> enqueue a `review` task linked to the experiment
+critic claims `review`
+  -> reviews experiment-level evidence
+  -> writes an experiment review activity and any concern activity
 completion
   -> enqueue next `plan` task when more planning is useful
 ```
@@ -104,13 +113,14 @@ start once the project exists. DBOS should still wrap runnable Pydantic AI
 agents; Situ should not add a separate workflow engine unless task-shaped
 agent/tool execution stops being enough.
 
-The runtime should treat Manager, Researcher, and Scientist as logically
-always-available workers. A Manager pass is triggered by session start,
-Researcher or Scientist task completion, user steering, or lack of runnable
-execution work. Researcher and Scientist passes are triggered by runnable tasks
-eligible for their agent kind. Each LLM pass should stay focused: the Manager
-handles one planning task, and a Researcher or Scientist handles one claimed
-work task.
+The runtime should treat Manager, Researcher, Scientist, and Critic as
+logically always-available workers. A Manager pass is triggered by session
+start, Researcher or Critic task completion, user steering, or lack of runnable
+execution work. Scientist experiment completion should trigger a Critic review
+before the next Manager planning pass. Researcher, Scientist, and Critic passes
+are triggered by runnable tasks eligible for their agent kind. Each LLM pass
+should stay focused: the Manager handles one planning task, and each other
+agent handles one claimed work task.
 
 The Manager should prefer fanout when the project state is underexplored. After
 baseline, it may file several independent `research` tasks covering different
@@ -128,6 +138,13 @@ promote claims into `Hypothesis` records when the next empirical work becomes
 clear. Scientist tasks should generally attach evidence to `Experiment` and
 `Evaluation` records rather than burying results in task comments.
 
+When a Scientist task is an `experiment`, Situ should not immediately replan
+from its results. The completed experiment is pending review until a Critic
+`review` task writes an experiment activity with `activity_type:
+critic_review`. The Manager should use that review, plus the underlying
+evaluation and measurement evidence, when deciding whether to reproduce,
+revise, combine, discard, or continue from the candidate.
+
 When the claimed Scientist task is an `experiment`, Situ should create or reuse
 a managed worktree for the linked experiment before invoking the Scientist. The
 Scientist's workspace tools and worker execution for that pass should be rooted
@@ -137,12 +154,13 @@ records. Researcher tasks should not require managed experiment worktrees unless
 they are explicitly asked to run a candidate experiment.
 
 Baseline completion must not close the session by itself. The Manager should be
-prompted to keep planning after a Researcher or Scientist task completes. A
-single Manager pass that creates no runnable next work is not enough to stop the
-loop; the runtime may close only after a small no-progress guardrail such as
-three consecutive planning cycles with no runnable Researcher or Scientist
-task, after the experiment budget is reached, after user stop, or after a fatal
-failure.
+prompted to keep planning after a Researcher, Critic, or non-experiment
+Scientist task completes. Scientist experiment completion should prompt Critic
+review first. A single Manager pass that creates no runnable next work is not
+enough to stop the loop; the runtime may close only after a small no-progress
+guardrail such as three consecutive planning cycles with no runnable
+Researcher, Scientist, or Critic task, after the experiment budget is reached
+and pending review is complete, after user stop, or after a fatal failure.
 
 Project/session close is an explicit tool-mediated handshake, not a normal
 project update. A Manager that wants to end a project before the experiment
@@ -170,7 +188,6 @@ we learn?"
 
 - External human assignees as first-class participants
 - Cycles, sprints, estimates, labels, and broad issue-tracker workflows
-- A dedicated reviewer agent kind
 - True concurrent execution of multiple Researcher or Scientist passes
 - Complex DBOS workflow orchestration around the full session loop
 
@@ -181,6 +198,10 @@ we learn?"
 - Agents are durable project records, not ad hoc names on task rows.
 - Researcher work produces durable analyses and hypotheses; Scientist work
   produces durable experiments and evaluations.
+- Critic work produces experiment-level review and concern activities rather
+  than a standalone review model.
+- Scientist experiment completion is followed by Critic review before Manager
+  replanning uses the candidate as decision-grade evidence.
 - Research tasks can be fanned out without requiring parallel code mutation.
 - Session references on coordination records are provenance fields, not owners.
 - Task claims are atomic enough to prevent double-claiming.

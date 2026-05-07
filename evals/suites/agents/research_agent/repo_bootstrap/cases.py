@@ -11,7 +11,7 @@ from evals.harness.evaluators import (
 from evals.suites.agents.research_agent.repo_bootstrap.evaluators import (
     EvaluationResultLinkedToExperiment,
     PrepareFileUnchanged,
-    SessionGraphContains,
+    ProjectBoardContains,
     ToolSucceeded,
 )
 from evals.worlds.repo_bootstrap import (
@@ -42,7 +42,7 @@ def repo_bootstrap_cases() -> list[
             ),
             metadata={"requires_real_llm": True},
             evaluators=(
-                ToolWasCalled("get_session"),
+                ToolWasCalled("get_project_board"),
                 ToolWasCalled("read_file"),
                 ToolArgsContain("read_file", "README.md"),
                 ToolWasCalled("execute"),
@@ -56,8 +56,8 @@ def repo_bootstrap_cases() -> list[
                 ToolSucceeded("add_evaluation_result"),
                 ToolCallOrder("execute", "add_evaluation_result"),
                 ToolWasCalled("create_experiment", expected=False),
-                SessionGraphContains("val_bpb"),
-                SessionGraphContains("baseline"),
+                ProjectBoardContains("val_bpb"),
+                ProjectBoardContains("baseline"),
             ),
         ),
         Case(
@@ -77,7 +77,7 @@ def repo_bootstrap_cases() -> list[
             ),
             metadata={"requires_real_llm": True},
             evaluators=(
-                ToolWasCalled("get_session"),
+                ToolWasCalled("get_project_board"),
                 ToolWasCalled("create_experiment"),
                 ToolSucceeded("create_experiment"),
                 ToolArgsContain("create_experiment", "Try component A"),
@@ -92,8 +92,8 @@ def repo_bootstrap_cases() -> list[
                 ToolWasCalled("add_evaluation_result"),
                 ToolSucceeded("add_evaluation_result"),
                 EvaluationResultLinkedToExperiment(),
-                SessionGraphContains("component_a"),
-                SessionGraphContains("val_bpb"),
+                ProjectBoardContains("component_a"),
+                ProjectBoardContains("val_bpb"),
                 PrepareFileUnchanged(),
             ),
         ),
@@ -113,12 +113,12 @@ def repo_bootstrap_cases() -> list[
             ),
             metadata={"requires_real_llm": True},
             evaluators=(
-                ToolWasCalled("get_session"),
+                ToolWasCalled("get_project_board"),
                 ToolWasCalled("read_file"),
                 ToolArgsContain("read_file", "prepare.py"),
                 PrepareFileUnchanged(),
-                SessionGraphContains("prepare.py"),
-                SessionGraphContains("suspicious"),
+                ProjectBoardContains("prepare.py"),
+                ProjectBoardContains("suspicious"),
             ),
         ),
     ]

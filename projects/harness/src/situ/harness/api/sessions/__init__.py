@@ -1,4 +1,4 @@
-from .schemas import NextSessionIdSchema, SessionGraphSchema
+from .schemas import NextSessionIdSchema
 from .service import SessionsService
 
-__all__ = ["NextSessionIdSchema", "SessionGraphSchema", "SessionsService"]
+__all__ = ["NextSessionIdSchema", "SessionsService"]

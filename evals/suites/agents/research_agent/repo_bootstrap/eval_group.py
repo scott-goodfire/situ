@@ -33,19 +33,19 @@ class ResearchAgentRepoBootstrapEvalGroup(
         increment_eval_metric("events", len(output.events))
         increment_eval_metric(
             "hypotheses",
-            len(output.session_graph.get("hypotheses", [])),
+            len(output.project_board.get("hypotheses", [])),
         )
         increment_eval_metric(
             "experiments",
-            len(output.session_graph.get("experiments", [])),
+            len(output.project_board.get("experiments", [])),
         )
         increment_eval_metric(
             "evaluations",
-            len(output.session_graph.get("evaluations", [])),
+            len(output.project_board.get("evaluations", [])),
         )
         increment_eval_metric(
             "evaluation_activities",
-            len(output.session_graph.get("evaluation_activities", [])),
+            len(output.project_board.get("evaluation_activities", [])),
         )
         increment_eval_metric(
             "changed_files",

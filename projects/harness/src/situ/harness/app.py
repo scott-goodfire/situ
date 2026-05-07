@@ -29,6 +29,7 @@ from situ.protocol import (
 from .agent_runtime import AgentRuntime
 from .api.collections import CollectionsService, publish_record_upsert
 from .api.current_state import CurrentStateService
+from .api.project_board import ProjectBoardService
 from .api.sessions import SessionsService
 from .core.db import Database
 from .core.notifications import (
@@ -89,6 +90,7 @@ class HarnessApp:
         self.collections_api = CollectionsService(repos=self.repos)
         self.current_state_api = CurrentStateService(repos=self.repos)
         self.sessions_api = SessionsService(repos=self.repos)
+        self.project_board_api = ProjectBoardService(repos=self.repos)
         self.app_root = app_root
         self._agent_runtime: AgentRuntime | None = None
         self.notify = notify
@@ -363,6 +365,7 @@ class HarnessApp:
             (AgentKind.MANAGER, "Manager"),
             (AgentKind.RESEARCHER, "Researcher"),
             (AgentKind.SCIENTIST, "Scientist"),
+            (AgentKind.CRITIC, "Critic"),
         ):
             existing = self.repos.agents.get_for_project_kind(project_id, kind)
             agent = self.repos.agents.ensure_project_agent(
@@ -409,6 +412,80 @@ class HarnessApp:
             payload={"task_id": task.id, "kind": task.kind.value},
         )
         self.publish_record(task, cursor=event.id)
+
+    def _enqueue_experiment_review_task(
+        self,
+        *,
+        session_id: str,
+        project_id: str,
+        experiment_id: str,
+        source_task_id: str,
+    ) -> TaskRecord:
+        experiment = self.repos.experiments.get(experiment_id)
+        evaluations = self.repos.evaluations.list_for_experiment(experiment_id)
+        title = (
+            f"Review {experiment.title}"
+            if experiment is not None and experiment.title
+            else f"Review {experiment_id}"
+        )
+        task = self.repos.tasks.create(
+            task_id=self.repos.tasks.next_id(project_id),
+            project_id=project_id,
+            created_in_session_id=session_id,
+            title=title,
+            content=(
+                "Review the completed experiment as a proposed change before "
+                "the Manager replans from its result. Check the experiment "
+                "workspace state, evaluations, measurements, artifacts, and "
+                "activities for seed hacking, selection on noise, adaptive "
+                "overfitting, greedy hill-climbing risks, and comparability "
+                "breaks. Record one experiment review with "
+                "`add_experiment_review`, link the central evidence, and mark "
+                "this review task done."
+            ),
+            kind=TaskKind.REVIEW,
+            priority="high",
+            source_kind="system",
+            payload={
+                "experiment_id": experiment_id,
+                "source_task_id": source_task_id,
+                "evaluation_ids": [evaluation.id for evaluation in evaluations],
+            },
+        )
+        links = [
+            self.repos.task_entity_links.create(
+                project_id=project_id,
+                task_id=task.id,
+                entity_kind=TaskEntityKind.EXPERIMENT,
+                entity_id=experiment_id,
+                relationship="reviews",
+            )
+        ]
+        for evaluation in evaluations:
+            links.append(
+                self.repos.task_entity_links.create(
+                    project_id=project_id,
+                    task_id=task.id,
+                    entity_kind=TaskEntityKind.EVALUATION,
+                    entity_id=evaluation.id,
+                    relationship="reviews",
+                )
+            )
+        event = self.record_event(
+            "task.created",
+            f"Created review task {task.id}",
+            session_id=session_id,
+            project_id=project_id,
+            payload={
+                "task_id": task.id,
+                "kind": task.kind.value,
+                "experiment_id": experiment_id,
+            },
+        )
+        self.publish_record(task, cursor=event.id)
+        for link in links:
+            self.publish_record(link, cursor=event.id)
+        return task
 
     def _claim_next_task(
         self,
@@ -532,6 +609,65 @@ class HarnessApp:
                         completion_summary = "Project is closed."
                         break
 
+                    if agent_passes >= max_agent_passes:
+                        completion_summary = (
+                            "Stopped after reaching the session agent-pass "
+                            f"guardrail ({max_agent_passes} passes)."
+                        )
+                        break
+
+                    critic_task = self._claim_next_task(
+                        session_id=session_id,
+                        agent_kind=AgentKind.CRITIC,
+                    )
+                    if critic_task is not None:
+                        active_task = critic_task
+                        no_progress_plans = 0
+                        agent_passes += 1
+                        result = runtime.run_review(
+                            workspace=workspace.model_dump(),
+                            setup_objective=setup.get("objective", ""),
+                            setup_research_context=setup.get("research_context", ""),
+                            current_state=self.project_board_api.get_project_board(
+                                session_id
+                            ).model_dump(),
+                            session_id=session_id,
+                            app_root=self.app_root,
+                            repos=self.repos,
+                            active_task=critic_task.model_dump(),
+                        )
+                        completion_summary = result.summary
+                        self._finish_claimed_task(
+                            task=critic_task,
+                            session_id=session_id,
+                            status=TaskStatus.DONE,
+                            result_summary=result.summary,
+                        )
+                        self.record_event(
+                            "session.critic_completed",
+                            result.summary,
+                            session_id=session_id,
+                            project_id=critic_task.project_id,
+                            payload=result.model_dump(),
+                        )
+                        active_task = None
+
+                        if self._experiment_count(session_id) < max_experiments:
+                            self._enqueue_plan_task(
+                                session_id=session_id,
+                                project_id=critic_task.project_id,
+                                title="Plan after Critic review",
+                                content=(
+                                    "A Critic review just completed. Review the "
+                                    "experiment review activity, concerns, project "
+                                    "ledger, task board, and experiment budget. "
+                                    "File the next focused Researcher or Scientist "
+                                    "task so the research loop keeps moving."
+                                ),
+                                source_kind="system",
+                            )
+                        continue
+
                     completed_experiments = self._experiment_count(session_id)
                     remaining_experiments = max(
                         0,
@@ -540,13 +676,6 @@ class HarnessApp:
                     if remaining_experiments <= 0:
                         completion_summary = (
                             f"Completed {max_experiments} experiment budget."
-                        )
-                        break
-
-                    if agent_passes >= max_agent_passes:
-                        completion_summary = (
-                            "Stopped after reaching the session agent-pass "
-                            f"guardrail ({max_agent_passes} passes)."
                         )
                         break
 
@@ -561,7 +690,7 @@ class HarnessApp:
                             workspace=workspace.model_dump(),
                             setup_objective=setup.get("objective", ""),
                             setup_research_context=setup.get("research_context", ""),
-                            current_state=self.sessions_api.get_session(
+                            current_state=self.project_board_api.get_project_board(
                                 session_id
                             ).model_dump(),
                             session_id=session_id,
@@ -601,7 +730,7 @@ class HarnessApp:
                             workspace=workspace.model_dump(),
                             setup_objective=setup.get("objective", ""),
                             setup_research_context=setup.get("research_context", ""),
-                            current_state=self.sessions_api.get_session(
+                            current_state=self.project_board_api.get_project_board(
                                 session_id
                             ).model_dump(),
                             session_id=session_id,
@@ -666,7 +795,7 @@ class HarnessApp:
                                 workspace=workspace.model_dump(),
                                 setup_objective=setup.get("objective", ""),
                                 setup_research_context=setup.get("research_context", ""),
-                                current_state=self.sessions_api.get_session(
+                                current_state=self.project_board_api.get_project_board(
                                     session_id
                                 ).model_dump(),
                                 session_id=session_id,
@@ -700,25 +829,28 @@ class HarnessApp:
                         )
                         active_task = None
 
-                        if self._experiment_count(session_id) >= max_experiments:
-                            completion_summary = (
-                                f"Completed {max_experiments} experiment budget."
+                        if scientist_task.kind == TaskKind.EXPERIMENT:
+                            assert active_experiment_id is not None
+                            self._enqueue_experiment_review_task(
+                                session_id=session_id,
+                                project_id=scientist_task.project_id,
+                                experiment_id=active_experiment_id,
+                                source_task_id=scientist_task.id,
                             )
-                            break
-
-                        self._enqueue_plan_task(
-                            session_id=session_id,
-                            project_id=scientist_task.project_id,
-                            title="Plan after Scientist task completion",
-                            content=(
-                                "A Scientist task just completed. Review the "
-                                "project ledger, task board, recent activity, "
-                                "and experiment budget. File the next focused "
-                                "Researcher or Scientist task so the research "
-                                "loop keeps moving."
-                            ),
-                            source_kind="system",
-                        )
+                        else:
+                            self._enqueue_plan_task(
+                                session_id=session_id,
+                                project_id=scientist_task.project_id,
+                                title="Plan after Scientist task completion",
+                                content=(
+                                    "A Scientist task just completed. Review the "
+                                    "project ledger, task board, recent activity, "
+                                    "and experiment budget. File the next focused "
+                                    "Researcher or Scientist task so the research "
+                                    "loop keeps moving."
+                                ),
+                                source_kind="system",
+                            )
                         continue
 
                     no_progress_plans += 1
@@ -726,7 +858,8 @@ class HarnessApp:
                         completion_summary = (
                             "Stopped after "
                             f"{MANAGER_NO_PROGRESS_LIMIT} consecutive planning "
-                            "cycles produced no runnable Researcher or Scientist task."
+                            "cycles produced no runnable Researcher, Scientist, "
+                            "or Critic task."
                         )
                         break
 
@@ -740,7 +873,7 @@ class HarnessApp:
                         title="Continue planning the next research step",
                         content=(
                             "The previous planning cycle did not leave a "
-                            "runnable Researcher or Scientist task. Re-read the project "
+                            "runnable Researcher, Scientist, or Critic task. Re-read the project "
                             "objective, ledger, and task board, then file one "
                             "focused runnable Researcher or Scientist task unless "
                             "there is a hard blocker."
@@ -980,6 +1113,7 @@ def _agent_display_name(agent_kind: AgentKind) -> str:
         AgentKind.MANAGER: "Manager",
         AgentKind.RESEARCHER: "Researcher",
         AgentKind.SCIENTIST: "Scientist",
+        AgentKind.CRITIC: "Critic",
     }[agent_kind]
 
 

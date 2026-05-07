@@ -91,10 +91,14 @@ repositories/
 ### API services (read-side composition)
 ```text
 api/
+  project_board/
+    __init__.py
+    service.py         # ProjectBoardService — composes the project board read model
+    schemas.py         # response Pydantic models
   sessions/
     __init__.py
-    service.py         # SessionsService — composes multiple repositories
-    schemas.py         # response Pydantic models
+    service.py         # SessionsService — session ids and session-local helpers
+    schemas.py         # session response Pydantic models
 ```
 
 ### Tools (agent-callable actions)

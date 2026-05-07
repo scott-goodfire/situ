@@ -18,6 +18,7 @@ from .analyses import CreateAnalysisTool, ListAnalysesTool, UpdateAnalysisTool
 from .comments import (
     AddAnalysisCommentTool,
     AddExperimentCommentTool,
+    AddExperimentReviewTool,
     AddHypothesisCommentTool,
 )
 from .evaluations import (
@@ -47,7 +48,7 @@ from .projects import (
     RequestProjectCloseTool,
     UpdateProjectTool,
 )
-from .sessions import GetSessionTool
+from .project_board import GetProjectBoardTool
 from .tasks import (
     AddTaskCommentTool,
     ClaimTaskTool,
@@ -62,12 +63,12 @@ RESEARCH_TOOLSET_INSTRUCTIONS = inspect.cleandoc(
     """
     This toolset is the Situ research ledger.
 
-    On session kickoff, make sure the session has a project when the objective
-    and research context are known. Use `create_project` if the session is
-    projectless, and `update_project` when the project objective or research
-    context needs refinement.
+    On kickoff, make sure the current run has a project when the objective and
+    research context are known. Use `create_project` if the run is projectless,
+    and `update_project` when the project objective or research context needs
+    refinement.
 
-    Use `get_session` when you need the current board: hypotheses,
+    Use `get_project_board` when you need the current board: hypotheses,
     analyses, baselines, experiments, evaluations, measurements, activities,
     artifacts, and events.
     Use analysis tools for codebase/domain understanding before it becomes a
@@ -122,8 +123,8 @@ MANAGER_TOOLSET_INSTRUCTIONS = inspect.cleandoc(
     """
     This toolset is the Situ manager surface.
 
-    Use it to inspect the current session, project, and task board; create or
-    update the session project when kickoff context requires it; file focused
+    Use it to inspect the current project board; create or update the project
+    when kickoff context requires it; file focused
     tasks; add coordination comments; and update the current planning task. Do
     not use the manager pass to run experiments or write research outputs
     directly; file Researcher or Scientist tasks for that work.
@@ -133,6 +134,30 @@ MANAGER_TOOLSET_INSTRUCTIONS = inspect.cleandoc(
     are confident no useful Scientist task remains. Only if closing is still
     warranted should you call `confirm_project_close` with the returned code.
     Do not try to close a project with `update_project`.
+    """
+)
+
+CRITIC_TOOLSET_INSTRUCTIONS = inspect.cleandoc(
+    """
+    This toolset is the Situ critic surface.
+
+    Use it to review a completed candidate experiment as the proposed change.
+    Read the experiment, linked task, evaluations, measurements, artifacts,
+    workspace-state activities, and prior concerns before writing judgment.
+    Focus on whether the recorded evidence is decision-grade, suspicious,
+    invalid, or needs reproduction.
+
+    Look specifically for seed hacking, selection on noisy measurements,
+    adaptive overfitting to the same evaluation surface, greedy hill-climbing
+    that discards useful partial results too early, and comparability breaks
+    such as changed tests, evals, fixtures, dependencies, toolchains, commands,
+    or result shapes.
+
+    Write exactly one experiment review with `add_experiment_review` for the
+    active review task unless the task is blocked. Use experiment comments only
+    for extra context that should remain separate from the review. Link the
+    active task to the experiment, evaluations, measurements, or artifacts that
+    were central to the review, and mark the review task done when complete.
     """
 )
 
@@ -156,7 +181,7 @@ def build_researcher_toolset() -> FunctionToolset[SituToolDeps]:
         id="situ.researcher.v1",
         instructions=RESEARCHER_TOOLSET_INSTRUCTIONS,
         tools=[
-            GetSessionTool().as_tool(),
+            GetProjectBoardTool().as_tool(),
             GetProjectTool().as_tool(),
             GetTaskBoardTool().as_tool(),
             UpdateTaskTool().as_tool(),
@@ -189,7 +214,7 @@ def build_scientist_toolset() -> FunctionToolset[SituToolDeps]:
         id="situ.scientist.v1",
         instructions=RESEARCH_TOOLSET_INSTRUCTIONS,
         tools=[
-            GetSessionTool().as_tool(),
+            GetProjectBoardTool().as_tool(),
             GetProjectTool().as_tool(),
             CreateProjectTool().as_tool(),
             UpdateProjectTool().as_tool(),
@@ -241,7 +266,7 @@ def build_manager_toolset() -> FunctionToolset[SituToolDeps]:
         id="situ.manager.v1",
         instructions=MANAGER_TOOLSET_INSTRUCTIONS,
         tools=[
-            GetSessionTool().as_tool(),
+            GetProjectBoardTool().as_tool(),
             GetProjectTool().as_tool(),
             CreateProjectTool().as_tool(),
             UpdateProjectTool().as_tool(),
@@ -252,6 +277,33 @@ def build_manager_toolset() -> FunctionToolset[SituToolDeps]:
             ClaimTaskTool().as_tool(),
             UpdateTaskTool().as_tool(),
             AddTaskCommentTool().as_tool(),
+        ],
+    )
+
+
+def build_critic_toolset() -> FunctionToolset[SituToolDeps]:
+    return FunctionToolset[SituToolDeps](
+        id="situ.critic.v1",
+        instructions=CRITIC_TOOLSET_INSTRUCTIONS,
+        tools=[
+            GetProjectBoardTool().as_tool(),
+            GetProjectTool().as_tool(),
+            GetTaskBoardTool().as_tool(),
+            UpdateTaskTool().as_tool(),
+            AddTaskCommentTool().as_tool(),
+            LinkTaskEntityTool().as_tool(),
+            InspectWorkspaceStateTool().as_tool(),
+            ListAnalysesTool().as_tool(),
+            ListHypothesesTool().as_tool(),
+            ListBaselinesTool().as_tool(),
+            ListExperimentsTool().as_tool(),
+            ListEvaluationsTool().as_tool(),
+            ListMeasurementsTool().as_tool(),
+            ListExperimentActivitiesTool().as_tool(),
+            ListEvaluationActivitiesTool().as_tool(),
+            ListArtifactsTool().as_tool(),
+            AddExperimentCommentTool().as_tool(),
+            AddExperimentReviewTool().as_tool(),
         ],
     )
 

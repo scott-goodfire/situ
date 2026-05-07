@@ -34,6 +34,7 @@ from situ.harness.tools.baselines import (
 from situ.harness.tools.comments import (
     AddAnalysisCommentTool,
     AddExperimentCommentTool,
+    AddExperimentReviewTool,
     AddHypothesisCommentTool,
 )
 from situ.harness.tools.common import SituToolDeps, invoke_situ_tool_sync
@@ -63,7 +64,7 @@ from situ.harness.tools.projects import (
     RequestProjectCloseTool,
     UpdateProjectTool,
 )
-from situ.harness.tools.sessions import GetSessionTool
+from situ.harness.tools.project_board import GetProjectBoardTool
 from situ.harness.tools.tasks import (
     AddTaskCommentTool,
     ClaimTaskTool,
@@ -122,7 +123,7 @@ def repos(tmp_path: Path) -> Repositories:
     return repositories
 
 
-def test_get_session_tool_reads_current_session_graph(repos: Repositories) -> None:
+def test_get_project_board_tool_reads_current_project_board(repos: Repositories) -> None:
     deps = SituToolDeps(session_id="session_0001", repos=repos)
     baseline = repos.baselines.create(
         baseline_id="baseline_project_0001_default",
@@ -146,7 +147,7 @@ def test_get_session_tool_reads_current_session_graph(repos: Repositories) -> No
         body="Baseline command passed.",
     )
 
-    result = invoke_situ_tool_sync(tool=GetSessionTool(), deps=deps)
+    result = invoke_situ_tool_sync(tool=GetProjectBoardTool(), deps=deps)
 
     assert result.success is True
     assert result.workspace is not None
@@ -783,6 +784,18 @@ def test_comment_tools_write_activity_records(repos: Repositories) -> None:
         comment="Component A improved score.",
         payload={"signals": [{"key": "score", "value": 0.73}]},
     )
+    experiment_review = invoke_situ_tool_sync(
+        tool=AddExperimentReviewTool(),
+        deps=deps,
+        experiment_id="exp_session_0001_a",
+        review="The candidate needs reproduction before replanning trusts it.",
+        verdict="needs_reproduction",
+        recommended_next_step="reproduce",
+        evidence_summary="One measurement improved, but there is no repeated run.",
+        concern_kinds=["selection_on_noise"],
+        reviewed_evaluation_ids=["eval_candidate"],
+        reviewed_measurement_ids=[42],
+    )
 
     assert hypothesis_comment.success is True
     assert hypothesis_comment.activity is not None
@@ -794,6 +807,19 @@ def test_comment_tools_write_activity_records(repos: Repositories) -> None:
     assert experiment_comment.activity["kind"] == "comment"
     assert experiment_comment.activity["created_in_session_id"] == "session_0001"
     assert experiment_comment.activity["body"] == "Component A improved score."
+    assert experiment_review.success is True
+    assert experiment_review.activity is not None
+    assert experiment_review.activity["kind"] == "comment"
+    assert experiment_review.activity["actor"] == "critic"
+    assert experiment_review.activity["payload"] == {
+        "activity_type": "critic_review",
+        "verdict": "needs_reproduction",
+        "recommended_next_step": "reproduce",
+        "evidence_summary": "One measurement improved, but there is no repeated run.",
+        "concern_kinds": ["selection_on_noise"],
+        "reviewed_evaluation_ids": ["eval_candidate"],
+        "reviewed_measurement_ids": [42],
+    }
 
     hypothesis_activities = invoke_situ_tool_sync(
         tool=ListHypothesisActivitiesTool(),
@@ -807,10 +833,11 @@ def test_comment_tools_write_activity_records(repos: Repositories) -> None:
     )
 
     assert [activity["id"] for activity in hypothesis_activities.activities] == [1]
-    assert [activity["id"] for activity in experiment_activities.activities] == [1]
+    assert [activity["id"] for activity in experiment_activities.activities] == [1, 2]
     assert [event["type"] for event in emitted] == [
         "hypothesis.comment_added",
         "experiment.comment_added",
+        "experiment.review_added",
     ]
 
 

@@ -49,7 +49,7 @@ class ToolSucceeded(
 
 
 @dataclass
-class SessionGraphContains(
+class ProjectBoardContains(
     Evaluator[ResearchAgentEvalInput, ResearchAgentEvalOutput, Any]
 ):
     text: str
@@ -58,14 +58,14 @@ class SessionGraphContains(
         self,
         ctx: EvaluatorContext[ResearchAgentEvalInput, ResearchAgentEvalOutput, Any],
     ) -> EvaluationReason:
-        rendered = json.dumps(ctx.output.session_graph, sort_keys=True).lower()
+        rendered = json.dumps(ctx.output.project_board, sort_keys=True).lower()
         needle = self.text.lower()
         if needle in rendered:
             return EvaluationReason(
                 value=True,
-                reason=f"Session graph contains {self.text!r}",
+                reason=f"Project board contains {self.text!r}",
             )
         return EvaluationReason(
             value=False,
-            reason=f"Session graph did not contain {self.text!r}",
+            reason=f"Project board did not contain {self.text!r}",
         )

@@ -98,12 +98,21 @@ Session objective
   -> agent runs project-native commands with workspace tools
   -> plaintext command evidence is recorded as a result comment
   -> lightweight trust or validity concerns are recorded when available
+  -> Critic reviews the experiment as a proposed change using the
+     evaluation/measurement evidence
   -> interpretation comment feeds the next proposal round
 ```
 
 The default loop should be sequential for the current slice. Parallel batches
 can come later after live observability and basic suspicious-result handling are
 reliable.
+
+The Manager should not treat a candidate experiment as decision-grade merely
+because its command output was recorded. After a Scientist experiment task
+completes, Situ should enqueue a review task for the Critic before the next
+Manager planning task. The Critic review is experiment-level: it references
+evaluations and measurements as evidence, but the user-facing judgment attaches
+to the experiment.
 
 ## Suspicious Result Flow
 
@@ -113,6 +122,7 @@ When a result looks invalid or untrustworthy:
 Experiment result arrives
   -> result comment is recorded
   -> lightweight trust checks or LLM review flag concerns when available
+  -> Critic review checks whether the proposed change earned its evidence
   -> concern comment is recorded if the evidence looks invalid
   -> artifact references are preserved
   -> LLM/human interpretation can decide what it means

@@ -6,7 +6,7 @@ from evals.harness.evaluators import ContentContains, ToolArgsContain, ToolWasCa
 from evals.worlds.research_session import ResearchAgentEvalInput, ResearchAgentEvalOutput
 from evals.worlds.research_session.world import HYPOTHESIS_ID
 from evals.suites.agents.research_agent.research_session.evaluators import (
-    SessionGraphContains,
+    ProjectBoardContains,
     ToolSucceeded,
 )
 
@@ -21,7 +21,7 @@ def research_session_planning_cases() -> list[
                 case_id="creates_baseline_measurement_thread",
                 seed="needs_baseline",
                 prompt="""
-                Take a look at the current session first. We do not have a
+                Take a look at the current project first. We do not have a
                 baseline yet, so create a baseline titled "Baseline first"
                 with the summary "Reference condition before variants." Then
                 create an evaluation associated with that baseline titled
@@ -32,15 +32,15 @@ def research_session_planning_cases() -> list[
             ),
             metadata={"requires_real_llm": True},
             evaluators=(
-                ToolWasCalled("get_session"),
-                ToolSucceeded("get_session"),
+                ToolWasCalled("get_project_board"),
+                ToolSucceeded("get_project_board"),
                 ToolWasCalled("create_baseline"),
                 ToolSucceeded("create_baseline"),
                 ToolWasCalled("create_evaluation"),
                 ToolSucceeded("create_evaluation"),
                 ToolArgsContain("create_baseline", "Baseline first"),
                 ToolArgsContain("create_evaluation", "Baseline measurement plan"),
-                SessionGraphContains("Baseline measurement plan"),
+                ProjectBoardContains("Baseline measurement plan"),
                 ContentContains("baseline is the first step"),
             ),
         ),
@@ -50,7 +50,7 @@ def research_session_planning_cases() -> list[
                 case_id="creates_followup_after_baseline",
                 seed="with_baseline_result",
                 prompt=f"""
-                Please review the current session. The baseline result is
+                Please review the current project. The baseline result is
                 already recorded, so set up the next experiment as "Try
                 component A" with the summary "Compare component A against
                 baseline." Connect it to hypothesis {HYPOTHESIS_ID}, leave an
@@ -60,8 +60,8 @@ def research_session_planning_cases() -> list[
             ),
             metadata={"requires_real_llm": True},
             evaluators=(
-                ToolWasCalled("get_session"),
-                ToolSucceeded("get_session"),
+                ToolWasCalled("get_project_board"),
+                ToolSucceeded("get_project_board"),
                 ToolWasCalled("create_experiment"),
                 ToolSucceeded("create_experiment"),
                 ToolWasCalled("link_hypothesis_experiment"),
@@ -69,7 +69,7 @@ def research_session_planning_cases() -> list[
                 ToolWasCalled("add_experiment_comment"),
                 ToolSucceeded("add_experiment_comment"),
                 ToolArgsContain("create_experiment", "Try component A"),
-                SessionGraphContains("compare against baseline"),
+                ProjectBoardContains("compare against baseline"),
                 ContentContains("component A"),
             ),
         ),
@@ -79,7 +79,7 @@ def research_session_planning_cases() -> list[
                 case_id="proposes_combination_from_promising_results",
                 seed="with_promising_results",
                 prompt=f"""
-                Look over the session. The recent results make A and C look
+                Look over the project board. The recent results make A and C look
                 promising, so propose the combined follow-up as an experiment
                 titled "Try A+C" with the summary "Combine the two promising
                 components." Link it to hypothesis {HYPOTHESIS_ID}. Also leave
@@ -89,8 +89,8 @@ def research_session_planning_cases() -> list[
             ),
             metadata={"requires_real_llm": True},
             evaluators=(
-                ToolWasCalled("get_session"),
-                ToolSucceeded("get_session"),
+                ToolWasCalled("get_project_board"),
+                ToolSucceeded("get_project_board"),
                 ToolWasCalled("create_experiment"),
                 ToolSucceeded("create_experiment"),
                 ToolWasCalled("link_hypothesis_experiment"),
@@ -98,8 +98,8 @@ def research_session_planning_cases() -> list[
                 ToolWasCalled("add_hypothesis_comment"),
                 ToolSucceeded("add_hypothesis_comment"),
                 ToolArgsContain("create_experiment", "Try A+C"),
-                SessionGraphContains("A and C are promising"),
-                SessionGraphContains("Try A+C"),
+                ProjectBoardContains("A and C are promising"),
+                ProjectBoardContains("Try A+C"),
                 ContentContains("A+C"),
             ),
         ),

@@ -161,5 +161,5 @@ The next durable test improvements should be:
 
 - A non-interactive smoke test that runs the harness without rendering the TUI.
 - A regression test for suspicious result concern comments.
-- A deterministic test for `SessionsService(repos=repos).get_session(...)`
+- A deterministic test for `ProjectBoardService(repos=repos).get_project_board(...)`
   across multiple sessions once cross-session links become possible.

@@ -30,7 +30,7 @@ def test_repo_bootstrap_world_runs_native_measurement() -> None:
 def test_repo_bootstrap_world_seeds_baseline_evaluation() -> None:
     world = RepoBootstrapWorld(seed="with_baseline_result")
     try:
-        graph = world.session_graph()
+        graph = world.project_board()
 
         assert [item["id"] for item in graph["evaluations"]] == [
             BASELINE_EVALUATION_ID
@@ -43,7 +43,7 @@ def test_repo_bootstrap_world_seeds_baseline_evaluation() -> None:
 def test_repo_bootstrap_world_can_seed_baseline_without_hypothesis() -> None:
     world = RepoBootstrapWorld(seed="with_baseline_no_hypothesis")
     try:
-        graph = world.session_graph()
+        graph = world.project_board()
 
         assert [item["id"] for item in graph["evaluations"]] == [
             BASELINE_EVALUATION_ID

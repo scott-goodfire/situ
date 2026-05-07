@@ -49,7 +49,7 @@ class ToolSucceeded(
 
 
 @dataclass
-class SessionGraphContains(
+class ProjectBoardContains(
     Evaluator[ResearchToolEvalInput, ResearchToolEvalOutput, Any]
 ):
     text: str
@@ -58,21 +58,21 @@ class SessionGraphContains(
         self,
         ctx: EvaluatorContext[ResearchToolEvalInput, ResearchToolEvalOutput, Any],
     ) -> EvaluationReason:
-        rendered = json.dumps(ctx.output.session_graph, sort_keys=True).lower()
+        rendered = json.dumps(ctx.output.project_board, sort_keys=True).lower()
         needle = self.text.lower()
         if needle in rendered:
             return EvaluationReason(
                 value=True,
-                reason=f"Session graph contains {self.text!r}",
+                reason=f"Project board contains {self.text!r}",
             )
         return EvaluationReason(
             value=False,
-            reason=f"Session graph did not contain {self.text!r}",
+            reason=f"Project board did not contain {self.text!r}",
         )
 
 
 @dataclass
-class SessionGraphHasLink(
+class ProjectBoardHasLink(
     Evaluator[ResearchToolEvalInput, ResearchToolEvalOutput, Any]
 ):
     hypothesis_id: str
@@ -82,7 +82,7 @@ class SessionGraphHasLink(
         self,
         ctx: EvaluatorContext[ResearchToolEvalInput, ResearchToolEvalOutput, Any],
     ) -> EvaluationReason:
-        links = ctx.output.session_graph.get("hypothesis_experiment_links", [])
+        links = ctx.output.project_board.get("hypothesis_experiment_links", [])
         for link in links:
             if (
                 link.get("hypothesis_id") == self.hypothesis_id
@@ -91,14 +91,14 @@ class SessionGraphHasLink(
                 return EvaluationReason(
                     value=True,
                     reason=(
-                        "Session graph links "
+                        "Project board links "
                         f"{self.hypothesis_id} to {self.experiment_id}"
                     ),
                 )
         return EvaluationReason(
             value=False,
             reason=(
-                "Session graph did not link "
+                "Project board did not link "
                 f"{self.hypothesis_id} to {self.experiment_id}"
             ),
         )

@@ -1,4 +1,5 @@
 from .toolsets import (
+    build_critic_toolset,
     build_manager_toolset,
     build_research_toolset,
     build_researcher_toolset,
@@ -8,6 +9,7 @@ from .toolsets import (
 )
 
 __all__ = [
+    "build_critic_toolset",
     "build_manager_toolset",
     "build_research_toolset",
     "build_researcher_toolset",

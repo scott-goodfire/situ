@@ -31,11 +31,11 @@ class ResearchToolsEvalGroup(
         increment_eval_metric("events", len(output.events))
         increment_eval_metric(
             "hypotheses",
-            len(output.session_graph.get("hypotheses", [])),
+            len(output.project_board.get("hypotheses", [])),
         )
         increment_eval_metric(
             "experiments",
-            len(output.session_graph.get("experiments", [])),
+            len(output.project_board.get("experiments", [])),
         )
         return output
 

@@ -32,7 +32,7 @@ class EventWasEmitted(
 
 
 @dataclass
-class SessionGraphContains(
+class ProjectBoardContains(
     Evaluator[AppSessionLoopEvalInput, AppSessionLoopEvalOutput, Any]
 ):
     text: str
@@ -41,16 +41,16 @@ class SessionGraphContains(
         self,
         ctx: EvaluatorContext[AppSessionLoopEvalInput, AppSessionLoopEvalOutput, Any],
     ) -> EvaluationReason:
-        rendered = json.dumps(ctx.output.session_graph, sort_keys=True).lower()
+        rendered = json.dumps(ctx.output.project_board, sort_keys=True).lower()
         needle = self.text.lower()
         if needle in rendered:
             return EvaluationReason(
                 value=True,
-                reason=f"Session graph contains {self.text!r}",
+                reason=f"Project board contains {self.text!r}",
             )
         return EvaluationReason(
             value=False,
-            reason=f"Session graph did not contain {self.text!r}",
+            reason=f"Project board did not contain {self.text!r}",
         )
 
 
@@ -67,7 +67,7 @@ class DoneTaskKindAtLeast(
     ) -> EvaluationReason:
         matches = [
             task
-            for task in ctx.output.session_graph.get("tasks", [])
+            for task in ctx.output.project_board.get("tasks", [])
             if task.get("kind") == self.task_kind and task.get("status") == "done"
         ]
         if len(matches) >= self.count:
@@ -82,7 +82,7 @@ class DoneTaskKindAtLeast(
             value=False,
             reason=(
                 f"Expected at least {self.count} done {self.task_kind} task(s). "
-                f"Tasks: {ctx.output.session_graph.get('tasks', [])}"
+                f"Tasks: {ctx.output.project_board.get('tasks', [])}"
             ),
         )
 
@@ -96,7 +96,7 @@ class NonPlanScientistTaskDone(
     ) -> EvaluationReason:
         matches = [
             task
-            for task in ctx.output.session_graph.get("tasks", [])
+            for task in ctx.output.project_board.get("tasks", [])
             if task.get("kind") != "plan" and task.get("status") == "done"
         ]
         if matches:
@@ -106,7 +106,7 @@ class NonPlanScientistTaskDone(
             )
         return EvaluationReason(
             value=False,
-            reason=f"No done Scientist task. Tasks: {ctx.output.session_graph.get('tasks', [])}",
+            reason=f"No done Scientist task. Tasks: {ctx.output.project_board.get('tasks', [])}",
         )
 
 
@@ -117,7 +117,7 @@ class BaselineThenFollowupWork(
         self,
         ctx: EvaluatorContext[AppSessionLoopEvalInput, AppSessionLoopEvalOutput, Any],
     ) -> EvaluationReason:
-        tasks = ctx.output.session_graph.get("tasks", [])
+        tasks = ctx.output.project_board.get("tasks", [])
         done_baseline = [
             task
             for task in tasks
@@ -163,7 +163,7 @@ class ExperimentCountAtLeast(
         self,
         ctx: EvaluatorContext[AppSessionLoopEvalInput, AppSessionLoopEvalOutput, Any],
     ) -> EvaluationReason:
-        experiments = ctx.output.session_graph.get("experiments", [])
+        experiments = ctx.output.project_board.get("experiments", [])
         if len(experiments) >= self.count:
             return EvaluationReason(
                 value=True,
@@ -204,11 +204,11 @@ class TaskDoneByAgentKind(
     ) -> EvaluationReason:
         agents_by_id = {
             agent.get("id"): agent
-            for agent in ctx.output.session_graph.get("agents", [])
+            for agent in ctx.output.project_board.get("agents", [])
         }
         matches = [
             task
-            for task in ctx.output.session_graph.get("tasks", [])
+            for task in ctx.output.project_board.get("tasks", [])
             if task.get("kind") == self.task_kind
             and task.get("status") == "done"
             and agents_by_id.get(task.get("assignee_id"), {}).get("kind")
@@ -228,8 +228,8 @@ class TaskDoneByAgentKind(
             reason=(
                 f"Expected at least {self.count} done {self.task_kind} task(s) "
                 f"assigned to {self.agent_kind}. Tasks: "
-                f"{ctx.output.session_graph.get('tasks', [])}; agents: "
-                f"{ctx.output.session_graph.get('agents', [])}"
+                f"{ctx.output.project_board.get('tasks', [])}; agents: "
+                f"{ctx.output.project_board.get('agents', [])}"
             ),
         )
 
@@ -245,7 +245,7 @@ class RecordCountAtLeast(
         self,
         ctx: EvaluatorContext[AppSessionLoopEvalInput, AppSessionLoopEvalOutput, Any],
     ) -> EvaluationReason:
-        records = ctx.output.session_graph.get(self.collection, [])
+        records = ctx.output.project_board.get(self.collection, [])
         if len(records) >= self.count:
             return EvaluationReason(
                 value=True,

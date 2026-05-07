@@ -49,12 +49,12 @@ def run_research_agent(args: ResearchAgentEvalInput) -> ResearchAgentEvalOutput:
             research_agent_output=output.model_dump(),
             captured_tool_calls=list(capture.tool_calls),
             events=list(world.events),
-            session_graph=world.session_graph(),
+            project_board=world.project_board(),
             signals={
                 "tool_calls": len(capture.tool_calls),
                 "events": len(world.events),
-                "hypotheses": len(world.session_graph().get("hypotheses", [])),
-                "experiments": len(world.session_graph().get("experiments", [])),
+                "hypotheses": len(world.project_board().get("hypotheses", [])),
+                "experiments": len(world.project_board().get("experiments", [])),
             },
         )
     finally:

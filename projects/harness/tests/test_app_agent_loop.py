@@ -28,6 +28,7 @@ def test_session_loop_replans_after_baseline_before_closing(
     assert session is not None
     assert session.status == "closed"
     assert runtime.plan_calls == 2
+    assert runtime.critic_calls == 1
     assert runtime.scientist_task_kinds == ["baseline", "experiment"]
     assert runtime.scientist_repo_paths[0] != runtime.scientist_repo_paths[1]
     assert runtime.scientist_repo_paths[1] is not None
@@ -44,7 +45,18 @@ def test_session_loop_replans_after_baseline_before_closing(
     } == {
         "Establish baseline": TaskStatus.DONE,
         "Try candidate": TaskStatus.DONE,
+        "Review Try candidate": TaskStatus.DONE,
     }
+    review_activities = [
+        activity
+        for experiment in experiments
+        for activity in app.repos.experiment_activities.list_for_experiment(
+            experiment.id
+        )
+        if activity.payload.get("activity_type") == "critic_review"
+    ]
+    assert len(review_activities) == 1
+    assert review_activities[0].payload["verdict"] == "usable"
     assert any(
         event.type == "session.completed"
         and "experiment budget" in event.message.lower()
@@ -173,7 +185,8 @@ def test_session_loop_retries_manager_before_no_progress_close(
     assert all(task.status == TaskStatus.DONE for task in tasks)
     assert any(
         event.type == "session.completed"
-        and "no runnable researcher or scientist task" in event.message.lower()
+        and "no runnable researcher, scientist, or critic task"
+        in event.message.lower()
         for event in app.repos.events.list_for_session(session_id)
     )
 
@@ -261,6 +274,7 @@ def test_failed_experiment_task_still_records_worktree_state(
 class BaselineThenExperimentRuntime:
     def __init__(self) -> None:
         self.plan_calls = 0
+        self.critic_calls = 0
         self.scientist_task_kinds: list[str] = []
         self.scientist_repo_paths: list[str | None] = []
 
@@ -349,6 +363,25 @@ class BaselineThenExperimentRuntime:
             status="closed",
         )
         return ResearchAgentOutput(summary="experiment done")
+
+    def run_review(self, **kwargs: Any) -> ResearchAgentOutput:
+        self.critic_calls += 1
+        repos = kwargs["repos"]
+        task = kwargs["active_task"]
+        experiment_id = task["payload"]["experiment_id"]
+        repos.experiment_activities.add(
+            experiment_id=experiment_id,
+            created_in_session_id=kwargs["session_id"],
+            actor="critic",
+            kind="comment",
+            body="Candidate evidence is usable.",
+            payload={
+                "activity_type": "critic_review",
+                "verdict": "usable",
+                "recommended_next_step": "accept",
+            },
+        )
+        return ResearchAgentOutput(summary="review done")
 
 
 class NoProgressRuntime:

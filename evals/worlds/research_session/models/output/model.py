@@ -8,7 +8,7 @@ from evals.harness.models import SituEvalOutput
 
 
 class ResearchToolEvalOutput(SituEvalOutput):
-    session_graph: dict[str, Any] = Field(default_factory=dict)
+    project_board: dict[str, Any] = Field(default_factory=dict)
 
 
 class ResearchAgentEvalOutput(ResearchToolEvalOutput):

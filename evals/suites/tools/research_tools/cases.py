@@ -9,8 +9,8 @@ from evals.harness.evaluators import (
     ToolWasCalled,
 )
 from evals.suites.tools.research_tools.evaluators import (
-    SessionGraphContains,
-    SessionGraphHasLink,
+    ProjectBoardContains,
+    ProjectBoardHasLink,
     ToolSucceeded,
 )
 from evals.worlds.research_session import (
@@ -29,21 +29,21 @@ from evals.worlds.research_session import (
 def research_tool_cases() -> list[Case[ResearchToolEvalInput, ResearchToolEvalOutput]]:
     return [
         Case(
-            name="get_session_reads_graph",
+            name="get_project_board_reads_board",
             inputs=ResearchToolEvalInput(
-                case_id="get_session_reads_graph",
+                case_id="get_project_board_reads_board",
                 seed="with_comments",
                 prompt=(
-                    "Please check the current session with get_session, then briefly "
+                    "Please check the current project with get_project_board, then briefly "
                     "state the objective title and one hypothesis on the board."
                 ),
             ),
             metadata={"requires_real_llm": True},
             evaluators=(
-                ToolWasCalled("get_session"),
-                ToolSucceeded("get_session"),
-                ToolResultContains("get_session", "Improve validation score"),
-                ToolResultContains("get_session", HYPOTHESIS_ID),
+                ToolWasCalled("get_project_board"),
+                ToolSucceeded("get_project_board"),
+                ToolResultContains("get_project_board", "Improve validation score"),
+                ToolResultContains("get_project_board", HYPOTHESIS_ID),
             ),
         ),
         Case(
@@ -70,7 +70,7 @@ def research_tool_cases() -> list[Case[ResearchToolEvalInput, ResearchToolEvalOu
                 case_id="project_setup_and_update_flow",
                 seed="projectless",
                 prompt=(
-                    "This session has no project yet. Create a project with "
+                    "This current run has no project yet. Create a project with "
                     "create_project using title 'Repo quality lift', objective "
                     "'Improve retrieval quality', and research_context "
                     "'Use score and latency_ms.' Then update that project with "
@@ -88,7 +88,7 @@ def research_tool_cases() -> list[Case[ResearchToolEvalInput, ResearchToolEvalOu
                 ToolWasCalled("get_project"),
                 ToolSucceeded("get_project"),
                 ToolResultContains("get_project", "Repo quality lift"),
-                SessionGraphContains("Refined research context"),
+                ProjectBoardContains("Refined research context"),
                 EventWasEmitted("project.created"),
                 EventWasEmitted("project.updated"),
             ),
@@ -140,7 +140,7 @@ def research_tool_cases() -> list[Case[ResearchToolEvalInput, ResearchToolEvalOu
                     "list_analysis_activities",
                     "Use this map before forming hypotheses",
                 ),
-                SessionGraphContains("Mapped the current eval knobs"),
+                ProjectBoardContains("Mapped the current eval knobs"),
                 EventWasEmitted("analysis.created"),
                 EventWasEmitted("analysis.comment_added"),
             ),
@@ -161,7 +161,7 @@ def research_tool_cases() -> list[Case[ResearchToolEvalInput, ResearchToolEvalOu
                 ToolWasCalled("create_hypothesis"),
                 ToolSucceeded("create_hypothesis"),
                 ToolResultContains("create_hypothesis", "Cache stability improves score"),
-                SessionGraphContains("Cache stability improves score"),
+                ProjectBoardContains("Cache stability improves score"),
                 EventWasEmitted("hypothesis.created"),
             ),
         ),
@@ -180,8 +180,8 @@ def research_tool_cases() -> list[Case[ResearchToolEvalInput, ResearchToolEvalOu
             evaluators=(
                 ToolWasCalled("update_hypothesis"),
                 ToolSucceeded("update_hypothesis"),
-                SessionGraphContains("Component A appears saturated"),
-                SessionGraphContains("closed"),
+                ProjectBoardContains("Component A appears saturated"),
+                ProjectBoardContains("closed"),
                 EventWasEmitted("hypothesis.updated"),
             ),
         ),
@@ -222,10 +222,10 @@ def research_tool_cases() -> list[Case[ResearchToolEvalInput, ResearchToolEvalOu
                 ToolSucceeded("add_task_comment"),
                 ToolWasCalled("link_task_entity"),
                 ToolSucceeded("link_task_entity"),
-                SessionGraphContains("Establish baseline eval"),
-                SessionGraphContains("Generate follow-up hypotheses"),
-                SessionGraphContains("claimed after baseline"),
-                SessionGraphContains(HYPOTHESIS_ID),
+                ProjectBoardContains("Establish baseline eval"),
+                ProjectBoardContains("Generate follow-up hypotheses"),
+                ProjectBoardContains("claimed after baseline"),
+                ProjectBoardContains(HYPOTHESIS_ID),
                 EventWasEmitted("task.created"),
                 EventWasEmitted("task.done"),
                 EventWasEmitted("task.comment_added"),
@@ -238,7 +238,7 @@ def research_tool_cases() -> list[Case[ResearchToolEvalInput, ResearchToolEvalOu
                 case_id="list_experiments_reads_existing_experiment",
                 seed="with_experiment",
                 prompt=(
-                    "Please review the current session's experiments with "
+                    "Please review the current project's experiments with "
                     "list_experiments, then state the experiment id and title you "
                     "found."
                 ),
@@ -307,7 +307,7 @@ def research_tool_cases() -> list[Case[ResearchToolEvalInput, ResearchToolEvalOu
                 ToolWasCalled("list_evaluation_activities"),
                 ToolSucceeded("list_evaluation_activities"),
                 ToolResultContains("list_evaluation_activities", '"kind": "result"'),
-                SessionGraphContains("score=0.730"),
+                ProjectBoardContains("score=0.730"),
                 EventWasEmitted("evaluation.created"),
                 EventWasEmitted("evaluation.result_added"),
             ),
@@ -328,7 +328,7 @@ def research_tool_cases() -> list[Case[ResearchToolEvalInput, ResearchToolEvalOu
                 ToolWasCalled("create_experiment"),
                 ToolSucceeded("create_experiment"),
                 ToolResultContains("create_experiment", "Try cache-key normalization"),
-                SessionGraphContains("Try cache-key normalization"),
+                ProjectBoardContains("Try cache-key normalization"),
                 EventWasEmitted("experiment.created"),
             ),
         ),
@@ -372,8 +372,8 @@ def research_tool_cases() -> list[Case[ResearchToolEvalInput, ResearchToolEvalOu
             evaluators=(
                 ToolWasCalled("update_experiment"),
                 ToolSucceeded("update_experiment"),
-                SessionGraphContains("Component A completed with score lift"),
-                SessionGraphContains("closed"),
+                ProjectBoardContains("Component A completed with score lift"),
+                ProjectBoardContains("closed"),
                 EventWasEmitted("experiment.updated"),
             ),
         ),
@@ -391,7 +391,7 @@ def research_tool_cases() -> list[Case[ResearchToolEvalInput, ResearchToolEvalOu
             evaluators=(
                 ToolWasCalled("link_hypothesis_experiment"),
                 ToolSucceeded("link_hypothesis_experiment"),
-                SessionGraphHasLink(HYPOTHESIS_ID, EXPERIMENT_ID),
+                ProjectBoardHasLink(HYPOTHESIS_ID, EXPERIMENT_ID),
                 EventWasEmitted("hypothesis.experiment_linked"),
             ),
         ),
@@ -410,7 +410,7 @@ def research_tool_cases() -> list[Case[ResearchToolEvalInput, ResearchToolEvalOu
             evaluators=(
                 ToolWasCalled("add_hypothesis_comment"),
                 ToolSucceeded("add_hypothesis_comment"),
-                SessionGraphContains("Prioritize reproducing Component A"),
+                ProjectBoardContains("Prioritize reproducing Component A"),
                 EventWasEmitted("hypothesis.comment_added"),
             ),
         ),
@@ -429,7 +429,7 @@ def research_tool_cases() -> list[Case[ResearchToolEvalInput, ResearchToolEvalOu
             evaluators=(
                 ToolWasCalled("add_experiment_comment"),
                 ToolSucceeded("add_experiment_comment"),
-                SessionGraphContains("Score improved but latency needs review"),
+                ProjectBoardContains("Score improved but latency needs review"),
                 EventWasEmitted("experiment.comment_added"),
             ),
         ),
@@ -484,8 +484,8 @@ def research_tool_cases() -> list[Case[ResearchToolEvalInput, ResearchToolEvalOu
             evaluators=(
                 ToolWasCalled("create_artifact"),
                 ToolSucceeded("create_artifact"),
-                SessionGraphContains("normalized cache raw output"),
-                SessionGraphContains("artifacts/normalized-cache.json"),
+                ProjectBoardContains("normalized cache raw output"),
+                ProjectBoardContains("artifacts/normalized-cache.json"),
                 EventWasEmitted("artifact.created"),
             ),
         ),
