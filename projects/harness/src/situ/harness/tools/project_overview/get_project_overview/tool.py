@@ -46,8 +46,8 @@ class GetProjectOverviewTool(BaseSituTool[SituToolDeps, GetProjectOverviewResult
         `list_*` and `get_*` tools (e.g. `list_measurements`,
         `list_evaluation_activities`, `get_task`) for older or filtered slices.
         """
-        events_cap = _resolve_cap("SITU_BOARD_EVENTS_CAP", 60)
-        activities_cap = _resolve_cap("SITU_BOARD_ACTIVITIES_CAP", 40)
+        events_cap = _resolve_cap("SITU_OVERVIEW_EVENTS_CAP", 60)
+        activities_cap = _resolve_cap("SITU_OVERVIEW_ACTIVITIES_CAP", 40)
 
         overview = await ProjectOverviewService(
             repos=await ctx.deps.get_repos()

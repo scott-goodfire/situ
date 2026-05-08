@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { LineagePage } from "./lineage-page";
 import { pageDecorator } from "./__shared__/decorators";
+import { StoryRouter } from "./__shared__/story-router";
 import {
   buildLineageFixture,
   makeEvaluation,
@@ -16,7 +17,14 @@ const meta: Meta<typeof LineagePage> = {
   title: "Lineage/LineagePage",
   component: LineagePage,
   parameters: { layout: "fullscreen" },
-  decorators: [pageDecorator],
+  decorators: [
+    pageDecorator,
+    (Story) => (
+      <StoryRouter>
+        <Story />
+      </StoryRouter>
+    ),
+  ],
   args: { onSelect: () => {} },
 };
 

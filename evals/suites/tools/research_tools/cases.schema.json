@@ -70,10 +70,10 @@
                 "$ref": "#/$defs/short_spec_EventWasEmitted"
               },
               {
-                "$ref": "#/$defs/short_spec_ProjectBoardContains"
+                "$ref": "#/$defs/short_spec_ProjectOverviewContains"
               },
               {
-                "$ref": "#/$defs/spec_ProjectBoardHasLink"
+                "$ref": "#/$defs/spec_ProjectOverviewHasLink"
               },
               {
                 "$ref": "#/$defs/spec_ToolArgsContain"
@@ -811,7 +811,7 @@
           "title": "Signals",
           "type": "object"
         },
-        "project_board": {
+        "project_overview": {
           "additionalProperties": true,
           "title": "Project Board",
           "type": "object"
@@ -1071,18 +1071,18 @@
       "title": "short_spec_MaxDuration",
       "type": "object"
     },
-    "short_spec_ProjectBoardContains": {
+    "short_spec_ProjectOverviewContains": {
       "additionalProperties": false,
       "properties": {
-        "ProjectBoardContains": {
+        "ProjectOverviewContains": {
           "title": "Projectboardcontains",
           "type": "string"
         }
       },
       "required": [
-        "ProjectBoardContains"
+        "ProjectOverviewContains"
       ],
-      "title": "short_spec_ProjectBoardContains",
+      "title": "short_spec_ProjectOverviewContains",
       "type": "object"
     },
     "short_spec_ToolCalledSuccessfully": {
@@ -1203,17 +1203,17 @@
       "title": "spec_PrecisionRecallEvaluator",
       "type": "object"
     },
-    "spec_ProjectBoardHasLink": {
+    "spec_ProjectOverviewHasLink": {
       "additionalProperties": false,
       "properties": {
-        "ProjectBoardHasLink": {
-          "$ref": "#/$defs/spec_params_ProjectBoardHasLink"
+        "ProjectOverviewHasLink": {
+          "$ref": "#/$defs/spec_params_ProjectOverviewHasLink"
         }
       },
       "required": [
-        "ProjectBoardHasLink"
+        "ProjectOverviewHasLink"
       ],
-      "title": "spec_ProjectBoardHasLink",
+      "title": "spec_ProjectOverviewHasLink",
       "type": "object"
     },
     "spec_ROCAUCEvaluator": {
@@ -1585,7 +1585,7 @@
       "title": "spec_params_PrecisionRecallEvaluator",
       "type": "object"
     },
-    "spec_params_ProjectBoardHasLink": {
+    "spec_params_ProjectOverviewHasLink": {
       "additionalProperties": false,
       "properties": {
         "hypothesis_id": {
@@ -1601,7 +1601,7 @@
         "hypothesis_id",
         "experiment_id"
       ],
-      "title": "spec_params_ProjectBoardHasLink",
+      "title": "spec_params_ProjectOverviewHasLink",
       "type": "object"
     },
     "spec_params_ROCAUCEvaluator": {
@@ -1723,10 +1723,10 @@
             "$ref": "#/$defs/short_spec_EventWasEmitted"
           },
           {
-            "$ref": "#/$defs/short_spec_ProjectBoardContains"
+            "$ref": "#/$defs/short_spec_ProjectOverviewContains"
           },
           {
-            "$ref": "#/$defs/spec_ProjectBoardHasLink"
+            "$ref": "#/$defs/spec_ProjectOverviewHasLink"
           },
           {
             "$ref": "#/$defs/spec_ToolArgsContain"

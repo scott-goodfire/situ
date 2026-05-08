@@ -111,8 +111,8 @@ Final report should be compact and skimmable. Per-spec block:
 
 ```text
 SPEC 0008 agent-facing-context
-- Aligned: get_project_board returns a typed digest (tool exists, returns
-  GetProjectBoardResult).
+- Aligned: get_project_overview returns a typed digest (tool exists, returns
+  GetProjectOverviewResult).
 - Stale reference: section "Candidate CLI/API Surface" lists `situ status`,
   `situ wait` — wait subcommand exists, status references TUI screen that
   was removed; reframe as "headless siblings include status, snapshot,
@@ -120,7 +120,7 @@ SPEC 0008 agent-facing-context
 - Code ahead of spec: tool surface includes `add_evaluation_result`,
   `inspect_workspace_state`, `link_task_entity` not mentioned by name.
   Recommend a one-line addition to the workspace/measurement section.
-- Spec ahead of code: cursor / "since" anchor in `get_project_board` not
+- Spec ahead of code: cursor / "since" anchor in `get_project_overview` not
   yet implemented. Keep as scope; add an explicit note that the cursor is
   emitted but unused by current agents.
 ```

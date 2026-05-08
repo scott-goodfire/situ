@@ -40,7 +40,14 @@ class RunExperimentTool(BaseSituTool[SituToolDeps, RunExperimentResult]):
         based_on: list[str] | None = None,
         **_kwargs: Any,
     ) -> RunExperimentResult:
-        """Run a concrete experiment through the configured worker path."""
+        """Run a concrete experiment through the configured durable worker path.
+
+        Use this only when handing the experiment off to the durable worker
+        runtime (DBOS step). For typical in-pass empirical work, follow the
+        `experiment-task` SKILL: create the experiment record, make the
+        candidate change in the managed worktree, and call `execute` against
+        the project-native measurement command.
+        """
         payload = RunExperimentPayload(
             title=title,
             summary=summary,

@@ -12,12 +12,12 @@ cases:
         with the summary "Record a baseline before variants." Mention
         "baseline is the first step" in your summary.
     evaluators:
-      - ToolCalledSuccessfully: get_project_board
+      - ToolCalledSuccessfully: get_project_overview
       - ToolCalledSuccessfully: create_baseline
       - ToolCalledSuccessfully: create_evaluation
       - ToolArgsContain: {tool_name: create_baseline, text: Baseline first}
       - ToolArgsContain: {tool_name: create_evaluation, text: Baseline measurement plan}
-      - ProjectBoardContains: Baseline measurement plan
+      - ProjectOverviewContains: Baseline measurement plan
       - ContentContains: baseline is the first step
 
   - name: creates_followup_after_baseline
@@ -31,30 +31,30 @@ cases:
         against baseline", and make component A the clear next focus in
         your response.
     evaluators:
-      - ToolCalledSuccessfully: get_project_board
+      - ToolCalledSuccessfully: get_project_overview
       - ToolCalledSuccessfully: create_experiment
       - ToolCalledSuccessfully: link_hypothesis_experiment
       - ToolCalledSuccessfully: add_experiment_comment
       - ToolArgsContain: {tool_name: create_experiment, text: Try component A}
-      - ProjectBoardContains: compare against baseline
+      - ProjectOverviewContains: compare against baseline
       - ContentContains: component A
 
   - name: proposes_combination_from_promising_results
     inputs:
       seed: with_promising_results
       prompt: |
-        Look over the project board. The recent results make A and C look
+        Look over the project overview. The recent results make A and C look
         promising, so propose the combined follow-up as an experiment titled
         "Try A+C" with the summary "Combine the two promising components."
         Link it to hypothesis H1. Also leave a hypothesis comment that says
         "A and C are promising", and make sure your response names A+C as
         the next move.
     evaluators:
-      - ToolCalledSuccessfully: get_project_board
+      - ToolCalledSuccessfully: get_project_overview
       - ToolCalledSuccessfully: create_experiment
       - ToolCalledSuccessfully: link_hypothesis_experiment
       - ToolCalledSuccessfully: add_hypothesis_comment
       - ToolArgsContain: {tool_name: create_experiment, text: Try A+C}
-      - ProjectBoardContains: A and C are promising
-      - ProjectBoardContains: Try A+C
+      - ProjectOverviewContains: A and C are promising
+      - ProjectOverviewContains: Try A+C
       - ContentContains: A+C

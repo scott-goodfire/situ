@@ -20,7 +20,7 @@ export const laneArea = style({
 export const laneSvg = style({
   display: "block",
   overflow: "visible",
-  color: vars.color.border02,
+  color: vars.color.mutedForegroundTertiary,
 });
 
 export const lanePipe = style({

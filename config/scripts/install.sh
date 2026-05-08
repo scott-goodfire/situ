@@ -142,9 +142,13 @@ if [ -n "${SITU_RELEASE_TARBALL:-}" ]; then
   printf '%s  %s\n' "$(sha256_of "$TMP_DIR/$TARBALL_NAME")" "$TARBALL_NAME" > "$TMP_DIR/checksums.txt"
 else
   if [ "$VERSION" = "latest" ]; then
-    info "resolving latest release tag"
-    release_json="$(api_curl "https://api.github.com/repos/${REPO}/releases/latest")" \
+    info "resolving latest release (any kind)"
+    release_json="$(api_curl "https://api.github.com/repos/${REPO}/releases?per_page=1")" \
       || err "failed to query latest release for $REPO"
+  elif [ "$VERSION" = "stable" ]; then
+    info "resolving latest stable release"
+    release_json="$(api_curl "https://api.github.com/repos/${REPO}/releases/latest")" \
+      || err "failed to query stable release for $REPO"
   else
     TAG="$VERSION"
     case "$TAG" in v*) ;; *) TAG="v$TAG" ;; esac

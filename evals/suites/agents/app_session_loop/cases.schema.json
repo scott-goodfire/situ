@@ -95,7 +95,7 @@
           "title": "Signals",
           "type": "object"
         },
-        "project_board": {
+        "project_overview": {
           "additionalProperties": true,
           "title": "Project Board",
           "type": "object"
@@ -252,7 +252,7 @@
                 "$ref": "#/$defs/short_spec_PlanningPassCountAtLeast"
               },
               {
-                "$ref": "#/$defs/short_spec_ProjectBoardContains"
+                "$ref": "#/$defs/short_spec_ProjectOverviewContains"
               },
               {
                 "$ref": "#/$defs/short_spec_RecordCountAtLeast"
@@ -1203,18 +1203,18 @@
       "title": "short_spec_PlanningPassCountAtLeast",
       "type": "object"
     },
-    "short_spec_ProjectBoardContains": {
+    "short_spec_ProjectOverviewContains": {
       "additionalProperties": false,
       "properties": {
-        "ProjectBoardContains": {
+        "ProjectOverviewContains": {
           "title": "Projectboardcontains",
           "type": "string"
         }
       },
       "required": [
-        "ProjectBoardContains"
+        "ProjectOverviewContains"
       ],
-      "title": "short_spec_ProjectBoardContains",
+      "title": "short_spec_ProjectOverviewContains",
       "type": "object"
     },
     "short_spec_RecordCountAtLeast": {
@@ -1911,7 +1911,7 @@
             "$ref": "#/$defs/short_spec_PlanningPassCountAtLeast"
           },
           {
-            "$ref": "#/$defs/short_spec_ProjectBoardContains"
+            "$ref": "#/$defs/short_spec_ProjectOverviewContains"
           },
           {
             "$ref": "#/$defs/short_spec_RecordCountAtLeast"

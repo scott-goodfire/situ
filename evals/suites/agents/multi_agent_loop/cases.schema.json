@@ -96,7 +96,7 @@
                 "type": "string"
               },
               {
-                "$ref": "#/$defs/short_spec_ProjectBoardContains"
+                "$ref": "#/$defs/short_spec_ProjectOverviewContains"
               },
               {
                 "const": "ResearcherHandoffRecorded",
@@ -899,7 +899,7 @@
           "title": "Final Manager Tool Calls",
           "type": "array"
         },
-        "project_board": {
+        "project_overview": {
           "additionalProperties": true,
           "title": "Project Board",
           "type": "object"
@@ -1217,18 +1217,18 @@
       "title": "short_spec_MaxDuration",
       "type": "object"
     },
-    "short_spec_ProjectBoardContains": {
+    "short_spec_ProjectOverviewContains": {
       "additionalProperties": false,
       "properties": {
-        "ProjectBoardContains": {
+        "ProjectOverviewContains": {
           "title": "Projectboardcontains",
           "type": "string"
         }
       },
       "required": [
-        "ProjectBoardContains"
+        "ProjectOverviewContains"
       ],
-      "title": "short_spec_ProjectBoardContains",
+      "title": "short_spec_ProjectOverviewContains",
       "type": "object"
     },
     "short_spec_TaskClaimedByRole": {
@@ -2094,7 +2094,7 @@
             "type": "string"
           },
           {
-            "$ref": "#/$defs/short_spec_ProjectBoardContains"
+            "$ref": "#/$defs/short_spec_ProjectOverviewContains"
           },
           {
             "const": "ResearcherHandoffRecorded",

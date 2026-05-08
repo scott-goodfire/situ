@@ -194,7 +194,7 @@ class ScientistCompletedBaselineTask(
             Any,
         ],
     ) -> EvaluationReason:
-        tasks = ctx.output.project_board.get("tasks", [])
+        tasks = ctx.output.project_overview.get("tasks", [])
         completed = [
             task
             for task in tasks
@@ -223,8 +223,8 @@ class BaselineEvaluationRecorded(
             Any,
         ],
         ) -> EvaluationReason:
-        evaluations = ctx.output.project_board.get("evaluations", [])
-        measurements = ctx.output.project_board.get("measurements", [])
+        evaluations = ctx.output.project_overview.get("evaluations", [])
+        measurements = ctx.output.project_overview.get("measurements", [])
         result_measurements = [
             measurement
             for measurement in measurements
@@ -261,7 +261,7 @@ class FollowupTaskCreatedAfterBaseline(
     ) -> EvaluationReason:
         followups = [
             task
-            for task in ctx.output.project_board.get("tasks", [])
+            for task in ctx.output.project_overview.get("tasks", [])
             if task.get("kind")
             in {"research", "hypothesize", "experiment", "interpret", "review"}
         ]
@@ -274,7 +274,7 @@ class FollowupTaskCreatedAfterBaseline(
             value=False,
             reason=(
                 "Manager did not create a post-baseline follow-up task. Tasks: "
-                f"{ctx.output.project_board.get('tasks', [])}"
+                f"{ctx.output.project_overview.get('tasks', [])}"
             ),
         )
 
@@ -291,7 +291,7 @@ class CandidateExperimentRecorded(
             Any,
         ],
     ) -> EvaluationReason:
-        graph = ctx.output.project_board
+        graph = ctx.output.project_overview
         experiments = graph.get("experiments", [])
         evaluations = graph.get("evaluations", [])
         measurements = graph.get("measurements", [])
@@ -342,8 +342,8 @@ class AnalysisRecorded(
             Any,
         ],
     ) -> EvaluationReason:
-        analyses = ctx.output.project_board.get("analyses", [])
-        activities = ctx.output.project_board.get("analysis_activities", [])
+        analyses = ctx.output.project_overview.get("analyses", [])
+        activities = ctx.output.project_overview.get("analysis_activities", [])
         has_analysis = any(
             "codebase map" in json.dumps(analysis, sort_keys=True).lower()
             for analysis in analyses
@@ -382,10 +382,10 @@ class TaskClaimedByRole(
     ) -> EvaluationReason:
         agents_by_id = {
             agent.get("id"): agent
-            for agent in ctx.output.project_board.get("agents", [])
+            for agent in ctx.output.project_overview.get("agents", [])
         }
         matches = []
-        for task in ctx.output.project_board.get("tasks", []):
+        for task in ctx.output.project_overview.get("tasks", []):
             agent = agents_by_id.get(task.get("assignee_id"))
             if agent is None or agent.get("kind") != self.role:
                 continue
@@ -409,8 +409,8 @@ class TaskClaimedByRole(
             reason=(
                 f"No task claimed by {self.role} matched kind={self.task_kind!r} "
                 f"title_contains={self.title_contains!r}. Tasks: "
-                f"{ctx.output.project_board.get('tasks', [])}; agents: "
-                f"{ctx.output.project_board.get('agents', [])}"
+                f"{ctx.output.project_overview.get('tasks', [])}; agents: "
+                f"{ctx.output.project_overview.get('agents', [])}"
             ),
         )
 
@@ -427,7 +427,7 @@ class ResearcherHandoffRecorded(
             Any,
         ],
     ) -> EvaluationReason:
-        graph = ctx.output.project_board
+        graph = ctx.output.project_overview
         analyses = graph.get("analyses", [])
         hypotheses = graph.get("hypotheses", [])
         links = graph.get("task_entity_links", [])
@@ -476,7 +476,7 @@ class WebSourceAnalysisRecorded(
             Any,
         ],
     ) -> EvaluationReason:
-        graph = ctx.output.project_board
+        graph = ctx.output.project_overview
         analyses = graph.get("analyses", [])
         links = graph.get("task_entity_links", [])
         matching = [
@@ -525,7 +525,7 @@ class UserUrgentTaskPreemptedBacklog(
             Any,
         ],
     ) -> EvaluationReason:
-        tasks = ctx.output.project_board.get("tasks", [])
+        tasks = ctx.output.project_overview.get("tasks", [])
         urgent = [
             task
             for task in tasks

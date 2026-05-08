@@ -37,8 +37,8 @@ specific content must be end state, not procedure.
 ## Required Checks
 
 - The spec is written in present tense about the running system
-  ("`get_project_board` returns a bounded digest..."), not in process tense
-  about the work to do it ("we will refactor `get_project_board` to...").
+  ("`get_project_overview` returns a bounded digest..."), not in process tense
+  about the work to do it ("we will refactor `get_project_overview` to...").
 - The spec has no numbered implementation steps, migration plans, rollout
   phases, or test-writing checklists.
 - The spec has no headings like "Implementation plan", "Sequencing",

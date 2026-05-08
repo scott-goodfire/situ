@@ -10,7 +10,7 @@ from pydantic_evals.evaluators import Evaluator
 from evals.framework import BaseSituEvalGroup
 from evals.framework.evaluators import (
     ChangedFilesDoNotInclude,
-    ProjectBoardContains,
+    ProjectOverviewContains,
     ToolArgsContain,
     ToolCalledSuccessfully,
     ToolCallOrder,
@@ -36,7 +36,7 @@ class ResearchAgentRepoBootstrapEvalGroup(
     custom_evaluator_types: ClassVar[Sequence[type[Evaluator]]] = (
         ChangedFilesDoNotInclude,
         EvaluationResultLinkedToExperiment,
-        ProjectBoardContains,
+        ProjectOverviewContains,
         ToolArgsContain,
         ToolCalledSuccessfully,
         ToolCallOrder,
@@ -53,19 +53,19 @@ class ResearchAgentRepoBootstrapEvalGroup(
         increment_eval_metric("events", len(output.events))
         increment_eval_metric(
             "hypotheses",
-            len(output.project_board.get("hypotheses", [])),
+            len(output.project_overview.get("hypotheses", [])),
         )
         increment_eval_metric(
             "experiments",
-            len(output.project_board.get("experiments", [])),
+            len(output.project_overview.get("experiments", [])),
         )
         increment_eval_metric(
             "evaluations",
-            len(output.project_board.get("evaluations", [])),
+            len(output.project_overview.get("evaluations", [])),
         )
         increment_eval_metric(
             "measurements",
-            len(output.project_board.get("measurements", [])),
+            len(output.project_overview.get("measurements", [])),
         )
         increment_eval_metric(
             "changed_files",

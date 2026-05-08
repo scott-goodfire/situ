@@ -102,9 +102,9 @@ repositories/
 ### API services (read-side composition)
 ```text
 api/
-  project_board/
+  project_overview/
     __init__.py
-    service.py         # ProjectBoardService — composes the project board read model
+    service.py         # ProjectOverviewService — composes the project board read model
     schemas.py         # response Pydantic models
   sessions/
     __init__.py

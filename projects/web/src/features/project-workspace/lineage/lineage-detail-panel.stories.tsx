@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { LineageDetailPanel } from "./lineage-detail-panel";
 import { narrowStageDecorator } from "./__shared__/decorators";
+import { StoryRouter } from "./__shared__/story-router";
 import {
   buildLineageFixture,
   makeEvaluation,
@@ -15,7 +16,14 @@ const meta: Meta<typeof LineageDetailPanel> = {
   title: "Lineage/LineageDetailPanel",
   component: LineageDetailPanel,
   parameters: { layout: "fullscreen" },
-  decorators: [narrowStageDecorator],
+  decorators: [
+    narrowStageDecorator,
+    (Story) => (
+      <StoryRouter>
+        <Story />
+      </StoryRouter>
+    ),
+  ],
 };
 
 export default meta;

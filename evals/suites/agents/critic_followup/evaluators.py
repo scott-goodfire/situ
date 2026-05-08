@@ -15,7 +15,7 @@ from evals.worlds.critic_followup import (
 def _manager_created_tasks(output: CriticFollowupEvalOutput) -> list[dict[str, Any]]:
     return [
         task
-        for task in output.project_board.get("tasks", [])
+        for task in output.project_overview.get("tasks", [])
         if task.get("source_kind") == "manager"
         and task.get("kind") != "plan"
         and task.get("status") == "backlog"
@@ -25,7 +25,7 @@ def _manager_created_tasks(output: CriticFollowupEvalOutput) -> list[dict[str, A
 def _lineage_decisions(output: CriticFollowupEvalOutput) -> list[dict[str, Any]]:
     return [
         activity
-        for activity in output.project_board.get("experiment_activities", [])
+        for activity in output.project_overview.get("experiment_activities", [])
         if (activity.get("payload") or {}).get("activity_type")
         == "lineage_decision"
     ]
@@ -157,7 +157,7 @@ class ManagerCreatedFollowupTask(
             )
         return EvaluationReason(
             value=False,
-            reason=f"No Manager-created follow-up task. Tasks: {ctx.output.project_board.get('tasks', [])}",
+            reason=f"No Manager-created follow-up task. Tasks: {ctx.output.project_overview.get('tasks', [])}",
         )
 
 
@@ -291,7 +291,7 @@ class FollowupTaskCarriesLineagePayload(
 
 
 @dataclass
-class ProjectBoardContainsReviewVerdict(
+class ProjectOverviewContainsReviewVerdict(
     Evaluator[CriticFollowupEvalInput, CriticFollowupEvalOutput, Any]
 ):
     verdict: str
@@ -300,13 +300,13 @@ class ProjectBoardContainsReviewVerdict(
         self,
         ctx: EvaluatorContext[CriticFollowupEvalInput, CriticFollowupEvalOutput, Any],
     ) -> EvaluationReason:
-        rendered = json.dumps(ctx.output.project_board, sort_keys=True).lower()
+        rendered = json.dumps(ctx.output.project_overview, sort_keys=True).lower()
         if self.verdict.lower() in rendered and "critic_review" in rendered:
             return EvaluationReason(
                 value=True,
-                reason=f"Project board contains Critic verdict {self.verdict!r}",
+                reason=f"Project overview contains Critic verdict {self.verdict!r}",
             )
         return EvaluationReason(
             value=False,
-            reason=f"Project board did not contain Critic verdict {self.verdict!r}",
+            reason=f"Project overview did not contain Critic verdict {self.verdict!r}",
         )

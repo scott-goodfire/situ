@@ -100,7 +100,7 @@
                 "$ref": "#/$defs/short_spec_ManagerToolWasCalled"
               },
               {
-                "$ref": "#/$defs/short_spec_ProjectBoardContainsReviewVerdict"
+                "$ref": "#/$defs/short_spec_ProjectOverviewContainsReviewVerdict"
               },
               {
                 "$ref": "#/$defs/short_spec_Equals"
@@ -260,7 +260,7 @@
           "title": "Manager Tool Calls",
           "type": "array"
         },
-        "project_board": {
+        "project_overview": {
           "additionalProperties": true,
           "title": "Project Board",
           "type": "object"
@@ -1162,18 +1162,18 @@
       "title": "short_spec_MaxDuration",
       "type": "object"
     },
-    "short_spec_ProjectBoardContainsReviewVerdict": {
+    "short_spec_ProjectOverviewContainsReviewVerdict": {
       "additionalProperties": false,
       "properties": {
-        "ProjectBoardContainsReviewVerdict": {
+        "ProjectOverviewContainsReviewVerdict": {
           "title": "Projectboardcontainsreviewverdict",
           "type": "string"
         }
       },
       "required": [
-        "ProjectBoardContainsReviewVerdict"
+        "ProjectOverviewContainsReviewVerdict"
       ],
-      "title": "short_spec_ProjectBoardContainsReviewVerdict",
+      "title": "short_spec_ProjectOverviewContainsReviewVerdict",
       "type": "object"
     },
     "spec_ConfusionMatrixEvaluator": {
@@ -1803,7 +1803,7 @@
             "$ref": "#/$defs/short_spec_ManagerToolWasCalled"
           },
           {
-            "$ref": "#/$defs/short_spec_ProjectBoardContainsReviewVerdict"
+            "$ref": "#/$defs/short_spec_ProjectOverviewContainsReviewVerdict"
           },
           {
             "$ref": "#/$defs/short_spec_Equals"

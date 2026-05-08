@@ -27,12 +27,33 @@ export function computeLaneLayout({
   experiments: ExperimentRecord[];
 }): LineageGraphLayout {
   const ordered = topologicallyOrdered({ experiments });
+  const byId = new Map(ordered.map((e) => [e.id, e]));
   const childCount = countChildren({ experiments: ordered });
   const remainingChildren = new Map(childCount);
 
   const lanes: Array<string | null> = [];
   const positionById = new Map<string, LineagePosition>();
-  const pendingFreeByParent = new Map<string, number[]>();
+  // Lanes whose owner is a leaf but whose ancestors still expect children.
+  // They're held until the full ancestor chain is satisfied so that an
+  // upcoming sibling can't reclaim the spine.
+  let pendingFreeLanes: number[] = [];
+
+  const sweepPendingFree = () => {
+    pendingFreeLanes = pendingFreeLanes.filter((lane) => {
+      const ownerId = lanes[lane];
+      if (!ownerId) return false;
+      const owner = byId.get(ownerId);
+      if (!owner) {
+        lanes[lane] = null;
+        return false;
+      }
+      if (allAncestorsDone({ experiment: owner, remainingChildren, byId })) {
+        lanes[lane] = null;
+        return false;
+      }
+      return true;
+    });
+  };
 
   ordered.forEach((experiment, row) => {
     const lane = pickLane({ experiment, lanes, positionById });
@@ -45,29 +66,20 @@ export function computeLaneLayout({
     });
 
     const parentId = experiment.parent_experiment_id ?? null;
-    const isLeaf = !childCount.has(experiment.id);
-
     if (parentId && remainingChildren.has(parentId)) {
       remainingChildren.set(parentId, (remainingChildren.get(parentId) ?? 0) - 1);
     }
 
-    // Leaf-lane release is deferred until the parent has no more children, so
-    // a later sibling can't accidentally reclaim a column that a leaf sibling
-    // just vacated. A root leaf has no siblings, so its lane is freed now.
+    // Decrementing parent counts can clear ancestor chains for previously
+    // queued leaves, so sweep the queue every iteration.
+    sweepPendingFree();
+
+    const isLeaf = !childCount.has(experiment.id);
     if (isLeaf) {
-      if (!parentId) {
+      if (allAncestorsDone({ experiment, remainingChildren, byId })) {
         lanes[lane] = null;
       } else {
-        const queued = pendingFreeByParent.get(parentId) ?? [];
-        queued.push(lane);
-        pendingFreeByParent.set(parentId, queued);
-
-        if ((remainingChildren.get(parentId) ?? 0) === 0) {
-          for (const queuedLane of queued) {
-            lanes[queuedLane] = null;
-          }
-          pendingFreeByParent.delete(parentId);
-        }
+        pendingFreeLanes.push(lane);
       }
     }
   });
@@ -82,6 +94,23 @@ export function computeLaneLayout({
     edges,
     laneCount,
   };
+}
+
+function allAncestorsDone({
+  experiment,
+  remainingChildren,
+  byId,
+}: {
+  experiment: ExperimentRecord;
+  remainingChildren: Map<string, number>;
+  byId: Map<string, ExperimentRecord>;
+}): boolean {
+  let parentId: string | null | undefined = experiment.parent_experiment_id;
+  while (parentId) {
+    if ((remainingChildren.get(parentId) ?? 0) > 0) return false;
+    parentId = byId.get(parentId)?.parent_experiment_id ?? null;
+  }
+  return true;
 }
 
 function pickLane({

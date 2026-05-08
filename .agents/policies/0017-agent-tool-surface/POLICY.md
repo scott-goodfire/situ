@@ -14,7 +14,7 @@ agents read or mutate Situ research state.
 
 Situ research tools that read or write records should feel like explicit
 operations over Situ product models and familiar research actions. Prefer concrete, inspectable tools such
-as `get_project_board`, `get_project`, `get_task`, `create_hypothesis`,
+as `get_project_overview`, `get_project`, `get_task`, `create_hypothesis`,
 `update_experiment`, `add_experiment_comment`, and `add_evaluation_result` over
 abstract tools that ask the model to choose internal ontology details.
 
@@ -74,7 +74,7 @@ to call a generic activity writer to record benchmark evidence.
   `get_task(task_id)`. This mirrors the Python backend's keyword-only API
   style and keeps IDs self-describing in traces.
 - Prefer model-shaped tool names:
-  `get_project_board`, `get_project`, `get_task`, `list_hypotheses`,
+  `get_project_overview`, `get_project`, `get_task`, `list_hypotheses`,
   `create_experiment`, `link_hypothesis_experiment`.
 - Agent-facing state readers should default to the current project. Do not
   expose session/run selectors unless the tool is explicitly for inspecting run
@@ -86,7 +86,7 @@ to call a generic activity writer to record benchmark evidence.
   reader.
 - Multi-record bootstrap context should be IDs and constraints, not full
   records. For example, pass "assigned task ids: `task_1`, `task_5`,
-  `task_7`" and let the agent call `get_task` and `get_project_board` as
+  `task_7`" and let the agent call `get_task` and `get_project_overview` as
   needed.
 - A tool may default to the current project for scoping, but record selection
   should remain explicit when the agent is expected to act on a particular

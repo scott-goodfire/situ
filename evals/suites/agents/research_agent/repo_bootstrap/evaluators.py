@@ -19,7 +19,7 @@ class EvaluationResultLinkedToExperiment(
         self,
         ctx: EvaluatorContext[RepoBootstrapEvalInput, RepoBootstrapEvalOutput, Any],
     ) -> EvaluationReason:
-        evaluations = ctx.output.project_board.get("evaluations", [])
+        evaluations = ctx.output.project_overview.get("evaluations", [])
         linked = [
             evaluation
             for evaluation in evaluations

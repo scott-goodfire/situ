@@ -11,8 +11,8 @@ ModelThinking = Literal["minimal", "low", "medium", "high", "xhigh"]
 class SituDefaults(BaseModel):
     model_config = ConfigDict(frozen=True)
 
-    agent_model: str = "anthropic:claude-opus-4-7"
-    eval_model: str = "anthropic:claude-haiku-4-5"
+    agent_model: str = "anthropic:claude-sonnet-4-6"
+    eval_model: str = "anthropic:claude-sonnet-4-6"
     model_thinking: ModelThinking = "low"
     anthropic_compaction_token_threshold: int = 150_000
     harness_logfire_service_name: str = "situ-harness"

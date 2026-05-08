@@ -12,7 +12,7 @@ from evals.framework.evaluators import (
     ChangedFilesDoNotInclude,
     ChangedFilesExactly,
     EventWasEmitted,
-    ProjectBoardContains,
+    ProjectOverviewContains,
     ToolArgsContain,
     ToolResultContains,
     ToolWasCalled,
@@ -53,7 +53,7 @@ class MultiAgentLoopEvalGroup(
         ChangedFilesExactly,
         EventWasEmitted,
         FollowupTaskCreatedAfterBaseline,
-        ProjectBoardContains,
+        ProjectOverviewContains,
         ResearcherHandoffRecorded,
         RoleToolArgsContain,
         RoleToolCalledSuccessfully,
@@ -92,24 +92,24 @@ class MultiAgentLoopEvalGroup(
             ),
         )
         increment_eval_metric("events", len(output.events))
-        increment_eval_metric("tasks", len(output.project_board.get("tasks", [])))
+        increment_eval_metric("tasks", len(output.project_overview.get("tasks", [])))
         increment_eval_metric(
             "done_tasks",
             len(
                 [
                     task
-                    for task in output.project_board.get("tasks", [])
+                    for task in output.project_overview.get("tasks", [])
                     if task.get("status") == "done"
                 ]
             ),
         )
         increment_eval_metric(
             "evaluations",
-            len(output.project_board.get("evaluations", [])),
+            len(output.project_overview.get("evaluations", [])),
         )
         increment_eval_metric(
             "measurements",
-            len(output.project_board.get("measurements", [])),
+            len(output.project_overview.get("measurements", [])),
         )
         increment_eval_metric("changed_files", len(output.changed_files))
         return output

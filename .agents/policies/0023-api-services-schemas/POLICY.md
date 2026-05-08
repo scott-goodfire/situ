@@ -22,7 +22,7 @@ composition. Schemas describe the boundary response, not the database row.
 - Stable API surfaces live under `api/<surface>/{service.py,schemas.py,__init__.py}`.
 - Service classes are named `<Surface>Service` and keep public methods
   keyword-only when they accept application semantics, such as
-  `get_project_board(project_id=...)`.
+  `get_project_overview(project_id=...)`.
 - Schemas are Pydantic models shaped for consumers such as the TUI, web app,
   headless commands, runtime agents, or collection snapshots.
 - Services may call multiple repositories and compose records into one response

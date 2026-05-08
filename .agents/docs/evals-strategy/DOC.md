@@ -94,7 +94,7 @@ Good first targets:
   as one integrated workflow.
 - The planner explores simple variants before over-committing.
 - The planner combines promising hypothesis/experiment activity.
-- The research-tool agent reads the compact project board with `get_project_board`.
+- The research-tool agent reads the compact project board with `get_project_overview`.
 - The research-tool agent uses explicit model-shaped tools for hypotheses,
   experiments, links, comments, activities, and artifacts.
 - Suspicious wins are not treated as accepted progress.

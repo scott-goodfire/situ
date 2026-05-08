@@ -45,14 +45,14 @@ name: research_tools
 evaluators:
   - IsInstance: SituEvalOutput
 cases:
-  - name: get_project_board_reads_board
+  - name: get_project_overview_reads_board
     inputs:
       seed: with_comments
       prompt: |
-        Check the project with get_project_board, then state the objective
+        Check the project with get_project_overview, then state the objective
         and one hypothesis on the board.
     evaluators:
-      - ToolCalledSuccessfully: get_project_board
+      - ToolCalledSuccessfully: get_project_overview
       - Contains: "Improve validation score"
       - Contains: H1
 ```
@@ -73,7 +73,7 @@ Three evaluator categories cover the eval surface:
 - **Built-in deterministic** — `Contains`, `IsInstance`, `EqualsExpected`
   from `pydantic_evals.evaluators` for plain-text and type checks.
 - **Situ trace evaluators** — read `SituEvalOutput.captured_tool_calls`,
-  `events`, and `project_board` to assert tool sequencing, durable records,
+  `events`, and `project_overview` to assert tool sequencing, durable records,
   and emitted events. These cover the bulk of agent-behavior assertions.
 - **Semantic judges** — `LLMJudge` with a rubric, used only when behavior
   cannot be expressed as a deterministic check.
@@ -105,8 +105,8 @@ class ResearchToolsEvalGroup(BaseSituEvalGroup[ResearchToolEvalInput, ResearchTo
         ToolCalledSuccessfully,
         ToolArgsContain,
         ToolResultContains,
-        ProjectBoardContains,
-        ProjectBoardHasLink,
+        ProjectOverviewContains,
+        ProjectOverviewHasLink,
         EventWasEmitted,
     ]
 

@@ -270,7 +270,7 @@
           "title": "Critic Tool Calls",
           "type": "array"
         },
-        "project_board": {
+        "project_overview": {
           "additionalProperties": true,
           "title": "Project Board",
           "type": "object"

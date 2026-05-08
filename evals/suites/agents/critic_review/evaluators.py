@@ -15,7 +15,7 @@ from evals.worlds.critic_review import (
 def _review_activities(output: CriticReviewEvalOutput) -> list[dict[str, Any]]:
     return [
         activity
-        for activity in output.project_board.get("experiment_activities", [])
+        for activity in output.project_overview.get("experiment_activities", [])
         if (activity.get("payload") or {}).get("activity_type") == "critic_review"
     ]
 
@@ -217,11 +217,11 @@ class CriticReviewReferencesEvidence(
 
         evaluations_by_id = {
             evaluation.get("id"): evaluation
-            for evaluation in ctx.output.project_board.get("evaluations", [])
+            for evaluation in ctx.output.project_overview.get("evaluations", [])
         }
         measurements_by_id = {
             str(measurement.get("id")): measurement
-            for measurement in ctx.output.project_board.get("measurements", [])
+            for measurement in ctx.output.project_overview.get("measurements", [])
             if measurement.get("id") is not None
         }
         missing_evaluations = sorted(
@@ -247,7 +247,7 @@ class CriticReviewReferencesEvidence(
         experiment_id = review.get("experiment_id")
         review_tasks = [
             task
-            for task in ctx.output.project_board.get("tasks", [])
+            for task in ctx.output.project_overview.get("tasks", [])
             if task.get("kind") == "review"
             and (task.get("payload") or {}).get("experiment_id") == experiment_id
         ]
@@ -344,11 +344,11 @@ class ReviewTaskCompletedByCritic(
     ) -> EvaluationReason:
         agents_by_id = {
             agent.get("id"): agent
-            for agent in ctx.output.project_board.get("agents", [])
+            for agent in ctx.output.project_overview.get("agents", [])
         }
         matches = [
             task
-            for task in ctx.output.project_board.get("tasks", [])
+            for task in ctx.output.project_overview.get("tasks", [])
             if task.get("kind") == "review"
             and task.get("status") == "done"
             and agents_by_id.get(task.get("assignee_id"), {}).get("kind") == "critic"
@@ -365,7 +365,7 @@ class ReviewTaskCompletedByCritic(
             value=False,
             reason=(
                 "No done Critic review task. Tasks: "
-                f"{ctx.output.project_board.get('tasks', [])}"
+                f"{ctx.output.project_overview.get('tasks', [])}"
             ),
         )
 

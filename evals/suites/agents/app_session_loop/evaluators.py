@@ -42,7 +42,7 @@ class DoneTaskKindAtLeast(
     ) -> EvaluationReason:
         matches = [
             task
-            for task in ctx.output.project_board.get("tasks", [])
+            for task in ctx.output.project_overview.get("tasks", [])
             if task.get("kind") == self.task_kind and task.get("status") == "done"
         ]
         if len(matches) >= self.count:
@@ -57,7 +57,7 @@ class DoneTaskKindAtLeast(
             value=False,
             reason=(
                 f"Expected at least {self.count} done {self.task_kind} task(s). "
-                f"Tasks: {ctx.output.project_board.get('tasks', [])}"
+                f"Tasks: {ctx.output.project_overview.get('tasks', [])}"
             ),
         )
 
@@ -72,7 +72,7 @@ class PlanningPassCountAtLeast(
         self,
         ctx: EvaluatorContext[AppSessionLoopEvalInput, AppSessionLoopEvalOutput, Any],
     ) -> EvaluationReason:
-        tasks = ctx.output.project_board.get("tasks", [])
+        tasks = ctx.output.project_overview.get("tasks", [])
         pass_count = _done_planning_pass_count(tasks)
         if pass_count >= self.count:
             return EvaluationReason(
@@ -96,7 +96,7 @@ class BaselineThenFollowupWork(
         self,
         ctx: EvaluatorContext[AppSessionLoopEvalInput, AppSessionLoopEvalOutput, Any],
     ) -> EvaluationReason:
-        tasks = ctx.output.project_board.get("tasks", [])
+        tasks = ctx.output.project_overview.get("tasks", [])
         done_baseline = [
             task
             for task in tasks
@@ -138,7 +138,7 @@ class ExperimentCountAtLeast(
         self,
         ctx: EvaluatorContext[AppSessionLoopEvalInput, AppSessionLoopEvalOutput, Any],
     ) -> EvaluationReason:
-        experiments = ctx.output.project_board.get("experiments", [])
+        experiments = ctx.output.project_overview.get("experiments", [])
         if len(experiments) >= self.count:
             return EvaluationReason(
                 value=True,
@@ -195,11 +195,11 @@ class TaskDoneByAgentKind(
     ) -> EvaluationReason:
         agents_by_id = {
             agent.get("id"): agent
-            for agent in ctx.output.project_board.get("agents", [])
+            for agent in ctx.output.project_overview.get("agents", [])
         }
         matches = [
             task
-            for task in ctx.output.project_board.get("tasks", [])
+            for task in ctx.output.project_overview.get("tasks", [])
             if task.get("kind") == self.task_kind
             and task.get("status") == "done"
             and agents_by_id.get(task.get("assignee_id"), {}).get("kind")
@@ -219,8 +219,8 @@ class TaskDoneByAgentKind(
             reason=(
                 f"Expected at least {self.count} done {self.task_kind} task(s) "
                 f"assigned to {self.agent_kind}. Tasks: "
-                f"{ctx.output.project_board.get('tasks', [])}; agents: "
-                f"{ctx.output.project_board.get('agents', [])}"
+                f"{ctx.output.project_overview.get('tasks', [])}; agents: "
+                f"{ctx.output.project_overview.get('agents', [])}"
             ),
         )
 
@@ -236,7 +236,7 @@ class RecordCountAtLeast(
         self,
         ctx: EvaluatorContext[AppSessionLoopEvalInput, AppSessionLoopEvalOutput, Any],
     ) -> EvaluationReason:
-        records = ctx.output.project_board.get(self.collection, [])
+        records = ctx.output.project_overview.get(self.collection, [])
         if len(records) >= self.count:
             return EvaluationReason(
                 value=True,
@@ -261,7 +261,7 @@ class ExperimentReviewRecorded(
     ) -> EvaluationReason:
         reviews = [
             activity
-            for activity in ctx.output.project_board.get("experiment_activities", [])
+            for activity in ctx.output.project_overview.get("experiment_activities", [])
             if (activity.get("payload") or {}).get("activity_type") == "critic_review"
         ]
         if reviews:
@@ -277,7 +277,7 @@ class ExperimentReviewRecorded(
             reason=(
                 "Expected an experiment activity with payload.activity_type "
                 "critic_review. Activities: "
-                f"{ctx.output.project_board.get('experiment_activities', [])}"
+                f"{ctx.output.project_overview.get('experiment_activities', [])}"
             ),
         )
 
@@ -290,10 +290,10 @@ class ReviewTaskLinksComplete(
         self,
         ctx: EvaluatorContext[AppSessionLoopEvalInput, AppSessionLoopEvalOutput, Any],
     ) -> EvaluationReason:
-        links = ctx.output.project_board.get("task_entity_links", [])
+        links = ctx.output.project_overview.get("task_entity_links", [])
         review_tasks = [
             task
-            for task in ctx.output.project_board.get("tasks", [])
+            for task in ctx.output.project_overview.get("tasks", [])
             if task.get("kind") == "review"
         ]
         expected = {"experiment", "evaluation", "measurement"}
@@ -331,10 +331,10 @@ class CommandReceiptArtifactCaptured(
     ) -> EvaluationReason:
         artifacts = [
             artifact
-            for artifact in ctx.output.project_board.get("artifacts", [])
+            for artifact in ctx.output.project_overview.get("artifacts", [])
             if artifact.get("kind") == "command_receipt"
         ]
-        links = ctx.output.project_board.get("task_entity_links", [])
+        links = ctx.output.project_overview.get("task_entity_links", [])
         linked_artifact_ids = {
             link.get("entity_id")
             for link in links
@@ -384,17 +384,17 @@ class PatchHandoffArtifactCaptured(
     ) -> EvaluationReason:
         artifacts = [
             artifact
-            for artifact in ctx.output.project_board.get("artifacts", [])
+            for artifact in ctx.output.project_overview.get("artifacts", [])
             if artifact.get("kind") == "patch"
         ]
-        links = ctx.output.project_board.get("task_entity_links", [])
+        links = ctx.output.project_overview.get("task_entity_links", [])
         produced_artifact_ids = {
             link.get("entity_id")
             for link in links
             if link.get("entity_kind") == "artifact"
             and link.get("relationship") == "produces"
         }
-        activities = ctx.output.project_board.get("experiment_activities", [])
+        activities = ctx.output.project_overview.get("experiment_activities", [])
         handoffs = [
             activity
             for activity in activities
@@ -440,7 +440,7 @@ class ExperimentCandidateStateRecorded(
         self,
         ctx: EvaluatorContext[AppSessionLoopEvalInput, AppSessionLoopEvalOutput, Any],
     ) -> EvaluationReason:
-        experiments = ctx.output.project_board.get("experiments", [])
+        experiments = ctx.output.project_overview.get("experiments", [])
         candidate_experiments = [
             experiment
             for experiment in experiments
@@ -448,7 +448,7 @@ class ExperimentCandidateStateRecorded(
         ]
         workspace_state = [
             activity
-            for activity in ctx.output.project_board.get("experiment_activities", [])
+            for activity in ctx.output.project_overview.get("experiment_activities", [])
             if (activity.get("payload") or {}).get("activity_type")
             == "workspace_state"
             and (activity.get("payload") or {}).get("candidate_commit")
@@ -467,6 +467,6 @@ class ExperimentCandidateStateRecorded(
             reason=(
                 "Expected experiment candidate state and workspace_state "
                 f"activity with patch_artifact_id. Experiments: {experiments}; "
-                f"activities: {ctx.output.project_board.get('experiment_activities', [])}"
+                f"activities: {ctx.output.project_overview.get('experiment_activities', [])}"
             ),
         )

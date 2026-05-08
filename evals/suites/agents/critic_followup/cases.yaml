@@ -6,10 +6,10 @@ cases:
       seed: needs_reproduction
     evaluators:
       - ManagerToolWasCalled: get_task
-      - ManagerToolWasCalled: get_project_board
+      - ManagerToolWasCalled: get_project_overview
       - ManagerToolCalledSuccessfully: add_experiment_lineage_decision
       - ManagerToolCalledSuccessfully: create_task
-      - ProjectBoardContainsReviewVerdict: needs_reproduction
+      - ProjectOverviewContainsReviewVerdict: needs_reproduction
       - LineageDecisionRecorded:
           decision: reproduce
           experiment_id: EX1
@@ -28,9 +28,9 @@ cases:
       seed: invalid
     evaluators:
       - ManagerToolWasCalled: get_task
-      - ManagerToolWasCalled: get_project_board
+      - ManagerToolWasCalled: get_project_overview
       - ManagerToolCalledSuccessfully: create_task
-      - ProjectBoardContainsReviewVerdict: invalid
+      - ProjectOverviewContainsReviewVerdict: invalid
       - ManagerCreatedFollowupTask
       - FollowupTaskKindIn:
           allowed: [research, interpret, experiment]
@@ -42,9 +42,9 @@ cases:
       seed: human_review
     evaluators:
       - ManagerToolWasCalled: get_task
-      - ManagerToolWasCalled: get_project_board
+      - ManagerToolWasCalled: get_project_overview
       - ManagerToolCalledSuccessfully: create_task
-      - ProjectBoardContainsReviewVerdict: human_review
+      - ProjectOverviewContainsReviewVerdict: human_review
       - ManagerCreatedFollowupTask
       - FollowupTaskKindIn:
           allowed: [research, interpret]
@@ -56,10 +56,10 @@ cases:
       seed: usable
     evaluators:
       - ManagerToolWasCalled: get_task
-      - ManagerToolWasCalled: get_project_board
+      - ManagerToolWasCalled: get_project_overview
       - ManagerToolCalledSuccessfully: add_experiment_lineage_decision
       - ManagerToolCalledSuccessfully: create_task
-      - ProjectBoardContainsReviewVerdict: usable
+      - ProjectOverviewContainsReviewVerdict: usable
       - LineageDecisionRecorded:
           decision: continue
           experiment_id: EX1

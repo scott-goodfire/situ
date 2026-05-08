@@ -20,7 +20,7 @@ developer-agent skills under `.agents/skills/`, and they do not replace normal
 Situ record tools.
 
 Skills may teach an agent how to do work. Durable findings still flow through
-explicit tools such as `get_project_board`, `get_task`, `create_analysis`,
+explicit tools such as `get_project_overview`, `get_task`, `create_analysis`,
 `create_hypothesis`, `create_experiment`, `add_task_comment`, and
 `link_task_entity`.
 

@@ -16,6 +16,19 @@ const config: StorybookConfig = {
   async viteFinal(config) {
     const { vanillaExtractPlugin } = await import("@vanilla-extract/vite-plugin");
     config.plugins = [...(config.plugins ?? []), vanillaExtractPlugin()];
+    // Dedupe React so workspace packages (web, web-ui, web-app-ui) all share
+    // a single instance — otherwise stories that import from the live web app
+    // hit two-React-instances and hooks fail with "Cannot read properties of
+    // null (reading 'useEffect')".
+    config.resolve = {
+      ...config.resolve,
+      dedupe: [
+        ...(config.resolve?.dedupe ?? []),
+        "react",
+        "react-dom",
+        "react/jsx-runtime",
+      ],
+    };
     return config;
   },
 };

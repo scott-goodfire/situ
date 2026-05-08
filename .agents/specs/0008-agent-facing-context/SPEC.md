@@ -8,7 +8,7 @@ Agents should also not receive hidden expanded project state context when they c
 read it explicitly. Role prompts should bootstrap the agent with the smallest
 useful assignment context: role, setup text, hard budgets, and record IDs such
 as task IDs. The agent should then call explicit tools such as
-`get_task(task_id=...)`, `get_project_board`, and focused `list_*` readers to
+`get_task(task_id=...)`, `get_project_overview`, and focused `list_*` readers to
 gather the state it uses.
 
 ## Agent Questions
@@ -76,7 +76,7 @@ inspection clearer than requiring agents to fetch the full project board.
 
 ## Project Board
 
-The compact project board, exposed to agents through `get_project_board`,
+The compact project board, exposed to agents through `get_project_overview`,
 should be a bounded digest of the active working set, not a dump of every
 record the project has ever produced. Its response size should scale with
 what is currently in motion (open hypotheses, runnable tasks, in-progress
@@ -127,7 +127,7 @@ the working set rather than project age, so a long-running session does not
 silently outgrow the model's context window.
 
 Agent-facing read and write tools should stay close to the product models.
-Use `get_project_board` for the bounded current digest, and use explicit
+Use `get_project_overview` for the bounded current digest, and use explicit
 `list_*` tools when an agent needs a focused slice such as hypotheses,
 baselines, experiments, evaluations, measurements, activities, or artifacts.
 When the harness has already selected a specific record for an agent to work

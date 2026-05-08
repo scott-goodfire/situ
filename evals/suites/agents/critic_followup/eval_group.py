@@ -17,7 +17,7 @@ from evals.suites.agents.critic_followup.evaluators import (
     ManagerToolCalledSuccessfully,
     ManagerToolSucceeded,
     ManagerToolWasCalled,
-    ProjectBoardContainsReviewVerdict,
+    ProjectOverviewContainsReviewVerdict,
 )
 from evals.worlds.critic_followup import (
     CriticFollowupEvalInput,
@@ -41,7 +41,7 @@ class CriticFollowupEvalGroup(
         ManagerToolCalledSuccessfully,
         ManagerToolSucceeded,
         ManagerToolWasCalled,
-        ProjectBoardContainsReviewVerdict,
+        ProjectOverviewContainsReviewVerdict,
     )
 
     async def task(self, args: CriticFollowupEvalInput) -> CriticFollowupEvalOutput:

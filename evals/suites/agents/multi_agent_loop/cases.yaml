@@ -10,7 +10,7 @@ cases:
       - RoleToolCalledSuccessfully: {role: manager, tool_name: create_task}
       - RoleToolWasCalled: {role: scientist, tool_name: get_task}
       - RoleToolWasCalled: {role: scientist, tool_name: load_skill}
-      - RoleToolWasCalled: {role: scientist, tool_name: get_project_board}
+      - RoleToolWasCalled: {role: scientist, tool_name: get_project_overview}
       - TaskClaimedByRole: {role: scientist, task_kind: baseline}
       - RoleToolWasCalled: {role: scientist, tool_name: inspect_workspace_state}
       - RoleToolWasCalled: {role: scientist, tool_name: execute}
@@ -26,8 +26,8 @@ cases:
       - EventWasEmitted: baseline.created
       - EventWasEmitted: evaluation.created
       - EventWasEmitted: evaluation.result_added
-      - ProjectBoardContains: val_bpb
-      - ProjectBoardContains: baseline
+      - ProjectOverviewContains: val_bpb
+      - ProjectOverviewContains: baseline
       - ScientistCompletedBaselineTask
       - BaselineEvaluationRecorded
       - FollowupTaskCreatedAfterBaseline
@@ -41,7 +41,7 @@ cases:
       - TaskClaimedByRole: {role: researcher, task_kind: research}
       - RoleToolWasCalled: {role: researcher, tool_name: get_task}
       - RoleToolWasCalled: {role: researcher, tool_name: load_skill}
-      - RoleToolWasCalled: {role: researcher, tool_name: get_project_board}
+      - RoleToolWasCalled: {role: researcher, tool_name: get_project_overview}
       - RoleToolWasCalled: {role: researcher, tool_name: read_file}
       - ToolArgsContain: {tool_name: read_file, text: train.py}
       - RoleToolCalledSuccessfully: {role: researcher, tool_name: create_analysis}
@@ -61,8 +61,8 @@ cases:
       - RoleToolCalledSuccessfully: {role: scientist, tool_name: create_evaluation}
       - RoleToolCalledSuccessfully: {role: scientist, tool_name: add_measurement}
       - EventWasEmitted: session.agent_completed
-      - ProjectBoardContains: component_a
-      - ProjectBoardContains: val_bpb
+      - ProjectOverviewContains: component_a
+      - ProjectOverviewContains: val_bpb
       - CandidateExperimentRecorded
       - ChangedFilesExactly:
           paths: [train.py]
@@ -87,7 +87,7 @@ cases:
       - RoleToolCalledSuccessfully: {role: scientist, tool_name: add_measurement}
       - RoleToolCalledSuccessfully: {role: scientist, tool_name: update_task}
       - EventWasEmitted: task.done
-      - ProjectBoardContains: component_a
+      - ProjectOverviewContains: component_a
       - CandidateExperimentRecorded
       - ChangedFilesExactly:
           paths: [train.py]
@@ -106,8 +106,8 @@ cases:
       - ToolArgsContain: {tool_name: read_file, text: prepare.py}
       - RoleToolCalledSuccessfully: {role: researcher, tool_name: add_task_comment}
       - RoleToolCalledSuccessfully: {role: researcher, tool_name: update_task}
-      - ProjectBoardContains: prepare.py
-      - ProjectBoardContains: suspicious
+      - ProjectOverviewContains: prepare.py
+      - ProjectOverviewContains: suspicious
       - ChangedFilesDoNotInclude: prepare.py
 
   - name: analysis_before_hypothesis_loop
@@ -126,8 +126,8 @@ cases:
       - RoleToolCalledSuccessfully: {role: researcher, tool_name: link_task_entity}
       - RoleToolWasCalled: {role: researcher, tool_name: create_hypothesis, expected: false}
       - RoleToolCalledSuccessfully: {role: researcher, tool_name: update_task}
-      - ProjectBoardContains: Codebase map
-      - ProjectBoardContains: analysis before hypotheses
+      - ProjectOverviewContains: Codebase map
+      - ProjectOverviewContains: analysis before hypotheses
       - AnalysisRecorded
 
   - name: user_urgent_task_preempts_backlog
@@ -135,7 +135,7 @@ cases:
       seed: with_user_urgent_task
     evaluators:
       - RoleToolWasCalled: {role: manager, tool_name: get_task}
-      - RoleToolWasCalled: {role: manager, tool_name: get_task_board}
+      - RoleToolWasCalled: {role: manager, tool_name: get_task_overview}
       - TaskClaimedByRole: {role: researcher, title_contains: "User urgent"}
       - RoleToolWasCalled: {role: researcher, tool_name: get_task}
       - RoleToolWasCalled: {role: researcher, tool_name: load_skill}
@@ -143,7 +143,7 @@ cases:
       - ToolArgsContain: {tool_name: read_file, text: prepare.py}
       - RoleToolCalledSuccessfully: {role: researcher, tool_name: add_task_comment}
       - RoleToolCalledSuccessfully: {role: researcher, tool_name: update_task}
-      - ProjectBoardContains: urgent user task handled
+      - ProjectOverviewContains: urgent user task handled
       - UserUrgentTaskPreemptedBacklog
       - ChangedFilesDoNotInclude: prepare.py
 
@@ -158,13 +158,13 @@ cases:
       - RoleToolWasCalled: {role: researcher, tool_name: get_task}
       - RoleToolWasCalled: {role: researcher, tool_name: load_skill}
       - RoleToolArgsContain: {role: researcher, tool_name: load_skill, text: interpret-task}
-      - RoleToolWasCalled: {role: researcher, tool_name: get_project_board}
+      - RoleToolWasCalled: {role: researcher, tool_name: get_project_overview}
       - RoleToolCalledSuccessfully: {role: researcher, tool_name: create_analysis}
       - RoleToolCalledSuccessfully: {role: researcher, tool_name: link_task_entity}
       - RoleToolCalledSuccessfully: {role: researcher, tool_name: update_task}
-      - ProjectBoardContains: Component A result interpretation
-      - ProjectBoardContains: component_a
-      - ProjectBoardContains: val_bpb
+      - ProjectOverviewContains: Component A result interpretation
+      - ProjectOverviewContains: component_a
+      - ProjectOverviewContains: val_bpb
       - ChangedFilesDoNotInclude: prepare.py
 
   - name: manager_and_researcher_use_real_web_search
@@ -179,7 +179,7 @@ cases:
       - RoleToolCalledSuccessfully: {role: manager, tool_name: create_task}
       - TaskClaimedByRole: {role: researcher, task_kind: research}
       - RoleToolWasCalled: {role: researcher, tool_name: get_task}
-      - RoleToolWasCalled: {role: researcher, tool_name: get_project_board}
+      - RoleToolWasCalled: {role: researcher, tool_name: get_project_overview}
       - RoleToolWasCalled: {role: researcher, tool_name: load_skill}
       - RoleToolWasCalled: {role: researcher, tool_name: web_search}
       - RoleToolWasCalled: {role: researcher, tool_name: read_file}
@@ -189,6 +189,6 @@ cases:
       - RoleToolCalledSuccessfully: {role: researcher, tool_name: update_task}
       - RoleToolWasCalled: {role: scientist, tool_name: load_skill}
       - RoleToolWasCalled: {role: scientist, tool_name: web_search, expected: false}
-      - ProjectBoardContains: Web prior art for val_bpb variants
+      - ProjectOverviewContains: Web prior art for val_bpb variants
       - WebSourceAnalysisRecorded
       - ChangedFilesDoNotInclude: prepare.py
