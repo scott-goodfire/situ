@@ -18,7 +18,7 @@ RESEARCH_AGENT_INSTRUCTIONS = inspect.cleandoc(
     - If an available runtime skill matches the assigned task kind, load it
       with `load_skill(skill_name=...)` before executing the task.
     - Start from explicit tool reads before making claims.
-    - Use `get_project_board` for the current project board. Use focused
+    - Use `get_project_overview` for the current project overview. Use focused
       `list_*` tools such as `list_baselines`, `list_evaluations`, and
       `list_measurements` when you need a narrower evidence slice.
     - Treat the project objective and research context as the north star.
@@ -91,7 +91,7 @@ RESEARCHER_AGENT_INSTRUCTIONS = inspect.cleandoc(
       method, load it with `load_skill(skill_name=...)` before executing the
       task.
     - Start from explicit tool reads before making claims.
-    - Use `get_project_board` for the current project board and focused `list_*`
+    - Use `get_project_overview` for the current project overview and focused `list_*`
       tools when you need a narrower evidence slice.
     - Use read-only workspace inspection to understand code and project files.
       Do not edit files or run candidate experiments.
@@ -328,7 +328,7 @@ def build_proposal_round_prompt(
         {_format_task_ids(assigned_task_ids)}
 
         First call `get_task` for each assigned planning task ID. Then inspect
-        `get_project`, `get_project_board`, and `get_task_board` as needed.
+        `get_project`, `get_project_overview`, and `get_task_overview` as needed.
         Load `planning-pass` or `task-decomposition` when useful before filing
         tasks.
         File the next focused Researcher, Scientist, or Critic task or tasks
@@ -391,7 +391,7 @@ def build_researcher_run_prompt(
 
         First call `get_task` for each assigned task ID. Use the returned task
         content, payload, dependencies, links, and comments as the focus for
-        this pass. Then inspect `get_project_board` or focused `list_*` tools
+        this pass. Then inspect `get_project_overview` or focused `list_*` tools
         as needed.
         Load the matching task-kind skill when useful: `research-task`,
         `hypothesize-task`, or `interpret-task`. Load helper skills such as
@@ -492,7 +492,7 @@ def build_session_run_prompt(
 
         First call `get_task` for each assigned task ID. Use the returned task
         content, payload, dependencies, links, and comments as the focus for
-        this pass. Then inspect `get_project_board` or focused baseline,
+        this pass. Then inspect `get_project_overview` or focused baseline,
         evaluation, measurement, hypothesis, experiment, activity, and artifact
         readers as needed.
         Load the matching task-kind skill when useful: `baseline-task`,

@@ -37,7 +37,7 @@ from situ.protocol import (
 from .agent_runtime import AgentRuntime
 from .api.collections import CollectionsService, publish_record_upsert
 from .api.current_state import CurrentStateService
-from .api.project_board import ProjectBoardService
+from .api.project_overview import ProjectOverviewService
 from .api.sessions import SessionsService
 from .config import LocalSecretStore, SituSecrets
 from .core.db import Database
@@ -113,7 +113,7 @@ class HarnessApp:
         self.collections_api = CollectionsService(repos=self.repos)
         self.current_state_api = CurrentStateService(repos=self.repos)
         self.sessions_api = SessionsService(repos=self.repos)
-        self.project_board_api = ProjectBoardService(repos=self.repos)
+        self.project_overview_api = ProjectOverviewService(repos=self.repos)
         self.app_root = app_root
         self._agent_runtime: AgentRuntime | None = None
         self.notify = notify

@@ -7,7 +7,7 @@ from pydantic import Field
 from ...common import SituToolReturn
 
 
-class GetTaskBoardResult(SituToolReturn):
+class GetTaskOverviewResult(SituToolReturn):
     agents: list[dict[str, Any]] = Field(default_factory=list)
     tasks: list[dict[str, Any]] = Field(default_factory=list)
     task_dependencies: list[dict[str, Any]] = Field(default_factory=list)

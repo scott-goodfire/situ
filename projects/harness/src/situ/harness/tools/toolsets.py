@@ -66,12 +66,12 @@ from .projects import (
     RequestProjectCloseTool,
     UpdateProjectTool,
 )
-from .project_board import GetProjectBoardTool
+from .project_overview import GetProjectOverviewTool
 from .tasks import (
     ClaimTaskTool,
     CreateTaskTool,
     GetTaskTool,
-    GetTaskBoardTool,
+    GetTaskOverviewTool,
     LinkTaskEntityTool,
     UpdateTaskTool,
 )
@@ -84,9 +84,9 @@ RESEARCH_TOOLSET_INSTRUCTIONS = inspect.cleandoc(
 
     Tool surface:
     - Project: `create_project`, `update_project`, `get_project`,
-      `get_project_board`. On kickoff make sure the current run has a project
+      `get_project_overview`. On kickoff make sure the current run has a project
       when the objective and research context are known.
-    - Tasks: `get_task`, `get_task_board`, `create_task`, `update_task`,
+    - Tasks: `get_task`, `get_task_overview`, `create_task`, `update_task`,
       `claim_task`, `link_task_entity`, `add_task_comment`. Read each assigned
       task explicitly before doing work.
     - Research records: analyses for context, hypotheses for testable claims,
@@ -134,7 +134,7 @@ MANAGER_TOOLSET_INSTRUCTIONS = inspect.cleandoc(
 
     If the prompt gives you an assigned planning task ID, call
     `get_task(task_id=...)` first. Use this toolset to inspect the current
-    project board; create or update the project when kickoff context requires it; file focused
+    project overview; create or update the project when kickoff context requires it; file focused
     tasks; add coordination comments; and update the current planning task. Do
     not use the manager pass to run experiments or create new research outputs
     directly; file Researcher or Scientist tasks for that work. Hypothesis
@@ -207,10 +207,10 @@ def build_researcher_toolset() -> FunctionToolset[SituToolDeps]:
         id="situ.researcher.v1",
         instructions=RESEARCHER_TOOLSET_INSTRUCTIONS,
         tools=[
-            GetProjectBoardTool().as_tool(),
+            GetProjectOverviewTool().as_tool(),
             GetProjectTool().as_tool(),
             GetTaskTool().as_tool(),
-            GetTaskBoardTool().as_tool(),
+            GetTaskOverviewTool().as_tool(),
             UpdateTaskTool().as_tool(),
             AddTaskCommentTool().as_tool(),
             LinkTaskEntityTool().as_tool(),
@@ -247,12 +247,12 @@ def build_scientist_toolset() -> FunctionToolset[SituToolDeps]:
         id="situ.scientist.v1",
         instructions=RESEARCH_TOOLSET_INSTRUCTIONS,
         tools=[
-            GetProjectBoardTool().as_tool(),
+            GetProjectOverviewTool().as_tool(),
             GetProjectTool().as_tool(),
             CreateProjectTool().as_tool(),
             UpdateProjectTool().as_tool(),
             GetTaskTool().as_tool(),
-            GetTaskBoardTool().as_tool(),
+            GetTaskOverviewTool().as_tool(),
             CreateTaskTool().as_tool(),
             ClaimTaskTool().as_tool(),
             UpdateTaskTool().as_tool(),
@@ -302,14 +302,14 @@ def build_manager_toolset() -> FunctionToolset[SituToolDeps]:
         id="situ.manager.v1",
         instructions=MANAGER_TOOLSET_INSTRUCTIONS,
         tools=[
-            GetProjectBoardTool().as_tool(),
+            GetProjectOverviewTool().as_tool(),
             GetProjectTool().as_tool(),
             CreateProjectTool().as_tool(),
             UpdateProjectTool().as_tool(),
             RequestProjectCloseTool().as_tool(),
             ConfirmProjectCloseTool().as_tool(),
             GetTaskTool().as_tool(),
-            GetTaskBoardTool().as_tool(),
+            GetTaskOverviewTool().as_tool(),
             CreateTaskTool().as_tool(),
             ClaimTaskTool().as_tool(),
             UpdateTaskTool().as_tool(),
@@ -328,10 +328,10 @@ def build_critic_toolset() -> FunctionToolset[SituToolDeps]:
         id="situ.critic.v1",
         instructions=CRITIC_TOOLSET_INSTRUCTIONS,
         tools=[
-            GetProjectBoardTool().as_tool(),
+            GetProjectOverviewTool().as_tool(),
             GetProjectTool().as_tool(),
             GetTaskTool().as_tool(),
-            GetTaskBoardTool().as_tool(),
+            GetTaskOverviewTool().as_tool(),
             UpdateTaskTool().as_tool(),
             AddTaskCommentTool().as_tool(),
             LinkTaskEntityTool().as_tool(),

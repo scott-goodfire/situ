@@ -28,16 +28,14 @@ export function computeLaneLayout({
 }): LineageGraphLayout {
   const ordered = topologicallyOrdered({ experiments });
   const childCount = countChildren({ experiments: ordered });
+  const remainingChildren = new Map(childCount);
 
   const lanes: Array<string | null> = [];
   const positionById = new Map<string, LineagePosition>();
+  const pendingFreeByParent = new Map<string, number[]>();
 
   ordered.forEach((experiment, row) => {
-    const lane = pickLane({
-      experiment,
-      lanes,
-      positionById,
-    });
+    const lane = pickLane({ experiment, lanes, positionById });
 
     lanes[lane] = experiment.id;
     positionById.set(experiment.id, {
@@ -46,11 +44,31 @@ export function computeLaneLayout({
       lane,
     });
 
-    // Leaves free their lane immediately so subsequent unrelated nodes can
-    // reclaim the column. Non-leaves keep the lane reserved until their first
-    // child arrives and claims it.
-    if (!childCount.has(experiment.id)) {
-      lanes[lane] = null;
+    const parentId = experiment.parent_experiment_id ?? null;
+    const isLeaf = !childCount.has(experiment.id);
+
+    if (parentId && remainingChildren.has(parentId)) {
+      remainingChildren.set(parentId, (remainingChildren.get(parentId) ?? 0) - 1);
+    }
+
+    // Leaf-lane release is deferred until the parent has no more children, so
+    // a later sibling can't accidentally reclaim a column that a leaf sibling
+    // just vacated. A root leaf has no siblings, so its lane is freed now.
+    if (isLeaf) {
+      if (!parentId) {
+        lanes[lane] = null;
+      } else {
+        const queued = pendingFreeByParent.get(parentId) ?? [];
+        queued.push(lane);
+        pendingFreeByParent.set(parentId, queued);
+
+        if ((remainingChildren.get(parentId) ?? 0) === 0) {
+          for (const queuedLane of queued) {
+            lanes[queuedLane] = null;
+          }
+          pendingFreeByParent.delete(parentId);
+        }
+      }
     }
   });
 

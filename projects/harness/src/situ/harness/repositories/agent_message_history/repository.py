@@ -205,7 +205,7 @@ class AgentMessageHistoryRepository(BaseRepository):
         # window after a few dozen passes. Set SITU_AGENT_HISTORY_CAP=0 to
         # disable replay entirely — the agent then runs each pass cold but
         # picks up project state via tool reads, which is sufficient when
-        # individual passes fetch large project_board responses. Pass
+        # individual passes fetch large project_overview responses. Pass
         # record_cap=None for a long-lived compacted agent transcript.
         if record_cap is not None and len(records) > record_cap:
             records = records[-record_cap:]

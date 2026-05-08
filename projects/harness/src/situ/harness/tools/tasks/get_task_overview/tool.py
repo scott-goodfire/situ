@@ -5,12 +5,12 @@ from typing import Any
 from pydantic_ai import RunContext
 
 from ...common import BaseSituTool, SituToolDeps
-from .models import GetTaskBoardResult
+from .models import GetTaskOverviewResult
 
 
-class GetTaskBoardTool(BaseSituTool[SituToolDeps, GetTaskBoardResult]):
-    name = "get_task_board"
-    result_type = GetTaskBoardResult
+class GetTaskOverviewTool(BaseSituTool[SituToolDeps, GetTaskOverviewResult]):
+    name = "get_task_overview"
+    result_type = GetTaskOverviewResult
 
     async def execute(
         self,
@@ -18,12 +18,20 @@ class GetTaskBoardTool(BaseSituTool[SituToolDeps, GetTaskBoardResult]):
         ctx: RunContext[SituToolDeps],
         project_id: str | None = None,
         **_kwargs: Any,
-    ) -> GetTaskBoardResult:
-        """Load agents, tasks, task dependencies, task links, and task activity."""
+    ) -> GetTaskOverviewResult:
+        """
+        Load the task-coordination slice: agents, tasks, task dependencies, task
+        entity links, and task activity.
+
+        Lighter than `get_project_overview` — prefer this when you only need
+        coordination state and not the research record. Use `get_project_overview`
+        when you also need analyses, hypotheses, baselines, experiments,
+        evaluations, measurements, or artifacts.
+        """
         repos = await ctx.deps.get_repos()
         target_project_id = project_id or await ctx.deps.current_project_id()
         if target_project_id is None:
-            return GetTaskBoardResult(
+            return GetTaskOverviewResult(
                 success=True,
                 agents=[],
                 tasks=[],
@@ -33,7 +41,7 @@ class GetTaskBoardTool(BaseSituTool[SituToolDeps, GetTaskBoardResult]):
             )
         tasks = await repos.tasks.list_for_project(project_id=target_project_id)
         task_ids = {task.id for task in tasks}
-        return GetTaskBoardResult(
+        return GetTaskOverviewResult(
             success=True,
             agents=[
                 agent.model_dump()
