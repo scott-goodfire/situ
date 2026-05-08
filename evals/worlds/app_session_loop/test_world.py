@@ -29,7 +29,7 @@ async def test_app_session_loop_world_can_seed_baseline_without_hypothesis() -> 
         )
     )
     try:
-        graph = await world.project_board()
+        graph = await world.project_overview()
 
         assert graph["hypotheses"] == []
         assert len(graph["evaluations"]) == 1

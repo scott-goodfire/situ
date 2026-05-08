@@ -44,29 +44,29 @@ async def run_critic_review(args: CriticReviewEvalInput) -> CriticReviewEvalOutp
                 critic_outputs[-1].model_dump(),
             )
 
-        project_board = await world.project_board()
-        review_activity = _latest_review_activity(project_board)
+        project_overview = await world.project_overview()
+        review_activity = _latest_review_activity(project_overview)
         return CriticReviewEvalOutput(
             content=_render_content(
                 critic_outputs=critic_outputs,
                 review_activity=review_activity,
-                project_board=project_board,
+                project_overview=project_overview,
             ),
             captured_tool_calls=list(capture.tool_calls),
             critic_tool_calls=list(capture.tool_calls),
             critic_outputs=[output.model_dump() for output in critic_outputs],
             events=list(world.events),
-            project_board=project_board,
+            project_overview=project_overview,
             workspace_files=world.workspace_files(),
             changed_files=world.changed_files(),
             review_activity=review_activity,
             signals={
                 "critic_tool_calls": len(capture.tool_calls),
-                "review_activities": len(_review_activities(project_board)),
+                "review_activities": len(_review_activities(project_overview)),
                 "done_review_tasks": len(
                     [
                         task
-                        for task in project_board.get("tasks", [])
+                        for task in project_overview.get("tasks", [])
                         if task.get("kind") == "review"
                         and task.get("status") == "done"
                     ]
@@ -167,16 +167,16 @@ async def _finish_task(
     )
 
 
-def _review_activities(project_board: dict) -> list[dict]:
+def _review_activities(project_overview: dict) -> list[dict]:
     return [
         activity
-        for activity in project_board.get("experiment_activities", [])
+        for activity in project_overview.get("experiment_activities", [])
         if (activity.get("payload") or {}).get("activity_type") == "critic_review"
     ]
 
 
-def _latest_review_activity(project_board: dict) -> dict | None:
-    reviews = _review_activities(project_board)
+def _latest_review_activity(project_overview: dict) -> dict | None:
+    reviews = _review_activities(project_overview)
     return reviews[-1] if reviews else None
 
 
@@ -184,7 +184,7 @@ def _render_content(
     *,
     critic_outputs: list[ResearchAgentOutput],
     review_activity: dict | None,
-    project_board: dict,
+    project_overview: dict,
 ) -> str:
     output_text = " ".join(
         part
@@ -204,6 +204,6 @@ def _render_content(
         [
             output_text,
             review_text,
-            str(project_board.get("tasks", [])),
+            str(project_overview.get("tasks", [])),
         ]
     ).strip()

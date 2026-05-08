@@ -9,7 +9,7 @@
 #   SITU_INSTALL_HOME    install dir (default: $HOME/.local/share/situ)
 #   SITU_BIN_DIR         PATH-symlink dir (default: $HOME/.local/bin)
 #   SITU_RELEASE_TARBALL absolute path to a local tarball (skips GitHub download).
-#                        Requires SITU_VERSION. Used by CI smoke tests.
+#                        Requires SITU_VERSION.
 #
 # See .agents/specs/0017-distribution-and-install/SPEC.md for the contract.
 

@@ -161,7 +161,7 @@ async def run_multi_agent_loop(args: MultiAgentLoopEvalInput) -> MultiAgentLoopE
                     result_summary=manager_outputs[-1].summary,
                 )
 
-        project_board = await world.project_board()
+        project_overview = await world.project_overview()
         combined_tool_calls = [
             *manager_capture.tool_calls,
             *researcher_capture.tool_calls,
@@ -185,7 +185,7 @@ async def run_multi_agent_loop(args: MultiAgentLoopEvalInput) -> MultiAgentLoopE
             ],
             scientist_outputs=[output.model_dump() for output in scientist_outputs],
             events=list(world.events),
-            project_board=project_board,
+            project_overview=project_overview,
             workspace_files=world.workspace_files(),
             changed_files=world.changed_files(),
             signals={
@@ -195,16 +195,16 @@ async def run_multi_agent_loop(args: MultiAgentLoopEvalInput) -> MultiAgentLoopE
                 "researcher_tool_calls": len(researcher_capture.tool_calls),
                 "scientist_tool_calls": len(scientist_capture.tool_calls),
                 "events": len(world.events),
-                "tasks": len(project_board.get("tasks", [])),
+                "tasks": len(project_overview.get("tasks", [])),
                 "done_tasks": len(
                     [
                         task
-                        for task in project_board.get("tasks", [])
+                        for task in project_overview.get("tasks", [])
                         if task.get("status") == "done"
                     ]
                 ),
-                "evaluations": len(project_board.get("evaluations", [])),
-                "measurements": len(project_board.get("measurements", [])),
+                "evaluations": len(project_overview.get("evaluations", [])),
+                "measurements": len(project_overview.get("measurements", [])),
                 "changed_files": len(world.changed_files()),
             },
         )

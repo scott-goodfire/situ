@@ -44,22 +44,22 @@ async def run_critic_followup(args: CriticFollowupEvalInput) -> CriticFollowupEv
                 manager_outputs[-1].model_dump(),
             )
 
-        project_board = await world.project_board()
+        project_overview = await world.project_overview()
         return CriticFollowupEvalOutput(
             content=_render_content(
                 manager_outputs=manager_outputs,
-                project_board=project_board,
+                project_overview=project_overview,
             ),
             captured_tool_calls=list(capture.tool_calls),
             manager_tool_calls=list(capture.tool_calls),
             manager_outputs=[output.model_dump() for output in manager_outputs],
             events=list(world.events),
-            project_board=project_board,
+            project_overview=project_overview,
             workspace_files=world.workspace_files(),
             changed_files=world.changed_files(),
             signals={
                 "manager_tool_calls": len(capture.tool_calls),
-                "manager_created_tasks": len(_manager_created_tasks(project_board)),
+                "manager_created_tasks": len(_manager_created_tasks(project_overview)),
                 "events": len(world.events),
             },
         )
@@ -157,10 +157,10 @@ async def _finish_task(
     )
 
 
-def _manager_created_tasks(project_board: dict) -> list[dict]:
+def _manager_created_tasks(project_overview: dict) -> list[dict]:
     return [
         task
-        for task in project_board.get("tasks", [])
+        for task in project_overview.get("tasks", [])
         if task.get("source_kind") == "manager"
         and task.get("kind") != "plan"
         and task.get("status") == "backlog"
@@ -170,7 +170,7 @@ def _manager_created_tasks(project_board: dict) -> list[dict]:
 def _render_content(
     *,
     manager_outputs: list[ResearchAgentOutput],
-    project_board: dict,
+    project_overview: dict,
 ) -> str:
     output_text = " ".join(
         part
@@ -187,10 +187,10 @@ def _render_content(
                 str(task.get("payload", {})),
             ]
         )
-        for task in project_board.get("tasks", [])
+        for task in project_overview.get("tasks", [])
     )
     review_text = " ".join(
         " ".join([activity.get("body", ""), str(activity.get("payload", {}))])
-        for activity in project_board.get("experiment_activities", [])
+        for activity in project_overview.get("experiment_activities", [])
     )
     return " ".join([output_text, task_text, review_text]).strip()

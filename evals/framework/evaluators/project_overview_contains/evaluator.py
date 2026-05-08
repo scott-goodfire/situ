@@ -8,19 +8,19 @@ from pydantic_evals.evaluators import EvaluationReason, Evaluator, EvaluatorCont
 
 
 @dataclass
-class ProjectBoardContains(Evaluator[Any, Any, Any]):
+class ProjectOverviewContains(Evaluator[Any, Any, Any]):
     text: str
 
     def evaluate(self, ctx: EvaluatorContext[Any, Any, Any]) -> EvaluationReason:
-        project_board = getattr(ctx.output, "project_board", {})
-        rendered = json.dumps(project_board, sort_keys=True).lower()
+        project_overview = getattr(ctx.output, "project_overview", {})
+        rendered = json.dumps(project_overview, sort_keys=True).lower()
         needle = self.text.lower()
         if needle in rendered:
             return EvaluationReason(
                 value=True,
-                reason=f"Project board contains {self.text!r}",
+                reason=f"Project overview contains {self.text!r}",
             )
         return EvaluationReason(
             value=False,
-            reason=f"Project board did not contain {self.text!r}",
+            reason=f"Project overview did not contain {self.text!r}",
         )

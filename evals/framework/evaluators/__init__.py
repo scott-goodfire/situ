@@ -4,7 +4,7 @@ from evals.framework.evaluators.changed_files.evaluator import (
     ChangedFilesExactly,
 )
 from evals.framework.evaluators.event_was_emitted.evaluator import EventWasEmitted
-from evals.framework.evaluators.project_board_contains.evaluator import ProjectBoardContains
+from evals.framework.evaluators.project_overview_contains.evaluator import ProjectOverviewContains
 from evals.framework.evaluators.tool_args_contain.evaluator import ToolArgsContain
 from evals.framework.evaluators.tool_call_order.evaluator import ToolCallOrder
 from evals.framework.evaluators.tool_called_successfully.evaluator import (
@@ -19,7 +19,7 @@ __all__ = [
     "ChangedFilesExactly",
     "ContentContains",
     "EventWasEmitted",
-    "ProjectBoardContains",
+    "ProjectOverviewContains",
     "ToolArgsContain",
     "ToolCallOrder",
     "ToolCalledSuccessfully",

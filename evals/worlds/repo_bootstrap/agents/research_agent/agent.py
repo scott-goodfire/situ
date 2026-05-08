@@ -38,7 +38,7 @@ async def run_repo_bootstrap_agent(args: RepoBootstrapEvalInput) -> RepoBootstra
             )
         )
         output = result.output
-        project_board = await world.project_board()
+        project_overview = await world.project_overview()
         changed_files = world.changed_files()
         return RepoBootstrapEvalOutput(
             content=" ".join(
@@ -51,16 +51,16 @@ async def run_repo_bootstrap_agent(args: RepoBootstrapEvalInput) -> RepoBootstra
             research_agent_output=output.model_dump(),
             captured_tool_calls=list(capture.tool_calls),
             events=list(world.events),
-            project_board=project_board,
+            project_overview=project_overview,
             workspace_files=world.workspace_files(),
             changed_files=changed_files,
             signals={
                 "tool_calls": len(capture.tool_calls),
                 "events": len(world.events),
-                "hypotheses": len(project_board.get("hypotheses", [])),
-                "experiments": len(project_board.get("experiments", [])),
-                "evaluations": len(project_board.get("evaluations", [])),
-                "measurements": len(project_board.get("measurements", [])),
+                "hypotheses": len(project_overview.get("hypotheses", [])),
+                "experiments": len(project_overview.get("experiments", [])),
+                "evaluations": len(project_overview.get("evaluations", [])),
+                "measurements": len(project_overview.get("measurements", [])),
                 "prepare_changed": "prepare.py" in changed_files,
             },
         )

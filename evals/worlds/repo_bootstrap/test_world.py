@@ -65,7 +65,7 @@ async def test_repo_bootstrap_world_runs_native_measurement() -> None:
 async def test_repo_bootstrap_world_seeds_baseline_evaluation() -> None:
     world = await RepoBootstrapWorld.create(seed="with_baseline_result")
     try:
-        graph = await world.project_board()
+        graph = await world.project_overview()
 
         assert [item["id"] for item in graph["evaluations"]] == [
             BASELINE_EVALUATION_ID
@@ -79,7 +79,7 @@ async def test_repo_bootstrap_world_seeds_baseline_evaluation() -> None:
 async def test_repo_bootstrap_world_can_seed_baseline_without_hypothesis() -> None:
     world = await RepoBootstrapWorld.create(seed="with_baseline_no_hypothesis")
     try:
-        graph = await world.project_board()
+        graph = await world.project_overview()
 
         assert [item["id"] for item in graph["evaluations"]] == [
             BASELINE_EVALUATION_ID

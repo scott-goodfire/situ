@@ -111,14 +111,14 @@ class AppSessionLoopWorld:
         finally:
             self._tmp.cleanup()
 
-    async def project_board(self) -> dict[str, Any]:
+    async def project_overview(self) -> dict[str, Any]:
         return (
-            await self.app.project_board_api.get_project_board(session_id=self.session_id)
+            await self.app.project_overview_api.get_project_overview(session_id=self.session_id)
         ).model_dump(mode="json")
 
     async def artifact_files(self) -> dict[str, str]:
         files: dict[str, str] = {}
-        for artifact in (await self.project_board()).get("artifacts", []):
+        for artifact in (await self.project_overview()).get("artifacts", []):
             artifact_id = artifact.get("id")
             artifact_path = artifact.get("path")
             if not isinstance(artifact_id, str) or not isinstance(artifact_path, str):

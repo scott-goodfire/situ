@@ -14,7 +14,7 @@ from evals.worlds.research_session.world import (
 async def test_research_session_world_can_start_projectless() -> None:
     world = await ResearchSessionWorld.create(seed="projectless")
     try:
-        graph = await world.project_board()
+        graph = await world.project_overview()
 
         assert graph["session"]["id"] == SESSION_ID
         assert graph["project"] is None
@@ -27,7 +27,7 @@ async def test_research_session_world_can_start_projectless() -> None:
 async def test_research_session_world_seeds_promising_results() -> None:
     world = await ResearchSessionWorld.create(seed="with_promising_results")
     try:
-        graph = await world.project_board()
+        graph = await world.project_overview()
 
         assert [hypothesis["id"] for hypothesis in graph["hypotheses"]] == [
             HYPOTHESIS_ID

@@ -8,7 +8,7 @@ from evals.framework.models import SituEvalOutput
 
 
 class ResearchToolEvalOutput(SituEvalOutput):
-    project_board: dict[str, Any] = Field(default_factory=dict)
+    project_overview: dict[str, Any] = Field(default_factory=dict)
 
 
 class ResearchAgentEvalOutput(ResearchToolEvalOutput):

@@ -26,17 +26,17 @@ async def test_critic_followup_world_seeds_reviewed_experiment(
 ) -> None:
     world = await CriticFollowupWorld.create(seed=seed)
     try:
-        board = await world.project_board()
-        plan_tasks = [task for task in board["tasks"] if task["kind"] == "plan"]
+        overview = await world.project_overview()
+        plan_tasks = [task for task in overview["tasks"] if task["kind"] == "plan"]
         reviews = [
             activity
-            for activity in board["experiment_activities"]
+            for activity in overview["experiment_activities"]
             if (activity.get("payload") or {}).get("activity_type")
             == "critic_review"
         ]
         experiments = [
             experiment
-            for experiment in board["experiments"]
+            for experiment in overview["experiments"]
             if experiment["id"] == FOLLOWUP_EXPERIMENT_ID
         ]
 

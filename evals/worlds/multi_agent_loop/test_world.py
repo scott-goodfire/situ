@@ -9,7 +9,7 @@ from evals.worlds.multi_agent_loop.world import MultiAgentLoopWorld
 async def test_multi_agent_loop_world_seeds_project_agents_and_plan() -> None:
     world = await MultiAgentLoopWorld.create(seed="empty_repo")
     try:
-        graph = await world.project_board()
+        graph = await world.project_overview()
 
         assert sorted(agent["kind"] for agent in graph["agents"]) == [
             "manager",
@@ -25,7 +25,7 @@ async def test_multi_agent_loop_world_seeds_project_agents_and_plan() -> None:
 async def test_multi_agent_loop_world_preserves_urgent_user_task() -> None:
     world = await MultiAgentLoopWorld.create(seed="with_user_urgent_task")
     try:
-        graph = await world.project_board()
+        graph = await world.project_overview()
         tasks_by_title = {task["title"]: task for task in graph["tasks"]}
 
         assert tasks_by_title["User urgent: inspect eval-surface risk"][

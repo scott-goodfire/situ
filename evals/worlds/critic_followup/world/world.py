@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from situ.harness.api.project_board import ProjectBoardService
+from situ.harness.api.project_overview import ProjectOverviewService
 from situ.harness.records import (
     AgentKind,
     TaskEntityKind,
@@ -89,9 +89,9 @@ class CriticFollowupWorld:
             payload,
         )
 
-    async def project_board(self) -> dict[str, Any]:
+    async def project_overview(self) -> dict[str, Any]:
         return (
-            await ProjectBoardService(repos=self.repos).get_project_board(
+            await ProjectOverviewService(repos=self.repos).get_project_overview(
                 session_id=SESSION_ID
             )
         ).model_dump(mode="json")

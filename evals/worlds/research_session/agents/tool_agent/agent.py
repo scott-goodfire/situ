@@ -55,7 +55,7 @@ async def run_research_tool_agent(args: ResearchToolEvalInput) -> ResearchToolEv
             content=str(result.output),
             captured_tool_calls=list(capture.tool_calls),
             events=list(world.events),
-            project_board=await world.project_board(),
+            project_overview=await world.project_overview(),
             signals={
                 "tool_calls": len(capture.tool_calls),
                 "events": len(world.events),

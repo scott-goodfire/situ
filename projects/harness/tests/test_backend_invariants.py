@@ -12,7 +12,7 @@ from situ.protocol.control import CollectionName, CollectionsBootstrapResult
 from situ.harness.api.collections.publisher import COLLECTION_ROUTES
 from situ.harness.api.collections.schemas import CollectionsBootstrapSchema
 from situ.harness.api.current_state.schemas import CurrentStateSchema
-from situ.harness.api.project_board.schemas import ProjectBoardSchema
+from situ.harness.api.project_overview.schemas import ProjectOverviewSchema
 from situ.harness.records import (
     AgentRecord,
     AnalysisActivityRecord,
@@ -131,7 +131,7 @@ def test_publishable_records_and_collection_surfaces_stay_aligned() -> None:
         "workspace",
         *(collection_names - {"workspaces"}),
     }
-    assert set(ProjectBoardSchema.model_fields) == {
+    assert set(ProjectOverviewSchema.model_fields) == {
         "workspace",
         "project",
         "session",

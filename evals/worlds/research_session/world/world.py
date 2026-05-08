@@ -6,7 +6,7 @@ from typing import Any
 
 import aiofiles
 import aiofiles.os
-from situ.harness.api.project_board import ProjectBoardService
+from situ.harness.api.project_overview import ProjectOverviewService
 from situ.harness.core.db import Database
 from situ.harness.core.git import run_git
 from situ.harness.repositories import Repositories
@@ -88,8 +88,8 @@ class ResearchSessionWorld:
         self.events.append(event)
         return record.model_dump()
 
-    async def project_board(self) -> dict[str, Any]:
-        graph = await ProjectBoardService(repos=self.repos).get_project_board(
+    async def project_overview(self) -> dict[str, Any]:
+        graph = await ProjectOverviewService(repos=self.repos).get_project_overview(
             session_id=SESSION_ID
         )
         return {

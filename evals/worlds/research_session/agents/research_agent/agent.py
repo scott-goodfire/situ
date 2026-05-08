@@ -38,7 +38,7 @@ async def run_research_agent(args: ResearchAgentEvalInput) -> ResearchAgentEvalO
             )
         )
         output = result.output
-        project_board = await world.project_board()
+        project_overview = await world.project_overview()
         return ResearchAgentEvalOutput(
             content=" ".join(
                 [
@@ -50,12 +50,12 @@ async def run_research_agent(args: ResearchAgentEvalInput) -> ResearchAgentEvalO
             research_agent_output=output.model_dump(),
             captured_tool_calls=list(capture.tool_calls),
             events=list(world.events),
-            project_board=project_board,
+            project_overview=project_overview,
             signals={
                 "tool_calls": len(capture.tool_calls),
                 "events": len(world.events),
-                "hypotheses": len(project_board.get("hypotheses", [])),
-                "experiments": len(project_board.get("experiments", [])),
+                "hypotheses": len(project_overview.get("hypotheses", [])),
+                "experiments": len(project_overview.get("experiments", [])),
             },
         )
     finally:
