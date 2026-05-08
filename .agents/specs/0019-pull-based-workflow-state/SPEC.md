@@ -223,8 +223,8 @@ actor supplies prose, the tool records a separate `comment`.
 
 Record-specific tools may use names such as `accept_analysis`,
 `cancel_experiment`, `complete_task`, or `fail_evaluation` when explicit names
-make agent behavior clearer. Generic record updates do not silently encode
-workflow transitions.
+make agent behavior clearer. Transition tools own workflow status changes.
+Generic record updates own non-status edits.
 
 ## TUI Shape
 

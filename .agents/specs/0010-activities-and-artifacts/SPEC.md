@@ -40,9 +40,9 @@ payload_json
 created_at
 ```
 
-Activities should not be session-owned. The session that created an activity can
-be stored as optional `created_in_session_id` provenance. Ownership reaches the
-project through the parent research record.
+Activities are project-owned through their parent research record. The session
+that created an activity can be stored as optional `created_in_session_id`
+provenance.
 
 The body should be useful to humans. Activity kinds are `created`, `updated`,
 `status_updated`, `recorded`, and `comment`. The payload carries structured
@@ -53,7 +53,7 @@ payload discriminator.
 
 A measurement is one concrete observed result under an evaluation. It is the
 model-level home for command output, workspace-state context, metric bundles,
-artifact references, failures, and concern metadata.
+artifact references, failures, and trust-finding metadata.
 
 Measurements can include scalar metrics, pass/fail checks, slice-level outputs,
 latency/cost, logs, artifact references, or failures. Do not force every
@@ -126,9 +126,9 @@ record.
 
 ## Evaluations
 
-An evaluation is the lightweight container for measurement evidence. It exists
-so baseline, candidate, reproduction, sanity, and blocked setup evidence do not
-have to be stuffed into experiment comments.
+An evaluation is the lightweight container for measurement evidence. Baseline,
+candidate, reproduction, sanity, and blocked setup evidence belong in
+evaluation/measurement records.
 
 Evaluation shape:
 
@@ -151,7 +151,8 @@ meaning from a missing experiment association.
 
 Baseline and experiment records may each have many evaluations. Each evaluation
 may have many measurements. Use separate evaluations for distinct checks, such
-as a primary benchmark, reproduction track, latency smoke, or human review.
+as a primary benchmark, reproduction track, latency smoke, or qualitative
+review.
 
 Measurement shape:
 

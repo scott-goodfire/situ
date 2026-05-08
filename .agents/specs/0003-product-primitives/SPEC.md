@@ -85,8 +85,8 @@ transitions, structured facts, and comments.
 The folder/runtime boundary.
 
 A workspace records the repo path where Situ is running and scopes local state,
-subscriptions, and sessions. It should not carry the research objective or
-experiment context; those belong to projects.
+subscriptions, and sessions. Projects carry the research objective and
+experiment context.
 
 ## Project
 
@@ -97,17 +97,16 @@ objective names what the effort is trying to improve or understand. The
 research context describes how progress is judged.
 
 Research context can include commands, tools, dashboards, metrics, eval suites,
-logs, cluster jobs, notebooks, or human review criteria. Do not require the
-user to reduce this to one command or one metric during onboarding.
+logs, cluster jobs, notebooks, or review criteria. Onboarding preserves broad
+research context as plaintext when the project cannot be reduced to one command
+or one metric.
 
 The default start flow creates a new project for a new session and attaches the
 session immediately. Resuming an existing session continues that same session
-and therefore the same project. Future flows may let a user deliberately start
-a new session from an existing project, but that is not implicit in the current
-slice. Analyses, hypotheses, baselines, experiments, evaluations, measurements,
-research activities, and artifacts created while that session is attached to a
-project belong to the project, with optional `created_in_session_id`
-provenance.
+and therefore the same project. Analyses, hypotheses, baselines, experiments,
+evaluations, measurements, research activities, and artifacts created while
+that session is attached to a project belong to the project, with optional
+`created_in_session_id` provenance.
 
 ## Session
 
@@ -115,32 +114,30 @@ The main unit of autoresearch work.
 
 A session belongs to one workspace (required `workspace_id` FK) and may attach
 to one project (`project_id`, nullable). It owns lifecycle status and runtime
-association, not the research records or coordination records. Each new default
+association. Each new default
 `situ tui [workspace]` start creates a new project and a new attached session.
 `situ tui --resume <session-id>` is the explicit action for continuing the same
 session id. There is no stored "active session" pointer on the workspace;
 lookups for "the latest session" sort by `updated_at` on demand.
 
 Agent, task, and research records may point back to the session that created,
-claimed, completed, or otherwise observed them. Those fields are provenance and
-should not be used as ownership boundaries.
+claimed, completed, or otherwise observed them. Those fields are provenance.
 
 ## Analysis
 
 Durable project understanding before, between, and around hypotheses.
 
 Analyses capture what the agent or user has learned about the codebase, domain,
-prior art, constraints, opportunities, or open questions. They are not
-necessarily claims to test and should not be forced into hypotheses too early.
-The expected flow is that discovery and synthesis tasks produce analyses, the
-manager and scientist read them, and only the ideas that become testable
-improvement directions are pulled into hypotheses.
+prior art, constraints, opportunities, or open questions. Analysis records can
+hold broad understanding before it becomes testable hypothesis material.
+Discovery and synthesis tasks produce analyses; manager and scientist passes
+read them; testable improvement directions become hypotheses.
 
 Analyses use the research-record state machine. A triaged analysis is intake
 context. An accepted analysis is normal project context. An active analysis is
 being refined or used as the focus of work. A done analysis is resolved enough
 for the project. Canceled or failed analyses remain visible with activity
-context. If one analysis replaces another, link it with
+context. If one analysis supersedes another, link it with
 `supersedes_analysis_id` and explain the relationship in an analysis activity.
 
 Analyses are required to belong to a project (`project_id` FK, NOT NULL). If a
@@ -197,7 +194,7 @@ a session created the experiment, store that provenance as
 
 An experiment may have many evaluations. Each evaluation is a distinct check
 for that candidate, such as a primary benchmark, reproduction track, latency
-smoke, or human review pass. Repeated runs of the same candidate check are
+smoke, or qualitative review pass. Repeated runs of the same candidate check are
 measurements under one evaluation unless the check itself changes enough to
 deserve a separate measurement thread.
 
@@ -233,7 +230,7 @@ session created the baseline, store that provenance as
 
 A baseline may have many evaluations. Each evaluation is a distinct check
 against the reference condition, such as dev accuracy, held-out accuracy,
-latency smoke, unit tests, or human review. Repeated runs of the same baseline
+latency smoke, unit tests, or qualitative review. Repeated runs of the same baseline
 check are measurements under one evaluation unless the check itself changes
 enough to deserve a separate measurement thread.
 
@@ -350,13 +347,12 @@ The main collaboration primitive.
 
 Activities are timeline entries attached to analyses, hypotheses, experiments,
 evaluations, measurements, tasks, or other inspectable research records when
-useful. They replace standalone finding, warning, and decision models;
-those are out of scope.
+useful. Findings, warnings, and decisions are recorded facts on the natural
+target record.
 
 Activities reach a project through their parent research record or associated
-entity, following the ownership rules for that entity. Activity rows do not
-carry their own `session_id` owner column. If a session created the activity,
-store that provenance as `created_in_session_id`.
+entity, following the ownership rules for that entity. If a session created the
+activity, store that provenance as `created_in_session_id`.
 
 Activity kinds follow
 [0019-pull-based-workflow-state](../0019-pull-based-workflow-state/SPEC.md):
@@ -371,8 +367,9 @@ artifact IDs or machine-readable details when useful. Raw benchmark or command
 evidence should normally be attached to a measurement, with experiment
 activities reserved for what changed, why it was tried, and how the result
 affects the experiment. Analysis activities should explain refinements, caveats,
-source notes, or why an analysis is superseded; they should not become a
-replacement for hypotheses, evaluations, or measurements.
+source notes, or why an analysis is superseded. Hypotheses, evaluations, and
+measurements remain the natural records for testable claims, measurement
+threads, and observed evidence.
 
 ## Artifact
 
@@ -399,8 +396,8 @@ project, hypothesis, baseline, experiment, evaluation, measurement, or activity.
 
 An internal timestamped record of system/runtime behavior.
 
-Events power debugging and streaming. They should not become the main product
-collaboration layer; activities are for that.
+Events power debugging and streaming. Activities are the product collaboration
+timeline.
 
 Events may be associated with a project, a session, both, or neither:
 
@@ -415,10 +412,9 @@ diagnostic behavior for one execution window. A `session.started` event for an
 attached project should carry both associations; a pre-setup runtime event may
 carry only `associated_session_id`.
 
-## Deferred Primitives
+## Out of Scope
 
-These remain possible future concepts, but are not part of the first
-implementation slice:
+The primitive set excludes:
 
 - Direction
 - Standalone Decision

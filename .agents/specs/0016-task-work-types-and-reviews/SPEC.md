@@ -160,9 +160,9 @@ evidence_ids?
 artifact_ids?
 ```
 
-Review results describe the record and its evidence. They do not prescribe the
-next task. Pull-based routing derives follow-up work from the decision,
-findings, record status, links, and unresolved activity state.
+Review results describe the record and its evidence. Pull-based routing derives
+follow-up work from the decision, findings, record status, links, and
+unresolved activity state.
 
 ## Pull-Derived Feedback
 
@@ -216,8 +216,8 @@ tasks, and project objective/research context.
 Review-driven iteration is bounded by visible statuses and links. A repeated
 review cycle needs materially new evidence, a status transition, or a task that
 addresses the prior review result. If the same blocking finding remains
-unresolved, the poller surfaces the unresolved state rather than creating
-unbounded duplicate review work.
+unresolved, the poller surfaces that unresolved state and keeps duplicate
+review work bounded.
 
 Task status carries work outcome. `canceled` is the graceful stop for work that
 is intentionally out of the runnable queue. `failed` is for attempted work that

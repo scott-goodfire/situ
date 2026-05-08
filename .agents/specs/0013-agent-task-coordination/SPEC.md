@@ -38,13 +38,11 @@ Agents are durable project participants. The active slice uses four agent kinds:
 Every agent pass reads current project and task state through Situ tools
 before making decisions. Durable output belongs in analyses, hypotheses,
 experiments, evaluations, measurements, activities, artifacts, and task
-summaries — never in a chat transcript. Whether and how agents carry
-prior-pass conversation across passes is an implementation detail and
-must not become the source of truth.
+summaries. Whether and how agents carry prior-pass conversation across passes
+is an implementation detail. Durable records are the source of truth.
 
 Additional agent kinds, such as specialist scientists, can be added without
-changing the task model. A task's eligible claimant is derived from its kind
-rather than stored as a separate assignee kind.
+changing the task model. A task's eligible claimant is derived from its kind.
 
 ## Tasks
 
@@ -53,8 +51,7 @@ such as `T1`, a title, content, kind, status, priority, source, optional parent
 task, optional assignee agent, optional kind-specific payload, and optional
 completion summary. Session provenance is captured with explicit fields such
 as `created_in_session_id`, `claimed_in_session_id`, and
-`completed_in_session_id`; those fields do not make the session the owner of
-the task.
+`completed_in_session_id`; those fields are provenance.
 
 Task IDs should be compact enough to cite in the TUI, logs, and agent prompts.
 Task IDs use the `T<N>` shape and participate in the same compact-ID posture as
@@ -111,8 +108,7 @@ Every task status transition records a `status_updated` activity.
 
 Task activities can record planning notes, claim notes, user steering,
 failure explanations, or completion context. Research evidence should still
-be recorded on the natural research records and measurements rather than
-hidden inside task activity.
+be recorded on the natural research records and measurements.
 
 ## Wakeup Model
 
@@ -141,8 +137,7 @@ This keeps planning and execution visible through the same durable task
 surface. If a session has not been attached to a project yet, it can still
 emit session-associated setup events, but project coordination records should
 start once the project exists. DBOS should still wrap runnable Pydantic AI
-agents; Situ should not add a separate workflow engine unless task-shaped
-agent/tool execution stops being enough.
+agents; task-shaped agent/tool execution is the session engine.
 
 The runtime should treat Manager, Researcher, Scientist, and Critic as
 logically always-available workers. A Manager pass is triggered by session
@@ -167,18 +162,19 @@ manager -> researcher(s) -> manager -> scientist -> manager -> researcher -> sci
 Researcher tasks should generally produce `Analysis` records first and only
 promote claims into `Hypothesis` records when the next empirical work becomes
 clear. Scientist tasks should generally attach evidence to `Experiment` and
-`Evaluation` records rather than burying results in task comments.
+`Evaluation` records.
 
-When a Scientist task is an `experiment`, Situ should not immediately replan
-from its results. The completed experiment is pending review until a Critic
+When a Scientist task is an `experiment`, the completed experiment enters
+review before Manager replanning treats it as decision-grade. The completed
+experiment is pending review until a Critic
 `review` task writes an experiment `recorded` activity with
 `record_type: review_result`. The Manager should use that review, plus the
 underlying evaluation and measurement evidence, when deciding how the candidate
 fits the portfolio.
 
 For lineage-aware autoresearch, the Manager should also decide which research
-thread and base state the next experiment should use. It should not assume
-there is one global champion candidate. It may continue a promising thread,
+thread and base state the next experiment should use. The Manager tracks a
+portfolio of candidate threads. It may continue a promising thread,
 fork from a prior candidate, reproduce a suspicious result, abandon a stale
 thread, or restart from baseline to avoid greedy hill-climbing. See
 [0015-experiment-lineage-portfolio-search/SPEC.md](../0015-experiment-lineage-portfolio-search/SPEC.md).
@@ -188,15 +184,15 @@ a managed worktree for the linked experiment before invoking the Scientist. The
 Scientist's workspace tools and worker execution for that pass should be rooted
 in that worktree. This keeps candidate code edits isolated while the task,
 experiment, measurements, activities, and events remain project-owned records.
-Researcher tasks should not require managed experiment worktrees unless
-they are explicitly asked to run a candidate experiment.
+Researcher tasks use read-only or selected-workspace inspection unless their
+assignment explicitly asks them to run a candidate experiment.
 
-Baseline completion must not close the session by itself. The Manager should be
-prompted to keep planning after a Researcher, Critic, or non-experiment
-Scientist task completes. Scientist experiment completion should prompt Critic
-review first. A single Manager pass that creates no runnable next work is not
-enough to stop the loop; the runtime may close only after a small no-progress
-guardrail such as three consecutive planning cycles with no runnable
+Baseline completion keeps the session open. The Manager should be prompted to
+keep planning after a Researcher, Critic, or non-experiment Scientist task
+completes. Scientist experiment completion prompts Critic review first. A
+single Manager pass that creates no runnable next work is not enough to stop
+the loop; the runtime may close only after a small no-progress guardrail such
+as three consecutive planning cycles with no runnable
 Researcher, Scientist, or Critic task, after the experiment budget is reached
 and pending review is complete, after user stop, or after a fatal failure.
 
@@ -206,13 +202,11 @@ budget is exhausted should first call a close-request tool. The tool returns a
 short-lived confirmation code and an agent-readable warning to try to keep
 going unless the Manager is confident no useful next work exists. Only a
 second close-confirmation tool call with that code, during the same active
-planning task, may mark the project closed. Direct project updates must not be
-able to bypass this handshake. Once a project is confirmed closed, the runtime
-should close the active session immediately instead of burning additional
-planning passes.
+planning task, may mark the project closed. The close handshake owns early
+project closure. Once a project is confirmed closed, the runtime should close
+the active session immediately.
 
-The close-request response should warn about unresolved hypotheses. The first
-slice should not hard-block close on unresolved hypotheses, but the Manager
+The close-request response should warn about unresolved hypotheses. The Manager
 should either resolve them with hypothesis resolution activities or explain in
 the close summary why they remain open.
 
@@ -243,14 +237,14 @@ we learn?"
   research output lives in records, not in chat history.
 - Researcher work produces durable analyses and hypotheses; Scientist work
   produces durable experiments and evaluations.
-- Critic work produces experiment-level review result and trust-finding activities rather
-  than a standalone review model.
+- Critic work produces experiment-level review result and trust-finding
+  activities.
 - Scientist experiment completion is followed by Critic review before Manager
   replanning uses the candidate as decision-grade evidence.
 - Research tasks can be fanned out without requiring parallel code mutation.
 - Session references on coordination records are provenance fields, not owners.
 - Task claims are atomic enough to prevent double-claiming.
-- Dependencies are explicit records rather than unvalidated JSON lists.
+- Dependencies are explicit records.
 - Task-to-research record links are explicit records.
 - Task activities are plain-language first; research evidence lives on
   research records and measurements.
