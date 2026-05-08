@@ -49,7 +49,17 @@ class AddExperimentReviewTool(
         payload: dict[str, Any] | None = None,
         **_kwargs: Any,
     ) -> AddExperimentReviewResult:
-        """Record a Critic review on an experiment as a comment activity."""
+        """Record a Critic review on an experiment as a comment activity.
+
+        Write exactly one review per assigned review task. Pass `review_task_id`
+        so the routing layer can tie this review to the task. Verdicts: `usable`
+        when evidence supports the claimed result, `concern` for a fixable
+        issue, `needs_reproduction` when promising but thin, `invalid` when
+        evidence cannot support the claim, `human_review` when the next call
+        needs user judgment. Recommended next step pairs with the verdict and
+        drives bounded follow-up routing (e.g. `reproduce` files a Scientist
+        repair task).
+        """
         repos = await ctx.deps.get_repos()
         experiment = await repos.experiments.get(experiment_id=experiment_id)
         if experiment is None:

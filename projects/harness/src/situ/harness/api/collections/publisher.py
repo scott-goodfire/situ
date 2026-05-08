@@ -89,14 +89,14 @@ COLLECTION_ROUTES: dict[type[DbRecord], CollectionRoute] = {
 }
 
 
-def publish_record_upsert(
+async def publish_record_upsert(
     *,
     project_id: str | None,
     record: DbRecord,
     cursor: int | None,
 ) -> None:
     route = collection_route_for_record(record)
-    emit_collection_upsert(
+    await emit_collection_upsert(
         project_id=project_id,
         collection=route.collection,
         key=route.key(record),

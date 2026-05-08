@@ -40,7 +40,7 @@ def write_message(message: JsonRpcResponse | JsonRpcNotification) -> None:
         sys.stdout.flush()
 
 
-def write_notification(method: str, params: dict[str, Any]) -> None:
+async def write_notification(method: str, params: dict[str, Any]) -> None:
     write_message(JsonRpcNotification(method=method, params=params))
 
 

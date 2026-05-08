@@ -13,17 +13,29 @@ from .activities import (
     ListHypothesisActivitiesTool,
 )
 from .artifacts import CreateArtifactTool, ListArtifactsTool
-from .baselines import CreateBaselineTool, ListBaselinesTool, UpdateBaselineTool
-from .analyses import CreateAnalysisTool, ListAnalysesTool, UpdateAnalysisTool
+from .baselines import (
+    CreateBaselineTool,
+    GetBaselineTool,
+    ListBaselinesTool,
+    UpdateBaselineTool,
+)
+from .analyses import (
+    CreateAnalysisTool,
+    GetAnalysisTool,
+    ListAnalysesTool,
+    UpdateAnalysisTool,
+)
 from .analysis_activities import AddAnalysisCommentTool
 from .evaluations import (
     AddEvaluationResultTool,
     CreateEvaluationTool,
+    GetEvaluationTool,
     ListEvaluationsTool,
     UpdateEvaluationTool,
 )
 from .experiments import (
     CreateExperimentTool,
+    GetExperimentTool,
     ListExperimentsTool,
     RunExperimentTool,
     UpdateExperimentTool,
@@ -35,6 +47,7 @@ from .experiment_activities import (
 )
 from .hypotheses import (
     CreateHypothesisTool,
+    GetHypothesisTool,
     ListHypothesesTool,
     ResolveHypothesisTool,
     UpdateHypothesisTool,
@@ -42,7 +55,7 @@ from .hypotheses import (
 from .hypothesis_activities import AddHypothesisCommentTool, AddHypothesisReviewTool
 from .common import SituToolDeps
 from .links import LinkHypothesisExperimentTool
-from .measurements import ListMeasurementsTool
+from .measurements import GetMeasurementTool, ListMeasurementsTool
 from .projects import (
     ConfirmProjectCloseTool,
     CreateProjectTool,
@@ -226,15 +239,21 @@ def build_researcher_toolset() -> FunctionToolset[SituToolDeps]:
             LinkTaskEntityTool().as_tool(),
             InspectWorkspaceStateTool().as_tool(),
             ListAnalysesTool().as_tool(),
+            GetAnalysisTool().as_tool(),
             CreateAnalysisTool().as_tool(),
             UpdateAnalysisTool().as_tool(),
             ListHypothesesTool().as_tool(),
+            GetHypothesisTool().as_tool(),
             CreateHypothesisTool().as_tool(),
             UpdateHypothesisTool().as_tool(),
             ListBaselinesTool().as_tool(),
+            GetBaselineTool().as_tool(),
             ListExperimentsTool().as_tool(),
+            GetExperimentTool().as_tool(),
             ListEvaluationsTool().as_tool(),
+            GetEvaluationTool().as_tool(),
             ListMeasurementsTool().as_tool(),
+            GetMeasurementTool().as_tool(),
             AddAnalysisCommentTool().as_tool(),
             AddHypothesisCommentTool().as_tool(),
             ListAnalysisActivitiesTool().as_tool(),
@@ -264,22 +283,28 @@ def build_scientist_toolset() -> FunctionToolset[SituToolDeps]:
             LinkTaskEntityTool().as_tool(),
             InspectWorkspaceStateTool().as_tool(),
             ListAnalysesTool().as_tool(),
+            GetAnalysisTool().as_tool(),
             CreateAnalysisTool().as_tool(),
             UpdateAnalysisTool().as_tool(),
             ListHypothesesTool().as_tool(),
+            GetHypothesisTool().as_tool(),
             CreateHypothesisTool().as_tool(),
             UpdateHypothesisTool().as_tool(),
             ListBaselinesTool().as_tool(),
+            GetBaselineTool().as_tool(),
             CreateBaselineTool().as_tool(),
             UpdateBaselineTool().as_tool(),
             ListExperimentsTool().as_tool(),
+            GetExperimentTool().as_tool(),
             CreateExperimentTool().as_tool(),
             UpdateExperimentTool().as_tool(),
             RunExperimentTool().as_tool(),
             ListEvaluationsTool().as_tool(),
+            GetEvaluationTool().as_tool(),
             CreateEvaluationTool().as_tool(),
             UpdateEvaluationTool().as_tool(),
             ListMeasurementsTool().as_tool(),
+            GetMeasurementTool().as_tool(),
             LinkHypothesisExperimentTool().as_tool(),
             AddAnalysisCommentTool().as_tool(),
             AddHypothesisCommentTool().as_tool(),
@@ -312,6 +337,9 @@ def build_manager_toolset() -> FunctionToolset[SituToolDeps]:
             ClaimTaskTool().as_tool(),
             UpdateTaskTool().as_tool(),
             AddTaskCommentTool().as_tool(),
+            GetHypothesisTool().as_tool(),
+            GetExperimentTool().as_tool(),
+            GetEvaluationTool().as_tool(),
             ResolveHypothesisTool().as_tool(),
             AddExperimentLineageDecisionTool().as_tool(),
         ],
@@ -332,11 +360,17 @@ def build_critic_toolset() -> FunctionToolset[SituToolDeps]:
             LinkTaskEntityTool().as_tool(),
             InspectWorkspaceStateTool().as_tool(),
             ListAnalysesTool().as_tool(),
+            GetAnalysisTool().as_tool(),
             ListHypothesesTool().as_tool(),
+            GetHypothesisTool().as_tool(),
             ListBaselinesTool().as_tool(),
+            GetBaselineTool().as_tool(),
             ListExperimentsTool().as_tool(),
+            GetExperimentTool().as_tool(),
             ListEvaluationsTool().as_tool(),
+            GetEvaluationTool().as_tool(),
             ListMeasurementsTool().as_tool(),
+            GetMeasurementTool().as_tool(),
             ListAnalysisActivitiesTool().as_tool(),
             ListHypothesisActivitiesTool().as_tool(),
             ListExperimentActivitiesTool().as_tool(),

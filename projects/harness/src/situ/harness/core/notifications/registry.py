@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from typing import Any, Callable
+from collections.abc import Awaitable, Callable
+from typing import Any
 
-NotificationWriter = Callable[[str, dict[str, Any]], None]
+NotificationWriter = Callable[[str, dict[str, Any]], Awaitable[None]]
 
 _WRITERS: dict[str, NotificationWriter] = {}
 _EVENT_SUBSCRIPTIONS: set[str] = set()
@@ -31,15 +32,15 @@ def set_project_collections_subscribed(*, project_id: str, subscribed: bool) -> 
         _COLLECTION_SUBSCRIPTIONS.discard(project_id)
 
 
-def emit_project_event(*, project_id: str | None, event: dict[str, Any]) -> None:
+async def emit_project_event(*, project_id: str | None, event: dict[str, Any]) -> None:
     if project_id is None or project_id not in _EVENT_SUBSCRIPTIONS:
         return
     writer = _WRITERS.get(project_id)
     if writer is not None:
-        writer("event.appended", {"event": event})
+        await writer("event.appended", {"event": event})
 
 
-def emit_collection_upsert(
+async def emit_collection_upsert(
     *,
     project_id: str | None,
     collection: str,
@@ -51,7 +52,7 @@ def emit_collection_upsert(
         return
     writer = _WRITERS.get(project_id)
     if writer is not None:
-        writer(
+        await writer(
             "collections.upserted",
             {
                 "cursor": cursor,

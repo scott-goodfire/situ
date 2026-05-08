@@ -11,6 +11,10 @@ from situ.harness.app import HarnessApp
 from situ.harness.config import LocalSecretStore, SituSecrets
 
 
+async def _noop_notify(_method: str, _params: dict) -> None:
+    return None
+
+
 @pytest.mark.asyncio
 async def test_local_secret_store_saves_anthropic_key_with_owner_only_permissions(
     tmp_path: Path,
@@ -105,11 +109,15 @@ async def test_harness_secret_rpc_saves_anthropic_key_without_ledger_events(
     workspace = tmp_path / "workspace"
     workspace.mkdir()
     notifications: list[tuple[str, dict]] = []
+
+    async def notify(method: str, params: dict) -> None:
+        notifications.append((method, params))
+
     app = await HarnessApp.create(
         workspace,
         app_root=Path.cwd(),
         project_home=tmp_path / "home",
-        notify=lambda method, params: notifications.append((method, params)),
+        notify=notify,
     )
 
     missing = SecretsStatusResult.model_validate(
@@ -162,7 +170,7 @@ async def test_harness_secret_rpc_saves_optional_logfire_token(
         workspace,
         app_root=Path.cwd(),
         project_home=tmp_path / "home",
-        notify=lambda _method, _params: None,
+        notify=_noop_notify,
     )
 
     saved = SecretsSetAnthropicKeyResult.model_validate(

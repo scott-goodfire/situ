@@ -52,6 +52,16 @@ mkdir -p "$STAGE_DIR/wheels" "$DIST_DIR"
 echo "==> populating bundled runtimes"
 SITU_TARGET="$TARGET" "$REPO_ROOT/config/scripts/build_bundled.sh"
 
+echo "==> stamping build info"
+GIT_SHA="$(git -C "$REPO_ROOT" rev-parse HEAD 2>/dev/null || echo unknown)"
+BUILD_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+BUILD_INFO_FILE="$REPO_ROOT/projects/harness/src/situ/harness/core/install_info/_build_info.py"
+cat > "$BUILD_INFO_FILE" <<BUILD_INFO
+GIT_SHA = "${GIT_SHA}"
+BUILD_DATE = "${BUILD_DATE}"
+SITU_VERSION = "${VERSION}"
+BUILD_INFO
+
 echo "==> building harness wheel"
 uv build \
   --wheel \

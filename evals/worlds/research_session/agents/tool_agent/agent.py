@@ -8,7 +8,7 @@ from pydantic_ai import FunctionToolset
 
 from situ.harness.config import DEFAULTS
 from situ.harness.core.workers import WorkerManager
-from situ.harness.tools import build_manager_toolset, build_research_toolset
+from situ.harness.tools import build_manager_toolset, build_scientist_toolset
 from situ.harness.tools.common import SituToolDeps
 from situ.protocol import ExperimentRunParams, ExperimentRunResult
 from evals.framework.capture import ToolCallCaptureCapability
@@ -85,7 +85,7 @@ async def _build_agent(
 def _build_toolset(toolset: str) -> FunctionToolset[SituToolDeps]:
     if toolset == "manager":
         return build_manager_toolset()
-    return build_research_toolset()
+    return build_scientist_toolset()
 
 
 def _agent_id(args: ResearchToolEvalInput) -> str | None:

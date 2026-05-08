@@ -30,7 +30,15 @@ class UpdateTaskTool(BaseSituTool[SituToolDeps, UpdateTaskResult]):
         result_summary: str | None = None,
         **_kwargs: Any,
     ) -> UpdateTaskResult:
-        """Update task coordination fields and lifecycle status."""
+        """Update task coordination fields and lifecycle status.
+
+        Call this when the assigned task is finished, blocked, or being
+        repointed. Status transitions: `done` for successful completion (pass
+        `result_summary`), `failed` when the work was attempted but blocked by
+        an error or missing evidence, `abandoned` for graceful stop when the
+        work is no longer worth pursuing. The `payload` argument replaces the
+        full payload dict — read the task first if you only want to merge.
+        """
         task = await (await ctx.deps.get_repos()).tasks.update(
             task_id=task_id,
             title=title,

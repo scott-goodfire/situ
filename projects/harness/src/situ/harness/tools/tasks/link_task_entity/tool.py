@@ -24,7 +24,16 @@ class LinkTaskEntityTool(BaseSituTool[SituToolDeps, LinkTaskEntityResult]):
         relationship: str = "created",
         **_kwargs: Any,
     ) -> LinkTaskEntityResult:
-        """Link a task to a produced or referenced research record."""
+        """Link a task to a record it produced, referenced, reviewed, or addressed.
+
+        Use a short verb for `relationship` so the link reads as a sentence:
+        `created` for records the task produced, `reviews` for the target of a
+        review task, `addresses` for the review activity a follow-up task
+        responds to, `revises` or `reproduces` for repair tasks targeting a
+        prior record, `considers` for evidence the task referenced. Pass an
+        activity id (as a string) when linking to an activity, e.g.
+        `entity_kind=hypothesis_activity, entity_id=str(activity.id)`.
+        """
         repos = await ctx.deps.get_repos()
         task = await repos.tasks.get(task_id=task_id)
         if task is None:

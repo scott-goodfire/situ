@@ -59,10 +59,22 @@ def _detect_install_method() -> tuple[InstallMethod, Path | None, Path | None]:
 def _resolve_version(*, method: InstallMethod, version_dir: Path | None) -> str:
     if method == "curl" and version_dir is not None:
         return version_dir.name
+    stamped = _build_info_attr("SITU_VERSION")
+    if stamped:
+        return stamped
     try:
         return package_version("situ-harness")
     except PackageNotFoundError:
         return "0.0.0"
+
+
+def _build_info_attr(name: str) -> str | None:
+    try:
+        from . import _build_info  # type: ignore[import-not-found]
+    except ImportError:
+        return None
+    value = getattr(_build_info, name, None)
+    return value if isinstance(value, str) else None
 
 
 def _resolve_bin_path(*, version_dir: Path | None) -> Path | None:
@@ -73,8 +85,4 @@ def _resolve_bin_path(*, version_dir: Path | None) -> Path | None:
 
 
 def _resolve_git_sha() -> str | None:
-    try:
-        from . import _build_info  # type: ignore[import-not-found]
-    except ImportError:
-        return None
-    return getattr(_build_info, "GIT_SHA", None)
+    return _build_info_attr("GIT_SHA")

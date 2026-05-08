@@ -43,7 +43,7 @@ class AppSessionLoopWorld:
             world.workspace_path,
             app_root=Path.cwd(),
             project_home=world.root / "home",
-            notify=lambda _method, _params: None,
+            notify=_noop_notify,
         )
         await world._write_fixture_repo()
         await world._init_git_repo()
@@ -257,3 +257,7 @@ def _initial_plan_content(seed: AppSessionLoopSeed) -> str:
         "should continue and plan a component_a train.py-only candidate "
         "experiment rather than stopping."
     )
+
+
+async def _noop_notify(_method: str, _params: dict[str, Any]) -> None:
+    return None

@@ -85,16 +85,21 @@ def test_collection_routes_cover_publishable_records() -> None:
         assert route.key(record) == key
 
 
-def test_collection_publisher_emits_generic_upsert() -> None:
+@pytest.mark.asyncio
+async def test_collection_publisher_emits_generic_upsert() -> None:
     project_id = f"P{uuid4().int}"
     notifications: list[tuple[str, dict]] = []
+
+    async def notify(method: str, params: dict) -> None:
+        notifications.append((method, params))
+
     register_project_notifications(
         project_id=project_id,
-        writer=lambda method, params: notifications.append((method, params)),
+        writer=notify,
     )
     set_project_collections_subscribed(project_id=project_id, subscribed=True)
 
-    publish_record_upsert(
+    await publish_record_upsert(
         project_id=project_id,
         record=project_record(),
         cursor=42,

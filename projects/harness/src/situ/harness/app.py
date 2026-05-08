@@ -43,6 +43,7 @@ from .config import LocalSecretStore, SituSecrets
 from .core.db import Database
 from .core.git import git_lines, git_stdout, git_text
 from .core.notifications import (
+    NotificationWriter,
     register_project_notifications,
     set_project_collections_subscribed,
     set_project_events_subscribed,
@@ -72,8 +73,6 @@ ReviewActivity = HypothesisActivityRecord | ExperimentActivityRecord
 from .records.base import DbRecord
 from .repositories import Repositories
 from .tools.tasks.eligibility import eligible_task_kinds_for_agent
-
-NotificationWriter = Callable[[str, dict[str, Any]], None]
 
 MANAGER_NO_PROGRESS_LIMIT = 25
 SESSION_AGENT_PASS_LIMIT_MINIMUM = 32
@@ -175,7 +174,7 @@ class HarnessApp:
             message="Configured workspace context",
             payload={"workspace_id": workspace.id},
         )
-        self.publish_record(record=workspace, cursor=event.id)
+        await self.publish_record(record=workspace, cursor=event.id)
         return SetupCompleteResult(workspace=workspace.model_dump()).model_dump()
 
     async def secrets_status(self, params: dict[str, Any]) -> dict[str, Any]:
@@ -248,7 +247,7 @@ class HarnessApp:
                     )
                 ):
                     continue
-                self.notify("event.appended", {"event": event.model_dump()})
+                await self.notify("event.appended", {"event": event.model_dump()})
                 replayed += 1
         return EventsSubscribeResult(subscribed=True, replayed=replayed).model_dump()
 
@@ -283,9 +282,9 @@ class HarnessApp:
                 "research_context": project.research_context,
             },
         )
-        self.publish_record(record=workspace, cursor=event.id)
-        self.publish_record(record=project, cursor=event.id)
-        self.publish_record(record=session, cursor=event.id)
+        await self.publish_record(record=workspace, cursor=event.id)
+        await self.publish_record(record=project, cursor=event.id)
+        await self.publish_record(record=session, cursor=event.id)
         await self._ensure_project_agents(session_id=session_id, project_id=project.id)
         await self._enqueue_plan_task(
             session_id=session_id,
@@ -319,7 +318,7 @@ class HarnessApp:
             session_id=resume.session_id,
             project_id=session.project_id,
         )
-        self.publish_record(record=session, cursor=event.id)
+        await self.publish_record(record=session, cursor=event.id)
 
         self._session_setup.setdefault(
             resume.session_id,
@@ -374,17 +373,17 @@ class HarnessApp:
             payload=payload,
         )
         if self.subscribed:
-            self.notify("event.appended", {"event": event.model_dump()})
-        self.publish_record(record=event, cursor=event.id)
+            await self.notify("event.appended", {"event": event.model_dump()})
+        await self.publish_record(record=event, cursor=event.id)
         return event
 
-    def publish_record(
+    async def publish_record(
         self,
         *,
         record: DbRecord,
         cursor: int,
     ) -> None:
-        publish_record_upsert(
+        await publish_record_upsert(
             project_id=self.context.project_id,
             record=record,
             cursor=cursor,
@@ -446,7 +445,7 @@ class HarnessApp:
             project_id=project_id,
             payload={"agent_id": agent.id, "kind": agent.kind.value},
         )
-        self.publish_record(record=agent, cursor=event.id)
+        await self.publish_record(record=agent, cursor=event.id)
 
     async def _enqueue_plan_task(
         self,
@@ -520,8 +519,8 @@ class HarnessApp:
                 "planning_pass_count": payload["planning_pass_count"],
             },
         )
-        self.publish_record(record=task, cursor=event.id)
-        self.publish_record(record=activity, cursor=event.id)
+        await self.publish_record(record=task, cursor=event.id)
+        await self.publish_record(record=activity, cursor=event.id)
         return task
 
     async def _reusable_plan_task(self, *, project_id: str) -> TaskRecord | None:
@@ -630,9 +629,9 @@ class HarnessApp:
                 "experiment_id": experiment_id,
             },
         )
-        self.publish_record(record=task, cursor=event.id)
+        await self.publish_record(record=task, cursor=event.id)
         for link in links:
-            self.publish_record(record=link, cursor=event.id)
+            await self.publish_record(record=link, cursor=event.id)
         return task
 
     async def _existing_experiment_review_task(
@@ -845,9 +844,9 @@ class HarnessApp:
                 "review_activity_id": review_activity_id,
             },
         )
-        self.publish_record(record=task, cursor=event.id)
+        await self.publish_record(record=task, cursor=event.id)
         for link in links:
-            self.publish_record(record=link, cursor=event.id)
+            await self.publish_record(record=link, cursor=event.id)
         return task
 
     async def _create_experiment_reproduction_task(
@@ -920,9 +919,9 @@ class HarnessApp:
                 "review_activity_id": review_activity_id,
             },
         )
-        self.publish_record(record=task, cursor=event.id)
+        await self.publish_record(record=task, cursor=event.id)
         for link in links:
-            self.publish_record(record=link, cursor=event.id)
+            await self.publish_record(record=link, cursor=event.id)
         return task
 
     async def _claim_next_task(
@@ -979,7 +978,7 @@ class HarnessApp:
                             "task_id": candidate.id,
                         },
                     )
-                    self.publish_record(record=candidate_agent, cursor=created_event.id)
+                    await self.publish_record(record=candidate_agent, cursor=created_event.id)
                 claimed = await self.repos.tasks.claim(
                     task_id=candidate.id,
                     agent_id=candidate_agent.id,
@@ -1003,8 +1002,8 @@ class HarnessApp:
             project_id=session.project_id,
             payload={"task_id": task.id, "agent_id": agent.id},
         )
-        self.publish_record(record=task, cursor=event.id)
-        self.publish_record(record=updated_agent, cursor=event.id)
+        await self.publish_record(record=task, cursor=event.id)
+        await self.publish_record(record=updated_agent, cursor=event.id)
         return task
 
     async def _finish_claimed_task(
@@ -1024,7 +1023,7 @@ class HarnessApp:
                     status=AgentStatus.IDLE,
                 )
                 if updated_agent is not None:
-                    self.publish_record(
+                    await self.publish_record(
                         record=updated_agent,
                         cursor=await self.collections_api.current_cursor(
                             workspace_id=self.context.workspace_id
@@ -1069,11 +1068,11 @@ class HarnessApp:
                     "status": updated_task.status.value,
                 },
             )
-        self.publish_record(record=updated_task, cursor=event.id)
+        await self.publish_record(record=updated_task, cursor=event.id)
         if activity is not None:
-            self.publish_record(record=activity, cursor=event.id)
+            await self.publish_record(record=activity, cursor=event.id)
         if updated_agent is not None:
-            self.publish_record(record=updated_agent, cursor=event.id)
+            await self.publish_record(record=updated_agent, cursor=event.id)
 
     async def _execute_session_async(
         self,
@@ -1507,7 +1506,7 @@ class HarnessApp:
             project_id=project_id,
             payload=payload,
         )
-        self.publish_record(record=activity, cursor=event.id)
+        await self.publish_record(record=activity, cursor=event.id)
 
     async def _prepare_experiment_task(
         self,
@@ -1576,7 +1575,7 @@ class HarnessApp:
                 project_id=task.project_id,
                 payload={"experiment_id": experiment.id},
             )
-            self.publish_record(record=experiment, cursor=event.id)
+            await self.publish_record(record=experiment, cursor=event.id)
         else:
             experiment = (
                 await self.repos.experiments.update(
@@ -1634,9 +1633,9 @@ class HarnessApp:
                 "research_thread": research_thread,
             },
         )
-        self.publish_record(record=experiment, cursor=event.id)
-        self.publish_record(record=link, cursor=event.id)
-        self.publish_record(record=updated_task, cursor=event.id)
+        await self.publish_record(record=experiment, cursor=event.id)
+        await self.publish_record(record=link, cursor=event.id)
+        await self.publish_record(record=updated_task, cursor=event.id)
         return PreparedExperimentTask(
             task=updated_task,
             experiment=experiment,
@@ -1726,8 +1725,8 @@ class HarnessApp:
                 "candidate_commit": candidate_commit,
             },
         )
-        self.publish_record(record=activity, cursor=event.id)
-        self.publish_record(record=closed, cursor=event.id)
+        await self.publish_record(record=activity, cursor=event.id)
+        await self.publish_record(record=closed, cursor=event.id)
 
     async def _capture_experiment_patch_artifact(
         self,
@@ -1840,10 +1839,10 @@ class HarnessApp:
                 "candidate_commit": candidate_commit,
             },
         )
-        self.publish_record(record=artifact, cursor=event.id)
+        await self.publish_record(record=artifact, cursor=event.id)
         for link in artifact_links:
-            self.publish_record(record=link, cursor=event.id)
-        self.publish_record(record=activity, cursor=event.id)
+            await self.publish_record(record=link, cursor=event.id)
+        await self.publish_record(record=activity, cursor=event.id)
         return artifact.id
 
     async def _experiment_count(self, session_id: str) -> int:
@@ -1870,7 +1869,7 @@ class HarnessApp:
             payload=payload,
         )
         if session is not None:
-            self.publish_record(record=session, cursor=event.id)
+            await self.publish_record(record=session, cursor=event.id)
 
     async def _setup_from_records(self, session_id: str) -> dict[str, str]:
         session = await self.repos.sessions.get(session_id=session_id)

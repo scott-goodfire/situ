@@ -14,6 +14,10 @@ from situ.harness.records import TaskEntityKind, TaskKind, TaskStatus, TaskWorkT
 pytestmark = pytest.mark.asyncio
 
 
+async def _noop_notify(_method: str, _params: dict[str, Any]) -> None:
+    return None
+
+
 def _agent_runtime_factory(runtime: Any) -> type:
     class FakeAgentRuntime:
         @classmethod
@@ -455,7 +459,7 @@ async def test_default_session_start_creates_fresh_project_per_session(
         workspace,
         app_root=Path.cwd(),
         project_home=tmp_path / "home",
-        notify=lambda _method, _params: None,
+        notify=_noop_notify,
     )
     monkeypatch.setattr(app, "_start_session_thread", lambda **_kwargs: None)
 
@@ -517,7 +521,7 @@ async def test_session_start_refuses_dirty_git_workspace_before_creating_records
         workspace,
         app_root=Path.cwd(),
         project_home=tmp_path / "home",
-        notify=lambda _method, _params: None,
+        notify=_noop_notify,
     )
     monkeypatch.setattr(
         app,
@@ -1020,7 +1024,7 @@ async def _app_with_initial_plan(tmp_path: Path) -> tuple[HarnessApp, str, str]:
         workspace,
         app_root=Path.cwd(),
         project_home=tmp_path / "home",
-        notify=lambda _method, _params: None,
+        notify=_noop_notify,
     )
     workspace_record = await app.repos.workspaces.ensure()
     project = await app.repos.projects.create(

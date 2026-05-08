@@ -17,6 +17,10 @@ async def load_snapshot(workspace: Path) -> tuple[str, dict[str, Any]]:
     app = await HarnessApp.create(
         workspace,
         app_root=await resolve_app_root(Path(__file__)),
-        notify=lambda _method, _params: None,
+        notify=_noop_notify,
     )
     return "local", await app.handle_async("collections.bootstrap", {})
+
+
+async def _noop_notify(_method: str, _params: dict[str, Any]) -> None:
+    return None

@@ -13,7 +13,22 @@ import pytest
 from situ.harness.app import HarnessApp
 from situ.harness.cli import commands as cli, headless
 from situ.harness.cli.local_session import base_env
+from situ.harness.core.paths import BundledRuntime
 from situ.harness.core.project_context import ProjectContext
+
+
+async def _noop_notify(_method: str, _params: dict[str, Any]) -> None:
+    return None
+
+
+async def _fake_source_web_runtime(
+    name: str, *, source_dir: str | None = None
+) -> BundledRuntime:
+    assert name == "web-server"
+    assert source_dir == "web"
+    app_root = Path(__file__).resolve().parents[3]
+    web_root = app_root / "projects" / "web"
+    return BundledRuntime(kind="source", path=web_root, source_cwd=web_root)
 
 
 class FakeAgentRuntime:
@@ -99,7 +114,7 @@ async def test_snapshot_json_reads_local_state_without_live_session(
         workspace,
         app_root=Path.cwd(),
         project_home=project_home,
-        notify=lambda _method, _params: None,
+        notify=_noop_notify,
     )
     await app.handle_async("setup.complete", {})
 
@@ -127,7 +142,7 @@ async def test_events_json_lines_reads_local_events(
         workspace,
         app_root=Path.cwd(),
         project_home=project_home,
-        notify=lambda _method, _params: None,
+        notify=_noop_notify,
     )
     await app.record_event(event_type="system.ready", message="Harness ready")
 
@@ -165,7 +180,7 @@ async def test_clear_removes_local_state_for_workspace(
         workspace,
         app_root=Path.cwd(),
         project_home=project_home,
-        notify=lambda _method, _params: None,
+        notify=_noop_notify,
     )
     await app.record_event(event_type="system.ready", message="Harness ready")
     context = ProjectContext(repo_root=workspace, home=project_home)
@@ -593,6 +608,10 @@ def test_web_launches_project_home_without_workspace(
 
     monkeypatch.chdir(launch_directory)
     monkeypatch.delenv("SITU_WORKSPACE", raising=False)
+    monkeypatch.setattr(
+        "situ.harness.cli.commands.web.command.resolve_bundled_runtime",
+        _fake_source_web_runtime,
+    )
     monkeypatch.setattr("situ.harness.cli.commands.web.command.subprocess.run", fake_run)
 
     code = cli.main(["web", "--rebuild"])
@@ -639,6 +658,12 @@ def test_web_skips_build_when_dist_exists(
         return Completed()
 
     monkeypatch.chdir(launch_directory)
+
+    monkeypatch.setattr(
+        "situ.harness.cli.commands.web.command.resolve_bundled_runtime",
+        _fake_source_web_runtime,
+    )
+
     async def fake_should_build_web(_root: Path, *, rebuild: bool) -> bool:
         return False
 

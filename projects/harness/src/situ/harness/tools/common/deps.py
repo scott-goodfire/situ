@@ -126,7 +126,7 @@ class SituToolDeps(BaseModel):
                 payload=payload,
             )
             event_dump = event.model_dump()
-            emit_project_event(project_id=self.workspace_id or self.project_id, event=event_dump)
+            await emit_project_event(project_id=self.workspace_id or self.project_id, event=event_dump)
             await self.publish_record(record=event, cursor=event.id)
             return event_dump
         maybe_event = self.emit_event(
@@ -150,7 +150,7 @@ class SituToolDeps(BaseModel):
         if resolved_cursor is None and event is not None:
             event_id = event.get("id")
             resolved_cursor = event_id if isinstance(event_id, int) else None
-        publish_record_upsert(
+        await publish_record_upsert(
             project_id=self.workspace_id or self.project_id,
             record=record,
             cursor=resolved_cursor,

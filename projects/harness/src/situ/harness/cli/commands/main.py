@@ -33,6 +33,7 @@ from .web.command import run as web_run
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="situ")
     parser.add_argument(
+        "-v",
         "--version",
         action="version",
         version=format_one_line(install_info()),

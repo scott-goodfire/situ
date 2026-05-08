@@ -13,6 +13,10 @@ from situ.protocol import (
 from situ.harness.app import HarnessApp
 
 
+async def _noop_notify(_method: str, _params: dict[str, Any]) -> None:
+    return None
+
+
 class FakeAgentRuntime:
     def __init__(self, _project_dir: Path) -> None:
         pass
@@ -40,7 +44,7 @@ async def app(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> HarnessApp:
         workspace,
         app_root=Path.cwd(),
         project_home=tmp_path / "home",
-        notify=lambda _method, _params: None,
+        notify=_noop_notify,
     )
 
 
@@ -180,11 +184,15 @@ async def test_collections_subscribe_emits_event_upserts(
     workspace = tmp_path / "workspace"
     workspace.mkdir()
     notifications: list[tuple[str, dict[str, Any]]] = []
+
+    async def notify(method: str, params: dict[str, Any]) -> None:
+        notifications.append((method, params))
+
     app = await HarnessApp.create(
         workspace,
         app_root=Path.cwd(),
         project_home=tmp_path / "home",
-        notify=lambda method, params: notifications.append((method, params)),
+        notify=notify,
     )
 
     subscribe = CollectionsSubscribeResult.model_validate(

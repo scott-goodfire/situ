@@ -13,6 +13,10 @@ from situ.harness.records import AgentKind, TaskKind
 from situ.harness.tools.tasks.eligibility import eligible_task_kinds_for_agent
 
 
+async def _noop_notify(_method: str, _params: dict) -> None:
+    return None
+
+
 def _git(cwd: Path, *args: str) -> str:
     result = subprocess.run(
         ["git", *args],
@@ -174,7 +178,7 @@ async def test_harness_prepares_experiment_task_checkout_and_records_final_state
     repo = _repo(tmp_path)
     app = await HarnessApp.create(
         repo,
-        notify=lambda _method, _params: None,
+        notify=_noop_notify,
         project_home=tmp_path / "situ-home",
     )
     workspace = await app.repos.workspaces.ensure()

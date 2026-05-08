@@ -45,7 +45,19 @@ class AddHypothesisReviewTool(
         payload: dict[str, Any] | None = None,
         **_kwargs: Any,
     ) -> AddHypothesisReviewResult:
-        """Record a Critic review on a hypothesis as a comment activity."""
+        """Record a Critic review on a hypothesis as a comment activity.
+
+        A hypothesis review checks readiness for empirical work — concrete,
+        testable, grounded, distinguishable — not whether the hypothesis is
+        true. Write exactly one review per assigned review task. Pass
+        `review_task_id` so the routing layer can tie this review to the task.
+        Verdicts: `usable` when ready to test, `concern` for a fixable defect,
+        `needs_more_evidence` when plausible but under-grounded, `invalid` when
+        not testable or contradicts established results, `human_review` when
+        the next call needs user judgment. Recommended next step (`test`,
+        `revise`, `discard`, `human_review`) pairs with the verdict and drives
+        bounded follow-up routing (`revise` files a Researcher repair task).
+        """
         repos = await ctx.deps.get_repos()
         hypothesis = await repos.hypotheses.get(hypothesis_id=hypothesis_id)
         if hypothesis is None:
