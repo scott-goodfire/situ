@@ -1,0 +1,69 @@
+{
+  "$defs": {
+    "RecordStatus": {
+      "enum": [
+        "triage",
+        "accepted",
+        "active",
+        "in_review",
+        "done",
+        "canceled",
+        "failed"
+      ],
+      "title": "RecordStatus",
+      "type": "string"
+    }
+  },
+  "properties": {
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "project_id": {
+      "title": "Project Id",
+      "type": "string"
+    },
+    "created_in_session_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Created In Session Id"
+    },
+    "status": {
+      "$ref": "#/$defs/RecordStatus"
+    },
+    "title": {
+      "title": "Title",
+      "type": "string"
+    },
+    "summary": {
+      "title": "Summary",
+      "type": "string"
+    },
+    "created_at": {
+      "title": "Created At",
+      "type": "string"
+    },
+    "updated_at": {
+      "title": "Updated At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "project_id",
+    "status",
+    "title",
+    "summary",
+    "created_at",
+    "updated_at"
+  ],
+  "title": "BaselineRecord",
+  "type": "object"
+}

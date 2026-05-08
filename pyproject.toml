@@ -1,0 +1,26 @@
+[project]
+name = "situ-workspace"
+version = "0.0.0"
+requires-python = ">=3.13"
+dependencies = []
+
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+members = [
+  "projects/harness",
+  "shared/python/protocol",
+]
+
+[dependency-groups]
+dev = [
+  "pydantic-evals[logfire]>=1.89.1",
+  "pydantic-settings>=2.0.0",
+  "pytest>=8.0.0",
+]
+
+[tool.pytest.ini_options]
+filterwarnings = [
+  "ignore::logfire._internal.config.LogfireNotConfiguredWarning",
+]

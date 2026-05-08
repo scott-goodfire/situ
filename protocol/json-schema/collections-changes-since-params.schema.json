@@ -1,0 +1,18 @@
+{
+  "properties": {
+    "cursor": {
+      "title": "Cursor",
+      "type": "integer"
+    },
+    "limit": {
+      "default": 500,
+      "title": "Limit",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "cursor"
+  ],
+  "title": "CollectionsChangesSinceParams",
+  "type": "object"
+}

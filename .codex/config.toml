@@ -1,0 +1,16 @@
+# Repo-local MCP reference for agents working on Situ.
+#
+# Codex CLI normally reads ~/.codex/config.toml. If this project-local config is
+# not loaded by your client, copy this stanza into ~/.codex/config.toml or run:
+#
+#   codex mcp add playwright npx "@playwright/mcp@latest"
+
+[mcp_servers.playwright]
+command = "npx"
+args = [
+  "@playwright/mcp@latest",
+  "--headless",
+  "--isolated",
+  "--output-dir",
+  "/tmp/situ-playwright-mcp",
+]

@@ -1,0 +1,67 @@
+{
+  "$defs": {
+    "AnalysisActivityKind": {
+      "enum": [
+        "created",
+        "updated",
+        "status_updated",
+        "recorded",
+        "comment"
+      ],
+      "title": "AnalysisActivityKind",
+      "type": "string"
+    }
+  },
+  "properties": {
+    "id": {
+      "title": "Id",
+      "type": "integer"
+    },
+    "analysis_id": {
+      "title": "Analysis Id",
+      "type": "string"
+    },
+    "created_in_session_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Created In Session Id"
+    },
+    "actor": {
+      "title": "Actor",
+      "type": "string"
+    },
+    "kind": {
+      "$ref": "#/$defs/AnalysisActivityKind"
+    },
+    "body": {
+      "title": "Body",
+      "type": "string"
+    },
+    "payload": {
+      "additionalProperties": true,
+      "title": "Payload",
+      "type": "object"
+    },
+    "created_at": {
+      "title": "Created At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "analysis_id",
+    "actor",
+    "kind",
+    "body",
+    "created_at"
+  ],
+  "title": "AnalysisActivityRecord",
+  "type": "object"
+}

@@ -1,0 +1,119 @@
+@import url("https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600;700&display=swap");
+
+:root {
+  --background: #f7f7f4;
+  --foreground: #26251e;
+
+  --card-hex: #f2f1ed;
+  --card-01-hex: #f0efeb;
+  --card-02-hex: #ebeae5;
+  --card-03-hex: #e6e5e0;
+
+  --panel: var(--card-hex);
+  --stage: var(--card-03-hex);
+
+  --fg-05: color-mix(in oklab, var(--foreground) 5%, transparent);
+  --fg-07-5: color-mix(in oklab, var(--foreground) 7.5%, transparent);
+  --fg-10: color-mix(in oklab, var(--foreground) 10%, transparent);
+
+  --border-01-5: color-mix(in oklab, var(--foreground) 2.5%, transparent);
+  --border-02: var(--fg-10);
+  --border-02-5: color-mix(in oklab, var(--foreground) 20%, transparent);
+  --border-03: color-mix(in oklab, var(--foreground) 60%, transparent);
+
+  --border: var(--border-02);
+  --border-subtle: var(--border-01-5);
+  --surface-hover: var(--fg-05);
+
+  --muted-foreground: color-mix(in oklab, var(--foreground) 60%, transparent);
+  --muted-foreground-tertiary: color-mix(in oklab, var(--foreground) 40%, transparent);
+
+  --accent: #f54e00;
+
+  --primary: var(--accent);
+  --primary-foreground: #fefefe;
+  --primary-hover: color-mix(in srgb, var(--accent) 88%, black);
+
+  --ring: var(--foreground);
+
+  --success-strong: #1f8a65;
+  --success-soft: color-mix(in srgb, var(--success-strong) 8%, transparent);
+  --danger-strong: #cf2d56;
+  --danger-soft: color-mix(in srgb, var(--danger-strong) 6%, transparent);
+  --warning-strong: #c47a00;
+  --warning-soft: color-mix(in srgb, var(--warning-strong) 8%, transparent);
+
+  --badge-gray: var(--fg-07-5);
+  --badge-gray-text: var(--muted-foreground);
+  --badge-green: color-mix(in srgb, var(--success-strong) 12%, transparent);
+  --badge-green-text: var(--success-strong);
+  --badge-red: color-mix(in srgb, var(--danger-strong) 10%, transparent);
+  --badge-red-text: var(--danger-strong);
+  --badge-yellow: color-mix(in srgb, var(--warning-strong) 12%, transparent);
+  --badge-yellow-text: var(--warning-strong);
+  --badge-blue: color-mix(in srgb, var(--accent) 10%, transparent);
+  --badge-blue-text: var(--accent);
+  --badge-purple: var(--badge-gray);
+  --badge-purple-text: var(--badge-gray-text);
+
+  --font-sans:
+    system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-mono:
+    "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+
+  --text-product-sm: 0.6875rem;
+  --text-product-base: 0.75rem;
+  --text-product-lg: 0.8125rem;
+  --text-body: 0.875rem;
+  --text-display-sm: 1.125rem;
+  --text-display-md: 1.375rem;
+  --text-display-lg: 1.625rem;
+
+  --leading-product-sm: 1.27273;
+  --leading-product-base: 1.33333;
+  --leading-body: 1.5;
+  --tracking-product-sm: 0.0044em;
+  --tracking-display: -0.018em;
+  --tracking-wide: 0.025em;
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  --shadow-window:
+    0 28px 70px rgba(0, 0, 0, 0.14),
+    0 14px 32px rgba(0, 0, 0, 0.1),
+    0 0 0 1px var(--border-02);
+  --shadow-card: 0 0 0 1px var(--border-02);
+
+  --duration-fast: 0.14s;
+  --duration-slow: 0.25s;
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out-spring: cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+:root[data-theme="dark"] {
+  --background: #14120b;
+  --foreground: #d7d6d5;
+
+  --card-hex: #1b1913;
+  --card-01-hex: #1d1b15;
+  --card-02-hex: #201e18;
+  --card-03-hex: #26241e;
+
+  --success-strong: #3aa885;
+  --success-soft: color-mix(in srgb, var(--success-strong) 10%, transparent);
+  --danger-strong: #e15a7a;
+  --danger-soft: color-mix(in srgb, var(--danger-strong) 8%, transparent);
+  --warning-strong: #d8a04e;
+  --warning-soft: color-mix(in srgb, var(--warning-strong) 10%, transparent);
+
+  --shadow-window:
+    0 28px 70px rgba(0, 0, 0, 0.45),
+    0 14px 32px rgba(0, 0, 0, 0.35),
+    0 0 0 1px var(--border-02);
+  --shadow-card: 0 0 0 1px var(--border-02);
+}

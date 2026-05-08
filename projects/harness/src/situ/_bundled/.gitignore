@@ -1,0 +1,5 @@
+# Bundled runtime artifacts populated by config/scripts/build_bundled.sh.
+# The package marker (__init__.py) is tracked; everything else is build output.
+*
+!.gitignore
+!__init__.py

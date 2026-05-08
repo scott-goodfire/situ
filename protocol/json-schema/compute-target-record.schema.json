@@ -1,0 +1,108 @@
+{
+  "$defs": {
+    "ComputeTargetKind": {
+      "enum": [
+        "local"
+      ],
+      "title": "ComputeTargetKind",
+      "type": "string"
+    },
+    "ComputeTargetStatus": {
+      "enum": [
+        "idle",
+        "claimed",
+        "draining",
+        "dead"
+      ],
+      "title": "ComputeTargetStatus",
+      "type": "string"
+    }
+  },
+  "properties": {
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "pool": {
+      "title": "Pool",
+      "type": "string"
+    },
+    "kind": {
+      "$ref": "#/$defs/ComputeTargetKind"
+    },
+    "label": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Label"
+    },
+    "status": {
+      "$ref": "#/$defs/ComputeTargetStatus"
+    },
+    "claimed_by_task_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Claimed By Task Id"
+    },
+    "claimed_at": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Claimed At"
+    },
+    "last_heartbeat": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Last Heartbeat"
+    },
+    "metadata": {
+      "additionalProperties": true,
+      "title": "Metadata",
+      "type": "object"
+    },
+    "created_at": {
+      "title": "Created At",
+      "type": "string"
+    },
+    "updated_at": {
+      "title": "Updated At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "pool",
+    "kind",
+    "status",
+    "created_at",
+    "updated_at"
+  ],
+  "title": "ComputeTargetRecord",
+  "type": "object"
+}

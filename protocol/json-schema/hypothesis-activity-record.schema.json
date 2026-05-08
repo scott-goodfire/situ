@@ -1,0 +1,67 @@
+{
+  "$defs": {
+    "HypothesisActivityKind": {
+      "enum": [
+        "created",
+        "updated",
+        "status_updated",
+        "recorded",
+        "comment"
+      ],
+      "title": "HypothesisActivityKind",
+      "type": "string"
+    }
+  },
+  "properties": {
+    "id": {
+      "title": "Id",
+      "type": "integer"
+    },
+    "hypothesis_id": {
+      "title": "Hypothesis Id",
+      "type": "string"
+    },
+    "created_in_session_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Created In Session Id"
+    },
+    "actor": {
+      "title": "Actor",
+      "type": "string"
+    },
+    "kind": {
+      "$ref": "#/$defs/HypothesisActivityKind"
+    },
+    "body": {
+      "title": "Body",
+      "type": "string"
+    },
+    "payload": {
+      "additionalProperties": true,
+      "title": "Payload",
+      "type": "object"
+    },
+    "created_at": {
+      "title": "Created At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "hypothesis_id",
+    "actor",
+    "kind",
+    "body",
+    "created_at"
+  ],
+  "title": "HypothesisActivityRecord",
+  "type": "object"
+}

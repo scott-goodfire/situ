@@ -1,0 +1,73 @@
+{
+  "$defs": {
+    "SessionRecord": {
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "workspace_id": {
+          "title": "Workspace Id",
+          "type": "string"
+        },
+        "project_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Project Id"
+        },
+        "status": {
+          "$ref": "#/$defs/SessionStatus"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        },
+        "updated_at": {
+          "title": "Updated At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "workspace_id",
+        "status",
+        "created_at",
+        "updated_at"
+      ],
+      "title": "SessionRecord",
+      "type": "object"
+    },
+    "SessionStatus": {
+      "enum": [
+        "active",
+        "closed"
+      ],
+      "title": "SessionStatus",
+      "type": "string"
+    }
+  },
+  "properties": {
+    "session": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/SessionRecord"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "session"
+  ],
+  "title": "SessionStatusResult",
+  "type": "object"
+}

@@ -1,0 +1,17 @@
+{
+  "name": "@situ/session-server",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun run src/main.ts",
+    "check": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@situ/protocol": "workspace:*",
+    "@situ/rpc-client": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.13"
+  }
+}

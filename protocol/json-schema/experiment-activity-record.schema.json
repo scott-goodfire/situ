@@ -1,0 +1,67 @@
+{
+  "$defs": {
+    "ExperimentActivityKind": {
+      "enum": [
+        "created",
+        "updated",
+        "status_updated",
+        "recorded",
+        "comment"
+      ],
+      "title": "ExperimentActivityKind",
+      "type": "string"
+    }
+  },
+  "properties": {
+    "id": {
+      "title": "Id",
+      "type": "integer"
+    },
+    "experiment_id": {
+      "title": "Experiment Id",
+      "type": "string"
+    },
+    "created_in_session_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Created In Session Id"
+    },
+    "actor": {
+      "title": "Actor",
+      "type": "string"
+    },
+    "kind": {
+      "$ref": "#/$defs/ExperimentActivityKind"
+    },
+    "body": {
+      "title": "Body",
+      "type": "string"
+    },
+    "payload": {
+      "additionalProperties": true,
+      "title": "Payload",
+      "type": "object"
+    },
+    "created_at": {
+      "title": "Created At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "experiment_id",
+    "actor",
+    "kind",
+    "body",
+    "created_at"
+  ],
+  "title": "ExperimentActivityRecord",
+  "type": "object"
+}

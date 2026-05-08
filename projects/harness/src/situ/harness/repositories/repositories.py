@@ -1,0 +1,99 @@
+from __future__ import annotations
+
+from pydantic import BaseModel, ConfigDict
+
+from .agents import AgentsRepository
+from .agent_message_history import AgentMessageHistoryRepository
+from .analyses import AnalysesRepository
+from .analysis_activities import AnalysisActivitiesRepository
+from .artifacts import ArtifactsRepository
+from .baseline_activities import BaselineActivitiesRepository
+from .baselines import BaselinesRepository
+from .collection_changes import CollectionChangesRepository
+from .continuation_claims import ContinuationClaimsRepository
+from .compute_targets import ComputeTargetsRepository
+from .events import EventsRepository
+from .evaluation_activities import EvaluationActivitiesRepository
+from .evaluations import EvaluationsRepository
+from .experiment_activities import ExperimentActivitiesRepository
+from .experiments import ExperimentsRepository
+from .hypotheses import HypothesesRepository
+from .hypothesis_activities import HypothesisActivitiesRepository
+from .hypothesis_experiment_links import HypothesisExperimentLinksRepository
+from .measurements import MeasurementsRepository
+from .project import ProjectRepository
+from .sessions import SessionsRepository
+from .task_activities import TaskActivitiesRepository
+from .task_dependencies import TaskDependenciesRepository
+from .task_entity_links import TaskEntityLinksRepository
+from .tasks import TasksRepository
+from .work_items import WorkItemsRepository
+from .workspaces import WorkspacesRepository
+
+
+class Repositories(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    workspaces: WorkspacesRepository
+    projects: ProjectRepository
+    sessions: SessionsRepository
+    agents: AgentsRepository
+    tasks: TasksRepository
+    work_items: WorkItemsRepository
+    task_dependencies: TaskDependenciesRepository
+    task_entity_links: TaskEntityLinksRepository
+    task_activities: TaskActivitiesRepository
+    analyses: AnalysesRepository
+    analysis_activities: AnalysisActivitiesRepository
+    hypotheses: HypothesesRepository
+    baselines: BaselinesRepository
+    baseline_activities: BaselineActivitiesRepository
+    experiments: ExperimentsRepository
+    evaluations: EvaluationsRepository
+    measurements: MeasurementsRepository
+    hypothesis_experiment_links: HypothesisExperimentLinksRepository
+    hypothesis_activities: HypothesisActivitiesRepository
+    experiment_activities: ExperimentActivitiesRepository
+    evaluation_activities: EvaluationActivitiesRepository
+    artifacts: ArtifactsRepository
+    agent_message_history: AgentMessageHistoryRepository
+    events: EventsRepository
+    collection_changes: CollectionChangesRepository
+    continuation_claims: ContinuationClaimsRepository
+    compute_targets: ComputeTargetsRepository
+
+    @property
+    def db(self) -> object:
+        return self.workspaces.db
+
+    @classmethod
+    def create(cls, db: object) -> "Repositories":
+        return cls(
+            workspaces=WorkspacesRepository(db=db),
+            projects=ProjectRepository(db=db),
+            sessions=SessionsRepository(db=db),
+            agents=AgentsRepository(db=db),
+            tasks=TasksRepository(db=db),
+            work_items=WorkItemsRepository(db=db),
+            task_dependencies=TaskDependenciesRepository(db=db),
+            task_entity_links=TaskEntityLinksRepository(db=db),
+            task_activities=TaskActivitiesRepository(db=db),
+            analyses=AnalysesRepository(db=db),
+            analysis_activities=AnalysisActivitiesRepository(db=db),
+            hypotheses=HypothesesRepository(db=db),
+            baselines=BaselinesRepository(db=db),
+            baseline_activities=BaselineActivitiesRepository(db=db),
+            experiments=ExperimentsRepository(db=db),
+            evaluations=EvaluationsRepository(db=db),
+            measurements=MeasurementsRepository(db=db),
+            hypothesis_experiment_links=HypothesisExperimentLinksRepository(db=db),
+            hypothesis_activities=HypothesisActivitiesRepository(db=db),
+            experiment_activities=ExperimentActivitiesRepository(db=db),
+            evaluation_activities=EvaluationActivitiesRepository(db=db),
+            artifacts=ArtifactsRepository(db=db),
+            agent_message_history=AgentMessageHistoryRepository(db=db),
+            events=EventsRepository(db=db),
+            collection_changes=CollectionChangesRepository(db=db),
+            continuation_claims=ContinuationClaimsRepository(db=db),
+            compute_targets=ComputeTargetsRepository(db=db),
+        )

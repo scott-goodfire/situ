@@ -1,0 +1,45 @@
+{
+  "properties": {
+    "objective": {
+      "default": "",
+      "title": "Objective",
+      "type": "string"
+    },
+    "research_context": {
+      "default": "",
+      "title": "Research Context",
+      "type": "string"
+    },
+    "project_title": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Project Title"
+    },
+    "project_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Project Id"
+    },
+    "max_experiments": {
+      "default": 6,
+      "title": "Max Experiments",
+      "type": "integer"
+    }
+  },
+  "title": "SessionStartParams",
+  "type": "object"
+}

@@ -1,0 +1,45 @@
+from __future__ import annotations
+
+from typing import Any
+
+from pydantic_ai import RunContext
+
+from ...common import BaseSituTool, SituToolDeps
+from .models import SearchMeasurementsResult
+
+
+class SearchMeasurementsTool(BaseSituTool[SituToolDeps, SearchMeasurementsResult]):
+    name = "search_measurements"
+    result_type = SearchMeasurementsResult
+
+    async def execute(
+        self,
+        *,
+        ctx: RunContext[SituToolDeps],
+        query: str,
+        limit: int = 20,
+        **_kwargs: Any,
+    ) -> SearchMeasurementsResult:
+        """Full-text search measurement bodies in the current project.
+
+        Pass natural-language keywords as ``query``. Results are ranked by
+        relevance (BM25) and each row includes a ``snippet`` highlighting the
+        matched terms with brackets. Always scoped to the current project;
+        no cross-project access. Append ``*`` to a token for prefix matching.
+
+        Args:
+            query: Keywords or quoted phrases to search for.
+            limit: Maximum results to return.
+        """
+        repos = await ctx.deps.get_repos()
+        project_id = await ctx.deps.require_project_id()
+        hits = await repos.measurements.search(
+            project_id=project_id, query=query, limit=limit
+        )
+        return SearchMeasurementsResult(
+            success=True,
+            measurements=[
+                {**record.model_dump(), "snippet": snippet}
+                for record, snippet in hits
+            ],
+        )

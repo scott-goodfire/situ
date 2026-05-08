@@ -1,0 +1,23 @@
+{
+  "name": "situ-workspace",
+  "private": true,
+  "type": "module",
+  "packageManager": "bun@1.2.20",
+  "workspaces": [
+    "projects/e2e_tests",
+    "projects/session-server",
+    "projects/tui",
+    "projects/tui/packages/*",
+    "projects/web",
+    "projects/web/packages/*",
+    "shared/typescript/*"
+  ],
+  "scripts": {
+    "check": "./commands/check-typescript.sh",
+    "protocol:generate": "./commands/protocol-generate.sh"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.0",
+    "typescript": "^6.0.3"
+  }
+}

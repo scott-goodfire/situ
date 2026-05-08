@@ -1,0 +1,139 @@
+# Autoresearch Harness
+
+A local-first terminal observability layer for autoresearch sessions.
+
+The first runnable slice is a local TypeScript Ink TUI and headless command
+surface talking JSON-RPC to the Python harness. The harness records workspaces,
+projects, sessions, hypotheses, experiments, evaluations, activities,
+artifacts, and events in the local canonical SQLite database at
+`~/.situ/situ.sqlite`, with per-project runtime files under
+`~/.situ/projects/<project-id>/`.
+
+Start here:
+
+- `.agents/specs/README.md` - numbered product spec index
+- `.agents/policies/DOC.md` - numbered policy and review rubric index
+- `.agents/docs/agents-surface/DOC.md` - `.agents` structure conventions
+- `AGENTS.md` - instructions for coding/design agents working in this repo
+
+## Quick Start
+
+```bash
+mise run update
+mise run app
+```
+
+Open the TUI from another terminal:
+
+```bash
+mise run tui -- .
+```
+
+`tui` opens the interactive terminal monitor over the local app. Use `resume`
+when you intentionally want to continue an older session id, and `attach` when
+a harness is already running and you only want the TUI monitor.
+
+Run headlessly against another local workspace:
+
+```bash
+mise run exec -- ~/sandbox/some-repo \
+  --objective "Improve the project behavior without breaking correctness." \
+  --context "Run make eval from the repo root. It prints the metrics and checks that matter."
+```
+
+Resume the latest local session for a workspace explicitly:
+
+```bash
+mise run exec -- ~/sandbox/some-repo --resume
+```
+
+## Commands
+
+```bash
+mise run update
+mise run check
+mise run protocol:generate
+mise run dev:harness
+mise run dev:tui
+mise run app
+mise run tui -- ~/sandbox/some-repo
+mise run exec -- ~/sandbox/some-repo
+mise run secrets -- status
+mise run secrets -- set anthropic
+mise run secrets -- set logfire
+mise run secrets -- unset anthropic
+mise run secrets -- unset logfire
+mise run secrets -- clear
+mise run resume -- ~/sandbox/some-repo
+mise run attach -- ~/sandbox/some-repo
+mise run sessions -- ~/sandbox/some-repo --json
+mise run web
+mise run web:smoke
+mise run clear -- ~/sandbox/some-repo
+```
+
+`mise run web` serves the built local project home and attach-only project
+monitors. Use `mise run web -- --rebuild` to force a browser rebuild before
+serving, `mise run web:dev` for the Vite development server, and
+`mise run web:smoke` to build and verify the local host, discovery API, and
+project-route fallback.
+
+## Agent Runtime And Observability
+
+The Python harness now initializes:
+
+- Pydantic AI for typed agent planning
+- pydantic-ai-backend workspace tools for bash/filesystem/search/edit access
+- DBOS for durable agent execution state
+- Logfire for Pydantic AI / DBOS / harness traces
+
+The default local agent runtime requires a saved local Anthropic key in Situ's
+secret store. The TUI prompts for it on first run and saves it under
+`~/.situ/secrets.json`. The TUI can also save an optional local Logfire token
+there for local run traces. Local app, TUI, web, and manual headless execution
+do not use `SITU_ANTHROPIC_KEY` or `SITU_LOGFIRE_TOKEN` as runtime credentials.
+Use `situ secrets status`, `situ secrets set anthropic`,
+`situ secrets set logfire`, `situ secrets unset anthropic`,
+`situ secrets unset logfire`, and `situ secrets clear` to manage those local
+runtime secrets without revealing saved values.
+
+DBOS stores its embedded Turso Database file beside Situ project state by
+default:
+
+```text
+~/.situ/projects/<project-id>/dbos.sqlite
+```
+
+Non-secret runtime defaults, including model names, Logfire service names, DBOS
+settings, and local state paths, live in typed code config rather than user env
+vars. The intended user-facing env vars are only eval launch secrets:
+`SITU_LOGFIRE_TOKEN` and `SITU_ANTHROPIC_KEY`.
+
+## Evals
+
+Situ has a small code-first eval layer for prompt, tool-call, and
+observability behavior:
+
+```bash
+mise run evals
+mise run evals -- --case suspicious
+mise run evals:json
+```
+
+The first suite uses a mocked micrograd world with baseline, A/B/C variants, an
+A+C combination, and one suspicious result. Evals require `SITU_ANTHROPIC_KEY`
+for real LLM calls and `SITU_LOGFIRE_TOKEN` so eval executions are sent to
+Logfire with `service_name=situ-evals`. Evals do not fall back to the saved
+local runtime secrets.
+
+## Layout
+
+```text
+evals                     Code-first evals and fixture worlds
+projects/harness              Python local runtime
+projects/tui                  TypeScript Ink TUI
+shared/python/protocol        Pydantic protocol source of truth
+shared/typescript/protocol    generated TypeScript protocol types
+shared/typescript/rpc-client  JSON-RPC stdio client
+protocol/json-schema          generated JSON Schema contracts
+```

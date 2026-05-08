@@ -1,0 +1,58 @@
+{
+  "$defs": {
+    "TaskEntityKind": {
+      "enum": [
+        "analysis",
+        "baseline",
+        "hypothesis",
+        "experiment",
+        "evaluation",
+        "measurement",
+        "artifact",
+        "analysis_activity",
+        "hypothesis_activity",
+        "experiment_activity",
+        "evaluation_activity",
+        "task_activity",
+        "event"
+      ],
+      "title": "TaskEntityKind",
+      "type": "string"
+    }
+  },
+  "properties": {
+    "project_id": {
+      "title": "Project Id",
+      "type": "string"
+    },
+    "task_id": {
+      "title": "Task Id",
+      "type": "string"
+    },
+    "entity_kind": {
+      "$ref": "#/$defs/TaskEntityKind"
+    },
+    "entity_id": {
+      "title": "Entity Id",
+      "type": "string"
+    },
+    "relationship": {
+      "title": "Relationship",
+      "type": "string"
+    },
+    "created_at": {
+      "title": "Created At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "project_id",
+    "task_id",
+    "entity_kind",
+    "entity_id",
+    "relationship",
+    "created_at"
+  ],
+  "title": "TaskEntityLinkRecord",
+  "type": "object"
+}

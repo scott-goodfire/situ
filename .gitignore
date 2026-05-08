@@ -1,0 +1,17 @@
+.situ/
+.venv/
+.env
+.env.*
+!.env.example
+.logfire/
+node_modules/
+__pycache__/
+*.pyc
+*.egg-info/
+*.sqlite
+*.sqlite-*
+dist/
+build/
+storybook-static/
+.DS_Store
+.claude/worktrees/

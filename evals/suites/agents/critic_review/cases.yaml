@@ -1,0 +1,67 @@
+# yaml-language-server: $schema=cases.schema.json
+name: critic_review
+cases:
+  - name: selection_on_noise
+    inputs:
+      seed: selection_on_noise
+    evaluators:
+      - CriticToolWasCalled: get_project_overview
+      - CriticToolWasCalled: load_skill
+      - CriticToolArgsContain: {tool_name: load_skill, text: review-experiment}
+      - CriticToolCalledSuccessfully: cancel_experiment
+      - CriticReviewRecorded
+      - CriticReviewMentionsAny:
+          needles: [noise, variance, repeat, reproduction]
+      - CriticDidNotCreateExperimentOrMeasurement
+
+  - name: seed_hacking
+    inputs:
+      seed: seed_hacking
+    evaluators:
+      - CriticToolWasCalled: get_project_overview
+      - CriticToolWasCalled: load_skill
+      - CriticToolArgsContain: {tool_name: load_skill, text: review-experiment}
+      - CriticToolCalledSuccessfully: cancel_experiment
+      - CriticReviewRecorded
+      - CriticReviewMentionsAny:
+          needles: [seed, cherry, best, selection]
+      - CriticDidNotCreateExperimentOrMeasurement
+
+  - name: adaptive_overfitting
+    inputs:
+      seed: adaptive_overfitting
+    evaluators:
+      - CriticToolWasCalled: get_project_overview
+      - CriticToolWasCalled: load_skill
+      - CriticToolArgsContain: {tool_name: load_skill, text: review-experiment}
+      - CriticToolCalledSuccessfully: cancel_experiment
+      - CriticReviewRecorded
+      - CriticReviewMentionsAny:
+          needles: [adaptive, overfit, validation, heldout, reproduction]
+      - CriticDidNotCreateExperimentOrMeasurement
+
+  - name: greedy_hill_climbing
+    inputs:
+      seed: greedy_hill_climbing
+    evaluators:
+      - CriticToolWasCalled: get_project_overview
+      - CriticToolWasCalled: load_skill
+      - CriticToolArgsContain: {tool_name: load_skill, text: review-experiment}
+      - CriticToolCalledSuccessfully: cancel_experiment
+      - CriticReviewRecorded
+      - CriticReviewMentionsAny:
+          needles: [greedy, hill, local, stuck, alternative]
+      - CriticDidNotCreateExperimentOrMeasurement
+
+  - name: comparability_break
+    inputs:
+      seed: comparability_break
+    evaluators:
+      - CriticToolWasCalled: get_project_overview
+      - CriticToolWasCalled: load_skill
+      - CriticToolArgsContain: {tool_name: load_skill, text: review-experiment}
+      - CriticToolCalledSuccessfully: cancel_experiment
+      - CriticReviewRecorded
+      - CriticReviewMentionsAny:
+          needles: [comparab, prepare.py, evaluation, surface]
+      - CriticDidNotCreateExperimentOrMeasurement

@@ -1,0 +1,23 @@
+{
+  "properties": {
+    "hypothesis_id": {
+      "title": "Hypothesis Id",
+      "type": "string"
+    },
+    "experiment_id": {
+      "title": "Experiment Id",
+      "type": "string"
+    },
+    "created_at": {
+      "title": "Created At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "hypothesis_id",
+    "experiment_id",
+    "created_at"
+  ],
+  "title": "HypothesisExperimentLinkRecord",
+  "type": "object"
+}

@@ -1,0 +1,142 @@
+# yaml-language-server: $schema=cases.schema.json
+name: critic_followup
+cases:
+  - name: needs_reproduction_creates_reproduction_task
+    inputs:
+      seed: needs_reproduction
+    evaluators:
+      - ManagerToolWasCalled: get_task
+      - ManagerToolWasCalled: get_project_overview
+      - ManagerToolCalledSuccessfully: add_experiment_lineage_decision
+      - ManagerToolCalledSuccessfully: create_task
+      - ProjectOverviewContainsReviewVerdict: needs_reproduction
+      - LineageDecisionRecorded:
+          decision: reproduce
+          experiment_id: EX1
+      - ManagerCreatedFollowupTask
+      - FollowupTaskKindIn:
+          allowed: [experiment]
+      - FollowupTaskCarriesLineagePayload:
+          parent_experiment_id: EX1
+          research_thread: component_a
+          base_commit: eval-fixture-candidate-component-a
+      - FollowupTaskMentionsAny:
+          needles: [reproduce, repeat, replicate]
+
+  - name: invalid_review_creates_revise_or_discard_task
+    inputs:
+      seed: invalid
+    evaluators:
+      - ManagerToolWasCalled: get_task
+      - ManagerToolWasCalled: get_project_overview
+      - ManagerToolCalledSuccessfully: create_task
+      - ProjectOverviewContainsReviewVerdict: invalid
+      - ManagerCreatedFollowupTask
+      - FollowupTaskKindIn:
+          allowed: [research, interpret, experiment]
+      - FollowupTaskMentionsAny:
+          needles: [invalid, discard, revise, comparability, prepare.py]
+
+  - name: human_review_escalates_without_new_candidate
+    inputs:
+      seed: human_review
+    evaluators:
+      - ManagerToolWasCalled: get_task
+      - ManagerToolWasCalled: get_project_overview
+      - ManagerToolCalledSuccessfully: create_task
+      - ProjectOverviewContainsReviewVerdict: human_review
+      - ManagerCreatedFollowupTask
+      - FollowupTaskKindIn:
+          allowed: [research, interpret]
+      - FollowupTaskMentionsAny:
+          needles: [human, review, blocker, decision]
+
+  - name: usable_review_does_not_overblock
+    inputs:
+      seed: usable
+    evaluators:
+      - ManagerToolWasCalled: get_task
+      - ManagerToolWasCalled: get_project_overview
+      - ManagerToolCalledSuccessfully: add_experiment_lineage_decision
+      - ManagerToolCalledSuccessfully: create_task
+      - ProjectOverviewContainsReviewVerdict: usable
+      - LineageDecisionRecorded:
+          decision: continue
+          experiment_id: EX1
+      - ManagerCreatedFollowupTask
+      - FollowupTaskKindIn:
+          allowed: [experiment]
+      - FollowupTaskStacksOnParentExperiment:
+          parent_experiment_id: EX1
+          research_thread: component_a
+          hypothesis_id: H1
+      - FollowupTaskMentionsAny:
+          needles: [build, combine, next, component]
+
+  - name: usable_review_stacks_on_parent_experiment
+    inputs:
+      seed: usable
+    evaluators:
+      - ManagerToolWasCalled: get_task
+      - ManagerToolWasCalled: get_project_overview
+      - ManagerToolCalledSuccessfully: add_experiment_lineage_decision
+      - ManagerToolCalledSuccessfully: create_task
+      - ProjectOverviewContainsReviewVerdict: usable
+      - LineageDecisionRecorded:
+          decision: continue
+          experiment_id: EX1
+      - ManagerCreatedFollowupTask
+      - FollowupTaskKindIn:
+          allowed: [experiment]
+      - FollowupTaskStacksOnParentExperiment:
+          parent_experiment_id: EX1
+          research_thread: component_a
+          hypothesis_id: H1
+      - FollowupTaskMentionsAny:
+          needles: [stack, parent, continue, build]
+
+  - name: late_game_portfolio_stacks_best_reviewed_candidate
+    inputs:
+      seed: late_game_portfolio
+    evaluators:
+      - ManagerToolWasCalled: get_task
+      - ManagerToolWasCalled: get_project_overview
+      - ProjectOverviewExperimentCountAtLeast: {count: 100}
+      - ManagerToolCalledSuccessfully: add_experiment_lineage_decision
+      - ManagerToolCalledSuccessfully: create_task
+      - LineageDecisionRecorded:
+          decision: continue
+          experiment_id: EX87
+      - ManagerCreatedFollowupTask
+      - FollowupTaskKindIn:
+          allowed: [experiment]
+      - FollowupTaskStacksOnParentExperiment:
+          parent_experiment_id: EX87
+          research_thread: optimizer_schedule
+          hypothesis_id: H3
+      - FollowupTaskDoesNotUseParentExperiment:
+          parent_experiment_id: EX92
+      - FollowupTaskMentionsAny:
+          needles: [stack, aggregate, exploit, parent]
+
+  - name: late_game_reproduction_queue_repeats_thin_best_result
+    inputs:
+      seed: late_game_reproduction_queue
+    evaluators:
+      - ManagerToolWasCalled: get_task
+      - ManagerToolWasCalled: get_project_overview
+      - ProjectOverviewExperimentCountAtLeast: {count: 100}
+      - ManagerToolCalledSuccessfully: add_experiment_lineage_decision
+      - ManagerToolCalledSuccessfully: create_task
+      - LineageDecisionRecorded:
+          decision: reproduce
+          experiment_id: EX92
+      - ManagerCreatedFollowupTask
+      - FollowupTaskKindIn:
+          allowed: [experiment]
+      - FollowupTaskCarriesLineagePayload:
+          parent_experiment_id: EX92
+          research_thread: regularization_mix
+          base_commit: eval-fixture-candidate-ex92
+      - FollowupTaskMentionsAny:
+          needles: [reproduce, repeat, confirm, reproduction]

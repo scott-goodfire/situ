@@ -1,0 +1,24 @@
+from __future__ import annotations
+
+from typing import Literal
+
+from evals.framework.models import EvalModel
+
+AppSessionLoopSeed = Literal[
+    "empty_repo",
+    "with_baseline_no_hypothesis",
+    "with_baseline_result",
+]
+
+
+class AppSessionLoopEvalInput(EvalModel):
+    case_id: str = ""
+    seed: AppSessionLoopSeed
+    max_experiments: int = 1
+    objective: str = "Improve validation bits per byte while preserving comparison integrity."
+    research_context: str = (
+        "Use the project-native measurement command, preserve raw command "
+        "output as evidence, avoid changing setup/evaluation code, and after "
+        "baseline evidence exists use Researcher analysis and hypotheses to "
+        "guide component_a train.py-only experiments."
+    )

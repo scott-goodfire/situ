@@ -1,0 +1,18 @@
+{
+  "properties": {
+    "message": {
+      "title": "Message",
+      "type": "string"
+    },
+    "harness": {
+      "default": "python",
+      "title": "Harness",
+      "type": "string"
+    }
+  },
+  "required": [
+    "message"
+  ],
+  "title": "HarnessHelloResult",
+  "type": "object"
+}

@@ -1,0 +1,345 @@
+# Local App Runtime
+
+This spec defines the hard-cutover local runtime: one local Situ app process,
+one canonical product state, and multiple clients over that app.
+
+## Purpose
+
+Situ should be easy to reason about operationally:
+
+- `situ app` starts the long-running local app server.
+- `situ tui` opens the terminal observability surface for one workspace.
+- `situ exec` runs the same session lifecycle through a headless automation
+  surface.
+- `situ web` opens the local project home and web monitors.
+
+The app server is unrelated to any one session. It is the local control plane
+for all known workspaces, projects, and sessions. Sessions are execution
+windows created or resumed through clients.
+
+## Command Contract
+
+`situ app`:
+
+- Starts the local app server on `127.0.0.1` by default, with explicit host
+  and port flags for operator-managed private network access.
+- Serves the built web monitor, app APIs, JSON-RPC endpoint, and event stream
+  from one HTTP origin.
+- Writes a live app record at `~/.situ/app.json` with URL, process id, and
+  start time for local CLI discovery.
+- Owns HTTP RPC, event streams, and project runtime routing.
+- Does not call `session.start`, `session.resume`, or any worker action by
+  itself.
+- Accepts app HTTP requests without application-layer authorization. The app
+  server is scoped to local and operator-managed private network use in this
+  slice.
+
+`situ secrets`:
+
+- Manages local runtime provider secrets used by app, TUI, web, and manual
+  headless execution.
+- Supports redacted status, masked interactive setting, explicit per-secret
+  unset, and clearing all local runtime secrets.
+- Writes only to the local Situ secret store and must not print secret values
+  to stdout, stderr, events, product records, or observability attributes.
+- Does not manage eval launch secrets. Evals continue to require
+  `SITU_ANTHROPIC_KEY` and `SITU_LOGFIRE_TOKEN` from the launch environment.
+
+`situ tui [workspace]`:
+
+- Requires a healthy app server.
+- Connects to the app server and scopes requests to the selected workspace.
+- Before starting or resuming agent execution, verifies that the required model
+  provider secret is available from the local Situ secret store. If the secret
+  is missing in an interactive TUI launch, asks the user for it inside the
+  fullscreen setup flow and saves it locally before continuing.
+- For a default fresh-session launch, refuses a dirty Git-backed workspace
+  before opening the fullscreen TUI, onboarding, or creating project/session
+  records. Dirty means tracked or untracked changes anywhere in the Git repo
+  that contains the selected workspace.
+- Opens the fullscreen TUI shell, gathers onboarding answers when objective or
+  context are not already supplied, presents final start confirmation, then
+  starts a fresh project and fresh attached session.
+- Supports explicit resume with final resume confirmation, for example
+  `situ tui --resume <session-id>`.
+- Does not spawn or stop the app server.
+
+`situ exec [workspace]`:
+
+- Runs the same session lifecycle through a headless automation surface.
+- Works without a TTY and keeps machine-readable output on stdout.
+- Starts a fresh project and fresh attached session by default, matching the
+  fresh-session default of the interactive TUI flow.
+- Supports explicit resume, for example `situ exec --resume <session-id>`.
+- When `--resume` is provided without a session id, resolves the latest local
+  session for the selected workspace and resumes that session with its existing
+  project association.
+- Preserves the resumed session's existing project association so project
+  lineage and project-scoped records continue under the same project id.
+- Provides explicit timeout controls for automation. A headless wait timeout is
+  different from a model request timeout: the command may stop waiting, but the
+  runtime must still have model/workflow timeouts so stuck agent passes can fail
+  visibly.
+- Uses predictable exit codes: success for clean completion, failure for a
+  failed session, timeout for a headless wait timeout, and interrupted for user
+  interruption.
+- Does not render the TUI, require interactive prompts, or depend on screen
+  scraping.
+
+`situ web`:
+
+- Requires or discovers the local app server for monitor connection.
+- Resolves the app-hosted project home and web monitors.
+- Lists all known local projects and sessions through the app server.
+- Does not start or resume sessions or mutate research state.
+
+The primary human-facing command vocabulary is `app`, `tui`, and `web`.
+Maintenance commands such as `secrets` may manage local runtime state without
+starting or resuming sessions. Headless automation commands such as
+`exec`, `status`, `snapshot`, `events`, `sessions`, and `wait` are siblings
+over the same backend, not aliases for the TUI. Do not keep a `start`
+compatibility command; starting a project-backed interactive session happens
+from the interactive `situ tui` flow after the app server is already running,
+while headless starts happen explicitly through `situ exec`.
+
+## State Contract
+
+The canonical product database is:
+
+```text
+~/.situ/situ.sqlite
+```
+
+It stores durable Situ product state across workspaces: known workspaces,
+projects, sessions, agents, tasks, analyses, hypotheses, experiments,
+evaluations, activities, artifacts, and internal events.
+
+Human-facing product records use compact canonical IDs: a short uppercase
+prefix followed by a sequential number. Each record type defines its own
+prefix in code; new record types follow the same shape. Existing local
+databases that contain older long-form IDs are stale for this runtime
+and may be reset when incompatible with current runtime. Workspace IDs may
+remain internal path-derived identifiers so the same repo path resolves to the
+same workspace boundary.
+
+Per-project runtime state remains under:
+
+```text
+~/.situ/projects/<project-id>/
+```
+
+This directory may hold runtime-only files such as DBOS state, logs, temporary
+run artifacts, managed experiment worktrees, and compatibility metadata. DBOS
+runtime state is per project and uses an embedded Turso Database file:
+
+```text
+~/.situ/projects/<project-id>/dbos.sqlite
+```
+
+Combining DBOS into the canonical product database is out of scope; DBOS
+state remains per-project.
+
+Managed experiment worktrees may live under the project runtime directory, for
+example:
+
+```text
+~/.situ/projects/<project-id-or-workspace-id>/worktrees/<project-id>/<experiment-id>/
+```
+
+They are execution checkouts, not product state. The canonical database should
+record enough path and base-commit information to inspect them, but deleting a
+worktree must not delete the experiment record.
+
+Local secrets are private runtime configuration, not product state data. The
+app may store user-provided provider secrets under the local Situ home with
+owner-only file permissions. Stored secrets must not be written to the canonical
+SQLite product database, events, collection updates, app/session discovery
+records, worker payloads, or observability attributes.
+
+Local app, TUI, web, and manual headless execution use the local Situ secret
+store as their provider-secret source. The local Anthropic key is required
+before agent execution. The local Logfire token is optional; when present,
+local runs may use it for SDK Logfire export, and when absent, local runs
+continue without remote Logfire export. Local runtime paths must not treat
+`SITU_ANTHROPIC_KEY` or `SITU_LOGFIRE_TOKEN` as credentials. Those Situ-scoped
+environment secrets belong to eval execution, where they are required so evals
+fail clearly when runtime credentials are absent.
+
+## Runtime Boundary
+
+The local app server owns project runtime routing:
+
+```text
+TUI / Web / Headless client
+  -> local Situ app server over HTTP/SSE
+    -> app-owned project-scoped harness runtime
+          -> workspace folder boundary
+          -> canonical product SQLite state database
+          -> per-project DBOS runtime state
+          -> workers and tools
+```
+
+The app server may host project runtimes directly or supervise project-scoped
+harness subprocesses. Either implementation is valid if these guarantees hold:
+
+- A single app process can serve many workspaces/projects.
+- The app process is not itself a session.
+- The app can route client RPC and events by workspace/project scope.
+- Browser clients use same-origin app APIs, RPC, and event streams. Private
+  loopback URLs for internal runtimes are not part of browser-visible state.
+- Product records are durable in the single canonical SQLite database.
+- DBOS state remains isolated per project.
+
+## Collection Sync Contract
+
+Terminal, web, and headless observability clients attach to a workspace-scoped
+collection stream backed by durable product state. Each collection change has a
+monotonic cursor within its workspace stream. A client can present its last
+applied cursor and receive every later collection change in cursor order.
+Product record mutations and their collection change rows commit in the same
+canonical product-state transaction, so every committed observable record write
+has a durable stream entry for the affected workspace.
+
+Collection bootstrap returns a state snapshot and the cursor represented by that
+snapshot. Applying the snapshot followed by collection changes after that cursor
+produces the same observable collection state as a fresh bootstrap at the later
+cursor.
+
+Live collection notifications are an acceleration path over the durable stream.
+If a client disconnects, misses a live notification, receives duplicate
+notifications, or detects a cursor gap, it recovers by replaying collection
+changes after its last applied cursor. If the runtime cannot replay from that
+cursor, the client reloads collection state through bootstrap and resumes from
+the returned cursor.
+
+Live notification dispatch is best-effort relative to product-state writes and
+session scheduler work. Notification lookup or client delivery failures are
+observable in logs, while the durable record mutation, event write, collection
+change stream, task scheduler, and session lifecycle continue from canonical
+state.
+
+The stream scope is the workspace/runtime boundary used by the app server for
+routing. Product records keep their own project ids inside record payloads, and
+client views filter by those product ids after sync has delivered the
+workspace-scoped records.
+
+The project-scoped Python harness runtime is async-first. Agent passes, the
+session execution loop, repository access, tool execution, and stdio dispatch
+use async APIs by default so production and tests exercise the same
+cancellation, timeout, and model-call path. Local product-state SQLite access
+uses `aiosqlite` through native async repository methods; repository methods
+must not change behavior depending on whether a caller is already inside an
+event loop, and they must not hold SQLite transactions across arbitrary awaits.
+Synchronous entrypoints are allowed only at external process boundaries such as
+CLI process startup or eval framework launchers, and they should be thin,
+explicit wrappers over the async runtime path. Local Git/worktree operations
+and artifact IO may remain blocking when invoked from an async boundary only if
+they are isolated with an explicit blocking adapter such as a worker thread.
+
+## Runtime Timeouts
+
+Long-running agent passes must have layered timeouts so local sessions do not
+hang forever without a visible state transition.
+
+The runtime should bound model requests at the provider layer so a stuck model
+call raises into the session loop. The runtime should also bound DBOS-backed
+agent workflows so an agent pass cannot run indefinitely across durable
+recovery. DBOS workflow timeouts are pass-level guardrails, not a substitute
+for model request timeouts, because workflow cancellation is observed at
+workflow or step boundaries.
+
+When a timeout or cancellation reaches the session loop, Situ should record a
+clear event and task/activity outcome. Automated retry is allowed only when it
+is bounded and visible; silent infinite retry is a failed local observability
+experience.
+
+The DBOS task scheduler is part of the local observability boundary. Scheduler
+and queue failures that prevent tasks from being claimed are recorded as
+infrastructure task failures with structured retry context. When repeated
+infrastructure failures make the scheduler unhealthy, the session closes with a
+failed outcome. A completed drain means the runnable work and review lanes
+finished without recent scheduler-health failures.
+
+## Web Project Home
+
+The web home exists because humans should be able to open one app URL and see
+their Situ projects. It is backed by canonical app state and app-owned runtime
+state.
+
+The home should show at least:
+
+- Known workspaces/projects.
+- Attached workspace runtimes, keyed by workspace id, including runtimes that
+  have no active research session yet.
+- Whether an app server is healthy.
+- Whether each project has an active session.
+- Recent sessions and stopped state.
+- Links into scoped project monitors.
+
+The web URL hierarchy names the local workspace before the research project:
+
+```text
+/workspaces/<workspace-id>
+/workspaces/<workspace-id>/projects/<project-id>
+/workspaces/<workspace-id>/projects/<project-id>/tasks
+/workspaces/<workspace-id>/projects/<project-id>/agents
+```
+
+The workspace URL is the entry point for a local repo boundary. Project monitor
+URLs are scoped to the selected research project inside that workspace.
+Session identifiers belong to execution history and replay views.
+
+The browser remains a client. It should not own workers or session lifecycle.
+
+## Deferred
+
+- Daemon installation or OS login integration.
+- Global DBOS consolidation.
+- Remote app servers or multi-user auth.
+- Web-started sessions.
+- Rich project management beyond local observability.
+
+## Review Criteria
+
+- Starting `situ app` does not create a session.
+- Starting `situ tui` for a dirty Git-backed workspace exits with a clear error
+  before the fullscreen TUI opens or a project/session is created.
+- Starting `situ tui` without setup inputs shows onboarding before creating a
+  project/session.
+- Starting `situ tui` without a required Anthropic provider secret shows secret
+  onboarding before creating or resuming agent work, saves a submitted secret
+  locally, and then continues to the normal setup/session flow.
+- Secret onboarding may also collect an optional local Logfire token. Skipping
+  it must not block local agent execution.
+- `situ secrets status`, `situ secrets set anthropic`,
+  `situ secrets set logfire`, `situ secrets unset anthropic`,
+  `situ secrets unset logfire`, and `situ secrets clear` manage only local
+  runtime secrets and never reveal saved values.
+- Headless or non-interactive local execution uses the local secret store and
+  otherwise fails clearly without prompting.
+- `situ exec` starts a fresh project/session by default and prints the final
+  machine-readable result on stdout.
+- `situ exec --resume <session-id>` resumes the named session and keeps its
+  existing project id.
+- `situ exec --resume` without an id resumes the latest workspace session
+  with its existing project id.
+- `situ exec` returns a non-zero failed-session exit code when the session ends
+  in failure, even if the session record is closed.
+- `situ exec --timeout` returns the timeout exit code when the command stops
+  waiting for a still-active session.
+- Repeated DBOS scheduler or queue failures close the session with a failed
+  outcome and a visible scheduler-health event.
+- Eval execution requires `SITU_ANTHROPIC_KEY` and `SITU_LOGFIRE_TOKEN` from the
+  launch environment and does not fall back to the local secret store.
+- Confirming final start creates a fresh project and fresh attached session
+  unless `--resume` is explicit.
+- The default session start stores a non-null `project_id` on the session and a
+  `session.started` event associated to both records.
+- Closing the TUI does not stop the app server.
+- `situ web` can list known projects without a current workspace.
+- Product records from multiple workspaces land in `~/.situ/situ.sqlite`.
+- DBOS files remain project-scoped under `~/.situ/projects/<project-id>/`.
+- Agent runtime and session-loop tests exercise the async execution path; sync
+  wrappers remain only for process-edge compatibility.
+- Core repository and tool surfaces are awaitable by default and use explicit
+  blocking adapters only behind the async API boundary.

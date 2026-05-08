@@ -1,0 +1,27 @@
+[03:47:58.419] [INFO] storybook v10.3.6
+[03:47:58.499] [ERROR] [38;2;241;97;97mSB_CORE-SERVER_0007 (MainFileEvaluationError): Storybook couldn't evaluate your .storybook/main.ts file.
+
+Original error:
+Error: The service was stopped: write EPIPE
+    at /Users/scott-goodfire/situ/node_modules/esbuild/lib/main.js:999:38
+    at responseCallbacks.<computed> (/Users/scott-goodfire/situ/node_modules/esbuild/lib/main.js:884:9)
+    at afterClose (/Users/scott-goodfire/situ/node_modules/esbuild/lib/main.js:875:28)
+    at /Users/scott-goodfire/situ/node_modules/esbuild/lib/main.js:2276:18
+    at onwriteError (node:internal/streams/writable:603:3)
+    at process.processTicksAndRejections (node:internal/process/task_queues:92:21)[39m
+    at loadMainConfig (file:///Users/scott-goodfire/situ/node_modules/storybook/dist/_node-chunks/chunk-H4PWFMMO.js:11734:11)
+    at async buildDevStandalone (file:///Users/scott-goodfire/situ/node_modules/storybook/dist/core-server/index.js:7953:16)
+    at async withTelemetry (file:///Users/scott-goodfire/situ/node_modules/storybook/dist/_node-chunks/chunk-UYONHJJP.js:225:12)
+    at async dev (file:///Users/scott-goodfire/situ/node_modules/storybook/dist/bin/core.js:2736:3)
+    at async _Command.<anonymous> (file:///Users/scott-goodfire/situ/node_modules/storybook/dist/bin/core.js:2806:92)
+[03:47:58.500] [WARN] Broken build, fix the error above.
+You may need to refresh the browser.
+[03:47:58.507] [WARN]   Failed to load preset: "/Users/scott-goodfire/situ/projects/web/packages/app-ui/.storybook/main.ts"
+[03:47:58.507] [ERROR] [38;2;241;97;97mError: The service was stopped: write EPIPE[39m
+    at /Users/scott-goodfire/situ/node_modules/esbuild/lib/main.js:999:38
+    at responseCallbacks.<computed> (/Users/scott-goodfire/situ/node_modules/esbuild/lib/main.js:884:9)
+    at afterClose (/Users/scott-goodfire/situ/node_modules/esbuild/lib/main.js:875:28)
+    at /Users/scott-goodfire/situ/node_modules/esbuild/lib/main.js:2276:18
+    at onwriteError (node:internal/streams/writable:603:3)
+    at process.processTicksAndRejections (node:internal/process/task_queues:92:21)
+[03:48:01.742] [PROMPT] Would you like to send anonymous crash reports to improve Storybook and fix bugs faster? {"choice":false}

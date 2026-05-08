@@ -1,0 +1,28 @@
+{
+  "properties": {
+    "project_id": {
+      "title": "Project Id",
+      "type": "string"
+    },
+    "task_id": {
+      "title": "Task Id",
+      "type": "string"
+    },
+    "blocked_by_task_id": {
+      "title": "Blocked By Task Id",
+      "type": "string"
+    },
+    "created_at": {
+      "title": "Created At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "project_id",
+    "task_id",
+    "blocked_by_task_id",
+    "created_at"
+  ],
+  "title": "TaskDependencyRecord",
+  "type": "object"
+}

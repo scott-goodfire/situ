@@ -1,0 +1,86 @@
+{
+  "$defs": {
+    "AgentKind": {
+      "enum": [
+        "manager",
+        "researcher",
+        "scientist",
+        "critic"
+      ],
+      "title": "AgentKind",
+      "type": "string"
+    },
+    "AgentStatus": {
+      "enum": [
+        "idle",
+        "active",
+        "closed"
+      ],
+      "title": "AgentStatus",
+      "type": "string"
+    }
+  },
+  "properties": {
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "project_id": {
+      "title": "Project Id",
+      "type": "string"
+    },
+    "created_in_session_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Created In Session Id"
+    },
+    "kind": {
+      "$ref": "#/$defs/AgentKind"
+    },
+    "display_name": {
+      "title": "Display Name",
+      "type": "string"
+    },
+    "model_name": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Model Name"
+    },
+    "status": {
+      "$ref": "#/$defs/AgentStatus"
+    },
+    "created_at": {
+      "title": "Created At",
+      "type": "string"
+    },
+    "updated_at": {
+      "title": "Updated At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "project_id",
+    "kind",
+    "display_name",
+    "status",
+    "created_at",
+    "updated_at"
+  ],
+  "title": "AgentRecord",
+  "type": "object"
+}

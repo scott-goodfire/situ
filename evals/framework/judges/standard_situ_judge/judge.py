@@ -1,0 +1,17 @@
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+
+from pydantic_evals.evaluators import LLMJudge
+
+from evals.framework.llms import eval_model_name
+from situ.harness.config import DEFAULTS
+
+
+@dataclass
+class StandardSituJudge(LLMJudge):
+    """Standard LLM judge wrapper for semantic Situ evals."""
+
+    include_input: bool = True
+    model: object = field(default_factory=eval_model_name)
+    model_settings: object = field(default_factory=DEFAULTS.model_settings)

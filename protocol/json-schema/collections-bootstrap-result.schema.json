@@ -1,0 +1,2047 @@
+{
+  "$defs": {
+    "AgentKind": {
+      "enum": [
+        "manager",
+        "researcher",
+        "scientist",
+        "critic"
+      ],
+      "title": "AgentKind",
+      "type": "string"
+    },
+    "AgentRecord": {
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "created_in_session_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Created In Session Id"
+        },
+        "kind": {
+          "$ref": "#/$defs/AgentKind"
+        },
+        "display_name": {
+          "title": "Display Name",
+          "type": "string"
+        },
+        "model_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model Name"
+        },
+        "status": {
+          "$ref": "#/$defs/AgentStatus"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        },
+        "updated_at": {
+          "title": "Updated At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "project_id",
+        "kind",
+        "display_name",
+        "status",
+        "created_at",
+        "updated_at"
+      ],
+      "title": "AgentRecord",
+      "type": "object"
+    },
+    "AgentStatus": {
+      "enum": [
+        "idle",
+        "active",
+        "closed"
+      ],
+      "title": "AgentStatus",
+      "type": "string"
+    },
+    "AnalysisActivityKind": {
+      "enum": [
+        "created",
+        "updated",
+        "status_updated",
+        "recorded",
+        "comment"
+      ],
+      "title": "AnalysisActivityKind",
+      "type": "string"
+    },
+    "AnalysisActivityRecord": {
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "integer"
+        },
+        "analysis_id": {
+          "title": "Analysis Id",
+          "type": "string"
+        },
+        "created_in_session_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Created In Session Id"
+        },
+        "actor": {
+          "title": "Actor",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/AnalysisActivityKind"
+        },
+        "body": {
+          "title": "Body",
+          "type": "string"
+        },
+        "payload": {
+          "additionalProperties": true,
+          "title": "Payload",
+          "type": "object"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "analysis_id",
+        "actor",
+        "kind",
+        "body",
+        "created_at"
+      ],
+      "title": "AnalysisActivityRecord",
+      "type": "object"
+    },
+    "AnalysisRecord": {
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "created_in_session_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Created In Session Id"
+        },
+        "created_by_agent_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Created By Agent Id"
+        },
+        "status": {
+          "$ref": "#/$defs/RecordStatus"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "summary": {
+          "title": "Summary",
+          "type": "string"
+        },
+        "content": {
+          "title": "Content",
+          "type": "string"
+        },
+        "supersedes_analysis_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Supersedes Analysis Id"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        },
+        "updated_at": {
+          "title": "Updated At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "project_id",
+        "status",
+        "title",
+        "summary",
+        "content",
+        "created_at",
+        "updated_at"
+      ],
+      "title": "AnalysisRecord",
+      "type": "object"
+    },
+    "ArtifactRecord": {
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "created_in_session_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Created In Session Id"
+        },
+        "associated_entity_kind": {
+          "title": "Associated Entity Kind",
+          "type": "string"
+        },
+        "associated_entity_id": {
+          "title": "Associated Entity Id",
+          "type": "string"
+        },
+        "kind": {
+          "title": "Kind",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "media_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Media Type"
+        },
+        "size_bytes": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Size Bytes"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "project_id",
+        "associated_entity_kind",
+        "associated_entity_id",
+        "kind",
+        "title",
+        "path",
+        "created_at"
+      ],
+      "title": "ArtifactRecord",
+      "type": "object"
+    },
+    "BaselineActivityKind": {
+      "enum": [
+        "created",
+        "updated",
+        "status_updated",
+        "recorded",
+        "comment"
+      ],
+      "title": "BaselineActivityKind",
+      "type": "string"
+    },
+    "BaselineActivityRecord": {
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "integer"
+        },
+        "baseline_id": {
+          "title": "Baseline Id",
+          "type": "string"
+        },
+        "created_in_session_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Created In Session Id"
+        },
+        "actor": {
+          "title": "Actor",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/BaselineActivityKind"
+        },
+        "body": {
+          "title": "Body",
+          "type": "string"
+        },
+        "payload": {
+          "additionalProperties": true,
+          "title": "Payload",
+          "type": "object"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "baseline_id",
+        "actor",
+        "kind",
+        "body",
+        "created_at"
+      ],
+      "title": "BaselineActivityRecord",
+      "type": "object"
+    },
+    "BaselineRecord": {
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "created_in_session_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Created In Session Id"
+        },
+        "status": {
+          "$ref": "#/$defs/RecordStatus"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "summary": {
+          "title": "Summary",
+          "type": "string"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        },
+        "updated_at": {
+          "title": "Updated At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "project_id",
+        "status",
+        "title",
+        "summary",
+        "created_at",
+        "updated_at"
+      ],
+      "title": "BaselineRecord",
+      "type": "object"
+    },
+    "ComputeTargetKind": {
+      "enum": [
+        "local"
+      ],
+      "title": "ComputeTargetKind",
+      "type": "string"
+    },
+    "ComputeTargetRecord": {
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "pool": {
+          "title": "Pool",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/ComputeTargetKind"
+        },
+        "label": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Label"
+        },
+        "status": {
+          "$ref": "#/$defs/ComputeTargetStatus"
+        },
+        "claimed_by_task_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Claimed By Task Id"
+        },
+        "claimed_at": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Claimed At"
+        },
+        "last_heartbeat": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Last Heartbeat"
+        },
+        "metadata": {
+          "additionalProperties": true,
+          "title": "Metadata",
+          "type": "object"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        },
+        "updated_at": {
+          "title": "Updated At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "pool",
+        "kind",
+        "status",
+        "created_at",
+        "updated_at"
+      ],
+      "title": "ComputeTargetRecord",
+      "type": "object"
+    },
+    "ComputeTargetStatus": {
+      "enum": [
+        "idle",
+        "claimed",
+        "draining",
+        "dead"
+      ],
+      "title": "ComputeTargetStatus",
+      "type": "string"
+    },
+    "EvaluationActivityKind": {
+      "enum": [
+        "created",
+        "updated",
+        "status_updated",
+        "recorded",
+        "comment"
+      ],
+      "title": "EvaluationActivityKind",
+      "type": "string"
+    },
+    "EvaluationActivityRecord": {
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "integer"
+        },
+        "evaluation_id": {
+          "title": "Evaluation Id",
+          "type": "string"
+        },
+        "created_in_session_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Created In Session Id"
+        },
+        "actor": {
+          "title": "Actor",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/EvaluationActivityKind"
+        },
+        "body": {
+          "title": "Body",
+          "type": "string"
+        },
+        "payload": {
+          "additionalProperties": true,
+          "title": "Payload",
+          "type": "object"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "evaluation_id",
+        "actor",
+        "kind",
+        "body",
+        "created_at"
+      ],
+      "title": "EvaluationActivityRecord",
+      "type": "object"
+    },
+    "EvaluationRecord": {
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "created_in_session_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Created In Session Id"
+        },
+        "status": {
+          "$ref": "#/$defs/RecordStatus"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "summary": {
+          "title": "Summary",
+          "type": "string"
+        },
+        "associated_baseline_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Associated Baseline Id"
+        },
+        "associated_experiment_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Associated Experiment Id"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        },
+        "updated_at": {
+          "title": "Updated At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "project_id",
+        "status",
+        "title",
+        "summary",
+        "created_at",
+        "updated_at"
+      ],
+      "title": "EvaluationRecord",
+      "type": "object"
+    },
+    "EventRecord": {
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "integer"
+        },
+        "associated_project_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Associated Project Id"
+        },
+        "associated_session_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Associated Session Id"
+        },
+        "type": {
+          "title": "Type",
+          "type": "string"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        },
+        "payload": {
+          "additionalProperties": true,
+          "title": "Payload",
+          "type": "object"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "message",
+        "created_at"
+      ],
+      "title": "EventRecord",
+      "type": "object"
+    },
+    "ExperimentActivityKind": {
+      "enum": [
+        "created",
+        "updated",
+        "status_updated",
+        "recorded",
+        "comment"
+      ],
+      "title": "ExperimentActivityKind",
+      "type": "string"
+    },
+    "ExperimentActivityRecord": {
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "integer"
+        },
+        "experiment_id": {
+          "title": "Experiment Id",
+          "type": "string"
+        },
+        "created_in_session_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Created In Session Id"
+        },
+        "actor": {
+          "title": "Actor",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/ExperimentActivityKind"
+        },
+        "body": {
+          "title": "Body",
+          "type": "string"
+        },
+        "payload": {
+          "additionalProperties": true,
+          "title": "Payload",
+          "type": "object"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "experiment_id",
+        "actor",
+        "kind",
+        "body",
+        "created_at"
+      ],
+      "title": "ExperimentActivityRecord",
+      "type": "object"
+    },
+    "ExperimentRecord": {
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "created_in_session_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Created In Session Id"
+        },
+        "status": {
+          "$ref": "#/$defs/RecordStatus"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "summary": {
+          "title": "Summary",
+          "type": "string"
+        },
+        "worktree_path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Worktree Path"
+        },
+        "base_commit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Base Commit"
+        },
+        "candidate_commit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Candidate Commit"
+        },
+        "parent_experiment_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parent Experiment Id"
+        },
+        "research_thread": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Research Thread"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        },
+        "updated_at": {
+          "title": "Updated At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "project_id",
+        "status",
+        "title",
+        "summary",
+        "created_at",
+        "updated_at"
+      ],
+      "title": "ExperimentRecord",
+      "type": "object"
+    },
+    "HypothesisActivityKind": {
+      "enum": [
+        "created",
+        "updated",
+        "status_updated",
+        "recorded",
+        "comment"
+      ],
+      "title": "HypothesisActivityKind",
+      "type": "string"
+    },
+    "HypothesisActivityRecord": {
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "integer"
+        },
+        "hypothesis_id": {
+          "title": "Hypothesis Id",
+          "type": "string"
+        },
+        "created_in_session_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Created In Session Id"
+        },
+        "actor": {
+          "title": "Actor",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/HypothesisActivityKind"
+        },
+        "body": {
+          "title": "Body",
+          "type": "string"
+        },
+        "payload": {
+          "additionalProperties": true,
+          "title": "Payload",
+          "type": "object"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "hypothesis_id",
+        "actor",
+        "kind",
+        "body",
+        "created_at"
+      ],
+      "title": "HypothesisActivityRecord",
+      "type": "object"
+    },
+    "HypothesisExperimentLinkRecord": {
+      "properties": {
+        "hypothesis_id": {
+          "title": "Hypothesis Id",
+          "type": "string"
+        },
+        "experiment_id": {
+          "title": "Experiment Id",
+          "type": "string"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "hypothesis_id",
+        "experiment_id",
+        "created_at"
+      ],
+      "title": "HypothesisExperimentLinkRecord",
+      "type": "object"
+    },
+    "HypothesisRecord": {
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "created_in_session_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Created In Session Id"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "summary": {
+          "title": "Summary",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/RecordStatus"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        },
+        "updated_at": {
+          "title": "Updated At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "project_id",
+        "title",
+        "summary",
+        "status",
+        "created_at",
+        "updated_at"
+      ],
+      "title": "HypothesisRecord",
+      "type": "object"
+    },
+    "MeasurementPayload": {
+      "additionalProperties": true,
+      "properties": {
+        "activity_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Activity Type"
+        },
+        "measurement_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Measurement Type"
+        },
+        "summary": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Summary"
+        },
+        "command": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Command"
+        },
+        "workspace_state": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Workspace State"
+        },
+        "metrics": {
+          "additionalProperties": {
+            "$ref": "#/$defs/MetricValue"
+          },
+          "title": "Metrics",
+          "type": "object"
+        },
+        "raw_output_summary": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Raw Output Summary"
+        },
+        "artifact_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Artifact Ids",
+          "type": "array"
+        },
+        "comparison_baseline_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Comparison Baseline Id"
+        },
+        "comparison_measurement_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Comparison Measurement Id"
+        },
+        "comparison_metric_deltas": {
+          "additionalProperties": {
+            "$ref": "#/$defs/MetricValue"
+          },
+          "title": "Comparison Metric Deltas",
+          "type": "object"
+        }
+      },
+      "title": "MeasurementPayload",
+      "type": "object"
+    },
+    "MeasurementRecord": {
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "evaluation_id": {
+          "title": "Evaluation Id",
+          "type": "string"
+        },
+        "created_in_session_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Created In Session Id"
+        },
+        "actor": {
+          "title": "Actor",
+          "type": "string"
+        },
+        "body": {
+          "title": "Body",
+          "type": "string"
+        },
+        "payload": {
+          "$ref": "#/$defs/MeasurementPayload"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "evaluation_id",
+        "actor",
+        "body",
+        "created_at"
+      ],
+      "title": "MeasurementRecord",
+      "type": "object"
+    },
+    "MetricValue": {
+      "properties": {
+        "value": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "title": "Value"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Unit"
+        },
+        "direction": {
+          "default": "informational",
+          "enum": [
+            "higher_is_better",
+            "lower_is_better",
+            "target",
+            "informational"
+          ],
+          "title": "Direction",
+          "type": "string"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Notes"
+        }
+      },
+      "required": [
+        "value"
+      ],
+      "title": "MetricValue",
+      "type": "object"
+    },
+    "ProjectRecord": {
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "workspace_id": {
+          "title": "Workspace Id",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "objective": {
+          "title": "Objective",
+          "type": "string"
+        },
+        "research_context": {
+          "title": "Research Context",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/ProjectStatus"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        },
+        "updated_at": {
+          "title": "Updated At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "workspace_id",
+        "title",
+        "objective",
+        "research_context",
+        "status",
+        "created_at",
+        "updated_at"
+      ],
+      "title": "ProjectRecord",
+      "type": "object"
+    },
+    "ProjectStatus": {
+      "enum": [
+        "active",
+        "closed"
+      ],
+      "title": "ProjectStatus",
+      "type": "string"
+    },
+    "RecordStatus": {
+      "enum": [
+        "triage",
+        "accepted",
+        "active",
+        "in_review",
+        "done",
+        "canceled",
+        "failed"
+      ],
+      "title": "RecordStatus",
+      "type": "string"
+    },
+    "SessionRecord": {
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "workspace_id": {
+          "title": "Workspace Id",
+          "type": "string"
+        },
+        "project_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Project Id"
+        },
+        "status": {
+          "$ref": "#/$defs/SessionStatus"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        },
+        "updated_at": {
+          "title": "Updated At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "workspace_id",
+        "status",
+        "created_at",
+        "updated_at"
+      ],
+      "title": "SessionRecord",
+      "type": "object"
+    },
+    "SessionStatus": {
+      "enum": [
+        "active",
+        "closed"
+      ],
+      "title": "SessionStatus",
+      "type": "string"
+    },
+    "TaskActivityKind": {
+      "enum": [
+        "created",
+        "updated",
+        "status_updated",
+        "recorded",
+        "comment"
+      ],
+      "title": "TaskActivityKind",
+      "type": "string"
+    },
+    "TaskActivityRecord": {
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "integer"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "task_id": {
+          "title": "Task Id",
+          "type": "string"
+        },
+        "created_in_session_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Created In Session Id"
+        },
+        "actor_agent_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Actor Agent Id"
+        },
+        "actor": {
+          "title": "Actor",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/TaskActivityKind"
+        },
+        "body": {
+          "title": "Body",
+          "type": "string"
+        },
+        "payload": {
+          "additionalProperties": true,
+          "title": "Payload",
+          "type": "object"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "project_id",
+        "task_id",
+        "actor",
+        "kind",
+        "body",
+        "created_at"
+      ],
+      "title": "TaskActivityRecord",
+      "type": "object"
+    },
+    "TaskDependencyRecord": {
+      "properties": {
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "task_id": {
+          "title": "Task Id",
+          "type": "string"
+        },
+        "blocked_by_task_id": {
+          "title": "Blocked By Task Id",
+          "type": "string"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "project_id",
+        "task_id",
+        "blocked_by_task_id",
+        "created_at"
+      ],
+      "title": "TaskDependencyRecord",
+      "type": "object"
+    },
+    "TaskEntityKind": {
+      "enum": [
+        "analysis",
+        "baseline",
+        "hypothesis",
+        "experiment",
+        "evaluation",
+        "measurement",
+        "artifact",
+        "analysis_activity",
+        "hypothesis_activity",
+        "experiment_activity",
+        "evaluation_activity",
+        "task_activity",
+        "event"
+      ],
+      "title": "TaskEntityKind",
+      "type": "string"
+    },
+    "TaskEntityLinkRecord": {
+      "properties": {
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "task_id": {
+          "title": "Task Id",
+          "type": "string"
+        },
+        "entity_kind": {
+          "$ref": "#/$defs/TaskEntityKind"
+        },
+        "entity_id": {
+          "title": "Entity Id",
+          "type": "string"
+        },
+        "relationship": {
+          "title": "Relationship",
+          "type": "string"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "project_id",
+        "task_id",
+        "entity_kind",
+        "entity_id",
+        "relationship",
+        "created_at"
+      ],
+      "title": "TaskEntityLinkRecord",
+      "type": "object"
+    },
+    "TaskKind": {
+      "enum": [
+        "plan",
+        "research",
+        "baseline",
+        "hypothesize",
+        "experiment",
+        "interpret"
+      ],
+      "title": "TaskKind",
+      "type": "string"
+    },
+    "TaskPriority": {
+      "enum": [
+        "urgent",
+        "high",
+        "normal",
+        "low"
+      ],
+      "title": "TaskPriority",
+      "type": "string"
+    },
+    "TaskRecord": {
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "created_in_session_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Created In Session Id"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "content": {
+          "title": "Content",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/TaskKind"
+        },
+        "work_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Work Type"
+        },
+        "status": {
+          "$ref": "#/$defs/TaskStatus"
+        },
+        "priority": {
+          "$ref": "#/$defs/TaskPriority"
+        },
+        "source_kind": {
+          "$ref": "#/$defs/TaskSourceKind"
+        },
+        "assignee_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Assignee Id"
+        },
+        "parent_task_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parent Task Id"
+        },
+        "payload": {
+          "additionalProperties": true,
+          "title": "Payload",
+          "type": "object"
+        },
+        "pydantic_run_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pydantic Run Id"
+        },
+        "conversation_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Conversation Id"
+        },
+        "result_summary": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Result Summary"
+        },
+        "workflow_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Workflow Id"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        },
+        "available_at": {
+          "title": "Available At",
+          "type": "string"
+        },
+        "claimed_in_session_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Claimed In Session Id"
+        },
+        "claimed_at": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Claimed At"
+        },
+        "completed_in_session_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Completed In Session Id"
+        },
+        "completed_at": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Completed At"
+        },
+        "updated_at": {
+          "title": "Updated At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "project_id",
+        "title",
+        "content",
+        "kind",
+        "status",
+        "priority",
+        "source_kind",
+        "created_at",
+        "available_at",
+        "updated_at"
+      ],
+      "title": "TaskRecord",
+      "type": "object"
+    },
+    "TaskSourceKind": {
+      "enum": [
+        "manager",
+        "user",
+        "system"
+      ],
+      "title": "TaskSourceKind",
+      "type": "string"
+    },
+    "TaskStatus": {
+      "enum": [
+        "triage",
+        "backlog",
+        "in_progress",
+        "done",
+        "canceled",
+        "failed"
+      ],
+      "title": "TaskStatus",
+      "type": "string"
+    },
+    "WorkspaceRecord": {
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "repo_path": {
+          "title": "Repo Path",
+          "type": "string"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        },
+        "updated_at": {
+          "title": "Updated At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "repo_path",
+        "created_at",
+        "updated_at"
+      ],
+      "title": "WorkspaceRecord",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "cursor": {
+      "title": "Cursor",
+      "type": "integer"
+    },
+    "workspaces": {
+      "items": {
+        "$ref": "#/$defs/WorkspaceRecord"
+      },
+      "title": "Workspaces",
+      "type": "array"
+    },
+    "projects": {
+      "items": {
+        "$ref": "#/$defs/ProjectRecord"
+      },
+      "title": "Projects",
+      "type": "array"
+    },
+    "sessions": {
+      "items": {
+        "$ref": "#/$defs/SessionRecord"
+      },
+      "title": "Sessions",
+      "type": "array"
+    },
+    "hypotheses": {
+      "items": {
+        "$ref": "#/$defs/HypothesisRecord"
+      },
+      "title": "Hypotheses",
+      "type": "array"
+    },
+    "baselines": {
+      "items": {
+        "$ref": "#/$defs/BaselineRecord"
+      },
+      "title": "Baselines",
+      "type": "array"
+    },
+    "experiments": {
+      "items": {
+        "$ref": "#/$defs/ExperimentRecord"
+      },
+      "title": "Experiments",
+      "type": "array"
+    },
+    "evaluations": {
+      "items": {
+        "$ref": "#/$defs/EvaluationRecord"
+      },
+      "title": "Evaluations",
+      "type": "array"
+    },
+    "measurements": {
+      "items": {
+        "$ref": "#/$defs/MeasurementRecord"
+      },
+      "title": "Measurements",
+      "type": "array"
+    },
+    "analyses": {
+      "items": {
+        "$ref": "#/$defs/AnalysisRecord"
+      },
+      "title": "Analyses",
+      "type": "array"
+    },
+    "hypothesis_experiment_links": {
+      "items": {
+        "$ref": "#/$defs/HypothesisExperimentLinkRecord"
+      },
+      "title": "Hypothesis Experiment Links",
+      "type": "array"
+    },
+    "agents": {
+      "items": {
+        "$ref": "#/$defs/AgentRecord"
+      },
+      "title": "Agents",
+      "type": "array"
+    },
+    "tasks": {
+      "items": {
+        "$ref": "#/$defs/TaskRecord"
+      },
+      "title": "Tasks",
+      "type": "array"
+    },
+    "task_dependencies": {
+      "items": {
+        "$ref": "#/$defs/TaskDependencyRecord"
+      },
+      "title": "Task Dependencies",
+      "type": "array"
+    },
+    "task_entity_links": {
+      "items": {
+        "$ref": "#/$defs/TaskEntityLinkRecord"
+      },
+      "title": "Task Entity Links",
+      "type": "array"
+    },
+    "task_activities": {
+      "items": {
+        "$ref": "#/$defs/TaskActivityRecord"
+      },
+      "title": "Task Activities",
+      "type": "array"
+    },
+    "analysis_activities": {
+      "items": {
+        "$ref": "#/$defs/AnalysisActivityRecord"
+      },
+      "title": "Analysis Activities",
+      "type": "array"
+    },
+    "hypothesis_activities": {
+      "items": {
+        "$ref": "#/$defs/HypothesisActivityRecord"
+      },
+      "title": "Hypothesis Activities",
+      "type": "array"
+    },
+    "baseline_activities": {
+      "items": {
+        "$ref": "#/$defs/BaselineActivityRecord"
+      },
+      "title": "Baseline Activities",
+      "type": "array"
+    },
+    "experiment_activities": {
+      "items": {
+        "$ref": "#/$defs/ExperimentActivityRecord"
+      },
+      "title": "Experiment Activities",
+      "type": "array"
+    },
+    "evaluation_activities": {
+      "items": {
+        "$ref": "#/$defs/EvaluationActivityRecord"
+      },
+      "title": "Evaluation Activities",
+      "type": "array"
+    },
+    "artifacts": {
+      "items": {
+        "$ref": "#/$defs/ArtifactRecord"
+      },
+      "title": "Artifacts",
+      "type": "array"
+    },
+    "events": {
+      "items": {
+        "$ref": "#/$defs/EventRecord"
+      },
+      "title": "Events",
+      "type": "array"
+    },
+    "compute_targets": {
+      "items": {
+        "$ref": "#/$defs/ComputeTargetRecord"
+      },
+      "title": "Compute Targets",
+      "type": "array"
+    }
+  },
+  "required": [
+    "cursor",
+    "sessions",
+    "hypotheses",
+    "experiments",
+    "evaluations",
+    "hypothesis_experiment_links",
+    "hypothesis_activities",
+    "experiment_activities",
+    "evaluation_activities",
+    "artifacts",
+    "events"
+  ],
+  "title": "CollectionsBootstrapResult",
+  "type": "object"
+}

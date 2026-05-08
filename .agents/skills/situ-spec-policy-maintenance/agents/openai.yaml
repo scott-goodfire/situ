@@ -1,0 +1,4 @@
+interface:
+  display_name: "Situ Spec Policy Maintenance"
+  short_description: "Add and lint Situ specs and policies."
+  default_prompt: "Use this skill to add, update, or lint numbered Situ specs and policies."

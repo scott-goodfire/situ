@@ -1,0 +1,253 @@
+{
+  "$defs": {
+    "TaskKind": {
+      "enum": [
+        "plan",
+        "research",
+        "baseline",
+        "hypothesize",
+        "experiment",
+        "interpret"
+      ],
+      "title": "TaskKind",
+      "type": "string"
+    },
+    "TaskPriority": {
+      "enum": [
+        "urgent",
+        "high",
+        "normal",
+        "low"
+      ],
+      "title": "TaskPriority",
+      "type": "string"
+    },
+    "TaskSourceKind": {
+      "enum": [
+        "manager",
+        "user",
+        "system"
+      ],
+      "title": "TaskSourceKind",
+      "type": "string"
+    },
+    "TaskStatus": {
+      "enum": [
+        "triage",
+        "backlog",
+        "in_progress",
+        "done",
+        "canceled",
+        "failed"
+      ],
+      "title": "TaskStatus",
+      "type": "string"
+    }
+  },
+  "properties": {
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "project_id": {
+      "title": "Project Id",
+      "type": "string"
+    },
+    "created_in_session_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Created In Session Id"
+    },
+    "title": {
+      "title": "Title",
+      "type": "string"
+    },
+    "content": {
+      "title": "Content",
+      "type": "string"
+    },
+    "kind": {
+      "$ref": "#/$defs/TaskKind"
+    },
+    "work_type": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Work Type"
+    },
+    "status": {
+      "$ref": "#/$defs/TaskStatus"
+    },
+    "priority": {
+      "$ref": "#/$defs/TaskPriority"
+    },
+    "source_kind": {
+      "$ref": "#/$defs/TaskSourceKind"
+    },
+    "assignee_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Assignee Id"
+    },
+    "parent_task_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Parent Task Id"
+    },
+    "payload": {
+      "additionalProperties": true,
+      "title": "Payload",
+      "type": "object"
+    },
+    "pydantic_run_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Pydantic Run Id"
+    },
+    "conversation_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Conversation Id"
+    },
+    "result_summary": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Result Summary"
+    },
+    "workflow_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Workflow Id"
+    },
+    "created_at": {
+      "title": "Created At",
+      "type": "string"
+    },
+    "available_at": {
+      "title": "Available At",
+      "type": "string"
+    },
+    "claimed_in_session_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Claimed In Session Id"
+    },
+    "claimed_at": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Claimed At"
+    },
+    "completed_in_session_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Completed In Session Id"
+    },
+    "completed_at": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Completed At"
+    },
+    "updated_at": {
+      "title": "Updated At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "project_id",
+    "title",
+    "content",
+    "kind",
+    "status",
+    "priority",
+    "source_kind",
+    "created_at",
+    "available_at",
+    "updated_at"
+  ],
+  "title": "TaskRecord",
+  "type": "object"
+}

@@ -1,0 +1,54 @@
+{
+  "$defs": {
+    "WorkspaceRecord": {
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "repo_path": {
+          "title": "Repo Path",
+          "type": "string"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        },
+        "updated_at": {
+          "title": "Updated At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "repo_path",
+        "created_at",
+        "updated_at"
+      ],
+      "title": "WorkspaceRecord",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "configured": {
+      "title": "Configured",
+      "type": "boolean"
+    },
+    "workspace": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/WorkspaceRecord"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    }
+  },
+  "required": [
+    "configured"
+  ],
+  "title": "SetupGetResult",
+  "type": "object"
+}

@@ -1,0 +1,33 @@
+from __future__ import annotations
+
+from typing import Any
+
+from pydantic_ai import RunContext
+
+from ...common import BaseSituTool, SituToolDeps
+from .models import GetProjectResult
+
+
+class GetProjectTool(BaseSituTool[SituToolDeps, GetProjectResult]):
+    name = "get_project"
+    result_type = GetProjectResult
+
+    async def execute(
+        self,
+        *,
+        ctx: RunContext[SituToolDeps],
+        project_id: str | None = None,
+        **_kwargs: Any,
+    ) -> GetProjectResult:
+        """Read a project by ID or the current project."""
+        repos = await ctx.deps.get_repos()
+        resolved_project_id = project_id or await ctx.deps.current_project_id()
+        project = (
+            await repos.projects.get(project_id=resolved_project_id)
+            if resolved_project_id is not None
+            else None
+        )
+        return GetProjectResult(
+            success=True,
+            project=project.model_dump() if project is not None else None,
+        )

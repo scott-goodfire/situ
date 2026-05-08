@@ -1,0 +1,556 @@
+from __future__ import annotations
+
+import json
+from dataclasses import dataclass
+from typing import Any
+
+from pydantic_evals.evaluators import EvaluationReason, Evaluator, EvaluatorContext
+
+from evals.worlds.multi_agent_loop import (
+    MultiAgentLoopEvalInput,
+    MultiAgentLoopEvalOutput,
+)
+from evals.worlds.multi_agent_loop.agents import calls_for_role
+
+
+def _enum_value(value: Any) -> Any:
+    return getattr(value, "value", value)
+
+
+@dataclass
+class RoleToolWasCalled(
+    Evaluator[MultiAgentLoopEvalInput, MultiAgentLoopEvalOutput, Any]
+):
+    role: str
+    tool_name: str
+    expected: bool = True
+
+    def evaluate(
+        self,
+        ctx: EvaluatorContext[
+            MultiAgentLoopEvalInput,
+            MultiAgentLoopEvalOutput,
+            Any,
+        ],
+    ) -> EvaluationReason:
+        matches = [
+            call
+            for call in calls_for_role(ctx.output, self.role)
+            if call.tool_name == self.tool_name
+        ]
+        found = bool(matches)
+        if found == self.expected:
+            reason = (
+                f"{self.role} {self.tool_name} called {len(matches)} time(s)"
+                if found
+                else f"{self.role} {self.tool_name} not called"
+            )
+            return EvaluationReason(value=True, reason=reason)
+        if self.expected:
+            return EvaluationReason(
+                value=False,
+                reason=f"Expected {self.role} to call {self.tool_name}",
+            )
+        return EvaluationReason(
+            value=False,
+            reason=f"Expected {self.role} not to call {self.tool_name}",
+        )
+
+
+@dataclass
+class RoleToolArgsContain(
+    Evaluator[MultiAgentLoopEvalInput, MultiAgentLoopEvalOutput, Any]
+):
+    role: str
+    tool_name: str
+    text: str
+
+    def evaluate(
+        self,
+        ctx: EvaluatorContext[
+            MultiAgentLoopEvalInput,
+            MultiAgentLoopEvalOutput,
+            Any,
+        ],
+    ) -> EvaluationReason:
+        matches = [
+            call
+            for call in calls_for_role(ctx.output, self.role)
+            if call.tool_name == self.tool_name
+        ]
+        needle = self.text.lower()
+        for call in matches:
+            rendered = json.dumps(call.args, sort_keys=True).lower()
+            if needle in rendered:
+                return EvaluationReason(
+                    value=True,
+                    reason=(
+                        f"{self.role} {self.tool_name} args contain {self.text!r}"
+                    ),
+                )
+        return EvaluationReason(
+            value=False,
+            reason=(
+                f"{self.role} {self.tool_name} args did not contain "
+                f"{self.text!r}: {[call.args for call in matches]}"
+            ),
+        )
+
+
+@dataclass
+class RoleToolSucceeded(
+    Evaluator[MultiAgentLoopEvalInput, MultiAgentLoopEvalOutput, Any]
+):
+    role: str
+    tool_name: str
+
+    def evaluate(
+        self,
+        ctx: EvaluatorContext[
+            MultiAgentLoopEvalInput,
+            MultiAgentLoopEvalOutput,
+            Any,
+        ],
+    ) -> EvaluationReason:
+        matches = [
+            call
+            for call in calls_for_role(ctx.output, self.role)
+            if call.tool_name == self.tool_name
+        ]
+        if not matches:
+            return EvaluationReason(
+                value=False,
+                reason=f"{self.role} did not call {self.tool_name}",
+            )
+        failures = [
+            call.result
+            for call in matches
+            if call.result.get("success") is not True or call.result.get("error")
+        ]
+        if failures:
+            return EvaluationReason(
+                value=False,
+                reason=f"{self.role} {self.tool_name} failures: {failures}",
+            )
+        return EvaluationReason(
+            value=True,
+            reason=f"{self.role} {self.tool_name} succeeded {len(matches)} time(s)",
+        )
+
+
+@dataclass
+class RoleToolCalledSuccessfully(
+    Evaluator[MultiAgentLoopEvalInput, MultiAgentLoopEvalOutput, Any]
+):
+    role: str
+    tool_name: str
+
+    def evaluate(
+        self,
+        ctx: EvaluatorContext[
+            MultiAgentLoopEvalInput,
+            MultiAgentLoopEvalOutput,
+            Any,
+        ],
+    ) -> EvaluationReason:
+        matches = [
+            call
+            for call in calls_for_role(ctx.output, self.role)
+            if call.tool_name == self.tool_name
+        ]
+        if not matches:
+            return EvaluationReason(
+                value=False,
+                reason=f"{self.role} did not call {self.tool_name}",
+            )
+        failures = [
+            call.result
+            for call in matches
+            if call.result.get("success") is not True or call.result.get("error")
+        ]
+        if failures:
+            return EvaluationReason(
+                value=False,
+                reason=f"{self.role} {self.tool_name} failures: {failures}",
+            )
+        return EvaluationReason(
+            value=True,
+            reason=(
+                f"{self.role} {self.tool_name} called successfully "
+                f"{len(matches)} time(s)"
+            ),
+        )
+
+
+@dataclass
+class ScientistCompletedBaselineTask(
+    Evaluator[MultiAgentLoopEvalInput, MultiAgentLoopEvalOutput, Any]
+):
+    def evaluate(
+        self,
+        ctx: EvaluatorContext[
+            MultiAgentLoopEvalInput,
+            MultiAgentLoopEvalOutput,
+            Any,
+        ],
+    ) -> EvaluationReason:
+        tasks = ctx.output.project_overview.get("tasks", [])
+        completed = [
+            task
+            for task in tasks
+            if task.get("kind") == "baseline" and task.get("status") == "done"
+        ]
+        if completed:
+            return EvaluationReason(
+                value=True,
+                reason=f"Completed baseline task(s): {[task.get('id') for task in completed]}",
+            )
+        return EvaluationReason(
+            value=False,
+            reason=f"No completed baseline task. Tasks: {tasks}",
+        )
+
+
+@dataclass
+class BaselineEvaluationRecorded(
+    Evaluator[MultiAgentLoopEvalInput, MultiAgentLoopEvalOutput, Any]
+):
+    def evaluate(
+        self,
+        ctx: EvaluatorContext[
+            MultiAgentLoopEvalInput,
+            MultiAgentLoopEvalOutput,
+            Any,
+        ],
+        ) -> EvaluationReason:
+        evaluations = ctx.output.project_overview.get("evaluations", [])
+        measurements = ctx.output.project_overview.get("measurements", [])
+        result_measurements = [
+            measurement
+            for measurement in measurements
+            if "val_bpb" in json.dumps(measurement, sort_keys=True).lower()
+        ]
+        if evaluations and result_measurements:
+            return EvaluationReason(
+                value=True,
+                reason=(
+                    "Found evaluation measurement evidence: "
+                    f"{[item.get('id') for item in result_measurements]}"
+                ),
+            )
+        return EvaluationReason(
+            value=False,
+            reason=(
+                "Missing baseline evaluation/measurement evidence. "
+                f"Evaluations: {evaluations}; measurements: {measurements}"
+            ),
+        )
+
+
+@dataclass
+class FollowupTaskCreatedAfterBaseline(
+    Evaluator[MultiAgentLoopEvalInput, MultiAgentLoopEvalOutput, Any]
+):
+    def evaluate(
+        self,
+        ctx: EvaluatorContext[
+            MultiAgentLoopEvalInput,
+            MultiAgentLoopEvalOutput,
+            Any,
+        ],
+    ) -> EvaluationReason:
+        followups = [
+            task
+            for task in ctx.output.project_overview.get("tasks", [])
+            if task.get("kind")
+            in {"research", "hypothesize", "experiment", "interpret", "review"}
+        ]
+        if followups:
+            return EvaluationReason(
+                value=True,
+                reason=f"Found follow-up task(s): {[task.get('id') for task in followups]}",
+            )
+        return EvaluationReason(
+            value=False,
+            reason=(
+                "Manager did not create a post-baseline follow-up task. Tasks: "
+                f"{ctx.output.project_overview.get('tasks', [])}"
+            ),
+        )
+
+
+@dataclass
+class CandidateExperimentRecorded(
+    Evaluator[MultiAgentLoopEvalInput, MultiAgentLoopEvalOutput, Any]
+):
+    def evaluate(
+        self,
+        ctx: EvaluatorContext[
+            MultiAgentLoopEvalInput,
+            MultiAgentLoopEvalOutput,
+            Any,
+        ],
+    ) -> EvaluationReason:
+        graph = ctx.output.project_overview
+        experiments = graph.get("experiments", [])
+        evaluations = graph.get("evaluations", [])
+        measurements = graph.get("measurements", [])
+        experiment_ids = {
+            experiment.get("id")
+            for experiment in experiments
+            if "component a" in json.dumps(experiment, sort_keys=True).lower()
+            or "try component a" in json.dumps(experiment, sort_keys=True).lower()
+        }
+        linked_evaluations = [
+            evaluation
+            for evaluation in evaluations
+            if evaluation.get("associated_experiment_id") in experiment_ids
+        ]
+        component_results = [
+            measurement
+            for measurement in measurements
+            if "component_a" in json.dumps(measurement, sort_keys=True).lower()
+            and "val_bpb" in json.dumps(measurement, sort_keys=True).lower()
+        ]
+        if experiment_ids and linked_evaluations and component_results:
+            return EvaluationReason(
+                value=True,
+                reason=(
+                    "Found component A experiment, linked evaluation, and "
+                    f"result evidence: {sorted(experiment_ids)}"
+                ),
+            )
+        return EvaluationReason(
+            value=False,
+            reason=(
+                "Missing component A experiment/evaluation/result. "
+                f"Experiments: {experiments}; evaluations: {evaluations}; "
+                f"measurements: {measurements}"
+            ),
+        )
+
+
+@dataclass
+class AnalysisRecorded(
+    Evaluator[MultiAgentLoopEvalInput, MultiAgentLoopEvalOutput, Any]
+):
+    def evaluate(
+        self,
+        ctx: EvaluatorContext[
+            MultiAgentLoopEvalInput,
+            MultiAgentLoopEvalOutput,
+            Any,
+        ],
+    ) -> EvaluationReason:
+        analyses = ctx.output.project_overview.get("analyses", [])
+        activities = ctx.output.project_overview.get("analysis_activities", [])
+        has_analysis = any(
+            "codebase map" in json.dumps(analysis, sort_keys=True).lower()
+            for analysis in analyses
+        )
+        has_comment = any(
+            "analysis before hypotheses"
+            in json.dumps(activity, sort_keys=True).lower()
+            for activity in activities
+        )
+        if has_analysis and has_comment:
+            return EvaluationReason(
+                value=True,
+                reason=f"Found analysis and analysis comment: {analyses}",
+            )
+        return EvaluationReason(
+            value=False,
+            reason=f"Missing analysis/comment. Analyses: {analyses}; activities: {activities}",
+        )
+
+
+@dataclass
+class TaskClaimedByRole(
+    Evaluator[MultiAgentLoopEvalInput, MultiAgentLoopEvalOutput, Any]
+):
+    role: str
+    task_kind: str | None = None
+    title_contains: str | None = None
+
+    def evaluate(
+        self,
+        ctx: EvaluatorContext[
+            MultiAgentLoopEvalInput,
+            MultiAgentLoopEvalOutput,
+            Any,
+        ],
+    ) -> EvaluationReason:
+        agents_by_id = {
+            agent.get("id"): agent
+            for agent in ctx.output.project_overview.get("agents", [])
+        }
+        matches = []
+        for task in ctx.output.project_overview.get("tasks", []):
+            agent = agents_by_id.get(task.get("assignee_id"))
+            if agent is None or agent.get("kind") != self.role:
+                continue
+            if self.task_kind is not None and task.get("kind") != self.task_kind:
+                continue
+            if self.title_contains is not None and self.title_contains.lower() not in str(
+                task.get("title", "")
+            ).lower():
+                continue
+            matches.append(task)
+        if matches:
+            return EvaluationReason(
+                value=True,
+                reason=(
+                    f"{self.role} claimed matching task(s): "
+                    f"{[task.get('id') for task in matches]}"
+                ),
+            )
+        return EvaluationReason(
+            value=False,
+            reason=(
+                f"No task claimed by {self.role} matched kind={self.task_kind!r} "
+                f"title_contains={self.title_contains!r}. Tasks: "
+                f"{ctx.output.project_overview.get('tasks', [])}; agents: "
+                f"{ctx.output.project_overview.get('agents', [])}"
+            ),
+        )
+
+
+@dataclass
+class ResearcherHandoffRecorded(
+    Evaluator[MultiAgentLoopEvalInput, MultiAgentLoopEvalOutput, Any]
+):
+    def evaluate(
+        self,
+        ctx: EvaluatorContext[
+            MultiAgentLoopEvalInput,
+            MultiAgentLoopEvalOutput,
+            Any,
+        ],
+    ) -> EvaluationReason:
+        graph = ctx.output.project_overview
+        analyses = graph.get("analyses", [])
+        hypotheses = graph.get("hypotheses", [])
+        links = graph.get("task_entity_links", [])
+        has_analysis = any(
+            "component a research map" in json.dumps(analysis, sort_keys=True).lower()
+            or "component_a" in json.dumps(analysis, sort_keys=True).lower()
+            for analysis in analyses
+        )
+        has_hypothesis = any(
+            "component a" in json.dumps(hypothesis, sort_keys=True).lower()
+            or "component_a" in json.dumps(hypothesis, sort_keys=True).lower()
+            for hypothesis in hypotheses
+        )
+        linked_entity_ids = {link.get("entity_id") for link in links}
+        has_link = any(
+            record.get("id") in linked_entity_ids
+            for record in [*analyses, *hypotheses]
+        )
+        if has_analysis and has_hypothesis and has_link:
+            return EvaluationReason(
+                value=True,
+                reason=(
+                    "Found Researcher analysis, hypothesis, and task link. "
+                    f"Analyses: {[item.get('id') for item in analyses]}; "
+                    f"hypotheses: {[item.get('id') for item in hypotheses]}"
+                ),
+            )
+        return EvaluationReason(
+            value=False,
+            reason=(
+                "Missing Researcher handoff records. "
+                f"Analyses: {analyses}; hypotheses: {hypotheses}; links: {links}"
+            ),
+        )
+
+
+@dataclass
+class WebSourceAnalysisRecorded(
+    Evaluator[MultiAgentLoopEvalInput, MultiAgentLoopEvalOutput, Any]
+):
+    def evaluate(
+        self,
+        ctx: EvaluatorContext[
+            MultiAgentLoopEvalInput,
+            MultiAgentLoopEvalOutput,
+            Any,
+        ],
+    ) -> EvaluationReason:
+        graph = ctx.output.project_overview
+        analyses = graph.get("analyses", [])
+        links = graph.get("task_entity_links", [])
+        matching = [
+            analysis
+            for analysis in analyses
+            if "web prior art for val_bpb variants"
+            in json.dumps(analysis, sort_keys=True).lower()
+        ]
+        source_backed = [
+            analysis
+            for analysis in matching
+            if "http" in json.dumps(analysis, sort_keys=True).lower()
+        ]
+        linked_entity_ids = {link.get("entity_id") for link in links}
+        linked = [
+            analysis
+            for analysis in source_backed
+            if analysis.get("id") in linked_entity_ids
+        ]
+        if linked:
+            return EvaluationReason(
+                value=True,
+                reason=(
+                    "Found source-backed web prior art analysis linked to a task: "
+                    f"{[analysis.get('id') for analysis in linked]}"
+                ),
+            )
+        return EvaluationReason(
+            value=False,
+            reason=(
+                "Missing linked source-backed web prior art analysis. "
+                f"Analyses: {analyses}; links: {links}"
+            ),
+        )
+
+
+@dataclass
+class UserUrgentTaskPreemptedBacklog(
+    Evaluator[MultiAgentLoopEvalInput, MultiAgentLoopEvalOutput, Any]
+):
+    def evaluate(
+        self,
+        ctx: EvaluatorContext[
+            MultiAgentLoopEvalInput,
+            MultiAgentLoopEvalOutput,
+            Any,
+        ],
+    ) -> EvaluationReason:
+        tasks = ctx.output.project_overview.get("tasks", [])
+        urgent = [
+            task
+            for task in tasks
+            if "user urgent" in str(task.get("title", "")).lower()
+        ]
+        normal = [
+            task
+            for task in tasks
+            if "normal backlog" in str(task.get("title", "")).lower()
+        ]
+        urgent_claimed = any(
+            _enum_value(task.get("status"))
+            in {"in_progress", "done", "failed", "abandoned"}
+            and task.get("assignee_id")
+            for task in urgent
+        )
+        normal_backlog = any(
+            _enum_value(task.get("status")) == "backlog" for task in normal
+        )
+        if urgent_claimed and normal_backlog:
+            return EvaluationReason(
+                value=True,
+                reason="Urgent user task was claimed before normal backlog task",
+            )
+        return EvaluationReason(
+            value=False,
+            reason=f"Urgent/normal task priority did not hold. Tasks: {tasks}",
+        )

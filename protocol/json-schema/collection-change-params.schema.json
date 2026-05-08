@@ -1,0 +1,82 @@
+{
+  "properties": {
+    "cursor": {
+      "title": "Cursor",
+      "type": "integer"
+    },
+    "collection": {
+      "enum": [
+        "workspaces",
+        "projects",
+        "sessions",
+        "hypotheses",
+        "baselines",
+        "experiments",
+        "evaluations",
+        "measurements",
+        "analyses",
+        "hypothesis_experiment_links",
+        "agents",
+        "tasks",
+        "task_dependencies",
+        "task_entity_links",
+        "task_activities",
+        "analysis_activities",
+        "hypothesis_activities",
+        "baseline_activities",
+        "experiment_activities",
+        "evaluation_activities",
+        "artifacts",
+        "events",
+        "compute_targets"
+      ],
+      "title": "Collection",
+      "type": "string"
+    },
+    "key": {
+      "title": "Key",
+      "type": "string"
+    },
+    "op": {
+      "enum": [
+        "upsert",
+        "delete"
+      ],
+      "title": "Op",
+      "type": "string"
+    },
+    "record": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Record"
+    },
+    "source_event_id": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Source Event Id"
+    }
+  },
+  "required": [
+    "cursor",
+    "collection",
+    "key",
+    "op"
+  ],
+  "title": "CollectionChangeParams",
+  "type": "object"
+}

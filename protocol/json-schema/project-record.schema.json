@@ -1,0 +1,57 @@
+{
+  "$defs": {
+    "ProjectStatus": {
+      "enum": [
+        "active",
+        "closed"
+      ],
+      "title": "ProjectStatus",
+      "type": "string"
+    }
+  },
+  "properties": {
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "workspace_id": {
+      "title": "Workspace Id",
+      "type": "string"
+    },
+    "title": {
+      "title": "Title",
+      "type": "string"
+    },
+    "objective": {
+      "title": "Objective",
+      "type": "string"
+    },
+    "research_context": {
+      "title": "Research Context",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/ProjectStatus"
+    },
+    "created_at": {
+      "title": "Created At",
+      "type": "string"
+    },
+    "updated_at": {
+      "title": "Updated At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "workspace_id",
+    "title",
+    "objective",
+    "research_context",
+    "status",
+    "created_at",
+    "updated_at"
+  ],
+  "title": "ProjectRecord",
+  "type": "object"
+}

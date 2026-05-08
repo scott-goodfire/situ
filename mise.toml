@@ -1,0 +1,109 @@
+[tools]
+bun = "1.2.20"
+node = "24.6.0"
+python = "3.13.7"
+uv = "0.9.7"
+
+[tasks.update]
+description = "Update TypeScript and Python workspace dependencies"
+run = "./commands/update.sh"
+
+[tasks.bundle]
+description = "Build bundled runtimes into projects/harness/src/situ/_bundled/"
+run = "./config/scripts/build_bundled.sh"
+
+[tasks.check]
+description = "Run Python syntax checks and TypeScript typechecks"
+run = "./commands/check.sh"
+
+[tasks.evals]
+description = "Run Situ eval suites"
+run = "./commands/evals.sh"
+
+[tasks.e2e]
+description = "Run live Situ Playwright smoke tests"
+run = "./commands/e2e-tests.sh"
+
+[tasks."evals:json"]
+description = "Run Situ eval suites and print JSON"
+run = "./commands/evals-json.sh"
+
+[tasks."dev:tui"]
+description = "Run the Situ TUI over the local app"
+run = "./commands/dev-tui.sh"
+
+[tasks."tui:story"]
+description = "Render an Situ TUI story"
+run = "./commands/tui-story.sh"
+
+[tasks."tui:snapshots"]
+description = "Capture text and PNG snapshots for Situ TUI stories"
+run = "./commands/tui-snapshots.sh"
+
+[tasks.app]
+description = "Run the local Situ app server"
+run = "./commands/app.sh"
+
+[tasks.secrets]
+description = "Manage local Situ runtime secrets"
+run = "./commands/secrets.sh"
+
+[tasks.compute]
+description = "Manage local compute targets (Scientist task gating)"
+run = "./commands/compute.sh"
+
+[tasks.tui]
+description = "Open the Situ TUI over the local app"
+run = "./commands/tui.sh"
+
+[tasks.exec]
+description = "Run a headless Situ session"
+run = "./commands/exec.sh"
+
+[tasks.resume]
+description = "Resume an existing Situ session in the TUI"
+run = "./commands/resume.sh"
+
+[tasks.sessions]
+description = "List local Situ sessions as JSON"
+run = "./commands/sessions.sh"
+
+[tasks.clear]
+description = "Clear local Situ state for a workspace"
+run = "./commands/clear.sh"
+
+[tasks.web]
+description = "Serve the local Situ project home and read-only monitors"
+run = "./commands/web.sh"
+
+[tasks."dev:web"]
+description = "Run the Situ web Vite development server"
+run = "./commands/web-dev.sh"
+
+[tasks."web:smoke"]
+description = "Build and smoke-test the local Situ web host"
+run = "./commands/web-smoke.sh"
+
+[tasks."storybook:web"]
+description = "Run Storybook for the Situ-branded web app UI"
+run = "./commands/storybook-web.sh"
+
+[tasks."storybook:web:build"]
+description = "Build Storybook for the Situ-branded web app UI"
+run = "./commands/storybook-web-build.sh"
+
+[tasks."storybook:ui"]
+description = "Run Storybook for reusable web UI primitives"
+run = "./commands/storybook-ui.sh"
+
+[tasks."storybook:ui:build"]
+description = "Build Storybook for reusable web UI primitives"
+run = "./commands/storybook-ui-build.sh"
+
+[tasks."dev:harness"]
+description = "Run the Python harness JSON-RPC stdio server"
+run = "./commands/dev-harness.sh"
+
+[tasks."protocol:generate"]
+description = "Generate JSON Schema and TypeScript protocol types"
+run = "./commands/protocol-generate.sh"

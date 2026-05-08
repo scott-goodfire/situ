@@ -1,0 +1,153 @@
+name: situ-release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to build (e.g. v0.0.1). Required for manual dispatch."
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: build (${{ matrix.platform }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-14
+            platform: darwin-arm64
+            situ_target: bun-darwin-arm64
+          - runner: ubuntu-22.04
+            platform: linux-x64
+            situ_target: bun-linux-x64
+          - runner: ubuntu-22.04-arm
+            platform: linux-arm64
+            situ_target: bun-linux-arm64
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve release tag
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: jdx/mise-action@v2
+        with:
+          install: true
+          cache: true
+
+      - name: Build release tarball
+        env:
+          SITU_TARGET: ${{ matrix.situ_target }}
+          SITU_VERSION: ${{ steps.tag.outputs.tag }}
+        run: |
+          bun install --frozen-lockfile
+          uv sync --all-packages --frozen
+          ./config/scripts/build_release_assets.sh
+
+      - name: Smoke-test installer
+        env:
+          SITU_VERSION: ${{ steps.tag.outputs.tag }}
+          SITU_RELEASE_TARBALL: ${{ github.workspace }}/dist/release/situ-${{ steps.tag.outputs.tag }}-${{ matrix.platform }}.tar.gz
+          SITU_INSTALL_HOME: ${{ runner.temp }}/situ
+          SITU_BIN_DIR: ${{ runner.temp }}/bin
+        run: |
+          ./config/scripts/install.sh
+          "$SITU_BIN_DIR/situ" --help
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.platform }}
+          path: |
+            dist/release/situ-*.tar.gz
+            dist/release/checksums.txt
+          retention-days: 7
+
+  publish:
+    name: publish release
+    needs: build
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve release tag
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: release-*
+          merge-multiple: true
+
+      - name: Aggregate checksums
+        run: |
+          mkdir -p dist/release
+          cp artifacts/situ-*.tar.gz dist/release/
+          (
+            cd dist/release
+            : > checksums.txt
+            for tarball in situ-*.tar.gz; do
+              sha256sum "$tarball" >> checksums.txt
+            done
+            cat checksums.txt
+          )
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          fail_on_unmatched_files: true
+          files: |
+            dist/release/situ-*.tar.gz
+            dist/release/checksums.txt
+
+  verify-install:
+    name: verify install (${{ matrix.platform }})
+    needs: publish
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { runner: macos-14, platform: darwin-arm64 }
+          - { runner: ubuntu-22.04, platform: linux-x64 }
+          - { runner: ubuntu-22.04-arm, platform: linux-arm64 }
+    steps:
+      - name: Resolve release tag
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install via the public install command
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SITU_INSTALL_HOME: ${{ runner.temp }}/situ
+          SITU_BIN_DIR: ${{ runner.temp }}/bin
+        run: |
+          gh api -H "Accept: application/vnd.github.raw" \
+            repos/${{ github.repository }}/contents/config/scripts/install.sh \
+            | bash -s -- ${{ steps.tag.outputs.tag }}
+
+          "$SITU_BIN_DIR/situ" --version
+          "$SITU_BIN_DIR/situ" doctor

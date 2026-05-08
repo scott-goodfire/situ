@@ -1,0 +1,162 @@
+import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
+import { createInterface } from "node:readline";
+import type { JsonRpcId, JsonRpcNotification, JsonRpcResponse } from "@situ/protocol";
+
+type PendingRequest = {
+  resolve: (value: unknown) => void;
+  reject: (error: Error) => void;
+};
+
+type NotificationHandler = (notification: JsonRpcNotification) => void;
+
+type SpawnClientOptions = {
+  command: string;
+  args: string[];
+  cwd: string;
+  env?: NodeJS.ProcessEnv;
+};
+
+type JsonRpcRequestOptions<TParams> = {
+  method: string;
+  params?: TParams;
+};
+
+type StdioJsonRpcClientOptions = {
+  child: ChildProcessWithoutNullStreams;
+};
+
+export class StdioJsonRpcClient {
+  private nextId = 1;
+  private pending = new Map<JsonRpcId, PendingRequest>();
+  private notificationHandlers = new Set<NotificationHandler>();
+
+  private readonly child: ChildProcessWithoutNullStreams;
+
+  constructor({ child }: StdioJsonRpcClientOptions) {
+    this.child = child;
+
+    const lines = createInterface({ input: child.stdout });
+
+    lines.on("line", (line) => {
+      this.handleLine({ line });
+    });
+
+    child.on("exit", (code, signal) => {
+      const reason = processExitReason({ code, signal });
+      this.rejectAll({
+        error: new Error(`JSON-RPC process exited with ${reason}`),
+      });
+    });
+  }
+
+  static spawn({ command, args, cwd, env = {} }: SpawnClientOptions): StdioJsonRpcClient {
+    const child = spawn(command, args, {
+      cwd,
+      env: { ...process.env, ...env, PYTHONDONTWRITEBYTECODE: "1" },
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+
+    child.stderr.on("data", (chunk) => {
+      process.stderr.write(chunk);
+    });
+
+    return new StdioJsonRpcClient({ child });
+  }
+
+  request<TResult, TParams = unknown>({
+    method,
+    params,
+  }: JsonRpcRequestOptions<TParams>): Promise<TResult> {
+    const id = String(this.nextId++);
+    const payload = {
+      jsonrpc: "2.0",
+      id,
+      method,
+      params,
+    };
+
+    return new Promise<TResult>((resolve, reject) => {
+      this.pending.set(id, {
+        resolve: (value) => resolve(value as TResult),
+        reject,
+      });
+
+      this.child.stdin.write(`${JSON.stringify(payload)}\n`, (error) => {
+        if (!error) {
+          return;
+        }
+
+        this.pending.delete(id);
+        reject(error);
+      });
+    });
+  }
+
+  onNotification({ handler }: { handler: NotificationHandler }): () => void {
+    this.notificationHandlers.add(handler);
+    return () => {
+      this.notificationHandlers.delete(handler);
+    };
+  }
+
+  close(): void {
+    this.child.stdin.end();
+    this.child.kill();
+  }
+
+  private handleLine({ line }: { line: string }): void {
+    let message: JsonRpcResponse | JsonRpcNotification;
+    try {
+      message = JSON.parse(line) as JsonRpcResponse | JsonRpcNotification;
+    } catch (error) {
+      this.rejectAll({
+        error: new Error(`invalid JSON-RPC response: ${String(error)}`),
+      });
+      return;
+    }
+
+    if ("method" in message && !("id" in message)) {
+      for (const handler of this.notificationHandlers) {
+        handler(message);
+      }
+      return;
+    }
+
+    const response = message as JsonRpcResponse;
+    const id = response.id ?? null;
+    const pending = this.pending.get(id);
+    if (!pending) {
+      return;
+    }
+
+    this.pending.delete(id);
+
+    if (response.error) {
+      pending.reject(new Error(response.error.message));
+      return;
+    }
+
+    pending.resolve(response.result);
+  }
+
+  private rejectAll({ error }: { error: Error }): void {
+    for (const request of this.pending.values()) {
+      request.reject(error);
+    }
+    this.pending.clear();
+  }
+}
+
+function processExitReason({
+  code,
+  signal,
+}: {
+  code: number | null;
+  signal: NodeJS.Signals | null;
+}): string {
+  if (signal) {
+    return `signal ${signal}`;
+  }
+
+  return `code ${code ?? "unknown"}`;
+}
