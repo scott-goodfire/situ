@@ -57,7 +57,6 @@ runtime under the install directory.
 Supported platforms:
 
 - `darwin-arm64`
-- `darwin-x64`
 - `linux-arm64`
 - `linux-x64`
 

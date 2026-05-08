@@ -17,14 +17,14 @@ An agent should be able to ask:
 
 - What is the current objective?
 - What research context is relevant?
-- Which hypotheses are open or active?
+- Which hypotheses are accepted or active?
 - What has already been tried?
 - What baselines and baseline measurements exist?
 - What measurements came back for candidate experiments?
 - Which experiments relate to which hypotheses?
 - What result comments came back?
-- What concern comments apply?
-- Which candidate experiments have Critic reviews?
+- What trust findings apply?
+- Which candidate experiments have Critic review results?
 - Are there experiments with recorded evidence that are still pending review?
 - What artifacts can be inspected?
 - What is running now?
@@ -79,8 +79,8 @@ inspection clearer than requiring agents to fetch the full project board.
 The compact project board, exposed to agents through `get_project_overview`,
 should be a bounded digest of the active working set, not a dump of every
 record the project has ever produced. Its response size should scale with
-what is currently in motion (open hypotheses, runnable tasks, in-progress
-task, recent results) rather than with project age. Agents drill deeper
+what is currently in motion (accepted/active hypotheses, runnable tasks,
+in-progress task, recent results) rather than with project age. Agents drill deeper
 through focused `list_*` and `get_*` tools.
 
 The digest should always include:
@@ -89,18 +89,18 @@ The digest should always include:
 - Shape of the project so the agent can orient quickly: counts of
   baselines, experiments, measurements, evaluations, analyses, hypotheses,
   and open tasks broken down by kind and status
-- Active hypotheses and open analyses, as titles and IDs rather than full
+- Active hypotheses and accepted analyses, as titles and IDs rather than full
   bodies
 - A bounded slice of recent experiments, evaluations, and measurements
   (headlines and IDs, with metric values inline when they exist), preserving
   research-thread context where the experiment carries one
 - The live task working set: any in-progress task with full content, plus
   the next runnable backlog tasks as titles and IDs
-- Recent Critic reviews and unresolved review concerns, with verdicts and
-  the IDs of the experiments and tasks they apply to
+- Recent Critic review results and unresolved trust findings, with decisions
+  and the IDs of the experiments and tasks they apply to
 - A bounded tail of lifecycle-relevant events (for example experiment
-  created and completed, measurement recorded, critic verdict, plan filed),
-  not link or receipt noise
+  created and completed, measurement recorded, review result decided, plan
+  filed), not link or receipt noise
 - Artifact references as IDs, not full payloads
 - A cursor or "since" anchor so the agent can ask "anything new since this
   point" without re-reading older state
@@ -142,12 +142,16 @@ Agent-facing write tools should stay close to the product models:
 `create_hypothesis`, `update_hypothesis`, `create_baseline`,
 `create_experiment`, `update_experiment`, `create_evaluation`,
 `update_evaluation`, `link_hypothesis_experiment`, `add_hypothesis_comment`,
-`add_experiment_comment`, an experiment-review-shaped tool when Critic review
-is active, and a result- or measurement-shaped evidence tool.
+`add_experiment_comment`, a review-result-shaped tool when Critic review is
+active, and a result- or measurement-shaped evidence tool. Action-shaped
+transition tools (for example `accept_analysis`, `cancel_experiment`,
+`complete_task`) own workflow status changes per
+[0019-pull-based-workflow-state](../0019-pull-based-workflow-state/SPEC.md).
 Analysis, hypothesis, experiment, and task collaboration is stored through
-comment-shaped activities. Measurement evidence carries human-readable result
-text plus optional payload metadata when a view or agent needs structured
-metrics, raw evidence, or interpretation details.
+activities — `comment` for freeform discussion, `recorded` for structured
+facts, `status_updated` for state transitions. Measurement evidence carries
+human-readable result text plus optional payload metadata when a view or agent
+needs structured metrics, raw evidence, or interpretation details.
 
 Workspace interaction comes from a separate console toolset backed by the
 current repo path. It exposes ordinary coding-agent tools such as `ls`,

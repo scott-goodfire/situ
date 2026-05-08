@@ -30,7 +30,7 @@ everything up front:
 
 Situ does not deterministically parse arbitrary command output into signals.
 When a project prints plaintext, agents preserve the output and use LLM
-review plus obvious process checks to decide whether a concern comment is
+review plus obvious process checks to decide whether a trust finding is
 warranted.
 
 ## Suspicious Results
@@ -42,19 +42,20 @@ corroboration.
 When this happens:
 
 - Keep the measurement or result record.
-- Record a concern on the relevant measurement, evaluation, or experiment.
+- Record a trust finding on the relevant measurement, evaluation, or
+  experiment as a `recorded` activity with `record_type: trust_finding`.
 - Preserve artifact references.
 - Explain the reason in plain language.
-- Show the concern in the TUI.
+- Show the trust finding in the TUI.
 
 ## Critic Review
 
 The Critic is the LLM reviewer for proposed experiment changes. It
 does not replace deterministic trust checks, and it should not mutate candidate
 code. It reviews an experiment after the Scientist has recorded candidate
-workspace state and evaluation evidence, then records an experiment activity
-that explains whether the evidence is usable, suspicious, invalid, or needs
-reproduction.
+workspace state and evaluation evidence, then records a `review_result`
+activity on the experiment with a decision of `accepted`, `changes_requested`,
+`rejected`, or `inconclusive`, plus findings that explain the judgment.
 
 The review should explicitly look for common autoresearch failure modes:
 
@@ -64,9 +65,9 @@ The review should explicitly look for common autoresearch failure modes:
 - Greedy hill-climbing that discards a useful partial result too early.
 - Comparability breaks such as eval/test/dependency/toolchain changes.
 
-The Critic may flag concerns with payload metadata, but the body must stay
-human-readable. A Critic concern is evidence for the Manager and human, not a
-hardcoded policy engine by itself.
+The Critic may attach trust findings to its review with payload metadata, but
+the body must stay human-readable. A Critic trust finding is evidence for the
+Manager and human, not a hardcoded policy engine by itself.
 
 ## Product Rule
 

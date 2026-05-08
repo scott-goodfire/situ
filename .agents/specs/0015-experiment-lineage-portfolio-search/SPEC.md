@@ -42,7 +42,7 @@ The user should be able to answer:
 
 > What candidate state did this experiment start from, what candidate state did
 > it produce, which research thread is it part of, and why did the loop continue,
-> fork, reproduce, or abandon that path?
+> fork, reproduce, or cancel that path?
 
 ## Lineage Contract
 
@@ -126,7 +126,7 @@ On each planning pass, it should consider:
 - Which threads are stale, overfit, noisy, or stuck.
 - Whether the next step should exploit a promising thread, explore an
   independent thread, reproduce a suspicious result, fork from an older
-  ancestor, or abandon a path.
+  ancestor, or cancel a path.
 
 The runtime does not need true parallel execution to support portfolio search.
 Sequential sessions can still keep multiple active fronts by choosing different
