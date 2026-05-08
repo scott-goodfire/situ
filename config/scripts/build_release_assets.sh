@@ -19,7 +19,9 @@ read_version() {
   python3 -c "import re,sys; t=open('$REPO_ROOT/projects/harness/pyproject.toml').read(); m=re.search(r'^version\s*=\s*\"([^\"]+)\"', t, re.M); print(m.group(1) if m else 'unknown')"
 }
 
-VERSION="${SITU_VERSION:-$(read_version)}"
+VERSION_INPUT="${SITU_VERSION:-$(read_version)}"
+VERSION_NUMERIC="${VERSION_INPUT#v}"
+VERSION_TAG="v${VERSION_NUMERIC}"
 
 case "$TARGET" in
   bun-darwin-arm64) PLATFORM="darwin-arm64" ;;
@@ -41,10 +43,10 @@ esac
 
 DIST_DIR="$REPO_ROOT/dist/release"
 STAGE_DIR="$DIST_DIR/staging-${PLATFORM}"
-TARBALL_NAME="situ-v${VERSION}-${PLATFORM}.tar.gz"
+TARBALL_NAME="situ-${VERSION_TAG}-${PLATFORM}.tar.gz"
 TARBALL="$DIST_DIR/$TARBALL_NAME"
 
-echo "==> building release v$VERSION for $PLATFORM (target=$TARGET)"
+echo "==> building release ${VERSION_TAG} for $PLATFORM (target=$TARGET)"
 
 rm -rf "$STAGE_DIR" "$TARBALL"
 mkdir -p "$STAGE_DIR/wheels" "$DIST_DIR"
@@ -59,7 +61,7 @@ BUILD_INFO_FILE="$REPO_ROOT/projects/harness/src/situ/harness/core/install_info/
 cat > "$BUILD_INFO_FILE" <<BUILD_INFO
 GIT_SHA = "${GIT_SHA}"
 BUILD_DATE = "${BUILD_DATE}"
-SITU_VERSION = "${VERSION}"
+SITU_VERSION = "${VERSION_TAG}"
 BUILD_INFO
 
 echo "==> building harness wheel"
@@ -75,7 +77,7 @@ uv build \
   --out-dir "$STAGE_DIR/wheels"
 
 cat > "$STAGE_DIR/MANIFEST" <<MANIFEST
-situ-version: ${VERSION}
+situ-version: ${VERSION_TAG}
 situ-platform: ${PLATFORM}
 situ-target: ${TARGET}
 situ-tarball: ${TARBALL_NAME}

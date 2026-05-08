@@ -12,6 +12,7 @@ import {
   CheckSquare,
   FileText,
   FlaskConical,
+  GitBranch,
   ListChecks,
   Users,
 } from "lucide-react";
@@ -108,6 +109,18 @@ function ProjectNavSection({ projectId }: { projectId: string }) {
         label="Experiments"
         active={matchRoute({ to: "/projects/$projectId/experiments", params, fuzzy: true }) !== false}
         render={<Link to="/projects/$projectId/experiments" params={params} />}
+      />
+      <DxSidebarItem
+        icon={<GitBranch size={14} />}
+        label="Lineage"
+        active={matchRoute({ to: "/projects/$projectId/lineage", params, fuzzy: true }) !== false}
+        render={
+          <Link
+            to="/projects/$projectId/lineage"
+            params={params}
+            search={{ experimentId: undefined }}
+          />
+        }
       />
       <DxSidebarItem
         icon={<ListChecks size={14} />}

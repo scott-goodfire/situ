@@ -3,6 +3,7 @@ import {
   createRootRoute,
   createRoute,
   createRouter,
+  useNavigate,
 } from "@tanstack/react-router";
 import { DxEmptyState } from "@situ/web-ui";
 import { AppShell } from "./app-shell";
@@ -20,6 +21,7 @@ import { ExperimentDetailPage } from "../features/project-workspace/experiments/
 import { ExperimentsPage } from "../features/project-workspace/experiments/experiments-page";
 import { HypothesisDetailPage } from "../features/project-workspace/hypotheses/hypothesis-detail-page";
 import { HypothesesPage } from "../features/project-workspace/hypotheses/hypotheses-page";
+import { LineagePage } from "../features/project-workspace/lineage/lineage-page";
 import { OverviewPage } from "../features/project-workspace/overview/overview-page";
 import { TaskDetailPage } from "../features/project-workspace/tasks/task-detail-page";
 import { TasksPage } from "../features/project-workspace/tasks/tasks-page";
@@ -69,6 +71,16 @@ const projectExperimentRoute = createRoute({
   getParentRoute: () => projectRoute,
   path: "experiments/$experimentId",
   component: ProjectExperimentRoute,
+});
+
+const projectLineageRoute = createRoute({
+  getParentRoute: () => projectRoute,
+  path: "lineage",
+  component: ProjectLineageRoute,
+  validateSearch: (search: Record<string, unknown>) => ({
+    experimentId:
+      typeof search.experimentId === "string" ? search.experimentId : undefined,
+  }),
 });
 
 const projectEvaluationsRoute = createRoute({
@@ -133,6 +145,7 @@ const routeTree = rootRoute.addChildren([
     projectHypothesisRoute,
     projectExperimentsRoute,
     projectExperimentRoute,
+    projectLineageRoute,
     projectEvaluationsRoute,
     projectEvaluationRoute,
     projectAgentsRoute,
@@ -189,6 +202,27 @@ function ProjectExperimentRoute() {
   const { experimentId } = projectExperimentRoute.useParams();
 
   return <ExperimentDetailPage data={data} experimentId={experimentId} />;
+}
+
+function ProjectLineageRoute() {
+  const data = useProjectWorkspaceData();
+  const { projectId } = projectRoute.useParams();
+  const { experimentId } = projectLineageRoute.useSearch();
+  const navigate = useNavigate();
+
+  return (
+    <LineagePage
+      data={data}
+      selectedExperimentId={experimentId}
+      onSelect={({ experimentId: nextId }) => {
+        navigate({
+          to: "/projects/$projectId/lineage",
+          params: { projectId },
+          search: { experimentId: nextId },
+        });
+      }}
+    />
+  );
 }
 
 function ProjectEvaluationsRoute() {

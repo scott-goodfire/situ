@@ -1082,17 +1082,23 @@ class HarnessApp:
         session_id: str,
         max_experiments: int,
     ) -> None:
+        logfire.info("execute_session_async entered session={s}", s=session_id)
         active_task: TaskRecord | None = None
         try:
+            logfire.info("execute_session_async fetch workspace")
             workspace = await self.repos.workspaces.get()
+            logfire.info("execute_session_async fetch session")
             session = await self.repos.sessions.get(session_id=session_id)
             if workspace is None or session is None:
                 raise RuntimeError("missing workspace setup")
 
+            logfire.info("execute_session_async resolve setup")
             setup = self._session_setup.get(session_id) or await self._setup_from_records(
                 session_id
             )
+            logfire.info("execute_session_async get_agent_runtime begin")
             runtime = await self._get_agent_runtime()
+            logfire.info("execute_session_async get_agent_runtime done")
             no_progress_plans = 0
             agent_passes = 0
             max_agent_passes = max(

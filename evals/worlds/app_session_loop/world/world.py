@@ -7,6 +7,7 @@ from typing import Any
 import aiofiles
 import aiofiles.os
 import aiofiles.ospath
+import logfire
 from situ.harness.app import HarnessApp
 from situ.harness.config import LocalSecretStore, SituSecrets
 from situ.harness.core.dbos.runtime import reset_dbos_for_tests
@@ -38,17 +39,25 @@ class AppSessionLoopWorld:
 
     @classmethod
     async def create(cls, args: AppSessionLoopEvalInput) -> "AppSessionLoopWorld":
+        logfire.info("world.create begin seed={seed}", seed=args.seed)
         world = cls(args)
+        logfire.info("world.create makedirs path={path}", path=str(world.workspace_path))
         await aiofiles.os.makedirs(world.workspace_path, exist_ok=True)
+        logfire.info("world.create HarnessApp.create begin")
         world.app = await HarnessApp.create(
             world.workspace_path,
             app_root=Path.cwd(),
             project_home=world.root / "home",
             notify=_noop_notify,
         )
+        logfire.info("world.create HarnessApp.create done")
+        logfire.info("world.create write fixture repo")
         await world._write_fixture_repo()
+        logfire.info("world.create init git repo")
         await world._init_git_repo()
+        logfire.info("world.create ensure workspace")
         world.workspace = await world.app.repos.workspaces.ensure()
+        logfire.info("world.create projects.create")
         world.project = await world.app.repos.projects.create(
             project_id=await world.app.repos.projects.next_id(
                 workspace_id=world.workspace.id,
@@ -58,6 +67,7 @@ class AppSessionLoopWorld:
             objective=args.objective,
             research_context=args.research_context,
         )
+        logfire.info("world.create sessions.create")
         world.session = await world.app.repos.sessions.create(
             session_id=world.session_id,
             workspace_id=world.workspace.id,
@@ -67,11 +77,14 @@ class AppSessionLoopWorld:
             "objective": world.project.objective,
             "research_context": world.project.research_context,
         }
+        logfire.info("world.create ensure project agents")
         await world.app._ensure_project_agents(
             session_id=world.session_id,
             project_id=world.project.id,
         )
+        logfire.info("world.create seed")
         await world._seed(args.seed)
+        logfire.info("world.create enqueue plan task")
         await world.app._enqueue_plan_task(
             session_id=world.session_id,
             project_id=world.project.id,
@@ -79,14 +92,18 @@ class AppSessionLoopWorld:
             content=_initial_plan_content(args.seed),
             source_kind="system",
         )
+        logfire.info("world.create done")
         return world
 
     async def run(self) -> None:
+        logfire.info("world.run install secrets")
         await self._install_eval_runtime_secrets()
+        logfire.info("world.run execute_session_async begin")
         await self.app._execute_session_async(
             session_id=self.session_id,
             max_experiments=self.args.max_experiments,
         )
+        logfire.info("world.run execute_session_async done")
 
     def teardown(self) -> None:
         try:
