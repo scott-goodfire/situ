@@ -5,11 +5,11 @@ import { ROW_HEIGHT } from "./__shared__/constants";
 export const container = style({
   position: "relative",
   display: "grid",
-  gridTemplateColumns: "auto 1fr",
+  gridTemplateColumns: "auto minmax(0, 1fr)",
   alignItems: "stretch",
-  gap: 10,
-  paddingTop: 8,
-  paddingBottom: 24,
+  gap: 4,
+  paddingTop: 4,
+  paddingBottom: 16,
 });
 
 export const laneArea = style({
@@ -20,7 +20,7 @@ export const laneArea = style({
 export const laneSvg = style({
   display: "block",
   overflow: "visible",
-  color: vars.color.mutedForegroundTertiary,
+  color: vars.color.border02_5,
 });
 
 export const lanePipe = style({
@@ -34,7 +34,7 @@ export const laneDot = style({
     '&[data-tone="warning"]': { fill: vars.color.warningStrong },
     '&[data-tone="success"]': { fill: vars.color.successStrong },
     '&[data-tone="danger"]': { fill: vars.color.dangerStrong },
-    '&[data-tone="neutral"]': { fill: vars.color.foreground },
+    '&[data-tone="neutral"]': { fill: vars.color.mutedForeground },
   },
 });
 

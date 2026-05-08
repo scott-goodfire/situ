@@ -22,28 +22,30 @@ The TUI should make these immediately visible:
 - Current active experiment
 - Recent experiments
 - Recent result comments
-- Recent concern comments
+- Recent trust findings
 - Recent interpretation/decision comments
 - Artifact references when useful
 - Internal event timeline
 
 ## Activities First
 
-Activities are visible. They are compact, comment-shaped, human-readable
-entries attached to hypotheses or experiments.
+Activities are visible. They are compact, human-readable entries attached to
+hypotheses or experiments. Activity kinds (`created`, `updated`,
+`status_updated`, `recorded`, `comment`) follow
+[0019-pull-based-workflow-state](../0019-pull-based-workflow-state/SPEC.md).
 
 Examples:
 
 - `baseline score 0.710, latency 100ms`
-- `concern: score improved sharply but result shape changed`
+- `trust finding: score improved sharply but result shape changed`
 - `A+C looks promising, but C explains most of the lift`
 - `decision: keep retrieval hypothesis active; pause prompt-ordering thread`
 
 Best observed signal can be shown as supporting context when meaningful.
 
-## Concerns
+## Trust Findings
 
-Concerns are simple and concrete comments:
+Trust findings are simple and concrete recorded entries:
 
 - Evaluation failed.
 - Expected signal missing.

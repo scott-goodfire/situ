@@ -33,7 +33,7 @@ the result:
 - A coarse classification of changed paths
 - The command used for evaluation
 - The interpreter or toolchain choice when it affects comparability
-- Any obvious process concerns
+- Any obvious process trust findings
 
 This is stored as activity payload metadata and artifact references. A
 top-level WorkspaceState model is out of scope.
@@ -47,7 +47,7 @@ toolchain configuration, and generated or cache files; the running set of
 buckets is owned by the implementation and may evolve.
 
 The classification does not have to be perfect. It exists to make obvious trust
-risks visible and to guide human review.
+risks visible and to guide review.
 
 ## Managed Worktree Strategy
 
@@ -84,7 +84,7 @@ workspace's relative path; it must not append the relative path twice.
 Situ should capture final worktree state for an experiment task even when the
 Scientist pass fails. Failed experiments are still evidence: the dirty files,
 partial patch, and command context explain what happened and help the Manager
-decide whether to retry, abandon, or hand off more research.
+decide whether to retry, cancel, or hand off more research.
 
 Baseline, planning, interpretation, and review work may still inspect the
 selected workspace directly. Candidate code edits, project-native commands, and
@@ -118,15 +118,15 @@ An experiment result is more trustworthy when:
 - It leaves generated files out of the research diff.
 
 A result can still be useful when these rules are violated, but Situ should
-surface the violation as a concern rather than silently treating the result as
-comparable.
+surface the violation as a trust finding rather than silently treating the
+result as comparable.
 
 ## In Scope
 
 - Recording workspace state observations as measurement evidence.
 - Flagging dirty starts, eval/test changes, dependency changes, generated file
-  clutter, and changed test counts as concerns.
-- Showing concern comments in the live session.
+  clutter, and changed test counts as trust findings.
+- Showing trust findings in the live session.
 - Creating managed worktrees for Scientist `experiment` tasks.
 - Running experiment-task workspace tools and workers inside the managed
   worktree.
@@ -141,7 +141,7 @@ comparable.
 ## Deferred
 
 - Promotion of accepted candidates back into the user's selected checkout.
-- Automatic cleanup of completed or abandoned managed worktrees.
+- Automatic cleanup of completed or canceled managed worktrees.
 - A full branch manager that commits, resets, stashes, cherry-picks, or merges
   on behalf of the user.
 - Sandboxed virtualenv recreation per experiment.

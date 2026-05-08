@@ -102,6 +102,7 @@ the same `~/.situ/` runtime state.
 ## Deferred
 
 - A single-binary distribution that embeds its own Python interpreter.
+- Intel Mac (`darwin-x64`) builds.
 - macOS code signing and notarization.
 - Windows installer support.
 - Homebrew tap, `apt`, `dnf`, or other OS-package channels.

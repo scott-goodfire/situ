@@ -3,7 +3,6 @@ import { useMemo } from "react";
 import {
   experimentLineageGraph,
   experimentActivitiesByExperiment,
-  hypothesisLabelsByExperiment,
   criticStatusForExperiment,
   type CriticStatus,
 } from "../../../selectors/experiments";
@@ -30,10 +29,6 @@ export function LineageGraph({
   onSelect: ({ experimentId }: { experimentId: string }) => void;
 }) {
   const layout = useMemo(() => experimentLineageGraph({ data }), [data]);
-  const hypothesisIdsByExperiment = useMemo(
-    () => hypothesisLabelsByExperiment({ data }),
-    [data],
-  );
   const activitiesByExperiment = useMemo(
     () => experimentActivitiesByExperiment({ data }),
     [data],
@@ -99,7 +94,6 @@ export function LineageGraph({
             <li key={position.experimentId} className={s.rowSlot}>
               <LineageNode
                 experiment={experiment}
-                hypothesisIds={hypothesisIdsByExperiment.get(experiment.id) ?? []}
                 criticStatus={criticStatusForExperiment({ activities })}
                 isSelected={position.experimentId === selectedExperimentId}
                 isFailed={failedExperimentIds.has(experiment.id)}

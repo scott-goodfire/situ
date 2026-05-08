@@ -97,7 +97,7 @@ Session objective
   -> experiment is created and linked to one or more hypotheses
   -> agent runs project-native commands with workspace tools
   -> plaintext command evidence is recorded as a result comment
-  -> lightweight trust or validity concerns are recorded when available
+  -> lightweight trust findings are recorded when available
   -> Critic reviews the experiment as a proposed change using the
      evaluation/measurement evidence
   -> interpretation comment feeds the next proposal round
@@ -120,14 +120,15 @@ When a result looks invalid or untrustworthy:
 ```text
 Experiment result arrives
   -> result comment is recorded
-  -> lightweight trust checks or LLM review flag concerns when available
+  -> lightweight trust checks or LLM review flag trust findings when available
   -> Critic review checks whether the proposed change earned its evidence
-  -> concern comment is recorded if the evidence looks invalid
+  -> a `recorded` activity with `record_type: trust_finding` is added if the
+     evidence looks invalid
   -> artifact references are preserved
-  -> LLM/human interpretation can decide what it means
-  -> TUI shows the concern in context
+  -> LLM/agent interpretation can decide what it means
+  -> TUI shows the trust finding in context
 ```
 
-Suspicious results are a core product moment, but they should not force a
-standalone Warning model. They are experiment comment activities with
-human-readable bodies and optional payload metadata.
+Suspicious results are a core product moment. They are `recorded` activities
+on the relevant experiment, evaluation, or measurement, with human-readable
+bodies and structured payload metadata, not a standalone Warning model.

@@ -142,33 +142,36 @@ The first policy can be simple:
   large or suspicious gain.
 - Periodically return to baseline or an older stable ancestor when a thread is
   producing small noisy improvements.
-- Abandon a thread after repeated non-improving descendants unless the thread
+- Cancel a thread after repeated non-improving descendants unless the thread
   is still strategically useful.
 
 ## Decisions As Activities
 
-Situ should not add a broad promotion-status enum as the first implementation
-step. Continuation, rejection, reproduction, and abandonment decisions should be
-recorded as activities with structured payload.
+Continuation, cancellation, reproduction, and rejection decisions are recorded
+as `recorded` activities with structured payload, per
+[0019-pull-based-workflow-state](../0019-pull-based-workflow-state/SPEC.md).
 
 Useful decision activity metadata includes:
 
 ```text
-activity_type: lineage_decision
-decision: continue | fork | reproduce | abandon | reject
+kind: recorded
+record_type: lineage_decision
+decision: continue | fork | reproduce | cancel | reject
 research_thread
 parent_experiment_id
 base_commit
 candidate_commit
 reason
-critic_review_activity_id?
+review_result_activity_id?
 ```
 
 The body should explain the decision in human terms. The payload exists so
 agents and views can reconstruct lineage behavior without parsing prose.
 
-An experiment's latest lineage decision can be derived from activities. Do not
-add duplicated status fields until querying or enforcement requires them.
+An experiment's latest lineage decision is derived from its activities and
+status. The experiment record itself uses the research-record state machine
+(`triage`, `accepted`, `active`, `done`, `canceled`, `failed`); duplicated
+lineage status fields are not added.
 
 ## Critic Role
 
@@ -176,17 +179,17 @@ The Critic reviews the experiment as the proposed change, as defined in
 [0010-activities-and-artifacts](../0010-activities-and-artifacts/SPEC.md) and
 [0013-agent-task-coordination](../0013-agent-task-coordination/SPEC.md).
 
-For lineage-aware sessions, the Critic should also comment on whether the
-candidate is a sound base for further work:
+For lineage-aware sessions, the Critic's review result should describe whether
+the candidate is a sound base for further work:
 
 - Does the result look reproducible enough to continue this thread?
 - Is the improvement likely to be selection on noise?
 - Did the candidate change the measurement or evaluation surface?
 - Is the change a useful simplification even if the metric is flat?
-- Should the Manager reproduce, fork, abandon, or continue from this state?
 
-The Critic does not have to choose the next experiment. It records review
-evidence and recommendations. The Manager allocates the next portfolio step.
+The Critic does not choose or prescribe the next experiment. It records review
+evidence and findings on the experiment. The Manager allocates the next
+portfolio step from those recorded facts and the experiment's status.
 
 ## TUI Shape
 
@@ -199,9 +202,9 @@ Useful views:
 - Parent/child relationship when one experiment builds on another.
 - Base and candidate commit/ref for each candidate.
 - Patch handoff artifact when a candidate diff was captured.
-- Latest Critic verdict and latest lineage decision.
+- Latest Critic review decision and latest lineage decision.
 - Thread-level hints such as promising, needs reproduction, stale, or
-  abandoned, derived from activities.
+  canceled, derived from activities and statuses.
 
 The TUI should make it clear that these are Situ-managed candidate states, not
 changes applied to the user's selected checkout.
@@ -215,7 +218,7 @@ changes applied to the user's selected checkout.
 - Preparing experiment worktrees from a selected base, not only the selected
   checkout's current `HEAD`.
 - Letting Manager planning choose whether to continue, fork, reproduce,
-  abandon, or restart from baseline.
+  cancel, or restart from baseline.
 - Recording lineage decisions as experiment or task activities.
 - Showing lineage and thread context in agent-facing project state and the TUI.
 

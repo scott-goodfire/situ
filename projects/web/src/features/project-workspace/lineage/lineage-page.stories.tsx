@@ -4,6 +4,8 @@ import { pageDecorator } from "./__shared__/decorators";
 import { StoryRouter } from "./__shared__/story-router";
 import {
   buildLineageFixture,
+  buildLongRunFixture,
+  buildWideBranchFixture,
   makeEvaluation,
   makeEvaluationActivity,
   makeExperiment,
@@ -162,4 +164,12 @@ export const NoSelection: Story = {
 
 export const WithSelection: Story = {
   args: { data: fixture, selectedExperimentId: "EX5" },
+};
+
+export const LongRun: Story = {
+  args: { data: buildLongRunFixture(), selectedExperimentId: "EX10" },
+};
+
+export const WideBranches: Story = {
+  args: { data: buildWideBranchFixture(), selectedExperimentId: "EX12" },
 };

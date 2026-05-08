@@ -72,19 +72,25 @@ export function LineageDetailPanel({
         parent={parent}
         projectId={data.projectId}
       />
-      <LinkedHypotheses hypotheses={linkedHypotheses} projectId={data.projectId} />
-      <EvaluationActivityList
-        title="Evidence"
-        data={data}
-        evaluations={evaluations}
-        emptyLabel="No evaluations attached"
-      />
-      <Artifacts artifacts={artifacts} projectId={data.projectId} />
-      <ActivityTimeline
-        title="Activity"
-        activities={activities}
-        emptyLabel="No experiment activity yet"
-      />
+      <div className={s.sectionsGrid}>
+        <div className={s.sectionsColumn}>
+          <LinkedHypotheses hypotheses={linkedHypotheses} projectId={data.projectId} />
+          <Artifacts artifacts={artifacts} />
+        </div>
+        <div className={s.sectionsColumn}>
+          <EvaluationActivityList
+            title="Evidence"
+            data={data}
+            evaluations={evaluations}
+            emptyLabel="No evaluations attached"
+          />
+          <ActivityTimeline
+            title="Activity"
+            activities={activities}
+            emptyLabel="No experiment activity yet"
+          />
+        </div>
+      </div>
     </aside>
   );
 }
@@ -102,17 +108,17 @@ function Header({
 }) {
   return (
     <header className={s.header}>
-      <div className={s.headerTop}>
-        <div>
-          <p className={s.eyebrow}>{experiment.id}</p>
-          <h2 className={s.titleEl}>{experiment.title}</h2>
-        </div>
+      <div className={s.headerMain}>
+        <p className={s.eyebrow}>{experiment.id}</p>
+        <h2 className={s.titleEl}>{experiment.title}</h2>
+        {experiment.summary && <p className={s.summary}>{experiment.summary}</p>}
+      </div>
+      <div className={s.headerSide}>
         <DxBadge tone={statusTone({ status: experiment.status, hasConcern })}>
           {hasConcern ? "concern" : experiment.status}
         </DxBadge>
+        <LineageMeta experiment={experiment} parent={parent} projectId={projectId} />
       </div>
-      <p className={s.summary}>{experiment.summary}</p>
-      <LineageMeta experiment={experiment} parent={parent} projectId={projectId} />
     </header>
   );
 }
@@ -126,56 +132,52 @@ function LineageMeta({
   parent: ExperimentRecord | undefined;
   projectId: string;
 }) {
-  const items: Array<{ key: string; node: React.ReactNode }> = [];
+  const items: Array<{ key: string; label: string; node: React.ReactNode }> = [];
   if (parent) {
     items.push({
       key: "parent",
+      label: "parent",
       node: (
-        <span>
-          parent{" "}
-          <Link
-            to="/projects/$projectId/lineage"
-            params={{ projectId }}
-            search={{ experimentId: parent.id }}
-            className={mono}
-          >
-            {parent.id}
-          </Link>
-        </span>
+        <Link
+          to="/projects/$projectId/lineage"
+          params={{ projectId }}
+          search={{ experimentId: parent.id }}
+          className={s.lineageMetaValue}
+        >
+          {parent.id}
+        </Link>
       ),
     });
   }
   if (experiment.research_thread) {
     items.push({
       key: "thread",
-      node: <span>thread {experiment.research_thread}</span>,
+      label: "thread",
+      node: <span className={s.lineageMetaValue}>{experiment.research_thread}</span>,
     });
   }
   if (experiment.base_commit) {
     items.push({
       key: "base",
-      node: (
-        <span>
-          base <span className={mono}>{shortSha(experiment.base_commit)}</span>
-        </span>
-      ),
+      label: "base",
+      node: <span className={s.lineageMetaValue}>{shortSha(experiment.base_commit)}</span>,
     });
   }
   if (experiment.candidate_commit) {
     items.push({
       key: "candidate",
-      node: (
-        <span>
-          candidate <span className={mono}>{shortSha(experiment.candidate_commit)}</span>
-        </span>
-      ),
+      label: "candidate",
+      node: <span className={s.lineageMetaValue}>{shortSha(experiment.candidate_commit)}</span>,
     });
   }
   if (items.length === 0) return null;
   return (
     <div className={s.lineageMeta}>
       {items.map((item) => (
-        <span key={item.key}>{item.node}</span>
+        <span key={item.key} className={s.lineageMetaRow}>
+          <span className={s.lineageMetaLabel}>{item.label}</span>
+          {item.node}
+        </span>
       ))}
     </div>
   );
@@ -190,9 +192,7 @@ function LinkedHypotheses({
 }) {
   return (
     <DxSection title="Linked Hypotheses">
-      {hypotheses.length === 0 && (
-        <p className={s.linkedItemSummary}>No linked hypotheses</p>
-      )}
+      {hypotheses.length === 0 && <p className={s.muted}>No linked hypotheses</p>}
       {hypotheses.length > 0 && (
         <ol className={s.linkedItemList}>
           {hypotheses.map((hypothesis) => (
@@ -216,18 +216,10 @@ function LinkedHypotheses({
   );
 }
 
-function Artifacts({
-  artifacts,
-  projectId: _projectId,
-}: {
-  artifacts: ArtifactRecord[];
-  projectId: string;
-}) {
+function Artifacts({ artifacts }: { artifacts: ArtifactRecord[] }) {
   return (
     <DxSection title="Artifacts">
-      {artifacts.length === 0 && (
-        <p className={s.linkedItemSummary}>No artifacts</p>
-      )}
+      {artifacts.length === 0 && <p className={s.muted}>No artifacts</p>}
       {artifacts.length > 0 && (
         <ol className={s.linkedItemList}>
           {artifacts.map((artifact) => (

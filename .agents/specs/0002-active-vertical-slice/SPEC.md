@@ -10,7 +10,7 @@ Situ proves one experience:
 
 Situ supports one local workspace, project-scoped objective and research
 context, a few analyses, a few hypotheses, a sequential agent-requested
-experiment loop, comment activities, simple automated trust concerns, and
+experiment loop, activity timelines, simple automated trust findings, and
 one worker path.
 
 ## Target User Story
@@ -48,8 +48,8 @@ Then Situ:
   candidate experiments as comparable.
 - Runs concrete experiment-task work in managed Git worktrees so candidate code
   edits and worker commands do not mutate the user's selected checkout.
-- Records measurement evidence, experiment results, concerns, interpretations,
-  and decisions as inspectable research records.
+- Records measurement evidence, experiment results, trust findings,
+  interpretations, and decisions as inspectable research records.
 - Renders a live terminal dashboard.
 - Supports a headless `situ exec` sibling for automation over the same session
   lifecycle when a TUI is not appropriate.
@@ -67,9 +67,10 @@ code are launched from the Situ repository.
   per-project storage of those inputs.
 - The full Situ research record set with session provenance: analyses,
   hypotheses, baselines, experiments, evaluations, measurements, and their
-  links, each with a comment-shaped activity timeline. Results, concerns,
-  plans, and interpretations are carried in activity bodies and optional
-  payload metadata.
+  links, each with an activity timeline using the kinds defined in
+  [0019-pull-based-workflow-state](../0019-pull-based-workflow-state/SPEC.md).
+  Results, trust findings, plans, and interpretations are carried in activity
+  bodies and optional payload metadata.
 - Artifact references and an internal event timeline.
 - Agent-readable project state and agent-requested experiment execution
   through typed harness tools, with managed detached worktrees for
@@ -82,7 +83,7 @@ code are launched from the Situ repository.
 - Pydantic AI `DBOSAgent` as the agent durability boundary, durable
   restart/resume, persisted agent message history, and
   `~/.situ/situ.sqlite` as the canonical product database.
-- Simple automated trust concerns visible to the user and the Manager.
+- Simple automated trust findings visible to the user and the Manager.
 
 The agent path should express active behavior through approved harness tools.
 Getting the project board, creating analyses, creating hypotheses,
@@ -127,7 +128,7 @@ tests/evals, dependencies, or generated files changed. See
 A user can start a fresh session, watch an agent inspect project/session state,
 create or update analyses and hypotheses, establish baseline measurement
 evidence, request concrete experiments through the harness, see measurement
-evidence, worker results, and automated concern comments land in the TUI, and
+evidence, worker results, and automated trust findings land in the TUI, and
 inspect artifacts when useful. If the user wants to continue an existing
 session, they must resume it explicitly.
 

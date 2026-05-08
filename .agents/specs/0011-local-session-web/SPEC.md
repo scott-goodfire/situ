@@ -194,7 +194,7 @@ For this slice:
   long-running sessions.
 - Recent experiment and event views should follow newly appended rows when the
   user is already at the bottom of the table.
-- Concern-like rows should be visually distinguishable without hiding the
+- Trust-finding rows should be visually distinguishable without hiding the
   underlying record.
 - Losing the live app or runtime connection should mark the monitor as
   disconnected or stopped. Reconnecting to a healthy app should reload

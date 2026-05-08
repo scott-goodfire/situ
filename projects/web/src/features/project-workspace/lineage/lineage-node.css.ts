@@ -4,30 +4,28 @@ import { ROW_HEIGHT } from "./__shared__/constants";
 
 export const card = style({
   display: "grid",
-  gridTemplateColumns: "auto 1fr auto",
+  gridTemplateColumns: "auto minmax(0, 1fr) auto",
   alignItems: "center",
   gap: 10,
   width: "100%",
-  height: ROW_HEIGHT - 12,
-  padding: "0 12px",
-  border: `1px solid ${vars.color.border01_5}`,
-  borderRadius: vars.radius.md,
-  background: vars.color.card01Hex,
+  height: ROW_HEIGHT - 6,
+  padding: "0 10px",
+  border: `1px solid transparent`,
+  borderRadius: vars.radius.sm,
+  background: "transparent",
   color: vars.color.foreground,
   cursor: "pointer",
   textAlign: "left",
   transition: "background-color 80ms ease, border-color 80ms ease",
   selectors: {
     '&[data-tone="warning"]': {
-      borderColor: `color-mix(in srgb, ${vars.color.warningStrong} 30%, transparent)`,
-      background: vars.color.warningSoft,
+      borderColor: `color-mix(in srgb, ${vars.color.warningStrong} 22%, transparent)`,
     },
     '&[data-tone="danger"]': {
-      borderColor: `color-mix(in srgb, ${vars.color.dangerStrong} 30%, transparent)`,
-      background: vars.color.dangerSoft,
+      borderColor: `color-mix(in srgb, ${vars.color.dangerStrong} 22%, transparent)`,
     },
     '&[data-tone="success"]': {
-      borderColor: `color-mix(in srgb, ${vars.color.successStrong} 30%, transparent)`,
+      borderColor: `color-mix(in srgb, ${vars.color.successStrong} 18%, transparent)`,
     },
     '&[data-failed="true"]': {
       opacity: 0.55,
@@ -35,34 +33,21 @@ export const card = style({
     "&:hover": { background: vars.color.fg05 },
     '&[data-selected="true"]': {
       borderColor: vars.color.ring,
-      boxShadow: `0 0 0 1px ${vars.color.ring}`,
+      background: vars.color.fg05,
     },
     "&:focus-visible": {
       outline: `2px solid ${vars.color.ring}`,
-      outlineOffset: 2,
+      outlineOffset: 1,
     },
   },
 });
 
 export const idBadge = style({
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  minWidth: 36,
-  height: 22,
-  padding: "0 8px",
-  border: `1px solid ${vars.color.border02}`,
-  borderRadius: vars.radius.sm,
-  color: vars.color.mutedForeground,
+  flex: "0 0 auto",
+  color: vars.color.mutedForegroundTertiary,
   fontFamily: vars.font.mono,
   fontSize: vars.text.productSm,
   letterSpacing: vars.tracking.productSm,
-});
-
-export const body = style({
-  display: "grid",
-  gap: 2,
-  minWidth: 0,
 });
 
 export const title = style({
@@ -75,49 +60,18 @@ export const title = style({
   lineHeight: 1.2,
 });
 
-export const meta = style({
-  display: "flex",
-  alignItems: "center",
-  gap: 6,
-  color: vars.color.mutedForegroundTertiary,
-  fontFamily: vars.font.mono,
-  fontSize: vars.text.productSm,
-  letterSpacing: vars.tracking.productSm,
-});
-
-export const chips = style({
-  display: "inline-flex",
-  flexWrap: "nowrap",
-  gap: 4,
-  overflow: "hidden",
-});
-
-export const chip = style({
-  display: "inline-flex",
-  alignItems: "center",
-  height: 16,
-  padding: "0 5px",
-  border: `1px solid ${vars.color.border02}`,
-  borderRadius: vars.radius.sm,
-  color: vars.color.mutedForeground,
-  fontFamily: vars.font.mono,
-  fontSize: 10,
-  letterSpacing: vars.tracking.productSm,
-});
-
 export const trailing = style({
   display: "flex",
   alignItems: "center",
-  gap: 6,
-  color: vars.color.mutedForeground,
+  flex: "0 0 auto",
 });
 
 export const criticIcon = style({
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
-  width: 16,
-  height: 16,
+  width: 14,
+  height: 14,
   selectors: {
     '&[data-status="reviewed"]': { color: vars.color.successStrong },
     '&[data-status="concern"]': { color: vars.color.warningStrong },

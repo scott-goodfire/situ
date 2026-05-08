@@ -35,7 +35,7 @@ The first useful screen should look conceptually like:
 │ active session · Improve support-agent resolution · experiments 3/6│
 │ workspace · branch/session status · research context preview       │
 ├ counts ────────────────────────────────────────────────────────────┤
-│ experiments 3/6   hypotheses 2   evaluations 4   concerns 1        │
+│ experiments 3/6   hypotheses 2   evaluations 4   trust findings 1  │
 ├ tasks ─────────────────────────────────────────────────────────────┤
 │ TODO                 │ IN PROGRESS              │ DONE              │
 │ ○ Run cancellation…  │ ● Test retrieval filter  │ ✓ Record baseline │
@@ -43,7 +43,7 @@ The first useful screen should look conceptually like:
 │ ○ Split cancellati…  │                          │ ✓ Capture state   │
 ├ activity ──────────────────────────────────────────────────────────┤
 │ result   baseline resolution 61.0% hallucination 2.4%              │
-│ concern  result missing hallucination_rate signal                  │
+│ finding  result missing hallucination_rate signal                  │
 │ update   retrieval filter running candidate eval                   │
 └ ? help · : commands · q quit ──────────────────────────────────────┘
 ```
@@ -81,14 +81,14 @@ done column should prefer the latest completed work first and collapse repeated
 or older done rows into a compact `+ N older done tasks` line when they would
 make the live board noisy.
 Until durable tasks are fully wired, the TUI may derive task-like rows from
-existing hypotheses, experiments, evaluations, and concern activities as a
-fallback.
+existing hypotheses, experiments, evaluations, and trust-finding activities as
+a fallback.
 
 The header and counts strip should make live progress legible without turning
 the dashboard into a chart wall. Compact visuals such as an experiment budget
-bar, concern emphasis, last-activity age, and tiny sparklines are appropriate
-only when they are computed from recorded project/session data. Do not show
-decorative or fabricated trends.
+bar, trust-finding emphasis, last-activity age, and tiny sparklines are
+appropriate only when they are computed from recorded project/session data. Do
+not show decorative or fabricated trends.
 
 When the terminal is too small to render the dashboard legibly, show a compact
 "please expand terminal" state with the current terminal size and the minimum

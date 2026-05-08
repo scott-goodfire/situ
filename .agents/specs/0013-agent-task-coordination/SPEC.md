@@ -175,7 +175,7 @@ fits the portfolio.
 For lineage-aware autoresearch, the Manager should also decide which research
 thread and base state the next experiment should use. The Manager tracks a
 portfolio of candidate threads. It may continue a promising thread,
-fork from a prior candidate, reproduce a suspicious result, abandon a stale
+fork from a prior candidate, reproduce a suspicious result, cancel a stale
 thread, or restart from baseline to avoid greedy hill-climbing. See
 [0015-experiment-lineage-portfolio-search/SPEC.md](../0015-experiment-lineage-portfolio-search/SPEC.md).
 

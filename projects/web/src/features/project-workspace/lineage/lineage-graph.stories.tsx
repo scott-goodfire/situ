@@ -3,6 +3,8 @@ import { LineageGraph } from "./lineage-graph";
 import { stageDecorator } from "./__shared__/decorators";
 import {
   buildLineageFixture,
+  buildLongRunFixture,
+  buildWideBranchFixture,
   makeExperiment,
   makeExperimentActivity,
   makeFailedExperimentTask,
@@ -197,6 +199,24 @@ export const MultipleRoots: Story = {
         makeHypLink({ hypothesisId: "H2", experimentId: "EX5" }),
       ],
     }),
+  },
+};
+
+export const LongRun: Story = {
+  args: {
+    selectedExperimentId: "EX10",
+    failedExperimentIds: new Set(["EX3"]),
+    onSelect: () => {},
+    data: buildLongRunFixture(),
+  },
+};
+
+export const WideBranches: Story = {
+  args: {
+    selectedExperimentId: "EX12",
+    failedExperimentIds: new Set(["EX8"]),
+    onSelect: () => {},
+    data: buildWideBranchFixture(),
   },
 };
 

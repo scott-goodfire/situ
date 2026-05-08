@@ -47,7 +47,7 @@ The system keeps these responsibilities distinct:
   runtime routing, HTTP RPC, and event streaming.
 - Harness: workspace/project/session lifecycle, durable research and
   coordination state, internal events, activities, artifacts, and
-  automated trust concerns. Objective and research context are fields on
+  automated trust findings. Objective and research context are fields on
   Project.
 - Workers: concrete experiments, code changes, eval runs, analysis.
 - Protocol/API: stable boundary between clients, the app server, harness
@@ -89,7 +89,7 @@ Python harness, not as a new product surface.
 - Logfire observes harness, DBOS, and Pydantic AI spans.
 - The agent requests experiment execution through typed Situ tools.
 - The harness owns workspace/project/session identity, worker execution,
-  automated trust concerns, activities, artifacts, events, task coordination,
+  automated trust findings, activities, artifacts, events, task coordination,
   and persisted message history.
 
 This keeps creativity in the agent layer while preserving Situ as the

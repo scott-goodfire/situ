@@ -3,13 +3,13 @@ import { vars } from "@situ/web-ui";
 
 export const layout = style({
   display: "grid",
-  gridTemplateColumns: "minmax(0, 1fr) 420px",
+  gridTemplateColumns: "minmax(260px, 320px) minmax(0, 1fr)",
   gap: 24,
   alignItems: "start",
-  paddingTop: 18,
+  paddingTop: 14,
   paddingBottom: 24,
   "@media": {
-    "(max-width: 1100px)": { gridTemplateColumns: "1fr" },
+    "(max-width: 900px)": { gridTemplateColumns: "1fr" },
   },
 });
 
@@ -38,11 +38,12 @@ export const subtitle = style({
 export const graphScroll = style({
   minWidth: 0,
   overflowX: "auto",
+  alignSelf: "start",
 });
 
 export const panelColumn = style({
   position: "sticky",
-  top: 18,
+  top: 14,
   alignSelf: "start",
   minWidth: 0,
 });
