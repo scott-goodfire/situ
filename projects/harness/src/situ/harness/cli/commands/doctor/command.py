@@ -102,7 +102,7 @@ async def _runtimes_summary() -> dict[str, Any]:
 async def _state_home_summary() -> dict[str, Any]:
     path = DEFAULTS.local_state_home_path()
     exists = await aiofiles.ospath.isdir(path)
-    writable = exists and os.access(path, os.W_OK)
+    writable = os.access(path, os.W_OK) if exists else os.access(path.parent, os.W_OK)
     return {
         "path": str(path),
         "exists": exists,

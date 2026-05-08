@@ -133,7 +133,7 @@ A Critic review result is a target-owned `recorded` activity:
 ```text
 kind: recorded
 record_type: review_result
-decision: accepted | changes_requested | rejected | inconclusive
+decision: accepted | rejected
 review_task_id
 findings
 reviewed_analysis_ids?
@@ -178,12 +178,12 @@ Useful pull derivations include:
   review result can produce a `review_experiment` task.
 - A review result with `accepted` can move the target record to accepted or
   done when the target's evidence is complete enough for the project.
-- A review result with `changes_requested` and unresolved blocking findings can
+- A review result with `rejected` and unresolved blocking findings can
   produce a focused producer-lane task linked to the review activity.
-- A review result with `inconclusive` and unresolved missing-evidence findings
-  can produce evidence-gathering, measurement, or interpretation work.
-- A review result with `rejected` can move the target to canceled or support a
-  recorded lineage or resolution decision.
+- A review result with `rejected` and unresolved missing-evidence findings can
+  produce evidence-gathering, measurement, or interpretation work.
+- A review result with `rejected` and no actionable findings can move the
+  target to canceled or support a recorded lineage or resolution decision.
 
 Follow-up tasks link to the review activity they address. A later done task,
 new review result, status transition, resolution, or lineage decision can make
@@ -255,8 +255,9 @@ record's timeline.
 - A review is visible as a task before or while the Critic works.
 - A review judgment is visible as a target-owned `recorded` activity with
   `record_type: review_result`.
-- Review decisions use `accepted`, `changes_requested`, `rejected`, or
-  `inconclusive`.
+- Review decisions are binary: `accepted` or `rejected`. Nuance such as
+  "needs more evidence" or "changes requested" is expressed through findings
+  on a `rejected` review.
 - Follow-up work is derived from unresolved statuses, findings, links, and
   recorded facts.
 - Review tasks and follow-up tasks link to the records and activities they

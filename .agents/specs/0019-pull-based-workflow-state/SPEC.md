@@ -148,19 +148,19 @@ Common recorded fact types include:
 The set grows only when a fact type needs durable rendering, polling, or
 agent-readable behavior. Freeform discussion remains `comment`.
 
-Review results use autonomous decisions:
+Review results use a binary decision:
 
 ```text
 accepted
-changes_requested
 rejected
-inconclusive
 ```
 
 A review result describes the evidence and findings. Findings carry stable
 codes, summaries, severity or blocking metadata when useful, and links to
-evidence records or artifacts. Routing is derived from these facts by the
-poller.
+evidence records or artifacts. Nuance such as "needs more evidence" or
+"changes requested" is expressed through findings on a `rejected` review
+rather than additional decision values. Routing is derived from these facts
+by the poller.
 
 Trust findings use the same recorded-fact shape. They make suspicious or
 invalid evidence visible without introducing a separate warning model.
@@ -183,12 +183,13 @@ Useful derivations include:
 - A hypothesis in triage or accepted state can be routed through a
   `review_hypothesis` task when the project needs Critic judgment before
   empirical work.
-- A review result with `changes_requested` and unresolved blocking findings is
+- A review result with `rejected` and unresolved blocking findings is
   eligible for a focused producer-lane task that addresses the findings.
-- A review result with `inconclusive` and unresolved missing-evidence findings
-  is eligible for evidence-gathering or interpretation work.
-- A review result with `rejected` excludes the target from decision-grade
-  planning unless a later activity or task addresses the rejection.
+- A review result with `rejected` and unresolved missing-evidence findings is
+  eligible for evidence-gathering or interpretation work.
+- A review result with `rejected` and no actionable findings excludes the
+  target from decision-grade planning unless a later activity or task addresses
+  the rejection.
 - A review result with `accepted` makes the target eligible as normal project
   context for later planning and execution.
 
@@ -236,15 +237,16 @@ recorded facts, such as:
 triage
 accepted
 active
-changes requested
-inconclusive
 rejected
 done
 canceled
 failed
 ```
 
-The labels are projections of record status plus recorded facts. The activity
+The labels are projections of record status plus recorded facts. "Rejected"
+is a derived label from the latest review result; finer texture such as
+"needs more evidence" or "changes requested" is rendered from review
+findings, not from additional status values. The activity
 timeline remains the source of explanation.
 
 ## Out of Scope
