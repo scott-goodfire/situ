@@ -12,7 +12,7 @@ class ListMeasurementsTool(BaseSituTool[SituToolDeps, ListMeasurementsResult]):
     name = "list_measurements"
     result_type = ListMeasurementsResult
 
-    def execute_sync(
+    async def execute(
         self,
         *,
         ctx: RunContext[SituToolDeps],
@@ -23,17 +23,21 @@ class ListMeasurementsTool(BaseSituTool[SituToolDeps, ListMeasurementsResult]):
         **_kwargs: Any,
     ) -> ListMeasurementsResult:
         """List measurements by evaluation, baseline, experiment, or project."""
-        repos = ctx.deps.get_repos()
+        repos = await ctx.deps.get_repos()
         if evaluation_id is not None:
-            measurements = repos.measurements.list_for_evaluation(evaluation_id=evaluation_id)
+            measurements = await repos.measurements.list_for_evaluation(
+                evaluation_id=evaluation_id
+            )
         elif baseline_id is not None:
-            measurements = repos.measurements.list_for_baseline(baseline_id=baseline_id)
+            measurements = await repos.measurements.list_for_baseline(baseline_id=baseline_id)
         elif experiment_id is not None:
-            measurements = repos.measurements.list_for_experiment(experiment_id=experiment_id)
+            measurements = await repos.measurements.list_for_experiment(
+                experiment_id=experiment_id
+            )
         else:
-            resolved_project_id = project_id or ctx.deps.current_project_id()
+            resolved_project_id = project_id or await ctx.deps.current_project_id()
             measurements = (
-                repos.measurements.list_for_project(project_id=resolved_project_id)
+                await repos.measurements.list_for_project(project_id=resolved_project_id)
                 if resolved_project_id is not None
                 else []
             )

@@ -20,7 +20,7 @@ class RequestProjectCloseTool(
     result_type = RequestProjectCloseResult
     sequential = True
 
-    def execute_sync(
+    async def execute(
         self,
         *,
         ctx: RunContext[SituToolDeps],
@@ -37,21 +37,21 @@ class RequestProjectCloseTool(
         confirmation code and a warning to keep going unless closing is still
         clearly warranted.
         """
-        repos = ctx.deps.get_repos()
-        resolved_project_id = project_id or ctx.deps.require_project_id()
-        project = repos.projects.get(project_id=resolved_project_id)
+        repos = await ctx.deps.get_repos()
+        resolved_project_id = project_id or await ctx.deps.require_project_id()
+        project = await repos.projects.get(project_id=resolved_project_id)
         if project is None:
             raise ValueError(f"project not found: {resolved_project_id}")
 
         unresolved_hypotheses = [
             hypothesis
-            for hypothesis in repos.hypotheses.list_for_project(project_id=project.id)
+            for hypothesis in await repos.hypotheses.list_for_project(project_id=project.id)
             if hypothesis.status != WorkStatus.CLOSED
         ]
         unresolved_hypothesis_ids = [
             hypothesis.id for hypothesis in unresolved_hypotheses
         ]
-        active_task = current_manager_plan_task(
+        active_task = await current_manager_plan_task(
             repos=repos,
             session_id=ctx.deps.session_id,
             project_id=project.id,
@@ -82,7 +82,7 @@ class RequestProjectCloseTool(
             else ""
         )
         message = f"{base_message}{unresolved_message}"
-        event = ctx.deps.record_event(
+        event = await ctx.deps.record_event(
             event_type="project.close_confirmation_required",
             message=message,
             payload={
@@ -95,7 +95,7 @@ class RequestProjectCloseTool(
             },
         )
         if active_task is not None:
-            activity = repos.task_activities.add(
+            activity = await repos.task_activities.add(
                 project_id=project.id,
                 task_id=active_task.id,
                 created_in_session_id=ctx.deps.session_id,
@@ -113,7 +113,7 @@ class RequestProjectCloseTool(
                     "unresolved_hypothesis_ids": unresolved_hypothesis_ids,
                 },
             )
-            ctx.deps.publish_record(record=activity, event=event)
+            await ctx.deps.publish_record(record=activity, event=event)
         return RequestProjectCloseResult(
             success=True,
             confirmation_required=True,

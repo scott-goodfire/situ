@@ -32,7 +32,7 @@ def _artifact_row(row: Any) -> ArtifactRecord:
 
 
 class ArtifactsRepository(BaseRepository):
-    def create(
+    async def create(
         self,
         *,
         artifact_id: str,
@@ -63,7 +63,7 @@ class ArtifactsRepository(BaseRepository):
             media_type=media_type,
             size_bytes=size_bytes,
         )
-        self.db.execute_blocking(
+        await self.db.execute(
             """
             INSERT INTO artifacts
               (id, project_id, created_in_session_id, associated_entity_kind,
@@ -85,28 +85,28 @@ class ArtifactsRepository(BaseRepository):
                 utc_now(),
             ),
         )
-        record = self.get_by_id(artifact_id=command.artifact_id)
+        record = await self.get_by_id(artifact_id=command.artifact_id)
         if record is None:
             raise RuntimeError(f"artifact was not persisted: {command.artifact_id}")
         return record
 
-    def get_by_id(self, *, artifact_id: str) -> ArtifactRecord | None:
-        row = self.db.fetchone_blocking("SELECT * FROM artifacts WHERE id = ?", (artifact_id,))
+    async def get_by_id(self, *, artifact_id: str) -> ArtifactRecord | None:
+        row = await self.db.fetchone("SELECT * FROM artifacts WHERE id = ?", (artifact_id,))
         return _artifact_row(row) if row else None
 
-    def get(self, *, artifact_id: str) -> ArtifactRecord | None:
-        return self.get_by_id(artifact_id=artifact_id)
+    async def get(self, *, artifact_id: str) -> ArtifactRecord | None:
+        return await self.get_by_id(artifact_id=artifact_id)
 
-    def list_all(self) -> list[ArtifactRecord]:
+    async def list_all(self) -> list[ArtifactRecord]:
         return [
             _artifact_row(row)
-            for row in self.db.fetchall_blocking("SELECT * FROM artifacts ORDER BY created_at")
+            for row in await self.db.fetchall("SELECT * FROM artifacts ORDER BY created_at")
         ]
 
-    def list_for_experiment(self, *, experiment_id: str) -> list[ArtifactRecord]:
+    async def list_for_experiment(self, *, experiment_id: str) -> list[ArtifactRecord]:
         return [
             _artifact_row(row)
-            for row in self.db.fetchall_blocking(
+            for row in await self.db.fetchall(
                 """
                 SELECT * FROM artifacts
                 WHERE associated_entity_kind = 'experiment'
@@ -117,26 +117,26 @@ class ArtifactsRepository(BaseRepository):
             )
         ]
 
-    def list_for_project(self, *, project_id: str) -> list[ArtifactRecord]:
+    async def list_for_project(self, *, project_id: str) -> list[ArtifactRecord]:
         return [
             _artifact_row(row)
-            for row in self.db.fetchall_blocking(
+            for row in await self.db.fetchall(
                 "SELECT * FROM artifacts WHERE project_id = ? ORDER BY created_at",
                 (project_id,),
             )
         ]
 
-    def list_for_session(self, *, session_id: str) -> list[ArtifactRecord]:
-        session = self.db.fetchone_blocking("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
+    async def list_for_session(self, *, session_id: str) -> list[ArtifactRecord]:
+        session = await self.db.fetchone("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
         project_id = session["project_id"] if session else None
         return (
-            self.list_for_project(project_id=project_id)
+            await self.list_for_project(project_id=project_id)
             if project_id is not None
             else []
         )
 
-    def next_id(self, *, project_id: str) -> str:
-        rows = self.db.fetchall_blocking("SELECT id FROM artifacts")
+    async def next_id(self, *, project_id: str) -> str:
+        rows = await self.db.fetchall("SELECT id FROM artifacts")
         return next_canonical_record_id(
             existing_ids=(str(row["id"]) for row in rows),
             prefix=ARTIFACT_ID_PREFIX,

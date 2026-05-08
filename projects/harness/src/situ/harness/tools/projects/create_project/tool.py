@@ -14,7 +14,7 @@ class CreateProjectTool(BaseSituTool[SituToolDeps, CreateProjectResult]):
     result_type = CreateProjectResult
     sequential = True
 
-    def execute_sync(
+    async def execute(
         self,
         *,
         ctx: RunContext[SituToolDeps],
@@ -26,10 +26,10 @@ class CreateProjectTool(BaseSituTool[SituToolDeps, CreateProjectResult]):
         **_kwargs: Any,
     ) -> CreateProjectResult:
         """Create a workspace project and optionally attach it to the current run."""
-        repos = ctx.deps.get_repos()
-        workspace = repos.workspaces.ensure()
-        resolved_project_id = project_id or repos.projects.next_id(workspace_id=workspace.id)
-        project = repos.projects.create(
+        repos = await ctx.deps.get_repos()
+        workspace = await repos.workspaces.ensure()
+        resolved_project_id = project_id or await repos.projects.next_id(workspace_id=workspace.id)
+        project = await repos.projects.create(
             project_id=resolved_project_id,
             workspace_id=workspace.id,
             title=title,
@@ -38,18 +38,21 @@ class CreateProjectTool(BaseSituTool[SituToolDeps, CreateProjectResult]):
             status=ProjectStatus.ACTIVE,
         )
         session = (
-            repos.sessions.update_project(session_id=ctx.deps.session_id, project_id=project.id)
+            await repos.sessions.update_project(
+                session_id=ctx.deps.session_id,
+                project_id=project.id,
+            )
             if attach_to_current_run
             else None
         )
-        event = ctx.deps.record_event(
+        event = await ctx.deps.record_event(
             event_type="project.created",
             message=f"Created project {project.id}",
             payload={"project_id": project.id, "workspace_id": workspace.id},
         )
-        ctx.deps.publish_record(record=project, event=event)
+        await ctx.deps.publish_record(record=project, event=event)
         if session is not None:
-            ctx.deps.publish_record(record=session, event=event)
+            await ctx.deps.publish_record(record=session, event=event)
         return CreateProjectResult(
             success=True,
             project=project.model_dump(),

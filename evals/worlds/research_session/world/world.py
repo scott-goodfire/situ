@@ -40,13 +40,20 @@ class ResearchSessionWorld:
         self.repo_path.mkdir()
         if seed == "with_dirty_workspace":
             _seed_dirty_workspace(self.repo_path)
-        self.repos = _build_repos(
-            self.path,
-            repo_path=self.repo_path,
+        self.repos: Repositories
+        self.events: list[EvalEvent] = []
+        self.seed = seed
+
+    @classmethod
+    async def create(cls, *, seed: ResearchSessionSeed) -> "ResearchSessionWorld":
+        world = cls(seed=seed)
+        world.repos = await _build_repos(
+            world.path,
+            repo_path=world.repo_path,
             attach_project=seed != "projectless",
         )
-        self.events: list[EvalEvent] = []
-        _seed(self.repos, seed)
+        await _seed(world.repos, seed)
+        return world
 
     def teardown(self) -> None:
         self._tmp.cleanup()
@@ -79,8 +86,8 @@ class ResearchSessionWorld:
         self.events.append(event)
         return record.model_dump()
 
-    def project_board(self) -> dict[str, Any]:
-        graph = ProjectBoardService(repos=self.repos).get_project_board(
+    async def project_board(self) -> dict[str, Any]:
+        graph = await ProjectBoardService(repos=self.repos).get_project_board(
             session_id=SESSION_ID
         )
         return {
@@ -124,22 +131,21 @@ class ResearchSessionWorld:
         }
 
 
-def _build_repos(
+async def _build_repos(
     path: Path,
     *,
     repo_path: Path,
-    attach_project: bool,
-) -> Repositories:
+    attach_project: bool,) -> Repositories:
     db = Database(
         path / "situ.sqlite",
         workspace_id=WORKSPACE_ID,
         repo_path=str(repo_path),
     )
     repos = Repositories.create(db)
-    workspace = repos.workspaces.ensure()
+    workspace = await repos.workspaces.ensure()
     project_id = None
     if attach_project:
-        project = repos.projects.create(
+        project = await repos.projects.create(
             project_id=PROJECT_ID,
             workspace_id=workspace.id,
             title="Improve validation score",
@@ -147,9 +153,9 @@ def _build_repos(
             research_context=RESEARCH_CONTEXT_BODY,
         )
         project_id = project.id
-    repos.sessions.create(session_id=SESSION_ID, workspace_id=workspace.id, project_id=project_id)
+    await repos.sessions.create(session_id=SESSION_ID, workspace_id=workspace.id, project_id=project_id)
     if project_id is not None:
-        repos.agents.ensure_session_agent(
+        await repos.agents.ensure_session_agent(
             session_id=SESSION_ID,
             kind="scientist",
             display_name="Scientist",
@@ -158,12 +164,12 @@ def _build_repos(
     return repos
 
 
-def _seed(repos: Repositories, seed: ResearchSessionSeed) -> None:
+async def _seed(repos: Repositories, seed: ResearchSessionSeed) -> None:
     if seed == "projectless":
         return
 
     if seed in {"needs_baseline", "with_baseline_result", "with_promising_results"}:
-        repos.hypotheses.create(
+        await repos.hypotheses.create(
             hypothesis_id=HYPOTHESIS_ID,
             project_id=PROJECT_ID,
             created_in_session_id=SESSION_ID,
@@ -173,14 +179,14 @@ def _seed(repos: Repositories, seed: ResearchSessionSeed) -> None:
         )
 
     if seed in {"with_baseline_result", "with_promising_results"}:
-        _create_baseline_measurement(
+        await _create_baseline_measurement(
             repos,
             result_body="Baseline completed: score 0.710, latency_ms 120, tests_passed true.",
             metrics={"score": 0.710, "latency_ms": 120, "tests_passed": True},
         )
 
     if seed == "with_promising_results":
-        _create_experiment_with_result(
+        await _create_experiment_with_result(
             repos,
             experiment_id=COMPONENT_A_EXPERIMENT_ID,
             title="Try component A",
@@ -188,7 +194,7 @@ def _seed(repos: Repositories, seed: ResearchSessionSeed) -> None:
             result_body="Component A completed: score 0.734, latency_ms 123, tests_passed true.",
             signals={"score": 0.734, "latency_ms": 123, "tests_passed": True},
         )
-        _create_experiment_with_result(
+        await _create_experiment_with_result(
             repos,
             experiment_id=COMPONENT_C_EXPERIMENT_ID,
             title="Try component C",
@@ -196,15 +202,15 @@ def _seed(repos: Repositories, seed: ResearchSessionSeed) -> None:
             result_body="Component C completed: score 0.748, latency_ms 126, tests_passed true.",
             signals={"score": 0.748, "latency_ms": 126, "tests_passed": True},
         )
-        repos.hypothesis_experiment_links.create(
+        await repos.hypothesis_experiment_links.create(
             hypothesis_id=HYPOTHESIS_ID,
             experiment_id=COMPONENT_A_EXPERIMENT_ID,
         )
-        repos.hypothesis_experiment_links.create(
+        await repos.hypothesis_experiment_links.create(
             hypothesis_id=HYPOTHESIS_ID,
             experiment_id=COMPONENT_C_EXPERIMENT_ID,
         )
-        repos.hypothesis_activities.add(
+        await repos.hypothesis_activities.add(
             hypothesis_id=HYPOTHESIS_ID,
             actor="harness",
             kind="comment",
@@ -219,7 +225,7 @@ def _seed(repos: Repositories, seed: ResearchSessionSeed) -> None:
         "with_comments",
         "with_artifact",
     }:
-        repos.hypotheses.create(
+        await repos.hypotheses.create(
             hypothesis_id=HYPOTHESIS_ID,
             project_id=PROJECT_ID,
             created_in_session_id=SESSION_ID,
@@ -229,7 +235,7 @@ def _seed(repos: Repositories, seed: ResearchSessionSeed) -> None:
         )
 
     if seed in {"with_experiment", "with_link", "with_comments", "with_artifact"}:
-        repos.experiments.create(
+        await repos.experiments.create(
             experiment_id=EXPERIMENT_ID,
             project_id=PROJECT_ID,
             created_in_session_id=SESSION_ID,
@@ -239,19 +245,19 @@ def _seed(repos: Repositories, seed: ResearchSessionSeed) -> None:
         )
 
     if seed in {"with_link", "with_comments", "with_artifact"}:
-        repos.hypothesis_experiment_links.create(
+        await repos.hypothesis_experiment_links.create(
             hypothesis_id=HYPOTHESIS_ID,
             experiment_id=EXPERIMENT_ID,
         )
 
     if seed in {"with_comments", "with_artifact"}:
-        repos.hypothesis_activities.add(
+        await repos.hypothesis_activities.add(
             hypothesis_id=HYPOTHESIS_ID,
             actor="agent",
             kind="comment",
             body="Component A is worth testing before combining variants.",
         )
-        repos.experiment_activities.add(
+        await repos.experiment_activities.add(
             experiment_id=EXPERIMENT_ID,
             actor="worker",
             kind="comment",
@@ -259,7 +265,7 @@ def _seed(repos: Repositories, seed: ResearchSessionSeed) -> None:
         )
 
     if seed == "with_artifact":
-        repos.artifacts.create(
+        await repos.artifacts.create(
             artifact_id=ARTIFACT_ID,
             project_id=PROJECT_ID,
             created_in_session_id=SESSION_ID,
@@ -273,7 +279,7 @@ def _seed(repos: Repositories, seed: ResearchSessionSeed) -> None:
         )
 
     if seed == "with_task":
-        repos.tasks.create(
+        await repos.tasks.create(
             task_id=TASK_ID,
             project_id=PROJECT_ID,
             created_in_session_id=SESSION_ID,
@@ -286,7 +292,7 @@ def _seed(repos: Repositories, seed: ResearchSessionSeed) -> None:
         )
 
 
-def _create_experiment_with_result(
+async def _create_experiment_with_result(
     repos: Repositories,
     *,
     experiment_id: str,
@@ -295,7 +301,7 @@ def _create_experiment_with_result(
     result_body: str,
     signals: dict[str, int | float | str | bool | None],
 ) -> None:
-    repos.experiments.create(
+    await repos.experiments.create(
         experiment_id=experiment_id,
         project_id=PROJECT_ID,
         created_in_session_id=SESSION_ID,
@@ -304,7 +310,7 @@ def _create_experiment_with_result(
         status="closed",
     )
     evaluation_id = _evaluation_id_for_experiment(experiment_id)
-    repos.evaluations.create(
+    await repos.evaluations.create(
         evaluation_id=evaluation_id,
         project_id=PROJECT_ID,
         created_in_session_id=SESSION_ID,
@@ -313,7 +319,7 @@ def _create_experiment_with_result(
         associated_experiment_id=experiment_id,
         status="closed",
     )
-    repos.measurements.add(
+    await repos.measurements.add(
         evaluation_id=evaluation_id,
         created_in_session_id=SESSION_ID,
         actor="worker",
@@ -327,7 +333,7 @@ def _create_experiment_with_result(
             "raw": {"shape": "standard"},
         },
     )
-    repos.evaluation_activities.add(
+    await repos.evaluation_activities.add(
         evaluation_id=evaluation_id,
         created_in_session_id=SESSION_ID,
         actor="worker",
@@ -342,7 +348,7 @@ def _create_experiment_with_result(
             "raw": {"shape": "standard"},
         },
     )
-    repos.experiment_activities.add(
+    await repos.experiment_activities.add(
         experiment_id=experiment_id,
         actor="worker",
         kind="comment",
@@ -358,13 +364,13 @@ def _create_experiment_with_result(
     )
 
 
-def _create_baseline_measurement(
+async def _create_baseline_measurement(
     repos: Repositories,
     *,
     result_body: str,
     metrics: dict[str, int | float | str | bool | None],
 ) -> None:
-    baseline = repos.baselines.create(
+    baseline = await repos.baselines.create(
         baseline_id=BASELINE_ID,
         project_id=PROJECT_ID,
         created_in_session_id=SESSION_ID,
@@ -372,7 +378,7 @@ def _create_baseline_measurement(
         summary="Reference validation run before candidate variants.",
         status="closed",
     )
-    repos.evaluations.create(
+    await repos.evaluations.create(
         evaluation_id=BASELINE_EVALUATION_ID,
         project_id=PROJECT_ID,
         created_in_session_id=SESSION_ID,
@@ -381,7 +387,7 @@ def _create_baseline_measurement(
         associated_baseline_id=baseline.id,
         status="closed",
     )
-    repos.measurements.add(
+    await repos.measurements.add(
         evaluation_id=BASELINE_EVALUATION_ID,
         created_in_session_id=SESSION_ID,
         actor="worker",
@@ -391,7 +397,7 @@ def _create_baseline_measurement(
             "raw": {"shape": "standard"},
         },
     )
-    repos.evaluation_activities.add(
+    await repos.evaluation_activities.add(
         evaluation_id=BASELINE_EVALUATION_ID,
         created_in_session_id=SESSION_ID,
         actor="worker",

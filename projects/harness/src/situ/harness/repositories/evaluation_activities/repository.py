@@ -26,7 +26,7 @@ def _evaluation_activity_row(row: Any) -> EvaluationActivityRecord:
 
 
 class EvaluationActivitiesRepository(BaseRepository):
-    def add(
+    async def add(
         self,
         *,
         evaluation_id: str,
@@ -44,7 +44,7 @@ class EvaluationActivitiesRepository(BaseRepository):
             body=body,
             payload=payload or {},
         )
-        cursor = self.db.execute_blocking(
+        cursor = await self.db.execute(
             """
             INSERT INTO evaluation_activities
               (evaluation_id, created_in_session_id, actor, kind, body, payload_json,
@@ -61,40 +61,40 @@ class EvaluationActivitiesRepository(BaseRepository):
                 utc_now(),
             ),
         )
-        record = self.get_by_id(activity_id=int(cursor.lastrowid))
+        record = await self.get_by_id(activity_id=int(cursor.lastrowid))
         if record is None:
             raise RuntimeError("evaluation activity was not persisted")
         return record
 
-    def get_by_id(self, *, activity_id: int) -> EvaluationActivityRecord | None:
-        row = self.db.fetchone_blocking(
+    async def get_by_id(self, *, activity_id: int) -> EvaluationActivityRecord | None:
+        row = await self.db.fetchone(
             "SELECT * FROM evaluation_activities WHERE id = ?",
             (activity_id,),
         )
         return _evaluation_activity_row(row) if row else None
 
-    def get(self, *, activity_id: int) -> EvaluationActivityRecord | None:
-        return self.get_by_id(activity_id=activity_id)
+    async def get(self, *, activity_id: int) -> EvaluationActivityRecord | None:
+        return await self.get_by_id(activity_id=activity_id)
 
-    def list_all(self) -> list[EvaluationActivityRecord]:
+    async def list_all(self) -> list[EvaluationActivityRecord]:
         return [
             _evaluation_activity_row(row)
-            for row in self.db.fetchall_blocking("SELECT * FROM evaluation_activities ORDER BY id")
+            for row in await self.db.fetchall("SELECT * FROM evaluation_activities ORDER BY id")
         ]
 
-    def list_for_evaluation(self, *, evaluation_id: str) -> list[EvaluationActivityRecord]:
+    async def list_for_evaluation(self, *, evaluation_id: str) -> list[EvaluationActivityRecord]:
         return [
             _evaluation_activity_row(row)
-            for row in self.db.fetchall_blocking(
+            for row in await self.db.fetchall(
                 "SELECT * FROM evaluation_activities WHERE evaluation_id = ? ORDER BY id",
                 (evaluation_id,),
             )
         ]
 
-    def list_for_project(self, *, project_id: str) -> list[EvaluationActivityRecord]:
+    async def list_for_project(self, *, project_id: str) -> list[EvaluationActivityRecord]:
         return [
             _evaluation_activity_row(row)
-            for row in self.db.fetchall_blocking(
+            for row in await self.db.fetchall(
                 """
                 SELECT evaluation_activities.*
                 FROM evaluation_activities
@@ -106,11 +106,11 @@ class EvaluationActivitiesRepository(BaseRepository):
             )
         ]
 
-    def list_for_session(self, *, session_id: str) -> list[EvaluationActivityRecord]:
-        session = self.db.fetchone_blocking("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
+    async def list_for_session(self, *, session_id: str) -> list[EvaluationActivityRecord]:
+        session = await self.db.fetchone("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
         project_id = session["project_id"] if session else None
         return (
-            self.list_for_project(project_id=project_id)
+            await self.list_for_project(project_id=project_id)
             if project_id is not None
             else []
         )

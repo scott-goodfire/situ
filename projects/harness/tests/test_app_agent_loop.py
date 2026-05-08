@@ -437,7 +437,7 @@ async def test_session_loop_retries_timed_out_agent_pass_and_records_activity(
     await app._execute_session_async(session_id=session_id, max_experiments=1)
 
     session = await app.repos.sessions.get(session_id=session_id)
-    task = await app.repos.tasks.list_for_session(session_id=session_id)[0]
+    task = (await app.repos.tasks.list_for_session(session_id=session_id))[0]
     activities = await app.repos.task_activities.list_for_task(task_id=task.id)
     timeout_events = [
         event
@@ -474,7 +474,8 @@ class BaselineThenExperimentRuntime:
         self.plan_calls += 1
         repos = kwargs["repos"]
         session_id = kwargs["session_id"]
-        project_id = await repos.sessions.get(session_id=session_id).project_id
+        session = await repos.sessions.get(session_id=session_id)
+        project_id = session.project_id if session is not None else None
         assert project_id is not None
 
         if self.plan_calls == 1:
@@ -508,7 +509,8 @@ class BaselineThenExperimentRuntime:
         assigned_task_ids = kwargs["assigned_task_ids"]
         task = await repos.tasks.get(task_id=assigned_task_ids[0])
         assert task is not None
-        project_id = await repos.sessions.get(session_id=session_id).project_id
+        session = await repos.sessions.get(session_id=session_id)
+        project_id = session.project_id if session is not None else None
         assert project_id is not None
 
         self.scientist_task_kinds.append(task.kind.value)
@@ -588,7 +590,8 @@ class BaselineOnlyRuntime:
         self.plan_calls += 1
         repos = kwargs["repos"]
         session_id = kwargs["session_id"]
-        project_id = await repos.sessions.get(session_id=session_id).project_id
+        session = await repos.sessions.get(session_id=session_id)
+        project_id = session.project_id if session is not None else None
         assert project_id is not None
         if self.plan_calls == 1:
             await repos.tasks.create(
@@ -606,7 +609,8 @@ class BaselineOnlyRuntime:
     async def run_session(self, **kwargs: Any) -> ResearchAgentOutput:
         repos = kwargs["repos"]
         session_id = kwargs["session_id"]
-        project_id = await repos.sessions.get(session_id=session_id).project_id
+        session = await repos.sessions.get(session_id=session_id)
+        project_id = session.project_id if session is not None else None
         assert project_id is not None
         baseline = await repos.baselines.create(
             baseline_id="B1",
@@ -661,7 +665,8 @@ class CloseProjectRuntime:
         self.plan_calls += 1
         repos = kwargs["repos"]
         session_id = kwargs["session_id"]
-        project_id = await repos.sessions.get(session_id=session_id).project_id
+        session = await repos.sessions.get(session_id=session_id)
+        project_id = session.project_id if session is not None else None
         assert project_id is not None
         await repos.projects.update(project_id=project_id, status="closed")
         return ResearchAgentOutput(summary="confirmed close")
@@ -681,7 +686,8 @@ class ResearcherThenNoProgressRuntime:
         self.plan_calls += 1
         repos = kwargs["repos"]
         session_id = kwargs["session_id"]
-        project_id = await repos.sessions.get(session_id=session_id).project_id
+        session = await repos.sessions.get(session_id=session_id)
+        project_id = session.project_id if session is not None else None
         assert project_id is not None
         if self.plan_calls == 1:
             await repos.tasks.create(
@@ -701,7 +707,8 @@ class ResearcherThenNoProgressRuntime:
         self.researcher_calls += 1
         repos = kwargs["repos"]
         session_id = kwargs["session_id"]
-        project_id = await repos.sessions.get(session_id=session_id).project_id
+        session = await repos.sessions.get(session_id=session_id)
+        project_id = session.project_id if session is not None else None
         assert project_id is not None
         await repos.analyses.create(
             analysis_id="A1",
@@ -728,7 +735,8 @@ class FailingExperimentRuntime:
         self.plan_calls += 1
         repos = kwargs["repos"]
         session_id = kwargs["session_id"]
-        project_id = await repos.sessions.get(session_id=session_id).project_id
+        session = await repos.sessions.get(session_id=session_id)
+        project_id = session.project_id if session is not None else None
         assert project_id is not None
         await repos.tasks.create(
             task_id=await repos.tasks.next_id(project_id=project_id),
@@ -760,7 +768,8 @@ class TimeoutThenCloseRuntime:
             raise TimeoutError("model request timed out")
         repos = kwargs["repos"]
         session_id = kwargs["session_id"]
-        project_id = await repos.sessions.get(session_id=session_id).project_id
+        session = await repos.sessions.get(session_id=session_id)
+        project_id = session.project_id if session is not None else None
         assert project_id is not None
         await repos.projects.update(project_id=project_id, status="closed")
         return ResearchAgentOutput(summary="closed after retry")

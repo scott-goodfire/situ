@@ -29,7 +29,7 @@ def _baseline_row(row: Any) -> BaselineRecord:
 
 
 class BaselinesRepository(BaseRepository):
-    def create(
+    async def create(
         self,
         *,
         baseline_id: str,
@@ -54,7 +54,7 @@ class BaselinesRepository(BaseRepository):
             status=checked_status,
         )
         now = utc_now()
-        self.db.execute_blocking(
+        await self.db.execute(
             """
             INSERT INTO baselines
               (id, project_id, created_in_session_id, status, title, summary,
@@ -72,12 +72,12 @@ class BaselinesRepository(BaseRepository):
                 now,
             ),
         )
-        record = self.get_by_id(baseline_id=command.baseline_id)
+        record = await self.get_by_id(baseline_id=command.baseline_id)
         if record is None:
             raise RuntimeError(f"baseline was not persisted: {command.baseline_id}")
         return record
 
-    def update(
+    async def update(
         self,
         *,
         baseline_id: str,
@@ -96,11 +96,11 @@ class BaselinesRepository(BaseRepository):
             summary=summary,
             status=checked_status,
         )
-        current = self.get_by_id(baseline_id=command.baseline_id)
+        current = await self.get_by_id(baseline_id=command.baseline_id)
         if current is None:
             return None
 
-        self.db.execute_blocking(
+        await self.db.execute(
             """
             UPDATE baselines
             SET title = ?, summary = ?, status = ?, updated_at = ?
@@ -114,41 +114,41 @@ class BaselinesRepository(BaseRepository):
                 command.baseline_id,
             ),
         )
-        return self.get_by_id(baseline_id=command.baseline_id)
+        return await self.get_by_id(baseline_id=command.baseline_id)
 
-    def get_by_id(self, *, baseline_id: str) -> BaselineRecord | None:
-        row = self.db.fetchone_blocking("SELECT * FROM baselines WHERE id = ?", (baseline_id,))
+    async def get_by_id(self, *, baseline_id: str) -> BaselineRecord | None:
+        row = await self.db.fetchone("SELECT * FROM baselines WHERE id = ?", (baseline_id,))
         return _baseline_row(row) if row else None
 
-    def get(self, *, baseline_id: str) -> BaselineRecord | None:
-        return self.get_by_id(baseline_id=baseline_id)
+    async def get(self, *, baseline_id: str) -> BaselineRecord | None:
+        return await self.get_by_id(baseline_id=baseline_id)
 
-    def list_all(self) -> list[BaselineRecord]:
+    async def list_all(self) -> list[BaselineRecord]:
         return [
             _baseline_row(row)
-            for row in self.db.fetchall_blocking("SELECT * FROM baselines ORDER BY created_at")
+            for row in await self.db.fetchall("SELECT * FROM baselines ORDER BY created_at")
         ]
 
-    def list_for_project(self, *, project_id: str) -> list[BaselineRecord]:
+    async def list_for_project(self, *, project_id: str) -> list[BaselineRecord]:
         return [
             _baseline_row(row)
-            for row in self.db.fetchall_blocking(
+            for row in await self.db.fetchall(
                 "SELECT * FROM baselines WHERE project_id = ? ORDER BY created_at",
                 (project_id,),
             )
         ]
 
-    def list_for_session(self, *, session_id: str) -> list[BaselineRecord]:
-        session = self.db.fetchone_blocking("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
+    async def list_for_session(self, *, session_id: str) -> list[BaselineRecord]:
+        session = await self.db.fetchone("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
         project_id = session["project_id"] if session else None
         return (
-            self.list_for_project(project_id=project_id)
+            await self.list_for_project(project_id=project_id)
             if project_id is not None
             else []
         )
 
-    def next_id(self, *, project_id: str) -> str:
-        rows = self.db.fetchall_blocking("SELECT id FROM baselines")
+    async def next_id(self, *, project_id: str) -> str:
+        rows = await self.db.fetchall("SELECT id FROM baselines")
         return next_canonical_record_id(
             existing_ids=(str(row["id"]) for row in rows),
             prefix=BASELINE_ID_PREFIX,

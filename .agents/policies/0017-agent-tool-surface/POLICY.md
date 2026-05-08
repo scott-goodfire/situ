@@ -113,9 +113,10 @@ to call a generic activity writer to record benchmark evidence.
   SQLite.
 - Toolsets should include concise instructions that explain when to read state
   and when to write comments.
-- Runtime skills should use progressive disclosure. Prefer advertising skill
-  names and descriptions, then requiring `load_skill(skill_name=...)` before
-  applying detailed methodology.
+- Runtime skills should use progressive disclosure: advertise skill names
+  and descriptions in role prompts and require an explicit load step
+  before the agent applies detailed methodology. The exact load primitive
+  is an implementation detail.
 - Runtime skills should be role-scoped. A Manager skill should help planning
   and task decomposition; a Researcher skill should help analysis, source
   synthesis, or hypothesis handoff. The skill must not blur role boundaries or
@@ -128,9 +129,10 @@ to call a generic activity writer to record benchmark evidence.
   `.agents/skills/` for coding agents maintaining this repo, and
   `projects/harness/src/situ/harness/agent_skills/` for skills exposed to
   Situ's runtime agents.
-- Runtime skills that ship markdown resources should be included as package
-  data and covered by a deterministic discovery test. Realistic evals should
-  assert `load_skill` calls when the behavior depends on skill use.
+- Runtime skills that ship markdown resources should be included as
+  package data and covered by a deterministic discovery test. Realistic
+  evals should assert that the skill was loaded when behavior depends on
+  it, using whichever load primitive the implementation exposes.
 - Tool names should avoid obsolete or overly generic phrasing like
   `record_finding` or `record_activity` when a product-model operation is
   clearer. A compact context reader is acceptable in the slim slice, but prefer

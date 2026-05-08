@@ -21,12 +21,12 @@ class CriticReviewEvalGroup(
     suite_name: ClassVar[str] = "agents"
     world_name: ClassVar[str] = "critic_review"
 
-    def task(self, args: CriticReviewEvalInput) -> CriticReviewEvalOutput:
+    async def task(self, args: CriticReviewEvalInput) -> CriticReviewEvalOutput:
         set_eval_attribute("suite", self.suite_name)
         set_eval_attribute("world", self.world_name)
         set_eval_attribute("case_id", args.case_id)
         set_eval_attribute("seed", args.seed)
-        output = run_critic_review(args)
+        output = await run_critic_review(args)
         increment_eval_metric("critic_tool_calls", len(output.critic_tool_calls))
         increment_eval_metric(
             "review_activities",

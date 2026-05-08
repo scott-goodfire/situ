@@ -16,12 +16,13 @@ from evals.worlds.critic_review.world import CriticReviewWorld
         "comparability_break",
     ],
 )
-def test_critic_review_world_seeds_linked_review_task(
+@pytest.mark.asyncio
+async def test_critic_review_world_seeds_linked_review_task(
     seed: CriticReviewSeed,
 ) -> None:
     world = CriticReviewWorld(seed=seed)
     try:
-        board = world.project_board()
+        board = await world.project_board()
         review_tasks = [task for task in board["tasks"] if task["kind"] == "review"]
 
         assert len(review_tasks) == 1

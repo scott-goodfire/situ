@@ -21,7 +21,7 @@ def _event_row(row: Any) -> EventRecord:
 
 
 class EventsRepository(BaseRepository):
-    def add(
+    async def add(
         self,
         *,
         event_type: str,
@@ -34,7 +34,7 @@ class EventsRepository(BaseRepository):
         resolved_session_id = associated_session_id or session_id
         resolved_project_id = associated_project_id
         if resolved_project_id is None and resolved_session_id is not None:
-            resolved_project_id = self._project_id_for_session(resolved_session_id)
+            resolved_project_id = await self._project_id_for_session(resolved_session_id)
         command = AddEvent(
             event_type=event_type,
             message=message,
@@ -42,7 +42,7 @@ class EventsRepository(BaseRepository):
             associated_session_id=resolved_session_id,
             payload=payload or {},
         )
-        cursor = self.db.execute_blocking(
+        cursor = await self.db.execute(
             """
             INSERT INTO events
               (associated_project_id, associated_session_id, type, message,
@@ -58,39 +58,39 @@ class EventsRepository(BaseRepository):
                 utc_now(),
             ),
         )
-        record = self.get_by_id(event_id=int(cursor.lastrowid))
+        record = await self.get_by_id(event_id=int(cursor.lastrowid))
         if record is None:
             raise RuntimeError("event was not persisted")
         return record
 
-    def get_by_id(self, *, event_id: int) -> EventRecord | None:
-        row = self.db.fetchone_blocking("SELECT * FROM events WHERE id = ?", (event_id,))
+    async def get_by_id(self, *, event_id: int) -> EventRecord | None:
+        row = await self.db.fetchone("SELECT * FROM events WHERE id = ?", (event_id,))
         return _event_row(row) if row else None
 
-    def get(self, *, event_id: int) -> EventRecord | None:
-        return self.get_by_id(event_id=event_id)
+    async def get(self, *, event_id: int) -> EventRecord | None:
+        return await self.get_by_id(event_id=event_id)
 
-    def list_all(self) -> list[EventRecord]:
-        return [_event_row(row) for row in self.db.fetchall_blocking("SELECT * FROM events ORDER BY id")]
+    async def list_all(self) -> list[EventRecord]:
+        return [_event_row(row) for row in await self.db.fetchall("SELECT * FROM events ORDER BY id")]
 
-    def list_for_session(self, *, session_id: str) -> list[EventRecord]:
+    async def list_for_session(self, *, session_id: str) -> list[EventRecord]:
         return [
             _event_row(row)
-            for row in self.db.fetchall_blocking(
+            for row in await self.db.fetchall(
                 "SELECT * FROM events WHERE associated_session_id = ? ORDER BY id",
                 (session_id,),
             )
         ]
 
-    def list_for_project(self, *, project_id: str) -> list[EventRecord]:
+    async def list_for_project(self, *, project_id: str) -> list[EventRecord]:
         return [
             _event_row(row)
-            for row in self.db.fetchall_blocking(
+            for row in await self.db.fetchall(
                 "SELECT * FROM events WHERE associated_project_id = ? ORDER BY id",
                 (project_id,),
             )
         ]
 
-    def _project_id_for_session(self, session_id: str) -> str | None:
-        row = self.db.fetchone_blocking("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
+    async def _project_id_for_session(self, session_id: str) -> str | None:
+        row = await self.db.fetchone("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
         return row["project_id"] if row else None

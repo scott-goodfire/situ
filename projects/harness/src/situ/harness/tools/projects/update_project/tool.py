@@ -14,7 +14,7 @@ class UpdateProjectTool(BaseSituTool[SituToolDeps, UpdateProjectResult]):
     result_type = UpdateProjectResult
     sequential = True
 
-    def execute_sync(
+    async def execute(
         self,
         *,
         ctx: RunContext[SituToolDeps],
@@ -26,8 +26,8 @@ class UpdateProjectTool(BaseSituTool[SituToolDeps, UpdateProjectResult]):
         **_kwargs: Any,
     ) -> UpdateProjectResult:
         """Update a project by ID or the current project."""
-        repos = ctx.deps.get_repos()
-        resolved_project_id = project_id or ctx.deps.current_project_id()
+        repos = await ctx.deps.get_repos()
+        resolved_project_id = project_id or await ctx.deps.current_project_id()
         if resolved_project_id is None:
             raise ValueError("project_id is required when the current run has no project")
         if status is not None and parse_project_status(status) == ProjectStatus.CLOSED:
@@ -41,7 +41,7 @@ class UpdateProjectTool(BaseSituTool[SituToolDeps, UpdateProjectResult]):
                     "call `confirm_project_close` with the returned code."
                 ),
             )
-        project = repos.projects.update(
+        project = await repos.projects.update(
             project_id=resolved_project_id,
             title=title,
             objective=objective,
@@ -50,10 +50,10 @@ class UpdateProjectTool(BaseSituTool[SituToolDeps, UpdateProjectResult]):
         )
         if project is None:
             raise ValueError(f"project not found: {resolved_project_id}")
-        event = ctx.deps.record_event(
+        event = await ctx.deps.record_event(
             event_type="project.updated",
             message=f"Updated project {project.id}",
             payload={"project_id": project.id},
         )
-        ctx.deps.publish_record(record=project, event=event)
+        await ctx.deps.publish_record(record=project, event=event)
         return UpdateProjectResult(success=True, project=project.model_dump())

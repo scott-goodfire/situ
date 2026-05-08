@@ -39,24 +39,25 @@ def app(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> HarnessApp:
     )
 
 
-def test_collections_bootstrap_returns_research_objects_and_events(
+@pytest.mark.asyncio
+async def test_collections_bootstrap_returns_research_objects_and_events(
     app: HarnessApp,
 ) -> None:
-    app.setup_complete({})
-    workspace = app.repos.workspaces.ensure()
-    project = app.repos.projects.create(
+    await app.handle_async("setup.complete", {})
+    workspace = await app.repos.workspaces.ensure()
+    project = await app.repos.projects.create(
         project_id="P1",
         workspace_id=workspace.id,
         title="Improve score",
         objective="Improve score.",
         research_context="Run local evals. Expected signals: score. Baseline and variants.",
     )
-    session = app.repos.sessions.create(
+    session = await app.repos.sessions.create(
         session_id="S1",
         workspace_id=workspace.id,
         project_id=project.id,
     )
-    app.repos.hypotheses.create(
+    await app.repos.hypotheses.create(
         hypothesis_id="H1",
         project_id=project.id,
         created_in_session_id=session.id,
@@ -64,21 +65,21 @@ def test_collections_bootstrap_returns_research_objects_and_events(
         summary="Component A may improve score.",
         status="active",
     )
-    app.repos.experiments.create(
+    await app.repos.experiments.create(
         experiment_id="EX1",
         project_id=project.id,
         created_in_session_id=session.id,
         title="Try component A",
         summary="Candidate eval.",
     )
-    baseline = app.repos.baselines.create(
+    baseline = await app.repos.baselines.create(
         baseline_id="B1",
         project_id=project.id,
         created_in_session_id=session.id,
         title="Current workspace baseline",
         summary="Reference behavior before candidate changes.",
     )
-    evaluation = app.repos.evaluations.create(
+    evaluation = await app.repos.evaluations.create(
         evaluation_id="EV1",
         project_id=project.id,
         created_in_session_id=session.id,
@@ -86,7 +87,7 @@ def test_collections_bootstrap_returns_research_objects_and_events(
         summary="Run the baseline project evaluation.",
         associated_baseline_id=baseline.id,
     )
-    analysis = app.repos.analyses.create(
+    analysis = await app.repos.analyses.create(
         analysis_id="A1",
         project_id=project.id,
         created_in_session_id=session.id,
@@ -95,7 +96,7 @@ def test_collections_bootstrap_returns_research_objects_and_events(
         content="Records and repositories define the backend data model.",
         status="active",
     )
-    activity = app.repos.experiment_activities.add(
+    activity = await app.repos.experiment_activities.add(
         experiment_id="EX1",
         created_in_session_id=session.id,
         actor="worker",
@@ -103,14 +104,14 @@ def test_collections_bootstrap_returns_research_objects_and_events(
         body="Baseline result recorded.",
         payload={"activity_type": "result"},
     )
-    analysis_activity = app.repos.analysis_activities.add(
+    analysis_activity = await app.repos.analysis_activities.add(
         analysis_id=analysis.id,
         created_in_session_id=session.id,
         actor="agent",
         kind="comment",
         body="Codebase map ready.",
     )
-    evaluation_activity = app.repos.evaluation_activities.add(
+    evaluation_activity = await app.repos.evaluation_activities.add(
         evaluation_id=evaluation.id,
         created_in_session_id=session.id,
         actor="agent",
@@ -118,21 +119,23 @@ def test_collections_bootstrap_returns_research_objects_and_events(
         body="Baseline result recorded.",
         payload={"activity_type": "result"},
     )
-    measurement = app.repos.measurements.add(
+    measurement = await app.repos.measurements.add(
         evaluation_id=evaluation.id,
         created_in_session_id=session.id,
         actor="agent",
         body="Baseline result recorded.",
         payload={"activity_type": "result", "metrics": {"score": 0.71}},
     )
-    event = app.record_event(
+    event = await app.record_event(
         event_type="experiment.completed",
         message="Completed baseline measurement",
         session_id="S1",
         payload={"measurement_id": measurement.id},
     )
 
-    bootstrap = CollectionsBootstrapResult.model_validate(app.collections_bootstrap({}))
+    bootstrap = CollectionsBootstrapResult.model_validate(
+        await app.handle_async("collections.bootstrap", {})
+    )
 
     assert bootstrap.cursor == event.id
     assert [item.id for item in bootstrap.workspaces] == [workspace.id]
@@ -163,7 +166,8 @@ def test_collections_bootstrap_returns_research_objects_and_events(
     ]
 
 
-def test_collections_subscribe_emits_event_upserts(
+@pytest.mark.asyncio
+async def test_collections_subscribe_emits_event_upserts(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -178,8 +182,13 @@ def test_collections_subscribe_emits_event_upserts(
         notify=lambda method, params: notifications.append((method, params)),
     )
 
-    subscribe = CollectionsSubscribeResult.model_validate(app.collections_subscribe({}))
-    event = app.record_event(event_type="system.ready", message="Harness ready")
+    subscribe = CollectionsSubscribeResult.model_validate(
+        await app.handle_async("collections.subscribe", {})
+    )
+    event = await app.record_event(
+        event_type="system.ready",
+        message="Harness ready",
+    )
 
     assert subscribe.subscribed is True
     assert subscribe.cursor == 0

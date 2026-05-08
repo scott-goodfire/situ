@@ -21,12 +21,12 @@ class CriticFollowupEvalGroup(
     suite_name: ClassVar[str] = "agents"
     world_name: ClassVar[str] = "critic_followup"
 
-    def task(self, args: CriticFollowupEvalInput) -> CriticFollowupEvalOutput:
+    async def task(self, args: CriticFollowupEvalInput) -> CriticFollowupEvalOutput:
         set_eval_attribute("suite", self.suite_name)
         set_eval_attribute("world", self.world_name)
         set_eval_attribute("case_id", args.case_id)
         set_eval_attribute("seed", args.seed)
-        output = run_critic_followup(args)
+        output = await run_critic_followup(args)
         increment_eval_metric("manager_tool_calls", len(output.manager_tool_calls))
         increment_eval_metric(
             "manager_created_tasks",

@@ -61,40 +61,28 @@ code are launched from the Situ repository.
 
 ## In Scope
 
-- One app server plus TUI and headless exec commands
-- Explicit workspace argument for sandbox/project testing
-- Sparse session setup inputs through objective/context
-- Local/private project context
-- Project-scoped objective and research context
-- Internal project state with session provenance
-- Analysis records
-- Hypothesis records
-- Baseline records
-- Experiment records
-- Evaluation records
-- Measurement evidence records
-- Many-to-many hypothesis/experiment links
-- Analysis activity timeline
-- Hypothesis activity timeline
-- Experiment activity timeline
-- Measurement/evaluation evidence timeline
-- Agent message history records
-- Comment activities, with results, concerns, plans, and interpretations carried
-  in activity bodies and optional payload metadata
-- Minimal artifact references when useful
-- Simple automated trust concerns
-- TypeScript Ink TUI
-- Internal event timeline
-- Agent-readable status and context
-- Agent-requested experiment execution through a typed harness tool
-- Workspace state inspection around baseline and candidate measurements, so
-  dirty starts, changed eval/test files, dependency changes, generated files,
-  branch, commit, and eval command are visible when interpreting results
-- Managed detached worktrees for Scientist `experiment` tasks, with a clean base
-  workspace required before candidate execution starts
-- Pydantic AI `DBOSAgent` as the agent durability boundary
-- Durable restart/resume
-- `~/.situ/situ.sqlite` as the product SQLite source of truth
+- Local app server, TypeScript Ink TUI, and headless `situ exec` over the
+  same backend, all scoped to an explicit local workspace.
+- Sparse session setup inputs (objective and research context) and durable
+  per-project storage of those inputs.
+- The full Situ research record set with session provenance: analyses,
+  hypotheses, baselines, experiments, evaluations, measurements, and their
+  links, each with a comment-shaped activity timeline. Results, concerns,
+  plans, and interpretations are carried in activity bodies and optional
+  payload metadata.
+- Artifact references and an internal event timeline.
+- Agent-readable project state and agent-requested experiment execution
+  through typed harness tools, with managed detached worktrees for
+  Scientist experiment tasks and a clean base workspace required before
+  candidate execution.
+- Workspace state inspection around baseline and candidate measurements
+  so dirty starts, changed eval/test files, dependency changes, generated
+  files, branch, commit, and eval command are visible when interpreting
+  results.
+- Pydantic AI `DBOSAgent` as the agent durability boundary, durable
+  restart/resume, persisted agent message history, and
+  `~/.situ/situ.sqlite` as the canonical product database.
+- Simple automated trust concerns visible to the user and the Manager.
 
 The agent path should express active behavior through approved harness tools.
 Getting the project board, creating analyses, creating hypotheses,

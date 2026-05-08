@@ -14,7 +14,7 @@ class UpdateHypothesisTool(BaseSituTool[SituToolDeps, UpdateHypothesisResult]):
     result_type = UpdateHypothesisResult
     sequential = True
 
-    def execute_sync(
+    async def execute(
         self,
         *,
         ctx: RunContext[SituToolDeps],
@@ -46,7 +46,7 @@ class UpdateHypothesisTool(BaseSituTool[SituToolDeps, UpdateHypothesisResult]):
                         "superseded, or inconclusive."
                     ),
                 )
-        hypothesis = ctx.deps.get_repos().hypotheses.update(
+        hypothesis = await (await ctx.deps.get_repos()).hypotheses.update(
             hypothesis_id=hypothesis_id,
             title=title,
             summary=summary,
@@ -55,10 +55,10 @@ class UpdateHypothesisTool(BaseSituTool[SituToolDeps, UpdateHypothesisResult]):
         if hypothesis is None:
             raise ValueError(f"hypothesis not found: {hypothesis_id}")
 
-        event = ctx.deps.record_event(
+        event = await ctx.deps.record_event(
             event_type="hypothesis.updated",
             message=f"Updated hypothesis {hypothesis.id}",
             payload={"hypothesis_id": hypothesis.id},
         )
-        ctx.deps.publish_record(record=hypothesis, event=event)
+        await ctx.deps.publish_record(record=hypothesis, event=event)
         return UpdateHypothesisResult(success=True, hypothesis=hypothesis.model_dump())

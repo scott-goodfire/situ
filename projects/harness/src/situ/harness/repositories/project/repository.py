@@ -29,7 +29,7 @@ def _project_row(row: Any) -> ProjectRecord:
 
 
 class ProjectRepository(BaseRepository):
-    def create(
+    async def create(
         self,
         *,
         project_id: str,
@@ -53,7 +53,7 @@ class ProjectRepository(BaseRepository):
             status=parse_project_status(status),
         )
         now = utc_now()
-        self.db.execute_blocking(
+        await self.db.execute(
             """
             INSERT INTO projects
               (id, workspace_id, title, objective, research_context, status,
@@ -71,12 +71,12 @@ class ProjectRepository(BaseRepository):
                 now,
             ),
         )
-        record = self.get(project_id=command.project_id)
+        record = await self.get(project_id=command.project_id)
         if record is None:
             raise RuntimeError(f"project was not persisted: {command.project_id}")
         return record
 
-    def update(
+    async def update(
         self,
         *,
         project_id: str,
@@ -85,7 +85,7 @@ class ProjectRepository(BaseRepository):
         research_context: str | None = None,
         status: ProjectStatus | str | None = None,
     ) -> ProjectRecord | None:
-        current = self.get(project_id=project_id)
+        current = await self.get(project_id=project_id)
         if current is None:
             return None
         command = UpdateProject(
@@ -96,7 +96,7 @@ class ProjectRepository(BaseRepository):
             status=parse_project_status(status) if status is not None else None,
         )
         now = utc_now()
-        self.db.execute_blocking(
+        await self.db.execute(
             """
             UPDATE projects
             SET title = ?,
@@ -119,29 +119,29 @@ class ProjectRepository(BaseRepository):
                 command.project_id,
             ),
         )
-        return self.get(project_id=command.project_id)
+        return await self.get(project_id=command.project_id)
 
-    def get(self, *, project_id: str) -> ProjectRecord | None:
-        row = self.db.fetchone_blocking("SELECT * FROM projects WHERE id = ?", (project_id,))
+    async def get(self, *, project_id: str) -> ProjectRecord | None:
+        row = await self.db.fetchone("SELECT * FROM projects WHERE id = ?", (project_id,))
         return _project_row(row) if row else None
 
-    def list_all(self) -> list[ProjectRecord]:
+    async def list_all(self) -> list[ProjectRecord]:
         return [
             _project_row(row)
-            for row in self.db.fetchall_blocking("SELECT * FROM projects ORDER BY created_at")
+            for row in await self.db.fetchall("SELECT * FROM projects ORDER BY created_at")
         ]
 
-    def list_for_workspace(self, *, workspace_id: str) -> list[ProjectRecord]:
+    async def list_for_workspace(self, *, workspace_id: str) -> list[ProjectRecord]:
         return [
             _project_row(row)
-            for row in self.db.fetchall_blocking(
+            for row in await self.db.fetchall(
                 "SELECT * FROM projects WHERE workspace_id = ? ORDER BY created_at",
                 (workspace_id,),
             )
         ]
 
-    def next_id(self, *, workspace_id: str) -> str:
-        rows = self.db.fetchall_blocking("SELECT id FROM projects")
+    async def next_id(self, *, workspace_id: str) -> str:
+        rows = await self.db.fetchall("SELECT id FROM projects")
         return next_canonical_record_id(
             existing_ids=(str(row["id"]) for row in rows),
             prefix=PROJECT_ID_PREFIX,

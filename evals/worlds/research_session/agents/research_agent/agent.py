@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import asyncio
-
 from situ.harness.agents import ResearchAgent, ResearchAgentContext
 from situ.harness.tools.common import SituToolDeps
 from evals.framework.capture import ToolCallCaptureCapability
@@ -17,8 +15,8 @@ from evals.worlds.research_session.world import (
 )
 
 
-def run_research_agent(args: ResearchAgentEvalInput) -> ResearchAgentEvalOutput:
-    world = ResearchSessionWorld(seed=args.seed)
+async def run_research_agent(args: ResearchAgentEvalInput) -> ResearchAgentEvalOutput:
+    world = await ResearchSessionWorld.create(seed=args.seed)
     capture = ToolCallCaptureCapability()
     try:
         deps = SituToolDeps(
@@ -32,16 +30,15 @@ def run_research_agent(args: ResearchAgentEvalInput) -> ResearchAgentEvalOutput:
             model=eval_model_name(),
             capabilities=[capture],
         )
-        result = asyncio.run(
-            agent.run(
-                ResearchAgentContext(
-                    deps=deps,
-                    objective=args.objective,
-                    user_prompt=args.prompt,
-                )
+        result = await agent.run(
+            ResearchAgentContext(
+                deps=deps,
+                objective=args.objective,
+                user_prompt=args.prompt,
             )
         )
         output = result.output
+        project_board = await world.project_board()
         return ResearchAgentEvalOutput(
             content=" ".join(
                 [
@@ -53,12 +50,12 @@ def run_research_agent(args: ResearchAgentEvalInput) -> ResearchAgentEvalOutput:
             research_agent_output=output.model_dump(),
             captured_tool_calls=list(capture.tool_calls),
             events=list(world.events),
-            project_board=world.project_board(),
+            project_board=project_board,
             signals={
                 "tool_calls": len(capture.tool_calls),
                 "events": len(world.events),
-                "hypotheses": len(world.project_board().get("hypotheses", [])),
-                "experiments": len(world.project_board().get("experiments", [])),
+                "hypotheses": len(project_board.get("hypotheses", [])),
+                "experiments": len(project_board.get("experiments", [])),
             },
         )
     finally:

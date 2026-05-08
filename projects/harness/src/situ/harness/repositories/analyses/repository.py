@@ -36,7 +36,7 @@ def _analysis_row(row: Any) -> AnalysisRecord:
 
 
 class AnalysesRepository(BaseRepository):
-    def create(
+    async def create(
         self,
         *,
         analysis_id: str,
@@ -66,7 +66,7 @@ class AnalysesRepository(BaseRepository):
             supersedes_analysis_id=supersedes_analysis_id,
         )
         now = utc_now()
-        self.db.execute_blocking(
+        await self.db.execute(
             """
             INSERT INTO analyses
               (id, project_id, created_in_session_id, created_by_agent_id,
@@ -88,12 +88,12 @@ class AnalysesRepository(BaseRepository):
                 now,
             ),
         )
-        record = self.get_by_id(analysis_id=command.analysis_id)
+        record = await self.get_by_id(analysis_id=command.analysis_id)
         if record is None:
             raise RuntimeError(f"analysis was not persisted: {command.analysis_id}")
         return record
 
-    def update(
+    async def update(
         self,
         *,
         analysis_id: str,
@@ -115,11 +115,11 @@ class AnalysesRepository(BaseRepository):
             content=content,
             supersedes_analysis_id=supersedes_analysis_id,
         )
-        current = self.get_by_id(analysis_id=command.analysis_id)
+        current = await self.get_by_id(analysis_id=command.analysis_id)
         if current is None:
             return None
 
-        self.db.execute_blocking(
+        await self.db.execute(
             """
             UPDATE analyses
             SET status = ?,
@@ -144,25 +144,25 @@ class AnalysesRepository(BaseRepository):
                 command.analysis_id,
             ),
         )
-        return self.get_by_id(analysis_id=command.analysis_id)
+        return await self.get_by_id(analysis_id=command.analysis_id)
 
-    def get_by_id(self, *, analysis_id: str) -> AnalysisRecord | None:
-        row = self.db.fetchone_blocking("SELECT * FROM analyses WHERE id = ?", (analysis_id,))
+    async def get_by_id(self, *, analysis_id: str) -> AnalysisRecord | None:
+        row = await self.db.fetchone("SELECT * FROM analyses WHERE id = ?", (analysis_id,))
         return _analysis_row(row) if row else None
 
-    def get(self, *, analysis_id: str) -> AnalysisRecord | None:
-        return self.get_by_id(analysis_id=analysis_id)
+    async def get(self, *, analysis_id: str) -> AnalysisRecord | None:
+        return await self.get_by_id(analysis_id=analysis_id)
 
-    def list_all(self) -> list[AnalysisRecord]:
+    async def list_all(self) -> list[AnalysisRecord]:
         return [
             _analysis_row(row)
-            for row in self.db.fetchall_blocking("SELECT * FROM analyses ORDER BY created_at")
+            for row in await self.db.fetchall("SELECT * FROM analyses ORDER BY created_at")
         ]
 
-    def list_for_project(self, *, project_id: str) -> list[AnalysisRecord]:
+    async def list_for_project(self, *, project_id: str) -> list[AnalysisRecord]:
         return [
             _analysis_row(row)
-            for row in self.db.fetchall_blocking(
+            for row in await self.db.fetchall(
                 """
                 SELECT * FROM analyses
                 WHERE project_id = ?
@@ -172,17 +172,17 @@ class AnalysesRepository(BaseRepository):
             )
         ]
 
-    def list_for_session(self, *, session_id: str) -> list[AnalysisRecord]:
-        session = self.db.fetchone_blocking("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
+    async def list_for_session(self, *, session_id: str) -> list[AnalysisRecord]:
+        session = await self.db.fetchone("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
         project_id = session["project_id"] if session else None
         return (
-            self.list_for_project(project_id=project_id)
+            await self.list_for_project(project_id=project_id)
             if project_id is not None
             else []
         )
 
-    def next_id(self, *, project_id: str) -> str:
-        rows = self.db.fetchall_blocking("SELECT id FROM analyses")
+    async def next_id(self, *, project_id: str) -> str:
+        rows = await self.db.fetchall("SELECT id FROM analyses")
         return next_canonical_record_id(
             existing_ids=(str(row["id"]) for row in rows),
             prefix=ANALYSIS_ID_PREFIX,

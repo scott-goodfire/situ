@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import asyncio
 import json
 import sqlite3
 import subprocess
@@ -95,7 +96,7 @@ def test_snapshot_json_reads_local_state_without_live_session(
         project_home=project_home,
         notify=lambda _method, _params: None,
     )
-    app.setup_complete({})
+    app.handle("setup.complete", {})
 
     code = cli.main(["snapshot", str(workspace), "--json"])
 
@@ -122,7 +123,7 @@ def test_events_json_lines_reads_local_events(
         project_home=project_home,
         notify=lambda _method, _params: None,
     )
-    app.record_event(event_type="system.ready", message="Harness ready")
+    asyncio.run(app.record_event(event_type="system.ready", message="Harness ready"))
 
     code = cli.main(["events", str(workspace), "--json"])
 
@@ -159,7 +160,7 @@ def test_clear_removes_local_state_for_workspace(
         project_home=project_home,
         notify=lambda _method, _params: None,
     )
-    app.record_event(event_type="system.ready", message="Harness ready")
+    asyncio.run(app.record_event(event_type="system.ready", message="Harness ready"))
     context = ProjectContext(repo_root=workspace, home=project_home)
 
     code = cli.main(["clear", str(workspace), "--json"])

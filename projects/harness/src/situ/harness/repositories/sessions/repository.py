@@ -27,7 +27,7 @@ def _session_row(row: Any) -> SessionRecord:
 
 
 class SessionsRepository(BaseRepository):
-    def create(
+    async def create(
         self,
         *,
         session_id: str,
@@ -45,7 +45,7 @@ class SessionsRepository(BaseRepository):
             project_id=project_id,
         )
         now = utc_now()
-        self.db.execute_blocking(
+        await self.db.execute(
             """
             INSERT INTO sessions
               (id, workspace_id, project_id, status, created_at, updated_at)
@@ -60,12 +60,12 @@ class SessionsRepository(BaseRepository):
                 now,
             ),
         )
-        record = self.get_by_id(session_id=command.session_id)
+        record = await self.get_by_id(session_id=command.session_id)
         if record is None:
             raise RuntimeError(f"session was not persisted: {command.session_id}")
         return record
 
-    def update_status(
+    async def update_status(
         self,
         *,
         session_id: str,
@@ -73,68 +73,68 @@ class SessionsRepository(BaseRepository):
     ) -> SessionRecord | None:
         checked_status = parse_session_status(status=status)
         command = UpdateSessionStatus(session_id=session_id, status=checked_status)
-        if self.get_by_id(session_id=command.session_id) is None:
+        if await self.get_by_id(session_id=command.session_id) is None:
             return None
-        self.db.execute_blocking(
+        await self.db.execute(
             "UPDATE sessions SET status = ?, updated_at = ? WHERE id = ?",
             (command.status.value, utc_now(), command.session_id),
         )
-        return self.get_by_id(session_id=command.session_id)
+        return await self.get_by_id(session_id=command.session_id)
 
-    def update_project(
+    async def update_project(
         self,
         *,
         session_id: str,
         project_id: str | None,
     ) -> SessionRecord | None:
         command = UpdateSessionProject(session_id=session_id, project_id=project_id)
-        if self.get_by_id(session_id=command.session_id) is None:
+        if await self.get_by_id(session_id=command.session_id) is None:
             return None
-        self.db.execute_blocking(
+        await self.db.execute(
             "UPDATE sessions SET project_id = ?, updated_at = ? WHERE id = ?",
             (command.project_id, utc_now(), command.session_id),
         )
-        return self.get_by_id(session_id=command.session_id)
+        return await self.get_by_id(session_id=command.session_id)
 
-    def get_by_id(self, *, session_id: str) -> SessionRecord | None:
-        row = self.db.fetchone_blocking("SELECT * FROM sessions WHERE id = ?", (session_id,))
+    async def get_by_id(self, *, session_id: str) -> SessionRecord | None:
+        row = await self.db.fetchone("SELECT * FROM sessions WHERE id = ?", (session_id,))
         return _session_row(row) if row else None
 
-    def get(self, *, session_id: str) -> SessionRecord | None:
-        return self.get_by_id(session_id=session_id)
+    async def get(self, *, session_id: str) -> SessionRecord | None:
+        return await self.get_by_id(session_id=session_id)
 
-    def list_all(self) -> list[SessionRecord]:
+    async def list_all(self) -> list[SessionRecord]:
         return [
             _session_row(row)
-            for row in self.db.fetchall_blocking("SELECT * FROM sessions ORDER BY created_at")
+            for row in await self.db.fetchall("SELECT * FROM sessions ORDER BY created_at")
         ]
 
-    def list_for_workspace(self, *, workspace_id: str) -> list[SessionRecord]:
+    async def list_for_workspace(self, *, workspace_id: str) -> list[SessionRecord]:
         return [
             _session_row(row)
-            for row in self.db.fetchall_blocking(
+            for row in await self.db.fetchall(
                 "SELECT * FROM sessions WHERE workspace_id = ? ORDER BY created_at",
                 (workspace_id,),
             )
         ]
 
-    def list_for_project(self, *, project_id: str) -> list[SessionRecord]:
+    async def list_for_project(self, *, project_id: str) -> list[SessionRecord]:
         return [
             _session_row(row)
-            for row in self.db.fetchall_blocking(
+            for row in await self.db.fetchall(
                 "SELECT * FROM sessions WHERE project_id = ? ORDER BY created_at",
                 (project_id,),
             )
         ]
 
-    def latest(self) -> SessionRecord | None:
-        row = self.db.fetchone_blocking(
+    async def latest(self) -> SessionRecord | None:
+        row = await self.db.fetchone(
             "SELECT * FROM sessions ORDER BY updated_at DESC LIMIT 1"
         )
         return _session_row(row) if row else None
 
-    def next_id(self) -> str:
-        rows = self.db.fetchall_blocking("SELECT id FROM sessions")
+    async def next_id(self) -> str:
+        rows = await self.db.fetchall("SELECT id FROM sessions")
         return next_canonical_record_id(
             existing_ids=(str(row["id"]) for row in rows),
             prefix=SESSION_ID_PREFIX,

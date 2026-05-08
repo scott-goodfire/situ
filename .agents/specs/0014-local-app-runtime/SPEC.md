@@ -108,13 +108,13 @@ It stores durable Situ product state across workspaces: known workspaces,
 projects, sessions, agents, tasks, analyses, hypotheses, experiments,
 evaluations, activities, artifacts, and internal events.
 
-Human-facing product records in this database use compact canonical IDs:
-projects `P<N>`, sessions `S<N>`, analyses `A<N>`, hypotheses `H<N>`,
-baselines `B<N>`, experiments `EX<N>`, evaluations `EV<N>`, artifacts `ART<N>`,
-and tasks `T<N>`. Existing local databases that contain older long-form IDs are
-stale for this runtime and may be reset instead of migrated. Workspace IDs may
-remain internal path-derived identifiers so the same repo path resolves to the
-same workspace boundary.
+Human-facing product records use compact canonical IDs: a short uppercase
+prefix followed by a sequential number. Each record type defines its own
+prefix in code; new record types follow the same shape. Existing local
+databases that contain older long-form IDs are stale for this runtime
+and may be reset instead of migrated. Workspace IDs may remain internal
+path-derived identifiers so the same repo path resolves to the same
+workspace boundary.
 
 Per-project runtime state remains under:
 
@@ -186,15 +186,16 @@ harness subprocesses. Either implementation is valid if these guarantees hold:
 
 The project-scoped Python harness runtime is async-first. Agent passes, the
 session execution loop, repository access, tool execution, and stdio dispatch
-should use async APIs by default so production and tests exercise the same
+use async APIs by default so production and tests exercise the same
 cancellation, timeout, and model-call path. Local product-state SQLite access
-should use `aiosqlite` behind the async repository surface; repository methods
-must not hold SQLite transactions across arbitrary awaits. Synchronous
-entrypoints are allowed only at external process boundaries such as CLI, legacy
-tests, or eval framework adapters, and they should be thin wrappers over the
-async runtime path. Local Git/worktree operations, artifact IO, and compatibility
-repositories may use explicit blocking adapters until they are worth replacing
-with native async implementations.
+uses `aiosqlite` through native async repository methods; repository methods
+must not change behavior depending on whether a caller is already inside an
+event loop, and they must not hold SQLite transactions across arbitrary awaits.
+Synchronous entrypoints are allowed only at external process boundaries such as
+CLI process startup or eval framework launchers, and they should be thin,
+explicit wrappers over the async runtime path. Local Git/worktree operations
+and artifact IO may remain blocking when invoked from an async boundary only if
+they are isolated with an explicit blocking adapter such as a worker thread.
 
 ## Runtime Timeouts
 

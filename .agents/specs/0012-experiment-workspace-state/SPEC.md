@@ -40,13 +40,11 @@ top-level WorkspaceState model is out of scope.
 
 ## Changed Path Categories
 
-Changed paths are classified coarsely:
-
-- Source or product code
-- Tests, evals, benchmarks, fixtures, or measurement harnesses
-- Dependency and toolchain configuration
-- Generated or cache files
-- Unknown or mixed files
+Changed paths are classified coarsely so obvious comparability risks are
+visible without a perfect taxonomy. The classification distinguishes at
+least source/product code, test/eval/benchmark surfaces, dependency or
+toolchain configuration, and generated or cache files; the running set of
+buckets is owned by the implementation and may evolve.
 
 The classification does not have to be perfect. It exists to make obvious trust
 risks visible and to guide human review.

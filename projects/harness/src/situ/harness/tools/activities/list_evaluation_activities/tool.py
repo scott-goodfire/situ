@@ -14,7 +14,7 @@ class ListEvaluationActivitiesTool(
     name = "list_evaluation_activities"
     result_type = ListEvaluationActivitiesResult
 
-    def execute_sync(
+    async def execute(
         self,
         *,
         ctx: RunContext[SituToolDeps],
@@ -23,15 +23,15 @@ class ListEvaluationActivitiesTool(
         **_kwargs: Any,
     ) -> ListEvaluationActivitiesResult:
         """List evaluation activity by evaluation or project."""
-        repos = ctx.deps.get_repos()
+        repos = await ctx.deps.get_repos()
         if evaluation_id is not None:
-            activities = repos.evaluation_activities.list_for_evaluation(
+            activities = await repos.evaluation_activities.list_for_evaluation(
                 evaluation_id=evaluation_id
             )
         else:
-            resolved_project_id = project_id or ctx.deps.current_project_id()
+            resolved_project_id = project_id or await ctx.deps.current_project_id()
             activities = (
-                repos.evaluation_activities.list_for_project(project_id=resolved_project_id)
+                await repos.evaluation_activities.list_for_project(project_id=resolved_project_id)
                 if resolved_project_id is not None
                 else []
             )

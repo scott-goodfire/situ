@@ -15,7 +15,7 @@ from .hypothesis_activities import HypothesisActivitiesRepository
 from .hypothesis_experiment_links import HypothesisExperimentLinksRepository
 from .measurements import MeasurementsRepository
 from .project import ProjectRepository
-from .repositories import Repositories, RepositoryProxy
+from .repositories import Repositories
 from .sessions import SessionsRepository
 from .task_activities import TaskActivitiesRepository
 from .task_dependencies import TaskDependenciesRepository
@@ -42,7 +42,6 @@ __all__ = [
     "MeasurementsRepository",
     "ProjectRepository",
     "Repositories",
-    "RepositoryProxy",
     "SessionsRepository",
     "TaskActivitiesRepository",
     "TaskDependenciesRepository",

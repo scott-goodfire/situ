@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import asyncio
-
 from situ.harness.agents import ManagerAgent, ManagerAgentContext, ResearchAgentOutput
 from situ.harness.records import AgentKind, AgentStatus, TaskRecord, TaskStatus
 from situ.harness.tools.common import SituToolDeps
@@ -17,7 +15,7 @@ from evals.worlds.critic_followup.world import MANAGER_AGENT_ID, CriticFollowupW
 from evals.worlds.repo_bootstrap.world.world import PROJECT_ID, SESSION_ID, WORKSPACE_ID
 
 
-def run_critic_followup(args: CriticFollowupEvalInput) -> CriticFollowupEvalOutput:
+async def run_critic_followup(args: CriticFollowupEvalInput) -> CriticFollowupEvalOutput:
     world = CriticFollowupWorld(seed=args.seed)
     capture = ToolCallCaptureCapability()
     manager_outputs: list[ResearchAgentOutput] = []
@@ -25,7 +23,7 @@ def run_critic_followup(args: CriticFollowupEvalInput) -> CriticFollowupEvalOutp
         plan_task = _claim_next_task(world)
         if plan_task is not None:
             manager_outputs.append(
-                _run_manager_pass(
+                await _run_manager_pass(
                     world=world,
                     args=args,
                     capture=capture,
@@ -46,7 +44,7 @@ def run_critic_followup(args: CriticFollowupEvalInput) -> CriticFollowupEvalOutp
                 manager_outputs[-1].model_dump(),
             )
 
-        project_board = world.project_board()
+        project_board = await world.project_board()
         return CriticFollowupEvalOutput(
             content=_render_content(
                 manager_outputs=manager_outputs,
@@ -69,7 +67,7 @@ def run_critic_followup(args: CriticFollowupEvalInput) -> CriticFollowupEvalOutp
         world.teardown()
 
 
-def _run_manager_pass(
+async def _run_manager_pass(
     *,
     world: CriticFollowupWorld,
     args: CriticFollowupEvalInput,
@@ -80,22 +78,20 @@ def _run_manager_pass(
         model=eval_model_name(),
         capabilities=[capture],
     )
-    result = asyncio.run(
-        agent.run(
-            ManagerAgentContext(
-                deps=SituToolDeps(
-                    session_id=SESSION_ID,
-                    agent_id=MANAGER_AGENT_ID,
-                    workspace_id=WORKSPACE_ID,
-                    project_id=PROJECT_ID,
-                    repo_path=str(world.workspace_path),
-                    repos=world.repos,
-                    emit_event=world.emit_event,
-                ),
-                setup_objective=args.objective,
-                setup_research_context=args.research_context,
-                assigned_task_ids=[active_task.id],
-            )
+    result = await agent.run(
+        ManagerAgentContext(
+            deps=SituToolDeps(
+                session_id=SESSION_ID,
+                agent_id=MANAGER_AGENT_ID,
+                workspace_id=WORKSPACE_ID,
+                project_id=PROJECT_ID,
+                repo_path=str(world.workspace_path),
+                repos=world.repos,
+                emit_event=world.emit_event,
+            ),
+            setup_objective=args.objective,
+            setup_research_context=args.research_context,
+            assigned_task_ids=[active_task.id],
         )
     )
     return result.output

@@ -15,7 +15,7 @@ class AddExperimentCommentTool(
     result_type = AddExperimentCommentResult
     sequential = True
 
-    def execute_sync(
+    async def execute(
         self,
         *,
         ctx: RunContext[SituToolDeps],
@@ -26,7 +26,7 @@ class AddExperimentCommentTool(
         **_kwargs: Any,
     ) -> AddExperimentCommentResult:
         """Add a human-readable comment to an experiment activity trail."""
-        activity = ctx.deps.get_repos().experiment_activities.add(
+        activity = await (await ctx.deps.get_repos()).experiment_activities.add(
             experiment_id=experiment_id,
             created_in_session_id=ctx.deps.session_id,
             actor=actor,
@@ -34,10 +34,10 @@ class AddExperimentCommentTool(
             body=comment,
             payload=payload or {},
         )
-        event = ctx.deps.record_event(
+        event = await ctx.deps.record_event(
             event_type="experiment.comment_added",
             message=comment,
             payload={"activity_id": activity.id, "experiment_id": experiment_id},
         )
-        ctx.deps.publish_record(record=activity, event=event)
+        await ctx.deps.publish_record(record=activity, event=event)
         return AddExperimentCommentResult(success=True, activity=activity.model_dump())

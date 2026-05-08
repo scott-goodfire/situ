@@ -17,7 +17,7 @@ class AddExperimentLineageDecisionTool(
     result_type = AddExperimentLineageDecisionResult
     sequential = True
 
-    def execute_sync(
+    async def execute(
         self,
         *,
         ctx: RunContext[SituToolDeps],
@@ -34,8 +34,8 @@ class AddExperimentLineageDecisionTool(
         **_kwargs: Any,
     ) -> AddExperimentLineageDecisionResult:
         """Record the Manager's portfolio decision for a reviewed experiment."""
-        repos = ctx.deps.get_repos()
-        experiment = repos.experiments.get(experiment_id=experiment_id)
+        repos = await ctx.deps.get_repos()
+        experiment = await repos.experiments.get(experiment_id=experiment_id)
         if experiment is None:
             return self._failure(
                 code="experiment_not_found",
@@ -46,7 +46,7 @@ class AddExperimentLineageDecisionTool(
             parent_experiment_id or experiment.parent_experiment_id
         )
         if resolved_parent_experiment_id is not None:
-            parent = repos.experiments.get(
+            parent = await repos.experiments.get(
                 experiment_id=resolved_parent_experiment_id
             )
             if parent is None or parent.project_id != experiment.project_id:
@@ -59,7 +59,7 @@ class AddExperimentLineageDecisionTool(
                 )
 
         if critic_review_activity_id is not None:
-            review_activity = repos.experiment_activities.get(
+            review_activity = await repos.experiment_activities.get(
                 activity_id=critic_review_activity_id
             )
             if (
@@ -86,7 +86,7 @@ class AddExperimentLineageDecisionTool(
             "critic_review_activity_id": critic_review_activity_id,
             **(payload or {}),
         }
-        activity = repos.experiment_activities.add(
+        activity = await repos.experiment_activities.add(
             experiment_id=experiment_id,
             created_in_session_id=ctx.deps.session_id,
             actor=actor,
@@ -94,7 +94,7 @@ class AddExperimentLineageDecisionTool(
             body=reason,
             payload=decision_payload,
         )
-        event = ctx.deps.record_event(
+        event = await ctx.deps.record_event(
             event_type="experiment.lineage_decision_added",
             message=reason,
             payload={
@@ -107,7 +107,7 @@ class AddExperimentLineageDecisionTool(
                 "candidate_commit": decision_payload["candidate_commit"],
             },
         )
-        ctx.deps.publish_record(record=activity, event=event)
+        await ctx.deps.publish_record(record=activity, event=event)
         return AddExperimentLineageDecisionResult(
             success=True,
             activity=activity.model_dump(),

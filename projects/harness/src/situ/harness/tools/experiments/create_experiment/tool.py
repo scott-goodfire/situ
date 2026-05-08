@@ -14,7 +14,7 @@ class CreateExperimentTool(BaseSituTool[SituToolDeps, CreateExperimentResult]):
     result_type = CreateExperimentResult
     sequential = True
 
-    def execute_sync(
+    async def execute(
         self,
         *,
         ctx: RunContext[SituToolDeps],
@@ -30,15 +30,15 @@ class CreateExperimentTool(BaseSituTool[SituToolDeps, CreateExperimentResult]):
 
         `status` must be `open`, `active`, or `closed`.
         """
-        repos = ctx.deps.get_repos()
-        project_id = ctx.deps.require_project_id()
+        repos = await ctx.deps.get_repos()
+        project_id = await ctx.deps.require_project_id()
         session_id = ctx.deps.session_id
         resolved_experiment_id = (
             experiment_id
             or ctx.deps.active_experiment_id
-            or repos.experiments.next_id(project_id=project_id)
+            or await repos.experiments.next_id(project_id=project_id)
         )
-        existing = repos.experiments.get(experiment_id=resolved_experiment_id)
+        existing = await repos.experiments.get(experiment_id=resolved_experiment_id)
         if existing is not None and experiment_id is None:
             next_status = (
                 existing.status
@@ -46,7 +46,7 @@ class CreateExperimentTool(BaseSituTool[SituToolDeps, CreateExperimentResult]):
                 else status
             )
             experiment = (
-                repos.experiments.update(
+                await repos.experiments.update(
                     experiment_id=resolved_experiment_id,
                     title=title,
                     summary=summary,
@@ -56,12 +56,12 @@ class CreateExperimentTool(BaseSituTool[SituToolDeps, CreateExperimentResult]):
                 )
                 or existing
             )
-            event = ctx.deps.record_event(
+            event = await ctx.deps.record_event(
                 event_type="experiment.updated",
                 message=f"Updated experiment {experiment.id}",
                 payload={"experiment_id": experiment.id},
             )
-            ctx.deps.publish_record(record=experiment, event=event)
+            await ctx.deps.publish_record(record=experiment, event=event)
             return CreateExperimentResult(
                 success=True,
                 experiment=experiment.model_dump(),
@@ -70,7 +70,7 @@ class CreateExperimentTool(BaseSituTool[SituToolDeps, CreateExperimentResult]):
         if existing is not None:
             raise ValueError(f"experiment already exists: {resolved_experiment_id}")
 
-        experiment = repos.experiments.create(
+        experiment = await repos.experiments.create(
             experiment_id=resolved_experiment_id,
             project_id=project_id,
             created_in_session_id=session_id,
@@ -80,10 +80,10 @@ class CreateExperimentTool(BaseSituTool[SituToolDeps, CreateExperimentResult]):
             parent_experiment_id=parent_experiment_id,
             research_thread=research_thread,
         )
-        event = ctx.deps.record_event(
+        event = await ctx.deps.record_event(
             event_type="experiment.created",
             message=f"Created experiment {experiment.id}",
             payload={"experiment_id": experiment.id},
         )
-        ctx.deps.publish_record(record=experiment, event=event)
+        await ctx.deps.publish_record(record=experiment, event=event)
         return CreateExperimentResult(success=True, experiment=experiment.model_dump())

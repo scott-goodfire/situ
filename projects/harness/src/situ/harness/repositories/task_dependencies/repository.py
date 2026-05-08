@@ -18,7 +18,7 @@ def _task_dependency_row(row: Any) -> TaskDependencyRecord:
 
 
 class TaskDependenciesRepository(BaseRepository):
-    def create(
+    async def create(
         self,
         *,
         project_id: str,
@@ -30,7 +30,7 @@ class TaskDependenciesRepository(BaseRepository):
             task_id=task_id,
             blocked_by_task_id=blocked_by_task_id,
         )
-        self.db.execute_blocking(
+        await self.db.execute(
             """
             INSERT INTO task_dependencies
               (project_id, task_id, blocked_by_task_id, created_at)
@@ -44,7 +44,7 @@ class TaskDependenciesRepository(BaseRepository):
                 utc_now(),
             ),
         )
-        record = self.get(
+        record = await self.get(
             task_id=command.task_id,
             blocked_by_task_id=command.blocked_by_task_id,
         )
@@ -55,13 +55,13 @@ class TaskDependenciesRepository(BaseRepository):
             )
         return record
 
-    def get(
+    async def get(
         self,
         *,
         task_id: str,
         blocked_by_task_id: str,
     ) -> TaskDependencyRecord | None:
-        row = self.db.fetchone_blocking(
+        row = await self.db.fetchone(
             """
             SELECT * FROM task_dependencies
             WHERE task_id = ? AND blocked_by_task_id = ?
@@ -70,18 +70,18 @@ class TaskDependenciesRepository(BaseRepository):
         )
         return _task_dependency_row(row) if row else None
 
-    def list_all(self) -> list[TaskDependencyRecord]:
+    async def list_all(self) -> list[TaskDependencyRecord]:
         return [
             _task_dependency_row(row)
-            for row in self.db.fetchall_blocking(
+            for row in await self.db.fetchall(
                 "SELECT * FROM task_dependencies ORDER BY created_at"
             )
         ]
 
-    def list_for_task(self, *, task_id: str) -> list[TaskDependencyRecord]:
+    async def list_for_task(self, *, task_id: str) -> list[TaskDependencyRecord]:
         return [
             _task_dependency_row(row)
-            for row in self.db.fetchall_blocking(
+            for row in await self.db.fetchall(
                 """
                 SELECT * FROM task_dependencies
                 WHERE task_id = ?
@@ -91,10 +91,10 @@ class TaskDependenciesRepository(BaseRepository):
             )
         ]
 
-    def list_for_project(self, *, project_id: str) -> list[TaskDependencyRecord]:
+    async def list_for_project(self, *, project_id: str) -> list[TaskDependencyRecord]:
         return [
             _task_dependency_row(row)
-            for row in self.db.fetchall_blocking(
+            for row in await self.db.fetchall(
                 """
                 SELECT * FROM task_dependencies
                 WHERE project_id = ?

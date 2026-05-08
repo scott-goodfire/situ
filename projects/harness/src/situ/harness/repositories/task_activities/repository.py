@@ -24,7 +24,7 @@ def _task_activity_row(row: Any) -> TaskActivityRecord:
 
 
 class TaskActivitiesRepository(BaseRepository):
-    def add(
+    async def add(
         self,
         *,
         project_id: str,
@@ -46,7 +46,7 @@ class TaskActivitiesRepository(BaseRepository):
             body=body,
             payload=payload or {},
         )
-        cursor = self.db.execute_blocking(
+        cursor = await self.db.execute(
             """
             INSERT INTO task_activities
               (project_id, task_id, created_in_session_id, actor_agent_id, actor,
@@ -65,37 +65,37 @@ class TaskActivitiesRepository(BaseRepository):
                 utc_now(),
             ),
         )
-        record = self.get_by_id(activity_id=int(cursor.lastrowid))
+        record = await self.get_by_id(activity_id=int(cursor.lastrowid))
         if record is None:
             raise RuntimeError("task activity was not persisted")
         return record
 
-    def get_by_id(self, *, activity_id: int) -> TaskActivityRecord | None:
-        row = self.db.fetchone_blocking("SELECT * FROM task_activities WHERE id = ?", (activity_id,))
+    async def get_by_id(self, *, activity_id: int) -> TaskActivityRecord | None:
+        row = await self.db.fetchone("SELECT * FROM task_activities WHERE id = ?", (activity_id,))
         return _task_activity_row(row) if row else None
 
-    def get(self, *, activity_id: int) -> TaskActivityRecord | None:
-        return self.get_by_id(activity_id=activity_id)
+    async def get(self, *, activity_id: int) -> TaskActivityRecord | None:
+        return await self.get_by_id(activity_id=activity_id)
 
-    def list_all(self) -> list[TaskActivityRecord]:
+    async def list_all(self) -> list[TaskActivityRecord]:
         return [
             _task_activity_row(row)
-            for row in self.db.fetchall_blocking("SELECT * FROM task_activities ORDER BY id")
+            for row in await self.db.fetchall("SELECT * FROM task_activities ORDER BY id")
         ]
 
-    def list_for_task(self, *, task_id: str) -> list[TaskActivityRecord]:
+    async def list_for_task(self, *, task_id: str) -> list[TaskActivityRecord]:
         return [
             _task_activity_row(row)
-            for row in self.db.fetchall_blocking(
+            for row in await self.db.fetchall(
                 "SELECT * FROM task_activities WHERE task_id = ? ORDER BY id",
                 (task_id,),
             )
         ]
 
-    def list_for_project(self, *, project_id: str) -> list[TaskActivityRecord]:
+    async def list_for_project(self, *, project_id: str) -> list[TaskActivityRecord]:
         return [
             _task_activity_row(row)
-            for row in self.db.fetchall_blocking(
+            for row in await self.db.fetchall(
                 "SELECT * FROM task_activities WHERE project_id = ? ORDER BY id",
                 (project_id,),
             )

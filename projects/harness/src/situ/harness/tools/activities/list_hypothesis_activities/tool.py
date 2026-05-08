@@ -14,7 +14,7 @@ class ListHypothesisActivitiesTool(
     name = "list_hypothesis_activities"
     result_type = ListHypothesisActivitiesResult
 
-    def execute_sync(
+    async def execute(
         self,
         *,
         ctx: RunContext[SituToolDeps],
@@ -23,15 +23,15 @@ class ListHypothesisActivitiesTool(
         **_kwargs: Any,
     ) -> ListHypothesisActivitiesResult:
         """List hypothesis activity by hypothesis or project."""
-        repos = ctx.deps.get_repos()
+        repos = await ctx.deps.get_repos()
         if hypothesis_id is not None:
-            activities = repos.hypothesis_activities.list_for_hypothesis(
+            activities = await repos.hypothesis_activities.list_for_hypothesis(
                 hypothesis_id=hypothesis_id
             )
         else:
-            resolved_project_id = project_id or ctx.deps.current_project_id()
+            resolved_project_id = project_id or await ctx.deps.current_project_id()
             activities = (
-                repos.hypothesis_activities.list_for_project(project_id=resolved_project_id)
+                await repos.hypothesis_activities.list_for_project(project_id=resolved_project_id)
                 if resolved_project_id is not None
                 else []
             )

@@ -35,20 +35,12 @@ Agents are durable project participants. The active slice uses four agent kinds:
   measurements, artifacts, and activities, then records experiment review and
   concern activities.
 
-Only the Manager is a long-lived conversational agent. It keeps a stable
-project identity across planning passes and may replay its compacted
-provider history so it can remember the research trajectory. That memory is
-an aid, not the source of truth: the Manager must still read current
-project and task state through Situ tools before making decisions.
-
-Researcher, Scientist, and Critic passes are task-scoped worker agents.
-Each claimed task gets a fresh agent identity and fresh model
-conversation. Their durable output belongs in analyses, hypotheses,
+Every agent pass reads current project and task state through Situ tools
+before making decisions. Durable output belongs in analyses, hypotheses,
 experiments, evaluations, measurements, activities, artifacts, and task
-summaries rather than in a reusable chat transcript. This is especially
-important for Scientists: a new Scientist should approach each baseline or
-experiment task from the task assignment and current project records, not from
-the previous Scientist's raw conversation.
+summaries — never in a chat transcript. Whether and how agents carry
+prior-pass conversation across passes is an implementation detail and
+must not become the source of truth.
 
 Additional agent kinds, such as specialist scientists, can be added without
 changing the task model. A task's eligible claimant is derived from its kind
@@ -158,13 +150,6 @@ are triggered by runnable tasks eligible for their agent kind. Each LLM pass
 should stay focused: the Manager handles one planning task, and each other
 agent handles one claimed work task.
 
-Long-lived Manager history should use provider-supported compaction when
-available so the Manager can accumulate trajectory memory without dropping the
-project. Compaction should preserve the objective, baseline and incumbent
-status, important record IDs, accepted and rejected evidence, unresolved
-questions, and active task lineage. Compacted history must not replace the
-compact project board or focused record reads.
-
 The Manager should prefer fanout when the project state is underexplored. After
 baseline, it may file several independent `research` tasks covering different
 angles such as error patterns, codebase knobs, prior art, environment setup,
@@ -250,9 +235,9 @@ we learn?"
 
 - Tasks are project-scoped and visible through the same collection/event
   pipeline as the rest of the project state.
-- The Manager is a durable project record with stable history; Researcher,
-  Scientist, and Critic passes are task-scoped worker agent records unless a
-  later spec makes them permanent.
+- All four agents (Manager, Researcher, Scientist, Critic) are project
+  agent records that read current state through tools each pass; durable
+  research output lives in records, not in chat history.
 - Researcher work produces durable analyses and hypotheses; Scientist work
   produces durable experiments and evaluations.
 - Critic work produces experiment-level review and concern activities rather

@@ -80,8 +80,8 @@ class MultiAgentLoopWorld:
             payload,
         )
 
-    def project_board(self) -> dict[str, Any]:
-        return self._repo_world.project_board()
+    async def project_board(self) -> dict[str, Any]:
+        return await self._repo_world.project_board()
 
     def workspace_files(self) -> dict[str, str]:
         return self._repo_world.workspace_files()

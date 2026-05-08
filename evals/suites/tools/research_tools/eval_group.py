@@ -21,13 +21,13 @@ class ResearchToolsEvalGroup(
     suite_name: ClassVar[str] = "tools"
     world_name: ClassVar[str] = "research_tools"
 
-    def task(self, args: ResearchToolEvalInput) -> ResearchToolEvalOutput:
+    async def task(self, args: ResearchToolEvalInput) -> ResearchToolEvalOutput:
         set_eval_attribute("suite", self.suite_name)
         set_eval_attribute("world", self.world_name)
         set_eval_attribute("case_id", args.case_id)
         set_eval_attribute("seed", args.seed)
         set_eval_attribute("toolset", args.toolset)
-        output = run_research_tool_agent(args)
+        output = await run_research_tool_agent(args)
         increment_eval_metric("tool_calls", len(output.captured_tool_calls))
         increment_eval_metric("events", len(output.events))
         increment_eval_metric(

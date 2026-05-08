@@ -14,7 +14,7 @@ class CreateEvaluationTool(BaseSituTool[SituToolDeps, CreateEvaluationResult]):
     result_type = CreateEvaluationResult
     sequential = True
 
-    def execute_sync(
+    async def execute(
         self,
         *,
         ctx: RunContext[SituToolDeps],
@@ -31,13 +31,13 @@ class CreateEvaluationTool(BaseSituTool[SituToolDeps, CreateEvaluationResult]):
         Exactly one of `associated_baseline_id` or `associated_experiment_id`
         is required. `status` must be `open`, `active`, or `closed`.
         """
-        repos = ctx.deps.get_repos()
-        project_id = ctx.deps.require_project_id()
+        repos = await ctx.deps.get_repos()
+        project_id = await ctx.deps.require_project_id()
         session_id = ctx.deps.session_id
-        resolved_evaluation_id = evaluation_id or repos.evaluations.next_id(
+        resolved_evaluation_id = evaluation_id or await repos.evaluations.next_id(
             project_id=project_id,
         )
-        evaluation = repos.evaluations.create(
+        evaluation = await repos.evaluations.create(
             evaluation_id=resolved_evaluation_id,
             project_id=project_id,
             created_in_session_id=session_id,
@@ -47,10 +47,10 @@ class CreateEvaluationTool(BaseSituTool[SituToolDeps, CreateEvaluationResult]):
             associated_experiment_id=associated_experiment_id,
             status=status,
         )
-        event = ctx.deps.record_event(
+        event = await ctx.deps.record_event(
             event_type="evaluation.created",
             message=f"Created evaluation {evaluation.id}",
             payload={"evaluation_id": evaluation.id},
         )
-        ctx.deps.publish_record(record=evaluation, event=event)
+        await ctx.deps.publish_record(record=evaluation, event=event)
         return CreateEvaluationResult(success=True, evaluation=evaluation.model_dump())

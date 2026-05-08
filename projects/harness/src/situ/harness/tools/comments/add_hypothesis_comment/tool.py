@@ -15,7 +15,7 @@ class AddHypothesisCommentTool(
     result_type = AddHypothesisCommentResult
     sequential = True
 
-    def execute_sync(
+    async def execute(
         self,
         *,
         ctx: RunContext[SituToolDeps],
@@ -26,7 +26,7 @@ class AddHypothesisCommentTool(
         **_kwargs: Any,
     ) -> AddHypothesisCommentResult:
         """Add a human-readable comment to a hypothesis activity trail."""
-        activity = ctx.deps.get_repos().hypothesis_activities.add(
+        activity = await (await ctx.deps.get_repos()).hypothesis_activities.add(
             hypothesis_id=hypothesis_id,
             created_in_session_id=ctx.deps.session_id,
             actor=actor,
@@ -34,10 +34,10 @@ class AddHypothesisCommentTool(
             body=comment,
             payload=payload or {},
         )
-        event = ctx.deps.record_event(
+        event = await ctx.deps.record_event(
             event_type="hypothesis.comment_added",
             message=comment,
             payload={"activity_id": activity.id, "hypothesis_id": hypothesis_id},
         )
-        ctx.deps.publish_record(record=activity, event=event)
+        await ctx.deps.publish_record(record=activity, event=event)
         return AddHypothesisCommentResult(success=True, activity=activity.model_dump())

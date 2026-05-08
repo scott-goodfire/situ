@@ -80,9 +80,11 @@ class CriticFollowupWorld:
             payload,
         )
 
-    def project_board(self) -> dict[str, Any]:
-        return ProjectBoardService(repos=self.repos).get_project_board(
-            session_id=SESSION_ID
+    async def project_board(self) -> dict[str, Any]:
+        return (
+            await ProjectBoardService(repos=self.repos).get_project_board(
+                session_id=SESSION_ID
+            )
         ).model_dump(mode="json")
 
     def workspace_files(self) -> dict[str, str]:

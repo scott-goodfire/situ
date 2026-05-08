@@ -38,7 +38,7 @@ def _agent_message_history_row(row: Any) -> AgentMessageHistoryRecord:
 
 
 class AgentMessageHistoryRepository(BaseRepository):
-    def append_project_messages(
+    async def append_project_messages(
         self,
         *,
         project_id: str,
@@ -61,7 +61,7 @@ class AgentMessageHistoryRepository(BaseRepository):
             pydantic_run_id=pydantic_run_id or inferred_run_id,
             conversation_id=conversation_id or inferred_conversation_id,
         )
-        cursor = self.db.execute_blocking(
+        cursor = await self.db.execute(
             """
             INSERT INTO agent_message_history
               (project_id, created_in_session_id, agent_id, agent_name,
@@ -79,12 +79,12 @@ class AgentMessageHistoryRepository(BaseRepository):
                 utc_now(),
             ),
         )
-        record = self.get(history_id=int(cursor.lastrowid))
+        record = await self.get(history_id=int(cursor.lastrowid))
         if record is None:
             raise RuntimeError("agent message history was not persisted")
         return record
 
-    def append_session_messages(
+    async def append_session_messages(
         self,
         *,
         session_id: str,
@@ -94,12 +94,12 @@ class AgentMessageHistoryRepository(BaseRepository):
         pydantic_run_id: str | None = None,
         conversation_id: str | None = None,
     ) -> AgentMessageHistoryRecord:
-        project_id = self._project_id_for_session(session_id)
+        project_id = await self._project_id_for_session(session_id)
         if project_id is None:
             raise ValueError(
                 "current run has no project; create or attach a project before recording agent messages"
             )
-        return self.append_project_messages(
+        return await self.append_project_messages(
             project_id=project_id,
             created_in_session_id=session_id,
             agent_id=agent_id,
@@ -109,14 +109,14 @@ class AgentMessageHistoryRepository(BaseRepository):
             conversation_id=conversation_id,
         )
 
-    def get_by_id(self, *, history_id: int) -> AgentMessageHistoryRecord | None:
-        row = self.db.fetchone_blocking("SELECT * FROM agent_message_history WHERE id = ?", (history_id,))
+    async def get_by_id(self, *, history_id: int) -> AgentMessageHistoryRecord | None:
+        row = await self.db.fetchone("SELECT * FROM agent_message_history WHERE id = ?", (history_id,))
         return _agent_message_history_row(row) if row else None
 
-    def get(self, *, history_id: int) -> AgentMessageHistoryRecord | None:
-        return self.get_by_id(history_id=history_id)
+    async def get(self, *, history_id: int) -> AgentMessageHistoryRecord | None:
+        return await self.get_by_id(history_id=history_id)
 
-    def list_for_project(
+    async def list_for_project(
         self,
         *,
         project_id: str,
@@ -124,12 +124,12 @@ class AgentMessageHistoryRepository(BaseRepository):
         agent_name: str | None = None,
     ) -> list[AgentMessageHistoryRecord]:
         if agent_id is None and agent_name is None:
-            rows = self.db.fetchall_blocking(
+            rows = await self.db.fetchall(
                 "SELECT * FROM agent_message_history WHERE project_id = ? ORDER BY id",
                 (project_id,),
             )
         elif agent_id is not None and agent_name is not None:
-            rows = self.db.fetchall_blocking(
+            rows = await self.db.fetchall(
                 """
                 SELECT * FROM agent_message_history
                 WHERE project_id = ? AND agent_id = ? AND agent_name = ?
@@ -138,7 +138,7 @@ class AgentMessageHistoryRepository(BaseRepository):
                 (project_id, agent_id, agent_name),
             )
         elif agent_id is not None:
-            rows = self.db.fetchall_blocking(
+            rows = await self.db.fetchall(
                 """
                 SELECT * FROM agent_message_history
                 WHERE project_id = ? AND agent_id = ?
@@ -147,7 +147,7 @@ class AgentMessageHistoryRepository(BaseRepository):
                 (project_id, agent_id),
             )
         else:
-            rows = self.db.fetchall_blocking(
+            rows = await self.db.fetchall(
                 """
                 SELECT * FROM agent_message_history
                 WHERE project_id = ? AND agent_name = ?
@@ -157,29 +157,29 @@ class AgentMessageHistoryRepository(BaseRepository):
             )
         return [_agent_message_history_row(row) for row in rows]
 
-    def list_for_session(
+    async def list_for_session(
         self,
         *,
         session_id: str,
         agent_id: str | None = None,
         agent_name: str | None = None,
     ) -> list[AgentMessageHistoryRecord]:
-        project_id = self._project_id_for_session(session_id)
+        project_id = await self._project_id_for_session(session_id)
         if project_id is None:
             return []
-        return self.list_for_project(
+        return await self.list_for_project(
             project_id=project_id,
             agent_id=agent_id,
             agent_name=agent_name,
         )
 
-    def list_all(self) -> list[AgentMessageHistoryRecord]:
+    async def list_all(self) -> list[AgentMessageHistoryRecord]:
         return [
             _agent_message_history_row(row)
-            for row in self.db.fetchall_blocking("SELECT * FROM agent_message_history ORDER BY id")
+            for row in await self.db.fetchall("SELECT * FROM agent_message_history ORDER BY id")
         ]
 
-    def get_message_history(
+    async def get_message_history(
         self,
         *,
         project_or_session_id: str,
@@ -187,12 +187,12 @@ class AgentMessageHistoryRepository(BaseRepository):
         agent_name: str | None = None,
         record_cap: int | None = AGENT_HISTORY_RECORD_CAP,
     ) -> list[dict[str, Any]]:
-        project_id = self._resolve_project_id(project_or_session_id)
+        project_id = await self._resolve_project_id(project_or_session_id)
         if project_id is None:
             return []
         if record_cap == 0:
             return []
-        records = self.list_for_project(
+        records = await self.list_for_project(
             project_id=project_id,
             agent_id=agent_id,
             agent_name=agent_name,
@@ -214,7 +214,7 @@ class AgentMessageHistoryRepository(BaseRepository):
             messages.extend(record.messages)
         return messages
 
-    def get_message_history_json(
+    async def get_message_history_json(
         self,
         *,
         project_or_session_id: str,
@@ -223,7 +223,7 @@ class AgentMessageHistoryRepository(BaseRepository):
         record_cap: int | None = AGENT_HISTORY_RECORD_CAP,
     ) -> bytes:
         return json_dumps(
-            self.get_message_history(
+            await self.get_message_history(
                 project_or_session_id=project_or_session_id,
                 agent_id=agent_id,
                 agent_name=agent_name,
@@ -231,7 +231,7 @@ class AgentMessageHistoryRepository(BaseRepository):
             )
         ).encode()
 
-    def get_model_message_history(
+    async def get_model_message_history(
         self,
         *,
         project_or_session_id: str,
@@ -243,7 +243,7 @@ class AgentMessageHistoryRepository(BaseRepository):
 
         return list(
             ModelMessagesTypeAdapter.validate_json(
-                self.get_message_history_json(
+                await self.get_message_history_json(
                     project_or_session_id=project_or_session_id,
                     agent_id=agent_id,
                     agent_name=agent_name,
@@ -280,11 +280,11 @@ class AgentMessageHistoryRepository(BaseRepository):
                 break
         return pydantic_run_id, conversation_id
 
-    def _resolve_project_id(self, project_or_session_id: str) -> str | None:
-        if self.db.fetchone_blocking("SELECT 1 FROM projects WHERE id = ?", (project_or_session_id,)):
+    async def _resolve_project_id(self, project_or_session_id: str) -> str | None:
+        if await self.db.fetchone("SELECT 1 FROM projects WHERE id = ?", (project_or_session_id,)):
             return project_or_session_id
-        return self._project_id_for_session(project_or_session_id)
+        return await self._project_id_for_session(project_or_session_id)
 
-    def _project_id_for_session(self, session_id: str) -> str | None:
-        row = self.db.fetchone_blocking("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
+    async def _project_id_for_session(self, session_id: str) -> str | None:
+        row = await self.db.fetchone("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
         return row["project_id"] if row else None

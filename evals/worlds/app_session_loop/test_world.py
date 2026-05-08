@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import pytest
+
 from evals.worlds.app_session_loop.models import AppSessionLoopEvalInput
 from evals.worlds.app_session_loop.world import AppSessionLoopWorld
 
 
-def test_app_session_loop_world_starts_from_clean_git_repo() -> None:
+@pytest.mark.asyncio
+async def test_app_session_loop_world_starts_from_clean_git_repo() -> None:
     world = AppSessionLoopWorld(
         AppSessionLoopEvalInput(
             case_id="clean_git_repo",
@@ -17,15 +20,16 @@ def test_app_session_loop_world_starts_from_clean_git_repo() -> None:
         world.teardown()
 
 
-def test_app_session_loop_world_can_seed_baseline_without_hypothesis() -> None:
-    world = AppSessionLoopWorld(
+@pytest.mark.asyncio
+async def test_app_session_loop_world_can_seed_baseline_without_hypothesis() -> None:
+    world = await AppSessionLoopWorld.create(
         AppSessionLoopEvalInput(
             case_id="baseline_without_hypothesis",
             seed="with_baseline_no_hypothesis",
         )
     )
     try:
-        graph = world.project_board()
+        graph = await world.project_board()
 
         assert graph["hypotheses"] == []
         assert len(graph["evaluations"]) == 1

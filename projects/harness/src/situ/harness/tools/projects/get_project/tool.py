@@ -12,7 +12,7 @@ class GetProjectTool(BaseSituTool[SituToolDeps, GetProjectResult]):
     name = "get_project"
     result_type = GetProjectResult
 
-    def execute_sync(
+    async def execute(
         self,
         *,
         ctx: RunContext[SituToolDeps],
@@ -20,10 +20,10 @@ class GetProjectTool(BaseSituTool[SituToolDeps, GetProjectResult]):
         **_kwargs: Any,
     ) -> GetProjectResult:
         """Read a project by ID or the current project."""
-        repos = ctx.deps.get_repos()
-        resolved_project_id = project_id or ctx.deps.current_project_id()
+        repos = await ctx.deps.get_repos()
+        resolved_project_id = project_id or await ctx.deps.current_project_id()
         project = (
-            repos.projects.get(project_id=resolved_project_id)
+            await repos.projects.get(project_id=resolved_project_id)
             if resolved_project_id is not None
             else None
         )

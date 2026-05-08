@@ -35,9 +35,9 @@ not only final prose.
   world and a suite when a small model would make assertions clearer.
 - Realistic agent behavior uses real Pydantic AI entrypoints and task queues
   when coordination is what the product depends on.
-- Tool-call assertions should be role-specific when roles matter. When runtime
-  skills matter, assert the relevant `load_skill(skill_name=...)` calls and
-  arguments.
+- Tool-call assertions should be role-specific when roles matter. When
+  runtime skills matter, assert that the relevant skill was loaded, using
+  whichever load primitive the implementation exposes.
 - Evals should inspect durable records, project boards, activity records,
   events, worktree state, tool-call order, and artifacts where those are the
   evidence a human would trust.

@@ -29,7 +29,7 @@ class GetProjectBoardTool(BaseSituTool[SituToolDeps, GetProjectBoardResult]):
     name = "get_project_board"
     result_type = GetProjectBoardResult
 
-    def execute_sync(
+    async def execute(
         self,
         *,
         ctx: RunContext[SituToolDeps],
@@ -47,7 +47,9 @@ class GetProjectBoardTool(BaseSituTool[SituToolDeps, GetProjectBoardResult]):
         events_cap = _resolve_cap("SITU_BOARD_EVENTS_CAP", 60)
         activities_cap = _resolve_cap("SITU_BOARD_ACTIVITIES_CAP", 40)
 
-        board = ProjectBoardService(repos=ctx.deps.get_repos()).get_project_board(
+        board = await ProjectBoardService(
+            repos=await ctx.deps.get_repos()
+        ).get_project_board(
             session_id=ctx.deps.session_id
         )
         return GetProjectBoardResult(

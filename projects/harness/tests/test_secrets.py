@@ -4,6 +4,7 @@ import os
 import stat
 from pathlib import Path
 
+import pytest
 from situ.protocol import SecretsSetAnthropicKeyResult, SecretsStatusResult
 
 from situ.harness.app import HarnessApp
@@ -89,7 +90,8 @@ def test_local_sdk_environment_uses_only_local_secret_store(
     assert os.environ["LOGFIRE_TOKEN"] == "logfire-local-test"
 
 
-def test_harness_secret_rpc_saves_anthropic_key_without_ledger_events(
+@pytest.mark.asyncio
+async def test_harness_secret_rpc_saves_anthropic_key_without_ledger_events(
     tmp_path: Path,
     monkeypatch,
 ) -> None:
@@ -106,11 +108,18 @@ def test_harness_secret_rpc_saves_anthropic_key_without_ledger_events(
         notify=lambda method, params: notifications.append((method, params)),
     )
 
-    missing = SecretsStatusResult.model_validate(app.secrets_status({}))
-    saved = SecretsSetAnthropicKeyResult.model_validate(
-        app.secrets_set_anthropic_key({"anthropic_key": "sk-rpc-test"})
+    missing = SecretsStatusResult.model_validate(
+        await app.handle_async("secrets.status", {})
     )
-    present = SecretsStatusResult.model_validate(app.secrets_status({}))
+    saved = SecretsSetAnthropicKeyResult.model_validate(
+        await app.handle_async(
+            "secrets.set_anthropic_key",
+            {"anthropic_key": "sk-rpc-test"},
+        )
+    )
+    present = SecretsStatusResult.model_validate(
+        await app.handle_async("secrets.status", {})
+    )
 
     assert missing.anthropic_key_configured is False
     assert missing.anthropic_key_source == "missing"
@@ -129,11 +138,12 @@ def test_harness_secret_rpc_saves_anthropic_key_without_ledger_events(
         == "sk-rpc-test"
     )
     assert os.environ["ANTHROPIC_API_KEY"] == "sk-rpc-test"
-    assert app.repos.events.list_all() == []
+    assert await app.repos.events.list_all() == []
     assert notifications == []
 
 
-def test_harness_secret_rpc_saves_optional_logfire_token(
+@pytest.mark.asyncio
+async def test_harness_secret_rpc_saves_optional_logfire_token(
     tmp_path: Path,
     monkeypatch,
 ) -> None:
@@ -152,14 +162,17 @@ def test_harness_secret_rpc_saves_optional_logfire_token(
     )
 
     saved = SecretsSetAnthropicKeyResult.model_validate(
-        app.secrets_set_anthropic_key(
+        await app.handle_async(
+            "secrets.set_anthropic_key",
             {
                 "anthropic_key": "sk-rpc-test",
                 "logfire_token": "logfire-rpc-test",
-            }
+            },
         )
     )
-    present = SecretsStatusResult.model_validate(app.secrets_status({}))
+    present = SecretsStatusResult.model_validate(
+        await app.handle_async("secrets.status", {})
+    )
     store = LocalSecretStore(home=tmp_path / "home")
 
     assert saved.anthropic_key_source == "local"

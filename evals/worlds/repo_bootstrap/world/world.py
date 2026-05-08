@@ -138,9 +138,16 @@ class RepoBootstrapWorld:
         self._write_fixture_repo()
         self._init_git_repo()
 
-        self.repos = _build_repos(self.root / "state", self.workspace_path)
+        self.repos: Repositories
         self.events: list[EvalEvent] = []
-        _seed(self.repos, seed)
+        self.seed = seed
+
+    @classmethod
+    async def create(cls, *, seed: RepoBootstrapSeed) -> "RepoBootstrapWorld":
+        world = cls(seed=seed)
+        world.repos = await _build_repos(world.root / "state", world.workspace_path)
+        await _seed(world.repos, seed)
+        return world
 
     def teardown(self) -> None:
         self._tmp.cleanup()
@@ -173,8 +180,8 @@ class RepoBootstrapWorld:
         self.events.append(event)
         return record.model_dump()
 
-    def project_board(self) -> dict[str, Any]:
-        graph = ProjectBoardService(repos=self.repos).get_project_board(
+    async def project_board(self) -> dict[str, Any]:
+        graph = await ProjectBoardService(repos=self.repos).get_project_board(
             session_id=SESSION_ID
         )
         return {
@@ -244,7 +251,7 @@ class RepoBootstrapWorld:
         _run_git(self.workspace_path, "commit", "-m", "fixture baseline")
 
 
-def _build_repos(path: Path, workspace_path: Path) -> Repositories:
+async def _build_repos(path: Path, workspace_path: Path) -> Repositories:
     path.mkdir(parents=True)
     db = Database(
         path / "situ.sqlite",
@@ -252,8 +259,8 @@ def _build_repos(path: Path, workspace_path: Path) -> Repositories:
         repo_path=str(workspace_path),
     )
     repos = Repositories.create(db)
-    workspace = repos.workspaces.ensure()
-    project = repos.projects.create(
+    workspace = await repos.workspaces.ensure()
+    project = await repos.projects.create(
         project_id=PROJECT_ID,
         workspace_id=workspace.id,
         title="Improve validation bits per byte",
@@ -263,8 +270,12 @@ def _build_repos(path: Path, workspace_path: Path) -> Repositories:
         ),
         research_context=RESEARCH_CONTEXT_BODY,
     )
-    repos.sessions.create(session_id=SESSION_ID, workspace_id=workspace.id, project_id=project.id)
-    repos.agents.ensure_session_agent(
+    await repos.sessions.create(
+        session_id=SESSION_ID,
+        workspace_id=workspace.id,
+        project_id=project.id,
+    )
+    await repos.agents.ensure_session_agent(
         session_id=SESSION_ID,
         kind="scientist",
         display_name="Scientist",
@@ -283,10 +294,10 @@ def _run_git(cwd: Path, *args: str) -> None:
     )
 
 
-def _seed(repos: Repositories, seed: RepoBootstrapSeed) -> None:
+async def _seed(repos: Repositories, seed: RepoBootstrapSeed) -> None:
     if seed in {"with_baseline_no_hypothesis", "with_baseline_result"}:
         if seed == "with_baseline_result":
-            repos.hypotheses.create(
+            await repos.hypotheses.create(
                 hypothesis_id=HYPOTHESIS_ID,
                 project_id=PROJECT_ID,
                 created_in_session_id=SESSION_ID,
@@ -294,7 +305,7 @@ def _seed(repos: Repositories, seed: RepoBootstrapSeed) -> None:
                 summary="Try narrow train.py variants and compare against baseline.",
                 status="active",
             )
-        baseline = repos.baselines.create(
+        baseline = await repos.baselines.create(
             baseline_id=BASELINE_ID,
             project_id=PROJECT_ID,
             created_in_session_id=SESSION_ID,
@@ -302,7 +313,7 @@ def _seed(repos: Repositories, seed: RepoBootstrapSeed) -> None:
             summary="Reference workspace behavior before variants.",
             status="closed",
         )
-        repos.evaluations.create(
+        await repos.evaluations.create(
             evaluation_id=BASELINE_EVALUATION_ID,
             project_id=PROJECT_ID,
             created_in_session_id=SESSION_ID,
@@ -311,7 +322,7 @@ def _seed(repos: Repositories, seed: RepoBootstrapSeed) -> None:
             associated_baseline_id=baseline.id,
             status="closed",
         )
-        repos.measurements.add(
+        await repos.measurements.add(
             evaluation_id=BASELINE_EVALUATION_ID,
             created_in_session_id=SESSION_ID,
             actor="worker",
@@ -328,7 +339,7 @@ def _seed(repos: Repositories, seed: RepoBootstrapSeed) -> None:
             ),
             payload={},
         )
-        repos.evaluation_activities.add(
+        await repos.evaluation_activities.add(
             evaluation_id=BASELINE_EVALUATION_ID,
             created_in_session_id=SESSION_ID,
             actor="worker",

@@ -14,7 +14,7 @@ class UpdateTaskTool(BaseSituTool[SituToolDeps, UpdateTaskResult]):
     result_type = UpdateTaskResult
     sequential = True
 
-    def execute_sync(
+    async def execute(
         self,
         *,
         ctx: RunContext[SituToolDeps],
@@ -31,7 +31,7 @@ class UpdateTaskTool(BaseSituTool[SituToolDeps, UpdateTaskResult]):
         **_kwargs: Any,
     ) -> UpdateTaskResult:
         """Update task coordination fields and lifecycle status."""
-        task = ctx.deps.get_repos().tasks.update(
+        task = await (await ctx.deps.get_repos()).tasks.update(
             task_id=task_id,
             title=title,
             content=content,
@@ -47,10 +47,10 @@ class UpdateTaskTool(BaseSituTool[SituToolDeps, UpdateTaskResult]):
         if task is None:
             raise ValueError(f"task not found: {task_id}")
         event_type = f"task.{task.status.value}" if status is not None else "task.updated"
-        event = ctx.deps.record_event(
+        event = await ctx.deps.record_event(
             event_type=event_type,
             message=f"Updated task {task.id}",
             payload={"task_id": task.id, "status": task.status.value},
         )
-        ctx.deps.publish_record(record=task, event=event)
+        await ctx.deps.publish_record(record=task, event=event)
         return UpdateTaskResult(success=True, task=task.model_dump())

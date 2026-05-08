@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import asyncio
-
 from situ.harness.agents import CriticAgent, CriticAgentContext, ResearchAgentOutput
 from situ.harness.records import AgentKind, AgentStatus, TaskRecord, TaskStatus
 from situ.harness.tools.common import SituToolDeps
@@ -17,7 +15,7 @@ from evals.worlds.critic_review.world import CRITIC_AGENT_ID, CriticReviewWorld
 from evals.worlds.repo_bootstrap.world.world import PROJECT_ID, SESSION_ID, WORKSPACE_ID
 
 
-def run_critic_review(args: CriticReviewEvalInput) -> CriticReviewEvalOutput:
+async def run_critic_review(args: CriticReviewEvalInput) -> CriticReviewEvalOutput:
     world = CriticReviewWorld(seed=args.seed)
     capture = ToolCallCaptureCapability()
     critic_outputs: list[ResearchAgentOutput] = []
@@ -25,7 +23,7 @@ def run_critic_review(args: CriticReviewEvalInput) -> CriticReviewEvalOutput:
         review_task = _claim_next_task(world)
         if review_task is not None:
             critic_outputs.append(
-                _run_critic_pass(
+                await _run_critic_pass(
                     world=world,
                     args=args,
                     capture=capture,
@@ -46,7 +44,7 @@ def run_critic_review(args: CriticReviewEvalInput) -> CriticReviewEvalOutput:
                 critic_outputs[-1].model_dump(),
             )
 
-        project_board = world.project_board()
+        project_board = await world.project_board()
         review_activity = _latest_review_activity(project_board)
         return CriticReviewEvalOutput(
             content=_render_content(
@@ -79,7 +77,7 @@ def run_critic_review(args: CriticReviewEvalInput) -> CriticReviewEvalOutput:
         world.teardown()
 
 
-def _run_critic_pass(
+async def _run_critic_pass(
     *,
     world: CriticReviewWorld,
     args: CriticReviewEvalInput,
@@ -90,22 +88,20 @@ def _run_critic_pass(
         model=eval_model_name(),
         capabilities=[capture],
     )
-    result = asyncio.run(
-        agent.run(
-            CriticAgentContext(
-                deps=SituToolDeps(
-                    session_id=SESSION_ID,
-                    agent_id=CRITIC_AGENT_ID,
-                    workspace_id=WORKSPACE_ID,
-                    project_id=PROJECT_ID,
-                    repo_path=str(world.workspace_path),
-                    repos=world.repos,
-                    emit_event=world.emit_event,
-                ),
-                setup_objective=args.objective,
-                setup_research_context=args.research_context,
-                assigned_task_ids=[active_task.id],
-            )
+    result = await agent.run(
+        CriticAgentContext(
+            deps=SituToolDeps(
+                session_id=SESSION_ID,
+                agent_id=CRITIC_AGENT_ID,
+                workspace_id=WORKSPACE_ID,
+                project_id=PROJECT_ID,
+                repo_path=str(world.workspace_path),
+                repos=world.repos,
+                emit_event=world.emit_event,
+            ),
+            setup_objective=args.objective,
+            setup_research_context=args.research_context,
+            assigned_task_ids=[active_task.id],
         )
     )
     return result.output

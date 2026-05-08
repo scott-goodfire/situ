@@ -21,12 +21,12 @@ class AppSessionLoopEvalGroup(
     suite_name: ClassVar[str] = "agents"
     world_name: ClassVar[str] = "app_session_loop"
 
-    def task(self, args: AppSessionLoopEvalInput) -> AppSessionLoopEvalOutput:
+    async def task(self, args: AppSessionLoopEvalInput) -> AppSessionLoopEvalOutput:
         set_eval_attribute("suite", self.suite_name)
         set_eval_attribute("world", self.world_name)
         set_eval_attribute("case_id", args.case_id)
         set_eval_attribute("seed", args.seed)
-        output = run_app_session_loop(args)
+        output = await run_app_session_loop(args)
         increment_eval_metric("events", len(output.events))
         increment_eval_metric("tasks", len(output.project_board.get("tasks", [])))
         increment_eval_metric("done_tasks", output.signals.get("done_tasks") or 0)

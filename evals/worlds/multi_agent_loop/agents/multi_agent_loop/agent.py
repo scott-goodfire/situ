@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import asyncio
-
 from situ.harness.agents import (
     ManagerAgent,
     ManagerAgentContext,
@@ -36,7 +34,7 @@ from evals.worlds.multi_agent_loop.world import (
 )
 
 
-def run_multi_agent_loop(args: MultiAgentLoopEvalInput) -> MultiAgentLoopEvalOutput:
+async def run_multi_agent_loop(args: MultiAgentLoopEvalInput) -> MultiAgentLoopEvalOutput:
     world = MultiAgentLoopWorld(seed=args.seed)
     manager_capture = ToolCallCaptureCapability()
     researcher_capture = ToolCallCaptureCapability()
@@ -48,7 +46,7 @@ def run_multi_agent_loop(args: MultiAgentLoopEvalInput) -> MultiAgentLoopEvalOut
     try:
         manager_task = _claim_next_task(world, AgentKind.MANAGER)
         manager_outputs.append(
-            _run_manager_pass(
+            await _run_manager_pass(
                 world=world,
                 args=args,
                 capture=manager_capture,
@@ -66,7 +64,7 @@ def run_multi_agent_loop(args: MultiAgentLoopEvalInput) -> MultiAgentLoopEvalOut
         researcher_task = _claim_next_task(world, AgentKind.RESEARCHER)
         if researcher_task is not None:
             researcher_outputs.append(
-                _run_researcher_pass(
+                await _run_researcher_pass(
                     world=world,
                     args=args,
                     capture=researcher_capture,
@@ -99,7 +97,7 @@ def run_multi_agent_loop(args: MultiAgentLoopEvalInput) -> MultiAgentLoopEvalOut
             manager_task = _claim_next_task(world, AgentKind.MANAGER)
             if manager_task is not None:
                 manager_outputs.append(
-                    _run_manager_pass(
+                    await _run_manager_pass(
                         world=world,
                         args=args,
                         capture=final_manager_capture,
@@ -116,7 +114,7 @@ def run_multi_agent_loop(args: MultiAgentLoopEvalInput) -> MultiAgentLoopEvalOut
         scientist_task = _claim_next_task(world, AgentKind.SCIENTIST)
         if scientist_task is not None:
             scientist_outputs.append(
-                _run_scientist_pass(
+                await _run_scientist_pass(
                     world=world,
                     args=args,
                     capture=scientist_capture,
@@ -149,7 +147,7 @@ def run_multi_agent_loop(args: MultiAgentLoopEvalInput) -> MultiAgentLoopEvalOut
             manager_task = _claim_next_task(world, AgentKind.MANAGER)
             if manager_task is not None:
                 manager_outputs.append(
-                    _run_manager_pass(
+                    await _run_manager_pass(
                         world=world,
                         args=args,
                         capture=final_manager_capture,
@@ -163,7 +161,7 @@ def run_multi_agent_loop(args: MultiAgentLoopEvalInput) -> MultiAgentLoopEvalOut
                     result_summary=manager_outputs[-1].summary,
                 )
 
-        project_board = world.project_board()
+        project_board = await world.project_board()
         combined_tool_calls = [
             *manager_capture.tool_calls,
             *researcher_capture.tool_calls,
@@ -216,7 +214,7 @@ def run_multi_agent_loop(args: MultiAgentLoopEvalInput) -> MultiAgentLoopEvalOut
         world.teardown()
 
 
-def _run_manager_pass(
+async def _run_manager_pass(
     *,
     world: MultiAgentLoopWorld,
     args: MultiAgentLoopEvalInput,
@@ -227,21 +225,19 @@ def _run_manager_pass(
         model=eval_model_name(),
         capabilities=[capture],
     )
-    result = asyncio.run(
-        agent.run(
-            ManagerAgentContext(
-                deps=_tool_deps(world, MANAGER_AGENT_ID),
-                setup_objective=args.objective,
-                setup_research_context=args.research_context,
-                assigned_task_ids=[active_task.id] if active_task is not None else [],
-            )
+    result = await agent.run(
+        ManagerAgentContext(
+            deps=_tool_deps(world, MANAGER_AGENT_ID),
+            setup_objective=args.objective,
+            setup_research_context=args.research_context,
+            assigned_task_ids=[active_task.id] if active_task is not None else [],
         )
     )
     capture.tool_calls.extend(captured_builtin_tool_calls_from_result(result))
     return result.output
 
 
-def _run_scientist_pass(
+async def _run_scientist_pass(
     *,
     world: MultiAgentLoopWorld,
     args: MultiAgentLoopEvalInput,
@@ -252,22 +248,20 @@ def _run_scientist_pass(
         model=eval_model_name(),
         capabilities=[capture],
     )
-    result = asyncio.run(
-        agent.run(
-            ScientistAgentContext(
-                deps=_tool_deps(world, SCIENTIST_AGENT_ID),
-                setup_objective=args.objective,
-                setup_research_context=args.research_context,
-                max_experiments=1,
-                assigned_task_ids=[active_task.id],
-            )
+    result = await agent.run(
+        ScientistAgentContext(
+            deps=_tool_deps(world, SCIENTIST_AGENT_ID),
+            setup_objective=args.objective,
+            setup_research_context=args.research_context,
+            max_experiments=1,
+            assigned_task_ids=[active_task.id],
         )
     )
     capture.tool_calls.extend(captured_builtin_tool_calls_from_result(result))
     return result.output
 
 
-def _run_researcher_pass(
+async def _run_researcher_pass(
     *,
     world: MultiAgentLoopWorld,
     args: MultiAgentLoopEvalInput,
@@ -278,14 +272,12 @@ def _run_researcher_pass(
         model=eval_model_name(),
         capabilities=[capture],
     )
-    result = asyncio.run(
-        agent.run(
-            ResearcherAgentContext(
-                deps=_tool_deps(world, RESEARCHER_AGENT_ID),
-                setup_objective=args.objective,
-                setup_research_context=args.research_context,
-                assigned_task_ids=[active_task.id],
-            )
+    result = await agent.run(
+        ResearcherAgentContext(
+            deps=_tool_deps(world, RESEARCHER_AGENT_ID),
+            setup_objective=args.objective,
+            setup_research_context=args.research_context,
+            assigned_task_ids=[active_task.id],
         )
     )
     capture.tool_calls.extend(captured_builtin_tool_calls_from_result(result))

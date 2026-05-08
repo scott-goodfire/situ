@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import asyncio
 import subprocess
 from pathlib import Path
 
@@ -207,10 +208,12 @@ def test_harness_prepares_experiment_task_checkout_and_records_final_state(
     )
     assert claimed is not None
 
-    prepared = app._prepare_experiment_task(
-        task=claimed,
-        session_id=session.id,
-        workspace_repo_path=workspace.repo_path,
+    prepared = asyncio.run(
+        app._prepare_experiment_task(
+            task=claimed,
+            session_id=session.id,
+            workspace_repo_path=workspace.repo_path,
+        )
     )
 
     assert prepared.repo_path != workspace.repo_path
@@ -230,10 +233,12 @@ def test_harness_prepares_experiment_task_checkout_and_records_final_state(
     (Path(prepared.repo_path) / "pkg" / "module.py").write_text("VALUE = 2\n")
     assert (repo / "pkg" / "module.py").read_text() == "VALUE = 1\n"
 
-    app._complete_experiment_task(
-        experiment_id=prepared.experiment.id,
-        session_id=session.id,
-        workspace_repo_path=workspace.repo_path,
+    asyncio.run(
+        app._complete_experiment_task(
+            experiment_id=prepared.experiment.id,
+            session_id=session.id,
+            workspace_repo_path=workspace.repo_path,
+        )
     )
 
     completed = app.repos.experiments.get(experiment_id=prepared.experiment.id)
@@ -292,10 +297,12 @@ def test_harness_prepares_experiment_task_checkout_and_records_final_state(
     )
     assert claimed_followup is not None
 
-    prepared_followup = app._prepare_experiment_task(
-        task=claimed_followup,
-        session_id=session.id,
-        workspace_repo_path=workspace.repo_path,
+    prepared_followup = asyncio.run(
+        app._prepare_experiment_task(
+            task=claimed_followup,
+            session_id=session.id,
+            workspace_repo_path=workspace.repo_path,
+        )
     )
 
     assert prepared_followup.experiment.parent_experiment_id == completed.id

@@ -14,7 +14,7 @@ class UpdateEvaluationTool(BaseSituTool[SituToolDeps, UpdateEvaluationResult]):
     result_type = UpdateEvaluationResult
     sequential = True
 
-    def execute_sync(
+    async def execute(
         self,
         *,
         ctx: RunContext[SituToolDeps],
@@ -34,7 +34,7 @@ class UpdateEvaluationTool(BaseSituTool[SituToolDeps, UpdateEvaluationResult]):
         experiment. Put raw evidence, failures, suspiciousness, and
         interpretations in measurements.
         """
-        evaluation = ctx.deps.get_repos().evaluations.update(
+        evaluation = await (await ctx.deps.get_repos()).evaluations.update(
             evaluation_id=evaluation_id,
             title=title,
             summary=summary,
@@ -45,10 +45,10 @@ class UpdateEvaluationTool(BaseSituTool[SituToolDeps, UpdateEvaluationResult]):
         if evaluation is None:
             raise ValueError(f"evaluation not found: {evaluation_id}")
 
-        event = ctx.deps.record_event(
+        event = await ctx.deps.record_event(
             event_type="evaluation.updated",
             message=f"Updated evaluation {evaluation.id}",
             payload={"evaluation_id": evaluation.id},
         )
-        ctx.deps.publish_record(record=evaluation, event=event)
+        await ctx.deps.publish_record(record=evaluation, event=event)
         return UpdateEvaluationResult(success=True, evaluation=evaluation.model_dump())

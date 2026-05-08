@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import asyncio
-
 from situ.harness.agents import ResearchAgent, ResearchAgentContext
 from situ.harness.tools.common import SituToolDeps
 from evals.framework.capture import ToolCallCaptureCapability
@@ -17,8 +15,8 @@ from evals.worlds.repo_bootstrap.world import (
 )
 
 
-def run_repo_bootstrap_agent(args: RepoBootstrapEvalInput) -> RepoBootstrapEvalOutput:
-    world = RepoBootstrapWorld(seed=args.seed)
+async def run_repo_bootstrap_agent(args: RepoBootstrapEvalInput) -> RepoBootstrapEvalOutput:
+    world = await RepoBootstrapWorld.create(seed=args.seed)
     capture = ToolCallCaptureCapability()
     try:
         deps = SituToolDeps(
@@ -32,17 +30,15 @@ def run_repo_bootstrap_agent(args: RepoBootstrapEvalInput) -> RepoBootstrapEvalO
             model=eval_model_name(),
             capabilities=[capture],
         )
-        result = asyncio.run(
-            agent.run(
-                ResearchAgentContext(
-                    deps=deps,
-                    objective=args.objective,
-                    user_prompt=args.prompt,
-                )
+        result = await agent.run(
+            ResearchAgentContext(
+                deps=deps,
+                objective=args.objective,
+                user_prompt=args.prompt,
             )
         )
         output = result.output
-        project_board = world.project_board()
+        project_board = await world.project_board()
         changed_files = world.changed_files()
         return RepoBootstrapEvalOutput(
             content=" ".join(

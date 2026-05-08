@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from typing import Any
 
 from situ.protocol import ExperimentRunParams
@@ -28,7 +29,7 @@ class RunExperimentTool(BaseSituTool[SituToolDeps, RunExperimentResult]):
     result_type = RunExperimentResult
     sequential = True
 
-    def execute_sync(
+    async def execute(
         self,
         *,
         ctx: RunContext[SituToolDeps],
@@ -54,26 +55,26 @@ class RunExperimentTool(BaseSituTool[SituToolDeps, RunExperimentResult]):
             or ctx.deps.worker_manager is not None
             or ctx.deps.emit_event is not None
         ):
-            return _run_experiment_impl(ctx.deps, payload)
-        return run_experiment_step(ctx.deps.model_dump(), payload.model_dump())
+            return await _run_experiment_impl(ctx.deps, payload)
+        return await run_experiment_step(ctx.deps.model_dump(), payload.model_dump())
 
 
 @DBOS.step(name="situ.tool.run_experiment")
-def run_experiment_step(
+async def run_experiment_step(
     raw_deps: dict[str, Any],
     raw_payload: dict[str, Any],
 ) -> RunExperimentResult:
     deps = SituToolDeps.model_validate(raw_deps)
     payload = RunExperimentPayload.model_validate(raw_payload)
-    return _run_experiment_impl(deps, payload)
+    return await _run_experiment_impl(deps, payload)
 
 
-def _run_experiment_impl(
+async def _run_experiment_impl(
     deps: SituToolDeps,
     payload: RunExperimentPayload,
 ) -> RunExperimentResult:
-    repos = deps.get_repos()
-    session = repos.sessions.get(session_id=deps.session_id)
+    repos = await deps.get_repos()
+    session = await repos.sessions.get(session_id=deps.session_id)
     if session is None:
         raise ValueError(f"session not found: {deps.session_id}")
     if session.project_id is None:
@@ -85,12 +86,12 @@ def _run_experiment_impl(
     experiment_id = (
         payload.experiment_id
         or deps.active_experiment_id
-        or _next_experiment_id(deps=deps)
+        or await _next_experiment_id(deps=deps)
     )
 
-    experiment = repos.experiments.get(experiment_id=experiment_id)
+    experiment = await repos.experiments.get(experiment_id=experiment_id)
     if experiment is None:
-        experiment = repos.experiments.create(
+        experiment = await repos.experiments.create(
             experiment_id=experiment_id,
             project_id=project_id,
             created_in_session_id=deps.session_id,
@@ -98,26 +99,26 @@ def _run_experiment_impl(
             summary=payload.summary,
             status="open",
         )
-        event = deps.record_event(
+        event = await deps.record_event(
             event_type="experiment.created",
             message=f"Created experiment {experiment.id}",
             payload={"experiment_id": experiment.id, "components": payload.components},
         )
-        _upsert(deps, experiment, event)
+        await _upsert(deps, experiment, event)
 
     for hypothesis_id in payload.hypothesis_ids:
-        link = repos.hypothesis_experiment_links.create(
+        link = await repos.hypothesis_experiment_links.create(
             hypothesis_id=hypothesis_id,
             experiment_id=experiment_id,
         )
-        event = deps.record_event(
+        event = await deps.record_event(
             event_type="hypothesis.experiment_linked",
             message=f"Linked {hypothesis_id} to {experiment_id}",
             payload=link.model_dump(),
         )
-        _upsert(deps, link, event)
+        await _upsert(deps, link, event)
 
-    _record_experiment_activity(
+    await _record_experiment_activity(
         deps,
         experiment_id=experiment_id,
         actor="agent",
@@ -129,15 +130,20 @@ def _run_experiment_impl(
         },
     )
 
-    active = repos.experiments.update(experiment_id=experiment_id, status="active") or experiment
-    event = deps.record_event(
+    active = (
+        await repos.experiments.update(experiment_id=experiment_id, status="active")
+        or experiment
+    )
+    event = await deps.record_event(
         event_type="experiment.started",
         message=f"Started experiment {experiment_id}",
         payload={"experiment_id": experiment_id},
     )
-    _upsert(deps, active, event)
+    await _upsert(deps, active, event)
 
-    worker_result = deps.get_worker_manager().run_experiment(
+    worker_manager = await deps.get_worker_manager()
+    worker_result = await asyncio.to_thread(
+        worker_manager.run_experiment,
         ExperimentRunParams(
             session_id=deps.session_id,
             experiment_id=experiment_id,
@@ -149,7 +155,7 @@ def _run_experiment_impl(
         on_progress=lambda notification: _record_worker_progress(deps, notification),
     )
 
-    _record_experiment_activity(
+    await _record_experiment_activity(
         deps,
         experiment_id=experiment_id,
         actor="worker",
@@ -164,12 +170,12 @@ def _run_experiment_impl(
 
     concerns = check_result(
         known_signals=[],
-        baseline_score=baseline_score(deps, project_id),
+        baseline_score=await baseline_score(deps, project_id),
         signals=worker_result.signals,
         raw=worker_result.raw,
     )
     for kind, message in concerns:
-        _record_experiment_activity(
+        await _record_experiment_activity(
             deps,
             experiment_id=experiment_id,
             actor="harness",
@@ -177,9 +183,11 @@ def _run_experiment_impl(
             payload={"activity_type": "concern", "concern_kind": kind},
         )
 
-    linked_hypotheses = repos.hypothesis_experiment_links.list_for_experiment(experiment_id=experiment_id)
+    linked_hypotheses = await repos.hypothesis_experiment_links.list_for_experiment(
+        experiment_id=experiment_id
+    )
     for link in linked_hypotheses:
-        _record_hypothesis_activity(
+        await _record_hypothesis_activity(
             deps,
             hypothesis_id=link.hypothesis_id,
             actor="harness",
@@ -191,13 +199,13 @@ def _run_experiment_impl(
             },
         )
 
-    closed = repos.experiments.update(experiment_id=experiment_id, status="closed") or active
-    event = deps.record_event(
+    closed = await repos.experiments.update(experiment_id=experiment_id, status="closed") or active
+    event = await deps.record_event(
         event_type="experiment.completed",
         message=f"Completed experiment {experiment_id}",
         payload={"experiment_id": experiment_id, "concern_count": len(concerns)},
     )
-    _upsert(deps, closed, event)
+    await _upsert(deps, closed, event)
 
     return RunExperimentResult(
         success=True,
@@ -212,14 +220,16 @@ def _run_experiment_impl(
 
 def _record_worker_progress(deps: SituToolDeps, notification: dict[str, Any]) -> None:
     params = notification.get("params") or {}
-    deps.record_event(
-        event_type="worker.progress",
-        message=str(params.get("message", "worker progress")),
-        payload=params,
+    asyncio.run(
+        deps.record_event(
+            event_type="worker.progress",
+            message=str(params.get("message", "worker progress")),
+            payload=params,
+        )
     )
 
 
-def _record_experiment_activity(
+async def _record_experiment_activity(
     deps: SituToolDeps,
     *,
     experiment_id: str,
@@ -227,7 +237,7 @@ def _record_experiment_activity(
     body: str,
     payload: dict[str, Any],
 ) -> None:
-    activity = deps.get_repos().experiment_activities.add(
+    activity = await (await deps.get_repos()).experiment_activities.add(
         experiment_id=experiment_id,
         created_in_session_id=deps.session_id,
         actor=actor,
@@ -235,15 +245,15 @@ def _record_experiment_activity(
         body=body,
         payload=payload,
     )
-    event = deps.record_event(
+    event = await deps.record_event(
         event_type="experiment.activity_recorded",
         message=body,
         payload={"activity_id": activity.id, "experiment_id": experiment_id},
     )
-    _upsert(deps, activity, event)
+    await _upsert(deps, activity, event)
 
 
-def _record_hypothesis_activity(
+async def _record_hypothesis_activity(
     deps: SituToolDeps,
     *,
     hypothesis_id: str,
@@ -251,7 +261,7 @@ def _record_hypothesis_activity(
     body: str,
     payload: dict[str, Any],
 ) -> None:
-    activity = deps.get_repos().hypothesis_activities.add(
+    activity = await (await deps.get_repos()).hypothesis_activities.add(
         hypothesis_id=hypothesis_id,
         created_in_session_id=deps.session_id,
         actor=actor,
@@ -259,37 +269,41 @@ def _record_hypothesis_activity(
         body=body,
         payload=payload,
     )
-    event = deps.record_event(
+    event = await deps.record_event(
         event_type="hypothesis.activity_recorded",
         message=body,
         payload={"activity_id": activity.id, "hypothesis_id": hypothesis_id},
     )
-    _upsert(deps, activity, event)
+    await _upsert(deps, activity, event)
 
 
-def _upsert(
+async def _upsert(
     deps: SituToolDeps,
     record: DbRecord,
     event: dict[str, Any] | None,
 ) -> None:
-    deps.publish_record(record=record, event=event)
+    await deps.publish_record(record=record, event=event)
 
 
-def _next_experiment_id(
+async def _next_experiment_id(
     *,
     deps: SituToolDeps,
 ) -> str:
-    repos = deps.get_repos()
-    project_id = deps.require_project_id()
-    return repos.experiments.next_id(project_id=project_id)
+    repos = await deps.get_repos()
+    project_id = await deps.require_project_id()
+    return await repos.experiments.next_id(project_id=project_id)
 
 
-def baseline_score(deps: SituToolDeps, project_id: str) -> float | None:
-    repos = deps.get_repos()
-    for baseline in reversed(repos.baselines.list_for_project(project_id=project_id)):
-        evaluations = repos.evaluations.list_for_baseline(baseline_id=baseline.id)
+async def baseline_score(deps: SituToolDeps, project_id: str) -> float | None:
+    repos = await deps.get_repos()
+    for baseline in reversed(
+        await repos.baselines.list_for_project(project_id=project_id)
+    ):
+        evaluations = await repos.evaluations.list_for_baseline(baseline_id=baseline.id)
         for evaluation in reversed(evaluations):
-            measurements = repos.measurements.list_for_evaluation(evaluation_id=evaluation.id)
+            measurements = await repos.measurements.list_for_evaluation(
+                evaluation_id=evaluation.id
+            )
             for measurement in reversed(measurements):
                 value = _score_from_payload(measurement.payload)
             if value is not None:
@@ -343,5 +357,8 @@ def interpret_result(
     concerns: list[tuple[str, str]],
 ) -> str:
     if concerns:
-        return f"{experiment_id} produced concerns; keep the result visible but do not trust it blindly."
+        return (
+            f"{experiment_id} produced concerns; keep the result visible but do "
+            "not trust it blindly."
+        )
     return f"{experiment_id} completed: {summary}"

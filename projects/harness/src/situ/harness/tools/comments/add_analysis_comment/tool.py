@@ -15,7 +15,7 @@ class AddAnalysisCommentTool(
     result_type = AddAnalysisCommentResult
     sequential = True
 
-    def execute_sync(
+    async def execute(
         self,
         *,
         ctx: RunContext[SituToolDeps],
@@ -26,7 +26,7 @@ class AddAnalysisCommentTool(
         **_kwargs: Any,
     ) -> AddAnalysisCommentResult:
         """Add a human-readable comment to an analysis activity trail."""
-        activity = ctx.deps.get_repos().analysis_activities.add(
+        activity = await (await ctx.deps.get_repos()).analysis_activities.add(
             analysis_id=analysis_id,
             created_in_session_id=ctx.deps.session_id,
             actor=actor,
@@ -34,10 +34,10 @@ class AddAnalysisCommentTool(
             body=comment,
             payload=payload or {},
         )
-        event = ctx.deps.record_event(
+        event = await ctx.deps.record_event(
             event_type="analysis.comment_added",
             message=comment,
             payload={"activity_id": activity.id, "analysis_id": analysis_id},
         )
-        ctx.deps.publish_record(record=activity, event=event)
+        await ctx.deps.publish_record(record=activity, event=event)
         return AddAnalysisCommentResult(success=True, activity=activity.model_dump())

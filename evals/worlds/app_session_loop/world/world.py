@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import subprocess
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -42,45 +41,48 @@ class AppSessionLoopWorld:
             notify=lambda _method, _params: None,
         )
         self.session_id = SESSION_ID
-        self.workspace = self.app.repos.workspaces.ensure()
-        self.project = self.app.repos.projects.create(
-            project_id=self.app.repos.projects.next_id(
-                workspace_id=self.workspace.id,
+
+    @classmethod
+    async def create(cls, args: AppSessionLoopEvalInput) -> "AppSessionLoopWorld":
+        world = cls(args)
+        world.workspace = await world.app.repos.workspaces.ensure()
+        world.project = await world.app.repos.projects.create(
+            project_id=await world.app.repos.projects.next_id(
+                workspace_id=world.workspace.id,
             ),
-            workspace_id=self.workspace.id,
+            workspace_id=world.workspace.id,
             title="Improve validation bits per byte",
             objective=args.objective,
             research_context=args.research_context,
         )
-        self.session = self.app.repos.sessions.create(
-            session_id=self.session_id,
-            workspace_id=self.workspace.id,
-            project_id=self.project.id,
+        world.session = await world.app.repos.sessions.create(
+            session_id=world.session_id,
+            workspace_id=world.workspace.id,
+            project_id=world.project.id,
         )
-        self.app._session_setup[self.session_id] = {
-            "objective": self.project.objective,
-            "research_context": self.project.research_context,
+        world.app._session_setup[world.session_id] = {
+            "objective": world.project.objective,
+            "research_context": world.project.research_context,
         }
-        self.app._ensure_project_agents(
-            session_id=self.session_id,
-            project_id=self.project.id,
+        await world.app._ensure_project_agents(
+            session_id=world.session_id,
+            project_id=world.project.id,
         )
-        self._seed(args.seed)
-        self.app._enqueue_plan_task(
-            session_id=self.session_id,
-            project_id=self.project.id,
+        await world._seed(args.seed)
+        await world.app._enqueue_plan_task(
+            session_id=world.session_id,
+            project_id=world.project.id,
             title=_initial_plan_title(args.seed),
             content=_initial_plan_content(args.seed),
             source_kind="system",
         )
+        return world
 
-    def run(self) -> None:
+    async def run(self) -> None:
         self._install_eval_runtime_secrets()
-        asyncio.run(
-            self.app._execute_session_async(
-                session_id=self.session_id,
-                max_experiments=self.args.max_experiments,
-            )
+        await self.app._execute_session_async(
+            session_id=self.session_id,
+            max_experiments=self.args.max_experiments,
         )
 
     def teardown(self) -> None:
@@ -89,14 +91,14 @@ class AppSessionLoopWorld:
         finally:
             self._tmp.cleanup()
 
-    def project_board(self) -> dict[str, Any]:
-        return self.app.project_board_api.get_project_board(
-            session_id=self.session_id
+    async def project_board(self) -> dict[str, Any]:
+        return (
+            await self.app.project_board_api.get_project_board(session_id=self.session_id)
         ).model_dump(mode="json")
 
-    def artifact_files(self) -> dict[str, str]:
+    async def artifact_files(self) -> dict[str, str]:
         files: dict[str, str] = {}
-        for artifact in self.project_board().get("artifacts", []):
+        for artifact in (await self.project_board()).get("artifacts", []):
             artifact_id = artifact.get("id")
             artifact_path = artifact.get("path")
             if not isinstance(artifact_id, str) or not isinstance(artifact_path, str):
@@ -116,7 +118,7 @@ class AppSessionLoopWorld:
         store.set_anthropic_key(secrets.require_eval_anthropic_key())
         store.set_logfire_token(secrets.require_eval_logfire_token())
 
-    def events(self) -> list[EvalEvent]:
+    async def events(self) -> list[EvalEvent]:
         return [
             EvalEvent(
                 event_type=event.type,
@@ -128,7 +130,9 @@ class AppSessionLoopWorld:
                     **event.payload,
                 },
             )
-            for event in self.app.repos.events.list_for_session(session_id=self.session_id)
+            for event in await self.app.repos.events.list_for_session(
+                session_id=self.session_id
+            )
         ]
 
     def workspace_files(self) -> dict[str, str]:
@@ -161,11 +165,11 @@ class AppSessionLoopWorld:
         _run_git(self.workspace_path, "add", ".")
         _run_git(self.workspace_path, "commit", "-m", "fixture baseline")
 
-    def _seed(self, seed: AppSessionLoopSeed) -> None:
+    async def _seed(self, seed: AppSessionLoopSeed) -> None:
         if seed not in {"with_baseline_no_hypothesis", "with_baseline_result"}:
             return
         if seed == "with_baseline_result":
-            self.app.repos.hypotheses.create(
+            await self.app.repos.hypotheses.create(
                 hypothesis_id=HYPOTHESIS_ID,
                 project_id=self.project.id,
                 created_in_session_id=self.session_id,
@@ -173,7 +177,7 @@ class AppSessionLoopWorld:
                 summary="Try narrow train.py variants and compare against baseline.",
                 status="active",
             )
-        baseline = self.app.repos.baselines.create(
+        baseline = await self.app.repos.baselines.create(
             baseline_id=BASELINE_ID,
             project_id=self.project.id,
             created_in_session_id=self.session_id,
@@ -181,7 +185,7 @@ class AppSessionLoopWorld:
             summary="Reference workspace behavior before variants.",
             status="closed",
         )
-        self.app.repos.evaluations.create(
+        await self.app.repos.evaluations.create(
             evaluation_id=BASELINE_EVALUATION_ID,
             project_id=self.project.id,
             created_in_session_id=self.session_id,
@@ -190,7 +194,7 @@ class AppSessionLoopWorld:
             associated_baseline_id=baseline.id,
             status="closed",
         )
-        self.app.repos.measurements.add(
+        await self.app.repos.measurements.add(
             evaluation_id=BASELINE_EVALUATION_ID,
             created_in_session_id=self.session_id,
             actor="worker",
@@ -207,7 +211,7 @@ class AppSessionLoopWorld:
             ),
             payload={},
         )
-        self.app.repos.evaluation_activities.add(
+        await self.app.repos.evaluation_activities.add(
             evaluation_id=BASELINE_EVALUATION_ID,
             created_in_session_id=self.session_id,
             actor="worker",

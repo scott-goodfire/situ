@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from pathlib import Path
 
 import pytest
@@ -257,11 +258,11 @@ def test_database_hard_resets_legacy_product_record_ids(tmp_path: Path) -> None:
     )
     repos = Repositories.create(db)
     project = create_project(repos)
-    db.execute(
+    db.execute_blocking(
         "UPDATE projects SET id = ? WHERE id = ?",
         ("project_legacy_001", project.id),
     )
-    db.close()
+    db.close_blocking()
 
     reopened = Database(
         db_path,
@@ -274,7 +275,7 @@ def test_database_hard_resets_legacy_product_record_ids(tmp_path: Path) -> None:
         assert reopened_repos.projects.list_all() == []
         assert reopened_repos.workspaces.get() is None
     finally:
-        reopened.close()
+        reopened.close_blocking()
 
 
 def test_workspace_repository_ensure_get_and_idempotent(repos: Repositories) -> None:
@@ -983,7 +984,7 @@ def test_current_state_api_composes_protocol_shaped_state(repos: Repositories) -
         payload={"experiment_id": "EX1"},
     )
 
-    current_state = CurrentStateService(repos=repos).get()
+    current_state = asyncio.run(CurrentStateService(repos=repos).get())
     assert current_state.workspace is not None
     assert current_state.workspace.id == "workspace_test"
     assert [project.id for project in current_state.projects] == ["P1"]
@@ -1061,8 +1062,8 @@ def test_project_board_api_composes_project_board(repos: Repositories) -> None:
         body="Baseline result recorded.",
     )
 
-    graph = ProjectBoardService(repos=repos).get_project_board(
-        session_id="S1"
+    graph = asyncio.run(
+        ProjectBoardService(repos=repos).get_project_board(session_id="S1")
     )
 
     assert graph.workspace is not None

@@ -24,7 +24,7 @@ def _task_entity_link_row(row: Any) -> TaskEntityLinkRecord:
 
 
 class TaskEntityLinksRepository(BaseRepository):
-    def create(
+    async def create(
         self,
         *,
         project_id: str,
@@ -40,7 +40,7 @@ class TaskEntityLinksRepository(BaseRepository):
             entity_id=entity_id,
             relationship=relationship,
         )
-        self.db.execute_blocking(
+        await self.db.execute(
             """
             INSERT INTO task_entity_links
               (project_id, task_id, entity_kind, entity_id, relationship, created_at)
@@ -56,7 +56,7 @@ class TaskEntityLinksRepository(BaseRepository):
                 utc_now(),
             ),
         )
-        record = self.get(
+        record = await self.get(
             task_id=command.task_id,
             entity_kind=command.entity_kind,
             entity_id=command.entity_id,
@@ -66,7 +66,7 @@ class TaskEntityLinksRepository(BaseRepository):
             raise RuntimeError(f"task entity link was not persisted: {command.task_id}")
         return record
 
-    def get(
+    async def get(
         self,
         *,
         task_id: str,
@@ -75,7 +75,7 @@ class TaskEntityLinksRepository(BaseRepository):
         relationship: str,
     ) -> TaskEntityLinkRecord | None:
         checked_kind = parse_task_entity_kind(entity_kind)
-        row = self.db.fetchone_blocking(
+        row = await self.db.fetchone(
             """
             SELECT * FROM task_entity_links
             WHERE task_id = ? AND entity_kind = ? AND entity_id = ? AND relationship = ?
@@ -84,18 +84,18 @@ class TaskEntityLinksRepository(BaseRepository):
         )
         return _task_entity_link_row(row) if row else None
 
-    def list_all(self) -> list[TaskEntityLinkRecord]:
+    async def list_all(self) -> list[TaskEntityLinkRecord]:
         return [
             _task_entity_link_row(row)
-            for row in self.db.fetchall_blocking(
+            for row in await self.db.fetchall(
                 "SELECT * FROM task_entity_links ORDER BY created_at"
             )
         ]
 
-    def list_for_task(self, *, task_id: str) -> list[TaskEntityLinkRecord]:
+    async def list_for_task(self, *, task_id: str) -> list[TaskEntityLinkRecord]:
         return [
             _task_entity_link_row(row)
-            for row in self.db.fetchall_blocking(
+            for row in await self.db.fetchall(
                 """
                 SELECT * FROM task_entity_links
                 WHERE task_id = ?
@@ -105,10 +105,10 @@ class TaskEntityLinksRepository(BaseRepository):
             )
         ]
 
-    def list_for_project(self, *, project_id: str) -> list[TaskEntityLinkRecord]:
+    async def list_for_project(self, *, project_id: str) -> list[TaskEntityLinkRecord]:
         return [
             _task_entity_link_row(row)
-            for row in self.db.fetchall_blocking(
+            for row in await self.db.fetchall(
                 """
                 SELECT * FROM task_entity_links
                 WHERE project_id = ?
@@ -118,7 +118,7 @@ class TaskEntityLinksRepository(BaseRepository):
             )
         ]
 
-    def list_for_entity(
+    async def list_for_entity(
         self,
         *,
         entity_kind: TaskEntityKind | str,
@@ -127,7 +127,7 @@ class TaskEntityLinksRepository(BaseRepository):
         checked_kind = parse_task_entity_kind(entity_kind)
         return [
             _task_entity_link_row(row)
-            for row in self.db.fetchall_blocking(
+            for row in await self.db.fetchall(
                 """
                 SELECT * FROM task_entity_links
                 WHERE entity_kind = ? AND entity_id = ?

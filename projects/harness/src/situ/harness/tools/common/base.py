@@ -47,7 +47,7 @@ class BaseSituTool(BaseModel, ABC, Generic[DepsT, ResultT]):
             ),
         )
 
-    def has_permission(
+    async def has_permission(
         self,
         *,
         ctx: RunContext[DepsT],
@@ -57,7 +57,7 @@ class BaseSituTool(BaseModel, ABC, Generic[DepsT, ResultT]):
         return True
 
     @abstractmethod
-    def execute_sync(
+    async def execute(
         self,
         *,
         ctx: RunContext[DepsT],
@@ -66,31 +66,31 @@ class BaseSituTool(BaseModel, ABC, Generic[DepsT, ResultT]):
         raise NotImplementedError
 
     def _build_tool_function(self):
-        @wraps(self.execute_sync)
-        def tool_function(
+        @wraps(self.execute)
+        async def tool_function(
             ctx: RunContext[DepsT],
             *args: Any,
             **kwargs: Any,
         ) -> ToolReturn:
             del args
-            result = self._execute_with_error_handling(ctx=ctx, **kwargs)
+            result = await self._execute_with_error_handling(ctx=ctx, **kwargs)
             return result.as_tool_return()
 
         return cast(Any, tool_function)
 
-    def _execute_with_error_handling(
+    async def _execute_with_error_handling(
         self,
         *,
         ctx: RunContext[DepsT],
         **kwargs: Any,
     ) -> ResultT:
         try:
-            if not self.has_permission(ctx=ctx, **kwargs):
+            if not await self.has_permission(ctx=ctx, **kwargs):
                 return self._failure(
                     code="permission_denied",
                     message=f"Tool '{self.name}' is not allowed in this context.",
                 )
-            return self.execute_sync(ctx=ctx, **kwargs)
+            return await self.execute(ctx=ctx, **kwargs)
         except Exception as error:
             return self._failure(
                 code="tool_execution_failed",

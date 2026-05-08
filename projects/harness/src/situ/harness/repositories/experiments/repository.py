@@ -34,7 +34,7 @@ def _experiment_row(row: Any) -> ExperimentRecord:
 
 
 class ExperimentsRepository(BaseRepository):
-    def create(
+    async def create(
         self,
         *,
         experiment_id: str,
@@ -69,7 +69,7 @@ class ExperimentsRepository(BaseRepository):
             research_thread=research_thread,
         )
         now = utc_now()
-        self.db.execute_blocking(
+        await self.db.execute(
             """
             INSERT INTO experiments
               (id, project_id, created_in_session_id, status, title, summary,
@@ -93,12 +93,12 @@ class ExperimentsRepository(BaseRepository):
                 now,
             ),
         )
-        record = self.get_by_id(experiment_id=command.experiment_id)
+        record = await self.get_by_id(experiment_id=command.experiment_id)
         if record is None:
             raise RuntimeError(f"experiment was not persisted: {command.experiment_id}")
         return record
 
-    def update(
+    async def update(
         self,
         *,
         experiment_id: str,
@@ -127,11 +127,11 @@ class ExperimentsRepository(BaseRepository):
             parent_experiment_id=parent_experiment_id,
             research_thread=research_thread,
         )
-        current = self.get_by_id(experiment_id=command.experiment_id)
+        current = await self.get_by_id(experiment_id=command.experiment_id)
         if current is None:
             return None
 
-        self.db.execute_blocking(
+        await self.db.execute(
             """
             UPDATE experiments
             SET title = ?,
@@ -174,41 +174,41 @@ class ExperimentsRepository(BaseRepository):
                 command.experiment_id,
             ),
         )
-        return self.get_by_id(experiment_id=command.experiment_id)
+        return await self.get_by_id(experiment_id=command.experiment_id)
 
-    def get_by_id(self, *, experiment_id: str) -> ExperimentRecord | None:
-        row = self.db.fetchone_blocking("SELECT * FROM experiments WHERE id = ?", (experiment_id,))
+    async def get_by_id(self, *, experiment_id: str) -> ExperimentRecord | None:
+        row = await self.db.fetchone("SELECT * FROM experiments WHERE id = ?", (experiment_id,))
         return _experiment_row(row) if row else None
 
-    def get(self, *, experiment_id: str) -> ExperimentRecord | None:
-        return self.get_by_id(experiment_id=experiment_id)
+    async def get(self, *, experiment_id: str) -> ExperimentRecord | None:
+        return await self.get_by_id(experiment_id=experiment_id)
 
-    def list_all(self) -> list[ExperimentRecord]:
+    async def list_all(self) -> list[ExperimentRecord]:
         return [
             _experiment_row(row)
-            for row in self.db.fetchall_blocking("SELECT * FROM experiments ORDER BY created_at")
+            for row in await self.db.fetchall("SELECT * FROM experiments ORDER BY created_at")
         ]
 
-    def list_for_project(self, *, project_id: str) -> list[ExperimentRecord]:
+    async def list_for_project(self, *, project_id: str) -> list[ExperimentRecord]:
         return [
             _experiment_row(row)
-            for row in self.db.fetchall_blocking(
+            for row in await self.db.fetchall(
                 "SELECT * FROM experiments WHERE project_id = ? ORDER BY created_at",
                 (project_id,),
             )
         ]
 
-    def list_for_session(self, *, session_id: str) -> list[ExperimentRecord]:
-        session = self.db.fetchone_blocking("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
+    async def list_for_session(self, *, session_id: str) -> list[ExperimentRecord]:
+        session = await self.db.fetchone("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
         project_id = session["project_id"] if session else None
         return (
-            self.list_for_project(project_id=project_id)
+            await self.list_for_project(project_id=project_id)
             if project_id is not None
             else []
         )
 
-    def next_id(self, *, project_id: str) -> str:
-        rows = self.db.fetchall_blocking("SELECT id FROM experiments")
+    async def next_id(self, *, project_id: str) -> str:
+        rows = await self.db.fetchall("SELECT id FROM experiments")
         return next_canonical_record_id(
             existing_ids=(str(row["id"]) for row in rows),
             prefix=EXPERIMENT_ID_PREFIX,

@@ -33,8 +33,10 @@ explicit tools such as `get_project_board`, `get_task`, `create_analysis`,
 - Runtime skill frontmatter includes `name` and `description`.
 - Skill names are stable, kebab-cased, and unique within the role/shared
   namespace.
-- Role prompts may advertise skill names and short descriptions, but detailed
-  methodology should be loaded with `load_skill(skill_name=...)`.
+- Role prompts may advertise skill names and short descriptions; detailed
+  methodology is loaded explicitly when the work calls for it. The exact
+  loading mechanism (a dedicated tool call, a registry lookup, or a
+  prompt-time include) is an implementation detail.
 - Prompts should still pass only minimal bootstrap IDs and constraints. A skill
   should tell the agent which explicit read tools to call, not rely on hidden
   injected state.
@@ -51,8 +53,9 @@ explicit tools such as `get_project_board`, `get_task`, `create_analysis`,
 - `agent_skills/registry.py` registers available skills and role access.
 - Package data includes markdown skill resources in
   `projects/harness/pyproject.toml`.
-- Deterministic tests discover registered skill names and resources. Live evals
-  assert `load_skill` calls when behavior depends on a skill.
+- Deterministic tests discover registered skill names and resources. Live
+  evals assert that the relevant skill was loaded when behavior depends on
+  it, using whichever load primitive the implementation exposes.
 
 ## Red Flags
 
@@ -67,12 +70,14 @@ explicit tools such as `get_project_board`, `get_task`, `create_analysis`,
 - Adding a task kind without a default skill or explicit reason.
 - Runtime skills shipped as markdown files but missing from package data.
 - Skill-loading behavior that is important to a role but not covered by any
-  deterministic discovery test or realistic eval.
+  deterministic discovery test or realistic eval, regardless of how the
+  load is wired.
 
 ## Review Questions
 
 - Is this reusable role methodology rather than one-off prompt text?
 - Is the skill in the correct skill family?
 - Does the skill preserve explicit tool reads and writes?
-- Does it make the agent's trace clearer through `load_skill` calls?
+- Does the chosen skill-loading mechanism make the agent's trace clearer
+  by surfacing which skill informed the work?
 - Is the role still bounded to its intended responsibilities?

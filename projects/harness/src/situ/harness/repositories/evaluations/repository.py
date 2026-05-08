@@ -31,7 +31,7 @@ def _evaluation_row(row: Any) -> EvaluationRecord:
 
 
 class EvaluationsRepository(BaseRepository):
-    def create(
+    async def create(
         self,
         *,
         evaluation_id: str,
@@ -60,7 +60,7 @@ class EvaluationsRepository(BaseRepository):
             status=checked_status,
         )
         now = utc_now()
-        self.db.execute_blocking(
+        await self.db.execute(
             """
             INSERT INTO evaluations
               (id, project_id, created_in_session_id, status, title, summary,
@@ -80,12 +80,12 @@ class EvaluationsRepository(BaseRepository):
                 now,
             ),
         )
-        record = self.get_by_id(evaluation_id=command.evaluation_id)
+        record = await self.get_by_id(evaluation_id=command.evaluation_id)
         if record is None:
             raise RuntimeError(f"evaluation was not persisted: {command.evaluation_id}")
         return record
 
-    def update(
+    async def update(
         self,
         *,
         evaluation_id: str,
@@ -108,7 +108,7 @@ class EvaluationsRepository(BaseRepository):
             associated_baseline_id=associated_baseline_id,
             associated_experiment_id=associated_experiment_id,
         )
-        current = self.get_by_id(evaluation_id=command.evaluation_id)
+        current = await self.get_by_id(evaluation_id=command.evaluation_id)
         if current is None:
             return None
         next_associated_baseline_id = current.associated_baseline_id
@@ -120,7 +120,7 @@ class EvaluationsRepository(BaseRepository):
             next_associated_baseline_id = None
             next_associated_experiment_id = command.associated_experiment_id
 
-        self.db.execute_blocking(
+        await self.db.execute(
             """
             UPDATE evaluations
             SET title = ?,
@@ -141,25 +141,25 @@ class EvaluationsRepository(BaseRepository):
                 command.evaluation_id,
             ),
         )
-        return self.get_by_id(evaluation_id=command.evaluation_id)
+        return await self.get_by_id(evaluation_id=command.evaluation_id)
 
-    def get_by_id(self, *, evaluation_id: str) -> EvaluationRecord | None:
-        row = self.db.fetchone_blocking("SELECT * FROM evaluations WHERE id = ?", (evaluation_id,))
+    async def get_by_id(self, *, evaluation_id: str) -> EvaluationRecord | None:
+        row = await self.db.fetchone("SELECT * FROM evaluations WHERE id = ?", (evaluation_id,))
         return _evaluation_row(row) if row else None
 
-    def get(self, *, evaluation_id: str) -> EvaluationRecord | None:
-        return self.get_by_id(evaluation_id=evaluation_id)
+    async def get(self, *, evaluation_id: str) -> EvaluationRecord | None:
+        return await self.get_by_id(evaluation_id=evaluation_id)
 
-    def list_all(self) -> list[EvaluationRecord]:
+    async def list_all(self) -> list[EvaluationRecord]:
         return [
             _evaluation_row(row)
-            for row in self.db.fetchall_blocking("SELECT * FROM evaluations ORDER BY created_at")
+            for row in await self.db.fetchall("SELECT * FROM evaluations ORDER BY created_at")
         ]
 
-    def list_for_project(self, *, project_id: str) -> list[EvaluationRecord]:
+    async def list_for_project(self, *, project_id: str) -> list[EvaluationRecord]:
         return [
             _evaluation_row(row)
-            for row in self.db.fetchall_blocking(
+            for row in await self.db.fetchall(
                 """
                 SELECT * FROM evaluations
                 WHERE project_id = ?
@@ -169,19 +169,19 @@ class EvaluationsRepository(BaseRepository):
             )
         ]
 
-    def list_for_session(self, *, session_id: str) -> list[EvaluationRecord]:
-        session = self.db.fetchone_blocking("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
+    async def list_for_session(self, *, session_id: str) -> list[EvaluationRecord]:
+        session = await self.db.fetchone("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
         project_id = session["project_id"] if session else None
         return (
-            self.list_for_project(project_id=project_id)
+            await self.list_for_project(project_id=project_id)
             if project_id is not None
             else []
         )
 
-    def list_for_experiment(self, *, experiment_id: str) -> list[EvaluationRecord]:
+    async def list_for_experiment(self, *, experiment_id: str) -> list[EvaluationRecord]:
         return [
             _evaluation_row(row)
-            for row in self.db.fetchall_blocking(
+            for row in await self.db.fetchall(
                 """
                 SELECT * FROM evaluations
                 WHERE associated_experiment_id = ?
@@ -191,10 +191,10 @@ class EvaluationsRepository(BaseRepository):
             )
         ]
 
-    def list_for_baseline(self, *, baseline_id: str) -> list[EvaluationRecord]:
+    async def list_for_baseline(self, *, baseline_id: str) -> list[EvaluationRecord]:
         return [
             _evaluation_row(row)
-            for row in self.db.fetchall_blocking(
+            for row in await self.db.fetchall(
                 """
                 SELECT * FROM evaluations
                 WHERE associated_baseline_id = ?
@@ -204,8 +204,8 @@ class EvaluationsRepository(BaseRepository):
             )
         ]
 
-    def next_id(self, *, project_id: str) -> str:
-        rows = self.db.fetchall_blocking("SELECT id FROM evaluations")
+    async def next_id(self, *, project_id: str) -> str:
+        rows = await self.db.fetchall("SELECT id FROM evaluations")
         return next_canonical_record_id(
             existing_ids=(str(row["id"]) for row in rows),
             prefix=EVALUATION_ID_PREFIX,

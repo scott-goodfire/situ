@@ -14,7 +14,7 @@ class CreateHypothesisTool(BaseSituTool[SituToolDeps, CreateHypothesisResult]):
     result_type = CreateHypothesisResult
     sequential = True
 
-    def execute_sync(
+    async def execute(
         self,
         *,
         ctx: RunContext[SituToolDeps],
@@ -41,13 +41,13 @@ class CreateHypothesisTool(BaseSituTool[SituToolDeps, CreateHypothesisResult]):
                     "records supported, rejected, superseded, or inconclusive."
                 ),
             )
-        repos = ctx.deps.get_repos()
-        project_id = ctx.deps.require_project_id()
+        repos = await ctx.deps.get_repos()
+        project_id = await ctx.deps.require_project_id()
         session_id = ctx.deps.session_id
-        resolved_hypothesis_id = hypothesis_id or repos.hypotheses.next_id(
+        resolved_hypothesis_id = hypothesis_id or await repos.hypotheses.next_id(
             project_id=project_id,
         )
-        hypothesis = repos.hypotheses.create(
+        hypothesis = await repos.hypotheses.create(
             hypothesis_id=resolved_hypothesis_id,
             project_id=project_id,
             created_in_session_id=session_id,
@@ -55,10 +55,10 @@ class CreateHypothesisTool(BaseSituTool[SituToolDeps, CreateHypothesisResult]):
             summary=summary,
             status=checked_status,
         )
-        event = ctx.deps.record_event(
+        event = await ctx.deps.record_event(
             event_type="hypothesis.created",
             message=f"Created hypothesis {hypothesis.id}",
             payload={"hypothesis_id": hypothesis.id},
         )
-        ctx.deps.publish_record(record=hypothesis, event=event)
+        await ctx.deps.publish_record(record=hypothesis, event=event)
         return CreateHypothesisResult(success=True, hypothesis=hypothesis.model_dump())

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pytest
+
 from evals.worlds.research_session.world import (
     BASELINE_EVALUATION_ID,
     HYPOTHESIS_ID,
@@ -8,10 +10,11 @@ from evals.worlds.research_session.world import (
 )
 
 
-def test_research_session_world_can_start_projectless() -> None:
-    world = ResearchSessionWorld(seed="projectless")
+@pytest.mark.asyncio
+async def test_research_session_world_can_start_projectless() -> None:
+    world = await ResearchSessionWorld.create(seed="projectless")
     try:
-        graph = world.project_board()
+        graph = await world.project_board()
 
         assert graph["session"]["id"] == SESSION_ID
         assert graph["project"] is None
@@ -20,10 +23,11 @@ def test_research_session_world_can_start_projectless() -> None:
         world.teardown()
 
 
-def test_research_session_world_seeds_promising_results() -> None:
-    world = ResearchSessionWorld(seed="with_promising_results")
+@pytest.mark.asyncio
+async def test_research_session_world_seeds_promising_results() -> None:
+    world = await ResearchSessionWorld.create(seed="with_promising_results")
     try:
-        graph = world.project_board()
+        graph = await world.project_board()
 
         assert [hypothesis["id"] for hypothesis in graph["hypotheses"]] == [
             HYPOTHESIS_ID

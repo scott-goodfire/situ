@@ -29,7 +29,7 @@ def _hypothesis_row(row: Any) -> HypothesisRecord:
 
 
 class HypothesesRepository(BaseRepository):
-    def create(
+    async def create(
         self,
         *,
         hypothesis_id: str,
@@ -54,7 +54,7 @@ class HypothesesRepository(BaseRepository):
             status=checked_status,
         )
         now = utc_now()
-        self.db.execute_blocking(
+        await self.db.execute(
             """
             INSERT INTO hypotheses
               (id, project_id, created_in_session_id, title, summary, status,
@@ -72,12 +72,12 @@ class HypothesesRepository(BaseRepository):
                 now,
             ),
         )
-        record = self.get_by_id(hypothesis_id=command.hypothesis_id)
+        record = await self.get_by_id(hypothesis_id=command.hypothesis_id)
         if record is None:
             raise RuntimeError(f"hypothesis was not persisted: {command.hypothesis_id}")
         return record
 
-    def update(
+    async def update(
         self,
         *,
         hypothesis_id: str,
@@ -96,10 +96,10 @@ class HypothesesRepository(BaseRepository):
             summary=summary,
             status=checked_status,
         )
-        current = self.get_by_id(hypothesis_id=command.hypothesis_id)
+        current = await self.get_by_id(hypothesis_id=command.hypothesis_id)
         if current is None:
             return None
-        self.db.execute_blocking(
+        await self.db.execute(
             """
             UPDATE hypotheses
             SET title = ?, summary = ?, status = ?, updated_at = ?
@@ -113,25 +113,25 @@ class HypothesesRepository(BaseRepository):
                 command.hypothesis_id,
             ),
         )
-        return self.get_by_id(hypothesis_id=command.hypothesis_id)
+        return await self.get_by_id(hypothesis_id=command.hypothesis_id)
 
-    def get_by_id(self, *, hypothesis_id: str) -> HypothesisRecord | None:
-        row = self.db.fetchone_blocking("SELECT * FROM hypotheses WHERE id = ?", (hypothesis_id,))
+    async def get_by_id(self, *, hypothesis_id: str) -> HypothesisRecord | None:
+        row = await self.db.fetchone("SELECT * FROM hypotheses WHERE id = ?", (hypothesis_id,))
         return _hypothesis_row(row) if row else None
 
-    def get(self, *, hypothesis_id: str) -> HypothesisRecord | None:
-        return self.get_by_id(hypothesis_id=hypothesis_id)
+    async def get(self, *, hypothesis_id: str) -> HypothesisRecord | None:
+        return await self.get_by_id(hypothesis_id=hypothesis_id)
 
-    def list_all(self) -> list[HypothesisRecord]:
+    async def list_all(self) -> list[HypothesisRecord]:
         return [
             _hypothesis_row(row)
-            for row in self.db.fetchall_blocking("SELECT * FROM hypotheses ORDER BY created_at")
+            for row in await self.db.fetchall("SELECT * FROM hypotheses ORDER BY created_at")
         ]
 
-    def list_for_project(self, *, project_id: str) -> list[HypothesisRecord]:
+    async def list_for_project(self, *, project_id: str) -> list[HypothesisRecord]:
         return [
             _hypothesis_row(row)
-            for row in self.db.fetchall_blocking(
+            for row in await self.db.fetchall(
                 """
                 SELECT * FROM hypotheses
                 WHERE project_id = ?
@@ -141,17 +141,17 @@ class HypothesesRepository(BaseRepository):
             )
         ]
 
-    def list_for_session(self, *, session_id: str) -> list[HypothesisRecord]:
-        session = self.db.fetchone_blocking("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
+    async def list_for_session(self, *, session_id: str) -> list[HypothesisRecord]:
+        session = await self.db.fetchone("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
         project_id = session["project_id"] if session else None
         return (
-            self.list_for_project(project_id=project_id)
+            await self.list_for_project(project_id=project_id)
             if project_id is not None
             else []
         )
 
-    def next_id(self, *, project_id: str) -> str:
-        rows = self.db.fetchall_blocking("SELECT id FROM hypotheses")
+    async def next_id(self, *, project_id: str) -> str:
+        rows = await self.db.fetchall("SELECT id FROM hypotheses")
         return next_canonical_record_id(
             existing_ids=(str(row["id"]) for row in rows),
             prefix=HYPOTHESIS_ID_PREFIX,

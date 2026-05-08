@@ -13,7 +13,7 @@ class AddTaskCommentTool(BaseSituTool[SituToolDeps, AddTaskCommentResult]):
     result_type = AddTaskCommentResult
     sequential = True
 
-    def execute_sync(
+    async def execute(
         self,
         *,
         ctx: RunContext[SituToolDeps],
@@ -25,11 +25,11 @@ class AddTaskCommentTool(BaseSituTool[SituToolDeps, AddTaskCommentResult]):
         **_kwargs: Any,
     ) -> AddTaskCommentResult:
         """Add a human-readable task activity comment."""
-        repos = ctx.deps.get_repos()
-        task = repos.tasks.get(task_id=task_id)
+        repos = await ctx.deps.get_repos()
+        task = await repos.tasks.get(task_id=task_id)
         if task is None:
             raise ValueError(f"task not found: {task_id}")
-        activity = repos.task_activities.add(
+        activity = await repos.task_activities.add(
             project_id=task.project_id,
             task_id=task_id,
             created_in_session_id=ctx.deps.session_id,
@@ -39,10 +39,10 @@ class AddTaskCommentTool(BaseSituTool[SituToolDeps, AddTaskCommentResult]):
             body=comment,
             payload=payload or {},
         )
-        event = ctx.deps.record_event(
+        event = await ctx.deps.record_event(
             event_type="task.comment_added",
             message=comment,
             payload={"activity_id": activity.id, "task_id": task_id},
         )
-        ctx.deps.publish_record(record=activity, event=event)
+        await ctx.deps.publish_record(record=activity, event=event)
         return AddTaskCommentResult(success=True, activity=activity.model_dump())

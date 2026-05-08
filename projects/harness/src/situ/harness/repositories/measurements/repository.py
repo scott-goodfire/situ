@@ -28,7 +28,7 @@ def _measurement_row(row: Any) -> MeasurementRecord:
 
 
 class MeasurementsRepository(BaseRepository):
-    def add(
+    async def add(
         self,
         *,
         evaluation_id: str,
@@ -37,7 +37,7 @@ class MeasurementsRepository(BaseRepository):
         payload: dict[str, Any] | None = None,
         created_in_session_id: str | None = None,
     ) -> MeasurementRecord:
-        measurement_id = self.next_id()
+        measurement_id = await self.next_id()
         ensure_canonical_record_id(
             record_id=measurement_id,
             prefix=MEASUREMENT_ID_PREFIX,
@@ -50,7 +50,7 @@ class MeasurementsRepository(BaseRepository):
             body=body,
             payload=payload or {},
         )
-        self.db.execute_blocking(
+        await self.db.execute(
             """
             INSERT INTO measurements
               (id, evaluation_id, created_in_session_id, actor, body,
@@ -67,33 +67,33 @@ class MeasurementsRepository(BaseRepository):
                 utc_now(),
             ),
         )
-        record = self.get_by_id(measurement_id=measurement_id)
+        record = await self.get_by_id(measurement_id=measurement_id)
         if record is None:
             raise RuntimeError("measurement was not persisted")
         return record
 
-    def get_by_id(self, *, measurement_id: str) -> MeasurementRecord | None:
-        row = self.db.fetchone_blocking(
+    async def get_by_id(self, *, measurement_id: str) -> MeasurementRecord | None:
+        row = await self.db.fetchone(
             "SELECT * FROM measurements WHERE id = ?",
             (measurement_id,),
         )
         return _measurement_row(row) if row else None
 
-    def get(self, *, measurement_id: str) -> MeasurementRecord | None:
-        return self.get_by_id(measurement_id=measurement_id)
+    async def get(self, *, measurement_id: str) -> MeasurementRecord | None:
+        return await self.get_by_id(measurement_id=measurement_id)
 
-    def list_all(self) -> list[MeasurementRecord]:
+    async def list_all(self) -> list[MeasurementRecord]:
         return [
             _measurement_row(row)
-            for row in self.db.fetchall_blocking(
+            for row in await self.db.fetchall(
                 "SELECT * FROM measurements ORDER BY CAST(SUBSTR(id, 2) AS INTEGER)"
             )
         ]
 
-    def list_for_evaluation(self, *, evaluation_id: str) -> list[MeasurementRecord]:
+    async def list_for_evaluation(self, *, evaluation_id: str) -> list[MeasurementRecord]:
         return [
             _measurement_row(row)
-            for row in self.db.fetchall_blocking(
+            for row in await self.db.fetchall(
                 """
                 SELECT * FROM measurements
                 WHERE evaluation_id = ?
@@ -103,10 +103,10 @@ class MeasurementsRepository(BaseRepository):
             )
         ]
 
-    def list_for_baseline(self, *, baseline_id: str) -> list[MeasurementRecord]:
+    async def list_for_baseline(self, *, baseline_id: str) -> list[MeasurementRecord]:
         return [
             _measurement_row(row)
-            for row in self.db.fetchall_blocking(
+            for row in await self.db.fetchall(
                 """
                 SELECT measurements.*
                 FROM measurements
@@ -118,10 +118,10 @@ class MeasurementsRepository(BaseRepository):
             )
         ]
 
-    def list_for_experiment(self, *, experiment_id: str) -> list[MeasurementRecord]:
+    async def list_for_experiment(self, *, experiment_id: str) -> list[MeasurementRecord]:
         return [
             _measurement_row(row)
-            for row in self.db.fetchall_blocking(
+            for row in await self.db.fetchall(
                 """
                 SELECT measurements.*
                 FROM measurements
@@ -133,10 +133,10 @@ class MeasurementsRepository(BaseRepository):
             )
         ]
 
-    def list_for_project(self, *, project_id: str) -> list[MeasurementRecord]:
+    async def list_for_project(self, *, project_id: str) -> list[MeasurementRecord]:
         return [
             _measurement_row(row)
-            for row in self.db.fetchall_blocking(
+            for row in await self.db.fetchall(
                 """
                 SELECT measurements.*
                 FROM measurements
@@ -148,17 +148,17 @@ class MeasurementsRepository(BaseRepository):
             )
         ]
 
-    def list_for_session(self, *, session_id: str) -> list[MeasurementRecord]:
-        session = self.db.fetchone_blocking("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
+    async def list_for_session(self, *, session_id: str) -> list[MeasurementRecord]:
+        session = await self.db.fetchone("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
         project_id = session["project_id"] if session else None
         return (
-            self.list_for_project(project_id=project_id)
+            await self.list_for_project(project_id=project_id)
             if project_id is not None
             else []
         )
 
-    def next_id(self) -> str:
-        rows = self.db.fetchall_blocking("SELECT id FROM measurements")
+    async def next_id(self) -> str:
+        rows = await self.db.fetchall("SELECT id FROM measurements")
         return next_canonical_record_id(
             existing_ids=(str(row["id"]) for row in rows),
             prefix=MEASUREMENT_ID_PREFIX,

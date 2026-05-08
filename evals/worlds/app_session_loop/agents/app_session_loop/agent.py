@@ -7,19 +7,19 @@ from evals.worlds.app_session_loop.models import (
 from evals.worlds.app_session_loop.world import AppSessionLoopWorld
 
 
-def run_app_session_loop(args: AppSessionLoopEvalInput) -> AppSessionLoopEvalOutput:
-    world = AppSessionLoopWorld(args)
+async def run_app_session_loop(args: AppSessionLoopEvalInput) -> AppSessionLoopEvalOutput:
+    world = await AppSessionLoopWorld.create(args)
     try:
-        world.run()
-        project_board = world.project_board()
+        await world.run()
+        project_board = await world.project_board()
         changed_files = world.changed_files()
-        events = world.events()
+        events = await world.events()
         content = _render_content(project_board=project_board, events=events)
         return AppSessionLoopEvalOutput(
             content=content,
             events=events,
             project_board=project_board,
-            artifact_files=world.artifact_files(),
+            artifact_files=await world.artifact_files(),
             workspace_files=world.workspace_files(),
             changed_files=changed_files,
             signals={

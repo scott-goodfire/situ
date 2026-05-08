@@ -1,3 +1,4 @@
+import asyncio
 import sys
 import threading
 from pathlib import Path
@@ -12,12 +13,12 @@ from .core.paths import resolve_app_root, resolve_workspace
 WRITE_LOCK = threading.Lock()
 
 
-def dispatch(app: HarnessApp, request: JsonRpcRequest) -> JsonRpcResponse | None:
+async def dispatch(app: HarnessApp, request: JsonRpcRequest) -> JsonRpcResponse | None:
     if request.id is None:
         return None
 
     try:
-        result = app.handle(request.method, request.params)
+        result = await app.handle_async(request.method, request.params)
     except MethodNotFound:
         return JsonRpcResponse.method_not_found(request.id, request.method)
     except ValidationError as error:
@@ -43,7 +44,7 @@ def write_notification(method: str, params: dict[str, Any]) -> None:
     write_message(JsonRpcNotification(method=method, params=params))
 
 
-def main() -> None:
+async def main_async() -> None:
     workspace = resolve_workspace(Path.cwd())
     app = HarnessApp(workspace, notify=write_notification, app_root=resolve_app_root(Path(__file__)))
     for line in sys.stdin:
@@ -65,6 +66,10 @@ def main() -> None:
             write_message(JsonRpcResponse.parse_error(str(error)))
             continue
 
-        response = dispatch(app, request)
+        response = await dispatch(app, request)
         if response is not None:
             write_message(response)
+
+
+def main() -> None:
+    asyncio.run(main_async())

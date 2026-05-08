@@ -65,7 +65,7 @@ def _task_row(row: Any) -> TaskRecord:
 
 
 class TasksRepository(BaseRepository):
-    def create(
+    async def create(
         self,
         *,
         task_id: str,
@@ -99,7 +99,7 @@ class TasksRepository(BaseRepository):
             available_at=available_at,
         )
         now = utc_now()
-        self.db.execute_blocking(
+        await self.db.execute(
             """
             INSERT INTO tasks
               (id, project_id, created_in_session_id, title, content, kind, status,
@@ -127,12 +127,12 @@ class TasksRepository(BaseRepository):
                 now,
             ),
         )
-        record = self.get(task_id=command.task_id)
+        record = await self.get(task_id=command.task_id)
         if record is None:
             raise RuntimeError(f"task was not persisted: {command.task_id}")
         return record
 
-    def update(
+    async def update(
         self,
         *,
         task_id: str,
@@ -150,7 +150,7 @@ class TasksRepository(BaseRepository):
         claimed_in_session_id: str | None = None,
         completed_in_session_id: str | None = None,
     ) -> TaskRecord | None:
-        current = self.get(task_id=task_id)
+        current = await self.get(task_id=task_id)
         if current is None:
             return None
         checked_status = parse_task_status(status) if status is not None else None
@@ -183,7 +183,7 @@ class TasksRepository(BaseRepository):
         elif checked_status in {TaskStatus.BACKLOG, TaskStatus.IN_PROGRESS}:
             completed_at = None
             resolved_completed_in_session_id = None
-        self.db.execute_blocking(
+        await self.db.execute(
             """
             UPDATE tasks
             SET title = ?,
@@ -246,9 +246,9 @@ class TasksRepository(BaseRepository):
                 command.task_id,
             ),
         )
-        return self.get(task_id=command.task_id)
+        return await self.get(task_id=command.task_id)
 
-    def requeue(
+    async def requeue(
         self,
         *,
         task_id: str,
@@ -259,11 +259,11 @@ class TasksRepository(BaseRepository):
         payload: dict[str, Any] | None = None,
         available_at: str | None = None,
     ) -> TaskRecord | None:
-        current = self.get(task_id=task_id)
+        current = await self.get(task_id=task_id)
         if current is None:
             return None
         now = utc_now()
-        self.db.execute_blocking(
+        await self.db.execute(
             """
             UPDATE tasks
             SET title = ?,
@@ -304,9 +304,9 @@ class TasksRepository(BaseRepository):
                 task_id,
             ),
         )
-        return self.get(task_id=task_id)
+        return await self.get(task_id=task_id)
 
-    def claim(
+    async def claim(
         self,
         *,
         task_id: str,
@@ -319,7 +319,7 @@ class TasksRepository(BaseRepository):
             return None
         now = utc_now()
         placeholders = ", ".join("?" for _ in kinds)
-        cursor = self.db.execute_blocking(
+        cursor = await self.db.execute(
             f"""
             UPDATE tasks
             SET status = ?,
@@ -352,9 +352,9 @@ class TasksRepository(BaseRepository):
                 TaskStatus.DONE.value,
             ),
         )
-        return self.get(task_id=task_id) if cursor.rowcount == 1 else None
+        return await self.get(task_id=task_id) if cursor.rowcount == 1 else None
 
-    def claim_next(
+    async def claim_next(
         self,
         *,
         project_id: str,
@@ -367,7 +367,7 @@ class TasksRepository(BaseRepository):
             return None
         placeholders = ", ".join("?" for _ in kinds)
         now = utc_now()
-        rows = self.db.fetchall_blocking(
+        rows = await self.db.fetchall(
             f"""
             SELECT * FROM tasks
             WHERE project_id = ?
@@ -386,7 +386,7 @@ class TasksRepository(BaseRepository):
             (project_id, TaskStatus.BACKLOG.value, now, *kinds, TaskStatus.DONE.value),
         )
         for row in rows:
-            claimed = self.claim(
+            claimed = await self.claim(
                 task_id=row["id"],
                 agent_id=agent_id,
                 eligible_kinds=kinds,
@@ -396,7 +396,7 @@ class TasksRepository(BaseRepository):
                 return claimed
         return None
 
-    def list_runnable_for_project(
+    async def list_runnable_for_project(
         self,
         *,
         project_id: str,
@@ -407,7 +407,7 @@ class TasksRepository(BaseRepository):
             return []
         placeholders = ", ".join("?" for _ in kinds)
         now = utc_now()
-        rows = self.db.fetchall_blocking(
+        rows = await self.db.fetchall(
             f"""
             SELECT * FROM tasks
             WHERE project_id = ?
@@ -427,22 +427,22 @@ class TasksRepository(BaseRepository):
         )
         return [_task_row(row) for row in rows]
 
-    def get(self, *, task_id: str) -> TaskRecord | None:
-        row = self.db.fetchone_blocking("SELECT * FROM tasks WHERE id = ?", (task_id,))
+    async def get(self, *, task_id: str) -> TaskRecord | None:
+        row = await self.db.fetchone("SELECT * FROM tasks WHERE id = ?", (task_id,))
         return _task_row(row) if row else None
 
-    def list_all(self) -> list[TaskRecord]:
+    async def list_all(self) -> list[TaskRecord]:
         return [
             _task_row(row)
-            for row in self.db.fetchall_blocking(
+            for row in await self.db.fetchall(
                 f"SELECT * FROM tasks ORDER BY {PRIORITY_ORDER_SQL}, created_at"
             )
         ]
 
-    def list_for_project(self, *, project_id: str) -> list[TaskRecord]:
+    async def list_for_project(self, *, project_id: str) -> list[TaskRecord]:
         return [
             _task_row(row)
-            for row in self.db.fetchall_blocking(
+            for row in await self.db.fetchall(
                 f"""
                 SELECT * FROM tasks
                 WHERE project_id = ?
@@ -452,23 +452,23 @@ class TasksRepository(BaseRepository):
             )
         ]
 
-    def list_for_session(self, *, session_id: str) -> list[TaskRecord]:
-        project_id = self._project_id_for_session(session_id)
+    async def list_for_session(self, *, session_id: str) -> list[TaskRecord]:
+        project_id = await self._project_id_for_session(session_id)
         return (
-            self.list_for_project(project_id=project_id)
+            await self.list_for_project(project_id=project_id)
             if project_id is not None
             else []
         )
 
-    def next_id(self, *, project_id: str) -> str:
-        rows = self.db.fetchall_blocking("SELECT id FROM tasks")
+    async def next_id(self, *, project_id: str) -> str:
+        rows = await self.db.fetchall("SELECT id FROM tasks")
         return next_canonical_record_id(
             existing_ids=(str(row["id"]) for row in rows),
             prefix=TASK_ID_PREFIX,
         )
 
-    def _project_id_for_session(self, session_id: str) -> str | None:
-        row = self.db.fetchone_blocking("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
+    async def _project_id_for_session(self, session_id: str) -> str | None:
+        row = await self.db.fetchone("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
         return row["project_id"] if row else None
 
 

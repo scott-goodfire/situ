@@ -114,13 +114,6 @@ class HarnessApp:
         self.collection_subscribed = False
         self._session_setup: dict[str, dict[str, str]] = {}
 
-    def handle(self, method: str, params: dict[str, Any] | None) -> dict[str, Any]:
-        _raise_if_running_loop(
-            sync_name="HarnessApp.handle",
-            async_name="HarnessApp.handle_async",
-        )
-        return asyncio.run(self.handle_async(method, params))
-
     async def handle_async(
         self,
         method: str,
@@ -142,10 +135,7 @@ class HarnessApp:
         handler = handlers.get(method)
         if handler is None:
             raise MethodNotFound(method)
-        result = handler(params or {})
-        if hasattr(result, "__await__"):
-            return await result
-        return result
+        return await handler(params or {})
 
     async def hello(self, params: dict[str, Any]) -> dict[str, Any]:
         hello = HarnessHelloParams.model_validate(params)
@@ -788,18 +778,6 @@ class HarnessApp:
             self.publish_record(record=activity, cursor=event.id)
         if updated_agent is not None:
             self.publish_record(record=updated_agent, cursor=event.id)
-
-    def _execute_session(self, session_id: str, max_experiments: int) -> None:
-        _raise_if_running_loop(
-            sync_name="HarnessApp._execute_session",
-            async_name="HarnessApp._execute_session_async",
-        )
-        asyncio.run(
-            self._execute_session_async(
-                session_id=session_id,
-                max_experiments=max_experiments,
-            )
-        )
 
     async def _execute_session_async(
         self,
@@ -1626,14 +1604,6 @@ class HarnessApp:
             daemon=True,
         )
         thread.start()
-
-
-def _raise_if_running_loop(*, sync_name: str, async_name: str) -> None:
-    try:
-        asyncio.get_running_loop()
-    except RuntimeError:
-        return
-    raise RuntimeError(f"{sync_name} cannot run inside an event loop; use {async_name}.")
 
 
 def _planning_pass_count(task: TaskRecord | None) -> int:

@@ -14,7 +14,7 @@ class ListExperimentActivitiesTool(
     name = "list_experiment_activities"
     result_type = ListExperimentActivitiesResult
 
-    def execute_sync(
+    async def execute(
         self,
         *,
         ctx: RunContext[SituToolDeps],
@@ -23,15 +23,15 @@ class ListExperimentActivitiesTool(
         **_kwargs: Any,
     ) -> ListExperimentActivitiesResult:
         """List experiment activity by experiment or project."""
-        repos = ctx.deps.get_repos()
+        repos = await ctx.deps.get_repos()
         if experiment_id is not None:
-            activities = repos.experiment_activities.list_for_experiment(
+            activities = await repos.experiment_activities.list_for_experiment(
                 experiment_id=experiment_id
             )
         else:
-            resolved_project_id = project_id or ctx.deps.current_project_id()
+            resolved_project_id = project_id or await ctx.deps.current_project_id()
             activities = (
-                repos.experiment_activities.list_for_project(project_id=resolved_project_id)
+                await repos.experiment_activities.list_for_project(project_id=resolved_project_id)
                 if resolved_project_id is not None
                 else []
             )

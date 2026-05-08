@@ -41,7 +41,7 @@ class InspectWorkspaceStateTool(
     name = "inspect_workspace_state"
     result_type = InspectWorkspaceState
 
-    def execute_sync(
+    async def execute(
         self,
         *,
         ctx: RunContext[SituToolDeps],

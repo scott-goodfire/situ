@@ -12,7 +12,7 @@ class GetTaskTool(BaseSituTool[SituToolDeps, GetTaskResult]):
     name = "get_task"
     result_type = GetTaskResult
 
-    def execute_sync(
+    async def execute(
         self,
         *,
         ctx: RunContext[SituToolDeps],
@@ -20,14 +20,14 @@ class GetTaskTool(BaseSituTool[SituToolDeps, GetTaskResult]):
         **_kwargs: Any,
     ) -> GetTaskResult:
         """Read one task and its local coordination context by explicit ID."""
-        repos = ctx.deps.get_repos()
-        task = repos.tasks.get(task_id=task_id)
+        repos = await ctx.deps.get_repos()
+        task = await repos.tasks.get(task_id=task_id)
         if task is None:
             return GetTaskResult(success=True, task=None)
 
-        project_tasks = repos.tasks.list_for_project(project_id=task.project_id)
+        project_tasks = await repos.tasks.list_for_project(project_id=task.project_id)
         parent_task = (
-            repos.tasks.get(task_id=task.parent_task_id)
+            await repos.tasks.get(task_id=task.parent_task_id)
             if task.parent_task_id is not None
             else None
         )
@@ -38,7 +38,9 @@ class GetTaskTool(BaseSituTool[SituToolDeps, GetTaskResult]):
         ]
         task_dependencies = [
             dependency
-            for dependency in repos.task_dependencies.list_for_project(project_id=task.project_id)
+            for dependency in await repos.task_dependencies.list_for_project(
+                project_id=task.project_id
+            )
             if dependency.task_id == task.id
             or dependency.blocked_by_task_id == task.id
         ]
@@ -52,10 +54,10 @@ class GetTaskTool(BaseSituTool[SituToolDeps, GetTaskResult]):
             ],
             task_entity_links=[
                 link.model_dump()
-                for link in repos.task_entity_links.list_for_task(task_id=task.id)
+                for link in await repos.task_entity_links.list_for_task(task_id=task.id)
             ],
             task_activities=[
                 activity.model_dump()
-                for activity in repos.task_activities.list_for_task(task_id=task.id)
+                for activity in await repos.task_activities.list_for_task(task_id=task.id)
             ],
         )

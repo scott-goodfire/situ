@@ -15,7 +15,7 @@ class AddEvaluationResultTool(
     result_type = AddEvaluationResult
     sequential = True
 
-    def execute_sync(
+    async def execute(
         self,
         *,
         ctx: RunContext[SituToolDeps],
@@ -37,15 +37,15 @@ class AddEvaluationResultTool(
             "measurement_type": "result",
             **(payload or {}),
         }
-        repos = ctx.deps.get_repos()
-        measurement = repos.measurements.add(
+        repos = await ctx.deps.get_repos()
+        measurement = await repos.measurements.add(
             evaluation_id=evaluation_id,
             created_in_session_id=ctx.deps.session_id,
             actor=actor,
             body=result,
             payload=result_payload,
         )
-        activity = repos.evaluation_activities.add(
+        activity = await repos.evaluation_activities.add(
             evaluation_id=evaluation_id,
             created_in_session_id=ctx.deps.session_id,
             actor=actor,
@@ -53,7 +53,7 @@ class AddEvaluationResultTool(
             body=result,
             payload={**result_payload, "measurement_id": measurement.id},
         )
-        event = ctx.deps.record_event(
+        event = await ctx.deps.record_event(
             event_type="evaluation.result_added",
             message=result,
             payload={
@@ -62,8 +62,8 @@ class AddEvaluationResultTool(
                 "evaluation_id": evaluation_id,
             },
         )
-        ctx.deps.publish_record(record=measurement, event=event)
-        ctx.deps.publish_record(record=activity, event=event)
+        await ctx.deps.publish_record(record=measurement, event=event)
+        await ctx.deps.publish_record(record=activity, event=event)
         return AddEvaluationResult(
             success=True,
             measurement=measurement.model_dump(),

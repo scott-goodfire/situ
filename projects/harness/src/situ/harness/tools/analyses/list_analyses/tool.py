@@ -13,7 +13,7 @@ class ListAnalysesTool(BaseSituTool[SituToolDeps, ListAnalysesResult]):
     name = "list_analyses"
     result_type = ListAnalysesResult
 
-    def execute_sync(
+    async def execute(
         self,
         *,
         ctx: RunContext[SituToolDeps],
@@ -27,10 +27,10 @@ class ListAnalysesTool(BaseSituTool[SituToolDeps, ListAnalysesResult]):
             if status is not None
             else None
         )
-        repos = ctx.deps.get_repos()
-        resolved_project_id = project_id or ctx.deps.current_project_id()
+        repos = await ctx.deps.get_repos()
+        resolved_project_id = project_id or await ctx.deps.current_project_id()
         analyses = (
-            repos.analyses.list_for_project(project_id=resolved_project_id)
+            await repos.analyses.list_for_project(project_id=resolved_project_id)
             if resolved_project_id is not None
             else []
         )

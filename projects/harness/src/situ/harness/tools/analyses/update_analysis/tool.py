@@ -14,7 +14,7 @@ class UpdateAnalysisTool(BaseSituTool[SituToolDeps, UpdateAnalysisResult]):
     result_type = UpdateAnalysisResult
     sequential = True
 
-    def execute_sync(
+    async def execute(
         self,
         *,
         ctx: RunContext[SituToolDeps],
@@ -27,7 +27,7 @@ class UpdateAnalysisTool(BaseSituTool[SituToolDeps, UpdateAnalysisResult]):
         **_kwargs: Any,
     ) -> UpdateAnalysisResult:
         """Update an analysis record; put discussion in analysis comments."""
-        analysis = ctx.deps.get_repos().analyses.update(
+        analysis = await (await ctx.deps.get_repos()).analyses.update(
             analysis_id=analysis_id,
             status=status,
             title=title,
@@ -38,10 +38,10 @@ class UpdateAnalysisTool(BaseSituTool[SituToolDeps, UpdateAnalysisResult]):
         if analysis is None:
             raise ValueError(f"analysis not found: {analysis_id}")
 
-        event = ctx.deps.record_event(
+        event = await ctx.deps.record_event(
             event_type="analysis.updated",
             message=f"Updated analysis {analysis.id}",
             payload={"analysis_id": analysis.id},
         )
-        ctx.deps.publish_record(record=analysis, event=event)
+        await ctx.deps.publish_record(record=analysis, event=event)
         return UpdateAnalysisResult(success=True, analysis=analysis.model_dump())

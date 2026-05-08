@@ -23,12 +23,12 @@ class ResearchAgentRepoBootstrapEvalGroup(
     suite_name: ClassVar[str] = "agents"
     world_name: ClassVar[str] = "research_agent_repo_bootstrap"
 
-    def task(self, args: RepoBootstrapEvalInput) -> RepoBootstrapEvalOutput:
+    async def task(self, args: RepoBootstrapEvalInput) -> RepoBootstrapEvalOutput:
         set_eval_attribute("suite", self.suite_name)
         set_eval_attribute("world", self.world_name)
         set_eval_attribute("case_id", args.case_id)
         set_eval_attribute("seed", args.seed)
-        output = run_repo_bootstrap_agent(args)
+        output = await run_repo_bootstrap_agent(args)
         increment_eval_metric("tool_calls", len(output.captured_tool_calls))
         increment_eval_metric("events", len(output.events))
         increment_eval_metric(

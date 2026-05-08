@@ -21,7 +21,7 @@ class ResolveHypothesisTool(
     result_type = ResolveHypothesisResult
     sequential = True
 
-    def execute_sync(
+    async def execute(
         self,
         *,
         ctx: RunContext[SituToolDeps],
@@ -34,8 +34,8 @@ class ResolveHypothesisTool(
         **_kwargs: Any,
     ) -> ResolveHypothesisResult:
         """Close a hypothesis with an explicit resolution activity."""
-        repos = ctx.deps.get_repos()
-        hypothesis = repos.hypotheses.get(hypothesis_id=hypothesis_id)
+        repos = await ctx.deps.get_repos()
+        hypothesis = await repos.hypotheses.get(hypothesis_id=hypothesis_id)
         if hypothesis is None:
             return self._failure(
                 code="hypothesis_not_found",
@@ -68,7 +68,7 @@ class ResolveHypothesisTool(
                         "resolution is 'superseded'."
                     ),
                 )
-            superseding_hypothesis = repos.hypotheses.get(
+            superseding_hypothesis = await repos.hypotheses.get(
                 hypothesis_id=superseded_by_hypothesis_id,
             )
             if (
@@ -94,7 +94,7 @@ class ResolveHypothesisTool(
             )
 
         evidence_ids = evidence_entity_ids or []
-        invalid_evidence_ids = _invalid_evidence_entity_ids(
+        invalid_evidence_ids = await _invalid_evidence_entity_ids(
             repos=repos,
             project_id=hypothesis.project_id,
             evidence_entity_ids=evidence_ids,
@@ -108,7 +108,7 @@ class ResolveHypothesisTool(
                 ),
             )
 
-        activity = repos.hypothesis_activities.add(
+        activity = await repos.hypothesis_activities.add(
             hypothesis_id=hypothesis.id,
             created_in_session_id=ctx.deps.session_id,
             actor=actor,
@@ -121,14 +121,14 @@ class ResolveHypothesisTool(
                 "superseded_by_hypothesis_id": superseded_by_hypothesis_id,
             },
         )
-        resolved = repos.hypotheses.update(
+        resolved = await repos.hypotheses.update(
             hypothesis_id=hypothesis.id,
             status=WorkStatus.CLOSED,
         )
         if resolved is None:
             raise RuntimeError(f"hypothesis was not resolved: {hypothesis.id}")
 
-        event = ctx.deps.record_event(
+        event = await ctx.deps.record_event(
             event_type="hypothesis.resolved",
             message=(
                 f"Resolved hypothesis {hypothesis.id} as "
@@ -142,8 +142,8 @@ class ResolveHypothesisTool(
                 "superseded_by_hypothesis_id": superseded_by_hypothesis_id,
             },
         )
-        ctx.deps.publish_record(record=activity, event=event)
-        ctx.deps.publish_record(record=resolved, event=event)
+        await ctx.deps.publish_record(record=activity, event=event)
+        await ctx.deps.publish_record(record=resolved, event=event)
         return ResolveHypothesisResult(
             success=True,
             hypothesis=resolved.model_dump(),
@@ -151,24 +151,25 @@ class ResolveHypothesisTool(
         )
 
 
-def _invalid_evidence_entity_ids(
+async def _invalid_evidence_entity_ids(
     *,
     repos: Repositories,
     project_id: str,
     evidence_entity_ids: list[str],
 ) -> list[str]:
-    return [
-        evidence_entity_id
-        for evidence_entity_id in evidence_entity_ids
-        if not _evidence_entity_exists(
+    invalid_ids: list[str] = []
+    for evidence_entity_id in evidence_entity_ids:
+        exists = await _evidence_entity_exists(
             repos=repos,
             project_id=project_id,
             evidence_entity_id=evidence_entity_id,
         )
-    ]
+        if not exists:
+            invalid_ids.append(evidence_entity_id)
+    return invalid_ids
 
 
-def _evidence_entity_exists(
+async def _evidence_entity_exists(
     *,
     repos: Repositories,
     project_id: str,
@@ -178,30 +179,30 @@ def _evidence_entity_exists(
         return False
     record_id = evidence_entity_id.strip()
     if record_id.startswith("ART"):
-        artifact = repos.artifacts.get(artifact_id=record_id)
+        artifact = await repos.artifacts.get(artifact_id=record_id)
         return artifact is not None and artifact.project_id == project_id
     if record_id.startswith("EX"):
-        experiment = repos.experiments.get(experiment_id=record_id)
+        experiment = await repos.experiments.get(experiment_id=record_id)
         return experiment is not None and experiment.project_id == project_id
     if record_id.startswith("EV"):
-        evaluation = repos.evaluations.get(evaluation_id=record_id)
+        evaluation = await repos.evaluations.get(evaluation_id=record_id)
         return evaluation is not None and evaluation.project_id == project_id
     if record_id.startswith("A"):
-        analysis = repos.analyses.get(analysis_id=record_id)
+        analysis = await repos.analyses.get(analysis_id=record_id)
         return analysis is not None and analysis.project_id == project_id
     if record_id.startswith("B"):
-        baseline = repos.baselines.get(baseline_id=record_id)
+        baseline = await repos.baselines.get(baseline_id=record_id)
         return baseline is not None and baseline.project_id == project_id
     if record_id.startswith("H"):
-        hypothesis = repos.hypotheses.get(hypothesis_id=record_id)
+        hypothesis = await repos.hypotheses.get(hypothesis_id=record_id)
         return hypothesis is not None and hypothesis.project_id == project_id
     if record_id.startswith("T"):
-        task = repos.tasks.get(task_id=record_id)
+        task = await repos.tasks.get(task_id=record_id)
         return task is not None and task.project_id == project_id
     if record_id.startswith("M"):
-        measurement = repos.measurements.get(measurement_id=record_id)
+        measurement = await repos.measurements.get(measurement_id=record_id)
         if measurement is None:
             return False
-        evaluation = repos.evaluations.get(evaluation_id=measurement.evaluation_id)
+        evaluation = await repos.evaluations.get(evaluation_id=measurement.evaluation_id)
         return evaluation is not None and evaluation.project_id == project_id
     return False

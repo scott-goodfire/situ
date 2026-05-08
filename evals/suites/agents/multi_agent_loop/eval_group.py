@@ -21,12 +21,12 @@ class MultiAgentLoopEvalGroup(
     suite_name: ClassVar[str] = "agents"
     world_name: ClassVar[str] = "multi_agent_loop"
 
-    def task(self, args: MultiAgentLoopEvalInput) -> MultiAgentLoopEvalOutput:
+    async def task(self, args: MultiAgentLoopEvalInput) -> MultiAgentLoopEvalOutput:
         set_eval_attribute("suite", self.suite_name)
         set_eval_attribute("world", self.world_name)
         set_eval_attribute("case_id", args.case_id)
         set_eval_attribute("seed", args.seed)
-        output = run_multi_agent_loop(args)
+        output = await run_multi_agent_loop(args)
         increment_eval_metric("tool_calls", len(output.captured_tool_calls))
         increment_eval_metric("manager_tool_calls", len(output.manager_tool_calls))
         increment_eval_metric(

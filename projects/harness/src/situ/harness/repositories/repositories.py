@@ -1,8 +1,5 @@
 from __future__ import annotations
 
-import asyncio
-from typing import Any
-
 from pydantic import BaseModel, ConfigDict
 
 from .agents import AgentsRepository
@@ -29,72 +26,55 @@ from .tasks import TasksRepository
 from .workspaces import WorkspacesRepository
 
 
-class RepositoryProxy:
-    def __init__(self, repository: object) -> None:
-        self._repository = repository
-
-    def __getattr__(self, name: str) -> Any:
-        value = getattr(self._repository, name)
-        if not callable(value):
-            return value
-
-        async def call(*args: Any, **kwargs: Any) -> Any:
-            return await asyncio.to_thread(value, *args, **kwargs)
-
-        return call
-
-
 class Repositories(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    workspaces: RepositoryProxy
-    projects: RepositoryProxy
-    sessions: RepositoryProxy
-    agents: RepositoryProxy
-    tasks: RepositoryProxy
-    task_dependencies: RepositoryProxy
-    task_entity_links: RepositoryProxy
-    task_activities: RepositoryProxy
-    analyses: RepositoryProxy
-    analysis_activities: RepositoryProxy
-    hypotheses: RepositoryProxy
-    baselines: RepositoryProxy
-    experiments: RepositoryProxy
-    evaluations: RepositoryProxy
-    measurements: RepositoryProxy
-    hypothesis_experiment_links: RepositoryProxy
-    hypothesis_activities: RepositoryProxy
-    experiment_activities: RepositoryProxy
-    evaluation_activities: RepositoryProxy
-    artifacts: RepositoryProxy
-    agent_message_history: RepositoryProxy
-    events: RepositoryProxy
+    workspaces: WorkspacesRepository
+    projects: ProjectRepository
+    sessions: SessionsRepository
+    agents: AgentsRepository
+    tasks: TasksRepository
+    task_dependencies: TaskDependenciesRepository
+    task_entity_links: TaskEntityLinksRepository
+    task_activities: TaskActivitiesRepository
+    analyses: AnalysesRepository
+    analysis_activities: AnalysisActivitiesRepository
+    hypotheses: HypothesesRepository
+    baselines: BaselinesRepository
+    experiments: ExperimentsRepository
+    evaluations: EvaluationsRepository
+    measurements: MeasurementsRepository
+    hypothesis_experiment_links: HypothesisExperimentLinksRepository
+    hypothesis_activities: HypothesisActivitiesRepository
+    experiment_activities: ExperimentActivitiesRepository
+    evaluation_activities: EvaluationActivitiesRepository
+    artifacts: ArtifactsRepository
+    agent_message_history: AgentMessageHistoryRepository
+    events: EventsRepository
 
     @classmethod
     def create(cls, db: object) -> "Repositories":
         return cls(
-            workspaces=RepositoryProxy(WorkspacesRepository(db=db)),
-            projects=RepositoryProxy(ProjectRepository(db=db)),
-            sessions=RepositoryProxy(SessionsRepository(db=db)),
-            agents=RepositoryProxy(AgentsRepository(db=db)),
-            tasks=RepositoryProxy(TasksRepository(db=db)),
-            task_dependencies=RepositoryProxy(TaskDependenciesRepository(db=db)),
-            task_entity_links=RepositoryProxy(TaskEntityLinksRepository(db=db)),
-            task_activities=RepositoryProxy(TaskActivitiesRepository(db=db)),
-            analyses=RepositoryProxy(AnalysesRepository(db=db)),
-            analysis_activities=RepositoryProxy(AnalysisActivitiesRepository(db=db)),
-            hypotheses=RepositoryProxy(HypothesesRepository(db=db)),
-            baselines=RepositoryProxy(BaselinesRepository(db=db)),
-            experiments=RepositoryProxy(ExperimentsRepository(db=db)),
-            evaluations=RepositoryProxy(EvaluationsRepository(db=db)),
-            measurements=RepositoryProxy(MeasurementsRepository(db=db)),
-            hypothesis_experiment_links=RepositoryProxy(
-                HypothesisExperimentLinksRepository(db=db),
-            ),
-            hypothesis_activities=RepositoryProxy(HypothesisActivitiesRepository(db=db)),
-            experiment_activities=RepositoryProxy(ExperimentActivitiesRepository(db=db)),
-            evaluation_activities=RepositoryProxy(EvaluationActivitiesRepository(db=db)),
-            artifacts=RepositoryProxy(ArtifactsRepository(db=db)),
-            agent_message_history=RepositoryProxy(AgentMessageHistoryRepository(db=db)),
-            events=RepositoryProxy(EventsRepository(db=db)),
+            workspaces=WorkspacesRepository(db=db),
+            projects=ProjectRepository(db=db),
+            sessions=SessionsRepository(db=db),
+            agents=AgentsRepository(db=db),
+            tasks=TasksRepository(db=db),
+            task_dependencies=TaskDependenciesRepository(db=db),
+            task_entity_links=TaskEntityLinksRepository(db=db),
+            task_activities=TaskActivitiesRepository(db=db),
+            analyses=AnalysesRepository(db=db),
+            analysis_activities=AnalysisActivitiesRepository(db=db),
+            hypotheses=HypothesesRepository(db=db),
+            baselines=BaselinesRepository(db=db),
+            experiments=ExperimentsRepository(db=db),
+            evaluations=EvaluationsRepository(db=db),
+            measurements=MeasurementsRepository(db=db),
+            hypothesis_experiment_links=HypothesisExperimentLinksRepository(db=db),
+            hypothesis_activities=HypothesisActivitiesRepository(db=db),
+            experiment_activities=ExperimentActivitiesRepository(db=db),
+            evaluation_activities=EvaluationActivitiesRepository(db=db),
+            artifacts=ArtifactsRepository(db=db),
+            agent_message_history=AgentMessageHistoryRepository(db=db),
+            events=EventsRepository(db=db),
         )

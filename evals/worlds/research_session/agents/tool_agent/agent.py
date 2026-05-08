@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import inspect
 from typing import Any
 
@@ -38,7 +37,7 @@ RESEARCH_TOOL_AGENT_INSTRUCTIONS = inspect.cleandoc(
 )
 
 
-def run_research_tool_agent(args: ResearchToolEvalInput) -> ResearchToolEvalOutput:
+async def run_research_tool_agent(args: ResearchToolEvalInput) -> ResearchToolEvalOutput:
     world = ResearchSessionWorld(seed=args.seed)
     capture = ToolCallCaptureCapability()
     try:
@@ -51,12 +50,12 @@ def run_research_tool_agent(args: ResearchToolEvalInput) -> ResearchToolEvalOutp
             emit_event=world.emit_event,
         )
         agent = _build_agent(capture, toolset=args.toolset)
-        result = asyncio.run(agent.run(args.prompt, deps=deps))
+        result = await agent.run(args.prompt, deps=deps)
         return ResearchToolEvalOutput(
             content=str(result.output),
             captured_tool_calls=list(capture.tool_calls),
             events=list(world.events),
-            project_board=world.project_board(),
+            project_board=await world.project_board(),
             signals={
                 "tool_calls": len(capture.tool_calls),
                 "events": len(world.events),

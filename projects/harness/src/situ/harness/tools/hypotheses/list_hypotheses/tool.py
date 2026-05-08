@@ -13,7 +13,7 @@ class ListHypothesesTool(BaseSituTool[SituToolDeps, ListHypothesesResult]):
     name = "list_hypotheses"
     result_type = ListHypothesesResult
 
-    def execute_sync(
+    async def execute(
         self,
         *,
         ctx: RunContext[SituToolDeps],
@@ -27,10 +27,10 @@ class ListHypothesesTool(BaseSituTool[SituToolDeps, ListHypothesesResult]):
             if status is not None
             else None
         )
-        repos = ctx.deps.get_repos()
-        resolved_project_id = project_id or ctx.deps.current_project_id()
+        repos = await ctx.deps.get_repos()
+        resolved_project_id = project_id or await ctx.deps.current_project_id()
         hypotheses = (
-            repos.hypotheses.list_for_project(project_id=resolved_project_id)
+            await repos.hypotheses.list_for_project(project_id=resolved_project_id)
             if resolved_project_id is not None
             else []
         )

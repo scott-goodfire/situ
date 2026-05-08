@@ -20,12 +20,13 @@ from evals.worlds.critic_followup.world import (
         "usable",
     ],
 )
-def test_critic_followup_world_seeds_reviewed_experiment(
+@pytest.mark.asyncio
+async def test_critic_followup_world_seeds_reviewed_experiment(
     seed: CriticFollowupSeed,
 ) -> None:
     world = CriticFollowupWorld(seed=seed)
     try:
-        board = world.project_board()
+        board = await world.project_board()
         plan_tasks = [task for task in board["tasks"] if task["kind"] == "plan"]
         reviews = [
             activity

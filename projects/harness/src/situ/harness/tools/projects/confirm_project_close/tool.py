@@ -21,7 +21,7 @@ class ConfirmProjectCloseTool(
     result_type = ConfirmProjectCloseResult
     sequential = True
 
-    def execute_sync(
+    async def execute(
         self,
         *,
         ctx: RunContext[SituToolDeps],
@@ -35,7 +35,7 @@ class ConfirmProjectCloseTool(
         The Manager should only call this after reconsidering whether another
         useful Scientist task can be filed.
         """
-        repos = ctx.deps.get_repos()
+        repos = await ctx.deps.get_repos()
         pending = get_pending_project_close(confirmation_code)
         if pending is None:
             return self._failure(
@@ -56,7 +56,7 @@ class ConfirmProjectCloseTool(
                 code="project_close_confirmation_agent_mismatch",
                 message="The confirmation code belongs to a different agent.",
             )
-        active_task = current_manager_plan_task(
+        active_task = await current_manager_plan_task(
             repos=repos,
             session_id=ctx.deps.session_id,
             project_id=pending.project_id,
@@ -75,11 +75,14 @@ class ConfirmProjectCloseTool(
             )
 
         pop_pending_project_close(confirmation_code)
-        project = repos.projects.update(project_id=pending.project_id, status=ProjectStatus.CLOSED)
+        project = await repos.projects.update(
+            project_id=pending.project_id,
+            status=ProjectStatus.CLOSED,
+        )
         if project is None:
             raise ValueError(f"project not found: {pending.project_id}")
 
-        event = ctx.deps.record_event(
+        event = await ctx.deps.record_event(
             event_type="project.closed",
             message=f"Closed project {project.id}: {final_summary}",
             payload={
@@ -91,9 +94,9 @@ class ConfirmProjectCloseTool(
                 "final_summary": final_summary,
             },
         )
-        ctx.deps.publish_record(record=project, event=event)
+        await ctx.deps.publish_record(record=project, event=event)
         if pending.task_id is not None:
-            activity = repos.task_activities.add(
+            activity = await repos.task_activities.add(
                 project_id=project.id,
                 task_id=pending.task_id,
                 created_in_session_id=ctx.deps.session_id,
@@ -106,7 +109,7 @@ class ConfirmProjectCloseTool(
                     "project_id": project.id,
                 },
             )
-            ctx.deps.publish_record(record=activity, event=event)
+            await ctx.deps.publish_record(record=activity, event=event)
         return ConfirmProjectCloseResult(
             success=True,
             project=project.model_dump(),

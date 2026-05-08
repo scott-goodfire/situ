@@ -55,7 +55,7 @@ def get_pending_project_close(code: str) -> PendingProjectClose | None:
     return _PENDING_CLOSES.get(code)
 
 
-def current_manager_plan_task(
+async def current_manager_plan_task(
     *,
     repos: Repositories,
     session_id: str,
@@ -64,7 +64,7 @@ def current_manager_plan_task(
 ) -> TaskRecord | None:
     candidates = [
         task
-        for task in repos.tasks.list_for_project(project_id=project_id)
+        for task in await repos.tasks.list_for_project(project_id=project_id)
         if task.kind == TaskKind.PLAN
         and task.status == TaskStatus.IN_PROGRESS
         and task.claimed_in_session_id == session_id

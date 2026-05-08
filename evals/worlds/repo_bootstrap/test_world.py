@@ -1,8 +1,12 @@
 from __future__ import annotations
 
-from situ.harness.tools.common import SituToolDeps
+from dataclasses import dataclass
+from typing import Any, cast
+
+import pytest
+
+from situ.harness.tools.common import BaseSituTool, SituToolDeps
 from situ.harness.tools.workspace_state import InspectWorkspaceStateTool
-from situ.harness.tools.common import invoke_situ_tool_sync
 from evals.worlds.repo_bootstrap import (
     BASELINE_EVALUATION_ID,
     RepoBootstrapWorld,
@@ -10,8 +14,27 @@ from evals.worlds.repo_bootstrap import (
 )
 
 
-def test_repo_bootstrap_world_runs_native_measurement() -> None:
-    world = RepoBootstrapWorld(seed="empty_repo")
+@dataclass(slots=True)
+class _DirectToolContext:
+    deps: SituToolDeps
+
+
+async def _invoke_situ_tool(
+    *,
+    tool: BaseSituTool,
+    deps: SituToolDeps,
+    **kwargs: Any,
+) -> Any:
+    tool_return = await tool._build_tool_function()(
+        cast(Any, _DirectToolContext(deps=deps)),
+        **kwargs,
+    )
+    return tool_return.return_value
+
+
+@pytest.mark.asyncio
+async def test_repo_bootstrap_world_runs_native_measurement() -> None:
+    world = await RepoBootstrapWorld.create(seed="empty_repo")
     try:
         deps = SituToolDeps(
             session_id=SESSION_ID,
@@ -20,7 +43,7 @@ def test_repo_bootstrap_world_runs_native_measurement() -> None:
         )
 
         result = deps.backend.execute("python train.py", timeout=5)
-        workspace_state = invoke_situ_tool_sync(
+        workspace_state = await _invoke_situ_tool(
             tool=InspectWorkspaceStateTool(),
             deps=deps,
             eval_command="python train.py",
@@ -38,10 +61,11 @@ def test_repo_bootstrap_world_runs_native_measurement() -> None:
         world.teardown()
 
 
-def test_repo_bootstrap_world_seeds_baseline_evaluation() -> None:
-    world = RepoBootstrapWorld(seed="with_baseline_result")
+@pytest.mark.asyncio
+async def test_repo_bootstrap_world_seeds_baseline_evaluation() -> None:
+    world = await RepoBootstrapWorld.create(seed="with_baseline_result")
     try:
-        graph = world.project_board()
+        graph = await world.project_board()
 
         assert [item["id"] for item in graph["evaluations"]] == [
             BASELINE_EVALUATION_ID
@@ -51,10 +75,11 @@ def test_repo_bootstrap_world_seeds_baseline_evaluation() -> None:
         world.teardown()
 
 
-def test_repo_bootstrap_world_can_seed_baseline_without_hypothesis() -> None:
-    world = RepoBootstrapWorld(seed="with_baseline_no_hypothesis")
+@pytest.mark.asyncio
+async def test_repo_bootstrap_world_can_seed_baseline_without_hypothesis() -> None:
+    world = await RepoBootstrapWorld.create(seed="with_baseline_no_hypothesis")
     try:
-        graph = world.project_board()
+        graph = await world.project_board()
 
         assert [item["id"] for item in graph["evaluations"]] == [
             BASELINE_EVALUATION_ID

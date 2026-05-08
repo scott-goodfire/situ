@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from pathlib import Path
 from typing import Any
 
@@ -19,4 +20,4 @@ def load_snapshot(workspace: Path) -> tuple[str, dict[str, Any]]:
         app_root=resolve_app_root(Path(__file__)),
         notify=lambda _method, _params: None,
     )
-    return "local", app.collections_bootstrap({})
+    return "local", asyncio.run(app.handle_async("collections.bootstrap", {}))

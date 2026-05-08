@@ -14,7 +14,7 @@ class UpdateBaselineTool(BaseSituTool[SituToolDeps, UpdateBaselineResult]):
     result_type = UpdateBaselineResult
     sequential = True
 
-    def execute_sync(
+    async def execute(
         self,
         *,
         ctx: RunContext[SituToolDeps],
@@ -30,7 +30,7 @@ class UpdateBaselineTool(BaseSituTool[SituToolDeps, UpdateBaselineResult]):
         suspicious, or accepted-for-comparison details in measurements or
         comments instead.
         """
-        baseline = ctx.deps.get_repos().baselines.update(
+        baseline = await (await ctx.deps.get_repos()).baselines.update(
             baseline_id=baseline_id,
             title=title,
             summary=summary,
@@ -39,10 +39,10 @@ class UpdateBaselineTool(BaseSituTool[SituToolDeps, UpdateBaselineResult]):
         if baseline is None:
             raise ValueError(f"baseline not found: {baseline_id}")
 
-        event = ctx.deps.record_event(
+        event = await ctx.deps.record_event(
             event_type="baseline.updated",
             message=f"Updated baseline {baseline.id}",
             payload={"baseline_id": baseline.id},
         )
-        ctx.deps.publish_record(record=baseline, event=event)
+        await ctx.deps.publish_record(record=baseline, event=event)
         return UpdateBaselineResult(success=True, baseline=baseline.model_dump())

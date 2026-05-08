@@ -163,11 +163,10 @@ which are repository-maintenance workflows for developer agents working on
 Situ itself. Runtime agent skills live under
 `projects/harness/src/situ/harness/agent_skills/`.
 
-Runtime skills should use progressive disclosure: the base role prompt and
-toolset list can advertise available skills, but full methodology should be
-loaded through an explicit tool call such as `load_skill(skill_name=...)`.
-This keeps traces readable and avoids turning every role prompt into a large
-manual.
+Runtime skills use progressive disclosure: role prompts and toolsets
+advertise the available skills, and full methodology is loaded explicitly
+by the agent when the work calls for it. This keeps traces readable and
+avoids turning every role prompt into a large manual.
 
 Skills should teach how to perform a kind of work, not replace product records.
 For example, a web-research skill can describe source selection and synthesis,
@@ -203,11 +202,6 @@ are reference material until their findings are copied, summarized, or resumed
 explicitly.
 Agents should read that working truth through tools. Prompt-injected project
 board slices are acceptable only as emergency fallback or for tiny bootstrap
-facts that are not durable research records.
-
-The Manager may be an exception in one narrow way: it can carry compacted
-conversation history across planning passes so it remembers the project
-trajectory. That memory must stay subordinate to durable Situ records. Worker
-roles such as Researcher, Scientist, and Critic should start from their task
-assignment and explicit tool reads rather than inheriting another worker pass's
-raw conversation.
+facts that are not durable research records. Whether agents carry any
+prior-pass chat history is an implementation detail; durable Situ records
+remain the source of truth.

@@ -13,7 +13,7 @@ class ListEvaluationsTool(BaseSituTool[SituToolDeps, ListEvaluationsResult]):
     name = "list_evaluations"
     result_type = ListEvaluationsResult
 
-    def execute_sync(
+    async def execute(
         self,
         *,
         ctx: RunContext[SituToolDeps],
@@ -29,15 +29,15 @@ class ListEvaluationsTool(BaseSituTool[SituToolDeps, ListEvaluationsResult]):
             if status is not None
             else None
         )
-        repos = ctx.deps.get_repos()
+        repos = await ctx.deps.get_repos()
         if baseline_id is not None:
-            evaluations = repos.evaluations.list_for_baseline(baseline_id=baseline_id)
+            evaluations = await repos.evaluations.list_for_baseline(baseline_id=baseline_id)
         elif experiment_id is not None:
-            evaluations = repos.evaluations.list_for_experiment(experiment_id=experiment_id)
+            evaluations = await repos.evaluations.list_for_experiment(experiment_id=experiment_id)
         else:
-            resolved_project_id = project_id or ctx.deps.current_project_id()
+            resolved_project_id = project_id or await ctx.deps.current_project_id()
             evaluations = (
-                repos.evaluations.list_for_project(project_id=resolved_project_id)
+                await repos.evaluations.list_for_project(project_id=resolved_project_id)
                 if resolved_project_id is not None
                 else []
             )

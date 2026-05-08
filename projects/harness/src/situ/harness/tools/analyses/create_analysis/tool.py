@@ -14,7 +14,7 @@ class CreateAnalysisTool(BaseSituTool[SituToolDeps, CreateAnalysisResult]):
     result_type = CreateAnalysisResult
     sequential = True
 
-    def execute_sync(
+    async def execute(
         self,
         *,
         ctx: RunContext[SituToolDeps],
@@ -27,12 +27,12 @@ class CreateAnalysisTool(BaseSituTool[SituToolDeps, CreateAnalysisResult]):
         **_kwargs: Any,
     ) -> CreateAnalysisResult:
         """Create durable project understanding before it becomes a hypothesis."""
-        repos = ctx.deps.get_repos()
-        project_id = ctx.deps.require_project_id()
-        resolved_analysis_id = analysis_id or repos.analyses.next_id(
+        repos = await ctx.deps.get_repos()
+        project_id = await ctx.deps.require_project_id()
+        resolved_analysis_id = analysis_id or await repos.analyses.next_id(
             project_id=project_id,
         )
-        analysis = repos.analyses.create(
+        analysis = await repos.analyses.create(
             analysis_id=resolved_analysis_id,
             project_id=project_id,
             created_in_session_id=ctx.deps.session_id,
@@ -43,10 +43,10 @@ class CreateAnalysisTool(BaseSituTool[SituToolDeps, CreateAnalysisResult]):
             content=content,
             supersedes_analysis_id=supersedes_analysis_id,
         )
-        event = ctx.deps.record_event(
+        event = await ctx.deps.record_event(
             event_type="analysis.created",
             message=f"Created analysis {analysis.id}",
             payload={"analysis_id": analysis.id},
         )
-        ctx.deps.publish_record(record=analysis, event=event)
+        await ctx.deps.publish_record(record=analysis, event=event)
         return CreateAnalysisResult(success=True, analysis=analysis.model_dump())

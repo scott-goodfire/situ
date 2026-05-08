@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import re
 from collections.abc import Callable
 from pathlib import Path
+from threading import Thread
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
@@ -67,7 +69,10 @@ class SituToolDeps(BaseModel):
         )
         return self._workspace_backend
 
-    def get_repos(self) -> Repositories:
+    async def get_repos(self) -> Repositories:
+        return self._get_repos_sync()
+
+    def _get_repos_sync(self) -> Repositories:
         if self.repos is not None:
             return self.repos
         if self._opened_repos is not None:
@@ -84,15 +89,15 @@ class SituToolDeps(BaseModel):
         self._opened_repos = Repositories.create(self._opened_db)
         return self._opened_repos
 
-    def get_worker_manager(self) -> WorkerManager:
+    async def get_worker_manager(self) -> WorkerManager:
         if self.worker_manager is not None:
             return self.worker_manager
         if self.repo_path is None:
             raise RuntimeError("tool deps require worker_manager or repo_path")
         return WorkerManager(Path(self.repo_path), app_root=self.app_root)
 
-    def require_project_id(self) -> str:
-        session = self.get_repos().sessions.get(session_id=self.session_id)
+    async def require_project_id(self) -> str:
+        session = await (await self.get_repos()).sessions.get(session_id=self.session_id)
         if session is None:
             raise ValueError(f"session not found: {self.session_id}")
         if session.project_id is None:
@@ -101,22 +106,30 @@ class SituToolDeps(BaseModel):
             )
         return session.project_id
 
-    def current_project_id(self) -> str | None:
+    async def current_project_id(self) -> str | None:
         if self.project_id is not None:
             return self.project_id
-        session = self.get_repos().sessions.get(session_id=self.session_id)
+        session = await (await self.get_repos()).sessions.get(session_id=self.session_id)
         return session.project_id if session is not None else None
 
-    def record_event(
+    def _current_project_id_sync(self) -> str | None:
+        if self.project_id is not None:
+            return self.project_id
+        session = _run_awaitable_sync(
+            self._get_repos_sync().sessions.get(session_id=self.session_id)
+        )
+        return session.project_id if session is not None else None
+
+    async def record_event(
         self,
         *,
         event_type: str,
         message: str,
         payload: dict[str, Any] | None = None,
     ) -> dict[str, Any] | None:
-        associated_project_id = self.current_project_id()
+        associated_project_id = await self.current_project_id()
         if self.emit_event is None:
-            event = self.get_repos().events.add(
+            event = await (await self.get_repos()).events.add(
                 event_type=event_type,
                 message=message,
                 associated_project_id=associated_project_id,
@@ -125,7 +138,7 @@ class SituToolDeps(BaseModel):
             )
             event_dump = event.model_dump()
             emit_project_event(project_id=self.workspace_id or self.project_id, event=event_dump)
-            self.publish_record(record=event, cursor=event.id)
+            await self.publish_record(record=event, cursor=event.id)
             return event_dump
         event = self.emit_event(
             event_type,
@@ -137,7 +150,46 @@ class SituToolDeps(BaseModel):
         event_id = event.get("id") if event is not None else None
         return event
 
-    def publish_record(
+    def _record_event_sync(
+        self,
+        *,
+        event_type: str,
+        message: str,
+        payload: dict[str, Any] | None = None,
+    ) -> dict[str, Any] | None:
+        associated_project_id = self._current_project_id_sync()
+        if self.emit_event is None:
+            event = _run_awaitable_sync(
+                self._get_repos_sync().events.add(
+                    event_type=event_type,
+                    message=message,
+                    associated_project_id=associated_project_id,
+                    associated_session_id=self.session_id,
+                    payload=payload,
+                )
+            )
+            event_dump = event.model_dump()
+            emit_project_event(project_id=self.workspace_id or self.project_id, event=event_dump)
+            self._publish_record_sync(record=event, cursor=event.id)
+            return event_dump
+        return self.emit_event(
+            event_type,
+            message,
+            associated_project_id,
+            self.session_id,
+            payload,
+        )
+
+    async def publish_record(
+        self,
+        *,
+        record: DbRecord,
+        event: dict[str, Any] | None = None,
+        cursor: int | None = None,
+    ) -> None:
+        self._publish_record_sync(record=record, event=event, cursor=cursor)
+
+    def _publish_record_sync(
         self,
         *,
         record: DbRecord,
@@ -167,12 +219,14 @@ class SituToolDeps(BaseModel):
         command_artifact_dir: str,
         run_log_path: str,
     ) -> None:
-        project_id = self.current_project_id()
+        project_id = self._current_project_id_sync()
         if project_id is None or self.project_dir is None:
             return
 
-        repos = self.get_repos()
-        artifact_id = repos.artifacts.next_id(project_id=project_id)
+        repos = self._get_repos_sync()
+        artifact_id = _run_awaitable_sync(
+            repos.artifacts.next_id(project_id=project_id)
+        )
         owner = self.active_experiment_id or self.active_task_id or self.agent_id or "unscoped"
         receipt_dir = (
             self.project_dir
@@ -216,32 +270,36 @@ class SituToolDeps(BaseModel):
             associated_entity_kind = "experiment"
             associated_entity_id = self.active_experiment_id
 
-        artifact = repos.artifacts.create(
-            artifact_id=artifact_id,
-            project_id=project_id,
-            created_in_session_id=self.session_id,
-            associated_entity_kind=associated_entity_kind,
-            associated_entity_id=associated_entity_id,
-            kind="command_receipt",
-            title=_command_receipt_title(command),
-            path=_artifact_path_for_record(
-                artifact_path=receipt_path,
-                project_dir=self.project_dir,
-            ),
-            media_type="application/json",
-            size_bytes=receipt_path.stat().st_size,
+        artifact = _run_awaitable_sync(
+            repos.artifacts.create(
+                artifact_id=artifact_id,
+                project_id=project_id,
+                created_in_session_id=self.session_id,
+                associated_entity_kind=associated_entity_kind,
+                associated_entity_id=associated_entity_id,
+                kind="command_receipt",
+                title=_command_receipt_title(command),
+                path=_artifact_path_for_record(
+                    artifact_path=receipt_path,
+                    project_dir=self.project_dir,
+                ),
+                media_type="application/json",
+                size_bytes=receipt_path.stat().st_size,
+            )
         )
         if self.active_task_id is not None:
-            link = repos.task_entity_links.create(
-                project_id=project_id,
-                task_id=self.active_task_id,
-                entity_kind="artifact",
-                entity_id=artifact.id,
-                relationship="receipt",
+            link = _run_awaitable_sync(
+                repos.task_entity_links.create(
+                    project_id=project_id,
+                    task_id=self.active_task_id,
+                    entity_kind="artifact",
+                    entity_id=artifact.id,
+                    relationship="receipt",
+                )
             )
         else:
             link = None
-        event = self.record_event(
+        event = self._record_event_sync(
             event_type="artifact.command_receipt_created",
             message=f"Captured command receipt {artifact.id}",
             payload={
@@ -252,9 +310,9 @@ class SituToolDeps(BaseModel):
                 "associated_entity_id": associated_entity_id,
             },
         )
-        self.publish_record(record=artifact, event=event)
+        self._publish_record_sync(record=artifact, event=event)
         if link is not None:
-            self.publish_record(record=link, event=event)
+            self._publish_record_sync(record=link, event=event)
 
 
 _METRIC_LINE_RE = re.compile(

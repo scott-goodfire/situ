@@ -14,7 +14,7 @@ class LinkTaskEntityTool(BaseSituTool[SituToolDeps, LinkTaskEntityResult]):
     result_type = LinkTaskEntityResult
     sequential = True
 
-    def execute_sync(
+    async def execute(
         self,
         *,
         ctx: RunContext[SituToolDeps],
@@ -25,21 +25,21 @@ class LinkTaskEntityTool(BaseSituTool[SituToolDeps, LinkTaskEntityResult]):
         **_kwargs: Any,
     ) -> LinkTaskEntityResult:
         """Link a task to a produced or referenced research record."""
-        repos = ctx.deps.get_repos()
-        task = repos.tasks.get(task_id=task_id)
+        repos = await ctx.deps.get_repos()
+        task = await repos.tasks.get(task_id=task_id)
         if task is None:
             raise ValueError(f"task not found: {task_id}")
-        link = repos.task_entity_links.create(
+        link = await repos.task_entity_links.create(
             project_id=task.project_id,
             task_id=task_id,
             entity_kind=entity_kind,
             entity_id=entity_id,
             relationship=relationship,
         )
-        event = ctx.deps.record_event(
+        event = await ctx.deps.record_event(
             event_type="task.entity_linked",
             message=f"Linked task {task_id} to {entity_kind}:{entity_id}",
             payload=link.model_dump(),
         )
-        ctx.deps.publish_record(record=link, event=event)
+        await ctx.deps.publish_record(record=link, event=event)
         return LinkTaskEntityResult(success=True, link=link.model_dump())
