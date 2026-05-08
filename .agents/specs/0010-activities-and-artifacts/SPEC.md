@@ -113,7 +113,7 @@ includes stable review metadata:
 
 ```text
 record_type: review_result
-decision: accepted | changes_requested | rejected | inconclusive
+decision: accepted | rejected
 reviewed_evaluation_ids
 reviewed_measurement_ids
 findings

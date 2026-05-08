@@ -54,8 +54,10 @@ The Critic is the LLM reviewer for proposed experiment changes. It
 does not replace deterministic trust checks, and it should not mutate candidate
 code. It reviews an experiment after the Scientist has recorded candidate
 workspace state and evaluation evidence, then records a `review_result`
-activity on the experiment with a decision of `accepted`, `changes_requested`,
-`rejected`, or `inconclusive`, plus findings that explain the judgment.
+activity on the experiment with a decision of `accepted` or `rejected`, plus
+findings that explain the judgment. Nuance such as "needs more evidence" or
+"changes requested" is expressed through findings on a `rejected` review,
+not through additional decision values.
 
 The review should explicitly look for common autoresearch failure modes:
 

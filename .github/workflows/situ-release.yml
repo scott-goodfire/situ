@@ -139,10 +139,6 @@ jobs:
             echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
           fi
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.13"
-
       - name: Install via the public install command
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

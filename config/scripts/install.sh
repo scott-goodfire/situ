@@ -9,6 +9,10 @@
 #   gh api -H "Accept: application/vnd.github.raw" repos/<repo>/contents/config/scripts/install.sh | bash
 #   gh api -H "Accept: application/vnd.github.raw" repos/<repo>/contents/config/scripts/install.sh | bash -s -- v0.1.0
 #
+# Prerequisites:
+#   curl, bash. uv (https://astral.sh/uv) is fetched automatically if missing
+#   and used to provision a Python 3.13 toolchain. No system Python required.
+#
 # Environment overrides:
 #   SITU_VERSION         pin a release tag (default: latest, or take from $1)
 #   SITU_RELEASE_REPO    GitHub <org>/<repo>
@@ -87,16 +91,26 @@ detect_platform() {
   printf '%s-%s' "$os" "$arch"
 }
 
-resolve_python() {
-  for candidate in python3.13 python3 python; do
-    if command -v "$candidate" >/dev/null 2>&1; then
-      if "$candidate" -c 'import sys; sys.exit(0 if sys.version_info >= (3, 13) else 1)' 2>/dev/null; then
-        printf '%s' "$candidate"
-        return 0
-      fi
+ensure_uv() {
+  if command -v uv >/dev/null 2>&1; then
+    command -v uv
+    return
+  fi
+  for candidate in "$HOME/.local/bin/uv" "$HOME/.cargo/bin/uv"; do
+    if [ -x "$candidate" ]; then
+      printf '%s' "$candidate"
+      return
     fi
   done
-  return 1
+  info "installing uv (manages the Python toolchain)" >&2
+  curl -LsSf https://astral.sh/uv/install.sh | sh >&2
+  for candidate in "$HOME/.local/bin/uv" "$HOME/.cargo/bin/uv"; do
+    if [ -x "$candidate" ]; then
+      printf '%s' "$candidate"
+      return
+    fi
+  done
+  err "uv installer ran but the binary is not where it usually lands"
 }
 
 extract_asset_url() {
@@ -126,11 +140,14 @@ sha256_of() {
 PLATFORM="$(detect_platform)"
 info "detected platform: $PLATFORM"
 
-PYTHON_BIN="$(resolve_python || true)"
-if [ -z "${PYTHON_BIN:-}" ]; then
-  err "Python 3.13+ is required but was not found on PATH. Install it from https://www.python.org/downloads/ and rerun."
-fi
-info "using $PYTHON_BIN ($($PYTHON_BIN --version 2>&1))"
+UV_BIN="$(ensure_uv)"
+info "using uv: $UV_BIN"
+
+info "ensuring Python 3.13 toolchain is available"
+"$UV_BIN" python install 3.13 >/dev/null 2>&1 || \
+  err "failed to install Python 3.13 via uv"
+PYTHON_BIN="$("$UV_BIN" python find 3.13)"
+info "using python: $PYTHON_BIN"
 
 if [ -n "${SITU_RELEASE_TARBALL:-}" ] && [ "$VERSION" = "latest" ]; then
   err "SITU_RELEASE_TARBALL requires SITU_VERSION to be set explicitly"
@@ -211,13 +228,12 @@ rm -rf "$VERSION_DIR"
 mkdir -p "$VERSION_DIR"
 tar -xzf "$TMP_DIR/$TARBALL_NAME" -C "$VERSION_DIR"
 
-info "creating Python venv"
-"$PYTHON_BIN" -m venv "$VERSION_DIR/venv"
-"$VERSION_DIR/venv/bin/python" -m pip install --quiet --upgrade pip
+info "creating venv"
+"$UV_BIN" venv --quiet --python "$PYTHON_BIN" "$VERSION_DIR/venv"
 
-info "installing wheels (this may take a minute)"
+info "installing wheels"
 # shellcheck disable=SC2046
-"$VERSION_DIR/venv/bin/python" -m pip install --quiet $(ls "$VERSION_DIR/wheels/"*.whl)
+"$UV_BIN" pip install --quiet --python "$VERSION_DIR/venv/bin/python" $(ls "$VERSION_DIR/wheels/"*.whl)
 
 mkdir -p "$VERSION_DIR/bin"
 ln -sfn "../venv/bin/situ" "$VERSION_DIR/bin/situ"
