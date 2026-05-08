@@ -44,9 +44,9 @@ Runtime skills are also separate from Situ research-record tools. Skills may
 package reusable methodology, resources, or scripts for a role, but skill use
 must still produce ordinary Situ records when the finding matters. Keep
 runtime skills under the harness package, not `.agents/skills`; `.agents/skills`
-is for developer agents maintaining this repo. Manager and Researcher may have
-runtime skills by default. Do not attach runtime skills to Scientist or Critic
-until their core role loops need them.
+is for developer agents maintaining this repo. Runtime skills may be available
+to Manager, Researcher, Scientist, and Critic when the skill is role-scoped and
+preserves that agent's normal read/write boundaries.
 
 The durable storage model can remain general. The agent-facing tool name should
 still describe the product action directly.
