@@ -6,8 +6,9 @@ Situ does not reduce autoresearch output to one best metric. Autoresearch
 often learns through many experiments whose value appears in patterns,
 combinations, failures, and suspicious results.
 
-This spec defines the minimal model for comment activities, measurement
-evidence, and artifacts.
+This spec defines the minimal model for activities, measurement evidence, and
+artifacts. Workflow state and pull-based routing are defined in
+[0019-pull-based-workflow-state](../0019-pull-based-workflow-state/SPEC.md).
 
 ## Activity
 
@@ -21,7 +22,7 @@ It can describe:
 - A status update
 - A plan
 - A result
-- A concern
+- A trust finding
 - A decision
 - An interpretation
 - A link to an artifact
@@ -33,7 +34,7 @@ id
 target_id        (NOT NULL, per activity table or associated entity fields)
 created_in_session_id?
 actor
-kind: comment
+kind
 body
 payload_json
 created_at
@@ -43,9 +44,10 @@ Activities should not be session-owned. The session that created an activity can
 be stored as optional `created_in_session_id` provenance. Ownership reaches the
 project through the parent research record.
 
-The body should be useful to humans. The payload can carry structured details
-for agents and views, such as `activity_type: result` or `activity_type:
-concern`, but the product model should not expose many activity kinds yet.
+The body should be useful to humans. Activity kinds are `created`, `updated`,
+`status_updated`, `recorded`, and `comment`. The payload carries structured
+details for agents and views. `recorded` activities use `record_type` as their
+payload discriminator.
 
 ## Measurements And Results
 
@@ -67,11 +69,11 @@ belong on the measurement trail. Evaluation result activities are the
 storage shape for measurements; a rigid metric table is out of scope until
 the measurement concept is explicit enough to need its own query surface.
 
-## Concerns
+## Trust Findings
 
-Concerns are human-readable entries that make suspicious or invalid results
-explicit. They most often attach to measurements or evaluations, because that is
-where the evidence arrives.
+Trust findings are human-readable recorded facts that make suspicious or
+invalid results explicit. They most often attach to measurements, evaluations,
+or experiments, because that is where the evidence arrives.
 
 Examples:
 
@@ -84,12 +86,15 @@ Examples:
 - `Candidate includes dependency changes; environment comparability needs
   review.`
 
-Concerns are distinguishable through body text and optional payload
-metadata.
+Trust findings are `recorded` activities with
+`record_type: trust_finding`. Their payloads may carry stable issue codes,
+blocking metadata, severity, and evidence references.
 
 ## Interpretations
 
-Interpretations and lightweight findings are written as comment activities.
+Interpretations and lightweight findings are written as `recorded` activities
+when they need structured payloads and as `comment` activities when they are
+freeform discussion.
 
 Examples:
 
@@ -99,27 +104,25 @@ Examples:
 
 ## Critic Reviews
 
-A Critic review is an experiment activity that treats the experiment as the
-proposed change and the associated evaluations/measurements as evidence. A
-separate first-class Review model is out of scope.
+A Critic review is a target-owned `recorded` activity that treats the target
+record and associated evidence as the review subject.
 
 The body should read like a concise PR review: what evidence was considered,
 what looks trustworthy or suspicious, and what should happen next. The payload
-may include stable review metadata while the shape is still evolving:
+includes stable review metadata:
 
 ```text
-activity_type: critic_review
-verdict: usable | concern | invalid | needs_reproduction | human_review
+record_type: review_result
+decision: accepted | changes_requested | rejected | inconclusive
 reviewed_evaluation_ids
 reviewed_measurement_ids
-concern_kinds
-recommended_next_step
+findings
 ```
 
-If the Critic finds a specific trust problem, it may also write a concern-shaped
-experiment activity or include concern metadata in the review payload. Raw
-command output and repeated runs should remain on measurements; the review is
-the judgment over the proposed change.
+Findings carry stable codes, summaries, blocking metadata when useful, and
+evidence references. Raw command output and repeated runs should remain on
+measurements; the review is the judgment over the proposed change or research
+record.
 
 ## Evaluations
 
@@ -135,7 +138,7 @@ project_id                 (NOT NULL, FK -> projects)
 created_in_session_id?
 title
 summary
-status: open | active | closed
+status
 associated_baseline_id?
 associated_experiment_id?
 created_at

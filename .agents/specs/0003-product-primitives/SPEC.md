@@ -74,6 +74,12 @@ is no stored "active session" pointer on the workspace; the most-recently-
 updated session is derived on demand. Agent and task records describe
 coordination and handoffs around the research-record work.
 
+Workflow-tracked records use the state machines defined in
+[0019-pull-based-workflow-state](../0019-pull-based-workflow-state/SPEC.md).
+Tasks carry coordination state. Analyses, hypotheses, baselines, experiments,
+and evaluations carry research-record state. Activities record status
+transitions, structured facts, and comments.
+
 ## Workspace
 
 The folder/runtime boundary.
@@ -130,9 +136,12 @@ The expected flow is that discovery and synthesis tasks produce analyses, the
 manager and scientist read them, and only the ideas that become testable
 improvement directions are pulled into hypotheses.
 
-Analyses should be status-light: open, active, or closed. If one analysis
-replaces another, link it with `supersedes_analysis_id` and explain the
-relationship in an analysis activity.
+Analyses use the research-record state machine. A triaged analysis is intake
+context. An accepted analysis is normal project context. An active analysis is
+being refined or used as the focus of work. A done analysis is resolved enough
+for the project. Canceled or failed analyses remain visible with activity
+context. If one analysis replaces another, link it with
+`supersedes_analysis_id` and explain the relationship in an analysis activity.
 
 Analyses are required to belong to a project (`project_id` FK, NOT NULL). If a
 session created the analysis, store that provenance as `created_in_session_id`.
@@ -142,22 +151,19 @@ If an agent created it, store `created_by_agent_id` when available.
 
 A research thread inside a project.
 
-Hypotheses should be lightweight and status-light. A hypothesis can be open,
-active, or closed. Promising, weakened, suspicious, or mostly-supported
-nuance is carried in activities; the row status stays light.
+Hypotheses use the research-record state machine. A triaged hypothesis is a
+claim that needs acceptance, review, refinement, or cancellation before it
+guides empirical work. An accepted hypothesis is usable project context. An
+active hypothesis is being tested or refined. A done hypothesis has a recorded
+resolution.
 
-Closing a hypothesis requires an explicit resolution activity. The hypothesis
-row should remain status-light (`closed`), while the resolution activity says
-whether the project evidence made the hypothesis `supported`, `rejected`,
-`superseded`, or `inconclusive`. `supported` means supported enough for this
-project's next decision; it does not claim general truth. `superseded` should
-name the replacement hypothesis when there is one. Evidence such as linked
-experiments, evaluations, measurements, artifacts, or analyses should be cited
-in the activity payload or body.
-
-Routine hypothesis updates should not directly set a hypothesis to `closed`.
-Use the explicit resolution action so the activity trail explains what was
-learned before the status changes.
+Hypothesis resolution is a `recorded` activity with
+`record_type: hypothesis_resolution`. Supported, rejected, superseded, and
+inconclusive are resolution values on that recorded fact. `supported` means
+supported enough for this project's next decision; it does not claim general
+truth. `superseded` names the replacement hypothesis when there is one.
+Evidence such as linked experiments, evaluations, measurements, artifacts, or
+analyses should be cited in the activity payload or body.
 
 Hypotheses are required to belong to a project (`project_id` FK, NOT NULL). If
 a session created the hypothesis, store that provenance as
@@ -177,9 +183,13 @@ lightweight and experiment-shaped. Separate Variant, Branch, Promotion, or
 Champion models are out of scope. See
 [0015-experiment-lineage-portfolio-search/SPEC.md](../0015-experiment-lineage-portfolio-search/SPEC.md).
 
-Experiments should also be status-light: open, active, or closed. Details such
-as failure, suspiciousness, reproduction, or interpretation should be expressed
-as experiment activities.
+Experiments use the research-record state machine. A triaged experiment is a
+candidate idea or produced candidate that needs acceptance, review, refinement,
+or cancellation. An accepted experiment is usable project context or a valid
+portfolio candidate. An active experiment is being prepared, executed,
+measured, or reviewed. A done experiment has enough recorded evidence and
+decision context for the project. Canceled and failed experiments remain
+inspectable with activities and artifacts.
 
 Experiments are required to belong to a project (`project_id` FK, NOT NULL). If
 a session created the experiment, store that provenance as
@@ -192,11 +202,9 @@ measurements under one evaluation unless the check itself changes enough to
 deserve a separate measurement thread.
 
 After candidate evaluation evidence is recorded, a Critic may review the
-experiment as a whole. That review should attach to the experiment as an
-activity with payload metadata that can cite the reviewed evaluations and
-measurements. Do not introduce a separate ProposedChange, PullRequest, Review,
-or Verdict model until multiple runtime paths need to query or enforce that
-shape directly.
+experiment as a whole. That review attaches to the experiment as a
+`recorded` activity with `record_type: review_result`, payload metadata that can
+cite the reviewed evaluations and measurements, and a human-readable body.
 
 Do not add `Variant` as a first-class model yet. Use experiment summaries,
 activity bodies, artifacts, and links to express baseline + A, baseline + B,
@@ -213,10 +221,11 @@ of the researched workspace before autonomous candidate changes begin, but a
 project may record more than one baseline over time when the comparison anchor
 meaningfully changes.
 
-Baselines should be status-light: open, active, or closed. Noisy,
-incomplete, dirty, suspicious, or accepted-for-comparison nuance is
-carried in measurement evidence, concerns, and activities; the row
-status stays light.
+Baselines use the research-record state machine. A triaged baseline is proposed
+comparison context. An accepted baseline is eligible for comparison. An active
+baseline is being measured or refined. A done baseline has enough evidence for
+the project's comparison needs. Noisy, incomplete, dirty, suspicious, or
+accepted-for-comparison nuance is carried in measurements and activities.
 
 Baselines are required to belong to a project (`project_id` FK, NOT NULL). If a
 session created the baseline, store that provenance as
@@ -242,10 +251,13 @@ measured subject is exactly one baseline or one experiment. Evaluation is not a
 synonym for a single command run; repeated command runs and their outputs are
 measurements under the evaluation.
 
-Evaluations should be status-light: open, active, or closed. Repeated runs,
-stdout/stderr, observed signals, interpretations, concerns, and
-reproduction notes live as measurements and activities under the
-evaluation.
+Evaluations use the research-record state machine. A triaged evaluation is a
+proposed measurement thread. An accepted evaluation is eligible for project
+measurement. An active evaluation is being run, reproduced, or interpreted. A
+done evaluation has sufficient measurements or a recorded reason that the
+thread is complete. Repeated runs, stdout/stderr, observed signals,
+interpretations, trust findings, and reproduction notes live as measurements
+and activities under the evaluation.
 
 Evaluations are required to belong to a project (`project_id` FK, NOT NULL)
 and must point at exactly one measured subject:
@@ -276,7 +288,8 @@ One concrete observed result under an evaluation.
 
 A measurement records what happened when the evaluation was actually run or
 observed. It can include command text, workspace state, raw output summaries,
-metric bundles, pass/fail checks, concern metadata, and artifact references.
+metric bundles, pass/fail checks, trust-finding metadata, and artifact
+references.
 This is the model-level home for evidence that came back from a baseline or
 candidate check.
 
@@ -297,7 +310,7 @@ workspace_state
 metrics
 raw_output_summary
 artifact_ids
-concerns
+trust_findings
 comparison_baseline_id
 comparison_measurement_id
 comparison_metric_deltas
@@ -345,10 +358,12 @@ entity, following the ownership rules for that entity. Activity rows do not
 carry their own `session_id` owner column. If a session created the activity,
 store that provenance as `created_in_session_id`.
 
-Analysis, hypothesis, experiment, and task activities use `comment` as the
-activity kind. Measurement evidence should be recorded as measurements, with
-human-readable result text and structured payload metadata. Results, concerns,
-interpretations, plans, and decisions still live in human-readable bodies, with
+Activity kinds follow
+[0019-pull-based-workflow-state](../0019-pull-based-workflow-state/SPEC.md):
+`created`, `updated`, `status_updated`, `recorded`, and `comment`.
+Measurement evidence should be recorded as measurements, with human-readable
+result text and structured payload metadata. Results, trust findings,
+interpretations, plans, and decisions live in human-readable bodies, with
 structured payloads available for views or agents when useful.
 
 The activity body should remain human-readable. Structured payloads can hold

@@ -33,7 +33,7 @@ Agents are durable project participants. The active slice uses four agent kinds:
 - `critic` claims review tasks and checks completed candidate experiments as
   proposed changes. It reads experiment workspace state, evaluations,
   measurements, artifacts, and activities, then records experiment review and
-  concern activities.
+  trust-finding activities.
 
 Every agent pass reads current project and task state through Situ tools
 before making decisions. Durable output belongs in analyses, hypotheses,
@@ -75,10 +75,11 @@ Task kinds should stay bounded and product-specific:
 
 Task statuses describe the coordination lifecycle:
 
+- `triage`
 - `backlog`
 - `in_progress`
 - `done`
-- `abandoned`
+- `canceled`
 - `failed`
 
 Tasks may depend on other tasks through explicit dependency links. A task may
@@ -102,9 +103,11 @@ reusable project-next-step planning task.
 
 ## Task Activity
 
-Task activities are the coordination timeline for a task. They use the same
-plain-language activity posture as the rest of Situ: a human-readable body
-with optional structured payload for view or agent use.
+Task activities are the coordination timeline for a task. They use the shared
+activity kinds from
+[0019-pull-based-workflow-state](../0019-pull-based-workflow-state/SPEC.md):
+`created`, `updated`, `status_updated`, `recorded`, and `comment`.
+Every task status transition records a `status_updated` activity.
 
 Task activities can record planning notes, claim notes, user steering,
 failure explanations, or completion context. Research evidence should still
@@ -129,7 +132,7 @@ scientist experiment completion
   -> enqueue a `review` task linked to the experiment
 critic claims `review`
   -> reviews experiment-level evidence
-  -> writes an experiment review activity and any concern activity
+  -> writes an experiment `review_result` activity and any trust findings
 completion
   -> requeue the reusable `plan` task when more planning is useful
 ```
@@ -168,10 +171,10 @@ clear. Scientist tasks should generally attach evidence to `Experiment` and
 
 When a Scientist task is an `experiment`, Situ should not immediately replan
 from its results. The completed experiment is pending review until a Critic
-`review` task writes an experiment activity with `activity_type:
-critic_review`. The Manager should use that review, plus the underlying
-evaluation and measurement evidence, when deciding whether to reproduce,
-revise, combine, discard, or continue from the candidate.
+`review` task writes an experiment `recorded` activity with
+`record_type: review_result`. The Manager should use that review, plus the
+underlying evaluation and measurement evidence, when deciding how the candidate
+fits the portfolio.
 
 For lineage-aware autoresearch, the Manager should also decide which research
 thread and base state the next experiment should use. It should not assume
@@ -216,9 +219,9 @@ the close summary why they remain open.
 ## TUI Shape
 
 The TUI should be able to show a compact board grouped by task status:
-backlog, in progress, done, failed, and abandoned. Task cards should show
-kind, priority, title, assignee when claimed, dependency state, recent task
-activity, and linked research outputs when present.
+triage, backlog, in progress, done, failed, and canceled. Task cards should
+show kind, priority, title, assignee when claimed, dependency state, recent
+task activity, and linked research outputs when present.
 
 The task board should complement the hypothesis and experiment views. It
 answers "what work is happening?" while the research record answers "what did
@@ -240,7 +243,7 @@ we learn?"
   research output lives in records, not in chat history.
 - Researcher work produces durable analyses and hypotheses; Scientist work
   produces durable experiments and evaluations.
-- Critic work produces experiment-level review and concern activities rather
+- Critic work produces experiment-level review result and trust-finding activities rather
   than a standalone review model.
 - Scientist experiment completion is followed by Critic review before Manager
   replanning uses the candidate as decision-grade evidence.

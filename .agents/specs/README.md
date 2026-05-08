@@ -23,6 +23,7 @@ Read in this order:
 16. [0016-task-work-types-and-reviews/SPEC.md](./0016-task-work-types-and-reviews/SPEC.md)
 17. [0017-distribution-and-install/SPEC.md](./0017-distribution-and-install/SPEC.md)
 18. [0018-evals/SPEC.md](./0018-evals/SPEC.md)
+19. [0019-pull-based-workflow-state/SPEC.md](./0019-pull-based-workflow-state/SPEC.md)
 
 ## Product Thesis
 

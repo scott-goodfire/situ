@@ -1,97 +1,117 @@
-# Task Work Types And Reviews
+# Task Types And Reviews
 
 ## Purpose
 
-Situ tasks should help humans and agents understand how to think about a piece
-of work, not only which agent can claim it.
+Situ tasks help humans and agents understand the shape of work, who can claim
+it, and which records it reviews or produces.
 
-This spec defines task work types and target-specific Critic reviews. It narrows
-the task coordination contract from
-[0013-agent-task-coordination](../0013-agent-task-coordination/SPEC.md) and the
+This spec defines task type semantics and target-specific Critic reviews. It
+narrows the task coordination contract from
+[0013-agent-task-coordination](../0013-agent-task-coordination/SPEC.md), the
 activity contract from
-[0010-activities-and-artifacts](../0010-activities-and-artifacts/SPEC.md).
+[0010-activities-and-artifacts](../0010-activities-and-artifacts/SPEC.md), and
+the workflow-state contract from
+[0019-pull-based-workflow-state](../0019-pull-based-workflow-state/SPEC.md).
 
 ## Product Thesis
 
-Autoresearch coordination needs two layers of task meaning:
+Autoresearch coordination uses visible work items and visible judgments. A task
+is the work item. A target-owned recorded activity is the durable judgment.
+The runtime poller reads statuses, links, dependencies, and recorded facts to
+derive the next runnable task.
 
-- The coordination lane: who can claim the task and which lifecycle rules
-  apply.
-- The semantic frame: what kind of thinking the task asks for, which rubric or
-  runtime skill applies, and how the task should appear in live observability.
+## Task Type
 
-`TaskKind` owns the coordination lane. A task work type owns the semantic
-frame.
+A task exposes a bounded semantic type that tells the runtime and UI how to
+route, display, and prompt the work.
 
-For example, a task that asks the Critic to review a hypothesis is still a
-`review` task, because the Critic claims it and review lifecycle rules apply.
-Its work type is `review_hypothesis`, so the task board and agent trace can
-read like "Review hypothesis" rather than a generic "Review".
+Task types include:
 
-## Task Work Type
+- `plan`
+- `research`
+- `hypothesize`
+- `baseline`
+- `experiment`
+- `interpret`
+- `review_analysis`
+- `review_hypothesis`
+- `review_baseline`
+- `review_experiment`
+- `review_evaluation`
 
-A task may carry a `work_type` in addition to its `kind`.
+The type determines the eligible agent lane:
 
-The task kind defines broad workflow behavior:
+- Manager: `plan`
+- Researcher: `research`, `hypothesize`, `interpret`
+- Scientist: `baseline`, `experiment`
+- Critic: `review_*`
 
-- `plan` tasks are Manager planning work.
-- `research`, `hypothesize`, and `interpret` tasks are Researcher work.
-- `baseline` and `experiment` tasks are Scientist work.
-- `review` tasks are Critic work.
+An implementation may expose type as a single field or as a broad kind plus a
+more specific work type. The product contract is that each task has one clear
+semantic frame for routing, display, runtime skill selection, and review.
 
-The work type defines a more specific mental model inside that workflow lane.
-It is stable enough for display, skill dispatch, and review, but it should not
-be used to create a second task lifecycle when the `kind` lifecycle is enough.
+## Task Status
 
-Work types must not contradict task kinds. A `review_hypothesis` task is a
-`review` task claimed by the Critic; its purpose is to independently
-check a hypothesis.
-
-When a task has no work type, the task is understood by its kind, title,
-content, payload, and links.
-
-## Review Work Types
-
-Review tasks are Critic-owned checks of durable research work before the system
-treats that work as decision-grade.
-
-The active review work types are:
-
-- `review_experiment` checks whether a completed candidate experiment has
-  trustworthy evidence before the Manager replans from it.
-- `review_hypothesis` checks whether a hypothesis is testable, grounded,
-  distinct enough, and clear enough to guide empirical work.
-
-Review work types share one product shape:
+Task statuses follow
+[0019-pull-based-workflow-state](../0019-pull-based-workflow-state/SPEC.md):
 
 ```text
-durable record exists
-  -> review task names that record
-  -> Critic claims the review task
-  -> Critic reads the task and target record through tools
-  -> Critic writes a target-owned review activity
-  -> Critic marks the review task done
-  -> producer lane or Manager reads the review before trusting the target
+triage
+backlog
+in_progress
+done
+canceled
+failed
 ```
 
-The review task is the visible request for independent judgment. The review
-activity is the durable judgment. Hooks, events, or automated checks may create
-or annotate review tasks, but hidden semantic review is out of scope.
+Triage is the intake lane. A task in triage needs acceptance, cancellation,
+merge, refinement, or routing before normal execution. Accepting a task moves
+it to backlog. Canceling a task moves it to canceled. Each status transition
+records a `status_updated` activity on the task.
+
+## Review Tasks
+
+Review tasks are Critic-owned checks of durable records before those records
+become decision-grade project context.
+
+Review task types map to the record being checked:
+
+- `review_analysis` checks whether an analysis is grounded, useful, and scoped
+  enough to guide later work.
+- `review_hypothesis` checks whether a hypothesis is concrete, testable,
+  grounded, and distinct enough to guide empirical work.
+- `review_baseline` checks whether baseline evidence is usable for comparison.
+- `review_experiment` checks whether a candidate experiment's evidence is
+  trustworthy enough to shape planning.
+- `review_evaluation` checks whether a measurement thread is clear,
+  comparable, and sufficiently evidenced.
+
+Review tasks share one runtime shape:
+
+```text
+target record reaches a reviewable state
+  -> poller exposes or creates a review task
+  -> Critic claims the review task
+  -> Critic reads the task, target, activities, measurements, artifacts, and links
+  -> Critic records a review result on the target
+  -> Critic completes, cancels, or fails the review task
+```
 
 ## Review Assignment Payload
 
-A review task payload names its main reviewed object with a direct entity ID
+A review task payload names its main reviewed object with a direct target ID
 field:
 
 ```text
+analysis_id
 hypothesis_id
+baseline_id
 experiment_id
 evaluation_id
-analysis_id
 ```
 
 Secondary context uses `associated_<entity>_id` or
-`associated_<entities>_ids`:
+`associated_<entities>_ids` fields when useful:
 
 ```text
 associated_task_id
@@ -99,362 +119,146 @@ associated_baseline_id
 associated_evaluation_ids
 associated_measurement_ids
 associated_artifact_ids
+associated_review_activity_id
 ```
 
-The main reviewed object should be obvious from the work type and direct ID
-field. Normal review tasks should not use generic fields such as
-`review_target_kind`, `review_target_id`, or `evidence_ids`.
+The task title and content explain why the review exists when that context is
+useful. Durable relationships to reviewed or considered records are represented
+with task entity links.
 
-Examples:
+## Review Result Activity
 
-```json
-{
-  "kind": "review",
-  "work_type": "review_hypothesis",
-  "payload": {
-    "hypothesis_id": "H7",
-    "associated_task_id": "T12"
-  }
-}
-```
-
-```json
-{
-  "kind": "review",
-  "work_type": "review_experiment",
-  "payload": {
-    "experiment_id": "EX4",
-    "associated_task_id": "T18",
-    "associated_evaluation_ids": ["EV3"],
-    "associated_measurement_ids": ["M9", "M10"]
-  }
-}
-```
-
-Payload context is assignment context, not a copied evidence bundle. The task
-title and content explain why the review exists when that is useful. Durable
-relationships to research records should also be represented with task entity
-links when the relationship matters for querying or rendering.
-
-## Simplicity Boundary
-
-Review tasks should stay small. The task's `kind`, `work_type`, direct target
-ID, title, content, and task entity links should be enough to understand and
-route the assignment.
-
-The normal review task shape should not add parallel generic fields for the
-same meaning:
+A Critic review result is a target-owned `recorded` activity:
 
 ```text
-review_target_kind
-review_target_id
-review_rubric
-review_trigger
-evidence_ids
-verification_status
-verified_at
-repair_attempt_count
+kind: recorded
+record_type: review_result
+decision: accepted | changes_requested | rejected | inconclusive
+review_task_id
+findings
+reviewed_analysis_ids?
+reviewed_hypothesis_ids?
+reviewed_baseline_ids?
+reviewed_experiment_ids?
+reviewed_evaluation_ids?
+reviewed_measurement_ids?
+reviewed_artifact_ids?
 ```
 
-`work_type` implies the review method or runtime skill. For example,
-`review_hypothesis` implies the hypothesis review method. The task title,
-content, associated IDs, and links explain why the review exists. The Critic
-gets evidence by reading records and activities through tools, not from a
-copied `evidence_ids` bundle.
+The activity body reads like a concise review: what evidence was checked, what
+is trustworthy or weak, and what the judgment means for the record. The payload
+supports rendering, polling, and agent context.
 
-The reviewed record should not carry denormalized review fields such as
-`latest_review_verdict`, `review_status`, or `verified_by_default` while review
-activities can answer those questions. Views and agents may derive the latest
-review from target-owned activities and task links.
+Findings carry:
 
-The task model should not add extra lifecycle states for review loops while the
-existing task statuses are sufficient. `abandoned` covers graceful stop and
-cancelled/not-worth-pursuing work. `failed` covers attempted work blocked by an
-error or missing evidence. Hypotheses and experiments remain status-light and
-do not gain `void`, `cancelled`, or `verified` statuses.
+```text
+code
+summary
+blocking?
+severity?
+evidence_ids?
+artifact_ids?
+```
+
+Review results describe the record and its evidence. They do not prescribe the
+next task. Pull-based routing derives follow-up work from the decision,
+findings, record status, links, and unresolved activity state.
+
+## Pull-Derived Feedback
+
+Review feedback is task-shaped and derived from recorded facts.
+
+Useful pull derivations include:
+
+- A triaged analysis with no review result can produce a `review_analysis`
+  task when the project needs Critic judgment before accepting it.
+- A triaged hypothesis with no review result can produce a
+  `review_hypothesis` task before empirical work depends on it.
+- An active or accepted experiment with measurement evidence and no later
+  review result can produce a `review_experiment` task.
+- A review result with `accepted` can move the target record to accepted or
+  done when the target's evidence is complete enough for the project.
+- A review result with `changes_requested` and unresolved blocking findings can
+  produce a focused producer-lane task linked to the review activity.
+- A review result with `inconclusive` and unresolved missing-evidence findings
+  can produce evidence-gathering, measurement, or interpretation work.
+- A review result with `rejected` can move the target to canceled or support a
+  recorded lineage or resolution decision.
+
+Follow-up tasks link to the review activity they address. A later done task,
+new review result, status transition, resolution, or lineage decision can make
+the earlier finding resolved for polling purposes.
 
 ## Context Acquisition
 
 The Critic acquires context through explicit tools.
 
-A review pass starts from the assigned task ID. The Critic reads the task, then
-uses target-specific readers, activity readers, task links, and project/task
-board readers as needed.
+A review pass starts from the assigned task ID. The Critic reads the task,
+target record, target activities, task links, nearby analyses, measurements,
+artifacts, and project overview as needed. The trace should show the Critic
+reading the records it uses before recording a review result.
 
-For a hypothesis review, useful context includes:
+For experiment reviews, useful context includes the experiment record,
+experiment activities, evaluations, measurements, workspace-state observations,
+patch or command artifacts, linked hypotheses, and the producing Scientist
+task.
 
-- the hypothesis record;
-- hypothesis activities;
-- linked or nearby analyses;
-- existing active hypotheses;
-- linked experiments, if any;
-- the associated source task, when present;
-- the objective and research context from project state.
+For hypothesis reviews, useful context includes the hypothesis record,
+hypothesis activities, linked or nearby analyses, active hypotheses, linked
+experiments, and the producing or associated task.
 
-For an experiment review, useful context includes:
+For analysis, baseline, and evaluation reviews, useful context includes the
+record body, related activities, measurements where present, artifacts, linked
+tasks, and project objective/research context.
 
-- the experiment record;
-- experiment activities;
-- associated evaluations and measurements;
-- workspace-state observations;
-- artifacts such as command receipts, logs, and patches;
-- linked hypotheses;
-- the associated Scientist task, when present.
+## Bounded Iteration
 
-The trace should show the Critic reading the records it uses before writing a
-review. Prior chat history or task payload should not replace these reads.
+Review-driven iteration is bounded by visible statuses and links. A repeated
+review cycle needs materially new evidence, a status transition, or a task that
+addresses the prior review result. If the same blocking finding remains
+unresolved, the poller surfaces the unresolved state rather than creating
+unbounded duplicate review work.
 
-## Review Activities
+Task status carries work outcome. `canceled` is the graceful stop for work that
+is intentionally out of the runnable queue. `failed` is for attempted work that
+could not complete because of setup, evidence, tool, or execution failure.
 
-A Critic review is a target-owned activity. A separate first-class Review or
-Verification model is out of scope.
-
-Experiment reviews attach to experiments. Hypothesis reviews attach to
-hypotheses. Future analysis or evaluation reviews should attach to their
-natural parent records if those work types become part of the active product
-surface.
-
-The review body should explain what the Critic checked, what looks trustworthy
-or weak, and what should happen next. Payload metadata may include:
-
-```text
-activity_type: critic_review
-work_type
-verdict
-concern_kinds
-associated_task_id
-associated_evaluation_ids
-associated_measurement_ids
-recommended_next_step
-```
-
-The payload supports rendering and agent context. The activity body remains the
-primary human-readable review.
-
-Verdicts are intentionally lightweight. Useful review verdicts include:
-
-- `usable`
-- `concern`
-- `invalid`
-- `needs_more_evidence`
-- `needs_reproduction`
-- `human_review`
-
-Each work type may use the subset that fits its target. For example,
-`needs_reproduction` is natural for experiment evidence and usually not the
-right vocabulary for a hypothesis review.
-
-## Review Feedback And Repair
-
-Critic feedback is task-shaped. A review activity does not silently mutate the
-reviewed record, rewrite another agent's work, or trigger hidden chat
-continuation. It becomes visible project state that the Manager and future
-task-scoped agents read through tools.
-
-Critic review supports two feedback paths:
-
-- Local repair sends bounded follow-up work back to the same work lane that
-  produced the reviewed record. A Researcher handles hypothesis repair. A
-  Scientist handles experiment reproduction, extra measurement, or focused
-  candidate cleanup.
-- Strategic routing sends the review to the Manager when the project needs a
-  direction decision: continue, discard, fork, combine, investigate, ask for
-  human review, or close a thread.
-
-The Critic names what is trustworthy, weak, missing, or invalid. It does not
-own the fix. The producing lane handles scoped repair when repair is plausible.
-The Manager consumes reviewed or repaired work when the next project direction
-is at stake.
-
-Usable reviews can unblock the next empirical or interpretive task. Concern
-reviews can lead to focused repair work. Invalid reviews prevent the target
-from being treated as decision-grade unless a later task addresses the problem
-or a human explicitly overrides the concern. Human-review verdicts should make
-the need for human judgment visible before more autonomous work depends on the
-target.
-
-Follow-up tasks should carry the relevant reviewed entity as assignment context
-and should link to the review activity that motivated the follow-up. Payload
-fields use the same direct and associated naming posture:
-
-```text
-associated_hypothesis_id
-associated_experiment_id
-associated_review_activity_id
-```
-
-The agent that handles a follow-up task is usually a fresh task-scoped pass, not
-the same chat session continuing from the Critic's message. A
-`review_hypothesis` concern may create a Researcher repair task. That
-Researcher reads the task, the hypothesis, and the Critic review activity
-before writing new hypothesis activity or creating a replacement hypothesis.
-
-This keeps iteration inspectable:
-
-```text
-Researcher creates H7
-  -> Critic reviews H7
-  -> review activity flags missing expected evidence
-  -> focused Researcher repair task is filed
-  -> Researcher updates or supersedes H7 with a visible activity trail
-  -> Manager decides whether H7 is ready for Scientist work
-```
-
-For experiment review, the same shape applies:
-
-```text
-Scientist records EX4 evidence
-  -> Critic reviews EX4
-  -> review activity asks for reproduction or flags invalid evidence
-  -> focused Scientist repair task is filed when the problem is local
-  -> Scientist records reproduction, extra measurement, or cleanup evidence
-  -> Manager decides whether to continue, fork, discard, or stop that thread
-```
-
-## Bounded Iteration And Graceful Exit
-
-Review-driven iteration should be bounded. Situ should not bounce a target
-between a producer and the Critic indefinitely.
-
-Each follow-up task should have a narrow repair question, a clear associated
-review activity, and an exit path. A follow-up can end by:
-
-- producing the missing record or activity the Critic asked for;
-- creating a replacement hypothesis or experiment;
-- recording why the concern cannot be resolved autonomously;
-- marking the task abandoned when the work is no longer worth pursuing;
-- marking the task failed when it was attempted but blocked by setup, evidence,
-  tool, or execution failure.
-
-Task status carries coordination outcome. `abandoned` is the graceful stop for
-work that is intentionally not pursued further, including cancelled,
-superseded, duplicate, out-of-scope, or no-longer-useful work. `failed` is for
-attempted work that could not complete because of an error, blocker, or missing
-required evidence. A separate `cancelled` task status is out of scope while
-`abandoned` covers the user-visible stop case.
-
-Hypotheses and experiments remain status-light. They should not gain a `void`
-status. A hypothesis that should not drive more work is closed with an explicit
-resolution activity such as `rejected`, `superseded`, or `inconclusive`. The
-activity body explains whether the hypothesis was unsupported, duplicated, too
-vague, not actionable, or no longer useful.
-
-An experiment that should not be continued is closed with experiment activity
-that explains the stop reason, such as invalid evidence, failed reproduction,
-changed evaluation surface, unpromising result, or supersession by a better
-candidate. Lineage or portfolio decisions should say whether the path was
-rejected, abandoned, revised, reproduced, or forked rather than encoding those
-judgments as experiment statuses.
-
-After a bounded repair task completes, the target may be reviewed again when the
-new evidence materially changes the concern. Re-review is not automatic churn.
-If the same concern persists, the next visible action should normally be a
-Manager decision, human-review handoff, hypothesis resolution, experiment
-abandonment, or project/thread stop.
-
-## Hypothesis Reviews
-
-A hypothesis review checks readiness for empirical work. It does not prove the
-hypothesis true.
-
-A `review_hypothesis` task checks whether the hypothesis is:
-
-- testable;
-- grounded in analysis, measurement, codebase evidence, user context, or prior
-  activity;
-- distinct enough from existing active hypotheses;
-- clear about expected evidence or a plausible experiment shape;
-- careful about uncertainty and overclaiming.
-
-The Critic may mark a hypothesis usable with caveats, request revision,
-recommend human review, or flag it as too vague, duplicative, or unsupported.
-
-The Manager should prefer reviewed hypotheses when filing Scientist experiment
-tasks. If the Manager files an experiment from an unreviewed hypothesis, the
-task content should make that choice visible.
-
-## Experiment Reviews
-
-An experiment review checks whether a candidate experiment can shape the next
-research decision.
-
-`review_experiment` follows the experiment review contract in
-[0010-activities-and-artifacts](../0010-activities-and-artifacts/SPEC.md) and
-[0013-agent-task-coordination](../0013-agent-task-coordination/SPEC.md). It
-checks whether the recorded measurements support the claimed result, whether
-the evidence is comparable to baseline, and whether the candidate has trust
-concerns such as changed evals, changed dependencies, noisy selection, seed
-hacking, or suspicious result shape changes.
-
-The Manager should not replan from a completed candidate experiment as
-decision-grade until a Critic experiment review exists or the lack of review is
-made visible as a limitation.
-
-## Runtime Skills
-
-Review methodology belongs in Critic runtime skills. The Critic should load a
-review method that matches the task work type, such as `review-hypothesis` or
-`review-experiment`, before writing the review activity.
-
-Runtime skills describe the method and rubric. They do not replace Situ tools.
-Durable findings still flow through explicit record reads and target-owned
-review activities.
+Record status carries record outcome. Hypothesis resolution, experiment
+lineage, trust findings, and review decisions are recorded facts on the natural
+target records.
 
 ## TUI Shape
 
-Live task surfaces should prefer the work type when it clarifies the task.
-
-Useful task labels include:
+Live task surfaces show the task type when it clarifies the work:
 
 ```text
-Review hypothesis H7
-Review experiment EX4
+review_analysis
+review_hypothesis
+review_experiment
 ```
 
-The TUI should still show the broader task kind when that helps users
-understand who owns the work. A compact task card can show both:
+Review tasks appear in the same triage, backlog, in-progress, done, canceled,
+and failed lanes as other tasks. Review result activities appear on the target
+record's timeline.
 
-```text
-review / review_hypothesis
-```
+## Out of Scope
 
-Review activities should appear in the target record's activity trail, so a
-user inspecting a hypothesis or experiment can see the Critic's judgment in
-context.
-
-## In Scope
-
-- Optional task work types as semantic frames for tasks.
-- `review_hypothesis` and `review_experiment` as active Critic work types.
-- Direct main ID fields such as `hypothesis_id` and `experiment_id` in review
-  task payloads.
-- `associated_*` payload fields for secondary context.
-- Task entity links for durable relationships to reviewed or considered
-  research records.
-- Target-owned Critic review activities.
-- Critic context acquisition through explicit tools and runtime skills.
-- TUI labels that show the work type when it is clearer than the broad task
-  kind.
-
-## Deferred
-
-- A standalone `Review` or `Verification` model.
-- Separate task kinds such as `review_hypothesis` or `review_experiment`.
-- Mandatory Critic review for every analysis, hypothesis, task, or comment.
-- Hidden semantic review inside Pydantic AI hooks or observability callbacks.
-- Generic `evidence_ids` payload bundles as the normal review context shape.
-- Review work types for every possible record before hypothesis and experiment
-  reviews are useful in the live loop.
+- Standalone Review, ReviewRequest, Verification, Warning, Finding, or
+  PullRequest models.
+- Human-dependent review states.
+- Prescriptive next-action fields on review result payloads.
+- Approval quorums, required reviewers, merge queues, cycles, estimates,
+  labels, and team collaboration workflows.
 
 ## Review Criteria
 
-- Task kinds remain bounded workflow lanes.
-- Work types make task cards and agent traces more semantically legible.
-- Review tasks clearly name their main target with a direct entity ID field.
-- Secondary review context uses `associated_*` names.
-- Critic review is visible as a task plus a target-owned activity, not hidden in
-  logs, hooks, or chat history.
-- The Critic reads task and research records through tools before writing
-  semantic judgment.
-- Review outputs stay concise, human-readable, and grounded in inspectable
-  records or artifacts.
+- A review is visible as a task before or while the Critic works.
+- A review judgment is visible as a target-owned `recorded` activity with
+  `record_type: review_result`.
+- Review decisions use `accepted`, `changes_requested`, `rejected`, or
+  `inconclusive`.
+- Follow-up work is derived from unresolved statuses, findings, links, and
+  recorded facts.
+- Review tasks and follow-up tasks link to the records and activities they
+  review or address.
+- Critic traces show explicit reads before judgment.
