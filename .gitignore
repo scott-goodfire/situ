@@ -14,3 +14,4 @@ dist/
 build/
 storybook-static/
 .DS_Store
+.claude/worktrees/
