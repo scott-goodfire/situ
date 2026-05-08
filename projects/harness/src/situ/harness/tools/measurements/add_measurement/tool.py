@@ -5,14 +5,14 @@ from typing import Any
 from pydantic_ai import RunContext
 
 from ...common import SituToolDeps, BaseSituTool
-from .models import AddEvaluationResult
+from .models import AddMeasurementResult
 
 
-class AddEvaluationResultTool(
-    BaseSituTool[SituToolDeps, AddEvaluationResult]
+class AddMeasurementTool(
+    BaseSituTool[SituToolDeps, AddMeasurementResult]
 ):
-    name = "add_evaluation_result"
-    result_type = AddEvaluationResult
+    name = "add_measurement"
+    result_type = AddMeasurementResult
     sequential = True
 
     async def execute(
@@ -24,11 +24,17 @@ class AddEvaluationResultTool(
         actor: str = "agent",
         payload: dict[str, Any] | None = None,
         **_kwargs: Any,
-    ) -> AddEvaluationResult:
+    ) -> AddMeasurementResult:
         """Record one measurement under an evaluation.
 
-        Metric payloads may use shorthand values, but are normalized to typed
-        metric value objects.
+        A measurement is one observed result for the evaluation's subject —
+        a baseline run or a candidate experiment run. Pass the human-readable
+        text in `result` and structured fields in `payload`. Metric payloads
+        may use shorthand values, but are normalized to typed metric value
+        objects shaped like `{"score": {"value": 0.73, "direction":
+        "higher_is_better"}}`. Use `comparison_baseline_id` /
+        `comparison_measurement_id` in the payload when comparing a candidate
+        run to a specific baseline measurement.
         """
         result_payload = {
             "activity_type": "result",
@@ -44,7 +50,7 @@ class AddEvaluationResultTool(
             payload=result_payload,
         )
         event = await ctx.deps.record_event(
-            event_type="evaluation.result_added",
+            event_type="measurement.added",
             message=result,
             payload={
                 "measurement_id": measurement.id,
@@ -52,7 +58,7 @@ class AddEvaluationResultTool(
             },
         )
         await ctx.deps.publish_record(record=measurement, event=event)
-        return AddEvaluationResult(
+        return AddMeasurementResult(
             success=True,
             measurement=measurement.model_dump(),
         )

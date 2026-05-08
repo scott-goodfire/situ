@@ -5,5 +5,5 @@ from typing import Any
 from ...common import SituToolReturn
 
 
-class AddEvaluationResult(SituToolReturn):
+class AddMeasurementResult(SituToolReturn):
     measurement: dict[str, Any] | None = None

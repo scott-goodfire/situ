@@ -15,6 +15,7 @@ from ._shared.arguments import (
     add_setup_arguments,
     add_workspace_argument,
 )
+from ._shared.parser import SituArgumentParser
 from ...core.install_info import install_info
 from .apply.command import run as apply_run
 from .app.command import run as app_run
@@ -31,14 +32,18 @@ from .web.command import run as web_run
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="situ")
+    parser = SituArgumentParser(prog="situ")
     parser.add_argument(
         "-v",
         "--version",
         action="version",
         version=format_one_line(install_info()),
     )
-    subparsers = parser.add_subparsers(dest="command", required=True)
+    subparsers = parser.add_subparsers(
+        dest="command",
+        required=True,
+        parser_class=SituArgumentParser,
+    )
 
     app_parser = subparsers.add_parser("app", help="run the local Situ app server")
     app_parser.add_argument(
@@ -54,6 +59,7 @@ def main(argv: list[str] | None = None) -> int:
     secrets_subparsers = secrets_parser.add_subparsers(
         dest="secrets_command",
         required=True,
+        parser_class=SituArgumentParser,
     )
 
     secrets_status_parser = secrets_subparsers.add_parser(
@@ -208,7 +214,11 @@ def main(argv: list[str] | None = None) -> int:
     add_machine_json_argument(version_parser)
 
     self_parser = subparsers.add_parser("self", help="manage the situ install")
-    self_subparsers = self_parser.add_subparsers(dest="self_command", required=True)
+    self_subparsers = self_parser.add_subparsers(
+        dest="self_command",
+        required=True,
+        parser_class=SituArgumentParser,
+    )
 
     self_update_parser = self_subparsers.add_parser(
         "update",
