@@ -312,9 +312,14 @@ async def test_harness_prepares_experiment_task_checkout_and_records_final_state
     assert prepared_followup.experiment.base_commit == completed.candidate_commit
     assert (Path(prepared_followup.repo_path) / "pkg" / "module.py").read_text() == "VALUE = 2\n"
 
+    class FakeProjectContext:
+        @classmethod
+        async def create(cls, _workspace: Path):
+            return app.context
+
     monkeypatch.setattr(
         "situ.harness.cli.commands.apply.command.ProjectContext",
-        lambda _workspace: app.context,
+        FakeProjectContext,
     )
     assert (
         await apply_patch_artifact(

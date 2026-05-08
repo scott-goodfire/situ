@@ -11,12 +11,16 @@ import aiofiles.ospath
 
 from ....config import DEFAULTS, LocalSecretStore
 from ....core.install_info import install_info
-from ....core.paths import find_bundled_resource
+from ....core.paths import find_bundled_resource, resolve_bundled_runtime
 from ...headless._shared.output import write_json
 from ...local_session import read_app_record
 
 
-BUNDLED_BINARIES = ("tui", "session-server", "web-server")
+RUNTIMES = (
+    ("tui", "tui"),
+    ("session-server", "session-server"),
+    ("web-server", "web"),
+)
 SITU_ENV_VARS = (
     "SITU_APP_ROOT",
     "SITU_WORKSPACE",
@@ -43,14 +47,14 @@ async def run_async(args: argparse.Namespace) -> int:
 async def _build_report() -> dict[str, Any]:
     info = install_info()
 
-    bundled = await _bundled_summary()
+    runtimes = await _runtimes_summary()
     state_home = await _state_home_summary()
     secrets = await _secrets_summary()
     app_state = await _app_discovery_summary()
     path_status = _path_status(info.bin_path)
 
     healthy = (
-        bundled["all_present"]
+        runtimes["all_resolved"]
         and state_home["writable"]
         and (info.method != "curl" or path_status == "ok")
     )
@@ -68,7 +72,7 @@ async def _build_report() -> dict[str, Any]:
             "version": sys.version.split()[0],
         },
         "path_status": path_status,
-        "bundled": bundled,
+        "runtimes": runtimes,
         "state_home": state_home,
         "secrets": secrets,
         "app_state": app_state,
@@ -76,16 +80,22 @@ async def _build_report() -> dict[str, Any]:
     }
 
 
-async def _bundled_summary() -> dict[str, Any]:
-    binaries: dict[str, str | None] = {}
-    for name in BUNDLED_BINARIES:
-        resource = await find_bundled_resource(name)
-        binaries[name] = str(resource) if resource is not None else None
+async def _runtimes_summary() -> dict[str, Any]:
+    items: dict[str, dict[str, str | None]] = {}
+    for name, source_dir in RUNTIMES:
+        runtime = await resolve_bundled_runtime(name, source_dir=source_dir)
+        items[name] = {
+            "kind": runtime.kind if runtime else "missing",
+            "path": str(runtime.path) if runtime else None,
+        }
     web_dist = await find_bundled_resource("web")
-    binaries["web"] = str(web_dist) if web_dist is not None else None
+    items["web"] = {
+        "kind": "installed" if web_dist else "missing",
+        "path": str(web_dist) if web_dist else None,
+    }
     return {
-        "all_present": all(binaries.values()),
-        "paths": binaries,
+        "all_resolved": all(item["kind"] != "missing" for name, item in items.items() if name != "web"),
+        "items": items,
     }
 
 
@@ -143,10 +153,11 @@ def _write_human_readable(report: dict[str, Any]) -> None:
 
     out(f"\npython:         {report['python']['version']} ({report['python']['executable']})\n")
 
-    out("\nbundled runtimes:\n")
-    for name, path in report["bundled"]["paths"].items():
-        marker = "✓" if path else "✗"
-        out(f"  {marker} {name}: {path or 'missing'}\n")
+    out("\nruntimes:\n")
+    for name, item in report["runtimes"]["items"].items():
+        marker = "✓" if item["kind"] != "missing" else "✗"
+        path = item["path"] or "missing"
+        out(f"  {marker} {name} ({item['kind']}): {path}\n")
 
     out(f"\nstate home:     {report['state_home']['path']}\n")
     out(f"  exists:       {report['state_home']['exists']}\n")

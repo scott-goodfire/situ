@@ -15,18 +15,28 @@ from ._shared.arguments import (
     add_setup_arguments,
     add_workspace_argument,
 )
+from ...core.install_info import install_info
 from .apply.command import run as apply_run
 from .app.command import run as app_run
 from .attach.command import run as attach_run
+from .completions.command import run as completions_run
+from .doctor.command import run as doctor_run
 from .patches.command import run as patches_run
 from .resume.command import run as resume_run
 from .secrets.command import run as secrets_run
+from .self.command import run as self_run
 from .tui.command import LATEST_SENTINEL, run as tui_run
+from .version.command import format_one_line, run as version_run
 from .web.command import run as web_run
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="situ")
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=format_one_line(install_info()),
+    )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     app_parser = subparsers.add_parser("app", help="run the local Situ app server")
@@ -193,6 +203,49 @@ def main(argv: list[str] | None = None) -> int:
         help="rebuild the browser app before serving",
     )
 
+    version_parser = subparsers.add_parser("version", help="print the situ version")
+    add_machine_json_argument(version_parser)
+
+    self_parser = subparsers.add_parser("self", help="manage the situ install")
+    self_subparsers = self_parser.add_subparsers(dest="self_command", required=True)
+
+    self_update_parser = self_subparsers.add_parser(
+        "update",
+        help="update situ to the latest release",
+    )
+    self_update_parser.add_argument(
+        "version",
+        nargs="?",
+        default=None,
+        help="release tag to install (default: latest)",
+    )
+
+    self_uninstall_parser = self_subparsers.add_parser(
+        "uninstall",
+        help="remove the situ install (preserves ~/.situ/ product state)",
+    )
+    self_uninstall_parser.add_argument(
+        "--yes",
+        action="store_true",
+        help="skip the confirmation prompt",
+    )
+
+    doctor_parser = subparsers.add_parser(
+        "doctor",
+        help="report install diagnostics",
+    )
+    add_machine_json_argument(doctor_parser)
+
+    completions_parser = subparsers.add_parser(
+        "completions",
+        help="emit shell completion script",
+    )
+    completions_parser.add_argument(
+        "shell",
+        choices=("bash", "zsh", "fish"),
+        help="target shell",
+    )
+
     args = parser.parse_args(argv)
 
     if args.command == "app":
@@ -225,6 +278,14 @@ def main(argv: list[str] | None = None) -> int:
         return headless_clear(args)
     if args.command == "web":
         return web_run(args)
+    if args.command == "version":
+        return version_run(args)
+    if args.command == "self":
+        return self_run(args)
+    if args.command == "doctor":
+        return doctor_run(args)
+    if args.command == "completions":
+        return completions_run(args)
 
     parser.error(f"unknown command: {args.command}")
     return 2

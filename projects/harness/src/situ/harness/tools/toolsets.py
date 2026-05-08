@@ -15,14 +15,7 @@ from .activities import (
 from .artifacts import CreateArtifactTool, ListArtifactsTool
 from .baselines import CreateBaselineTool, ListBaselinesTool, UpdateBaselineTool
 from .analyses import CreateAnalysisTool, ListAnalysesTool, UpdateAnalysisTool
-from .comments import (
-    AddAnalysisCommentTool,
-    AddExperimentCommentTool,
-    AddExperimentLineageDecisionTool,
-    AddExperimentReviewTool,
-    AddHypothesisCommentTool,
-    AddHypothesisReviewTool,
-)
+from .analysis_activities import AddAnalysisCommentTool
 from .evaluations import (
     AddEvaluationResultTool,
     CreateEvaluationTool,
@@ -35,12 +28,18 @@ from .experiments import (
     RunExperimentTool,
     UpdateExperimentTool,
 )
+from .experiment_activities import (
+    AddExperimentCommentTool,
+    AddExperimentLineageDecisionTool,
+    AddExperimentReviewTool,
+)
 from .hypotheses import (
     CreateHypothesisTool,
     ListHypothesesTool,
     ResolveHypothesisTool,
     UpdateHypothesisTool,
 )
+from .hypothesis_activities import AddHypothesisCommentTool, AddHypothesisReviewTool
 from .common import SituToolDeps
 from .links import LinkHypothesisExperimentTool
 from .measurements import ListMeasurementsTool
@@ -53,7 +52,6 @@ from .projects import (
 )
 from .project_board import GetProjectBoardTool
 from .tasks import (
-    AddTaskCommentTool,
     ClaimTaskTool,
     CreateTaskTool,
     GetTaskTool,
@@ -61,6 +59,7 @@ from .tasks import (
     LinkTaskEntityTool,
     UpdateTaskTool,
 )
+from .task_activities import AddTaskCommentTool
 from .workspace_state import InspectWorkspaceStateTool
 
 RESEARCH_TOOLSET_INSTRUCTIONS = inspect.cleandoc(

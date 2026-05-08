@@ -33,13 +33,7 @@ from situ.harness.tools.baselines import (
     ListBaselinesTool,
     UpdateBaselineTool,
 )
-from situ.harness.tools.comments import (
-    AddAnalysisCommentTool,
-    AddExperimentCommentTool,
-    AddExperimentLineageDecisionTool,
-    AddExperimentReviewTool,
-    AddHypothesisCommentTool,
-)
+from situ.harness.tools.analysis_activities import AddAnalysisCommentTool
 from situ.harness.tools.common import BaseSituTool, SituToolDeps
 from situ.harness.tools.evaluations import (
     AddEvaluationResultTool,
@@ -53,12 +47,18 @@ from situ.harness.tools.experiments import (
     RunExperimentTool,
     UpdateExperimentTool,
 )
+from situ.harness.tools.experiment_activities import (
+    AddExperimentCommentTool,
+    AddExperimentLineageDecisionTool,
+    AddExperimentReviewTool,
+)
 from situ.harness.tools.hypotheses import (
     CreateHypothesisTool,
     ListHypothesesTool,
     ResolveHypothesisTool,
     UpdateHypothesisTool,
 )
+from situ.harness.tools.hypothesis_activities import AddHypothesisCommentTool
 from situ.harness.tools.links import LinkHypothesisExperimentTool
 from situ.harness.tools.measurements import ListMeasurementsTool
 from situ.harness.tools.projects import (
@@ -70,7 +70,6 @@ from situ.harness.tools.projects import (
 )
 from situ.harness.tools.project_board import GetProjectBoardTool
 from situ.harness.tools.tasks import (
-    AddTaskCommentTool,
     ClaimTaskTool,
     CreateTaskTool,
     GetTaskTool,
@@ -78,6 +77,7 @@ from situ.harness.tools.tasks import (
     LinkTaskEntityTool,
     UpdateTaskTool,
 )
+from situ.harness.tools.task_activities import AddTaskCommentTool
 from situ.harness.tools.workspace_state import InspectWorkspaceStateTool
 from situ.protocol import ExperimentRunParams, ExperimentRunResult
 

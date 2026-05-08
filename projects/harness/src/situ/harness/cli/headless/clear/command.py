@@ -3,7 +3,9 @@ from __future__ import annotations
 import argparse
 import asyncio
 import shutil
-import sqlite3
+
+import aiofiles.ospath
+import aiosqlite
 
 from ...local_session import read_live_session
 from ....core.project_context import ProjectContext
@@ -41,8 +43,8 @@ async def run_async(args: argparse.Namespace) -> int:
     if live_session is not None:
         await terminate_live_session(session=live_session)
 
-    clear_workspace_records(context)
-    shutil.rmtree(context.project_dir, ignore_errors=True)
+    await clear_workspace_records(context)
+    await asyncio.to_thread(shutil.rmtree, context.project_dir, ignore_errors=True)
     write_json(
         {
             "workspace": str(workspace),
@@ -54,14 +56,13 @@ async def run_async(args: argparse.Namespace) -> int:
     return 0
 
 
-def clear_workspace_records(context: ProjectContext) -> None:
-    if not context.database_path.exists():
+async def clear_workspace_records(context: ProjectContext) -> None:
+    if not await aiofiles.ospath.exists(context.database_path):
         return
 
-    connection = sqlite3.connect(context.database_path)
-    try:
-        with connection:
-            connection.execute("PRAGMA foreign_keys = OFF")
+    async with aiosqlite.connect(context.database_path) as connection:
+        await connection.execute("PRAGMA foreign_keys = OFF")
+        try:
             params = (context.workspace_id,)
             for sql in (
                 """
@@ -134,7 +135,7 @@ def clear_workspace_records(context: ProjectContext) -> None:
                 )
                 """,
             ):
-                connection.execute(sql, params * 2)
+                await connection.execute(sql, params * 2)
 
             for table in (
                 "hypothesis_experiment_links",
@@ -153,20 +154,23 @@ def clear_workspace_records(context: ProjectContext) -> None:
                 "sessions",
                 "projects",
             ):
-                clear_table_for_workspace(connection, table, context.workspace_id)
-            connection.execute("DELETE FROM workspaces WHERE id = ?", params)
-            connection.execute("PRAGMA foreign_keys = ON")
-    finally:
-        connection.close()
+                await clear_table_for_workspace(connection, table, context.workspace_id)
+            await connection.execute("DELETE FROM workspaces WHERE id = ?", params)
+            await connection.commit()
+        except Exception:
+            await connection.rollback()
+            raise
+        finally:
+            await connection.execute("PRAGMA foreign_keys = ON")
 
 
-def clear_table_for_workspace(
-    connection: sqlite3.Connection,
+async def clear_table_for_workspace(
+    connection: aiosqlite.Connection,
     table: str,
     workspace_id: str,
 ) -> None:
     if table == "hypothesis_experiment_links":
-        connection.execute(
+        await connection.execute(
             """
             DELETE FROM hypothesis_experiment_links
             WHERE hypothesis_id IN (
@@ -183,7 +187,7 @@ def clear_table_for_workspace(
         return
 
     if table == "events":
-        connection.execute(
+        await connection.execute(
             """
             DELETE FROM events
             WHERE associated_project_id IN (
@@ -207,10 +211,13 @@ def clear_table_for_workspace(
 
     workspace_column_tables = {"sessions", "projects"}
     if table in workspace_column_tables:
-        connection.execute(f"DELETE FROM {table} WHERE workspace_id = ?", (workspace_id,))
+        await connection.execute(
+            f"DELETE FROM {table} WHERE workspace_id = ?",
+            (workspace_id,),
+        )
         return
 
-    connection.execute(
+    await connection.execute(
         f"""
         DELETE FROM {table}
         WHERE project_id IN (
