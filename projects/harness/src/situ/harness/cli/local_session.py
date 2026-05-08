@@ -44,7 +44,7 @@ async def start_app_server(
     env: dict[str, str],
     *,
     quiet: bool = False,
-) -> tuple[subprocess.Popen[bytes], dict[str, str]]:
+) -> tuple[asyncio.subprocess.Process, dict[str, str]]:
     path = app_path()
     try:
         await aiofiles.os.remove(path)
@@ -52,8 +52,8 @@ async def start_app_server(
         pass
     argv, cwd = await _session_server_command()
     stdout = subprocess.DEVNULL if quiet else None
-    process = subprocess.Popen(
-        argv,
+    process = await asyncio.create_subprocess_exec(
+        *argv,
         cwd=cwd,
         env=env,
         stdout=stdout,
@@ -61,7 +61,7 @@ async def start_app_server(
     try:
         return process, await wait_for_app(path, process)
     except Exception:
-        stop_process(process)
+        await stop_process(process)
         raise
 
 
@@ -70,7 +70,7 @@ async def start_session_server(
     env: dict[str, str],
     *,
     quiet: bool = False,
-) -> tuple[subprocess.Popen[bytes], dict[str, str]]:
+) -> tuple[asyncio.subprocess.Process, dict[str, str]]:
     path = session_path(workspace)
     try:
         await aiofiles.os.remove(path)
@@ -78,8 +78,8 @@ async def start_session_server(
         pass
     argv, cwd = await _session_server_command()
     stdout = subprocess.DEVNULL if quiet else None
-    process = subprocess.Popen(
-        argv,
+    process = await asyncio.create_subprocess_exec(
+        *argv,
         cwd=cwd,
         env=env,
         stdout=stdout,
@@ -87,7 +87,7 @@ async def start_session_server(
     try:
         return process, await wait_for_session(path, process)
     except Exception:
-        stop_process(process)
+        await stop_process(process)
         raise
 
 
@@ -101,10 +101,13 @@ async def _session_server_command() -> tuple[list[str], Path | None]:
     return runtime.subprocess_args()
 
 
-async def wait_for_session(path: Path, process: subprocess.Popen[bytes]) -> dict[str, str]:
+async def wait_for_session(
+    path: Path,
+    process: asyncio.subprocess.Process,
+) -> dict[str, str]:
     deadline = time.monotonic() + 10
     while time.monotonic() < deadline:
-        if process.poll() is not None:
+        if process.returncode is not None:
             raise RuntimeError(f"Situ app server exited with code {process.returncode}")
         if await aiofiles.ospath.exists(path):
             async with aiofiles.open(path, encoding="utf-8") as file:
@@ -115,10 +118,13 @@ async def wait_for_session(path: Path, process: subprocess.Popen[bytes]) -> dict
     raise TimeoutError("timed out waiting for Situ app server")
 
 
-async def wait_for_app(path: Path, process: subprocess.Popen[bytes]) -> dict[str, str]:
+async def wait_for_app(
+    path: Path,
+    process: asyncio.subprocess.Process,
+) -> dict[str, str]:
     deadline = time.monotonic() + 10
     while time.monotonic() < deadline:
-        if process.poll() is not None:
+        if process.returncode is not None:
             raise RuntimeError(f"Situ app server exited with code {process.returncode}")
         if await aiofiles.ospath.exists(path):
             async with aiofiles.open(path, encoding="utf-8") as file:
@@ -195,12 +201,12 @@ def _ping_session_sync(session: dict[str, str]) -> bool:
         return False
 
 
-def stop_process(process: subprocess.Popen[bytes]) -> None:
-    if process.poll() is not None:
+async def stop_process(process: asyncio.subprocess.Process) -> None:
+    if process.returncode is not None:
         return
     process.terminate()
     try:
-        process.wait(timeout=5)
-    except subprocess.TimeoutExpired:
+        await asyncio.wait_for(process.wait(), timeout=5)
+    except TimeoutError:
         process.kill()
-        process.wait(timeout=5)
+        await asyncio.wait_for(process.wait(), timeout=5)

@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import aiofiles.os
+import aiofiles.ospath
 
 from ..git import (
     git_lines,
@@ -87,7 +88,7 @@ class WorktreeManager:
             if existing_worktree_path is not None
             else (self.worktrees_dir / experiment_id).resolve()
         )
-        if worktree_root.exists():
+        if await aiofiles.ospath.exists(worktree_root):
             await self._require_existing_worktree(worktree_root)
         else:
             await aiofiles.os.makedirs(worktree_root.parent, exist_ok=True)
@@ -189,7 +190,7 @@ class WorktreeManager:
 
     async def _existing_worktree_root(self, existing_worktree_path: str) -> Path:
         existing = Path(existing_worktree_path).expanduser().resolve()
-        if not existing.exists():
+        if not await aiofiles.ospath.exists(existing):
             raise RuntimeError(
                 f"experiment worktree path does not exist: {existing}"
             )

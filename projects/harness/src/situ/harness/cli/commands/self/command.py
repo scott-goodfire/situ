@@ -4,10 +4,13 @@ import argparse
 import asyncio
 import os
 import shutil
-import subprocess
 import sys
 from pathlib import Path
 
+import aiofiles.os
+import aiofiles.ospath
+
+from ..._shared.process import run_process
 from ....core.install_info import install_info
 
 
@@ -49,10 +52,10 @@ async def update(args: argparse.Namespace) -> int:
 
     env = os.environ.copy()
     env["SITU_VERSION"] = target
-    return subprocess.run(
+    return await run_process(
         ["bash", "-c", f'curl -fsSL "{install_url}" | bash'],
         env=env,
-    ).returncode
+    )
 
 
 async def uninstall(args: argparse.Namespace) -> int:
@@ -68,7 +71,7 @@ async def uninstall(args: argparse.Namespace) -> int:
     bin_link = bin_dir / "situ"
 
     targets: list[Path] = [info.install_home]
-    if bin_link.is_symlink() or bin_link.exists():
+    if await aiofiles.ospath.islink(bin_link) or await aiofiles.ospath.exists(bin_link):
         targets.append(bin_link)
 
     if not args.yes:
@@ -79,16 +82,16 @@ async def uninstall(args: argparse.Namespace) -> int:
         sys.stdout.write("Continue? [y/N] ")
         sys.stdout.flush()
         try:
-            answer = input().strip().lower()
+            answer = (await asyncio.to_thread(input)).strip().lower()
         except EOFError:
             answer = ""
         if answer not in ("y", "yes"):
             sys.stdout.write("aborted\n")
             return 1
 
-    shutil.rmtree(info.install_home, ignore_errors=False)
-    if bin_link.is_symlink() or bin_link.is_file():
-        bin_link.unlink()
+    await asyncio.to_thread(shutil.rmtree, info.install_home, ignore_errors=False)
+    if await aiofiles.ospath.islink(bin_link) or await aiofiles.ospath.isfile(bin_link):
+        await aiofiles.os.remove(bin_link)
 
     sys.stdout.write("situ uninstalled\n")
     return 0

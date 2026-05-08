@@ -9,6 +9,8 @@ import time
 from pathlib import Path
 from typing import Any
 
+import aiofiles.ospath
+
 from ...local_session import ping_session
 from ....core.paths import resolve_workspace
 
@@ -17,7 +19,7 @@ DEFAULT_MAX_EXPERIMENTS = 6
 
 async def resolve_existing_workspace(args: argparse.Namespace) -> Path | None:
     workspace = await resolve_workspace(Path.cwd(), args.workspace)
-    if workspace.is_dir():
+    if await aiofiles.ospath.isdir(workspace):
         return workspace
 
     print(f"workspace does not exist or is not a directory: {workspace}", file=sys.stderr)

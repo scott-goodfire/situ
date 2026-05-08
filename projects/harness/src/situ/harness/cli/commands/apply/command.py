@@ -5,6 +5,8 @@ import asyncio
 import sys
 from pathlib import Path
 
+import aiofiles.ospath
+
 from ....core.db import Database
 from ....core.git import git_lines, git_output, git_text, run_git
 from ....core.paths import resolve_workspace
@@ -35,7 +37,7 @@ async def run_async(args: argparse.Namespace) -> int:
         project_dir=context.project_dir,
         artifact_path=artifact.path,
     )
-    if not patch_path.is_file():
+    if not await aiofiles.ospath.isfile(patch_path):
         print(f"patch file not found: {patch_path}", file=sys.stderr)
         return 1
 

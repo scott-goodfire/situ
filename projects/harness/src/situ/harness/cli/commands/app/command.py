@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-import subprocess
 import sys
 from pathlib import Path
 
 from ....core.paths import resolve_app_root, resolve_bundled_runtime
+from ..._shared.process import run_process
 from ...local_session import base_env, read_live_app
 
 
@@ -32,4 +32,4 @@ async def run_async(args: argparse.Namespace) -> int:
     app_root = await resolve_app_root(Path(__file__)) if runtime.kind == "source" else None
     env = base_env(app_root)
     argv, cwd = runtime.subprocess_args()
-    return subprocess.run(argv, cwd=cwd, env=env).returncode
+    return await run_process(argv, cwd=cwd, env=env)

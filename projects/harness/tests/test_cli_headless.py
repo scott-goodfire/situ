@@ -21,6 +21,10 @@ async def _noop_notify(_method: str, _params: dict[str, Any]) -> None:
     return None
 
 
+async def _noop_stop_process(_process: Any) -> None:
+    return None
+
+
 async def _fake_source_web_runtime(
     name: str, *, source_dir: str | None = None
 ) -> BundledRuntime:
@@ -289,7 +293,7 @@ def test_exec_uses_shared_rpc_lifecycle_and_prints_final_json(
         assert env["SITU_WORKSPACE"] == str(workspace)
         return object(), {"url": "http://127.0.0.1:1", "token": "token"}
 
-    def fake_stop_process(_process: Any) -> None:
+    async def fake_stop_process(_process: Any) -> None:
         return None
 
     def fake_rpc_request(
@@ -444,7 +448,7 @@ def test_exec_resumes_latest_session_when_requested_without_id(
     )
     monkeypatch.setattr(
         "situ.harness.cli.headless.exec.command.stop_process",
-        lambda _process: None,
+        _noop_stop_process,
     )
     monkeypatch.setattr(
         "situ.harness.cli.headless.exec.command.rpc_request",
@@ -531,7 +535,7 @@ def test_exec_returns_failure_when_closed_session_has_failed_event(
     )
     monkeypatch.setattr(
         "situ.harness.cli.headless.exec.command.stop_process",
-        lambda _process: None,
+        _noop_stop_process,
     )
     monkeypatch.setattr(
         "situ.harness.cli.headless.exec.command.rpc_request",
@@ -594,17 +598,14 @@ def test_web_launches_project_home_without_workspace(
     launch_directory.mkdir()
     calls: list[dict[str, Any]] = []
 
-    class Completed:
-        returncode = 0
-
-    def fake_run(
+    async def fake_run(
         command: list[str],
         *,
-        cwd: Path,
+        cwd: Path | None = None,
         env: dict[str, str],
-    ) -> Completed:
+    ) -> int:
         calls.append({"command": command, "cwd": cwd, "env": env})
-        return Completed()
+        return 0
 
     monkeypatch.chdir(launch_directory)
     monkeypatch.delenv("SITU_WORKSPACE", raising=False)
@@ -612,7 +613,7 @@ def test_web_launches_project_home_without_workspace(
         "situ.harness.cli.commands.web.command.resolve_bundled_runtime",
         _fake_source_web_runtime,
     )
-    monkeypatch.setattr("situ.harness.cli.commands.web.command.subprocess.run", fake_run)
+    monkeypatch.setattr("situ.harness.cli.commands.web.command.run_process", fake_run)
 
     code = cli.main(["web", "--rebuild"])
 
@@ -645,17 +646,14 @@ def test_web_skips_build_when_dist_exists(
     launch_directory.mkdir()
     calls: list[dict[str, Any]] = []
 
-    class Completed:
-        returncode = 0
-
-    def fake_run(
+    async def fake_run(
         command: list[str],
         *,
-        cwd: Path,
+        cwd: Path | None = None,
         env: dict[str, str],
-    ) -> Completed:
+    ) -> int:
         calls.append({"command": command, "cwd": cwd, "env": env})
-        return Completed()
+        return 0
 
     monkeypatch.chdir(launch_directory)
 
@@ -671,7 +669,7 @@ def test_web_skips_build_when_dist_exists(
         "situ.harness.cli.commands.web.command.should_build_web",
         fake_should_build_web,
     )
-    monkeypatch.setattr("situ.harness.cli.commands.web.command.subprocess.run", fake_run)
+    monkeypatch.setattr("situ.harness.cli.commands.web.command.run_process", fake_run)
 
     code = cli.main(["web"])
 
@@ -714,7 +712,7 @@ def test_tui_uses_existing_app_server(
     calls: list[dict[str, Any]] = []
     monkeypatch.delenv("SITU_PROJECT_ID", raising=False)
 
-    def fake_run_tui(
+    async def fake_run_tui(
         *,
         runtime: Any,
         env: dict[str, str],

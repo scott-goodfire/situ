@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from pathlib import Path
 from typing import Any
 
@@ -12,7 +13,12 @@ from .rpc import rpc_request
 async def load_snapshot(workspace: Path) -> tuple[str, dict[str, Any]]:
     live_session = await read_live_session(workspace)
     if live_session is not None:
-        return "live", rpc_request(live_session, "collections.bootstrap", {})
+        return "live", await asyncio.to_thread(
+            rpc_request,
+            live_session,
+            "collections.bootstrap",
+            {},
+        )
 
     app = await HarnessApp.create(
         workspace,

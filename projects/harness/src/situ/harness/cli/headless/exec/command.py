@@ -2,9 +2,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-import subprocess
 import sys
-import time
 from pathlib import Path
 from typing import Any
 
@@ -36,7 +34,7 @@ async def run_async(args: argparse.Namespace) -> int:
     env = base_env(app_root, workspace)
     apply_session_env(env, args)
 
-    session_process: subprocess.Popen[bytes] | None = None
+    session_process: asyncio.subprocess.Process | None = None
     session_id = None
 
     try:
@@ -45,7 +43,7 @@ async def run_async(args: argparse.Namespace) -> int:
             env,
             quiet=True,
         )
-        start_result = start_or_resume_session(
+        start_result = await start_or_resume_session(
             session=session,
             args=args,
             workspace=workspace,
@@ -54,7 +52,7 @@ async def run_async(args: argparse.Namespace) -> int:
         action = "resumed" if getattr(args, "resume", None) else "started"
         print(f"{action} {session_id}", file=sys.stderr)
 
-        wait_result = wait_for_rpc_session_to_close(
+        wait_result = await wait_for_rpc_session_to_close(
             session=session,
             session_id=session_id,
             timeout_seconds=args.timeout,
@@ -96,10 +94,10 @@ async def run_async(args: argparse.Namespace) -> int:
         return 1
     finally:
         if session_process is not None:
-            stop_process(session_process)
+            await stop_process(session_process)
 
 
-def start_or_resume_session(
+async def start_or_resume_session(
     *,
     session: dict[str, str],
     args: argparse.Namespace,
@@ -108,11 +106,12 @@ def start_or_resume_session(
     resume = getattr(args, "resume", None)
     if resume is not None:
         session_id = (
-            latest_session_id(session=session)
+            await latest_session_id(session=session)
             if resume == LATEST_SENTINEL
             else str(resume)
         )
-        return rpc_request(
+        return await asyncio.to_thread(
+            rpc_request,
             session,
             "session.resume",
             {
@@ -121,7 +120,8 @@ def start_or_resume_session(
             },
         )
 
-    return rpc_request(
+    return await asyncio.to_thread(
+        rpc_request,
         session,
         "session.start",
         session_start_params(
@@ -131,8 +131,13 @@ def start_or_resume_session(
     )
 
 
-def latest_session_id(*, session: dict[str, str]) -> str:
-    snapshot = rpc_request(session, "collections.bootstrap", {})
+async def latest_session_id(*, session: dict[str, str]) -> str:
+    snapshot = await asyncio.to_thread(
+        rpc_request,
+        session,
+        "collections.bootstrap",
+        {},
+    )
     latest = latest_record(snapshot.get("sessions", []))
     if latest is None:
         raise RuntimeError("no local session found to resume")
@@ -142,7 +147,7 @@ def latest_session_id(*, session: dict[str, str]) -> str:
     return session_id
 
 
-def wait_for_rpc_session_to_close(
+async def wait_for_rpc_session_to_close(
     *,
     session: dict[str, str],
     session_id: str,
@@ -151,10 +156,20 @@ def wait_for_rpc_session_to_close(
     deadline = timeout_deadline(timeout_seconds)
 
     while True:
-        status = rpc_request(session, "session.status", {"session_id": session_id})
+        status = await asyncio.to_thread(
+            rpc_request,
+            session,
+            "session.status",
+            {"session_id": session_id},
+        )
         session_record = status.get("session")
         if isinstance(session_record, dict) and session_record.get("status") == "closed":
-            snapshot = rpc_request(session, "collections.bootstrap", {})
+            snapshot = await asyncio.to_thread(
+                rpc_request,
+                session,
+                "collections.bootstrap",
+                {},
+            )
             return {
                 "session": session_record,
                 "snapshot": snapshot,
@@ -163,7 +178,7 @@ def wait_for_rpc_session_to_close(
         if is_deadline_expired(deadline):
             raise TimeoutError(f"timed out waiting for {session_id}")
 
-        time.sleep(0.5)
+        await asyncio.sleep(0.5)
 
 
 def final_session_status(*, session_id: str, snapshot: dict[str, Any]) -> str:

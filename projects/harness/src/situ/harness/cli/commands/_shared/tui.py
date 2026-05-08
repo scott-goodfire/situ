@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-import subprocess
 import sys
 from pathlib import Path
 
+import aiofiles.ospath
+
 from ..._shared import apply_session_env
+from ..._shared.process import run_process
 from ....core.paths import (
     BundledRuntime,
     resolve_app_root,
@@ -40,7 +42,7 @@ async def launch_app_tui_async(
         return 1
 
     workspace = await resolve_workspace(Path.cwd(), args.workspace)
-    if not workspace.is_dir():
+    if not await aiofiles.ospath.isdir(workspace):
         print(f"workspace does not exist or is not a directory: {workspace}", file=sys.stderr)
         return 1
 
@@ -68,9 +70,9 @@ async def launch_app_tui_async(
     env["SITU_SESSION_URL"] = app["url"]
     env["SITU_SESSION_TOKEN"] = app["token"]
 
-    return run_tui(runtime=runtime, env=env)
+    return await run_tui(runtime=runtime, env=env)
 
 
-def run_tui(*, runtime: BundledRuntime, env: dict[str, str]) -> int:
+async def run_tui(*, runtime: BundledRuntime, env: dict[str, str]) -> int:
     argv, cwd = runtime.subprocess_args()
-    return subprocess.run(argv, cwd=cwd, env=env).returncode
+    return await run_process(argv, cwd=cwd, env=env)

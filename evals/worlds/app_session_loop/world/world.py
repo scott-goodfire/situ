@@ -6,6 +6,7 @@ from typing import Any
 
 import aiofiles
 import aiofiles.os
+import aiofiles.ospath
 from situ.harness.app import HarnessApp
 from situ.harness.config import LocalSecretStore, SituSecrets
 from situ.harness.core.dbos.runtime import reset_dbos_for_tests
@@ -108,9 +109,10 @@ class AppSessionLoopWorld:
             path = Path(artifact_path)
             if not path.is_absolute():
                 path = self.app.context.project_dir / path
-            if not path.is_file():
+            if not await aiofiles.ospath.isfile(path):
                 continue
-            files[artifact_id] = path.read_text(encoding="utf-8", errors="replace")
+            async with aiofiles.open(path, encoding="utf-8", errors="replace") as file:
+                files[artifact_id] = await file.read()
         return files
 
     async def _install_eval_runtime_secrets(self) -> None:

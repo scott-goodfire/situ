@@ -3,12 +3,12 @@ from __future__ import annotations
 import argparse
 import asyncio
 import os
-import subprocess
 import sys
 from pathlib import Path
 
 import aiofiles.ospath
 
+from ..._shared.process import run_process
 from ....core.paths import (
     find_bundled_resource,
     resolve_app_root,
@@ -51,7 +51,7 @@ async def run_async(args: argparse.Namespace) -> int:
             "--dist",
             str(web_dist),
         ]
-        return subprocess.run(argv, env=env).returncode
+        return await run_process(argv, env=env)
 
     app_root = await resolve_app_root(Path(__file__))
     if app_root is None:
@@ -62,15 +62,15 @@ async def run_async(args: argparse.Namespace) -> int:
     web_root = runtime.source_cwd
     assert web_root is not None
     if await should_build_web(web_root, rebuild=args.rebuild):
-        build = subprocess.run(
+        build_code = await run_process(
             ["bun", "run", "build"],
             cwd=web_root,
             env=env,
         )
-        if build.returncode != 0:
-            return build.returncode
+        if build_code != 0:
+            return build_code
 
-    return subprocess.run(
+    return await run_process(
         [
             "bun",
             "run",
@@ -83,7 +83,7 @@ async def run_async(args: argparse.Namespace) -> int:
         ],
         cwd=web_root,
         env=env,
-    ).returncode
+    )
 
 
 async def should_build_web(web_root: Path, *, rebuild: bool) -> bool:

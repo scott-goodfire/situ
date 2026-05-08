@@ -53,13 +53,17 @@ async def follow_live_events(workspace: Path) -> int:
         return 1
 
     try:
-        with open_event_stream(session) as response:
-            rpc_request(session, "events.subscribe", {"replay_existing": True})
-            for notification in iter_sse_notifications(response):
-                write_notification(notification)
+        await asyncio.to_thread(_follow_live_events_sync, session)
     except KeyboardInterrupt:
         return 130
     except Exception as error:
         print(error_message(error), file=sys.stderr)
         return 1
     return 0
+
+
+def _follow_live_events_sync(session: dict[str, str]) -> None:
+    with open_event_stream(session) as response:
+        rpc_request(session, "events.subscribe", {"replay_existing": True})
+        for notification in iter_sse_notifications(response):
+            write_notification(notification)
