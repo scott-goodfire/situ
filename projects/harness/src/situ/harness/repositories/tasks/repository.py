@@ -99,7 +99,7 @@ class TasksRepository(BaseRepository):
             available_at=available_at,
         )
         now = utc_now()
-        self.db.execute(
+        self.db.execute_blocking(
             """
             INSERT INTO tasks
               (id, project_id, created_in_session_id, title, content, kind, status,
@@ -183,7 +183,7 @@ class TasksRepository(BaseRepository):
         elif checked_status in {TaskStatus.BACKLOG, TaskStatus.IN_PROGRESS}:
             completed_at = None
             resolved_completed_in_session_id = None
-        self.db.execute(
+        self.db.execute_blocking(
             """
             UPDATE tasks
             SET title = ?,
@@ -263,7 +263,7 @@ class TasksRepository(BaseRepository):
         if current is None:
             return None
         now = utc_now()
-        self.db.execute(
+        self.db.execute_blocking(
             """
             UPDATE tasks
             SET title = ?,
@@ -319,7 +319,7 @@ class TasksRepository(BaseRepository):
             return None
         now = utc_now()
         placeholders = ", ".join("?" for _ in kinds)
-        cursor = self.db.execute(
+        cursor = self.db.execute_blocking(
             f"""
             UPDATE tasks
             SET status = ?,
@@ -367,7 +367,7 @@ class TasksRepository(BaseRepository):
             return None
         placeholders = ", ".join("?" for _ in kinds)
         now = utc_now()
-        rows = self.db.fetchall(
+        rows = self.db.fetchall_blocking(
             f"""
             SELECT * FROM tasks
             WHERE project_id = ?
@@ -396,14 +396,45 @@ class TasksRepository(BaseRepository):
                 return claimed
         return None
 
+    def list_runnable_for_project(
+        self,
+        *,
+        project_id: str,
+        eligible_kinds: Sequence[TaskKind | str],
+    ) -> list[TaskRecord]:
+        kinds = [parse_task_kind(kind).value for kind in eligible_kinds]
+        if not kinds:
+            return []
+        placeholders = ", ".join("?" for _ in kinds)
+        now = utc_now()
+        rows = self.db.fetchall_blocking(
+            f"""
+            SELECT * FROM tasks
+            WHERE project_id = ?
+              AND status = ?
+              AND available_at <= ?
+              AND kind IN ({placeholders})
+              AND NOT EXISTS (
+                SELECT 1
+                FROM task_dependencies dependency
+                JOIN tasks blocker ON blocker.id = dependency.blocked_by_task_id
+                WHERE dependency.task_id = tasks.id
+                  AND blocker.status != ?
+              )
+            ORDER BY {PRIORITY_ORDER_SQL}, created_at
+            """,
+            (project_id, TaskStatus.BACKLOG.value, now, *kinds, TaskStatus.DONE.value),
+        )
+        return [_task_row(row) for row in rows]
+
     def get(self, *, task_id: str) -> TaskRecord | None:
-        row = self.db.fetchone("SELECT * FROM tasks WHERE id = ?", (task_id,))
+        row = self.db.fetchone_blocking("SELECT * FROM tasks WHERE id = ?", (task_id,))
         return _task_row(row) if row else None
 
     def list_all(self) -> list[TaskRecord]:
         return [
             _task_row(row)
-            for row in self.db.fetchall(
+            for row in self.db.fetchall_blocking(
                 f"SELECT * FROM tasks ORDER BY {PRIORITY_ORDER_SQL}, created_at"
             )
         ]
@@ -411,7 +442,7 @@ class TasksRepository(BaseRepository):
     def list_for_project(self, *, project_id: str) -> list[TaskRecord]:
         return [
             _task_row(row)
-            for row in self.db.fetchall(
+            for row in self.db.fetchall_blocking(
                 f"""
                 SELECT * FROM tasks
                 WHERE project_id = ?
@@ -430,14 +461,14 @@ class TasksRepository(BaseRepository):
         )
 
     def next_id(self, *, project_id: str) -> str:
-        rows = self.db.fetchall("SELECT id FROM tasks")
+        rows = self.db.fetchall_blocking("SELECT id FROM tasks")
         return next_canonical_record_id(
             existing_ids=(str(row["id"]) for row in rows),
             prefix=TASK_ID_PREFIX,
         )
 
     def _project_id_for_session(self, session_id: str) -> str | None:
-        row = self.db.fetchone("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
+        row = self.db.fetchone_blocking("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
         return row["project_id"] if row else None
 
 

@@ -53,7 +53,7 @@ class SetupCompleteResult(BaseModel):
     workspace: WorkspaceRecord
 
 
-OpenAIKeySource = Literal["local", "missing"]
+SecretSource = Literal["local", "missing"]
 
 
 class SecretsStatusParams(BaseModel):
@@ -61,22 +61,22 @@ class SecretsStatusParams(BaseModel):
 
 
 class SecretsStatusResult(BaseModel):
-    openai_key_configured: bool
-    openai_key_source: OpenAIKeySource
+    anthropic_key_configured: bool
+    anthropic_key_source: SecretSource
     logfire_token_configured: bool = False
-    logfire_token_source: OpenAIKeySource = "missing"
+    logfire_token_source: SecretSource = "missing"
 
 
-class SecretsSetOpenAIKeyParams(BaseModel):
-    openai_key: str
+class SecretsSetAnthropicKeyParams(BaseModel):
+    anthropic_key: str
     logfire_token: str | None = None
 
 
-class SecretsSetOpenAIKeyResult(BaseModel):
-    openai_key_configured: bool = True
-    openai_key_source: Literal["local"] = "local"
+class SecretsSetAnthropicKeyResult(BaseModel):
+    anthropic_key_configured: bool = True
+    anthropic_key_source: Literal["local"] = "local"
     logfire_token_configured: bool = False
-    logfire_token_source: OpenAIKeySource = "missing"
+    logfire_token_source: SecretSource = "missing"
 
 
 CollectionName = Literal[

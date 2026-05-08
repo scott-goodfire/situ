@@ -30,7 +30,7 @@ class TaskDependenciesRepository(BaseRepository):
             task_id=task_id,
             blocked_by_task_id=blocked_by_task_id,
         )
-        self.db.execute(
+        self.db.execute_blocking(
             """
             INSERT INTO task_dependencies
               (project_id, task_id, blocked_by_task_id, created_at)
@@ -61,7 +61,7 @@ class TaskDependenciesRepository(BaseRepository):
         task_id: str,
         blocked_by_task_id: str,
     ) -> TaskDependencyRecord | None:
-        row = self.db.fetchone(
+        row = self.db.fetchone_blocking(
             """
             SELECT * FROM task_dependencies
             WHERE task_id = ? AND blocked_by_task_id = ?
@@ -73,7 +73,7 @@ class TaskDependenciesRepository(BaseRepository):
     def list_all(self) -> list[TaskDependencyRecord]:
         return [
             _task_dependency_row(row)
-            for row in self.db.fetchall(
+            for row in self.db.fetchall_blocking(
                 "SELECT * FROM task_dependencies ORDER BY created_at"
             )
         ]
@@ -81,7 +81,7 @@ class TaskDependenciesRepository(BaseRepository):
     def list_for_task(self, *, task_id: str) -> list[TaskDependencyRecord]:
         return [
             _task_dependency_row(row)
-            for row in self.db.fetchall(
+            for row in self.db.fetchall_blocking(
                 """
                 SELECT * FROM task_dependencies
                 WHERE task_id = ?
@@ -94,7 +94,7 @@ class TaskDependenciesRepository(BaseRepository):
     def list_for_project(self, *, project_id: str) -> list[TaskDependencyRecord]:
         return [
             _task_dependency_row(row)
-            for row in self.db.fetchall(
+            for row in self.db.fetchall_blocking(
                 """
                 SELECT * FROM task_dependencies
                 WHERE project_id = ?

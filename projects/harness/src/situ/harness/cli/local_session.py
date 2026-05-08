@@ -12,9 +12,9 @@ from ..config import DEFAULTS
 from ..core.project_context import ProjectContext
 
 LOCAL_RUNTIME_SECRET_ENV = (
-    "SITU_OPENAI_KEY",
+    "SITU_ANTHROPIC_KEY",
     "SITU_LOGFIRE_TOKEN",
-    "OPENAI_API_KEY",
+    "ANTHROPIC_API_KEY",
     "LOGFIRE_TOKEN",
 )
 

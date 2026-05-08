@@ -2,16 +2,16 @@
 
 ## Purpose
 
-The current slice should prove one experience:
+Situ proves one experience:
 
 > I start an autoresearch session in the terminal and can see the objective,
 > active hypotheses, experiments, activity, artifacts, and internal events as the
 > loop runs.
 
-The slice should support one local workspace, project-scoped objective and
-research context, a few analyses, a few hypotheses, a sequential
-agent-requested experiment loop, comment activities, simple automated trust
-concerns, and one worker path.
+Situ supports one local workspace, project-scoped objective and research
+context, a few analyses, a few hypotheses, a sequential agent-requested
+experiment loop, comment activities, simple automated trust concerns, and
+one worker path.
 
 ## Target User Story
 
@@ -29,8 +29,8 @@ situ app
 situ tui ~/sandbox/some-project
 ```
 
-For the current implementation slice, Situ accepts setup context through
-sparse start/exec inputs and reasonable defaults. The durable inputs are:
+Situ accepts setup context through sparse start/exec inputs and reasonable
+defaults. The durable inputs are:
 
 - Objective
 - Research context: how progress is judged, what evals/tools/metrics/logs or
@@ -59,7 +59,7 @@ concepts. Runtime state, project identity, worker current directory, and trust
 checks are scoped to the researched workspace, even when the TUI and harness
 code are launched from the Situ repository.
 
-## Current Slice Includes
+## In Scope
 
 - One app server plus TUI and headless exec commands
 - Explicit workspace argument for sandbox/project testing
@@ -111,7 +111,7 @@ the starting git state, ending dirty state, eval command, and whether source,
 tests/evals, dependencies, or generated files changed. See
 [0012-experiment-workspace-state/SPEC.md](../0012-experiment-workspace-state/SPEC.md).
 
-## Deferred
+## Out of Scope
 
 - Web UI as the primary surface
 - Interactive terminal setup wizard

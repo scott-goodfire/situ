@@ -2,9 +2,9 @@
 
 ## Purpose
 
-The first slice should not reduce autoresearch output to one best metric.
-Autoresearch often learns through many experiments whose value appears in
-patterns, combinations, failures, and suspicious results.
+Situ does not reduce autoresearch output to one best metric. Autoresearch
+often learns through many experiments whose value appears in patterns,
+combinations, failures, and suspicious results.
 
 This spec defines the minimal model for comment activities, measurement
 evidence, and artifacts.
@@ -26,7 +26,7 @@ It can describe:
 - An interpretation
 - A link to an artifact
 
-First-slice activity shape:
+Activity shape:
 
 ```text
 id
@@ -63,10 +63,9 @@ dirty state, changed paths, and coarse changed-path categories.
 
 Experiment activities can summarize what a measurement means for the attempted
 change, but repeated benchmark runs, raw stdout/stderr, and reproduction notes
-belong on the measurement trail. In the current implementation, evaluation
-result activities are the closest storage shape to measurements; future model
-work should make the measurement concept explicit before adding a rigid metric
-table.
+belong on the measurement trail. Evaluation result activities are the
+storage shape for measurements; a rigid metric table is out of scope until
+the measurement concept is explicit enough to need its own query surface.
 
 ## Concerns
 
@@ -85,9 +84,9 @@ Examples:
 - `Candidate includes dependency changes; environment comparability needs
   review.`
 
-Concerns replace the standalone warning model in the first slice. They should
-be distinguishable through body text and optional payload metadata rather than a
-separate database status or activity kind.
+Concerns replace any standalone warning model. They should be
+distinguishable through body text and optional payload metadata rather than
+a separate database status or activity kind.
 
 ## Interpretations
 
@@ -103,8 +102,8 @@ Examples:
 ## Critic Reviews
 
 A Critic review is an experiment activity that treats the experiment as the
-proposed change and the associated evaluations/measurements as evidence. It is
-not a separate first-class Review model in the current slice.
+proposed change and the associated evaluations/measurements as evidence. A
+separate first-class Review model is out of scope.
 
 The body should read like a concise PR review: what evidence was considered,
 what looks trustworthy or suspicious, and what should happen next. The payload
@@ -130,7 +129,7 @@ An evaluation is the lightweight container for measurement evidence. It exists
 so baseline, candidate, reproduction, sanity, and blocked setup evidence do not
 have to be stuffed into experiment comments.
 
-First-slice evaluation shape:
+Evaluation shape:
 
 ```text
 id
@@ -218,7 +217,7 @@ they produce a candidate commit. The patch artifact is a handoff receipt for
 humans and later agents: it points at the diff from base state to candidate
 state without applying it to the user's selected checkout.
 
-First-slice artifact shape:
+Artifact shape:
 
 ```text
 id
@@ -241,15 +240,15 @@ fields.
 
 Artifacts always belong to a project. Use the generic associated entity fields
 instead of a widening set of nullable foreign keys. This keeps the record
-understandable without forcing the first slice to predict every artifact
-attachment target.
+understandable without forcing Situ to predict every artifact attachment
+target.
 
-For the first slice, structured artifact metadata may live in the artifact file
-itself or in the nearby activity payload. Do not add a separate artifact
-metadata table until querying those fields becomes necessary.
+Structured artifact metadata lives in the artifact file itself or in the
+nearby activity payload. A separate artifact metadata table is out of scope
+until querying those fields becomes necessary.
 
 ## Product Rule
 
-Keep the activity model small and LLM-friendly. Do not build a full research
-knowledge graph, direction board, variant model, or specialized finding/warning
-tables in the first slice.
+Keep the activity model small and LLM-friendly. A full research knowledge
+graph, direction board, variant model, and specialized finding/warning
+tables are out of scope.

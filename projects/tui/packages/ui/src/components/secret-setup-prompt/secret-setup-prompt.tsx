@@ -35,19 +35,19 @@ export function SecretSetupPrompt({
   isActive?: boolean;
   message?: CommandMessage;
   onSubmit: ({
-    openaiKey,
+    anthropicKey,
     logfireToken,
   }: {
-    openaiKey: string;
+    anthropicKey: string;
     logfireToken?: string;
   }) => void;
   onExit: () => void;
   terminalSize?: TerminalSize;
 }) {
-  const [step, setStep] = useState<"intro" | "openai" | "logfire">(() =>
-    message ? "openai" : "intro",
+  const [step, setStep] = useState<"intro" | "anthropic" | "logfire">(() =>
+    message ? "anthropic" : "intro",
   );
-  const [openaiDraft, setOpenaiDraft] = useState("");
+  const [anthropicDraft, setAnthropicDraft] = useState("");
   const [logfireDraft, setLogfireDraft] = useState("");
   const [localMessage, setLocalMessage] = useState<CommandMessage | undefined>(
     undefined,
@@ -61,7 +61,7 @@ export function SecretSetupPrompt({
 
   useEffect(() => {
     if (message) {
-      setStep("openai");
+      setStep("anthropic");
     }
   }, [message]);
 
@@ -89,7 +89,7 @@ export function SecretSetupPrompt({
           label={
             step === "intro"
               ? "Enter OK - Esc exits"
-              : step === "openai"
+              : step === "anthropic"
                 ? "Enter continues - Esc clears/exits"
                 : "Enter saves - Esc skips"
           }
@@ -101,7 +101,7 @@ export function SecretSetupPrompt({
         <LayoutBox width={layout.contentWidth}>
           <Text>
             {previewText({
-              value: "OpenAI required, Logfire optional",
+              value: "Anthropic required, Logfire optional",
               maxCharacters: Math.max(24, layout.contentWidth),
             })}
           </Text>
@@ -122,7 +122,7 @@ export function SecretSetupPrompt({
         <LayoutBox width={layout.contentWidth} height={sectionHeight}>
           {step === "intro" ? (
             <PaneSection title="Local provider secrets" chrome="none">
-              <Text>Situ needs an OpenAI API key before it can run agents.</Text>
+              <Text>Situ needs an Anthropic API key before it can run agents.</Text>
               <Text dimColor>
                 This local runtime uses secrets saved in Situ's secret store for
                 future sessions on this machine. Logfire is optional.
@@ -139,37 +139,37 @@ export function SecretSetupPrompt({
                 isActive={isActive}
                 onCancel={onExit}
                 onSelect={() => {
-                  setStep("openai");
+                  setStep("anthropic");
                 }}
               />
             </PaneSection>
-          ) : step === "openai" ? (
-            <PaneSection title="OpenAI API key" chrome="none">
-              <Text>Paste your OpenAI API key to run Situ agents.</Text>
+          ) : step === "anthropic" ? (
+            <PaneSection title="Anthropic API key" chrome="none">
+              <Text>Paste your Anthropic API key to run Situ agents.</Text>
               <Text dimColor>
                 It will be saved in local Situ runtime state and used for future
                 sessions on this machine.
               </Text>
               <CommandInput
-                draft={openaiDraft}
+                draft={anthropicDraft}
                 isActive={isActive}
                 mask="*"
                 message={localMessage ?? message}
                 onCancel={onExit}
                 onChange={({ value }) => {
                   setLocalMessage(undefined);
-                  setOpenaiDraft(value);
+                  setAnthropicDraft(value);
                 }}
                 onSubmit={({ value }) => {
-                  const openaiKey = value.trim();
-                  if (!openaiKey) {
+                  const anthropicKey = value.trim();
+                  if (!anthropicKey) {
                     setLocalMessage({
                       tone: "yellow",
                       text: "Paste a key before continuing.",
                     });
                     return;
                   }
-                  setOpenaiDraft(openaiKey);
+                  setAnthropicDraft(anthropicKey);
                   setLocalMessage(undefined);
                   setStep("logfire");
                 }}
@@ -188,7 +188,7 @@ export function SecretSetupPrompt({
                 mask="*"
                 message={localMessage}
                 onCancel={() => {
-                  onSubmit({ openaiKey: openaiDraft });
+                  onSubmit({ anthropicKey: anthropicDraft });
                 }}
                 onChange={({ value }) => {
                   setLocalMessage(undefined);
@@ -197,7 +197,7 @@ export function SecretSetupPrompt({
                 onSubmit={({ value }) => {
                   const logfireToken = value.trim();
                   onSubmit({
-                    openaiKey: openaiDraft,
+                    anthropicKey: anthropicDraft,
                     logfireToken: logfireToken || undefined,
                   });
                 }}

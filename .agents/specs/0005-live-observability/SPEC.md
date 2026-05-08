@@ -1,6 +1,6 @@
 # Live Observability
 
-Live observability is the core first-slice product object.
+Live observability is the core product object.
 
 It answers:
 
@@ -8,8 +8,8 @@ It answers:
 > what activity came back, what looks suspicious, and what is the system
 > learning?
 
-Do not model this as a broad health score yet. The first TUI should show live
-facts clearly.
+Live observability is not a broad health score. The TUI shows live facts
+clearly; aggregated health scoring is out of scope.
 
 ## Observability Summary
 
@@ -29,8 +29,8 @@ The TUI should make these immediately visible:
 
 ## Activities First
 
-The first slice should make activities visible. Activities are compact,
-comment-shaped, human-readable entries attached to hypotheses or experiments.
+Activities are visible. They are compact, comment-shaped, human-readable
+entries attached to hypotheses or experiments.
 
 Examples:
 
@@ -52,9 +52,9 @@ Concerns are simple and concrete comments:
 - Evaluation artifact changed unexpectedly.
 - Suspiciously large improvement needs corroboration.
 
-The first UI should not hide these behind a health score.
+The UI does not hide these behind a health score.
 
 ## Product Rule
 
-The terminal dashboard is the output. Do not add a final report until the live
-observability surface is useful.
+The terminal dashboard is the output. A final report is out of scope until
+the live observability surface is useful on its own.

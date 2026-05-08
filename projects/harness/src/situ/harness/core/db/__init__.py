@@ -1,3 +1,3 @@
-from .database import Database
+from .database import CursorResult, Database
 
-__all__ = ["Database"]
+__all__ = ["CursorResult", "Database"]

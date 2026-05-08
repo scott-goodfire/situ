@@ -59,9 +59,9 @@ mise run app
 mise run tui -- ~/sandbox/some-repo
 mise run exec -- ~/sandbox/some-repo
 mise run secrets -- status
-mise run secrets -- set openai
+mise run secrets -- set anthropic
 mise run secrets -- set logfire
-mise run secrets -- unset openai
+mise run secrets -- unset anthropic
 mise run secrets -- unset logfire
 mise run secrets -- clear
 mise run resume -- ~/sandbox/some-repo
@@ -87,13 +87,13 @@ The Python harness now initializes:
 - DBOS for durable agent execution state
 - Logfire for Pydantic AI / DBOS / harness traces
 
-The default local agent runtime requires a saved local OpenAI key in Situ's
+The default local agent runtime requires a saved local Anthropic key in Situ's
 secret store. The TUI prompts for it on first run and saves it under
 `~/.situ/secrets.json`. The TUI can also save an optional local Logfire token
 there for local run traces. Local app, TUI, web, and manual headless execution
-do not use `SITU_OPENAI_KEY` or `SITU_LOGFIRE_TOKEN` as runtime credentials.
-Use `situ secrets status`, `situ secrets set openai`,
-`situ secrets set logfire`, `situ secrets unset openai`,
+do not use `SITU_ANTHROPIC_KEY` or `SITU_LOGFIRE_TOKEN` as runtime credentials.
+Use `situ secrets status`, `situ secrets set anthropic`,
+`situ secrets set logfire`, `situ secrets unset anthropic`,
 `situ secrets unset logfire`, and `situ secrets clear` to manage those local
 runtime secrets without revealing saved values.
 
@@ -106,7 +106,7 @@ DBOS stores its system database beside Situ project state by default:
 Non-secret runtime defaults, including model names, Logfire service names, DBOS
 settings, and local state paths, live in typed code config rather than user env
 vars. The intended user-facing env vars are only eval launch secrets:
-`SITU_LOGFIRE_TOKEN` and `SITU_OPENAI_KEY`.
+`SITU_LOGFIRE_TOKEN` and `SITU_ANTHROPIC_KEY`.
 
 ## Evals
 
@@ -120,7 +120,7 @@ mise run evals:json
 ```
 
 The first suite uses a mocked micrograd world with baseline, A/B/C variants, an
-A+C combination, and one suspicious result. Evals require `SITU_OPENAI_KEY`
+A+C combination, and one suspicious result. Evals require `SITU_ANTHROPIC_KEY`
 for real LLM calls and `SITU_LOGFIRE_TOKEN` so eval executions are sent to
 Logfire with `service_name=situ-evals`. Evals do not fall back to the saved
 local runtime secrets.

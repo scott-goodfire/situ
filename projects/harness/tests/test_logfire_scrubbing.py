@@ -37,7 +37,7 @@ def test_eval_logfire_configuration_disables_scrubbing(monkeypatch) -> None:
     module = _load_eval_observability_module()
 
     monkeypatch.setenv("SITU_LOGFIRE_TOKEN", "test-token")
-    monkeypatch.setenv("SITU_OPENAI_KEY", "test-openai-key")
+    monkeypatch.setenv("SITU_ANTHROPIC_KEY", "test-anthropic-key")
     monkeypatch.setattr(module, "_CONFIGURED", False)
     monkeypatch.setattr(logfire, "configure", lambda **kwargs: configure_calls.append(kwargs))
     monkeypatch.setattr(logfire, "instrument_pydantic_ai", lambda: None)

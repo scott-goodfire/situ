@@ -60,7 +60,7 @@ class EvaluationsRepository(BaseRepository):
             status=checked_status,
         )
         now = utc_now()
-        self.db.execute(
+        self.db.execute_blocking(
             """
             INSERT INTO evaluations
               (id, project_id, created_in_session_id, status, title, summary,
@@ -120,7 +120,7 @@ class EvaluationsRepository(BaseRepository):
             next_associated_baseline_id = None
             next_associated_experiment_id = command.associated_experiment_id
 
-        self.db.execute(
+        self.db.execute_blocking(
             """
             UPDATE evaluations
             SET title = ?,
@@ -144,7 +144,7 @@ class EvaluationsRepository(BaseRepository):
         return self.get_by_id(evaluation_id=command.evaluation_id)
 
     def get_by_id(self, *, evaluation_id: str) -> EvaluationRecord | None:
-        row = self.db.fetchone("SELECT * FROM evaluations WHERE id = ?", (evaluation_id,))
+        row = self.db.fetchone_blocking("SELECT * FROM evaluations WHERE id = ?", (evaluation_id,))
         return _evaluation_row(row) if row else None
 
     def get(self, *, evaluation_id: str) -> EvaluationRecord | None:
@@ -153,13 +153,13 @@ class EvaluationsRepository(BaseRepository):
     def list_all(self) -> list[EvaluationRecord]:
         return [
             _evaluation_row(row)
-            for row in self.db.fetchall("SELECT * FROM evaluations ORDER BY created_at")
+            for row in self.db.fetchall_blocking("SELECT * FROM evaluations ORDER BY created_at")
         ]
 
     def list_for_project(self, *, project_id: str) -> list[EvaluationRecord]:
         return [
             _evaluation_row(row)
-            for row in self.db.fetchall(
+            for row in self.db.fetchall_blocking(
                 """
                 SELECT * FROM evaluations
                 WHERE project_id = ?
@@ -170,7 +170,7 @@ class EvaluationsRepository(BaseRepository):
         ]
 
     def list_for_session(self, *, session_id: str) -> list[EvaluationRecord]:
-        session = self.db.fetchone("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
+        session = self.db.fetchone_blocking("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
         project_id = session["project_id"] if session else None
         return (
             self.list_for_project(project_id=project_id)
@@ -181,7 +181,7 @@ class EvaluationsRepository(BaseRepository):
     def list_for_experiment(self, *, experiment_id: str) -> list[EvaluationRecord]:
         return [
             _evaluation_row(row)
-            for row in self.db.fetchall(
+            for row in self.db.fetchall_blocking(
                 """
                 SELECT * FROM evaluations
                 WHERE associated_experiment_id = ?
@@ -194,7 +194,7 @@ class EvaluationsRepository(BaseRepository):
     def list_for_baseline(self, *, baseline_id: str) -> list[EvaluationRecord]:
         return [
             _evaluation_row(row)
-            for row in self.db.fetchall(
+            for row in self.db.fetchall_blocking(
                 """
                 SELECT * FROM evaluations
                 WHERE associated_baseline_id = ?
@@ -205,7 +205,7 @@ class EvaluationsRepository(BaseRepository):
         ]
 
     def next_id(self, *, project_id: str) -> str:
-        rows = self.db.fetchall("SELECT id FROM evaluations")
+        rows = self.db.fetchall_blocking("SELECT id FROM evaluations")
         return next_canonical_record_id(
             existing_ids=(str(row["id"]) for row in rows),
             prefix=EVALUATION_ID_PREFIX,

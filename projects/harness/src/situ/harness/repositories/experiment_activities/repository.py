@@ -40,7 +40,7 @@ class ExperimentActivitiesRepository(BaseRepository):
             body=body,
             payload=payload or {},
         )
-        cursor = self.db.execute(
+        cursor = self.db.execute_blocking(
             """
             INSERT INTO experiment_activities
               (experiment_id, created_in_session_id, actor, kind, body, payload_json,
@@ -63,7 +63,7 @@ class ExperimentActivitiesRepository(BaseRepository):
         return record
 
     def get_by_id(self, *, activity_id: int) -> ExperimentActivityRecord | None:
-        row = self.db.fetchone("SELECT * FROM experiment_activities WHERE id = ?", (activity_id,))
+        row = self.db.fetchone_blocking("SELECT * FROM experiment_activities WHERE id = ?", (activity_id,))
         return _experiment_activity_row(row) if row else None
 
     def get(self, *, activity_id: int) -> ExperimentActivityRecord | None:
@@ -72,13 +72,13 @@ class ExperimentActivitiesRepository(BaseRepository):
     def list_all(self) -> list[ExperimentActivityRecord]:
         return [
             _experiment_activity_row(row)
-            for row in self.db.fetchall("SELECT * FROM experiment_activities ORDER BY id")
+            for row in self.db.fetchall_blocking("SELECT * FROM experiment_activities ORDER BY id")
         ]
 
     def list_for_experiment(self, *, experiment_id: str) -> list[ExperimentActivityRecord]:
         return [
             _experiment_activity_row(row)
-            for row in self.db.fetchall(
+            for row in self.db.fetchall_blocking(
                 "SELECT * FROM experiment_activities WHERE experiment_id = ? ORDER BY id",
                 (experiment_id,),
             )
@@ -87,7 +87,7 @@ class ExperimentActivitiesRepository(BaseRepository):
     def list_for_project(self, *, project_id: str) -> list[ExperimentActivityRecord]:
         return [
             _experiment_activity_row(row)
-            for row in self.db.fetchall(
+            for row in self.db.fetchall_blocking(
                 """
                 SELECT experiment_activities.*
                 FROM experiment_activities
@@ -100,7 +100,7 @@ class ExperimentActivitiesRepository(BaseRepository):
         ]
 
     def list_for_session(self, *, session_id: str) -> list[ExperimentActivityRecord]:
-        session = self.db.fetchone("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
+        session = self.db.fetchone_blocking("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
         project_id = session["project_id"] if session else None
         return (
             self.list_for_project(project_id=project_id)

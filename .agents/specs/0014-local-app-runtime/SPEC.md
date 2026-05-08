@@ -37,7 +37,7 @@ windows created or resumed through clients.
 - Writes only to the local Situ secret store and must not print secret values
   to stdout, stderr, events, product records, or observability attributes.
 - Does not manage eval launch secrets. Evals continue to require
-  `SITU_OPENAI_KEY` and `SITU_LOGFIRE_TOKEN` from the launch environment.
+  `SITU_ANTHROPIC_KEY` and `SITU_LOGFIRE_TOKEN` from the launch environment.
 
 `situ tui [workspace]`:
 
@@ -123,15 +123,16 @@ Per-project runtime state remains under:
 ```
 
 This directory may hold runtime-only files such as DBOS state, logs, temporary
-run artifacts, managed experiment worktrees, and compatibility metadata. The
-first cutover keeps DBOS SQLite per project, for example:
+run artifacts, managed experiment worktrees, and compatibility metadata. DBOS
+SQLite is per project:
 
 ```text
 ~/.situ/projects/<project-id>/dbos.sqlite
 ```
 
-Do not combine DBOS into the canonical product database until the app runtime
-has a clear multi-project DBOS story. Product state should converge first.
+Combining DBOS into the canonical product database is out of scope until
+the app runtime has a clear multi-project DBOS story; product state
+converges first.
 
 Managed experiment worktrees may live under the project runtime directory, for
 example:
@@ -182,6 +183,18 @@ harness subprocesses. Either implementation is valid if these guarantees hold:
 - The app can route client RPC and events by workspace/project scope.
 - Product records are durable in the single canonical SQLite database.
 - DBOS state remains isolated per project until a future spec changes that.
+
+The project-scoped Python harness runtime is async-first. Agent passes, the
+session execution loop, repository access, tool execution, and stdio dispatch
+should use async APIs by default so production and tests exercise the same
+cancellation, timeout, and model-call path. Local product-state SQLite access
+should use `aiosqlite` behind the async repository surface; repository methods
+must not hold SQLite transactions across arbitrary awaits. Synchronous
+entrypoints are allowed only at external process boundaries such as CLI, legacy
+tests, or eval framework adapters, and they should be thin wrappers over the
+async runtime path. Local Git/worktree operations, artifact IO, and compatibility
+repositories may use explicit blocking adapters until they are worth replacing
+with native async implementations.
 
 ## Runtime Timeouts
 
@@ -252,7 +265,7 @@ The browser remains a client. It should not own workers or session lifecycle.
   in failure, even if the session record is closed.
 - `situ exec --timeout` returns the timeout exit code when the command stops
   waiting for a still-active session.
-- Eval execution requires `SITU_OPENAI_KEY` and `SITU_LOGFIRE_TOKEN` from the
+- Eval execution requires `SITU_ANTHROPIC_KEY` and `SITU_LOGFIRE_TOKEN` from the
   launch environment and does not fall back to the local secret store.
 - Confirming onboarding or providing setup inputs creates a fresh project and
   fresh attached session unless `--resume` or `--attach` is explicit.
@@ -262,3 +275,7 @@ The browser remains a client. It should not own workers or session lifecycle.
 - `situ web` can list known projects without a current workspace.
 - Product records from multiple workspaces land in `~/.situ/situ.sqlite`.
 - DBOS files remain project-scoped under `~/.situ/projects/<project-id>/`.
+- Agent runtime and session-loop tests exercise the async execution path; sync
+  wrappers remain only for process-edge compatibility.
+- Core repository and tool surfaces are awaitable by default and use explicit
+  blocking adapters only behind the async API boundary.

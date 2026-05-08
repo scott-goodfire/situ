@@ -16,7 +16,7 @@ class FakeAgentRuntime:
     def __init__(self, _project_dir: Path) -> None:
         pass
 
-    def plan_session(self, **_kwargs: Any):
+    async def plan_session(self, **_kwargs: Any):
         class Plan:
             summary = "fake plan"
 

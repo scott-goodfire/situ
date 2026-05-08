@@ -40,6 +40,7 @@ or agent/worker flows.
 - [0030-frontend-collections-selectors/POLICY.md](./0030-frontend-collections-selectors/POLICY.md) - keep frontend live state collection-backed and read-side derivations in selectors
 - [0031-ui-package-boundaries/POLICY.md](./0031-ui-package-boundaries/POLICY.md) - keep design tokens, reusable UI, app UI, and live app wiring in separate package layers
 - [0032-command-task-surface/POLICY.md](./0032-command-task-surface/POLICY.md) - keep routine workflows discoverable through strict command wrappers and mise tasks
+- [0033-specs-as-end-state/POLICY.md](./0033-specs-as-end-state/POLICY.md) - keep specs end-state contracts and let agents derive deltas; no implementation plans in specs
 
 ## Review Style
 

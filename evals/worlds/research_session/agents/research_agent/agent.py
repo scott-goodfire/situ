@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import asyncio
+
 from situ.harness.agents import ResearchAgent, ResearchAgentContext
 from situ.harness.tools.common import SituToolDeps
 from evals.framework.capture import ToolCallCaptureCapability
@@ -30,11 +32,13 @@ def run_research_agent(args: ResearchAgentEvalInput) -> ResearchAgentEvalOutput:
             model=eval_model_name(),
             capabilities=[capture],
         )
-        result = agent.run_sync(
-            ResearchAgentContext(
-                deps=deps,
-                objective=args.objective,
-                user_prompt=args.prompt,
+        result = asyncio.run(
+            agent.run(
+                ResearchAgentContext(
+                    deps=deps,
+                    objective=args.objective,
+                    user_prompt=args.prompt,
+                )
             )
         )
         output = result.output

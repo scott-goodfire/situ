@@ -532,7 +532,7 @@ function agentRecord({
     created_in_session_id: SESSION_ID,
     kind: "scientist",
     display_name: "Scientist",
-    model_name: "openai:test",
+    model_name: "anthropic:test",
     status: "idle",
     created_at: "2026-01-01T00:00:01Z",
     updated_at: "2026-01-01T00:00:01Z",

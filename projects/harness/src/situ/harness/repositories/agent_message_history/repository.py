@@ -61,7 +61,7 @@ class AgentMessageHistoryRepository(BaseRepository):
             pydantic_run_id=pydantic_run_id or inferred_run_id,
             conversation_id=conversation_id or inferred_conversation_id,
         )
-        cursor = self.db.execute(
+        cursor = self.db.execute_blocking(
             """
             INSERT INTO agent_message_history
               (project_id, created_in_session_id, agent_id, agent_name,
@@ -110,7 +110,7 @@ class AgentMessageHistoryRepository(BaseRepository):
         )
 
     def get_by_id(self, *, history_id: int) -> AgentMessageHistoryRecord | None:
-        row = self.db.fetchone("SELECT * FROM agent_message_history WHERE id = ?", (history_id,))
+        row = self.db.fetchone_blocking("SELECT * FROM agent_message_history WHERE id = ?", (history_id,))
         return _agent_message_history_row(row) if row else None
 
     def get(self, *, history_id: int) -> AgentMessageHistoryRecord | None:
@@ -124,12 +124,12 @@ class AgentMessageHistoryRepository(BaseRepository):
         agent_name: str | None = None,
     ) -> list[AgentMessageHistoryRecord]:
         if agent_id is None and agent_name is None:
-            rows = self.db.fetchall(
+            rows = self.db.fetchall_blocking(
                 "SELECT * FROM agent_message_history WHERE project_id = ? ORDER BY id",
                 (project_id,),
             )
         elif agent_id is not None and agent_name is not None:
-            rows = self.db.fetchall(
+            rows = self.db.fetchall_blocking(
                 """
                 SELECT * FROM agent_message_history
                 WHERE project_id = ? AND agent_id = ? AND agent_name = ?
@@ -138,7 +138,7 @@ class AgentMessageHistoryRepository(BaseRepository):
                 (project_id, agent_id, agent_name),
             )
         elif agent_id is not None:
-            rows = self.db.fetchall(
+            rows = self.db.fetchall_blocking(
                 """
                 SELECT * FROM agent_message_history
                 WHERE project_id = ? AND agent_id = ?
@@ -147,7 +147,7 @@ class AgentMessageHistoryRepository(BaseRepository):
                 (project_id, agent_id),
             )
         else:
-            rows = self.db.fetchall(
+            rows = self.db.fetchall_blocking(
                 """
                 SELECT * FROM agent_message_history
                 WHERE project_id = ? AND agent_name = ?
@@ -176,7 +176,7 @@ class AgentMessageHistoryRepository(BaseRepository):
     def list_all(self) -> list[AgentMessageHistoryRecord]:
         return [
             _agent_message_history_row(row)
-            for row in self.db.fetchall("SELECT * FROM agent_message_history ORDER BY id")
+            for row in self.db.fetchall_blocking("SELECT * FROM agent_message_history ORDER BY id")
         ]
 
     def get_message_history(
@@ -185,11 +185,12 @@ class AgentMessageHistoryRepository(BaseRepository):
         project_or_session_id: str,
         agent_id: str | None = None,
         agent_name: str | None = None,
+        record_cap: int | None = AGENT_HISTORY_RECORD_CAP,
     ) -> list[dict[str, Any]]:
         project_id = self._resolve_project_id(project_or_session_id)
         if project_id is None:
             return []
-        if AGENT_HISTORY_RECORD_CAP == 0:
+        if record_cap == 0:
             return []
         records = self.list_for_project(
             project_id=project_id,
@@ -204,9 +205,10 @@ class AgentMessageHistoryRepository(BaseRepository):
         # window after a few dozen passes. Set SITU_AGENT_HISTORY_CAP=0 to
         # disable replay entirely — the agent then runs each pass cold but
         # picks up project state via tool reads, which is sufficient when
-        # individual passes fetch large project_board responses.
-        if len(records) > AGENT_HISTORY_RECORD_CAP:
-            records = records[-AGENT_HISTORY_RECORD_CAP:]
+        # individual passes fetch large project_board responses. Pass
+        # record_cap=None for a long-lived compacted agent transcript.
+        if record_cap is not None and len(records) > record_cap:
+            records = records[-record_cap:]
         messages: list[dict[str, Any]] = []
         for record in records:
             messages.extend(record.messages)
@@ -218,12 +220,14 @@ class AgentMessageHistoryRepository(BaseRepository):
         project_or_session_id: str,
         agent_id: str | None = None,
         agent_name: str | None = None,
+        record_cap: int | None = AGENT_HISTORY_RECORD_CAP,
     ) -> bytes:
         return json_dumps(
             self.get_message_history(
                 project_or_session_id=project_or_session_id,
                 agent_id=agent_id,
                 agent_name=agent_name,
+                record_cap=record_cap,
             )
         ).encode()
 
@@ -233,6 +237,7 @@ class AgentMessageHistoryRepository(BaseRepository):
         project_or_session_id: str,
         agent_id: str | None = None,
         agent_name: str | None = None,
+        record_cap: int | None = AGENT_HISTORY_RECORD_CAP,
     ) -> list[Any]:
         from pydantic_ai import ModelMessagesTypeAdapter
 
@@ -242,6 +247,7 @@ class AgentMessageHistoryRepository(BaseRepository):
                     project_or_session_id=project_or_session_id,
                     agent_id=agent_id,
                     agent_name=agent_name,
+                    record_cap=record_cap,
                 )
             )
         )
@@ -275,10 +281,10 @@ class AgentMessageHistoryRepository(BaseRepository):
         return pydantic_run_id, conversation_id
 
     def _resolve_project_id(self, project_or_session_id: str) -> str | None:
-        if self.db.fetchone("SELECT 1 FROM projects WHERE id = ?", (project_or_session_id,)):
+        if self.db.fetchone_blocking("SELECT 1 FROM projects WHERE id = ?", (project_or_session_id,)):
             return project_or_session_id
         return self._project_id_for_session(project_or_session_id)
 
     def _project_id_for_session(self, session_id: str) -> str | None:
-        row = self.db.fetchone("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
+        row = self.db.fetchone_blocking("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
         return row["project_id"] if row else None

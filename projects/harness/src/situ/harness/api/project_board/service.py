@@ -11,26 +11,26 @@ class ProjectBoardService(BaseModel):
 
     repos: Repositories
 
-    def get_project_board(self, *, session_id: str) -> ProjectBoardSchema:
-        session = self.repos.sessions.get(session_id=session_id)
+    async def get_project_board(self, *, session_id: str) -> ProjectBoardSchema:
+        session = await self.repos.sessions.get(session_id=session_id)
         workspace = (
-            self.repos.workspaces.get(workspace_id=session.workspace_id)
+            await self.repos.workspaces.get(workspace_id=session.workspace_id)
             if session is not None
             else None
         )
         project = (
-            self.repos.projects.get(project_id=session.project_id)
+            await self.repos.projects.get(project_id=session.project_id)
             if session is not None and session.project_id is not None
             else None
         )
-        hypotheses = self.repos.hypotheses.list_for_session(session_id=session_id)
-        baselines = self.repos.baselines.list_for_session(session_id=session_id)
-        experiments = self.repos.experiments.list_for_session(session_id=session_id)
-        evaluations = self.repos.evaluations.list_for_session(session_id=session_id)
-        measurements = self.repos.measurements.list_for_session(session_id=session_id)
-        agents = self.repos.agents.list_for_session(session_id=session_id)
-        tasks = self.repos.tasks.list_for_session(session_id=session_id)
-        analyses = self.repos.analyses.list_for_session(session_id=session_id)
+        hypotheses = await self.repos.hypotheses.list_for_session(session_id=session_id)
+        baselines = await self.repos.baselines.list_for_session(session_id=session_id)
+        experiments = await self.repos.experiments.list_for_session(session_id=session_id)
+        evaluations = await self.repos.evaluations.list_for_session(session_id=session_id)
+        measurements = await self.repos.measurements.list_for_session(session_id=session_id)
+        agents = await self.repos.agents.list_for_session(session_id=session_id)
+        tasks = await self.repos.tasks.list_for_session(session_id=session_id)
+        analyses = await self.repos.analyses.list_for_session(session_id=session_id)
         hypothesis_ids = {hypothesis.id for hypothesis in hypotheses}
         experiment_ids = {experiment.id for experiment in experiments}
         evaluation_ids = {evaluation.id for evaluation in evaluations}
@@ -38,50 +38,50 @@ class ProjectBoardService(BaseModel):
         analysis_ids = {analysis.id for analysis in analyses}
         links = [
             link
-            for link in self.repos.hypothesis_experiment_links.list_all()
+            for link in await self.repos.hypothesis_experiment_links.list_all()
             if link.hypothesis_id in hypothesis_ids or link.experiment_id in experiment_ids
         ]
         hypothesis_activities = [
             activity
             for hypothesis_id in hypothesis_ids
-            for activity in self.repos.hypothesis_activities.list_for_hypothesis(
+            for activity in await self.repos.hypothesis_activities.list_for_hypothesis(
                 hypothesis_id=hypothesis_id
             )
         ]
         experiment_activities = [
             activity
             for experiment_id in experiment_ids
-            for activity in self.repos.experiment_activities.list_for_experiment(
+            for activity in await self.repos.experiment_activities.list_for_experiment(
                 experiment_id=experiment_id
             )
         ]
         evaluation_activities = [
             activity
             for evaluation_id in evaluation_ids
-            for activity in self.repos.evaluation_activities.list_for_evaluation(
+            for activity in await self.repos.evaluation_activities.list_for_evaluation(
                 evaluation_id=evaluation_id
             )
         ]
         task_activities = [
             activity
             for task_id in task_ids
-            for activity in self.repos.task_activities.list_for_task(task_id=task_id)
+            for activity in await self.repos.task_activities.list_for_task(task_id=task_id)
         ]
         analysis_activities = [
             activity
             for analysis_id in analysis_ids
-            for activity in self.repos.analysis_activities.list_for_analysis(
+            for activity in await self.repos.analysis_activities.list_for_analysis(
                 analysis_id=analysis_id
             )
         ]
         task_dependencies = [
             dependency
-            for dependency in self.repos.task_dependencies.list_all()
+            for dependency in await self.repos.task_dependencies.list_all()
             if dependency.task_id in task_ids or dependency.blocked_by_task_id in task_ids
         ]
         task_entity_links = [
             link
-            for link in self.repos.task_entity_links.list_all()
+            for link in await self.repos.task_entity_links.list_all()
             if link.task_id in task_ids
         ]
         return ProjectBoardSchema(
@@ -104,6 +104,6 @@ class ProjectBoardService(BaseModel):
             hypothesis_activities=hypothesis_activities,
             experiment_activities=experiment_activities,
             evaluation_activities=evaluation_activities,
-            artifacts=self.repos.artifacts.list_for_session(session_id=session_id),
-            events=self.repos.events.list_for_session(session_id=session_id),
+            artifacts=await self.repos.artifacts.list_for_session(session_id=session_id),
+            events=await self.repos.events.list_for_session(session_id=session_id),
         )

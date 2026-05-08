@@ -67,17 +67,6 @@ class BaseSituAgent(BaseModel, ABC, Generic[ContextT, OutputT]):
         )
         return run_result
 
-    def run_sync(self, context: ContextT) -> AgentRunResult[OutputT]:
-        prompt = self.generate_prompt(context)
-        agent = self.build_agent(context=context, prompt=prompt)
-        run_result = agent.run_sync(**self._build_run_call_kwargs(context, prompt))
-        run_result.output = self.postprocess_output(
-            output=run_result.output,
-            context=context,
-            run_result=run_result,
-        )
-        return run_result
-
     @staticmethod
     def _build_run_call_kwargs(
         context: ContextT,

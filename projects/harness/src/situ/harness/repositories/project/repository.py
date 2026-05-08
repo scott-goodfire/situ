@@ -53,7 +53,7 @@ class ProjectRepository(BaseRepository):
             status=parse_project_status(status),
         )
         now = utc_now()
-        self.db.execute(
+        self.db.execute_blocking(
             """
             INSERT INTO projects
               (id, workspace_id, title, objective, research_context, status,
@@ -96,7 +96,7 @@ class ProjectRepository(BaseRepository):
             status=parse_project_status(status) if status is not None else None,
         )
         now = utc_now()
-        self.db.execute(
+        self.db.execute_blocking(
             """
             UPDATE projects
             SET title = ?,
@@ -122,26 +122,26 @@ class ProjectRepository(BaseRepository):
         return self.get(project_id=command.project_id)
 
     def get(self, *, project_id: str) -> ProjectRecord | None:
-        row = self.db.fetchone("SELECT * FROM projects WHERE id = ?", (project_id,))
+        row = self.db.fetchone_blocking("SELECT * FROM projects WHERE id = ?", (project_id,))
         return _project_row(row) if row else None
 
     def list_all(self) -> list[ProjectRecord]:
         return [
             _project_row(row)
-            for row in self.db.fetchall("SELECT * FROM projects ORDER BY created_at")
+            for row in self.db.fetchall_blocking("SELECT * FROM projects ORDER BY created_at")
         ]
 
     def list_for_workspace(self, *, workspace_id: str) -> list[ProjectRecord]:
         return [
             _project_row(row)
-            for row in self.db.fetchall(
+            for row in self.db.fetchall_blocking(
                 "SELECT * FROM projects WHERE workspace_id = ? ORDER BY created_at",
                 (workspace_id,),
             )
         ]
 
     def next_id(self, *, workspace_id: str) -> str:
-        rows = self.db.fetchall("SELECT id FROM projects")
+        rows = self.db.fetchall_blocking("SELECT id FROM projects")
         return next_canonical_record_id(
             existing_ids=(str(row["id"]) for row in rows),
             prefix=PROJECT_ID_PREFIX,

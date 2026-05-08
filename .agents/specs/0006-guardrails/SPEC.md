@@ -1,6 +1,6 @@
 # Guardrails
 
-In the first slice, "guardrails" means automated trust checks.
+"Guardrails" means automated trust checks.
 
 They protect interpretation activities from obvious invalidity. The user should
 not have to manually enumerate every forbidden behavior before Situ can
@@ -9,10 +9,10 @@ notice suspicious results.
 The failure modes these checks protect against are catalogued in
 [../../docs/failure-modes/DOC.md](../../docs/failure-modes/DOC.md).
 
-## Current Trust Checks
+## Trust Checks
 
-The current slice should catch obvious issues without requiring the user to
-enumerate everything up front:
+Trust checks catch obvious issues without requiring the user to enumerate
+everything up front:
 
 - Evaluation failed.
 - Command failed or timed out.
@@ -28,10 +28,10 @@ enumerate everything up front:
 - Test count or result shape changes compared with baseline.
 - Result improved suspiciously much without corroborating context.
 
-The first slice should not deterministically parse arbitrary command output
-into signals. When a project prints plaintext, agents should preserve the
-output and use LLM review plus obvious process checks to decide whether a
-concern comment is warranted.
+Situ does not deterministically parse arbitrary command output into signals.
+When a project prints plaintext, agents preserve the output and use LLM
+review plus obvious process checks to decide whether a concern comment is
+warranted.
 
 ## Suspicious Results
 
@@ -49,7 +49,7 @@ When this happens:
 
 ## Critic Review
 
-The Critic is the first-slice LLM reviewer for proposed experiment changes. It
+The Critic is the LLM reviewer for proposed experiment changes. It
 does not replace deterministic trust checks, and it should not mutate candidate
 code. It reviews an experiment after the Scientist has recorded candidate
 workspace state and evaluation evidence, then records an experiment activity

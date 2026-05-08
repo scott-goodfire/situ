@@ -59,53 +59,84 @@ Headless output should be machine-readable by default:
   whether anything was removed.
 - Human progress and diagnostics on stderr, not mixed into stdout.
 
-Keep the first setup flags sparse:
+Setup flags stay sparse:
 
 - `--objective` names the durable goal.
 - `--context` explains how the project is normally evaluated, which commands
   matter, what output means, and what should be treated as invalid.
 
-Do not split first-slice setup into `--eval`, `--signals`, or repeated signal
-flags. Situ should preserve ambiguous project context and structure it over
-time.
+Splitting setup into `--eval`, `--signals`, or repeated signal flags is out
+of scope. Situ preserves ambiguous project context and structures it over
+time through records, not flags.
 
-Defer richer guidance and proposal-context commands until the basic loop is
-working. Agent-facing toolsets may expose explicit `list_*` tools for
-first-class research records when those tools make state inspection clearer
-than requiring agents to fetch the full project board.
+Richer guidance and proposal-context commands are out of scope until the
+basic loop is solid. Agent-facing toolsets may expose explicit `list_*`
+tools for first-class research records when those tools make state
+inspection clearer than requiring agents to fetch the full project board.
 
 ## Project Board
 
 The compact project board, exposed to agents through `get_project_board`,
-should include:
+should be a bounded digest of the active working set, not a dump of every
+record the project has ever produced. Its response size should scale with
+what is currently in motion (open hypotheses, runnable tasks, in-progress
+task, recent results) rather than with project age. Agents drill deeper
+through focused `list_*` and `get_*` tools.
 
-- Project objective
-- Project research context
-- Current run status when useful
-- Active hypotheses
-- Recent experiments
-- Recent evaluations
-- Recent measurements
-- Hypothesis/experiment links
-- Recent hypothesis activities
-- Recent experiment activities
-- Recent measurement evidence
-- Recent Critic reviews and pending review tasks
-- Recent concern/result/decision comments
-- Artifact references
-- Internal events when useful
+The digest should always include:
+
+- Project objective and research context
+- Shape of the project so the agent can orient quickly: counts of
+  baselines, experiments, measurements, evaluations, analyses, hypotheses,
+  and open tasks broken down by kind and status
+- Active hypotheses and open analyses, as titles and IDs rather than full
+  bodies
+- A bounded slice of recent experiments, evaluations, and measurements
+  (headlines and IDs, with metric values inline when they exist), preserving
+  research-thread context where the experiment carries one
+- The live task working set: any in-progress task with full content, plus
+  the next runnable backlog tasks as titles and IDs
+- Recent Critic reviews and unresolved review concerns, with verdicts and
+  the IDs of the experiments and tasks they apply to
+- A bounded tail of lifecycle-relevant events (for example experiment
+  created and completed, measurement recorded, critic verdict, plan filed),
+  not link or receipt noise
+- Artifact references as IDs, not full payloads
+- A cursor or "since" anchor so the agent can ask "anything new since this
+  point" without re-reading older state
+
+The digest must not surface a single "current champion" or "incumbent"
+result. Autoresearch is a portfolio search across research threads (see
+[0015-experiment-lineage-portfolio-search](../0015-experiment-lineage-portfolio-search/SPEC.md));
+collapsing the recent-results view onto one ranked best biases the Manager
+toward exploiting the strongest single thread instead of allocating work
+across threads, and encourages greedy hill-climbing. When the digest
+surfaces recent experiments it should present them as a portfolio with
+their thread labels intact, not a leaderboard.
+
+Older or filtered slices live behind explicit reads such as
+`list_measurements`, `list_evaluations`, `list_experiment_activities`,
+`get_experiment`, and `get_task`. The digest should make clear what it
+omitted and how to reach it, for example by including counts and naming the
+list tool that pages the rest.
+
+Full bodies of records appear in the digest only for the small live working
+set. For everything else the digest carries IDs and one-line headlines and
+the agent fetches full content on demand. This keeps response size tied to
+the working set rather than project age, so a long-running session does not
+silently outgrow the model's context window.
 
 Agent-facing read and write tools should stay close to the product models.
-Use `get_project_board` for the compact current board, and use explicit `list_*`
-tools when an agent needs a focused slice such as hypotheses, baselines,
-experiments, evaluations, measurements, activities, or artifacts.
+Use `get_project_board` for the bounded current digest, and use explicit
+`list_*` tools when an agent needs a focused slice such as hypotheses,
+baselines, experiments, evaluations, measurements, activities, or artifacts.
 When the harness has already selected a specific record for an agent to work
-on, pass the record ID rather than the full record. For example, a Scientist or
-Researcher assigned `T444` should be prompted to call
+on, pass the record ID rather than the full record. For example, a Scientist
+or Researcher assigned `T444` should be prompted to call
 `get_task(task_id="T444")`; the task body, payload, links, dependencies,
-and comments should be obtained through that explicit read. This keeps context
-acquisition visible in traces and avoids making prompt construction the hidden
-source of truth.
+and comments should be obtained through that explicit read. This keeps
+context acquisition visible in traces and avoids making prompt construction
+the hidden source of truth.
 
 Agent-facing write tools should stay close to the product models:
 `create_hypothesis`, `update_hypothesis`, `create_baseline`,
@@ -118,11 +149,11 @@ comment-shaped activities. Measurement evidence carries human-readable result
 text plus optional payload metadata when a view or agent needs structured
 metrics, raw evidence, or interpretation details.
 
-Workspace interaction should come from a separate console toolset backed by the
-current repo path. The first slice should expose ordinary coding-agent tools
-such as `ls`, `read_file`, `write_file`, `edit_file`, `glob`, `grep`, and
-`execute`. Agents use those tools to inspect the project and run native
-commands described in `--context`.
+Workspace interaction comes from a separate console toolset backed by the
+current repo path. It exposes ordinary coding-agent tools such as `ls`,
+`read_file`, `write_file`, `edit_file`, `glob`, `grep`, and `execute`.
+Agents use those tools to inspect the project and run native commands
+described in `--context`.
 
 ## Runtime Skills
 
@@ -142,8 +173,8 @@ Skills should teach how to perform a kind of work, not replace product records.
 For example, a web-research skill can describe source selection and synthesis,
 but the durable output still belongs in `Analysis`, task comments,
 `Hypothesis`, or other Situ records. Manager and Researcher skills are in
-scope for the current slice. Scientist and Critic skills are deferred until
-their core tool loops are stable.
+scope. Scientist and Critic skills are out of scope until their core tool
+loops are stable.
 
 Add a runtime skill when a role needs reusable methodology that would otherwise
 inflate the role prompt or be repeated across tasks. Do not use runtime skills

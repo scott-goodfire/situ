@@ -8,10 +8,10 @@ from typing import Any, Literal
 from ....config import LocalSecretStore
 from ...headless._shared.output import write_json
 
-SecretName = Literal["openai", "logfire"]
+SecretName = Literal["anthropic", "logfire"]
 
 SECRET_LABELS: dict[SecretName, str] = {
-    "openai": "OpenAI API key",
+    "anthropic": "Anthropic API key",
     "logfire": "Logfire token",
 }
 
@@ -51,7 +51,7 @@ def status(*, store: LocalSecretStore, as_json: bool) -> int:
         return 0
 
     sys.stdout.write(f"local secret store: {payload['path']}\n")
-    sys.stdout.write(f"openai: {configured_label(payload['openai']['configured'])}\n")
+    sys.stdout.write(f"anthropic: {configured_label(payload['anthropic']['configured'])}\n")
     sys.stdout.write(f"logfire: {configured_label(payload['logfire']['configured'])}\n")
     return 0
 
@@ -76,8 +76,8 @@ def set_secret(
         sys.stderr.write(f"{label} cannot be empty; use `situ secrets unset {secret_name}` to remove it.\n")
         return 1
 
-    if secret_name == "openai":
-        store.set_openai_key(value)
+    if secret_name == "anthropic":
+        store.set_anthropic_key(value)
     else:
         store.set_logfire_token(value)
 
@@ -100,8 +100,8 @@ def unset_secret(
     secret_name: SecretName,
     as_json: bool,
 ) -> int:
-    if secret_name == "openai":
-        changed = store.unset_openai_key()
+    if secret_name == "anthropic":
+        changed = store.unset_anthropic_key()
     else:
         changed = store.unset_logfire_token()
 
@@ -125,7 +125,7 @@ def clear_secrets(*, store: LocalSecretStore, as_json: bool) -> int:
         "action": "clear",
         "changed": changed,
         "path": str(store.path),
-        "openai": secret_status(configured=False),
+        "anthropic": secret_status(configured=False),
         "logfire": secret_status(configured=False),
     }
     if as_json:
@@ -139,7 +139,7 @@ def clear_secrets(*, store: LocalSecretStore, as_json: bool) -> int:
 def status_payload(*, store: LocalSecretStore) -> dict[str, Any]:
     return {
         "path": str(store.path),
-        "openai": secret_status(configured=store.get_openai_key() is not None),
+        "anthropic": secret_status(configured=store.get_anthropic_key() is not None),
         "logfire": secret_status(configured=store.get_logfire_token() is not None),
     }
 

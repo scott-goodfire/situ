@@ -56,14 +56,14 @@ def main(argv: list[str] | None = None) -> int:
         "set",
         help="prompt for and save a local runtime secret",
     )
-    secrets_set_parser.add_argument("secret_name", choices=("openai", "logfire"))
+    secrets_set_parser.add_argument("secret_name", choices=("anthropic", "logfire"))
     add_machine_json_argument(secrets_set_parser)
 
     secrets_unset_parser = secrets_subparsers.add_parser(
         "unset",
         help="remove one local runtime secret",
     )
-    secrets_unset_parser.add_argument("secret_name", choices=("openai", "logfire"))
+    secrets_unset_parser.add_argument("secret_name", choices=("anthropic", "logfire"))
     add_machine_json_argument(secrets_unset_parser)
 
     secrets_clear_parser = secrets_subparsers.add_parser(

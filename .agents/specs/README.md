@@ -32,16 +32,18 @@ The product should answer:
 > tried, what measurements came back, what activity was recorded, what
 > artifacts can be inspected, and what is the system learning?
 
-The first slice should be intentionally slim. Live guidance, final reports,
-broad health scoring, directions, and standalone decision/finding/warning
-models are deferred until the terminal loop is useful. The local app runtime is
-the control plane for terminal and web observability surfaces.
+Situ is intentionally slim. Live guidance, final reports, broad health
+scoring, directions, and standalone decision/finding/warning models are
+out of scope until the terminal loop is useful on its own. The local app
+runtime is the control plane for terminal and web observability surfaces.
 
 ## Spec Discipline
 
-Specs should stay product-shaped. They can define runtime boundaries and
+Specs are end-state contracts. They can define runtime boundaries and
 required guarantees, but they should avoid prematurely locking in database
-schemas, framework choices, or internal abstractions.
+schemas, framework choices, or internal abstractions, and they should not
+contain implementation plans, migration recipes, or "first slice / later
+slice" timelines. Agents derive deltas from current code against the spec.
 
 When implementation reveals a better product shape, update the spec first.
 
@@ -55,4 +57,6 @@ Specs live in numbered directories:
 
 Use the next zero-padded number when adding a spec. See
 [../policies/0009-good-specs/POLICY.md](../policies/0009-good-specs/POLICY.md)
+and
+[../policies/0033-specs-as-end-state/POLICY.md](../policies/0033-specs-as-end-state/POLICY.md)
 for the writing bar.

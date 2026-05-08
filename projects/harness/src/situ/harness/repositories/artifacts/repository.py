@@ -63,7 +63,7 @@ class ArtifactsRepository(BaseRepository):
             media_type=media_type,
             size_bytes=size_bytes,
         )
-        self.db.execute(
+        self.db.execute_blocking(
             """
             INSERT INTO artifacts
               (id, project_id, created_in_session_id, associated_entity_kind,
@@ -91,7 +91,7 @@ class ArtifactsRepository(BaseRepository):
         return record
 
     def get_by_id(self, *, artifact_id: str) -> ArtifactRecord | None:
-        row = self.db.fetchone("SELECT * FROM artifacts WHERE id = ?", (artifact_id,))
+        row = self.db.fetchone_blocking("SELECT * FROM artifacts WHERE id = ?", (artifact_id,))
         return _artifact_row(row) if row else None
 
     def get(self, *, artifact_id: str) -> ArtifactRecord | None:
@@ -100,13 +100,13 @@ class ArtifactsRepository(BaseRepository):
     def list_all(self) -> list[ArtifactRecord]:
         return [
             _artifact_row(row)
-            for row in self.db.fetchall("SELECT * FROM artifacts ORDER BY created_at")
+            for row in self.db.fetchall_blocking("SELECT * FROM artifacts ORDER BY created_at")
         ]
 
     def list_for_experiment(self, *, experiment_id: str) -> list[ArtifactRecord]:
         return [
             _artifact_row(row)
-            for row in self.db.fetchall(
+            for row in self.db.fetchall_blocking(
                 """
                 SELECT * FROM artifacts
                 WHERE associated_entity_kind = 'experiment'
@@ -120,14 +120,14 @@ class ArtifactsRepository(BaseRepository):
     def list_for_project(self, *, project_id: str) -> list[ArtifactRecord]:
         return [
             _artifact_row(row)
-            for row in self.db.fetchall(
+            for row in self.db.fetchall_blocking(
                 "SELECT * FROM artifacts WHERE project_id = ? ORDER BY created_at",
                 (project_id,),
             )
         ]
 
     def list_for_session(self, *, session_id: str) -> list[ArtifactRecord]:
-        session = self.db.fetchone("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
+        session = self.db.fetchone_blocking("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
         project_id = session["project_id"] if session else None
         return (
             self.list_for_project(project_id=project_id)
@@ -136,7 +136,7 @@ class ArtifactsRepository(BaseRepository):
         )
 
     def next_id(self, *, project_id: str) -> str:
-        rows = self.db.fetchall("SELECT id FROM artifacts")
+        rows = self.db.fetchall_blocking("SELECT id FROM artifacts")
         return next_canonical_record_id(
             existing_ids=(str(row["id"]) for row in rows),
             prefix=ARTIFACT_ID_PREFIX,

@@ -1,7 +1,7 @@
 # Product Primitives
 
-Use simple product nouns. For the first slice, keep the domain intentionally
-small and let activities carry nuance.
+Use simple product nouns. The domain is intentionally small; activities
+carry nuance.
 
 ## Target Hierarchy
 
@@ -341,8 +341,8 @@ The main collaboration primitive.
 
 Activities are timeline entries attached to analyses, hypotheses, experiments,
 evaluations, measurements, tasks, or other inspectable research records when
-useful. They replace standalone finding, warning, and decision models in the
-first slice.
+useful. They replace standalone finding, warning, and decision models;
+those are out of scope.
 
 Activities reach a project through their parent research record or associated
 entity, following the ownership rules for that entity. Activity rows do not

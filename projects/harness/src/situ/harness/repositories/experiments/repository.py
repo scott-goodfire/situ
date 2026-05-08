@@ -69,7 +69,7 @@ class ExperimentsRepository(BaseRepository):
             research_thread=research_thread,
         )
         now = utc_now()
-        self.db.execute(
+        self.db.execute_blocking(
             """
             INSERT INTO experiments
               (id, project_id, created_in_session_id, status, title, summary,
@@ -131,7 +131,7 @@ class ExperimentsRepository(BaseRepository):
         if current is None:
             return None
 
-        self.db.execute(
+        self.db.execute_blocking(
             """
             UPDATE experiments
             SET title = ?,
@@ -177,7 +177,7 @@ class ExperimentsRepository(BaseRepository):
         return self.get_by_id(experiment_id=command.experiment_id)
 
     def get_by_id(self, *, experiment_id: str) -> ExperimentRecord | None:
-        row = self.db.fetchone("SELECT * FROM experiments WHERE id = ?", (experiment_id,))
+        row = self.db.fetchone_blocking("SELECT * FROM experiments WHERE id = ?", (experiment_id,))
         return _experiment_row(row) if row else None
 
     def get(self, *, experiment_id: str) -> ExperimentRecord | None:
@@ -186,20 +186,20 @@ class ExperimentsRepository(BaseRepository):
     def list_all(self) -> list[ExperimentRecord]:
         return [
             _experiment_row(row)
-            for row in self.db.fetchall("SELECT * FROM experiments ORDER BY created_at")
+            for row in self.db.fetchall_blocking("SELECT * FROM experiments ORDER BY created_at")
         ]
 
     def list_for_project(self, *, project_id: str) -> list[ExperimentRecord]:
         return [
             _experiment_row(row)
-            for row in self.db.fetchall(
+            for row in self.db.fetchall_blocking(
                 "SELECT * FROM experiments WHERE project_id = ? ORDER BY created_at",
                 (project_id,),
             )
         ]
 
     def list_for_session(self, *, session_id: str) -> list[ExperimentRecord]:
-        session = self.db.fetchone("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
+        session = self.db.fetchone_blocking("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
         project_id = session["project_id"] if session else None
         return (
             self.list_for_project(project_id=project_id)
@@ -208,7 +208,7 @@ class ExperimentsRepository(BaseRepository):
         )
 
     def next_id(self, *, project_id: str) -> str:
-        rows = self.db.fetchall("SELECT id FROM experiments")
+        rows = self.db.fetchall_blocking("SELECT id FROM experiments")
         return next_canonical_record_id(
             existing_ids=(str(row["id"]) for row in rows),
             prefix=EXPERIMENT_ID_PREFIX,

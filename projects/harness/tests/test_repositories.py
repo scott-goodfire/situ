@@ -888,6 +888,46 @@ def test_agent_message_history_repository_appends_and_reconstructs(
     ]
 
 
+def test_agent_message_history_repository_allows_uncapped_replay(
+    repos: Repositories,
+) -> None:
+    create_session(repos)
+    manager = repos.agents.ensure_session_agent(
+        session_id="S1",
+        kind="manager",
+        display_name="Manager",
+    )
+    for index in range(3):
+        repos.agent_message_history.append_session_messages(
+            session_id="S1",
+            agent_id=manager.id,
+            agent_name="situ-manager-agent",
+            messages_json=f'[{{"kind":"request","content":"turn-{index}"}}]',
+        )
+
+    assert repos.agent_message_history.get_message_history(
+        project_or_session_id="S1",
+        agent_id=manager.id,
+    ) == [
+        {"kind": "request", "content": "turn-1"},
+        {"kind": "request", "content": "turn-2"},
+    ]
+    assert repos.agent_message_history.get_message_history(
+        project_or_session_id="S1",
+        agent_id=manager.id,
+        record_cap=None,
+    ) == [
+        {"kind": "request", "content": "turn-0"},
+        {"kind": "request", "content": "turn-1"},
+        {"kind": "request", "content": "turn-2"},
+    ]
+    assert repos.agent_message_history.get_message_history(
+        project_or_session_id="S1",
+        agent_id=manager.id,
+        record_cap=1,
+    ) == [{"kind": "request", "content": "turn-2"}]
+
+
 def test_current_state_api_composes_protocol_shaped_state(repos: Repositories) -> None:
     create_experiment(repos)
     analysis = create_analysis(repos)

@@ -40,7 +40,7 @@ class HypothesisActivitiesRepository(BaseRepository):
             body=body,
             payload=payload or {},
         )
-        cursor = self.db.execute(
+        cursor = self.db.execute_blocking(
             """
             INSERT INTO hypothesis_activities
               (hypothesis_id, created_in_session_id, actor, kind, body, payload_json,
@@ -63,7 +63,7 @@ class HypothesisActivitiesRepository(BaseRepository):
         return record
 
     def get_by_id(self, *, activity_id: int) -> HypothesisActivityRecord | None:
-        row = self.db.fetchone("SELECT * FROM hypothesis_activities WHERE id = ?", (activity_id,))
+        row = self.db.fetchone_blocking("SELECT * FROM hypothesis_activities WHERE id = ?", (activity_id,))
         return _hypothesis_activity_row(row) if row else None
 
     def get(self, *, activity_id: int) -> HypothesisActivityRecord | None:
@@ -72,13 +72,13 @@ class HypothesisActivitiesRepository(BaseRepository):
     def list_all(self) -> list[HypothesisActivityRecord]:
         return [
             _hypothesis_activity_row(row)
-            for row in self.db.fetchall("SELECT * FROM hypothesis_activities ORDER BY id")
+            for row in self.db.fetchall_blocking("SELECT * FROM hypothesis_activities ORDER BY id")
         ]
 
     def list_for_hypothesis(self, *, hypothesis_id: str) -> list[HypothesisActivityRecord]:
         return [
             _hypothesis_activity_row(row)
-            for row in self.db.fetchall(
+            for row in self.db.fetchall_blocking(
                 "SELECT * FROM hypothesis_activities WHERE hypothesis_id = ? ORDER BY id",
                 (hypothesis_id,),
             )
@@ -87,7 +87,7 @@ class HypothesisActivitiesRepository(BaseRepository):
     def list_for_project(self, *, project_id: str) -> list[HypothesisActivityRecord]:
         return [
             _hypothesis_activity_row(row)
-            for row in self.db.fetchall(
+            for row in self.db.fetchall_blocking(
                 """
                 SELECT hypothesis_activities.*
                 FROM hypothesis_activities
@@ -100,7 +100,7 @@ class HypothesisActivitiesRepository(BaseRepository):
         ]
 
     def list_for_session(self, *, session_id: str) -> list[HypothesisActivityRecord]:
-        session = self.db.fetchone("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
+        session = self.db.fetchone_blocking("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
         project_id = session["project_id"] if session else None
         return (
             self.list_for_project(project_id=project_id)

@@ -45,7 +45,7 @@ class SessionsRepository(BaseRepository):
             project_id=project_id,
         )
         now = utc_now()
-        self.db.execute(
+        self.db.execute_blocking(
             """
             INSERT INTO sessions
               (id, workspace_id, project_id, status, created_at, updated_at)
@@ -75,7 +75,7 @@ class SessionsRepository(BaseRepository):
         command = UpdateSessionStatus(session_id=session_id, status=checked_status)
         if self.get_by_id(session_id=command.session_id) is None:
             return None
-        self.db.execute(
+        self.db.execute_blocking(
             "UPDATE sessions SET status = ?, updated_at = ? WHERE id = ?",
             (command.status.value, utc_now(), command.session_id),
         )
@@ -90,14 +90,14 @@ class SessionsRepository(BaseRepository):
         command = UpdateSessionProject(session_id=session_id, project_id=project_id)
         if self.get_by_id(session_id=command.session_id) is None:
             return None
-        self.db.execute(
+        self.db.execute_blocking(
             "UPDATE sessions SET project_id = ?, updated_at = ? WHERE id = ?",
             (command.project_id, utc_now(), command.session_id),
         )
         return self.get_by_id(session_id=command.session_id)
 
     def get_by_id(self, *, session_id: str) -> SessionRecord | None:
-        row = self.db.fetchone("SELECT * FROM sessions WHERE id = ?", (session_id,))
+        row = self.db.fetchone_blocking("SELECT * FROM sessions WHERE id = ?", (session_id,))
         return _session_row(row) if row else None
 
     def get(self, *, session_id: str) -> SessionRecord | None:
@@ -106,13 +106,13 @@ class SessionsRepository(BaseRepository):
     def list_all(self) -> list[SessionRecord]:
         return [
             _session_row(row)
-            for row in self.db.fetchall("SELECT * FROM sessions ORDER BY created_at")
+            for row in self.db.fetchall_blocking("SELECT * FROM sessions ORDER BY created_at")
         ]
 
     def list_for_workspace(self, *, workspace_id: str) -> list[SessionRecord]:
         return [
             _session_row(row)
-            for row in self.db.fetchall(
+            for row in self.db.fetchall_blocking(
                 "SELECT * FROM sessions WHERE workspace_id = ? ORDER BY created_at",
                 (workspace_id,),
             )
@@ -121,20 +121,20 @@ class SessionsRepository(BaseRepository):
     def list_for_project(self, *, project_id: str) -> list[SessionRecord]:
         return [
             _session_row(row)
-            for row in self.db.fetchall(
+            for row in self.db.fetchall_blocking(
                 "SELECT * FROM sessions WHERE project_id = ? ORDER BY created_at",
                 (project_id,),
             )
         ]
 
     def latest(self) -> SessionRecord | None:
-        row = self.db.fetchone(
+        row = self.db.fetchone_blocking(
             "SELECT * FROM sessions ORDER BY updated_at DESC LIMIT 1"
         )
         return _session_row(row) if row else None
 
     def next_id(self) -> str:
-        rows = self.db.fetchall("SELECT id FROM sessions")
+        rows = self.db.fetchall_blocking("SELECT id FROM sessions")
         return next_canonical_record_id(
             existing_ids=(str(row["id"]) for row in rows),
             prefix=SESSION_ID_PREFIX,

@@ -158,7 +158,7 @@ def agent_record() -> AgentRecord:
         created_in_session_id="S1",
         kind="scientist",
         display_name="Scientist",
-        model_name="openai:test",
+        model_name="anthropic:test",
         status="idle",
         created_at="now",
         updated_at="now",

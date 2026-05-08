@@ -51,7 +51,7 @@ Follow Pydantic Evals and Logfire defaults where they fit:
   should not require model or Logfire credentials.
 - Send eval runs to Logfire by default; eval commands should not require a
   per-run send-mode override.
-- Load only eval secrets from user environment: `SITU_OPENAI_KEY` for the
+- Load only eval secrets from user environment: `SITU_ANTHROPIC_KEY` for the
   model call and `SITU_LOGFIRE_TOKEN` for Logfire export.
 - Do not fall back to the local Situ secret store for eval credentials; saved
   local runtime secrets are intentionally separate from eval launch secrets.

@@ -18,7 +18,7 @@ def _workspace_row(row: Any) -> WorkspaceRecord:
 
 class WorkspacesRepository(BaseRepository):
     def get(self, *, workspace_id: str | None = None) -> WorkspaceRecord | None:
-        row = self.db.fetchone(
+        row = self.db.fetchone_blocking(
             "SELECT * FROM workspaces WHERE id = ?",
             (workspace_id or self.db.workspace_id,),
         )
@@ -28,7 +28,7 @@ class WorkspacesRepository(BaseRepository):
         existing = self.get()
         now = utc_now()
         if existing is None:
-            self.db.execute(
+            self.db.execute_blocking(
                 """
                 INSERT INTO workspaces (id, repo_path, created_at, updated_at)
                 VALUES (?, ?, ?, ?)
@@ -36,7 +36,7 @@ class WorkspacesRepository(BaseRepository):
                 (self.db.workspace_id, self.db.repo_path, now, now),
             )
         else:
-            self.db.execute(
+            self.db.execute_blocking(
                 """
                 UPDATE workspaces
                 SET repo_path = ?, updated_at = ?
@@ -52,5 +52,5 @@ class WorkspacesRepository(BaseRepository):
     def list_all(self) -> list[WorkspaceRecord]:
         return [
             _workspace_row(row)
-            for row in self.db.fetchall("SELECT * FROM workspaces ORDER BY created_at")
+            for row in self.db.fetchall_blocking("SELECT * FROM workspaces ORDER BY created_at")
         ]

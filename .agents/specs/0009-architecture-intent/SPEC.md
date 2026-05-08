@@ -16,10 +16,9 @@ Situ should feel like a local agent tool:
 - Nothing should be written to the researched repo unless the user explicitly
   exports or publishes it.
 
-Future optional repo artifacts can include winning patches, PR bodies, project
-briefs, agent instructions, or reports.
-
-For the first slice, avoid repo writes entirely unless explicitly requested.
+Out of scope by default: writing to the researched repo. Optional explicit
+exports — winning patches, PR bodies, project briefs, agent instructions,
+reports — are the only way Situ touches the researched repo.
 
 ## Runtime Boundary
 
@@ -70,10 +69,8 @@ state remains project-scoped until there is a deliberate global DBOS design.
 
 ## Collection Sync Boundary
 
-The first UI sync surface should be normalized around durable records instead of
-one broad application-state object.
-
-For the first collection-backed slice, the sync surface is:
+The UI sync surface is normalized around durable records, not one broad
+application-state object. The collection-backed sync surface is:
 
 - Workspaces
 - Projects
@@ -103,21 +100,19 @@ aligned with a shared TypeScript collection layer without requiring a full sync
 engine yet.
 
 Artifacts, deletes, pagination, optimistic writes, and a durable collection
-change log are deferred until the basic UI loop works.
+change log are out of scope.
 
 ## Agent Runtime
 
-The first real agent runtime should use Pydantic AI for typed agent-facing
-planning and DBOS for durable execution boundaries. This should be introduced as
-infrastructure under the Python harness, not as a new product surface.
+The agent runtime uses Pydantic AI for typed agent-facing planning and DBOS
+for durable execution boundaries. It lives as infrastructure under the
+Python harness, not as a new product surface.
 
-For the current slice:
-
-- Pydantic AI may inspect the compact, typed project board.
-- DBOS should wrap agent execution through Pydantic AI `DBOSAgent`.
-- Logfire may observe harness, DBOS, and Pydantic AI spans.
-- The agent may request experiment execution through typed Situ tools.
-- The harness still owns workspace/project/session identity, worker execution,
+- Pydantic AI inspects the compact, typed project board.
+- DBOS wraps agent execution through Pydantic AI `DBOSAgent`.
+- Logfire observes harness, DBOS, and Pydantic AI spans.
+- The agent requests experiment execution through typed Situ tools.
+- The harness owns workspace/project/session identity, worker execution,
   automated trust concerns, activities, artifacts, events, task coordination,
   and persisted message history.
 
@@ -141,7 +136,7 @@ This repo should borrow the useful engineering pattern: clear local process
 boundaries, durable state, explicit protocol contracts, and small command
 scripts behind `mise` tasks.
 
-It should stay close to that structure for the first implementation:
+Situ stays close to that structure:
 
 ```text
 projects/tui                  projects/harness
@@ -149,9 +144,9 @@ TypeScript + Ink   HTTP/SSE   local app server   JSON-RPC   Python
 terminal UI      ---------->  TypeScript       ---------->  project harness runtime
 ```
 
-## Implementation Bias
+## Scope
 
-Start with a narrow, durable core:
+In scope:
 
 - Workspace as the folder boundary
 - Project state with objective and research context fields
@@ -162,5 +157,5 @@ Start with a narrow, durable core:
 - Internal event log with optional project/session associations
 - TypeScript Ink TUI
 
-Only add parallelism, plugins, and remote workers after the agent/tool loop is
-trustworthy.
+Out of scope until the agent/tool loop is trustworthy: parallelism, plugins,
+and remote workers.

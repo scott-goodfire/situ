@@ -27,7 +27,7 @@ class HypothesisExperimentLinksRepository(BaseRepository):
             hypothesis_id=hypothesis_id,
             experiment_id=experiment_id,
         )
-        self.db.execute(
+        self.db.execute_blocking(
             """
             INSERT INTO hypothesis_experiment_links
               (hypothesis_id, experiment_id, created_at)
@@ -57,7 +57,7 @@ class HypothesisExperimentLinksRepository(BaseRepository):
         hypothesis_id: str,
         experiment_id: str,
     ) -> HypothesisExperimentLinkRecord | None:
-        row = self.db.fetchone(
+        row = self.db.fetchone_blocking(
             """
             SELECT * FROM hypothesis_experiment_links
             WHERE hypothesis_id = ? AND experiment_id = ?
@@ -69,7 +69,7 @@ class HypothesisExperimentLinksRepository(BaseRepository):
     def list_all(self) -> list[HypothesisExperimentLinkRecord]:
         return [
             _hypothesis_experiment_link_row(row)
-            for row in self.db.fetchall(
+            for row in self.db.fetchall_blocking(
                 "SELECT * FROM hypothesis_experiment_links ORDER BY created_at"
             )
         ]
@@ -81,7 +81,7 @@ class HypothesisExperimentLinksRepository(BaseRepository):
     ) -> list[HypothesisExperimentLinkRecord]:
         return [
             _hypothesis_experiment_link_row(row)
-            for row in self.db.fetchall(
+            for row in self.db.fetchall_blocking(
                 """
                 SELECT * FROM hypothesis_experiment_links
                 WHERE hypothesis_id = ?
@@ -98,7 +98,7 @@ class HypothesisExperimentLinksRepository(BaseRepository):
     ) -> list[HypothesisExperimentLinkRecord]:
         return [
             _hypothesis_experiment_link_row(row)
-            for row in self.db.fetchall(
+            for row in self.db.fetchall_blocking(
                 """
                 SELECT * FROM hypothesis_experiment_links
                 WHERE experiment_id = ?

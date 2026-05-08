@@ -14,6 +14,7 @@ from .agent_skills import (
     build_researcher_skill_capabilities,
     build_scientist_skill_capabilities,
 )
+from .agents.common import build_model_capabilities, keep_last_compaction_history
 from .agents.research.agent import (
     CRITIC_AGENT_NAME,
     RESEARCHER_AGENT_NAME,
@@ -57,7 +58,7 @@ class AgentRuntime:
         self.database_path = database_path or project_dir.parent.parent / "situ.sqlite"
         secrets = SituSecrets()
         secrets_home = project_dir.parent.parent
-        secrets.require_local_openai_key(home=secrets_home)
+        secrets.require_local_anthropic_key(home=secrets_home)
         secrets.apply_local_sdk_environment(home=secrets_home)
 
         configure_observability(project_dir)
@@ -74,7 +75,11 @@ class AgentRuntime:
                 build_workspace_toolset(),
             ],
             model_settings=DEFAULTS.model_settings(),
-            capabilities=build_scientist_skill_capabilities(),
+            history_processors=[keep_last_compaction_history],
+            capabilities=[
+                *build_model_capabilities(self.model_name),
+                *build_scientist_skill_capabilities(),
+            ],
             name=RESEARCH_AGENT_NAME,
         )
         self.dbos_agent = DBOSAgent(self.agent, name=RESEARCH_AGENT_NAME)
@@ -89,7 +94,11 @@ class AgentRuntime:
             ],
             builtin_tools=build_web_search_builtin_tools(),
             model_settings=DEFAULTS.model_settings(),
-            capabilities=build_researcher_skill_capabilities(),
+            history_processors=[keep_last_compaction_history],
+            capabilities=[
+                *build_model_capabilities(self.model_name),
+                *build_researcher_skill_capabilities(),
+            ],
             name=RESEARCHER_AGENT_NAME,
         )
         self.dbos_researcher_agent = DBOSAgent(
@@ -104,7 +113,11 @@ class AgentRuntime:
             toolsets=[build_manager_toolset()],
             builtin_tools=build_web_search_builtin_tools(),
             model_settings=DEFAULTS.model_settings(),
-            capabilities=build_manager_skill_capabilities(),
+            history_processors=[keep_last_compaction_history],
+            capabilities=[
+                *build_model_capabilities(self.model_name),
+                *build_manager_skill_capabilities(),
+            ],
             name=MANAGER_AGENT_NAME,
         )
         self.dbos_manager_agent = DBOSAgent(self.manager_agent, name=MANAGER_AGENT_NAME)
@@ -118,7 +131,11 @@ class AgentRuntime:
                 build_workspace_readonly_toolset(),
             ],
             model_settings=DEFAULTS.model_settings(),
-            capabilities=build_critic_skill_capabilities(),
+            history_processors=[keep_last_compaction_history],
+            capabilities=[
+                *build_model_capabilities(self.model_name),
+                *build_critic_skill_capabilities(),
+            ],
             name=CRITIC_AGENT_NAME,
         )
         self.dbos_critic_agent = DBOSAgent(
@@ -127,7 +144,7 @@ class AgentRuntime:
         )
         launch_dbos()
 
-    def plan_session(
+    async def plan_session(
         self,
         *,
         workspace: dict[str, Any],
@@ -147,10 +164,10 @@ class AgentRuntime:
         project_id = None
         agent_id = None
         if repos is not None:
-            session = repos.sessions.get(session_id=session_id)
+            session = await repos.sessions.get(session_id=session_id)
             project_id = session.project_id if session is not None else None
             if project_id is not None:
-                agent = repos.agents.ensure_project_agent(
+                agent = await repos.agents.ensure_project_agent(
                     project_id=project_id,
                     created_in_session_id=session_id,
                     kind="manager",
@@ -158,14 +175,16 @@ class AgentRuntime:
                     model_name=self.model_name,
                 )
                 agent_id = agent.id
-                stored_messages = repos.agent_message_history.get_message_history(
+                stored_messages = await repos.agent_message_history.get_message_history(
                     project_or_session_id=project_id,
                     agent_id=agent.id,
+                    record_cap=None,
                 )
                 if stored_messages:
-                    message_history = repos.agent_message_history.get_model_message_history(
+                    message_history = await repos.agent_message_history.get_model_message_history(
                         project_or_session_id=project_id,
                         agent_id=agent.id,
+                        record_cap=None,
                     )
                 else:
                     conversation_id = f"situ:{project_id}:{agent.id}"
@@ -186,15 +205,15 @@ class AgentRuntime:
             workspace=workspace.get("repo_path", ""),
             objective=setup_objective,
         ):
-            result = self._run_with_workflow_timeout(
-                self.dbos_manager_agent.run_sync,
+            result = await self._run_with_workflow_timeout(
+                self.dbos_manager_agent.run,
                 prompt,
                 deps=tool_deps,
                 message_history=message_history,
                 conversation_id=conversation_id,
             )
         if session_id is not None and repos is not None and project_id is not None:
-            repos.agent_message_history.append_project_messages(
+            await repos.agent_message_history.append_project_messages(
                 project_id=project_id,
                 created_in_session_id=session_id,
                 agent_id=agent_id,
@@ -205,7 +224,7 @@ class AgentRuntime:
             )
         return result.output
 
-    def run_research(
+    async def run_research(
         self,
         *,
         workspace: dict[str, Any],
@@ -221,26 +240,20 @@ class AgentRuntime:
             setup_research_context=setup_research_context,
             assigned_task_ids=assigned_task_ids,
         )
-        message_history = None
-        conversation_id = None
         project_id = None
-        agent = None
         if repos is not None:
-            session = repos.sessions.get(session_id=session_id)
+            session = await repos.sessions.get(session_id=session_id)
             project_id = session.project_id if session is not None else None
-            if project_id is not None:
-                agent = repos.agents.ensure_project_agent(
-                    project_id=project_id,
-                    created_in_session_id=session_id,
-                    kind="researcher",
-                    display_name="Researcher",
-                    model_name=self.model_name,
-                )
-        agent_id = agent.id if agent is not None else None
-        if agent_id is None and project_id is not None:
-            agent_id = f"agent_{project_id}_researcher"
-        if agent_id is None:
-            agent_id = f"agent_{session_id}_researcher"
+        agent_id = await self._task_scoped_agent_id(
+            repos=repos,
+            project_id=project_id,
+            session_id=session_id,
+            assigned_task_ids=assigned_task_ids,
+            kind="researcher",
+            display_name="Researcher",
+            model_name=self.model_name,
+        ) or f"agent_{session_id}_researcher"
+        conversation_id = f"situ:{project_id or session_id}:{agent_id}"
         repo_path = workspace.get("repo_path")
         tool_deps = SituToolDeps(
             session_id=session_id,
@@ -253,34 +266,20 @@ class AgentRuntime:
             app_root=app_root,
             active_task_id=assigned_task_ids[0] if assigned_task_ids else None,
         )
-        if repos is not None and project_id is not None:
-            stored_messages = repos.agent_message_history.get_message_history(
-                project_or_session_id=project_id,
-                agent_id=agent_id,
-            )
-            if stored_messages:
-                message_history = repos.agent_message_history.get_model_message_history(
-                    project_or_session_id=project_id,
-                    agent_id=agent_id,
-                )
-            else:
-                conversation_id = f"situ:{project_id}:{agent_id}"
-
         with span(
             "situ.agent.research",
             workspace=repo_path or "",
             objective=setup_objective,
             session_id=session_id,
         ):
-            result = self._run_with_workflow_timeout(
-                self.dbos_researcher_agent.run_sync,
+            result = await self._run_with_workflow_timeout(
+                self.dbos_researcher_agent.run,
                 prompt,
                 deps=tool_deps,
-                message_history=message_history,
                 conversation_id=conversation_id,
             )
         if repos is not None and project_id is not None:
-            repos.agent_message_history.append_project_messages(
+            await repos.agent_message_history.append_project_messages(
                 project_id=project_id,
                 created_in_session_id=session_id,
                 agent_id=agent_id,
@@ -291,7 +290,7 @@ class AgentRuntime:
             )
         return result.output
 
-    def run_session(
+    async def run_session(
         self,
         *,
         workspace: dict[str, Any],
@@ -311,26 +310,20 @@ class AgentRuntime:
             max_experiments=max_experiments,
             assigned_task_ids=assigned_task_ids,
         )
-        message_history = None
-        conversation_id = None
         project_id = None
-        agent = None
         if repos is not None:
-            session = repos.sessions.get(session_id=session_id)
+            session = await repos.sessions.get(session_id=session_id)
             project_id = session.project_id if session is not None else None
-            if project_id is not None:
-                agent = repos.agents.ensure_project_agent(
-                    project_id=project_id,
-                    created_in_session_id=session_id,
-                    kind="scientist",
-                    display_name="Scientist",
-                    model_name=self.model_name,
-                )
-        agent_id = agent.id if agent is not None else None
-        if agent_id is None and project_id is not None:
-            agent_id = f"agent_{project_id}_scientist"
-        if agent_id is None:
-            agent_id = f"agent_{session_id}_scientist"
+        agent_id = await self._task_scoped_agent_id(
+            repos=repos,
+            project_id=project_id,
+            session_id=session_id,
+            assigned_task_ids=assigned_task_ids,
+            kind="scientist",
+            display_name="Scientist",
+            model_name=self.model_name,
+        ) or f"agent_{session_id}_scientist"
+        conversation_id = f"situ:{project_id or session_id}:{agent_id}"
         execution_repo_path = repo_path or workspace.get("repo_path")
         tool_deps = SituToolDeps(
             session_id=session_id,
@@ -344,34 +337,20 @@ class AgentRuntime:
             active_task_id=assigned_task_ids[0] if assigned_task_ids else None,
             active_experiment_id=active_experiment_id,
         )
-        if repos is not None and project_id is not None:
-            stored_messages = repos.agent_message_history.get_message_history(
-                project_or_session_id=project_id,
-                agent_id=agent_id,
-            )
-            if stored_messages:
-                message_history = repos.agent_message_history.get_model_message_history(
-                    project_or_session_id=project_id,
-                    agent_id=agent_id,
-                )
-            else:
-                conversation_id = f"situ:{project_id}:{agent_id}"
-
         with span(
             "situ.agent.session",
             workspace=execution_repo_path or "",
             objective=setup_objective,
             session_id=session_id,
         ):
-            result = self._run_with_workflow_timeout(
-                self.dbos_agent.run_sync,
+            result = await self._run_with_workflow_timeout(
+                self.dbos_agent.run,
                 prompt,
                 deps=tool_deps,
-                message_history=message_history,
                 conversation_id=conversation_id,
             )
         if repos is not None and project_id is not None:
-            repos.agent_message_history.append_project_messages(
+            await repos.agent_message_history.append_project_messages(
                 project_id=project_id,
                 created_in_session_id=session_id,
                 agent_id=agent_id,
@@ -382,7 +361,7 @@ class AgentRuntime:
             )
         return result.output
 
-    def run_review(
+    async def run_review(
         self,
         *,
         workspace: dict[str, Any],
@@ -398,26 +377,20 @@ class AgentRuntime:
             setup_research_context=setup_research_context,
             assigned_task_ids=assigned_task_ids,
         )
-        message_history = None
-        conversation_id = None
         project_id = None
-        agent = None
         if repos is not None:
-            session = repos.sessions.get(session_id=session_id)
+            session = await repos.sessions.get(session_id=session_id)
             project_id = session.project_id if session is not None else None
-            if project_id is not None:
-                agent = repos.agents.ensure_project_agent(
-                    project_id=project_id,
-                    created_in_session_id=session_id,
-                    kind="critic",
-                    display_name="Critic",
-                    model_name=self.model_name,
-                )
-        agent_id = agent.id if agent is not None else None
-        if agent_id is None and project_id is not None:
-            agent_id = f"agent_{project_id}_critic"
-        if agent_id is None:
-            agent_id = f"agent_{session_id}_critic"
+        agent_id = await self._task_scoped_agent_id(
+            repos=repos,
+            project_id=project_id,
+            session_id=session_id,
+            assigned_task_ids=assigned_task_ids,
+            kind="critic",
+            display_name="Critic",
+            model_name=self.model_name,
+        ) or f"agent_{session_id}_critic"
+        conversation_id = f"situ:{project_id or session_id}:{agent_id}"
         repo_path = workspace.get("repo_path")
         tool_deps = SituToolDeps(
             session_id=session_id,
@@ -430,34 +403,20 @@ class AgentRuntime:
             app_root=app_root,
             active_task_id=assigned_task_ids[0] if assigned_task_ids else None,
         )
-        if repos is not None and project_id is not None:
-            stored_messages = repos.agent_message_history.get_message_history(
-                project_or_session_id=project_id,
-                agent_id=agent_id,
-            )
-            if stored_messages:
-                message_history = repos.agent_message_history.get_model_message_history(
-                    project_or_session_id=project_id,
-                    agent_id=agent_id,
-                )
-            else:
-                conversation_id = f"situ:{project_id}:{agent_id}"
-
         with span(
             "situ.agent.review",
             workspace=repo_path or "",
             objective=setup_objective,
             session_id=session_id,
         ):
-            result = self._run_with_workflow_timeout(
-                self.dbos_critic_agent.run_sync,
+            result = await self._run_with_workflow_timeout(
+                self.dbos_critic_agent.run,
                 prompt,
                 deps=tool_deps,
-                message_history=message_history,
                 conversation_id=conversation_id,
             )
         if repos is not None and project_id is not None:
-            repos.agent_message_history.append_project_messages(
+            await repos.agent_message_history.append_project_messages(
                 project_id=project_id,
                 created_in_session_id=session_id,
                 agent_id=agent_id,
@@ -469,13 +428,55 @@ class AgentRuntime:
         return result.output
 
     @staticmethod
-    def _run_with_workflow_timeout(
-        run_sync: Any,
+    async def _task_scoped_agent_id(
+        *,
+        repos: Repositories | None,
+        project_id: str | None,
+        session_id: str,
+        assigned_task_ids: Sequence[str],
+        kind: str,
+        display_name: str,
+        model_name: str,
+    ) -> str | None:
+        if project_id is None:
+            return f"agent_{session_id}_{kind}"
+        if repos is None:
+            return f"agent_{project_id}_{kind}_{assigned_task_ids[0]}" if assigned_task_ids else None
+        for task_id in assigned_task_ids:
+            task = await repos.tasks.get(task_id=task_id)
+            if task is not None and task.assignee_id is not None:
+                await repos.agents.update(agent_id=task.assignee_id, model_name=model_name)
+                return task.assignee_id
+            if task is not None:
+                agent = await repos.agents.ensure_task_agent(
+                    project_id=project_id,
+                    task_id=task.id,
+                    created_in_session_id=session_id,
+                    kind=kind,
+                    display_name=f"{display_name} {task.id}",
+                    model_name=model_name,
+                )
+                return agent.id
+        if assigned_task_ids:
+            return f"agent_{project_id}_{kind}_{assigned_task_ids[0]}"
+        agent = await repos.agents.ensure_task_agent(
+            project_id=project_id,
+            task_id=f"{session_id}_pass",
+            created_in_session_id=session_id,
+            kind=kind,
+            display_name=f"{display_name} {session_id}",
+            model_name=model_name,
+        )
+        return agent.id
+
+    @staticmethod
+    async def _run_with_workflow_timeout(
+        run: Any,
         *args: Any,
         **kwargs: Any,
     ) -> Any:
         with SetWorkflowTimeout(DEFAULTS.agent_workflow_timeout_seconds):
-            return run_sync(*args, **kwargs)
+            return await run(*args, **kwargs)
 
 
 def get_agent_runtime(

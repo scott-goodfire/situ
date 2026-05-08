@@ -8,7 +8,7 @@ from typing import Any
 from ..defaults import DEFAULTS
 
 LOGFIRE_TOKEN_NAME = "logfire_token"
-OPENAI_KEY_NAME = "openai_key"
+ANTHROPIC_KEY_NAME = "anthropic_key"
 
 
 class LocalSecretStore:
@@ -16,14 +16,14 @@ class LocalSecretStore:
         self.home = home.expanduser() if home is not None else DEFAULTS.local_state_home_path()
         self.path = self.home / "secrets.json"
 
-    def get_openai_key(self) -> str | None:
-        return self._get_secret(OPENAI_KEY_NAME)
+    def get_anthropic_key(self) -> str | None:
+        return self._get_secret(ANTHROPIC_KEY_NAME)
 
-    def set_openai_key(self, value: str) -> None:
-        self._set_secret(OPENAI_KEY_NAME, value, label="OpenAI key")
+    def set_anthropic_key(self, value: str) -> None:
+        self._set_secret(ANTHROPIC_KEY_NAME, value, label="Anthropic key")
 
-    def unset_openai_key(self) -> bool:
-        return self._unset_secret(OPENAI_KEY_NAME)
+    def unset_anthropic_key(self) -> bool:
+        return self._unset_secret(ANTHROPIC_KEY_NAME)
 
     def get_logfire_token(self) -> str | None:
         return self._get_secret(LOGFIRE_TOKEN_NAME)

@@ -3,7 +3,7 @@
 This package contains code-first evals for Situ's agent behavior,
 tool-calling flow, and observability.
 
-Evals make real model calls. They require `SITU_OPENAI_KEY` and
+Evals make real model calls. They require `SITU_ANTHROPIC_KEY` and
 `SITU_LOGFIRE_TOKEN` in the launch environment; unit tests should cover
 deterministic behavior, while evals cover live model behavior against
 controlled fixture worlds. Evals do not fall back to the saved local runtime
@@ -55,7 +55,7 @@ Emit JSON:
 ```
 
 Eval experiments are sent to Logfire by default with
-`service_name=situ-evals`. Set `SITU_OPENAI_KEY` and `SITU_LOGFIRE_TOKEN` in
+`service_name=situ-evals`. Set `SITU_ANTHROPIC_KEY` and `SITU_LOGFIRE_TOKEN` in
 the environment used to launch evals.
 
 ## Layout

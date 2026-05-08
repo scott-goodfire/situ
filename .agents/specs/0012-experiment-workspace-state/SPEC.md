@@ -35,12 +35,12 @@ the result:
 - The interpreter or toolchain choice when it affects comparability
 - Any obvious process concerns
 
-The first slice can store this as activity payload metadata and artifact
-references rather than introducing a new top-level WorkspaceState model.
+This is stored as activity payload metadata and artifact references. A
+top-level WorkspaceState model is out of scope.
 
 ## Changed Path Categories
 
-The first slice should classify changed paths coarsely:
+Changed paths are classified coarsely:
 
 - Source or product code
 - Tests, evals, benchmarks, fixtures, or measurement harnesses
@@ -98,9 +98,9 @@ workspaces before opening the TUI or creating product records. This keeps users
 from answering onboarding questions only to discover at the first candidate
 experiment that isolation cannot begin from the selected checkout.
 
-The first slice does not need a complete promotion or cleanup workflow.
-Accepted candidates can be inspected from their worktree path, and rejected
-candidates can remain as disposable local checkouts until cleanup is added.
+A complete promotion or cleanup workflow is out of scope. Accepted
+candidates are inspected from their worktree path; rejected candidates
+remain as disposable local checkouts.
 Lineage-aware portfolio search extends this by making candidate code states
 durable bases for later experiments without applying them to the user's
 selected checkout; see

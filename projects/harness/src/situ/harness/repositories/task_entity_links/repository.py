@@ -40,7 +40,7 @@ class TaskEntityLinksRepository(BaseRepository):
             entity_id=entity_id,
             relationship=relationship,
         )
-        self.db.execute(
+        self.db.execute_blocking(
             """
             INSERT INTO task_entity_links
               (project_id, task_id, entity_kind, entity_id, relationship, created_at)
@@ -75,7 +75,7 @@ class TaskEntityLinksRepository(BaseRepository):
         relationship: str,
     ) -> TaskEntityLinkRecord | None:
         checked_kind = parse_task_entity_kind(entity_kind)
-        row = self.db.fetchone(
+        row = self.db.fetchone_blocking(
             """
             SELECT * FROM task_entity_links
             WHERE task_id = ? AND entity_kind = ? AND entity_id = ? AND relationship = ?
@@ -87,7 +87,7 @@ class TaskEntityLinksRepository(BaseRepository):
     def list_all(self) -> list[TaskEntityLinkRecord]:
         return [
             _task_entity_link_row(row)
-            for row in self.db.fetchall(
+            for row in self.db.fetchall_blocking(
                 "SELECT * FROM task_entity_links ORDER BY created_at"
             )
         ]
@@ -95,7 +95,7 @@ class TaskEntityLinksRepository(BaseRepository):
     def list_for_task(self, *, task_id: str) -> list[TaskEntityLinkRecord]:
         return [
             _task_entity_link_row(row)
-            for row in self.db.fetchall(
+            for row in self.db.fetchall_blocking(
                 """
                 SELECT * FROM task_entity_links
                 WHERE task_id = ?
@@ -108,7 +108,7 @@ class TaskEntityLinksRepository(BaseRepository):
     def list_for_project(self, *, project_id: str) -> list[TaskEntityLinkRecord]:
         return [
             _task_entity_link_row(row)
-            for row in self.db.fetchall(
+            for row in self.db.fetchall_blocking(
                 """
                 SELECT * FROM task_entity_links
                 WHERE project_id = ?
@@ -127,7 +127,7 @@ class TaskEntityLinksRepository(BaseRepository):
         checked_kind = parse_task_entity_kind(entity_kind)
         return [
             _task_entity_link_row(row)
-            for row in self.db.fetchall(
+            for row in self.db.fetchall_blocking(
                 """
                 SELECT * FROM task_entity_links
                 WHERE entity_kind = ? AND entity_id = ?

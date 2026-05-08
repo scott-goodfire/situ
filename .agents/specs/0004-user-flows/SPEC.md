@@ -103,9 +103,8 @@ Session objective
   -> interpretation comment feeds the next proposal round
 ```
 
-The default loop should be sequential for the current slice. Parallel batches
-can come later after live observability and basic suspicious-result handling are
-reliable.
+The default loop is sequential. Parallel batches are out of scope until
+live observability and basic suspicious-result handling are reliable.
 
 The Manager should not treat a candidate experiment as decision-grade merely
 because its command output was recorded. After a Scientist experiment task

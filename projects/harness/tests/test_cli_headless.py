@@ -19,7 +19,7 @@ class FakeAgentRuntime:
     def __init__(self, _project_dir: Path) -> None:
         pass
 
-    def plan_session(self, **_kwargs: Any):
+    async def plan_session(self, **_kwargs: Any):
         class Plan:
             summary = "fake plan"
 
@@ -67,18 +67,18 @@ def test_local_session_env_strips_eval_and_provider_secrets(
     app_root = tmp_path / "app"
     workspace = tmp_path / "workspace"
     workspace.mkdir()
-    monkeypatch.setenv("SITU_OPENAI_KEY", "situ-openai")
+    monkeypatch.setenv("SITU_ANTHROPIC_KEY", "situ-anthropic")
     monkeypatch.setenv("SITU_LOGFIRE_TOKEN", "situ-logfire")
-    monkeypatch.setenv("OPENAI_API_KEY", "provider-openai")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "provider-anthropic")
     monkeypatch.setenv("LOGFIRE_TOKEN", "provider-logfire")
 
     env = base_env(app_root, workspace)
 
     assert env["SITU_APP_ROOT"] == str(app_root)
     assert env["SITU_WORKSPACE"] == str(workspace)
-    assert "SITU_OPENAI_KEY" not in env
+    assert "SITU_ANTHROPIC_KEY" not in env
     assert "SITU_LOGFIRE_TOKEN" not in env
-    assert "OPENAI_API_KEY" not in env
+    assert "ANTHROPIC_API_KEY" not in env
     assert "LOGFIRE_TOKEN" not in env
 
 

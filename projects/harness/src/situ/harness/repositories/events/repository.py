@@ -42,7 +42,7 @@ class EventsRepository(BaseRepository):
             associated_session_id=resolved_session_id,
             payload=payload or {},
         )
-        cursor = self.db.execute(
+        cursor = self.db.execute_blocking(
             """
             INSERT INTO events
               (associated_project_id, associated_session_id, type, message,
@@ -64,19 +64,19 @@ class EventsRepository(BaseRepository):
         return record
 
     def get_by_id(self, *, event_id: int) -> EventRecord | None:
-        row = self.db.fetchone("SELECT * FROM events WHERE id = ?", (event_id,))
+        row = self.db.fetchone_blocking("SELECT * FROM events WHERE id = ?", (event_id,))
         return _event_row(row) if row else None
 
     def get(self, *, event_id: int) -> EventRecord | None:
         return self.get_by_id(event_id=event_id)
 
     def list_all(self) -> list[EventRecord]:
-        return [_event_row(row) for row in self.db.fetchall("SELECT * FROM events ORDER BY id")]
+        return [_event_row(row) for row in self.db.fetchall_blocking("SELECT * FROM events ORDER BY id")]
 
     def list_for_session(self, *, session_id: str) -> list[EventRecord]:
         return [
             _event_row(row)
-            for row in self.db.fetchall(
+            for row in self.db.fetchall_blocking(
                 "SELECT * FROM events WHERE associated_session_id = ? ORDER BY id",
                 (session_id,),
             )
@@ -85,12 +85,12 @@ class EventsRepository(BaseRepository):
     def list_for_project(self, *, project_id: str) -> list[EventRecord]:
         return [
             _event_row(row)
-            for row in self.db.fetchall(
+            for row in self.db.fetchall_blocking(
                 "SELECT * FROM events WHERE associated_project_id = ? ORDER BY id",
                 (project_id,),
             )
         ]
 
     def _project_id_for_session(self, session_id: str) -> str | None:
-        row = self.db.fetchone("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
+        row = self.db.fetchone_blocking("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
         return row["project_id"] if row else None

@@ -35,14 +35,14 @@ Agents are durable project participants. The active slice uses four agent kinds:
   measurements, artifacts, and activities, then records experiment review and
   concern activities.
 
-For the current slice, only the Manager is a long-lived conversational agent.
-It should keep a stable project identity across planning passes and may replay
-its compacted provider history so it can remember the research trajectory. That
-memory is an aid, not the source of truth: the Manager must still read current
+Only the Manager is a long-lived conversational agent. It keeps a stable
+project identity across planning passes and may replay its compacted
+provider history so it can remember the research trajectory. That memory is
+an aid, not the source of truth: the Manager must still read current
 project and task state through Situ tools before making decisions.
 
-Researcher, Scientist, and Critic passes are task-scoped worker agents for now.
-Each claimed task should get a fresh agent identity and fresh model
+Researcher, Scientist, and Critic passes are task-scoped worker agents.
+Each claimed task gets a fresh agent identity and fresh model
 conversation. Their durable output belongs in analyses, hypotheses,
 experiments, evaluations, measurements, activities, artifacts, and task
 summaries rather than in a reusable chat transcript. This is especially
@@ -50,7 +50,7 @@ important for Scientists: a new Scientist should approach each baseline or
 experiment task from the task assignment and current project records, not from
 the previous Scientist's raw conversation.
 
-Additional kinds such as specialist scientists can be added later without
+Additional agent kinds, such as specialist scientists, can be added without
 changing the task model. A task's eligible claimant is derived from its kind
 rather than stored as a separate assignee kind.
 

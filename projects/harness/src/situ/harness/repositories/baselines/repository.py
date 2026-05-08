@@ -54,7 +54,7 @@ class BaselinesRepository(BaseRepository):
             status=checked_status,
         )
         now = utc_now()
-        self.db.execute(
+        self.db.execute_blocking(
             """
             INSERT INTO baselines
               (id, project_id, created_in_session_id, status, title, summary,
@@ -100,7 +100,7 @@ class BaselinesRepository(BaseRepository):
         if current is None:
             return None
 
-        self.db.execute(
+        self.db.execute_blocking(
             """
             UPDATE baselines
             SET title = ?, summary = ?, status = ?, updated_at = ?
@@ -117,7 +117,7 @@ class BaselinesRepository(BaseRepository):
         return self.get_by_id(baseline_id=command.baseline_id)
 
     def get_by_id(self, *, baseline_id: str) -> BaselineRecord | None:
-        row = self.db.fetchone("SELECT * FROM baselines WHERE id = ?", (baseline_id,))
+        row = self.db.fetchone_blocking("SELECT * FROM baselines WHERE id = ?", (baseline_id,))
         return _baseline_row(row) if row else None
 
     def get(self, *, baseline_id: str) -> BaselineRecord | None:
@@ -126,20 +126,20 @@ class BaselinesRepository(BaseRepository):
     def list_all(self) -> list[BaselineRecord]:
         return [
             _baseline_row(row)
-            for row in self.db.fetchall("SELECT * FROM baselines ORDER BY created_at")
+            for row in self.db.fetchall_blocking("SELECT * FROM baselines ORDER BY created_at")
         ]
 
     def list_for_project(self, *, project_id: str) -> list[BaselineRecord]:
         return [
             _baseline_row(row)
-            for row in self.db.fetchall(
+            for row in self.db.fetchall_blocking(
                 "SELECT * FROM baselines WHERE project_id = ? ORDER BY created_at",
                 (project_id,),
             )
         ]
 
     def list_for_session(self, *, session_id: str) -> list[BaselineRecord]:
-        session = self.db.fetchone("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
+        session = self.db.fetchone_blocking("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
         project_id = session["project_id"] if session else None
         return (
             self.list_for_project(project_id=project_id)
@@ -148,7 +148,7 @@ class BaselinesRepository(BaseRepository):
         )
 
     def next_id(self, *, project_id: str) -> str:
-        rows = self.db.fetchall("SELECT id FROM baselines")
+        rows = self.db.fetchall_blocking("SELECT id FROM baselines")
         return next_canonical_record_id(
             existing_ids=(str(row["id"]) for row in rows),
             prefix=BASELINE_ID_PREFIX,

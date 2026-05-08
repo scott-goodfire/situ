@@ -4,55 +4,55 @@ import os
 import stat
 from pathlib import Path
 
-from situ.protocol import SecretsSetOpenAIKeyResult, SecretsStatusResult
+from situ.protocol import SecretsSetAnthropicKeyResult, SecretsStatusResult
 
 from situ.harness.app import HarnessApp
 from situ.harness.config import LocalSecretStore, SituSecrets
 
 
-def test_local_secret_store_saves_openai_key_with_owner_only_permissions(
+def test_local_secret_store_saves_anthropic_key_with_owner_only_permissions(
     tmp_path: Path,
     monkeypatch,
 ) -> None:
     monkeypatch.chdir(tmp_path)
-    monkeypatch.delenv("SITU_OPENAI_KEY", raising=False)
+    monkeypatch.delenv("SITU_ANTHROPIC_KEY", raising=False)
     home = tmp_path / "situ-home"
     store = LocalSecretStore(home=home)
 
-    store.set_openai_key("  sk-local-test  ")
+    store.set_anthropic_key("  sk-local-test  ")
     store.set_logfire_token("  logfire-local-test  ")
 
-    assert store.get_openai_key() == "sk-local-test"
+    assert store.get_anthropic_key() == "sk-local-test"
     assert store.get_logfire_token() == "logfire-local-test"
-    assert SituSecrets().openai_key_source(home=home) == "local"
-    assert SituSecrets().local_openai_key_value(home=home) == "sk-local-test"
+    assert SituSecrets().anthropic_key_source(home=home) == "local"
+    assert SituSecrets().local_anthropic_key_value(home=home) == "sk-local-test"
     assert stat.S_IMODE(os.stat(store.path).st_mode) == 0o600
 
     assert store.unset_logfire_token() is True
-    assert store.get_openai_key() == "sk-local-test"
+    assert store.get_anthropic_key() == "sk-local-test"
     assert store.get_logfire_token() is None
     assert store.unset_logfire_token() is False
 
     assert store.clear() is True
-    assert store.get_openai_key() is None
+    assert store.get_anthropic_key() is None
     assert store.path.exists() is False
     assert store.clear() is False
 
 
-def test_situ_openai_key_env_does_not_override_local_secret(
+def test_situ_anthropic_key_env_does_not_override_local_secret(
     tmp_path: Path,
     monkeypatch,
 ) -> None:
     monkeypatch.chdir(tmp_path)
     home = tmp_path / "situ-home"
-    LocalSecretStore(home=home).set_openai_key("sk-local-test")
-    monkeypatch.setenv("SITU_OPENAI_KEY", "sk-env-test")
+    LocalSecretStore(home=home).set_anthropic_key("sk-local-test")
+    monkeypatch.setenv("SITU_ANTHROPIC_KEY", "sk-env-test")
 
     secrets = SituSecrets()
 
-    assert secrets.openai_key_source(home=home) == "local"
-    assert secrets.local_openai_key_value(home=home) == "sk-local-test"
-    assert secrets.eval_openai_key_value() == "sk-env-test"
+    assert secrets.anthropic_key_source(home=home) == "local"
+    assert secrets.local_anthropic_key_value(home=home) == "sk-local-test"
+    assert secrets.eval_anthropic_key_value() == "sk-env-test"
 
 
 def test_local_runtime_ignores_situ_env_when_local_secret_is_missing(
@@ -61,12 +61,12 @@ def test_local_runtime_ignores_situ_env_when_local_secret_is_missing(
 ) -> None:
     monkeypatch.chdir(tmp_path)
     home = tmp_path / "situ-home"
-    monkeypatch.setenv("SITU_OPENAI_KEY", "sk-env-test")
+    monkeypatch.setenv("SITU_ANTHROPIC_KEY", "sk-env-test")
 
     secrets = SituSecrets()
 
-    assert secrets.openai_key_source(home=home) == "missing"
-    assert secrets.local_openai_key_value(home=home) is None
+    assert secrets.anthropic_key_source(home=home) == "missing"
+    assert secrets.local_anthropic_key_value(home=home) is None
 
 
 def test_local_sdk_environment_uses_only_local_secret_store(
@@ -76,26 +76,26 @@ def test_local_sdk_environment_uses_only_local_secret_store(
     monkeypatch.chdir(tmp_path)
     home = tmp_path / "situ-home"
     store = LocalSecretStore(home=home)
-    store.set_openai_key("sk-local-test")
+    store.set_anthropic_key("sk-local-test")
     store.set_logfire_token("logfire-local-test")
-    monkeypatch.setenv("SITU_OPENAI_KEY", "sk-env-test")
+    monkeypatch.setenv("SITU_ANTHROPIC_KEY", "sk-env-test")
     monkeypatch.setenv("SITU_LOGFIRE_TOKEN", "logfire-env-test")
-    monkeypatch.setenv("OPENAI_API_KEY", "provider-openai-test")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "provider-anthropic-test")
     monkeypatch.setenv("LOGFIRE_TOKEN", "provider-logfire-test")
 
     SituSecrets().apply_local_sdk_environment(home=home)
 
-    assert os.environ["OPENAI_API_KEY"] == "sk-local-test"
+    assert os.environ["ANTHROPIC_API_KEY"] == "sk-local-test"
     assert os.environ["LOGFIRE_TOKEN"] == "logfire-local-test"
 
 
-def test_harness_secret_rpc_saves_openai_key_without_ledger_events(
+def test_harness_secret_rpc_saves_anthropic_key_without_ledger_events(
     tmp_path: Path,
     monkeypatch,
 ) -> None:
     monkeypatch.chdir(tmp_path)
-    monkeypatch.delenv("SITU_OPENAI_KEY", raising=False)
-    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.delenv("SITU_ANTHROPIC_KEY", raising=False)
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     workspace = tmp_path / "workspace"
     workspace.mkdir()
     notifications: list[tuple[str, dict]] = []
@@ -107,28 +107,28 @@ def test_harness_secret_rpc_saves_openai_key_without_ledger_events(
     )
 
     missing = SecretsStatusResult.model_validate(app.secrets_status({}))
-    saved = SecretsSetOpenAIKeyResult.model_validate(
-        app.secrets_set_openai_key({"openai_key": "sk-rpc-test"})
+    saved = SecretsSetAnthropicKeyResult.model_validate(
+        app.secrets_set_anthropic_key({"anthropic_key": "sk-rpc-test"})
     )
     present = SecretsStatusResult.model_validate(app.secrets_status({}))
 
-    assert missing.openai_key_configured is False
-    assert missing.openai_key_source == "missing"
+    assert missing.anthropic_key_configured is False
+    assert missing.anthropic_key_source == "missing"
     assert missing.logfire_token_configured is False
     assert missing.logfire_token_source == "missing"
-    assert saved.openai_key_configured is True
-    assert saved.openai_key_source == "local"
+    assert saved.anthropic_key_configured is True
+    assert saved.anthropic_key_source == "local"
     assert saved.logfire_token_configured is False
     assert saved.logfire_token_source == "missing"
-    assert present.openai_key_configured is True
-    assert present.openai_key_source == "local"
+    assert present.anthropic_key_configured is True
+    assert present.anthropic_key_source == "local"
     assert present.logfire_token_configured is False
     assert present.logfire_token_source == "missing"
     assert (
-        LocalSecretStore(home=tmp_path / "home").get_openai_key()
+        LocalSecretStore(home=tmp_path / "home").get_anthropic_key()
         == "sk-rpc-test"
     )
-    assert os.environ["OPENAI_API_KEY"] == "sk-rpc-test"
+    assert os.environ["ANTHROPIC_API_KEY"] == "sk-rpc-test"
     assert app.repos.events.list_all() == []
     assert notifications == []
 
@@ -138,9 +138,9 @@ def test_harness_secret_rpc_saves_optional_logfire_token(
     monkeypatch,
 ) -> None:
     monkeypatch.chdir(tmp_path)
-    monkeypatch.delenv("SITU_OPENAI_KEY", raising=False)
+    monkeypatch.delenv("SITU_ANTHROPIC_KEY", raising=False)
     monkeypatch.delenv("SITU_LOGFIRE_TOKEN", raising=False)
-    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     monkeypatch.delenv("LOGFIRE_TOKEN", raising=False)
     workspace = tmp_path / "workspace"
     workspace.mkdir()
@@ -151,10 +151,10 @@ def test_harness_secret_rpc_saves_optional_logfire_token(
         notify=lambda _method, _params: None,
     )
 
-    saved = SecretsSetOpenAIKeyResult.model_validate(
-        app.secrets_set_openai_key(
+    saved = SecretsSetAnthropicKeyResult.model_validate(
+        app.secrets_set_anthropic_key(
             {
-                "openai_key": "sk-rpc-test",
+                "anthropic_key": "sk-rpc-test",
                 "logfire_token": "logfire-rpc-test",
             }
         )
@@ -162,25 +162,25 @@ def test_harness_secret_rpc_saves_optional_logfire_token(
     present = SecretsStatusResult.model_validate(app.secrets_status({}))
     store = LocalSecretStore(home=tmp_path / "home")
 
-    assert saved.openai_key_source == "local"
+    assert saved.anthropic_key_source == "local"
     assert saved.logfire_token_configured is True
     assert saved.logfire_token_source == "local"
     assert present.logfire_token_configured is True
     assert present.logfire_token_source == "local"
-    assert store.get_openai_key() == "sk-rpc-test"
+    assert store.get_anthropic_key() == "sk-rpc-test"
     assert store.get_logfire_token() == "logfire-rpc-test"
-    assert os.environ["OPENAI_API_KEY"] == "sk-rpc-test"
+    assert os.environ["ANTHROPIC_API_KEY"] == "sk-rpc-test"
     assert os.environ["LOGFIRE_TOKEN"] == "logfire-rpc-test"
 
 
-def test_eval_environment_requires_situ_openai_key_and_logfire_token(
+def test_eval_environment_requires_situ_anthropic_key_and_logfire_token(
     tmp_path: Path,
     monkeypatch,
 ) -> None:
     monkeypatch.chdir(tmp_path)
-    monkeypatch.delenv("SITU_OPENAI_KEY", raising=False)
+    monkeypatch.delenv("SITU_ANTHROPIC_KEY", raising=False)
     monkeypatch.delenv("SITU_LOGFIRE_TOKEN", raising=False)
-    LocalSecretStore(home=tmp_path / "situ-home").set_openai_key("sk-local-test")
+    LocalSecretStore(home=tmp_path / "situ-home").set_anthropic_key("sk-local-test")
 
     secrets = SituSecrets()
 
@@ -196,13 +196,13 @@ def test_eval_environment_requires_situ_openai_key_and_logfire_token(
     try:
         secrets.require_eval_environment()
     except RuntimeError as error:
-        assert "SITU_OPENAI_KEY" in str(error)
+        assert "SITU_ANTHROPIC_KEY" in str(error)
     else:
-        raise AssertionError("Expected missing eval OpenAI key to fail.")
+        raise AssertionError("Expected missing eval Anthropic key to fail.")
 
-    monkeypatch.setenv("SITU_OPENAI_KEY", "openai-env-test")
+    monkeypatch.setenv("SITU_ANTHROPIC_KEY", "anthropic-env-test")
     secrets = SituSecrets()
     secrets.require_eval_environment()
 
     assert os.environ["LOGFIRE_TOKEN"] == "logfire-env-test"
-    assert os.environ["OPENAI_API_KEY"] == "openai-env-test"
+    assert os.environ["ANTHROPIC_API_KEY"] == "anthropic-env-test"

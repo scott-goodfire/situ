@@ -1,12 +1,22 @@
 from __future__ import annotations
 
+import asyncio
 import sqlite3
 import threading
-from collections.abc import Sequence
+from collections.abc import Coroutine, Sequence
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+import aiosqlite
+
 from .migrations import run_migrations
+
+
+@dataclass(frozen=True, slots=True)
+class CursorResult:
+    lastrowid: int | None
+    rowcount: int
 
 
 class Database:
@@ -25,25 +35,82 @@ class Database:
         self.project_id = self.workspace_id
         self.repo_path = repo_path
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        self._lock = threading.Lock()
-        self._db = sqlite3.connect(self.path, check_same_thread=False)
-        self._db.row_factory = sqlite3.Row
-        self._db.execute("PRAGMA journal_mode = WAL")
-        self._db.execute("PRAGMA foreign_keys = ON")
-        run_migrations(self._db)
+        self._sync_lock = threading.Lock()
+        self._run_migrations()
 
-    def execute(self, sql: str, params: Sequence[Any] = ()) -> sqlite3.Cursor:
-        with self._lock, self._db:
-            return self._db.execute(sql, tuple(params))
+    async def execute(self, sql: str, params: Sequence[Any] = ()) -> CursorResult:
+        async with aiosqlite.connect(self.path) as db:
+            await self._configure(db)
+            cursor = await db.execute(sql, tuple(params))
+            await db.commit()
+            result = CursorResult(lastrowid=cursor.lastrowid, rowcount=cursor.rowcount)
+            await cursor.close()
+            return result
 
-    def fetchone(self, sql: str, params: Sequence[Any] = ()) -> sqlite3.Row | None:
-        with self._lock:
-            return self._db.execute(sql, tuple(params)).fetchone()
+    async def fetchone(
+        self,
+        sql: str,
+        params: Sequence[Any] = (),
+    ) -> sqlite3.Row | None:
+        async with aiosqlite.connect(self.path) as db:
+            await self._configure(db)
+            cursor = await db.execute(sql, tuple(params))
+            row = await cursor.fetchone()
+            await cursor.close()
+            return row
 
-    def fetchall(self, sql: str, params: Sequence[Any] = ()) -> list[sqlite3.Row]:
-        with self._lock:
-            return list(self._db.execute(sql, tuple(params)).fetchall())
+    async def fetchall(
+        self,
+        sql: str,
+        params: Sequence[Any] = (),
+    ) -> list[sqlite3.Row]:
+        async with aiosqlite.connect(self.path) as db:
+            await self._configure(db)
+            cursor = await db.execute(sql, tuple(params))
+            rows = await cursor.fetchall()
+            await cursor.close()
+            return list(rows)
 
-    def close(self) -> None:
-        with self._lock:
-            self._db.close()
+    def execute_blocking(self, sql: str, params: Sequence[Any] = ()) -> CursorResult:
+        return self._run_blocking(self.execute(sql, params))
+
+    def fetchone_blocking(
+        self,
+        sql: str,
+        params: Sequence[Any] = (),
+    ) -> sqlite3.Row | None:
+        return self._run_blocking(self.fetchone(sql, params))
+
+    def fetchall_blocking(
+        self,
+        sql: str,
+        params: Sequence[Any] = (),
+    ) -> list[sqlite3.Row]:
+        return self._run_blocking(self.fetchall(sql, params))
+
+    async def close(self) -> None:
+        return None
+
+    def close_blocking(self) -> None:
+        return None
+
+    def _run_migrations(self) -> None:
+        with sqlite3.connect(self.path) as db:
+            db.row_factory = sqlite3.Row
+            db.execute("PRAGMA journal_mode = WAL")
+            db.execute("PRAGMA foreign_keys = ON")
+            run_migrations(db)
+
+    async def _configure(self, db: aiosqlite.Connection) -> None:
+        db.row_factory = sqlite3.Row
+        await db.execute("PRAGMA journal_mode = WAL")
+        await db.execute("PRAGMA foreign_keys = ON")
+
+    def _run_blocking(self, awaitable: Coroutine[Any, Any, Any]) -> Any:
+        with self._sync_lock:
+            try:
+                asyncio.get_running_loop()
+            except RuntimeError:
+                return asyncio.run(awaitable)
+            awaitable.close()
+            raise RuntimeError("Database blocking methods cannot run in an event loop")

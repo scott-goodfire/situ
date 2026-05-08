@@ -40,7 +40,7 @@ class AnalysisActivitiesRepository(BaseRepository):
             body=body,
             payload=payload or {},
         )
-        cursor = self.db.execute(
+        cursor = self.db.execute_blocking(
             """
             INSERT INTO analysis_activities
               (analysis_id, created_in_session_id, actor, kind, body,
@@ -63,7 +63,7 @@ class AnalysisActivitiesRepository(BaseRepository):
         return record
 
     def get_by_id(self, *, activity_id: int) -> AnalysisActivityRecord | None:
-        row = self.db.fetchone(
+        row = self.db.fetchone_blocking(
             "SELECT * FROM analysis_activities WHERE id = ?",
             (activity_id,),
         )
@@ -75,13 +75,13 @@ class AnalysisActivitiesRepository(BaseRepository):
     def list_all(self) -> list[AnalysisActivityRecord]:
         return [
             _analysis_activity_row(row)
-            for row in self.db.fetchall("SELECT * FROM analysis_activities ORDER BY id")
+            for row in self.db.fetchall_blocking("SELECT * FROM analysis_activities ORDER BY id")
         ]
 
     def list_for_analysis(self, *, analysis_id: str) -> list[AnalysisActivityRecord]:
         return [
             _analysis_activity_row(row)
-            for row in self.db.fetchall(
+            for row in self.db.fetchall_blocking(
                 "SELECT * FROM analysis_activities WHERE analysis_id = ? ORDER BY id",
                 (analysis_id,),
             )
@@ -90,7 +90,7 @@ class AnalysisActivitiesRepository(BaseRepository):
     def list_for_project(self, *, project_id: str) -> list[AnalysisActivityRecord]:
         return [
             _analysis_activity_row(row)
-            for row in self.db.fetchall(
+            for row in self.db.fetchall_blocking(
                 """
                 SELECT analysis_activities.*
                 FROM analysis_activities
@@ -103,7 +103,7 @@ class AnalysisActivitiesRepository(BaseRepository):
         ]
 
     def list_for_session(self, *, session_id: str) -> list[AnalysisActivityRecord]:
-        session = self.db.fetchone("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
+        session = self.db.fetchone_blocking("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
         project_id = session["project_id"] if session else None
         return (
             self.list_for_project(project_id=project_id)

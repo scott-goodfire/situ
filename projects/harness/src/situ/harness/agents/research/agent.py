@@ -24,7 +24,13 @@ from ...tools import (
     build_workspace_toolset,
 )
 from ...tools.common import SituToolDeps
-from ..common import SituAgentContext, SituAgentPrompt, BaseSituAgent
+from ..common import (
+    SituAgentContext,
+    SituAgentPrompt,
+    BaseSituAgent,
+    build_model_capabilities,
+    keep_last_compaction_history,
+)
 from .prompt import (
     CRITIC_AGENT_INSTRUCTIONS,
     MANAGER_AGENT_INSTRUCTIONS,
@@ -119,7 +125,9 @@ class ResearchAgent(
             instructions=RESEARCH_AGENT_INSTRUCTIONS,
             toolsets=toolsets,
             model_settings=DEFAULTS.model_settings(),
+            history_processors=[keep_last_compaction_history],
             capabilities=[
+                *build_model_capabilities(self.model),
                 *build_scientist_skill_capabilities(),
                 *self.capabilities,
             ],
@@ -156,7 +164,9 @@ class ManagerAgent(BaseSituAgent[ManagerAgentContext, ResearchAgentOutput]):
             toolsets=[build_manager_toolset()],
             builtin_tools=build_web_search_builtin_tools(),
             model_settings=DEFAULTS.model_settings(),
+            history_processors=[keep_last_compaction_history],
             capabilities=[
+                *build_model_capabilities(self.model),
                 *build_manager_skill_capabilities(),
                 *self.capabilities,
             ],
@@ -196,7 +206,9 @@ class ScientistAgent(BaseSituAgent[ScientistAgentContext, ResearchAgentOutput]):
                 build_workspace_toolset(),
             ],
             model_settings=DEFAULTS.model_settings(),
+            history_processors=[keep_last_compaction_history],
             capabilities=[
+                *build_model_capabilities(self.model),
                 *build_scientist_skill_capabilities(),
                 *self.capabilities,
             ],
@@ -236,7 +248,9 @@ class ResearcherAgent(BaseSituAgent[ResearcherAgentContext, ResearchAgentOutput]
             ],
             builtin_tools=build_web_search_builtin_tools(),
             model_settings=DEFAULTS.model_settings(),
+            history_processors=[keep_last_compaction_history],
             capabilities=[
+                *build_model_capabilities(self.model),
                 *build_researcher_skill_capabilities(),
                 *self.capabilities,
             ],
@@ -275,7 +289,9 @@ class CriticAgent(BaseSituAgent[CriticAgentContext, ResearchAgentOutput]):
                 build_workspace_readonly_toolset(),
             ],
             model_settings=DEFAULTS.model_settings(),
+            history_processors=[keep_last_compaction_history],
             capabilities=[
+                *build_model_capabilities(self.model),
                 *build_critic_skill_capabilities(),
                 *self.capabilities,
             ],

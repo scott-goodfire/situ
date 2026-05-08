@@ -50,7 +50,7 @@ class MeasurementsRepository(BaseRepository):
             body=body,
             payload=payload or {},
         )
-        self.db.execute(
+        self.db.execute_blocking(
             """
             INSERT INTO measurements
               (id, evaluation_id, created_in_session_id, actor, body,
@@ -73,7 +73,7 @@ class MeasurementsRepository(BaseRepository):
         return record
 
     def get_by_id(self, *, measurement_id: str) -> MeasurementRecord | None:
-        row = self.db.fetchone(
+        row = self.db.fetchone_blocking(
             "SELECT * FROM measurements WHERE id = ?",
             (measurement_id,),
         )
@@ -85,7 +85,7 @@ class MeasurementsRepository(BaseRepository):
     def list_all(self) -> list[MeasurementRecord]:
         return [
             _measurement_row(row)
-            for row in self.db.fetchall(
+            for row in self.db.fetchall_blocking(
                 "SELECT * FROM measurements ORDER BY CAST(SUBSTR(id, 2) AS INTEGER)"
             )
         ]
@@ -93,7 +93,7 @@ class MeasurementsRepository(BaseRepository):
     def list_for_evaluation(self, *, evaluation_id: str) -> list[MeasurementRecord]:
         return [
             _measurement_row(row)
-            for row in self.db.fetchall(
+            for row in self.db.fetchall_blocking(
                 """
                 SELECT * FROM measurements
                 WHERE evaluation_id = ?
@@ -106,7 +106,7 @@ class MeasurementsRepository(BaseRepository):
     def list_for_baseline(self, *, baseline_id: str) -> list[MeasurementRecord]:
         return [
             _measurement_row(row)
-            for row in self.db.fetchall(
+            for row in self.db.fetchall_blocking(
                 """
                 SELECT measurements.*
                 FROM measurements
@@ -121,7 +121,7 @@ class MeasurementsRepository(BaseRepository):
     def list_for_experiment(self, *, experiment_id: str) -> list[MeasurementRecord]:
         return [
             _measurement_row(row)
-            for row in self.db.fetchall(
+            for row in self.db.fetchall_blocking(
                 """
                 SELECT measurements.*
                 FROM measurements
@@ -136,7 +136,7 @@ class MeasurementsRepository(BaseRepository):
     def list_for_project(self, *, project_id: str) -> list[MeasurementRecord]:
         return [
             _measurement_row(row)
-            for row in self.db.fetchall(
+            for row in self.db.fetchall_blocking(
                 """
                 SELECT measurements.*
                 FROM measurements
@@ -149,7 +149,7 @@ class MeasurementsRepository(BaseRepository):
         ]
 
     def list_for_session(self, *, session_id: str) -> list[MeasurementRecord]:
-        session = self.db.fetchone("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
+        session = self.db.fetchone_blocking("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
         project_id = session["project_id"] if session else None
         return (
             self.list_for_project(project_id=project_id)
@@ -158,7 +158,7 @@ class MeasurementsRepository(BaseRepository):
         )
 
     def next_id(self) -> str:
-        rows = self.db.fetchall("SELECT id FROM measurements")
+        rows = self.db.fetchall_blocking("SELECT id FROM measurements")
         return next_canonical_record_id(
             existing_ids=(str(row["id"]) for row in rows),
             prefix=MEASUREMENT_ID_PREFIX,

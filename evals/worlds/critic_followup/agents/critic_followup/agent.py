@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import asyncio
+
 from situ.harness.agents import ManagerAgent, ManagerAgentContext, ResearchAgentOutput
 from situ.harness.records import AgentKind, AgentStatus, TaskRecord, TaskStatus
 from situ.harness.tools.common import SituToolDeps
@@ -78,20 +80,22 @@ def _run_manager_pass(
         model=eval_model_name(),
         capabilities=[capture],
     )
-    result = agent.run_sync(
-        ManagerAgentContext(
-            deps=SituToolDeps(
-                session_id=SESSION_ID,
-                agent_id=MANAGER_AGENT_ID,
-                workspace_id=WORKSPACE_ID,
-                project_id=PROJECT_ID,
-                repo_path=str(world.workspace_path),
-                repos=world.repos,
-                emit_event=world.emit_event,
-            ),
-            setup_objective=args.objective,
-            setup_research_context=args.research_context,
-            assigned_task_ids=[active_task.id],
+    result = asyncio.run(
+        agent.run(
+            ManagerAgentContext(
+                deps=SituToolDeps(
+                    session_id=SESSION_ID,
+                    agent_id=MANAGER_AGENT_ID,
+                    workspace_id=WORKSPACE_ID,
+                    project_id=PROJECT_ID,
+                    repo_path=str(world.workspace_path),
+                    repos=world.repos,
+                    emit_event=world.emit_event,
+                ),
+                setup_objective=args.objective,
+                setup_research_context=args.research_context,
+                assigned_task_ids=[active_task.id],
+            )
         )
     )
     return result.output

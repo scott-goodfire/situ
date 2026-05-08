@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import inspect
 from typing import Any
 
@@ -50,7 +51,7 @@ def run_research_tool_agent(args: ResearchToolEvalInput) -> ResearchToolEvalOutp
             emit_event=world.emit_event,
         )
         agent = _build_agent(capture, toolset=args.toolset)
-        result = agent.run_sync(args.prompt, deps=deps)
+        result = asyncio.run(agent.run(args.prompt, deps=deps))
         return ResearchToolEvalOutput(
             content=str(result.output),
             captured_tool_calls=list(capture.tool_calls),

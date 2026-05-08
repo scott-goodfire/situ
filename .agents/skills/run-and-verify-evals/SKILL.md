@@ -34,7 +34,7 @@ git status --short
 
 3. Required execution credentials:
 
-- `SITU_OPENAI_KEY` for model calls.
+- `SITU_ANTHROPIC_KEY` for model calls.
 - `SITU_LOGFIRE_TOKEN` for sending eval traces to Logfire.
 
 Eval discovery and `--list` should work without credentials. Executing cases

@@ -87,12 +87,12 @@ test("web client receives live agent events from a real session", async ({ page 
 });
 
 async function startLiveStack(): Promise<LiveStack> {
-  const openaiKey = requireOpenAIKey();
+  const anthropicKey = requireAnthropicKey();
   const root = makeTempRoot();
   const workspace = join(root, "workspace");
   const home = join(root, "home");
   mkdirSync(workspace, { recursive: true });
-  writeSituSecrets({ home, openaiKey });
+  writeSituSecrets({ home, anthropicKey });
   writeTinyEval(workspace);
 
   const env = {
@@ -143,11 +143,11 @@ async function startLiveStack(): Promise<LiveStack> {
   }
 }
 
-function requireOpenAIKey(): string {
-  const key = process.env.SITU_OPENAI_KEY ?? process.env.OPENAI_API_KEY;
+function requireAnthropicKey(): string {
+  const key = process.env.SITU_ANTHROPIC_KEY ?? process.env.ANTHROPIC_API_KEY;
   if (!key) {
     throw new Error(
-      "Real-real E2E requires SITU_OPENAI_KEY or OPENAI_API_KEY; no fake model is used.",
+      "Real-real E2E requires SITU_ANTHROPIC_KEY or ANTHROPIC_API_KEY; no fake model is used.",
     );
   }
   return key;
@@ -155,23 +155,23 @@ function requireOpenAIKey(): string {
 
 function writeSituSecrets({
   home,
-  openaiKey,
+  anthropicKey,
 }: {
   home: string;
-  openaiKey: string;
+  anthropicKey: string;
 }): void {
   mkdirSync(home, { recursive: true, mode: 0o700 });
   writeFileSync(
     join(home, "secrets.json"),
-    `${JSON.stringify({ openai_key: openaiKey }, null, 2)}\n`,
+    `${JSON.stringify({ anthropic_key: anthropicKey }, null, 2)}\n`,
     { mode: 0o600 },
   );
 }
 
 function withoutRuntimeSecrets(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
   const next = { ...env };
-  delete next.SITU_OPENAI_KEY;
-  delete next.OPENAI_API_KEY;
+  delete next.SITU_ANTHROPIC_KEY;
+  delete next.ANTHROPIC_API_KEY;
   delete next.SITU_LOGFIRE_TOKEN;
   delete next.LOGFIRE_TOKEN;
   return next;

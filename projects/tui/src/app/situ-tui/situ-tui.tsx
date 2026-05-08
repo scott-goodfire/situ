@@ -29,8 +29,8 @@ import type {
   SessionResumeResult,
   SessionStartParams,
   SessionStartResult,
-  SecretsSetOpenAIKeyParams,
-  SecretsSetOpenAIKeyResult,
+  SecretsSetAnthropicKeyParams,
+  SecretsSetAnthropicKeyResult,
   SecretsStatusParams,
   SecretsStatusResult,
   TaskActivityRecord,
@@ -462,10 +462,10 @@ export function SituTui() {
       });
   };
   const handleSecretSubmit = ({
-    openaiKey,
+    anthropicKey,
     logfireToken,
   }: {
-    openaiKey: string;
+    anthropicKey: string;
     logfireToken?: string;
   }) => {
     const client = clientRef.current;
@@ -480,10 +480,10 @@ export function SituTui() {
     const mode = sessionMode();
     setStatus({ kind: "saving_secret" });
     client
-      .request<SecretsSetOpenAIKeyResult, SecretsSetOpenAIKeyParams>({
-        method: "secrets.set_openai_key",
+      .request<SecretsSetAnthropicKeyResult, SecretsSetAnthropicKeyParams>({
+        method: "secrets.set_anthropic_key",
         params: {
-          openai_key: openaiKey,
+          anthropic_key: anthropicKey,
           logfire_token: logfireToken,
         },
       })
@@ -552,7 +552,7 @@ export function SituTui() {
       <LoadingView
         workspace={workspace}
         frameStatus="setup"
-        title="Saving OpenAI API key..."
+        title="Saving Anthropic API key..."
         detail="Writing the key to local Situ runtime state."
         footerLabel="Saving key... - q quit"
         onExit={() => {
@@ -728,7 +728,7 @@ async function continueAfterBootstrap({
       method: "secrets.status",
       params: {},
     });
-    const secretGate = localOpenAISecretGate({ status });
+    const secretGate = localAnthropicSecretGate({ status });
     if (!secretGate.configured) {
       setStatus({ kind: "secret", message: secretGate.message });
       return;
@@ -777,15 +777,15 @@ async function continueAfterBootstrap({
   });
 }
 
-function localOpenAISecretGate({
+function localAnthropicSecretGate({
   status,
 }: {
   status: SecretsStatusResult;
 }): { configured: boolean; message?: CommandMessage } {
   const source = String(
-    (status as { openai_key_source?: unknown }).openai_key_source ?? "missing",
+    (status as { anthropic_key_source?: unknown }).anthropic_key_source ?? "missing",
   );
-  if (source === "local" && status.openai_key_configured) {
+  if (source === "local" && status.anthropic_key_configured) {
     return { configured: true };
   }
 
@@ -794,7 +794,7 @@ function localOpenAISecretGate({
       configured: false,
       message: {
         tone: "yellow",
-        text: "Local Situ runs ignore environment keys. Save an OpenAI API key locally to continue.",
+        text: "Local Situ runs ignore environment keys. Save an Anthropic API key locally to continue.",
       },
     };
   }
@@ -955,11 +955,11 @@ function statusSummary({
   }
 
   if (status.kind === "secret") {
-    return "Waiting for OpenAI API key...";
+    return "Waiting for Anthropic API key...";
   }
 
   if (status.kind === "saving_secret") {
-    return "Saving OpenAI API key...";
+    return "Saving Anthropic API key...";
   }
 
   if (status.kind === "onboarding") {

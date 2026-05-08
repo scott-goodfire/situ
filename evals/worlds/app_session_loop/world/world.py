@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import subprocess
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -75,9 +76,11 @@ class AppSessionLoopWorld:
 
     def run(self) -> None:
         self._install_eval_runtime_secrets()
-        self.app._execute_session(
-            self.session_id,
-            max_experiments=self.args.max_experiments,
+        asyncio.run(
+            self.app._execute_session_async(
+                session_id=self.session_id,
+                max_experiments=self.args.max_experiments,
+            )
         )
 
     def teardown(self) -> None:
@@ -110,7 +113,7 @@ class AppSessionLoopWorld:
         secrets = SituSecrets()
         secrets.require_eval_environment()
         store = LocalSecretStore(home=self.app.context.home)
-        store.set_openai_key(secrets.require_eval_openai_key())
+        store.set_anthropic_key(secrets.require_eval_anthropic_key())
         store.set_logfire_token(secrets.require_eval_logfire_token())
 
     def events(self) -> list[EvalEvent]:

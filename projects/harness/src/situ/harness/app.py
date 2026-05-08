@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import asyncio
 import subprocess
 import threading
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Awaitable, Callable
 
 from situ.protocol import (
     CollectionsBootstrapParams,
@@ -15,8 +16,8 @@ from situ.protocol import (
     EventsSubscribeResult,
     HarnessHelloParams,
     HarnessHelloResult,
-    SecretsSetOpenAIKeyParams,
-    SecretsSetOpenAIKeyResult,
+    SecretsSetAnthropicKeyParams,
+    SecretsSetAnthropicKeyResult,
     SecretsStatusParams,
     SecretsStatusResult,
     SessionResumeParams,
@@ -114,12 +115,23 @@ class HarnessApp:
         self._session_setup: dict[str, dict[str, str]] = {}
 
     def handle(self, method: str, params: dict[str, Any] | None) -> dict[str, Any]:
+        _raise_if_running_loop(
+            sync_name="HarnessApp.handle",
+            async_name="HarnessApp.handle_async",
+        )
+        return asyncio.run(self.handle_async(method, params))
+
+    async def handle_async(
+        self,
+        method: str,
+        params: dict[str, Any] | None,
+    ) -> dict[str, Any]:
         handlers = {
             "harness.hello": self.hello,
             "setup.get": self.setup_get,
             "setup.complete": self.setup_complete,
             "secrets.status": self.secrets_status,
-            "secrets.set_openai_key": self.secrets_set_openai_key,
+            "secrets.set_anthropic_key": self.secrets_set_anthropic_key,
             "collections.bootstrap": self.collections_bootstrap,
             "collections.subscribe": self.collections_subscribe,
             "events.subscribe": self.events_subscribe,
@@ -130,24 +142,27 @@ class HarnessApp:
         handler = handlers.get(method)
         if handler is None:
             raise MethodNotFound(method)
-        return handler(params or {})
+        result = handler(params or {})
+        if hasattr(result, "__await__"):
+            return await result
+        return result
 
-    def hello(self, params: dict[str, Any]) -> dict[str, Any]:
+    async def hello(self, params: dict[str, Any]) -> dict[str, Any]:
         hello = HarnessHelloParams.model_validate(params)
         return HarnessHelloResult(message=f"hello, {hello.name} from the Python harness").model_dump()
 
-    def setup_get(self, params: dict[str, Any]) -> dict[str, Any]:
+    async def setup_get(self, params: dict[str, Any]) -> dict[str, Any]:
         SetupGetParams.model_validate(params)
-        workspace = self.repos.workspaces.get()
+        workspace = await self.repos.workspaces.get()
         return SetupGetResult(
             configured=workspace is not None,
             workspace=workspace.model_dump() if workspace is not None else None,
         ).model_dump()
 
-    def setup_complete(self, params: dict[str, Any]) -> dict[str, Any]:
+    async def setup_complete(self, params: dict[str, Any]) -> dict[str, Any]:
         SetupCompleteParams.model_validate(params)
-        workspace = self.repos.workspaces.ensure()
-        event = self.record_event(
+        workspace = await self.repos.workspaces.ensure()
+        event = await self.record_event(
             event_type="setup.completed",
             message="Configured workspace context",
             payload={"workspace_id": workspace.id},
@@ -155,48 +170,48 @@ class HarnessApp:
         self.publish_record(record=workspace, cursor=event.id)
         return SetupCompleteResult(workspace=workspace.model_dump()).model_dump()
 
-    def secrets_status(self, params: dict[str, Any]) -> dict[str, Any]:
+    async def secrets_status(self, params: dict[str, Any]) -> dict[str, Any]:
         SecretsStatusParams.model_validate(params)
         secrets = SituSecrets()
-        source = secrets.openai_key_source(home=self.context.home)
+        source = secrets.anthropic_key_source(home=self.context.home)
         logfire_source = secrets.logfire_token_source(home=self.context.home)
         return SecretsStatusResult(
-            openai_key_configured=source != "missing",
-            openai_key_source=source,
+            anthropic_key_configured=source != "missing",
+            anthropic_key_source=source,
             logfire_token_configured=logfire_source != "missing",
             logfire_token_source=logfire_source,
         ).model_dump()
 
-    def secrets_set_openai_key(self, params: dict[str, Any]) -> dict[str, Any]:
-        secret = SecretsSetOpenAIKeyParams.model_validate(params)
+    async def secrets_set_anthropic_key(self, params: dict[str, Any]) -> dict[str, Any]:
+        secret = SecretsSetAnthropicKeyParams.model_validate(params)
         store = LocalSecretStore(home=self.context.home)
-        store.set_openai_key(secret.openai_key)
+        store.set_anthropic_key(secret.anthropic_key)
         if secret.logfire_token is not None and secret.logfire_token.strip():
             store.set_logfire_token(secret.logfire_token)
         SituSecrets().apply_local_sdk_environment(home=self.context.home)
         logfire_source = SituSecrets().logfire_token_source(home=self.context.home)
-        return SecretsSetOpenAIKeyResult(
+        return SecretsSetAnthropicKeyResult(
             logfire_token_configured=logfire_source != "missing",
             logfire_token_source=logfire_source,
         ).model_dump()
 
-    def collections_bootstrap(self, params: dict[str, Any]) -> dict[str, Any]:
+    async def collections_bootstrap(self, params: dict[str, Any]) -> dict[str, Any]:
         CollectionsBootstrapParams.model_validate(params)
-        bootstrap = self.collections_api.bootstrap(workspace_id=self.context.workspace_id)
+        bootstrap = await self.collections_api.bootstrap(workspace_id=self.context.workspace_id)
         return CollectionsBootstrapResult.model_validate(bootstrap.model_dump()).model_dump()
 
-    def collections_subscribe(self, params: dict[str, Any]) -> dict[str, Any]:
+    async def collections_subscribe(self, params: dict[str, Any]) -> dict[str, Any]:
         CollectionsSubscribeParams.model_validate(params)
         self.collection_subscribed = True
         set_project_collections_subscribed(project_id=self.context.project_id, subscribed=True)
         return CollectionsSubscribeResult(
             subscribed=True,
-            cursor=self.collections_api.current_cursor(
+            cursor=await self.collections_api.current_cursor(
                 workspace_id=self.context.workspace_id
             ),
         ).model_dump()
 
-    def events_subscribe(self, params: dict[str, Any]) -> dict[str, Any]:
+    async def events_subscribe(self, params: dict[str, Any]) -> dict[str, Any]:
         subscribe = EventsSubscribeParams.model_validate(params)
         self.subscribed = True
         set_project_events_subscribed(project_id=self.context.project_id, subscribed=True)
@@ -204,17 +219,17 @@ class HarnessApp:
         if subscribe.replay_existing:
             project_ids = {
                 project.id
-                for project in self.repos.projects.list_for_workspace(
+                for project in await self.repos.projects.list_for_workspace(
                     workspace_id=self.context.workspace_id
                 )
             }
             session_ids = {
                 session.id
-                for session in self.repos.sessions.list_for_workspace(
+                for session in await self.repos.sessions.list_for_workspace(
                     workspace_id=self.context.workspace_id
                 )
             }
-            for event in self.repos.events.list_all():
+            for event in await self.repos.events.list_all():
                 if (
                     event.associated_project_id not in project_ids
                     and event.associated_session_id not in session_ids
@@ -228,17 +243,17 @@ class HarnessApp:
                 replayed += 1
         return EventsSubscribeResult(subscribed=True, replayed=replayed).model_dump()
 
-    def session_start(self, params: dict[str, Any]) -> dict[str, Any]:
+    async def session_start(self, params: dict[str, Any]) -> dict[str, Any]:
         start = SessionStartParams.model_validate(params)
         require_clean_if_git_workspace(
             self.context.repo_root,
             action="starting a Situ session",
         )
-        workspace = self.repos.workspaces.ensure()
-        session_id = self.sessions_api.next_session_id().session_id
-        project = self._project_from_start(start, workspace_id=workspace.id)
+        workspace = await self.repos.workspaces.ensure()
+        session_id = (await self.sessions_api.next_session_id()).session_id
+        project = await self._project_from_start(start, workspace_id=workspace.id)
 
-        session = self.repos.sessions.create(
+        session = await self.repos.sessions.create(
             session_id=session_id,
             workspace_id=workspace.id,
             project_id=project.id,
@@ -247,7 +262,7 @@ class HarnessApp:
             "objective": project.objective,
             "research_context": project.research_context,
         }
-        event = self.record_event(
+        event = await self.record_event(
             event_type="session.started",
             message=f"Started {session_id}",
             session_id=session_id,
@@ -262,8 +277,8 @@ class HarnessApp:
         self.publish_record(record=workspace, cursor=event.id)
         self.publish_record(record=project, cursor=event.id)
         self.publish_record(record=session, cursor=event.id)
-        self._ensure_project_agents(session_id=session_id, project_id=project.id)
-        self._enqueue_plan_task(
+        await self._ensure_project_agents(session_id=session_id, project_id=project.id)
+        await self._enqueue_plan_task(
             session_id=session_id,
             project_id=project.id,
             title="Plan first research pass",
@@ -282,14 +297,14 @@ class HarnessApp:
 
         return SessionStartResult(session_id=session_id, status="active").model_dump()
 
-    def session_resume(self, params: dict[str, Any]) -> dict[str, Any]:
+    async def session_resume(self, params: dict[str, Any]) -> dict[str, Any]:
         resume = SessionResumeParams.model_validate(params)
-        session = self.repos.sessions.get(session_id=resume.session_id)
+        session = await self.repos.sessions.get(session_id=resume.session_id)
         if session is None:
             raise RuntimeError(f"session not found: {resume.session_id}")
 
-        session = self.repos.sessions.update_status(session_id=resume.session_id, status="active") or session
-        event = self.record_event(
+        session = await self.repos.sessions.update_status(session_id=resume.session_id, status="active") or session
+        event = await self.record_event(
             event_type="session.resumed",
             message=f"Resumed {resume.session_id}",
             session_id=resume.session_id,
@@ -299,14 +314,14 @@ class HarnessApp:
 
         self._session_setup.setdefault(
             resume.session_id,
-            self._setup_from_records(resume.session_id),
+            await self._setup_from_records(resume.session_id),
         )
         if session.project_id is not None:
-            self._ensure_project_agents(
+            await self._ensure_project_agents(
                 session_id=resume.session_id,
                 project_id=session.project_id,
             )
-            self._enqueue_plan_task(
+            await self._enqueue_plan_task(
                 session_id=resume.session_id,
                 project_id=session.project_id,
                 title="Plan resumed research pass",
@@ -326,14 +341,14 @@ class HarnessApp:
             status=session.status.value,
         ).model_dump()
 
-    def session_status(self, params: dict[str, Any]) -> dict[str, Any]:
+    async def session_status(self, params: dict[str, Any]) -> dict[str, Any]:
         status = SessionStatusParams.model_validate(params)
-        session = self.repos.sessions.get(session_id=status.session_id)
+        session = await self.repos.sessions.get(session_id=status.session_id)
         return SessionStatusResult(
             session=session.model_dump() if session is not None else None
         ).model_dump()
 
-    def record_event(
+    async def record_event(
         self,
         *,
         event_type: str,
@@ -342,7 +357,7 @@ class HarnessApp:
         project_id: str | None = None,
         payload: dict[str, Any] | None = None,
     ) -> EventRecord:
-        event = self.repos.events.add(
+        event = await self.repos.events.add(
             event_type=event_type,
             message=message,
             associated_project_id=project_id,
@@ -366,7 +381,7 @@ class HarnessApp:
             cursor=cursor,
         )
 
-    def _project_from_start(
+    async def _project_from_start(
         self,
         start: SessionStartParams,
         *,
@@ -374,7 +389,7 @@ class HarnessApp:
     ) -> ProjectRecord:
         requested_project_id = getattr(start, "project_id", None)
         if requested_project_id:
-            project = self.repos.projects.get(project_id=requested_project_id)
+            project = await self.repos.projects.get(project_id=requested_project_id)
             if project is None:
                 raise RuntimeError(f"project not found: {requested_project_id}")
             if project.workspace_id != workspace_id:
@@ -394,40 +409,37 @@ class HarnessApp:
             or objective
             or "Untitled project"
         )
-        return self.repos.projects.create(
-            project_id=self.repos.projects.next_id(workspace_id=workspace_id),
+        return await self.repos.projects.create(
+            project_id=await self.repos.projects.next_id(workspace_id=workspace_id),
             workspace_id=workspace_id,
             title=title,
             objective=objective,
             research_context=research_context,
         )
 
-    def _ensure_project_agents(self, *, session_id: str, project_id: str) -> None:
-        for kind, display_name in (
-            (AgentKind.MANAGER, "Manager"),
-            (AgentKind.RESEARCHER, "Researcher"),
-            (AgentKind.SCIENTIST, "Scientist"),
-            (AgentKind.CRITIC, "Critic"),
-        ):
-            existing = self.repos.agents.get_for_project_kind(project_id=project_id, kind=kind)
-            agent = self.repos.agents.ensure_project_agent(
-                project_id=project_id,
-                created_in_session_id=session_id,
-                kind=kind,
-                display_name=display_name,
-            )
-            if existing is not None:
-                continue
-            event = self.record_event(
-                event_type="agent.created",
-                message=f"Created {display_name} agent",
-                session_id=session_id,
-                project_id=project_id,
-                payload={"agent_id": agent.id, "kind": agent.kind.value},
-            )
-            self.publish_record(record=agent, cursor=event.id)
+    async def _ensure_project_agents(self, *, session_id: str, project_id: str) -> None:
+        existing = await self.repos.agents.get_for_project_kind(
+            project_id=project_id,
+            kind=AgentKind.MANAGER,
+        )
+        agent = await self.repos.agents.ensure_project_agent(
+            project_id=project_id,
+            created_in_session_id=session_id,
+            kind=AgentKind.MANAGER,
+            display_name="Manager",
+        )
+        if existing is not None:
+            return
+        event = await self.record_event(
+            event_type="agent.created",
+            message="Created Manager agent",
+            session_id=session_id,
+            project_id=project_id,
+            payload={"agent_id": agent.id, "kind": agent.kind.value},
+        )
+        self.publish_record(record=agent, cursor=event.id)
 
-    def _enqueue_plan_task(
+    async def _enqueue_plan_task(
         self,
         *,
         session_id: str,
@@ -436,7 +448,7 @@ class HarnessApp:
         content: str,
         source_kind: str,
     ) -> TaskRecord:
-        previous = self._reusable_plan_task(project_id=project_id)
+        previous = await self._reusable_plan_task(project_id=project_id)
         pass_count = _planning_pass_count(previous)
         payload = {
             **(previous.payload if previous is not None else {}),
@@ -446,8 +458,8 @@ class HarnessApp:
             "last_enqueued_in_session_id": session_id,
         }
         if previous is None:
-            task = self.repos.tasks.create(
-                task_id=self.repos.tasks.next_id(project_id=project_id),
+            task = await self.repos.tasks.create(
+                task_id=await self.repos.tasks.next_id(project_id=project_id),
                 project_id=project_id,
                 created_in_session_id=session_id,
                 title=REUSABLE_PLAN_TASK_TITLE,
@@ -461,7 +473,7 @@ class HarnessApp:
             event_message = f"Created task {task.id}"
             activity_type = "planning_task_queued"
         else:
-            task = self.repos.tasks.requeue(
+            task = await self.repos.tasks.requeue(
                 task_id=previous.id,
                 title=REUSABLE_PLAN_TASK_TITLE,
                 content=content,
@@ -475,7 +487,7 @@ class HarnessApp:
             event_message = f"Requeued planning task {task.id}"
             activity_type = "planning_task_requeued"
 
-        event = self.record_event(
+        event = await self.record_event(
             event_type=event_type,
             message=event_message,
             session_id=session_id,
@@ -486,7 +498,7 @@ class HarnessApp:
                 "planning_pass_count": payload["planning_pass_count"],
             },
         )
-        activity = self.repos.task_activities.add(
+        activity = await self.repos.task_activities.add(
             project_id=project_id,
             task_id=task.id,
             created_in_session_id=session_id,
@@ -503,10 +515,10 @@ class HarnessApp:
         self.publish_record(record=activity, cursor=event.id)
         return task
 
-    def _reusable_plan_task(self, *, project_id: str) -> TaskRecord | None:
+    async def _reusable_plan_task(self, *, project_id: str) -> TaskRecord | None:
         candidates = [
             task
-            for task in self.repos.tasks.list_for_project(project_id=project_id)
+            for task in await self.repos.tasks.list_for_project(project_id=project_id)
             if _is_reusable_plan_task(task)
             and task.status not in {TaskStatus.ABANDONED, TaskStatus.FAILED}
         ]
@@ -514,7 +526,7 @@ class HarnessApp:
             return None
         return sorted(candidates, key=lambda task: task.created_at)[0]
 
-    def _enqueue_experiment_review_task(
+    async def _enqueue_experiment_review_task(
         self,
         *,
         session_id: str,
@@ -522,19 +534,19 @@ class HarnessApp:
         experiment_id: str,
         source_task_id: str,
     ) -> TaskRecord:
-        existing_review_task = self._existing_experiment_review_task(
+        existing_review_task = await self._existing_experiment_review_task(
             project_id=project_id,
             experiment_id=experiment_id,
         )
         if existing_review_task is not None:
             return existing_review_task
 
-        experiment = self.repos.experiments.get(experiment_id=experiment_id)
-        evaluations = self.repos.evaluations.list_for_experiment(experiment_id=experiment_id)
+        experiment = await self.repos.experiments.get(experiment_id=experiment_id)
+        evaluations = await self.repos.evaluations.list_for_experiment(experiment_id=experiment_id)
         measurements = [
             measurement
             for evaluation in evaluations
-            for measurement in self.repos.measurements.list_for_evaluation(
+            for measurement in await self.repos.measurements.list_for_evaluation(
                 evaluation_id=evaluation.id
             )
         ]
@@ -543,8 +555,8 @@ class HarnessApp:
             if experiment is not None and experiment.title
             else f"Review {experiment_id}"
         )
-        task = self.repos.tasks.create(
-            task_id=self.repos.tasks.next_id(project_id=project_id),
+        task = await self.repos.tasks.create(
+            task_id=await self.repos.tasks.next_id(project_id=project_id),
             project_id=project_id,
             created_in_session_id=session_id,
             title=title,
@@ -569,7 +581,7 @@ class HarnessApp:
             },
         )
         links = [
-            self.repos.task_entity_links.create(
+            await self.repos.task_entity_links.create(
                 project_id=project_id,
                 task_id=task.id,
                 entity_kind=TaskEntityKind.EXPERIMENT,
@@ -579,7 +591,7 @@ class HarnessApp:
         ]
         for evaluation in evaluations:
             links.append(
-                self.repos.task_entity_links.create(
+                await self.repos.task_entity_links.create(
                     project_id=project_id,
                     task_id=task.id,
                     entity_kind=TaskEntityKind.EVALUATION,
@@ -589,7 +601,7 @@ class HarnessApp:
             )
         for measurement in measurements:
             links.append(
-                self.repos.task_entity_links.create(
+                await self.repos.task_entity_links.create(
                     project_id=project_id,
                     task_id=task.id,
                     entity_kind=TaskEntityKind.MEASUREMENT,
@@ -597,7 +609,7 @@ class HarnessApp:
                     relationship="reviews",
                 )
             )
-        event = self.record_event(
+        event = await self.record_event(
             event_type="task.created",
             message=f"Created review task {task.id}",
             session_id=session_id,
@@ -613,13 +625,13 @@ class HarnessApp:
             self.publish_record(record=link, cursor=event.id)
         return task
 
-    def _existing_experiment_review_task(
+    async def _existing_experiment_review_task(
         self,
         *,
         project_id: str,
         experiment_id: str,
     ) -> TaskRecord | None:
-        for task in self.repos.tasks.list_for_project(project_id=project_id):
+        for task in await self.repos.tasks.list_for_project(project_id=project_id):
             if (
                 task.kind == TaskKind.REVIEW
                 and task.payload.get("experiment_id") == experiment_id
@@ -627,31 +639,78 @@ class HarnessApp:
                 return task
         return None
 
-    def _claim_next_task(
+    async def _claim_next_task(
         self,
         *,
         session_id: str,
         agent_kind: AgentKind,
     ) -> TaskRecord | None:
-        session = self.repos.sessions.get(session_id=session_id)
+        session = await self.repos.sessions.get(session_id=session_id)
         if session is None or session.project_id is None:
             return None
-        agent = self.repos.agents.ensure_project_agent(
-            project_id=session.project_id,
-            created_in_session_id=session_id,
-            kind=agent_kind,
-            display_name=_agent_display_name(agent_kind),
-        )
-        task = self.repos.tasks.claim_next(
-            project_id=session.project_id,
-            agent_id=agent.id,
-            eligible_kinds=eligible_task_kinds_for_agent(agent.kind),
-            claimed_in_session_id=session_id,
-        )
+
+        eligible_kinds = eligible_task_kinds_for_agent(agent_kind)
+        if agent_kind == AgentKind.MANAGER:
+            agent = await self.repos.agents.ensure_project_agent(
+                project_id=session.project_id,
+                created_in_session_id=session_id,
+                kind=agent_kind,
+                display_name=_agent_display_name(agent_kind),
+            )
+            task = await self.repos.tasks.claim_next(
+                project_id=session.project_id,
+                agent_id=agent.id,
+                eligible_kinds=eligible_kinds,
+                claimed_in_session_id=session_id,
+            )
+        else:
+            task = None
+            agent = None
+            for candidate in await self.repos.tasks.list_runnable_for_project(
+                project_id=session.project_id,
+                eligible_kinds=eligible_kinds,
+            ):
+                display_name = f"{_agent_display_name(agent_kind)} {candidate.id}"
+                existing_agent = await self.repos.agents.get(
+                    agent_id=f"agent_{session.project_id}_{agent_kind.value}_{candidate.id}"
+                )
+                candidate_agent = await self.repos.agents.ensure_task_agent(
+                    project_id=session.project_id,
+                    task_id=candidate.id,
+                    created_in_session_id=session_id,
+                    kind=agent_kind,
+                    display_name=display_name,
+                )
+                if existing_agent is None:
+                    created_event = await self.record_event(
+                        event_type="agent.created",
+                        message=f"Created {display_name} agent",
+                        session_id=session_id,
+                        project_id=session.project_id,
+                        payload={
+                            "agent_id": candidate_agent.id,
+                            "kind": candidate_agent.kind.value,
+                            "task_id": candidate.id,
+                        },
+                    )
+                    self.publish_record(record=candidate_agent, cursor=created_event.id)
+                claimed = await self.repos.tasks.claim(
+                    task_id=candidate.id,
+                    agent_id=candidate_agent.id,
+                    eligible_kinds=eligible_kinds,
+                    claimed_in_session_id=session_id,
+                )
+                if claimed is not None:
+                    task = claimed
+                    agent = candidate_agent
+                    break
+
         if task is None:
             return None
-        updated_agent = self.repos.agents.update(agent_id=agent.id, status=AgentStatus.ACTIVE) or agent
-        event = self.record_event(
+        if agent is None:
+            raise RuntimeError(f"missing agent for claimed task {task.id}")
+        updated_agent = await self.repos.agents.update(agent_id=agent.id, status=AgentStatus.ACTIVE) or agent
+        event = await self.record_event(
             event_type="task.claimed",
             message=f"Claimed task {task.id}",
             session_id=session_id,
@@ -662,7 +721,7 @@ class HarnessApp:
         self.publish_record(record=updated_agent, cursor=event.id)
         return task
 
-    def _finish_claimed_task(
+    async def _finish_claimed_task(
         self,
         *,
         task: TaskRecord,
@@ -670,23 +729,23 @@ class HarnessApp:
         status: TaskStatus,
         result_summary: str,
     ) -> None:
-        current = self.repos.tasks.get(task_id=task.id) or task
+        current = await self.repos.tasks.get(task_id=task.id) or task
         terminal_statuses = {TaskStatus.DONE, TaskStatus.ABANDONED, TaskStatus.FAILED}
         if current.status in terminal_statuses:
             if current.assignee_id is not None:
-                updated_agent = self.repos.agents.update(
+                updated_agent = await self.repos.agents.update(
                     agent_id=current.assignee_id,
                     status=AgentStatus.IDLE,
                 )
                 if updated_agent is not None:
                     self.publish_record(
                         record=updated_agent,
-                        cursor=self.collections_api.current_cursor(
+                        cursor=await self.collections_api.current_cursor(
                             workspace_id=self.context.workspace_id
                         ),
                     )
             return
-        updated_task = self.repos.tasks.update(
+        updated_task = await self.repos.tasks.update(
             task_id=task.id,
             status=status,
             result_summary=current.result_summary or result_summary,
@@ -695,11 +754,11 @@ class HarnessApp:
         if updated_task is None:
             return
         updated_agent = (
-            self.repos.agents.update(agent_id=updated_task.assignee_id, status=AgentStatus.IDLE)
+            await self.repos.agents.update(agent_id=updated_task.assignee_id, status=AgentStatus.IDLE)
             if updated_task.assignee_id is not None
             else None
         )
-        event = self.record_event(
+        event = await self.record_event(
             event_type=f"task.{updated_task.status.value}",
             message=f"Finished task {updated_task.id}",
             session_id=session_id,
@@ -711,7 +770,7 @@ class HarnessApp:
         )
         activity = None
         if _is_reusable_plan_task(updated_task):
-            activity = self.repos.task_activities.add(
+            activity = await self.repos.task_activities.add(
                 project_id=updated_task.project_id,
                 task_id=updated_task.id,
                 created_in_session_id=session_id,
@@ -731,14 +790,31 @@ class HarnessApp:
             self.publish_record(record=updated_agent, cursor=event.id)
 
     def _execute_session(self, session_id: str, max_experiments: int) -> None:
+        _raise_if_running_loop(
+            sync_name="HarnessApp._execute_session",
+            async_name="HarnessApp._execute_session_async",
+        )
+        asyncio.run(
+            self._execute_session_async(
+                session_id=session_id,
+                max_experiments=max_experiments,
+            )
+        )
+
+    async def _execute_session_async(
+        self,
+        *,
+        session_id: str,
+        max_experiments: int,
+    ) -> None:
         active_task: TaskRecord | None = None
         try:
-            workspace = self.repos.workspaces.get()
-            session = self.repos.sessions.get(session_id=session_id)
+            workspace = await self.repos.workspaces.get()
+            session = await self.repos.sessions.get(session_id=session_id)
             if workspace is None or session is None:
                 raise RuntimeError("missing workspace setup")
 
-            setup = self._session_setup.get(session_id) or self._setup_from_records(
+            setup = self._session_setup.get(session_id) or await self._setup_from_records(
                 session_id
             )
             runtime = self._get_agent_runtime()
@@ -756,12 +832,12 @@ class HarnessApp:
                 workspace=workspace.repo_path,
             ):
                 while True:
-                    session = self.repos.sessions.get(session_id=session_id)
+                    session = await self.repos.sessions.get(session_id=session_id)
                     if session is None or session.status == SessionStatus.CLOSED:
                         return
                     if (
                         session.project_id is not None
-                        and self._project_is_closed(session.project_id)
+                        and await self._project_is_closed(session.project_id)
                     ):
                         completion_summary = "Project is closed."
                         break
@@ -773,7 +849,7 @@ class HarnessApp:
                         )
                         break
 
-                    critic_task = self._claim_next_task(
+                    critic_task = await self._claim_next_task(
                         session_id=session_id,
                         agent_kind=AgentKind.CRITIC,
                     )
@@ -781,7 +857,7 @@ class HarnessApp:
                         active_task = critic_task
                         no_progress_plans = 0
                         agent_passes += 1
-                        result = self._run_agent_pass(
+                        result = await self._run_agent_pass(
                             session_id=session_id,
                             project_id=critic_task.project_id,
                             task=critic_task,
@@ -797,13 +873,13 @@ class HarnessApp:
                             ),
                         )
                         completion_summary = result.summary
-                        self._finish_claimed_task(
+                        await self._finish_claimed_task(
                             task=critic_task,
                             session_id=session_id,
                             status=TaskStatus.DONE,
                             result_summary=result.summary,
                         )
-                        self.record_event(
+                        await self.record_event(
                             event_type="session.critic_completed",
                             message=result.summary,
                             session_id=session_id,
@@ -812,8 +888,8 @@ class HarnessApp:
                         )
                         active_task = None
 
-                        if self._experiment_count(session_id) < max_experiments:
-                            self._enqueue_plan_task(
+                        if await self._experiment_count(session_id) < max_experiments:
+                            await self._enqueue_plan_task(
                                 session_id=session_id,
                                 project_id=critic_task.project_id,
                                 title="Plan from critic review",
@@ -828,7 +904,7 @@ class HarnessApp:
                             )
                         continue
 
-                    completed_experiments = self._experiment_count(session_id)
+                    completed_experiments = await self._experiment_count(session_id)
                     remaining_experiments = max(
                         0,
                         max_experiments - completed_experiments,
@@ -839,14 +915,14 @@ class HarnessApp:
                         )
                         break
 
-                    manager_task = self._claim_next_task(
+                    manager_task = await self._claim_next_task(
                         session_id=session_id,
                         agent_kind=AgentKind.MANAGER,
                     )
                     if manager_task is not None:
                         active_task = manager_task
                         agent_passes += 1
-                        manager_result = self._run_agent_pass(
+                        manager_result = await self._run_agent_pass(
                             session_id=session_id,
                             project_id=manager_task.project_id,
                             task=manager_task,
@@ -861,27 +937,27 @@ class HarnessApp:
                             ),
                         )
                         completion_summary = manager_result.summary
-                        self.record_event(
+                        await self.record_event(
                             event_type="session.manager_completed",
                             message=manager_result.summary,
                             session_id=session_id,
                             project_id=manager_task.project_id,
                             payload=manager_result.model_dump(),
                         )
-                        self._finish_claimed_task(
+                        await self._finish_claimed_task(
                             task=manager_task,
                             session_id=session_id,
                             status=TaskStatus.DONE,
                             result_summary=manager_result.summary,
                         )
                         active_task = None
-                        if self._project_is_closed(manager_task.project_id):
+                        if await self._project_is_closed(manager_task.project_id):
                             completion_summary = (
                                 "Project was closed by Manager confirmation."
                             )
                             break
 
-                    researcher_task = self._claim_next_task(
+                    researcher_task = await self._claim_next_task(
                         session_id=session_id,
                         agent_kind=AgentKind.RESEARCHER,
                     )
@@ -889,7 +965,7 @@ class HarnessApp:
                         active_task = researcher_task
                         no_progress_plans = 0
                         agent_passes += 1
-                        result = self._run_agent_pass(
+                        result = await self._run_agent_pass(
                             session_id=session_id,
                             project_id=researcher_task.project_id,
                             task=researcher_task,
@@ -905,13 +981,13 @@ class HarnessApp:
                             ),
                         )
                         completion_summary = result.summary
-                        self._finish_claimed_task(
+                        await self._finish_claimed_task(
                             task=researcher_task,
                             session_id=session_id,
                             status=TaskStatus.DONE,
                             result_summary=result.summary,
                         )
-                        self.record_event(
+                        await self.record_event(
                             event_type="session.researcher_completed",
                             message=result.summary,
                             session_id=session_id,
@@ -919,7 +995,7 @@ class HarnessApp:
                             payload=result.model_dump(),
                         )
                         active_task = None
-                        self._enqueue_plan_task(
+                        await self._enqueue_plan_task(
                             session_id=session_id,
                             project_id=researcher_task.project_id,
                             title="Plan next research step",
@@ -934,7 +1010,7 @@ class HarnessApp:
                         )
                         continue
 
-                    scientist_task = self._claim_next_task(
+                    scientist_task = await self._claim_next_task(
                         session_id=session_id,
                         agent_kind=AgentKind.SCIENTIST,
                     )
@@ -946,7 +1022,7 @@ class HarnessApp:
                         execution_repo_path = workspace.repo_path
                         active_experiment_id: str | None = None
                         if scientist_task.kind == TaskKind.EXPERIMENT:
-                            prepared_experiment = self._prepare_experiment_task(
+                            prepared_experiment = await self._prepare_experiment_task(
                                 task=scientist_task,
                                 session_id=session_id,
                                 workspace_repo_path=workspace.repo_path,
@@ -957,7 +1033,7 @@ class HarnessApp:
                             active_experiment_id = prepared_experiment.experiment.id
 
                         try:
-                            result = self._run_agent_pass(
+                            result = await self._run_agent_pass(
                                 session_id=session_id,
                                 project_id=scientist_task.project_id,
                                 task=scientist_task,
@@ -979,19 +1055,19 @@ class HarnessApp:
                             )
                         finally:
                             if prepared_experiment is not None:
-                                self._complete_experiment_task(
+                                await self._complete_experiment_task(
                                     experiment_id=prepared_experiment.experiment.id,
                                     session_id=session_id,
                                     workspace_repo_path=workspace.repo_path,
                                 )
                         completion_summary = result.summary
-                        self._finish_claimed_task(
+                        await self._finish_claimed_task(
                             task=scientist_task,
                             session_id=session_id,
                             status=TaskStatus.DONE,
                             result_summary=result.summary,
                         )
-                        self.record_event(
+                        await self.record_event(
                             event_type="session.agent_completed",
                             message=result.summary,
                             session_id=session_id,
@@ -1002,14 +1078,14 @@ class HarnessApp:
 
                         if scientist_task.kind == TaskKind.EXPERIMENT:
                             assert active_experiment_id is not None
-                            self._enqueue_experiment_review_task(
+                            await self._enqueue_experiment_review_task(
                                 session_id=session_id,
                                 project_id=scientist_task.project_id,
                                 experiment_id=active_experiment_id,
                                 source_task_id=scientist_task.id,
                             )
                         else:
-                            self._enqueue_plan_task(
+                            await self._enqueue_plan_task(
                                 session_id=session_id,
                                 project_id=scientist_task.project_id,
                                 title="Plan next experiment step",
@@ -1038,7 +1114,7 @@ class HarnessApp:
                     if project_id is None:
                         completion_summary = "Stopped because the current run has no project."
                         break
-                    self._enqueue_plan_task(
+                    await self._enqueue_plan_task(
                         session_id=session_id,
                         project_id=project_id,
                         title="Plan runnable next step",
@@ -1052,7 +1128,7 @@ class HarnessApp:
                         source_kind="system",
                     )
 
-            self._close_session(
+            await self._close_session(
                 session_id=session_id,
                 event_type="session.completed",
                 message=f"Completed {session_id}: {completion_summary}",
@@ -1060,37 +1136,37 @@ class HarnessApp:
             )
         except Exception as error:
             if active_task is not None:
-                self._finish_claimed_task(
+                await self._finish_claimed_task(
                     task=active_task,
                     session_id=session_id,
                     status=TaskStatus.FAILED,
                     result_summary=str(error),
                 )
-            self._close_session(
+            await self._close_session(
                 session_id=session_id,
                 event_type="session.failed",
                 message=f"Session failed: {error}",
                 payload={"error": str(error)},
             )
 
-    def _run_agent_pass(
+    async def _run_agent_pass(
         self,
         *,
         session_id: str,
         project_id: str,
         task: TaskRecord,
         agent_kind: AgentKind,
-        run: Callable[[], Any],
+        run: Callable[[], Awaitable[Any]],
     ) -> Any:
         max_attempts = AGENT_PASS_TIMEOUT_RETRIES + 1
         for attempt in range(1, max_attempts + 1):
             try:
-                return run()
+                return await run()
             except Exception as error:
                 if not _is_timeout_or_cancellation_error(error):
                     raise
                 will_retry = attempt < max_attempts
-                self._record_agent_pass_timeout(
+                await self._record_agent_pass_timeout(
                     session_id=session_id,
                     project_id=project_id,
                     task=task,
@@ -1104,7 +1180,7 @@ class HarnessApp:
                     raise
         raise RuntimeError("agent pass retry loop ended unexpectedly")
 
-    def _record_agent_pass_timeout(
+    async def _record_agent_pass_timeout(
         self,
         *,
         session_id: str,
@@ -1128,7 +1204,7 @@ class HarnessApp:
             "error_type": type(error).__name__,
             "error": str(error),
         }
-        activity = self.repos.task_activities.add(
+        activity = await self.repos.task_activities.add(
             project_id=project_id,
             task_id=task.id,
             actor="system",
@@ -1140,7 +1216,7 @@ class HarnessApp:
             created_in_session_id=session_id,
             payload=payload,
         )
-        event = self.record_event(
+        event = await self.record_event(
             event_type="session.agent_timeout",
             message=(
                 f"{label} pass timed out on {task.id}; "
@@ -1152,17 +1228,17 @@ class HarnessApp:
         )
         self.publish_record(record=activity, cursor=event.id)
 
-    def _prepare_experiment_task(
+    async def _prepare_experiment_task(
         self,
         *,
         task: TaskRecord,
         session_id: str,
         workspace_repo_path: str,
     ) -> PreparedExperimentTask:
-        experiment_id = _experiment_id_from_task(task) or self.repos.experiments.next_id(
+        experiment_id = _experiment_id_from_task(task) or await self.repos.experiments.next_id(
             project_id=task.project_id
         )
-        existing = self.repos.experiments.get(experiment_id=experiment_id)
+        existing = await self.repos.experiments.get(experiment_id=experiment_id)
         parent_experiment_id = (
             existing.parent_experiment_id
             if existing is not None and existing.parent_experiment_id is not None
@@ -1170,7 +1246,7 @@ class HarnessApp:
         )
         parent_experiment = None
         if parent_experiment_id is not None:
-            parent_experiment = self.repos.experiments.get(
+            parent_experiment = await self.repos.experiments.get(
                 experiment_id=parent_experiment_id
             )
             if parent_experiment is None or parent_experiment.project_id != task.project_id:
@@ -1200,7 +1276,7 @@ class HarnessApp:
         )
 
         if existing is None:
-            experiment = self.repos.experiments.create(
+            experiment = await self.repos.experiments.create(
                 experiment_id=experiment_id,
                 project_id=task.project_id,
                 created_in_session_id=session_id,
@@ -1212,7 +1288,7 @@ class HarnessApp:
                 parent_experiment_id=parent_experiment_id,
                 research_thread=research_thread,
             )
-            event = self.record_event(
+            event = await self.record_event(
                 event_type="experiment.created",
                 message=f"Created experiment {experiment.id}",
                 session_id=session_id,
@@ -1222,7 +1298,7 @@ class HarnessApp:
             self.publish_record(record=experiment, cursor=event.id)
         else:
             experiment = (
-                self.repos.experiments.update(
+                await self.repos.experiments.update(
                     experiment_id=experiment_id,
                     status=WorkStatus.ACTIVE,
                     worktree_path=str(worktree.workspace_path),
@@ -1233,7 +1309,7 @@ class HarnessApp:
                 or existing
             )
 
-        link = self.repos.task_entity_links.create(
+        link = await self.repos.task_entity_links.create(
             project_id=task.project_id,
             task_id=task.id,
             entity_kind=TaskEntityKind.EXPERIMENT,
@@ -1241,7 +1317,7 @@ class HarnessApp:
             relationship="produces",
         )
         updated_task = (
-            self.repos.tasks.update(
+            await self.repos.tasks.update(
                 task_id=task.id,
                 payload={
                     **task.payload,
@@ -1262,7 +1338,7 @@ class HarnessApp:
             )
             or task
         )
-        event = self.record_event(
+        event = await self.record_event(
             event_type="experiment.worktree_ready",
             message=f"Prepared worktree for {experiment.id}",
             session_id=session_id,
@@ -1286,14 +1362,14 @@ class HarnessApp:
             repo_path=str(worktree.workspace_path),
         )
 
-    def _complete_experiment_task(
+    async def _complete_experiment_task(
         self,
         *,
         experiment_id: str,
         session_id: str,
         workspace_repo_path: str,
     ) -> None:
-        experiment = self.repos.experiments.get(experiment_id=experiment_id)
+        experiment = await self.repos.experiments.get(experiment_id=experiment_id)
         if experiment is None:
             return
 
@@ -1320,7 +1396,7 @@ class HarnessApp:
                 candidate_ref = candidate_state.candidate_ref
                 post_commit_state = candidate_state.post_commit_worktree.model_dump()
                 if candidate_commit is not None:
-                    patch_artifact_id = self._capture_experiment_patch_artifact(
+                    patch_artifact_id = await self._capture_experiment_patch_artifact(
                         experiment=experiment,
                         session_id=session_id,
                         candidate_commit=candidate_commit,
@@ -1344,7 +1420,7 @@ class HarnessApp:
         if post_commit_state is not None:
             activity_payload["post_commit_worktree"] = post_commit_state
 
-        activity = self.repos.experiment_activities.add(
+        activity = await self.repos.experiment_activities.add(
             experiment_id=experiment.id,
             created_in_session_id=session_id,
             actor="harness",
@@ -1352,12 +1428,12 @@ class HarnessApp:
             body=f"Captured final worktree state for {experiment.id}.",
             payload=activity_payload,
         )
-        closed = self.repos.experiments.update(
+        closed = await self.repos.experiments.update(
             experiment_id=experiment.id,
             status=WorkStatus.CLOSED,
             candidate_commit=candidate_commit,
         ) or experiment
-        event = self.record_event(
+        event = await self.record_event(
             event_type="experiment.worktree_completed",
             message=f"Captured final worktree state for {experiment.id}",
             session_id=session_id,
@@ -1372,7 +1448,7 @@ class HarnessApp:
         self.publish_record(record=activity, cursor=event.id)
         self.publish_record(record=closed, cursor=event.id)
 
-    def _capture_experiment_patch_artifact(
+    async def _capture_experiment_patch_artifact(
         self,
         *,
         experiment: ExperimentRecord,
@@ -1414,13 +1490,13 @@ class HarnessApp:
         if not patch.strip():
             return None
 
-        artifact_id = self.repos.artifacts.next_id(project_id=experiment.project_id)
+        artifact_id = await self.repos.artifacts.next_id(project_id=experiment.project_id)
         patch_dir = self.context.project_dir / "artifacts" / "patches" / experiment.project_id
         patch_dir.mkdir(parents=True, exist_ok=True)
         patch_path = patch_dir / f"{artifact_id}-{experiment.id}.patch"
         patch_path.write_text(patch, encoding="utf-8")
 
-        artifact = self.repos.artifacts.create(
+        artifact = await self.repos.artifacts.create(
             artifact_id=artifact_id,
             project_id=experiment.project_id,
             created_in_session_id=session_id,
@@ -1435,12 +1511,12 @@ class HarnessApp:
             media_type="text/x-patch",
             size_bytes=patch_path.stat().st_size,
         )
-        linked_tasks = self.repos.task_entity_links.list_for_entity(
+        linked_tasks = await self.repos.task_entity_links.list_for_entity(
             entity_kind=TaskEntityKind.EXPERIMENT,
             entity_id=experiment.id,
         )
         artifact_links = [
-            self.repos.task_entity_links.create(
+            await self.repos.task_entity_links.create(
                 project_id=experiment.project_id,
                 task_id=link.task_id,
                 entity_kind=TaskEntityKind.ARTIFACT,
@@ -1449,7 +1525,7 @@ class HarnessApp:
             )
             for link in linked_tasks
         ]
-        activity = self.repos.experiment_activities.add(
+        activity = await self.repos.experiment_activities.add(
             experiment_id=experiment.id,
             created_in_session_id=session_id,
             actor="harness",
@@ -1470,7 +1546,7 @@ class HarnessApp:
                 "apply_command": f"situ apply {artifact.id}",
             },
         )
-        event = self.record_event(
+        event = await self.record_event(
             event_type="experiment.patch_captured",
             message=f"Captured patch artifact {artifact.id} from {experiment.id}",
             session_id=session_id,
@@ -1488,14 +1564,14 @@ class HarnessApp:
         self.publish_record(record=activity, cursor=event.id)
         return artifact.id
 
-    def _experiment_count(self, session_id: str) -> int:
-        return len(self.repos.experiments.list_for_session(session_id=session_id))
+    async def _experiment_count(self, session_id: str) -> int:
+        return len(await self.repos.experiments.list_for_session(session_id=session_id))
 
-    def _project_is_closed(self, project_id: str) -> bool:
-        project = self.repos.projects.get(project_id=project_id)
+    async def _project_is_closed(self, project_id: str) -> bool:
+        project = await self.repos.projects.get(project_id=project_id)
         return project is not None and project.status == ProjectStatus.CLOSED
 
-    def _close_session(
+    async def _close_session(
         self,
         *,
         session_id: str,
@@ -1503,8 +1579,8 @@ class HarnessApp:
         message: str,
         payload: dict[str, Any] | None = None,
     ) -> None:
-        session = self.repos.sessions.update_status(session_id=session_id, status="closed")
-        event = self.record_event(
+        session = await self.repos.sessions.update_status(session_id=session_id, status="closed")
+        event = await self.record_event(
             event_type=event_type,
             message=message,
             session_id=session_id,
@@ -1514,10 +1590,10 @@ class HarnessApp:
         if session is not None:
             self.publish_record(record=session, cursor=event.id)
 
-    def _setup_from_records(self, session_id: str) -> dict[str, str]:
-        session = self.repos.sessions.get(session_id=session_id)
+    async def _setup_from_records(self, session_id: str) -> dict[str, str]:
+        session = await self.repos.sessions.get(session_id=session_id)
         project = (
-            self.repos.projects.get(project_id=session.project_id)
+            await self.repos.projects.get(project_id=session.project_id)
             if session is not None and session.project_id is not None
             else None
         )
@@ -1537,12 +1613,27 @@ class HarnessApp:
         session_id: str,
         max_experiments: int,
     ) -> None:
+        def run_session() -> None:
+            asyncio.run(
+                self._execute_session_async(
+                    session_id=session_id,
+                    max_experiments=max_experiments,
+                )
+            )
+
         thread = threading.Thread(
-            target=self._execute_session,
-            args=(session_id, max_experiments),
+            target=run_session,
             daemon=True,
         )
         thread.start()
+
+
+def _raise_if_running_loop(*, sync_name: str, async_name: str) -> None:
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return
+    raise RuntimeError(f"{sync_name} cannot run inside an event loop; use {async_name}.")
 
 
 def _planning_pass_count(task: TaskRecord | None) -> int:

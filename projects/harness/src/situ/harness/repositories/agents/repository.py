@@ -52,7 +52,7 @@ class AgentsRepository(BaseRepository):
             status=checked_status,
         )
         now = utc_now()
-        self.db.execute(
+        self.db.execute_blocking(
             """
             INSERT INTO agents
               (id, project_id, created_in_session_id, kind, display_name, model_name,
@@ -100,6 +100,32 @@ class AgentsRepository(BaseRepository):
             model_name=model_name,
         )
 
+    def ensure_task_agent(
+        self,
+        *,
+        project_id: str,
+        task_id: str,
+        kind: AgentKind | str,
+        display_name: str,
+        model_name: str | None = None,
+        created_in_session_id: str | None = None,
+    ) -> AgentRecord:
+        checked_kind = parse_agent_kind(kind)
+        agent_id = f"agent_{project_id}_{checked_kind.value}_{task_id}"
+        existing = self.get(agent_id=agent_id)
+        if existing is not None:
+            if model_name is not None and existing.model_name != model_name:
+                return self.update(agent_id=existing.id, model_name=model_name) or existing
+            return existing
+        return self.create(
+            agent_id=agent_id,
+            project_id=project_id,
+            created_in_session_id=created_in_session_id,
+            kind=checked_kind,
+            display_name=display_name,
+            model_name=model_name,
+        )
+
     def ensure_session_agent(
         self,
         *,
@@ -139,7 +165,7 @@ class AgentsRepository(BaseRepository):
         current = self.get(agent_id=command.agent_id)
         if current is None:
             return None
-        self.db.execute(
+        self.db.execute_blocking(
             """
             UPDATE agents
             SET display_name = ?, model_name = ?, status = ?, updated_at = ?
@@ -156,7 +182,7 @@ class AgentsRepository(BaseRepository):
         return self.get(agent_id=command.agent_id)
 
     def get(self, *, agent_id: str) -> AgentRecord | None:
-        row = self.db.fetchone("SELECT * FROM agents WHERE id = ?", (agent_id,))
+        row = self.db.fetchone_blocking("SELECT * FROM agents WHERE id = ?", (agent_id,))
         return _agent_row(row) if row else None
 
     def get_for_project_kind(
@@ -166,7 +192,7 @@ class AgentsRepository(BaseRepository):
         kind: AgentKind | str,
     ) -> AgentRecord | None:
         checked_kind = parse_agent_kind(kind)
-        row = self.db.fetchone(
+        row = self.db.fetchone_blocking(
             """
             SELECT * FROM agents
             WHERE project_id = ? AND kind = ?
@@ -189,12 +215,12 @@ class AgentsRepository(BaseRepository):
         return self.get_for_project_kind(project_id=project_id, kind=kind)
 
     def list_all(self) -> list[AgentRecord]:
-        return [_agent_row(row) for row in self.db.fetchall("SELECT * FROM agents ORDER BY created_at")]
+        return [_agent_row(row) for row in self.db.fetchall_blocking("SELECT * FROM agents ORDER BY created_at")]
 
     def list_for_project(self, *, project_id: str) -> list[AgentRecord]:
         return [
             _agent_row(row)
-            for row in self.db.fetchall(
+            for row in self.db.fetchall_blocking(
                 "SELECT * FROM agents WHERE project_id = ? ORDER BY created_at",
                 (project_id,),
             )
@@ -209,5 +235,5 @@ class AgentsRepository(BaseRepository):
         )
 
     def _project_id_for_session(self, session_id: str) -> str | None:
-        row = self.db.fetchone("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
+        row = self.db.fetchone_blocking("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
         return row["project_id"] if row else None

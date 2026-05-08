@@ -153,17 +153,16 @@ filter or search entry. Free-text entry should appear only in an intentional
 mode, such as a command prompt, setup prompt, reconnect choice, confirmation,
 filter, or future note composer.
 
-The first slice command palette should stay small and operational. It may expose
-status, help, and quit, but should not send arbitrary user text to the agent.
+The command palette stays small and operational. It may expose status,
+help, and quit, but does not send arbitrary user text to the agent.
 When the command palette is opened from the live dashboard, it should replace
 the activity pane in place. It must not render below the full-screen frame or
 change the dashboard's overall height.
 
 ## Setup
 
-For the current implementation slice, setup is resolved before the live
-observability screen through CLI-provided objective/context or interactive TUI
-onboarding:
+Setup is resolved before the live observability screen through CLI-provided
+objective/context or interactive TUI onboarding:
 
 - Required local model provider secret when it is not already available.
 - Optional local Logfire token.
@@ -171,16 +170,16 @@ onboarding:
 - Research context: how progress is judged, relevant evals, tools, metrics,
   dashboards, logs, artifacts, and in-scope experiment types
 
-The onboarding should accept sparse plaintext and preserve it rather than
-forcing a rigid form. Avoid advanced setup screens for autonomy, budgets,
-directions, or guidance in the first slice.
+The onboarding accepts sparse plaintext and preserves it rather than
+forcing a rigid form. Advanced setup screens for autonomy, budgets,
+directions, or guidance are out of scope.
 
 Provider secrets are not research context. The TUI may collect them as setup
 prerequisites, but it must not render, log, or persist them as session,
 activity, event, or artifact content.
 
 The TUI secret check reads the local Situ secret store only. Situ-scoped eval
-environment secrets such as `SITU_OPENAI_KEY` and `SITU_LOGFIRE_TOKEN` are not
+environment secrets such as `SITU_ANTHROPIC_KEY` and `SITU_LOGFIRE_TOKEN` are not
 local runtime credentials and must not bypass TUI secret onboarding. A missing
 local Logfire token must not block local runs.
 

@@ -21,6 +21,8 @@ not so detailed that it prematurely designs code.
   decision it governs.
 - The spec explains why the decision matters, not only what the decision is.
 - The spec defines what is in scope and what is intentionally deferred.
+- The spec describes end state, not implementation steps. See
+  [`../0033-specs-as-end-state/POLICY.md`](../0033-specs-as-end-state/POLICY.md).
 - The spec uses product language first and implementation details only when they
   define a boundary or guarantee.
 - The spec is actionable for future implementation and review.

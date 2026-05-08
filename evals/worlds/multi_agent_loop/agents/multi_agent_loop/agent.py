@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import asyncio
+
 from situ.harness.agents import (
     ManagerAgent,
     ManagerAgentContext,
@@ -225,12 +227,14 @@ def _run_manager_pass(
         model=eval_model_name(),
         capabilities=[capture],
     )
-    result = agent.run_sync(
-        ManagerAgentContext(
-            deps=_tool_deps(world, MANAGER_AGENT_ID),
-            setup_objective=args.objective,
-            setup_research_context=args.research_context,
-            assigned_task_ids=[active_task.id] if active_task is not None else [],
+    result = asyncio.run(
+        agent.run(
+            ManagerAgentContext(
+                deps=_tool_deps(world, MANAGER_AGENT_ID),
+                setup_objective=args.objective,
+                setup_research_context=args.research_context,
+                assigned_task_ids=[active_task.id] if active_task is not None else [],
+            )
         )
     )
     capture.tool_calls.extend(captured_builtin_tool_calls_from_result(result))
@@ -248,13 +252,15 @@ def _run_scientist_pass(
         model=eval_model_name(),
         capabilities=[capture],
     )
-    result = agent.run_sync(
-        ScientistAgentContext(
-            deps=_tool_deps(world, SCIENTIST_AGENT_ID),
-            setup_objective=args.objective,
-            setup_research_context=args.research_context,
-            max_experiments=1,
-            assigned_task_ids=[active_task.id],
+    result = asyncio.run(
+        agent.run(
+            ScientistAgentContext(
+                deps=_tool_deps(world, SCIENTIST_AGENT_ID),
+                setup_objective=args.objective,
+                setup_research_context=args.research_context,
+                max_experiments=1,
+                assigned_task_ids=[active_task.id],
+            )
         )
     )
     capture.tool_calls.extend(captured_builtin_tool_calls_from_result(result))
@@ -272,12 +278,14 @@ def _run_researcher_pass(
         model=eval_model_name(),
         capabilities=[capture],
     )
-    result = agent.run_sync(
-        ResearcherAgentContext(
-            deps=_tool_deps(world, RESEARCHER_AGENT_ID),
-            setup_objective=args.objective,
-            setup_research_context=args.research_context,
-            assigned_task_ids=[active_task.id],
+    result = asyncio.run(
+        agent.run(
+            ResearcherAgentContext(
+                deps=_tool_deps(world, RESEARCHER_AGENT_ID),
+                setup_objective=args.objective,
+                setup_research_context=args.research_context,
+                assigned_task_ids=[active_task.id],
+            )
         )
     )
     capture.tool_calls.extend(captured_builtin_tool_calls_from_result(result))

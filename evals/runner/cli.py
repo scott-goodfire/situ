@@ -12,7 +12,7 @@ from evals.runner.reporting import print_json, print_summary
 from evals.runner.signals import has_report_failures
 
 DEFAULT_MAX_CONCURRENCY = 4
-_NOISY_LOGGERS = ["httpx", "httpcore", "openai", "logfire", "pydantic_ai"]
+_NOISY_LOGGERS = ["httpx", "httpcore", "anthropic", "logfire", "pydantic_ai"]
 
 
 def main(argv: list[str] | None = None) -> int:

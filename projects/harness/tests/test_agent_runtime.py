@@ -1,14 +1,23 @@
 from __future__ import annotations
 
+import asyncio
 from pathlib import Path
 
 import pytest
 from pydantic_ai import Agent, WebSearchTool
 from pydantic_ai.durable_exec.dbos import DBOSAgent
+from pydantic_ai.messages import (
+    CompactionPart,
+    ModelRequest,
+    ModelResponse,
+    TextPart,
+    UserPromptPart,
+)
 from pydantic_ai_skills import SkillsToolset
 
 from situ.harness.config import DEFAULTS, LocalSecretStore
 from situ.harness.agent_runtime import MANAGER_AGENT_NAME, AgentRuntime
+from situ.harness.agents.common import keep_last_compaction_history
 from situ.harness.agent_skills import (
     build_critic_skill_capabilities,
     build_manager_skill_capabilities,
@@ -31,6 +40,13 @@ def _agent_skill_names(agent: Agent) -> set[str]:
     for toolset in agent.toolsets:
         names.update(_skill_names_from_toolset(toolset))
     return names
+
+
+def _capability_type_names(agent: Agent) -> set[str]:
+    return {
+        type(capability).__name__
+        for capability in getattr(agent.root_capability, "capabilities", ())
+    }
 
 
 def _skill_names_from_toolset(toolset: object) -> set[str]:
@@ -86,7 +102,7 @@ def test_agent_runtime_wraps_research_agent_with_dbos_agent(
 ) -> None:
     project_dir = tmp_path / ".situ" / "projects" / "workspace"
     project_dir.mkdir(parents=True)
-    LocalSecretStore(home=tmp_path / ".situ").set_openai_key("test-openai-key")
+    LocalSecretStore(home=tmp_path / ".situ").set_anthropic_key("test-anthropic-key")
 
     runtime = AgentRuntime(project_dir)
 
@@ -94,9 +110,10 @@ def test_agent_runtime_wraps_research_agent_with_dbos_agent(
     assert runtime.agent.name == RESEARCH_AGENT_NAME
     assert runtime.agent.model_settings == {
         "thinking": "low",
-        "openai_reasoning_effort": "low",
         "timeout": DEFAULTS.agent_model_request_timeout_seconds,
     }
+    assert "AnthropicCompaction" in _capability_type_names(runtime.agent)
+    assert "ProcessHistory" in _capability_type_names(runtime.agent)
     assert isinstance(runtime.dbos_agent, DBOSAgent)
     assert runtime.agent.toolsets
     assert not _agent_has_web_search(runtime.agent)
@@ -132,7 +149,7 @@ def test_agent_runtime_wraps_agent_calls_with_dbos_workflow_timeout(
         def __exit__(self, *_args: object) -> bool:
             return False
 
-    def fake_run_sync(prompt: str, *, value: str) -> str:
+    async def fake_run(prompt: str, *, value: str) -> str:
         return f"{prompt}:{value}"
 
     monkeypatch.setattr(
@@ -140,14 +157,34 @@ def test_agent_runtime_wraps_agent_calls_with_dbos_workflow_timeout(
         FakeWorkflowTimeout,
     )
 
-    result = AgentRuntime._run_with_workflow_timeout(
-        fake_run_sync,
-        "prompt",
-        value="ok",
+    result = asyncio.run(
+        AgentRuntime._run_with_workflow_timeout(
+            fake_run,
+            "prompt",
+            value="ok",
+        )
     )
 
     assert result == "prompt:ok"
     assert seen == [DEFAULTS.agent_workflow_timeout_seconds]
+
+
+def test_history_processor_keeps_latest_anthropic_compaction() -> None:
+    messages = [
+        ModelRequest(parts=[UserPromptPart(content="old request")]),
+        ModelResponse(parts=[TextPart(content="old response")]),
+        ModelResponse(
+            parts=[
+                CompactionPart(
+                    content="summary",
+                    provider_name="anthropic",
+                )
+            ]
+        ),
+        ModelRequest(parts=[UserPromptPart(content="new request")]),
+    ]
+
+    assert keep_last_compaction_history(messages) == messages[2:]
 
 
 def test_runtime_agent_skill_capabilities_discover_expected_skills() -> None:
