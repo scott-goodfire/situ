@@ -57,6 +57,23 @@ def launch_app_tui(
     env["SITU_SESSION_URL"] = app["url"]
     env["SITU_SESSION_TOKEN"] = app["token"]
 
+    return run_tui(app_root=app_root, env=env)
+
+
+def run_tui(
+    *,
+    app_root: Path | None,
+    env: dict[str, str],
+) -> int:
+    runtime = resolve_bundled_runtime("tui", source_dir="tui")
+    if runtime is None:
+        print(
+            "could not resolve TUI runtime; "
+            "run from a Situ source checkout, set SITU_APP_ROOT, or reinstall Situ",
+            file=sys.stderr,
+        )
+        return 1
+
     if runtime.kind == "installed":
         argv: list[str] = [str(runtime.path)]
         cwd: Path | None = None

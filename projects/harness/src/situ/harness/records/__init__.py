@@ -24,15 +24,19 @@ from .measurement import MeasurementPayload, MeasurementRecord, MetricValue
 from .project import ProjectRecord, ProjectStatus, parse_project_status
 from .session import SessionRecord, SessionStatus, parse_session_status
 from .task import (
+    REVIEW_WORK_TYPES,
     TaskKind,
     TaskPriority,
     TaskRecord,
     TaskSourceKind,
     TaskStatus,
+    TaskWorkType,
+    ensure_work_type_compatible_with_kind,
     parse_task_kind,
     parse_task_priority,
     parse_task_source_kind,
     parse_task_status,
+    parse_task_work_type,
 )
 from .task_activity import TaskActivityKind, TaskActivityRecord
 from .task_dependency import TaskDependencyRecord
@@ -73,13 +77,16 @@ __all__ = [
     "TaskDependencyRecord",
     "TaskEntityKind",
     "TaskEntityLinkRecord",
+    "REVIEW_WORK_TYPES",
     "TaskKind",
     "TaskPriority",
     "TaskRecord",
     "TaskSourceKind",
     "TaskStatus",
+    "TaskWorkType",
     "WorkStatus",
     "WorkspaceRecord",
+    "ensure_work_type_compatible_with_kind",
     "parse_agent_kind",
     "parse_agent_status",
     "parse_evaluation_activity_kind",
@@ -91,5 +98,6 @@ __all__ = [
     "parse_task_priority",
     "parse_task_source_kind",
     "parse_task_status",
+    "parse_task_work_type",
     "parse_work_status",
 ]

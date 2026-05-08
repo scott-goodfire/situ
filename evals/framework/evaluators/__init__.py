@@ -7,6 +7,9 @@ from evals.framework.evaluators.event_was_emitted.evaluator import EventWasEmitt
 from evals.framework.evaluators.project_board_contains.evaluator import ProjectBoardContains
 from evals.framework.evaluators.tool_args_contain.evaluator import ToolArgsContain
 from evals.framework.evaluators.tool_call_order.evaluator import ToolCallOrder
+from evals.framework.evaluators.tool_called_successfully.evaluator import (
+    ToolCalledSuccessfully,
+)
 from evals.framework.evaluators.tool_result_contains.evaluator import ToolResultContains
 from evals.framework.evaluators.tool_succeeded.evaluator import ToolSucceeded
 from evals.framework.evaluators.tool_was_called.evaluator import ToolWasCalled
@@ -19,6 +22,7 @@ __all__ = [
     "ProjectBoardContains",
     "ToolArgsContain",
     "ToolCallOrder",
+    "ToolCalledSuccessfully",
     "ToolResultContains",
     "ToolSucceeded",
     "ToolWasCalled",

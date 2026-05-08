@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any
@@ -8,6 +7,7 @@ from typing import Any
 from situ.harness.app import HarnessApp
 from situ.harness.config import LocalSecretStore, SituSecrets
 from situ.harness.core.dbos.runtime import reset_dbos_for_tests
+from situ.harness.core.git import run_git
 
 from evals.framework.models import EvalEvent
 from evals.worlds.app_session_loop.models import (
@@ -159,11 +159,11 @@ class AppSessionLoopWorld:
             )
 
     async def _init_git_repo(self) -> None:
-        await _run_git(self.workspace_path, "init")
-        await _run_git(self.workspace_path, "config", "user.email", "situ-eval@example.com")
-        await _run_git(self.workspace_path, "config", "user.name", "Situ Eval")
-        await _run_git(self.workspace_path, "add", ".")
-        await _run_git(self.workspace_path, "commit", "-m", "fixture baseline")
+        await run_git(self.workspace_path, "init")
+        await run_git(self.workspace_path, "config", "user.email", "situ-eval@example.com")
+        await run_git(self.workspace_path, "config", "user.name", "Situ Eval")
+        await run_git(self.workspace_path, "add", ".")
+        await run_git(self.workspace_path, "commit", "-m", "fixture baseline")
 
     async def _seed(self, seed: AppSessionLoopSeed) -> None:
         if seed not in {"with_baseline_no_hypothesis", "with_baseline_result"}:
@@ -271,22 +271,3 @@ def _initial_plan_content(seed: AppSessionLoopSeed) -> str:
         "should continue and plan a component_a train.py-only candidate "
         "experiment rather than stopping."
     )
-
-
-async def _run_git(cwd: Path, *args: str) -> None:
-    try:
-        process = await asyncio.create_subprocess_exec(
-            "git",
-            *args,
-            cwd=cwd,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-        )
-    except OSError as error:
-        raise RuntimeError(f"git {' '.join(args)} failed: {error}") from error
-    stdout, stderr = await process.communicate()
-    if process.returncode != 0:
-        error = stderr.decode(errors="replace").strip() or stdout.decode(
-            errors="replace"
-        ).strip()
-        raise RuntimeError(f"git {' '.join(args)} failed: {error}")

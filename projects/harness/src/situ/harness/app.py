@@ -38,6 +38,7 @@ from .api.project_board import ProjectBoardService
 from .api.sessions import SessionsService
 from .config import LocalSecretStore, SituSecrets
 from .core.db import Database
+from .core.git import git_lines, git_stdout, git_text
 from .core.notifications import (
     register_project_notifications,
     set_project_collections_subscribed,
@@ -58,6 +59,7 @@ from .records import (
     TaskKind,
     TaskRecord,
     TaskStatus,
+    TaskWorkType,
     WorkStatus,
 )
 from .records.base import DbRecord
@@ -560,6 +562,7 @@ class HarnessApp:
                 "this review task done."
             ),
             kind=TaskKind.REVIEW,
+            work_type=TaskWorkType.REVIEW_EXPERIMENT,
             priority="high",
             source_kind="system",
             payload={
@@ -1437,27 +1440,27 @@ class HarnessApp:
             return None
 
         worktree_path = Path(experiment.worktree_path)
-        git_root = await _git_text(worktree_path, "rev-parse", "--show-toplevel")
+        git_root = await git_text(worktree_path, "rev-parse", "--show-toplevel")
         if not git_root:
             raise RuntimeError(
                 f"could not resolve git root for experiment {experiment.id}"
             )
 
-        patch = await _git_stdout(
+        patch = await git_stdout(
             Path(git_root),
             "diff",
             "--binary",
             experiment.base_commit,
             candidate_commit,
         )
-        changed_files = await _git_lines(
+        changed_files = await git_lines(
             Path(git_root),
             "diff",
             "--name-only",
             experiment.base_commit,
             candidate_commit,
         )
-        diff_stat = await _git_text(
+        diff_stat = await git_text(
             Path(git_root),
             "diff",
             "--stat",
@@ -1726,49 +1729,6 @@ def _research_thread_from_task(task: TaskRecord) -> str | None:
     if not isinstance(research_thread, str) or not research_thread:
         research_thread = task.payload.get("thread")
     return research_thread if isinstance(research_thread, str) and research_thread else None
-
-
-@dataclass(frozen=True, slots=True)
-class _GitResult:
-    returncode: int
-    stdout: str
-    stderr: str
-
-
-async def _git_text(cwd: Path, *args: str) -> str:
-    return (await _git_stdout(cwd, *args)).strip()
-
-
-async def _git_stdout(cwd: Path, *args: str) -> str:
-    result = await _git_output(cwd, *args)
-    if result.returncode != 0:
-        error = result.stderr.strip() or result.stdout.strip()
-        raise RuntimeError(f"git {' '.join(args)} failed: {error}")
-    return result.stdout
-
-
-async def _git_output(cwd: Path, *args: str) -> _GitResult:
-    try:
-        process = await asyncio.create_subprocess_exec(
-            "git",
-            *args,
-            cwd=cwd,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-        )
-    except OSError as error:
-        return _GitResult(returncode=127, stdout="", stderr=str(error))
-    stdout, stderr = await process.communicate()
-    return _GitResult(
-        returncode=process.returncode if process.returncode is not None else 0,
-        stdout=stdout.decode(errors="replace"),
-        stderr=stderr.decode(errors="replace"),
-    )
-
-
-async def _git_lines(cwd: Path, *args: str) -> list[str]:
-    text = await _git_text(cwd, *args)
-    return text.splitlines() if text else []
 
 
 def _artifact_path_for_record(*, artifact_path: Path, project_dir: Path) -> str:

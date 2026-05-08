@@ -4,7 +4,7 @@ from typing import Any
 
 from pydantic import Field
 
-from ...records import TaskKind, TaskPriority, TaskSourceKind, TaskStatus
+from ...records import TaskKind, TaskPriority, TaskSourceKind, TaskStatus, TaskWorkType
 from ..base.command import RepositoryCommand
 
 
@@ -15,6 +15,7 @@ class CreateTask(RepositoryCommand):
     title: str
     content: str
     kind: TaskKind
+    work_type: TaskWorkType | None = None
     priority: TaskPriority = TaskPriority.NORMAL
     source_kind: TaskSourceKind = TaskSourceKind.SYSTEM
     parent_task_id: str | None = None

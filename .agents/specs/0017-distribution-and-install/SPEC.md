@@ -9,9 +9,13 @@ install artifact carries. It narrows
 ## Purpose
 
 Situ is a single command on a user's machine. A user installs Situ with one
-shell command, runs `situ`, and gets a working CLI without a Python, Bun, or
-uv toolchain on PATH. Updates and uninstalls are equally simple and leave the
+shell command, runs `situ`, and gets a working CLI without a Bun, uv, or Node
+toolchain on PATH. Updates and uninstalls are equally simple and leave the
 user's product data intact.
+
+The installed CLI requires Python 3.13 or newer on the user's PATH. An
+embedded-interpreter distribution that removes that prerequisite is listed
+under `## Deferred`.
 
 ## Install Contract
 
@@ -44,10 +48,11 @@ upgrade, and uninstall. Removing `~/.local/share/situ/` and the
 ## Release Artifact
 
 A release publishes one self-contained bundle per supported platform. Each
-bundle contains the Python harness, the prebuilt frontend assets, and the
-platform-specific Bun-compiled executables required by the harness. The
-end-user install does not require `bun`, `uv`, `node`, or a system Python on
-PATH.
+bundle contains the Python harness wheel(s), the prebuilt frontend assets,
+and the platform-specific Bun-compiled executables required by the harness.
+The end-user install does not require `bun`, `uv`, or `node` on PATH; the
+installer uses the user's existing Python 3.13+ to provision an isolated
+runtime under the install directory.
 
 Supported platforms:
 
@@ -106,8 +111,9 @@ the same `~/.situ/` runtime state.
 
 ## Review Criteria
 
-- A user with no `bun`, `uv`, or Python toolchain installed runs the
-  published curl install command and ends up with a working `situ` on PATH.
+- A user with Python 3.13 on PATH but no `bun`, `uv`, or `node` installed runs
+  the published curl install command and ends up with a working `situ` on
+  PATH.
 - The install flow does not prompt for sudo and only writes paths under
   `$HOME`.
 - Running the install command a second time upgrades to the latest release

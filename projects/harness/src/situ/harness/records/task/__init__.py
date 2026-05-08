@@ -1,23 +1,31 @@
 from .record import (
+    REVIEW_WORK_TYPES,
+    TaskKind,
     TaskPriority,
     TaskRecord,
     TaskSourceKind,
     TaskStatus,
-    TaskKind,
+    TaskWorkType,
+    ensure_work_type_compatible_with_kind,
     parse_task_kind,
     parse_task_priority,
     parse_task_source_kind,
     parse_task_status,
+    parse_task_work_type,
 )
 
 __all__ = [
+    "REVIEW_WORK_TYPES",
     "TaskKind",
     "TaskPriority",
     "TaskRecord",
     "TaskSourceKind",
     "TaskStatus",
+    "TaskWorkType",
+    "ensure_work_type_compatible_with_kind",
     "parse_task_kind",
     "parse_task_priority",
     "parse_task_source_kind",
     "parse_task_status",
+    "parse_task_work_type",
 ]

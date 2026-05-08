@@ -16,10 +16,13 @@ from ...records import (
     TaskRecord,
     TaskSourceKind,
     TaskStatus,
+    TaskWorkType,
+    ensure_work_type_compatible_with_kind,
     parse_task_kind,
     parse_task_priority,
     parse_task_source_kind,
     parse_task_status,
+    parse_task_work_type,
 )
 from ..base import BaseRepository
 from .command import CreateTask, UpdateTask
@@ -45,6 +48,7 @@ def _task_row(row: Any) -> TaskRecord:
         title=row["title"],
         content=row["content"],
         kind=row["kind"],
+        work_type=row["work_type"] if row["work_type"] is not None else None,
         status=row["status"],
         priority=row["priority"],
         source_kind=row["source_kind"],
@@ -74,6 +78,7 @@ class TasksRepository(BaseRepository):
         title: str,
         content: str,
         kind: TaskKind | str,
+        work_type: TaskWorkType | str | None = None,
         priority: TaskPriority | str = TaskPriority.NORMAL,
         source_kind: TaskSourceKind | str = TaskSourceKind.SYSTEM,
         parent_task_id: str | None = None,
@@ -85,13 +90,17 @@ class TasksRepository(BaseRepository):
             prefix=TASK_ID_PREFIX,
             noun="task",
         )
+        parsed_kind = parse_task_kind(kind)
+        parsed_work_type = parse_task_work_type(work_type) if work_type is not None else None
+        ensure_work_type_compatible_with_kind(kind=parsed_kind, work_type=parsed_work_type)
         command = CreateTask(
             task_id=task_id,
             project_id=project_id,
             created_in_session_id=created_in_session_id,
             title=title,
             content=content,
-            kind=parse_task_kind(kind),
+            kind=parsed_kind,
+            work_type=parsed_work_type,
             priority=parse_task_priority(priority),
             source_kind=parse_task_source_kind(source_kind),
             parent_task_id=parent_task_id,
@@ -102,13 +111,13 @@ class TasksRepository(BaseRepository):
         await self.db.execute(
             """
             INSERT INTO tasks
-              (id, project_id, created_in_session_id, title, content, kind, status,
-               priority, source_kind,
+              (id, project_id, created_in_session_id, title, content, kind, work_type,
+               status, priority, source_kind,
                assignee_id, parent_task_id, payload_json, pydantic_run_id,
                conversation_id, result_summary, created_at, available_at,
                claimed_in_session_id, claimed_at, completed_in_session_id,
                completed_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, NULL, NULL, NULL, ?, ?, NULL, NULL, NULL, NULL, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, NULL, NULL, NULL, ?, ?, NULL, NULL, NULL, NULL, ?)
             """,
             (
                 command.task_id,
@@ -117,6 +126,7 @@ class TasksRepository(BaseRepository):
                 command.title,
                 command.content,
                 command.kind.value,
+                command.work_type.value if command.work_type is not None else None,
                 TaskStatus.BACKLOG.value,
                 command.priority.value,
                 command.source_kind.value,

@@ -8,6 +8,10 @@ uv = "0.9.7"
 description = "Update TypeScript and Python workspace dependencies"
 run = "./commands/update.sh"
 
+[tasks.bundle]
+description = "Build bundled runtimes into projects/harness/src/situ/_bundled/"
+run = "./config/scripts/build_bundled.sh"
+
 [tasks.check]
 description = "Run Python syntax checks and TypeScript typechecks"
 run = "./commands/check.sh"

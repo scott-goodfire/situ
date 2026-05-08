@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from abc import abstractmethod
+from pathlib import Path
 import re
-from typing import Any, ClassVar, Generic, Sequence, TypeVar
+from typing import Any, ClassVar, Generic, Sequence, TypeVar, get_args
 
 from pydantic import BaseModel, ConfigDict
 from pydantic_evals import Case, Dataset
@@ -19,6 +20,8 @@ class BaseSituEvalGroup(BaseModel, Generic[T_Input, T_Output]):
 
     suite_name: ClassVar[str]
     world_name: ClassVar[str]
+    cases_path: ClassVar[Path | None] = None
+    custom_evaluator_types: ClassVar[Sequence[type[Evaluator[Any, Any, Any]]]] = ()
 
     def __init__(self, **data: Any) -> None:
         super().__init__(**data)
@@ -31,18 +34,16 @@ class BaseSituEvalGroup(BaseModel, Generic[T_Input, T_Output]):
     def task(self, args: T_Input) -> T_Output:
         raise NotImplementedError
 
-    @abstractmethod
     def eval_cases(self) -> list[Case[T_Input, T_Output]]:
-        raise NotImplementedError
+        # Default for YAML-backed suites. Suites that keep cases in Python override this.
+        return []
 
     def dataset(self) -> Dataset[T_Input, T_Output, Any]:
-        cases = [
-            case
-            for case in self.eval_cases()
-            if not (case.metadata and isinstance(case.metadata, dict) and case.metadata.get("@skip"))
-        ]
+        if self.cases_path is not None:
+            return self._load_yaml_dataset()
+        cases = _filter_skipped(self.eval_cases())
         return Dataset(
-            name=f"{_eval_name_segment(self.suite_name)}.{_eval_name_segment(self.world_name)}",
+            name=self._dataset_name(),
             cases=cases,
             evaluators=list(self.dataset_evaluators()),
         )
@@ -52,6 +53,54 @@ class BaseSituEvalGroup(BaseModel, Generic[T_Input, T_Output]):
 
     def teardown(self) -> None:
         return None
+
+    def _load_yaml_dataset(self) -> Dataset[T_Input, T_Output, Any]:
+        assert self.cases_path is not None
+        input_type, output_type = self._concrete_io_types()
+        dataset_cls = Dataset[input_type, output_type, Any]  # type: ignore[valid-type]
+        dataset = dataset_cls.from_file(
+            self.cases_path,
+            custom_evaluator_types=list(self.custom_evaluator_types),
+        )
+        dataset.name = self._dataset_name()
+        dataset.cases = _filter_skipped(dataset.cases)
+        for case in dataset.cases:
+            _autofill_case_id(case)
+        return dataset
+
+    def _dataset_name(self) -> str:
+        return f"{_eval_name_segment(self.suite_name)}.{_eval_name_segment(self.world_name)}"
+
+    @classmethod
+    def _concrete_io_types(cls) -> tuple[type, type]:
+        for base in getattr(cls, "__orig_bases__", ()):
+            args = get_args(base)
+            if len(args) >= 2:
+                return args[0], args[1]
+        raise RuntimeError(
+            f"Cannot resolve T_Input/T_Output for {cls.__name__}; "
+            "set the generic parameters on the class declaration."
+        )
+
+
+def _filter_skipped(cases: list[Case[Any, Any]]) -> list[Case[Any, Any]]:
+    return [
+        case
+        for case in cases
+        if not (case.metadata and isinstance(case.metadata, dict) and case.metadata.get("@skip"))
+    ]
+
+
+def _autofill_case_id(case: Case[Any, Any]) -> None:
+    inputs = case.inputs
+    if not hasattr(inputs, "case_id"):
+        return
+    if getattr(inputs, "case_id", None):
+        return
+    try:
+        setattr(inputs, "case_id", case.name)
+    except Exception:
+        pass
 
 
 def _eval_name_segment(value: str) -> str:

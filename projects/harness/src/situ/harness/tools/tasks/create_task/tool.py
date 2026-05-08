@@ -4,7 +4,7 @@ from typing import Any, Literal
 
 from pydantic_ai import RunContext
 
-from ....records import TaskKind, TaskPriority, TaskSourceKind
+from ....records import TaskKind, TaskPriority, TaskSourceKind, TaskWorkType
 from ...common import BaseSituTool, SituToolDeps
 from .models import CreateTaskResult
 
@@ -27,6 +27,7 @@ class CreateTaskTool(BaseSituTool[SituToolDeps, CreateTaskResult]):
         title: str,
         content: str,
         kind: TaskKind,
+        work_type: TaskWorkType | None = None,
         priority: TaskPriority = TaskPriority.NORMAL,
         source_kind: TaskSourceKind = TaskSourceKind.MANAGER,
         task_id: str | None = None,
@@ -57,6 +58,7 @@ class CreateTaskTool(BaseSituTool[SituToolDeps, CreateTaskResult]):
             title=title,
             content=content,
             kind=kind,
+            work_type=work_type,
             priority=priority,
             source_kind=source_kind,
             parent_task_id=parent_task_id,

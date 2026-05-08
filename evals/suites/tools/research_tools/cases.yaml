@@ -1,0 +1,411 @@
+# yaml-language-server: $schema=cases.schema.json
+name: research_tools
+evaluators: []
+cases:
+  - name: get_project_board_reads_board
+    inputs:
+      seed: with_comments
+      prompt: |
+        Please check the current project with get_project_board, then briefly
+        state the objective title and one hypothesis on the board.
+    evaluators:
+      - ToolCalledSuccessfully: get_project_board
+      - ToolResultContains:
+          tool_name: get_project_board
+          text: Improve validation score
+      - ToolResultContains:
+          tool_name: get_project_board
+          text: H1
+
+  - name: get_task_reads_explicit_task
+    inputs:
+      seed: with_task
+      prompt: |
+        Please call get_task with task_id 'T1', then state the task title and
+        what command/evidence it asks for.
+    evaluators:
+      - ToolCalledSuccessfully: get_task
+      - ToolResultContains:
+          tool_name: get_task
+          text: T1
+      - ToolResultContains:
+          tool_name: get_task
+          text: Establish baseline metrics
+
+  - name: get_project_reads_current_project
+    inputs:
+      seed: basic
+      prompt: |
+        Please load the current project with get_project and state the title
+        and objective.
+    evaluators:
+      - ToolCalledSuccessfully: get_project
+      - ToolResultContains:
+          tool_name: get_project
+          text: P1
+      - ToolResultContains:
+          tool_name: get_project
+          text: Improve validation score
+
+  - name: project_setup_and_update_flow
+    inputs:
+      seed: projectless
+      prompt: |
+        This current run has no project yet. Create a project with
+        create_project using title 'Repo quality lift', objective 'Improve
+        retrieval quality', and research_context 'Use score and latency_ms.'
+        Then update that project with update_project so the research_context
+        becomes 'Refined research context: compare score and latency_ms.'
+        Finally call get_project and state the project title.
+    evaluators:
+      - ToolCalledSuccessfully: create_project
+      - ToolCalledSuccessfully: update_project
+      - ToolCalledSuccessfully: get_project
+      - ToolResultContains:
+          tool_name: get_project
+          text: Repo quality lift
+      - ProjectBoardContains: Refined research context
+      - EventWasEmitted: project.created
+      - EventWasEmitted: project.updated
+
+  - name: list_hypotheses_reads_existing_hypothesis
+    inputs:
+      seed: with_hypothesis
+      prompt: |
+        Please pull the current project's hypotheses with list_hypotheses,
+        then state the id and title you found.
+    evaluators:
+      - ToolCalledSuccessfully: list_hypotheses
+      - ToolResultContains:
+          tool_name: list_hypotheses
+          text: H1
+
+  - name: analysis_creation_comment_and_readback
+    inputs:
+      seed: basic
+      prompt: |
+        Create an analysis with create_analysis titled 'Codebase map for
+        evals', summary 'Mapped the current eval knobs.', and content 'The
+        main knobs are score, latency_ms, and tests_passed.' Add an analysis
+        comment that says 'Use this map before forming hypotheses.' Update
+        the analysis summary to 'Updated eval knob map.' Then call
+        list_analyses and list_analysis_activities to read both records back.
+    evaluators:
+      - ToolCalledSuccessfully: create_analysis
+      - ToolCalledSuccessfully: add_analysis_comment
+      - ToolCalledSuccessfully: update_analysis
+      - ToolCalledSuccessfully: list_analyses
+      - ToolCalledSuccessfully: list_analysis_activities
+      - ToolResultContains:
+          tool_name: list_analyses
+          text: Codebase map for evals
+      - ToolResultContains:
+          tool_name: list_analysis_activities
+          text: Use this map before forming hypotheses
+      - ProjectBoardContains: Updated eval knob map
+      - EventWasEmitted: analysis.created
+      - EventWasEmitted: analysis.updated
+      - EventWasEmitted: analysis.comment_added
+
+  - name: create_hypothesis_writes_new_hypothesis
+    inputs:
+      seed: basic
+      prompt: |
+        Please add a hypothesis with create_hypothesis. Title it 'Cache
+        stability improves score' with summary 'Stabilizing cache keys may
+        improve validation score.'
+    evaluators:
+      - ToolCalledSuccessfully: create_hypothesis
+      - ToolResultContains:
+          tool_name: create_hypothesis
+          text: Cache stability improves score
+      - ProjectBoardContains: Cache stability improves score
+      - EventWasEmitted: hypothesis.created
+
+  - name: update_hypothesis_writes_status_and_summary
+    inputs:
+      seed: with_hypothesis
+      prompt: |
+        Please update hypothesis H1 with update_hypothesis. Set status to
+        'closed' and summary to 'Component A appears saturated.'
+    evaluators:
+      - ToolCalledSuccessfully: update_hypothesis
+      - ProjectBoardContains: Component A appears saturated
+      - ProjectBoardContains: closed
+      - EventWasEmitted: hypothesis.updated
+
+  - name: task_board_coordination_flow
+    inputs:
+      seed: with_hypothesis
+      prompt: |
+        Coordinate work with tasks. First create a baseline task with
+        create_task: title 'Establish baseline eval', content 'Run baseline
+        and record evidence.', kind 'baseline', priority 'high'. Then create
+        a dependent hypothesize task with title 'Generate follow-up
+        hypotheses', content 'Generate hypotheses after baseline evidence
+        exists.', kind 'hypothesize', priority 'normal', blocked by the
+        baseline task id. Call get_task_board. Claim the baseline task with
+        claim_task, mark that claimed task done with update_task and
+        result_summary 'Baseline evidence ready.', then claim the next task.
+        Add a task comment to the second claimed task saying 'claimed after
+        baseline'. Link that second task to hypothesis H1 with
+        link_task_entity using entity_kind 'hypothesis' and relationship
+        'referenced'.
+    evaluators:
+      - ToolCalledSuccessfully: create_task
+      - ToolCalledSuccessfully: get_task_board
+      - ToolCalledSuccessfully: claim_task
+      - ToolCalledSuccessfully: update_task
+      - ToolCalledSuccessfully: add_task_comment
+      - ToolCalledSuccessfully: link_task_entity
+      - ProjectBoardContains: Establish baseline eval
+      - ProjectBoardContains: Generate follow-up hypotheses
+      - ProjectBoardContains: claimed after baseline
+      - ProjectBoardContains: H1
+      - EventWasEmitted: task.created
+      - EventWasEmitted: task.done
+      - EventWasEmitted: task.comment_added
+      - EventWasEmitted: task.entity_linked
+
+  - name: list_experiments_reads_existing_experiment
+    inputs:
+      seed: with_experiment
+      prompt: |
+        Please review the current project's experiments with list_experiments,
+        then state the experiment id and title you found.
+    evaluators:
+      - ToolCalledSuccessfully: list_experiments
+      - ToolResultContains:
+          tool_name: list_experiments
+          text: EX1
+
+  - name: list_baseline_evaluations_and_measurements
+    inputs:
+      seed: with_baseline_result
+      prompt: |
+        Please inspect existing baseline evidence. Call list_baselines, then
+        list_evaluations for that baseline, update the baseline summary to
+        'Baseline accepted for comparison' and update the evaluation status
+        to 'closed' with summary 'Baseline evidence closed'. Then
+        list_measurements for that baseline. State the baseline id,
+        evaluation id, and score you found.
+    evaluators:
+      - ToolCalledSuccessfully: list_baselines
+      - ToolResultContains:
+          tool_name: list_baselines
+          text: B1
+      - ToolCalledSuccessfully: list_evaluations
+      - ToolResultContains:
+          tool_name: list_evaluations
+          text: EV1
+      - ToolCalledSuccessfully: update_baseline
+      - ToolCalledSuccessfully: update_evaluation
+      - ToolCalledSuccessfully: list_measurements
+      - ToolResultContains:
+          tool_name: list_measurements
+          text: "0.71"
+      - ProjectBoardContains: Baseline accepted for comparison
+      - ProjectBoardContains: Baseline evidence closed
+
+  - name: run_experiment_records_worker_result
+    inputs:
+      seed: with_hypothesis
+      prompt: |
+        Run one worker-backed experiment with run_experiment. Use title
+        'Worker component B run', summary 'Run component B through the
+        worker path.', components ['B'], and link it to hypothesis H1. Then
+        report the result score.
+    evaluators:
+      - ToolCalledSuccessfully: run_experiment
+      - ToolResultContains:
+          tool_name: run_experiment
+          text: "0.72"
+      - ProjectBoardContains: Worker component B run
+      - EventWasEmitted: experiment.completed
+      - EventWasEmitted: worker.progress
+
+  - name: evaluation_result_kind_is_result
+    inputs:
+      seed: basic
+      prompt: |
+        Create a baseline with create_baseline titled 'Current baseline' and
+        summary 'Reference behavior.' Create an evaluation associated with
+        that baseline using create_evaluation titled 'Baseline command
+        output' and summary 'Record baseline score output.' Add an
+        evaluation result with add_evaluation_result using result
+        'score=0.730 latency=120'. Then call list_measurements and
+        list_evaluation_activities for that evaluation and report the
+        measurement body and activity kind.
+    evaluators:
+      - ToolCalledSuccessfully: create_baseline
+      - ToolCalledSuccessfully: create_evaluation
+      - ToolCalledSuccessfully: add_evaluation_result
+      - ToolCalledSuccessfully: list_measurements
+      - ToolResultContains:
+          tool_name: list_measurements
+          text: score=0.730
+      - ToolCalledSuccessfully: list_evaluation_activities
+      - ToolResultContains:
+          tool_name: list_evaluation_activities
+          text: '"kind": "result"'
+      - ProjectBoardContains: score=0.730
+      - EventWasEmitted: evaluation.created
+      - EventWasEmitted: evaluation.result_added
+
+  - name: create_experiment_writes_new_experiment
+    inputs:
+      seed: basic
+      prompt: |
+        Please add an experiment with create_experiment. Title it 'Try
+        cache-key normalization' with summary 'Normalize cache keys and
+        compare validation score.'
+    evaluators:
+      - ToolCalledSuccessfully: create_experiment
+      - ToolResultContains:
+          tool_name: create_experiment
+          text: Try cache-key normalization
+      - ProjectBoardContains: Try cache-key normalization
+      - EventWasEmitted: experiment.created
+
+  - name: workspace_state_inspection_reports_dirty_eval_surface
+    inputs:
+      seed: with_dirty_workspace
+      prompt: |
+        Inspect the workspace state with inspect_workspace_state using
+        eval_command 'python train.py'. State whether the workspace is dirty
+        and name any changed-file categories.
+    evaluators:
+      - ToolCalledSuccessfully: inspect_workspace_state
+      - ToolArgsContain:
+          tool_name: inspect_workspace_state
+          text: python train.py
+      - ToolResultContains:
+          tool_name: inspect_workspace_state
+          text: '"dirty": true'
+      - ToolResultContains:
+          tool_name: inspect_workspace_state
+          text: test_or_eval
+      - ToolResultContains:
+          tool_name: inspect_workspace_state
+          text: dependency
+      - ToolResultContains:
+          tool_name: inspect_workspace_state
+          text: Workspace has uncommitted changes
+
+  - name: update_experiment_writes_status_and_summary
+    inputs:
+      seed: with_experiment
+      prompt: |
+        Please update experiment EX1 with update_experiment. Set status to
+        'closed' and summary to 'Component A completed with score lift.'
+    evaluators:
+      - ToolCalledSuccessfully: update_experiment
+      - ProjectBoardContains: Component A completed with score lift
+      - ProjectBoardContains: closed
+      - EventWasEmitted: experiment.updated
+
+  - name: link_hypothesis_experiment_writes_join
+    inputs:
+      seed: with_experiment
+      prompt: |
+        Please connect hypothesis H1 to experiment EX1 with
+        link_hypothesis_experiment.
+    evaluators:
+      - ToolCalledSuccessfully: link_hypothesis_experiment
+      - ProjectBoardHasLink:
+          hypothesis_id: H1
+          experiment_id: EX1
+      - EventWasEmitted: hypothesis.experiment_linked
+
+  - name: add_hypothesis_comment_writes_activity
+    inputs:
+      seed: with_hypothesis
+      prompt: |
+        Please leave a hypothesis comment on H1 with add_hypothesis_comment:
+        'Prioritize reproducing Component A before combining it.'
+    evaluators:
+      - ToolCalledSuccessfully: add_hypothesis_comment
+      - ProjectBoardContains: Prioritize reproducing Component A
+      - EventWasEmitted: hypothesis.comment_added
+
+  - name: add_experiment_comment_writes_activity
+    inputs:
+      seed: with_experiment
+      prompt: |
+        Please leave an experiment comment on EX1 with
+        add_experiment_comment: 'Score improved but latency needs review.'
+    evaluators:
+      - ToolCalledSuccessfully: add_experiment_comment
+      - ProjectBoardContains: Score improved but latency needs review
+      - EventWasEmitted: experiment.comment_added
+
+  - name: list_hypothesis_activities_reads_comments
+    inputs:
+      seed: with_comments
+      prompt: |
+        Please read the activity for hypothesis H1 with
+        list_hypothesis_activities, then state the existing comment.
+    evaluators:
+      - ToolCalledSuccessfully: list_hypothesis_activities
+      - ToolResultContains:
+          tool_name: list_hypothesis_activities
+          text: worth testing
+
+  - name: list_experiment_activities_reads_comments
+    inputs:
+      seed: with_comments
+      prompt: |
+        Please read the activity for experiment EX1 with
+        list_experiment_activities, then state the existing comment.
+    evaluators:
+      - ToolCalledSuccessfully: list_experiment_activities
+      - ToolResultContains:
+          tool_name: list_experiment_activities
+          text: score 0.73
+
+  - name: create_artifact_writes_artifact
+    inputs:
+      seed: with_experiment
+      prompt: |
+        Please record a JSON artifact with create_artifact for the current
+        project and experiment EX1. Use title 'normalized cache raw output',
+        path 'artifacts/normalized-cache.json', media_type
+        'application/json', and size_bytes 256.
+    evaluators:
+      - ToolCalledSuccessfully: create_artifact
+      - ProjectBoardContains: normalized cache raw output
+      - ProjectBoardContains: artifacts/normalized-cache.json
+      - EventWasEmitted: artifact.created
+
+  - name: list_artifacts_reads_existing_artifact
+    inputs:
+      seed: with_artifact
+      prompt: |
+        Please look up artifacts for experiment EX1 with list_artifacts,
+        then state the artifact id and title you found.
+    evaluators:
+      - ToolCalledSuccessfully: list_artifacts
+      - ToolResultContains:
+          tool_name: list_artifacts
+          text: ART1
+      - ToolResultContains:
+          tool_name: list_artifacts
+          text: component A raw eval output
+
+  - name: project_close_handshake_flow
+    inputs:
+      seed: with_baseline_result
+      toolset: manager
+      prompt: |
+        Use the explicit project-close handshake. First call
+        request_project_close with reason 'No bounded next task',
+        evidence_summary 'Baseline evidence is recorded', and
+        remaining_work_assessment 'No useful follow-up remains'. Then call
+        confirm_project_close with the returned confirmation_code and
+        final_summary 'Closed after explicit confirmation'.
+    evaluators:
+      - ToolCalledSuccessfully: request_project_close
+      - ToolCalledSuccessfully: confirm_project_close
+      - EventWasEmitted: project.close_confirmation_required
+      - EventWasEmitted: project.closed
+      - ProjectBoardContains: closed

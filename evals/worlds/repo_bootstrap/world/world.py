@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import inspect
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -8,6 +7,7 @@ from typing import Any
 
 from situ.harness.api.project_board import ProjectBoardService
 from situ.harness.core.db import Database
+from situ.harness.core.git import run_git
 from situ.harness.repositories import Repositories
 from evals.framework.models import EvalEvent
 from evals.worlds.repo_bootstrap.models import RepoBootstrapSeed
@@ -244,11 +244,11 @@ class RepoBootstrapWorld:
             )
 
     async def _init_git_repo(self) -> None:
-        await _run_git(self.workspace_path, "init")
-        await _run_git(self.workspace_path, "config", "user.email", "situ-eval@example.com")
-        await _run_git(self.workspace_path, "config", "user.name", "Situ Eval")
-        await _run_git(self.workspace_path, "add", ".")
-        await _run_git(self.workspace_path, "commit", "-m", "fixture baseline")
+        await run_git(self.workspace_path, "init")
+        await run_git(self.workspace_path, "config", "user.email", "situ-eval@example.com")
+        await run_git(self.workspace_path, "config", "user.name", "Situ Eval")
+        await run_git(self.workspace_path, "add", ".")
+        await run_git(self.workspace_path, "commit", "-m", "fixture baseline")
 
 
 async def _build_repos(path: Path, workspace_path: Path) -> Repositories:
@@ -282,25 +282,6 @@ async def _build_repos(path: Path, workspace_path: Path) -> Repositories:
         model_name="eval:model",
     )
     return repos
-
-
-async def _run_git(cwd: Path, *args: str) -> None:
-    try:
-        process = await asyncio.create_subprocess_exec(
-            "git",
-            *args,
-            cwd=cwd,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-        )
-    except OSError as error:
-        raise RuntimeError(f"git {' '.join(args)} failed: {error}") from error
-    stdout, stderr = await process.communicate()
-    if process.returncode != 0:
-        error = stderr.decode(errors="replace").strip() or stdout.decode(
-            errors="replace"
-        ).strip()
-        raise RuntimeError(f"git {' '.join(args)} failed: {error}")
 
 
 async def _seed(repos: Repositories, seed: RepoBootstrapSeed) -> None:

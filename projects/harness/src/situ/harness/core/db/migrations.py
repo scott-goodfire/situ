@@ -138,6 +138,7 @@ CREATE TABLE IF NOT EXISTS tasks (
   title TEXT NOT NULL,
   content TEXT NOT NULL,
   kind TEXT NOT NULL,
+  work_type TEXT,
   status TEXT NOT NULL,
   priority TEXT NOT NULL,
   source_kind TEXT NOT NULL,
@@ -437,6 +438,11 @@ def has_stale_schema(connection: sqlite3.Connection) -> bool:
 
 
 def upgrade_schema(connection: sqlite3.Connection) -> None:
+    if table_exists(connection, "tasks"):
+        task_columns = table_columns(connection, "tasks")
+        if "work_type" not in task_columns:
+            connection.execute("ALTER TABLE tasks ADD COLUMN work_type TEXT")
+
     if table_exists(connection, "evaluations"):
         evaluation_columns = table_columns(connection, "evaluations")
         if "associated_baseline_id" not in evaluation_columns:

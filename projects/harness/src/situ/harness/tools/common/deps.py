@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import inspect
 import json
 import re
@@ -13,6 +12,7 @@ from pydantic_ai_backends import LocalBackend
 
 from ...api.collections import publish_record_upsert
 from ...core.db import Database
+from ...core.git import git_lines, git_text
 from ...core.notifications import emit_project_event
 from ...core.workers import WorkerManager
 from ...records.base import DbRecord
@@ -287,47 +287,18 @@ def _metric_hints_from_output(output: str) -> dict[str, dict[str, Any]]:
 
 
 async def _git_state_for_receipt(cwd: Path) -> dict[str, Any]:
-    git_root = await _git_text(cwd, "rev-parse", "--show-toplevel")
+    git_root = await git_text(cwd, "rev-parse", "--show-toplevel")
     if not git_root:
         return {"available": False}
     return {
         "available": True,
         "root": git_root,
-        "branch": await _git_text(cwd, "branch", "--show-current") or None,
-        "commit": await _git_text(cwd, "rev-parse", "HEAD") or None,
+        "branch": await git_text(cwd, "branch", "--show-current") or None,
+        "commit": await git_text(cwd, "rev-parse", "HEAD") or None,
         "dirty": bool(
-            await _git_lines(cwd, "status", "--porcelain=v1", "--untracked-files=all")
+            await git_lines(cwd, "status", "--porcelain=v1", "--untracked-files=all")
         ),
     }
-
-
-async def _git_text(cwd: Path, *args: str) -> str:
-    returncode, stdout, _stderr = await _git_output(cwd, *args)
-    return stdout.strip() if returncode == 0 else ""
-
-
-async def _git_lines(cwd: Path, *args: str) -> list[str]:
-    text = await _git_text(cwd, *args)
-    return text.splitlines() if text else []
-
-
-async def _git_output(cwd: Path, *args: str) -> tuple[int, str, str]:
-    try:
-        process = await asyncio.create_subprocess_exec(
-            "git",
-            *args,
-            cwd=cwd,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-        )
-    except OSError as error:
-        return 127, "", str(error)
-    stdout, stderr = await process.communicate()
-    return (
-        process.returncode if process.returncode is not None else 0,
-        stdout.decode(errors="replace"),
-        stderr.decode(errors="replace"),
-    )
 
 
 def _artifact_path_for_record(*, artifact_path: Path, project_dir: Path) -> str:

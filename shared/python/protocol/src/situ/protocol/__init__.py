@@ -61,6 +61,7 @@ from .events import (
     TaskRecord,
     TaskSourceKind,
     TaskStatus,
+    TaskWorkType,
     WorkStatus,
     WorkspaceRecord,
 )
@@ -145,6 +146,7 @@ __all__ = [
     "TaskRecord",
     "TaskSourceKind",
     "TaskStatus",
+    "TaskWorkType",
     "WorkerInitializeParams",
     "WorkerInitializeResult",
     "WorkerProgressParams",

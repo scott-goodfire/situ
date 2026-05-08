@@ -22,6 +22,7 @@ Read in this order:
 15. [0015-experiment-lineage-portfolio-search/SPEC.md](./0015-experiment-lineage-portfolio-search/SPEC.md)
 16. [0016-task-work-types-and-reviews/SPEC.md](./0016-task-work-types-and-reviews/SPEC.md)
 17. [0017-distribution-and-install/SPEC.md](./0017-distribution-and-install/SPEC.md)
+18. [0018-evals/SPEC.md](./0018-evals/SPEC.md)
 
 ## Product Thesis
 

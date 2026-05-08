@@ -116,6 +116,11 @@ class TaskKind(StrEnum):
     REVIEW = "review"
 
 
+class TaskWorkType(StrEnum):
+    REVIEW_HYPOTHESIS = "review_hypothesis"
+    REVIEW_EXPERIMENT = "review_experiment"
+
+
 class TaskStatus(StrEnum):
     BACKLOG = "backlog"
     IN_PROGRESS = "in_progress"
@@ -270,6 +275,7 @@ class TaskRecord(BaseModel):
     title: str
     content: str
     kind: TaskKind
+    work_type: TaskWorkType | None = None
     status: TaskStatus
     priority: TaskPriority
     source_kind: TaskSourceKind

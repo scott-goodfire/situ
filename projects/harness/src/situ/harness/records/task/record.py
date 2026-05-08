@@ -18,6 +18,11 @@ class TaskKind(StrEnum):
     REVIEW = "review"
 
 
+class TaskWorkType(StrEnum):
+    REVIEW_HYPOTHESIS = "review_hypothesis"
+    REVIEW_EXPERIMENT = "review_experiment"
+
+
 class TaskStatus(StrEnum):
     BACKLOG = "backlog"
     IN_PROGRESS = "in_progress"
@@ -45,6 +50,30 @@ def parse_task_kind(kind: TaskKind | str) -> TaskKind:
     except ValueError as error:
         allowed = ", ".join(f"'{item.value}'" for item in TaskKind)
         raise ValueError(f"invalid task kind: {kind!r}. Use exactly one of {allowed}.") from error
+
+
+def parse_task_work_type(work_type: TaskWorkType | str) -> TaskWorkType:
+    try:
+        return TaskWorkType(work_type)
+    except ValueError as error:
+        allowed = ", ".join(f"'{item.value}'" for item in TaskWorkType)
+        raise ValueError(
+            f"invalid task work type: {work_type!r}. Use exactly one of {allowed}."
+        ) from error
+
+
+REVIEW_WORK_TYPES = frozenset({TaskWorkType.REVIEW_HYPOTHESIS, TaskWorkType.REVIEW_EXPERIMENT})
+
+
+def ensure_work_type_compatible_with_kind(
+    *, kind: TaskKind, work_type: TaskWorkType | None
+) -> None:
+    if work_type is None:
+        return
+    if work_type in REVIEW_WORK_TYPES and kind != TaskKind.REVIEW:
+        raise ValueError(
+            f"work_type {work_type.value!r} requires kind 'review', got {kind.value!r}."
+        )
 
 
 def parse_task_status(status: TaskStatus | str) -> TaskStatus:
@@ -84,6 +113,7 @@ class TaskRecord(DbRecord):
     title: str
     content: str
     kind: TaskKind
+    work_type: TaskWorkType | None = None
     status: TaskStatus
     priority: TaskPriority
     source_kind: TaskSourceKind

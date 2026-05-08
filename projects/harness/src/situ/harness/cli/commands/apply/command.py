@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-import subprocess
 import sys
 from pathlib import Path
 
 from ....core.db import Database
+from ....core.git import git_lines, git_output, git_text, run_git
 from ....core.paths import resolve_workspace
 from ....core.project_context import ProjectContext
 from ....repositories import Repositories
@@ -37,13 +37,13 @@ async def run_async(args: argparse.Namespace) -> int:
         print(f"patch file not found: {patch_path}", file=sys.stderr)
         return 1
 
-    git_root = _git_text(context.repo_root, "rev-parse", "--show-toplevel")
+    git_root = await git_text(context.repo_root, "rev-parse", "--show-toplevel")
     if not git_root:
         print(f"workspace is not a git repository: {context.repo_root}", file=sys.stderr)
         return 1
     git_root_path = Path(git_root)
 
-    dirty_paths = _git_lines(
+    dirty_paths = await git_lines(
         git_root_path,
         "status",
         "--porcelain=v1",
@@ -61,11 +61,14 @@ async def run_async(args: argparse.Namespace) -> int:
 
     if args.branch is not None:
         branch = args.branch or f"situ/apply/{artifact.id.lower()}"
-        if _run_git(git_root_path, "checkout", "-b", branch) != 0:
+        try:
+            await run_git(git_root_path, "checkout", "-b", branch)
+        except RuntimeError as error:
+            print(str(error), file=sys.stderr)
             return 1
 
     base_commit = await _base_commit_for_patch(repos, artifact.id)
-    current_commit = _git_text(git_root_path, "rev-parse", "HEAD")
+    current_commit = await git_text(git_root_path, "rev-parse", "HEAD")
     if base_commit and current_commit and base_commit != current_commit:
         print(
             f"warning: patch base {base_commit[:12]} differs from current "
@@ -73,13 +76,7 @@ async def run_async(args: argparse.Namespace) -> int:
             file=sys.stderr,
         )
 
-    result = subprocess.run(
-        ["git", "apply", "--3way", str(patch_path)],
-        cwd=git_root_path,
-        text=True,
-        capture_output=True,
-        check=False,
-    )
+    result = await git_output(git_root_path, "apply", "--3way", str(patch_path))
     if result.returncode != 0:
         sys.stderr.write(result.stderr or result.stdout)
         return result.returncode
@@ -103,24 +100,3 @@ async def _base_commit_for_patch(repos: Repositories, artifact_id: str) -> str |
             base_commit = payload.get("base_commit")
             return base_commit if isinstance(base_commit, str) else None
     return None
-
-
-def _run_git(cwd: Path, *args: str) -> int:
-    result = subprocess.run(["git", *args], cwd=cwd, text=True)
-    return result.returncode
-
-
-def _git_text(cwd: Path, *args: str) -> str:
-    result = subprocess.run(
-        ["git", *args],
-        cwd=cwd,
-        text=True,
-        capture_output=True,
-        check=False,
-    )
-    return result.stdout.strip() if result.returncode == 0 else ""
-
-
-def _git_lines(cwd: Path, *args: str) -> list[str]:
-    text = _git_text(cwd, *args)
-    return text.splitlines() if text else []

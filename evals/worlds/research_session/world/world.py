@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-import asyncio
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any
 
 from situ.harness.api.project_board import ProjectBoardService
 from situ.harness.core.db import Database
+from situ.harness.core.git import run_git
 from situ.harness.repositories import Repositories
 from evals.framework.models import EvalEvent
 from evals.worlds.research_session.models import ResearchSessionSeed
@@ -425,17 +425,17 @@ def _metric_values(
 
 
 async def _seed_dirty_workspace(repo_path: Path) -> None:
-    await _git(repo_path, "init")
-    await _git(repo_path, "config", "user.email", "situ@example.com")
-    await _git(repo_path, "config", "user.name", "Situ")
+    await run_git(repo_path, "init")
+    await run_git(repo_path, "config", "user.email", "situ@example.com")
+    await run_git(repo_path, "config", "user.name", "Situ")
     (repo_path / "train.py").write_text("COMPONENT = 'baseline'\n", encoding="utf-8")
     (repo_path / "tests").mkdir()
     (repo_path / "tests" / "test_train.py").write_text(
         "def test_train(): pass\n",
         encoding="utf-8",
     )
-    await _git(repo_path, "add", ".")
-    await _git(repo_path, "commit", "-m", "baseline")
+    await run_git(repo_path, "add", ".")
+    await run_git(repo_path, "commit", "-m", "baseline")
 
     (repo_path / "train.py").write_text("COMPONENT = 'component_a'\n", encoding="utf-8")
     (repo_path / "tests" / "test_train.py").write_text(
@@ -446,22 +446,3 @@ async def _seed_dirty_workspace(repo_path: Path) -> None:
         "[project]\nname = 'situ-eval-world'\n",
         encoding="utf-8",
     )
-
-
-async def _git(repo_path: Path, *args: str) -> None:
-    try:
-        process = await asyncio.create_subprocess_exec(
-            "git",
-            *args,
-            cwd=repo_path,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-        )
-    except OSError as error:
-        raise RuntimeError(f"git {' '.join(args)} failed: {error}") from error
-    stdout, stderr = await process.communicate()
-    if process.returncode != 0:
-        error = stderr.decode(errors="replace").strip() or stdout.decode(
-            errors="replace"
-        ).strip()
-        raise RuntimeError(f"git {' '.join(args)} failed: {error}")
