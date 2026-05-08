@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 import pytest_asyncio
 from situ.harness.api.current_state import CurrentStateService
-from situ.harness.api.project_board import ProjectBoardService
+from situ.harness.api.project_overview import ProjectOverviewService
 from situ.harness.api.sessions import SessionsService
 from situ.harness.core.db import Database
 from situ.harness.records import (
@@ -1030,7 +1030,7 @@ async def test_current_state_api_composes_protocol_shaped_state(repos: Repositor
     assert [event.type for event in current_state.events] == ["experiment.completed"]
 
 
-async def test_project_board_api_composes_project_board(repos: Repositories) -> None:
+async def test_project_overview_api_composes_project_overview(repos: Repositories) -> None:
     await create_experiment(repos)
     analysis = await create_analysis(repos)
     await repos.hypothesis_experiment_links.create(
@@ -1079,7 +1079,7 @@ async def test_project_board_api_composes_project_board(repos: Repositories) -> 
         body="Baseline result recorded.",
     )
 
-    graph = await ProjectBoardService(repos=repos).get_project_board(session_id="S1")
+    graph = await ProjectOverviewService(repos=repos).get_project_overview(session_id="S1")
 
     assert graph.workspace is not None
     assert graph.workspace.id == "workspace_test"

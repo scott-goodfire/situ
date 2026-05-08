@@ -1,6 +1,11 @@
 ---
 name: verify-specs-against-project
-description: Use when the user asks to check whether the specs and the actual code/state are still in sync, find spec ↔ project drift, and propose targeted updates to one side or the other. Different from curate-meta-layer (which is broad meta-layer entropy reduction): this skill is narrow and grounded in evidence from the running codebase.
+description: >-
+  Use when the user asks to check whether the specs and the actual code/state
+  are still in sync, find spec ↔ project drift, and propose targeted updates to
+  one side or the other. Different from curate-meta-layer (which is broad
+  meta-layer entropy reduction): this skill is narrow and grounded in evidence
+  from the running codebase.
 ---
 
 # Verify Specs Against Project

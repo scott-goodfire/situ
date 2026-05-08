@@ -70,12 +70,12 @@ from situ.harness.tools.projects import (
     RequestProjectCloseTool,
     UpdateProjectTool,
 )
-from situ.harness.tools.project_board import GetProjectBoardTool
+from situ.harness.tools.project_overview import GetProjectOverviewTool
 from situ.harness.tools.tasks import (
     ClaimTaskTool,
     CreateTaskTool,
     GetTaskTool,
-    GetTaskBoardTool,
+    GetTaskOverviewTool,
     LinkTaskEntityTool,
     UpdateTaskTool,
 )
@@ -150,7 +150,7 @@ async def repos(tmp_path: Path) -> Repositories:
     return repositories
 
 
-async def test_get_project_board_tool_reads_current_project_board(repos: Repositories) -> None:
+async def test_get_project_overview_tool_reads_current_project_overview(repos: Repositories) -> None:
     deps = SituToolDeps(session_id="S1", repos=repos)
     baseline = await repos.baselines.create(
         baseline_id="B1",
@@ -174,7 +174,7 @@ async def test_get_project_board_tool_reads_current_project_board(repos: Reposit
         body="Baseline command passed.",
     )
 
-    result = await invoke_situ_tool(tool=GetProjectBoardTool(), deps=deps)
+    result = await invoke_situ_tool(tool=GetProjectOverviewTool(), deps=deps)
 
     assert result.success is True
     assert result.workspace is not None
@@ -273,7 +273,7 @@ async def test_task_tools_coordinate_claims_comments_and_entity_links(
         entity_id="H1",
         relationship="referenced",
     )
-    board = await invoke_situ_tool(tool=GetTaskBoardTool(), deps=researcher_deps)
+    board = await invoke_situ_tool(tool=GetTaskOverviewTool(), deps=researcher_deps)
 
     assert comment.activity is not None
     assert link.link is not None

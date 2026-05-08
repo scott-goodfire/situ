@@ -9,7 +9,7 @@ description: Use when the Manager needs to plan the next focused Researcher, Sci
 
 1. Load `task-execution` if this planning pass has assigned task IDs.
 2. Read every assigned planning task with `get_task(task_id=...)`.
-3. Read `get_project`, `get_project_board`, and `get_task_board` as needed.
+3. Read `get_project`, `get_project_overview`, and `get_task_overview` as needed.
 4. Identify the highest-value next uncertainty.
 5. File a small batch of concrete tasks, usually one to three.
 6. Use dependencies when work must happen in order.

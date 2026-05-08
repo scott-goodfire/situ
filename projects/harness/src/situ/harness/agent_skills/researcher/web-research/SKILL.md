@@ -8,7 +8,7 @@ description: Use when a Researcher task asks for public prior art, papers, packa
 ## Method
 
 1. Read the assigned task with `get_task(task_id=...)`.
-2. Read `get_project_board` and local files needed to understand the project.
+2. Read `get_project_overview` and local files needed to understand the project.
 3. Use web search for source discovery and grounding.
 4. Prefer diverse primary or high-quality sources over repeated summaries.
 5. Create an `Analysis` that preserves source names and URLs.

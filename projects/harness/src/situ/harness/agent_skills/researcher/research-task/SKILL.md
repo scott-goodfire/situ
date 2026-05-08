@@ -9,7 +9,7 @@ description: Use when a Researcher is assigned a `research` task for codebase un
 
 1. Load `task-execution`.
 2. Read the task with `get_task(task_id=...)`.
-3. Read `get_project_board` and focused record lists needed for the task.
+3. Read `get_project_overview` and focused record lists needed for the task.
 4. Inspect local files with read-only workspace tools when local context matters.
 5. Use web search only when external context would materially improve the synthesis.
 6. Create or update an `Analysis` for reusable understanding.

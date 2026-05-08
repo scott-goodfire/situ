@@ -9,7 +9,7 @@ description: Use when any Situ runtime agent is assigned task IDs and needs the 
 
 1. Read every assigned task with `get_task(task_id=...)`.
 2. Use the returned task content, payload, dependencies, links, and comments as the focus for this pass.
-3. Read `get_project_board` or focused `list_*` tools only when the task needs that context.
+3. Read `get_project_overview` or focused `list_*` tools only when the task needs that context.
 4. Load a task-kind skill when one matches the task kind.
 5. Produce durable Situ records for findings, hypotheses, baselines, experiments, evaluations, measurements, or reviews.
 6. Link the task to important produced or referenced records with `link_task_entity` when the role has that tool.
