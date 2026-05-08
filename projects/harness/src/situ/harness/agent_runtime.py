@@ -67,6 +67,7 @@ class AgentRuntime:
                 build_scientist_toolset(),
                 build_workspace_toolset(),
             ],
+            builtin_tools=build_web_search_builtin_tools(),
             model_settings=DEFAULTS.model_settings(),
             history_processors=[keep_last_compaction_history],
             capabilities=[
@@ -123,6 +124,7 @@ class AgentRuntime:
                 build_critic_toolset(),
                 build_workspace_readonly_toolset(),
             ],
+            builtin_tools=build_web_search_builtin_tools(),
             model_settings=DEFAULTS.model_settings(),
             history_processors=[keep_last_compaction_history],
             capabilities=[

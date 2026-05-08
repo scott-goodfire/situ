@@ -115,12 +115,15 @@ async def test_agent_runtime_wraps_research_agent_with_dbos_agent(
     assert runtime.agent.model_settings == {
         "thinking": "low",
         "timeout": DEFAULTS.agent_model_request_timeout_seconds,
+        "anthropic_cache": True,
+        "anthropic_cache_instructions": True,
+        "anthropic_cache_tool_definitions": True,
     }
     assert "AnthropicCompaction" in _capability_type_names(runtime.agent)
     assert "ProcessHistory" in _capability_type_names(runtime.agent)
     assert isinstance(runtime.dbos_agent, DBOSAgent)
     assert runtime.agent.toolsets
-    assert not _agent_has_web_search(runtime.agent)
+    assert _agent_has_web_search(runtime.agent)
     assert _agent_skill_names(runtime.agent) == SCIENTIST_SKILLS
     assert runtime.manager_agent.name == MANAGER_AGENT_NAME
     assert runtime.manager_agent.model_settings == runtime.agent.model_settings
@@ -134,7 +137,7 @@ async def test_agent_runtime_wraps_research_agent_with_dbos_agent(
     assert runtime.researcher_agent.toolsets
     assert _agent_has_web_search(runtime.researcher_agent)
     assert _agent_skill_names(runtime.researcher_agent) == RESEARCHER_SKILLS
-    assert not _agent_has_web_search(runtime.critic_agent)
+    assert _agent_has_web_search(runtime.critic_agent)
     assert _agent_skill_names(runtime.critic_agent) == CRITIC_SKILLS
 
 

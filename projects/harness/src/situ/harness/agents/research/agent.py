@@ -124,6 +124,7 @@ class ResearchAgent(
             output_type=ResearchAgentOutput,
             instructions=RESEARCH_AGENT_INSTRUCTIONS,
             toolsets=toolsets,
+            builtin_tools=build_web_search_builtin_tools(),
             model_settings=DEFAULTS.model_settings(),
             history_processors=[keep_last_compaction_history],
             capabilities=[
@@ -205,6 +206,7 @@ class ScientistAgent(BaseSituAgent[ScientistAgentContext, ResearchAgentOutput]):
                 build_scientist_toolset(),
                 build_workspace_toolset(),
             ],
+            builtin_tools=build_web_search_builtin_tools(),
             model_settings=DEFAULTS.model_settings(),
             history_processors=[keep_last_compaction_history],
             capabilities=[
@@ -288,6 +290,7 @@ class CriticAgent(BaseSituAgent[CriticAgentContext, ResearchAgentOutput]):
                 build_critic_toolset(),
                 build_workspace_readonly_toolset(),
             ],
+            builtin_tools=build_web_search_builtin_tools(),
             model_settings=DEFAULTS.model_settings(),
             history_processors=[keep_last_compaction_history],
             capabilities=[

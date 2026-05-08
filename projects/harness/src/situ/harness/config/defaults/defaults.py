@@ -33,6 +33,9 @@ class SituDefaults(BaseModel):
         return {
             "thinking": self.model_thinking,
             "timeout": self.agent_model_request_timeout_seconds,
+            "anthropic_cache": True,
+            "anthropic_cache_instructions": True,
+            "anthropic_cache_tool_definitions": True,
         }
 
 

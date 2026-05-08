@@ -31,13 +31,14 @@ console/filesystem toolset for ordinary coding-agent operations such as
 are backed by the current workspace root and do not write directly to Situ's
 research records.
 
-Provider-native web search is separate from Situ research-record tools.
-Manager and Researcher agents may use web search for prior art, public docs,
-papers, package/API behavior, or domain context. Findings that influence the
-work should be captured in explicit Situ records, usually `Analysis` records or
-task comments with source names and URLs. Do not attach web search to Scientist
-or Critic by default; those roles should focus on workspace evidence,
-measurements, and review.
+Provider-native web search is separate from Situ research-record tools. Agents
+may have web search available as an optional model-native capability for prior
+art, public docs, papers, package/API behavior, or domain context. Findings
+that influence the work should be captured in explicit Situ records, usually
+`Analysis` records or task comments with source names and URLs. Scientist and
+Critic use local workspace evidence, measurements, artifacts, and review trails
+as the basis for experiment and review judgment; web search is only supporting
+context when external facts make that local evidence easier to interpret.
 
 Runtime skills are also separate from Situ research-record tools. Skills may
 package reusable methodology, resources, or scripts for a role, but skill use

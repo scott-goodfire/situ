@@ -15,7 +15,7 @@ description: Use when a Scientist is assigned a `baseline` task to establish pro
 6. Create or select a `Baseline`.
 7. Create a baseline-associated `Evaluation`.
 8. Record useful plaintext command output and interpretation with `add_measurement`.
-9. Put comparable values in `payload.metrics` using stable metric keys when possible.
+9. Put comparable values in `payload.metrics` using stable metric keys and the typed metric-value shape, e.g. `{"score": {"value": 0.73, "direction": "higher_is_better"}}`. Direction may be `higher_is_better`, `lower_is_better`, `target`, or `informational`.
 10. Link the task to the baseline, evaluation, and central measurement evidence.
 11. Mark the task done with the command, headline metrics, and comparability caveats.
 
