@@ -20,6 +20,10 @@ class FakeAgentRuntime:
     def __init__(self, _project_dir: Path) -> None:
         pass
 
+    @classmethod
+    async def create(cls, project_dir: Path) -> "FakeAgentRuntime":
+        return cls(project_dir)
+
     async def plan_session(self, **_kwargs: Any):
         class Plan:
             summary = "fake plan"
@@ -91,7 +95,7 @@ async def test_snapshot_json_reads_local_state_without_live_session(
     workspace = tmp_path / "workspace"
     workspace.mkdir()
     project_home = Path.home() / ".situ"
-    app = HarnessApp(
+    app = await HarnessApp.create(
         workspace,
         app_root=Path.cwd(),
         project_home=project_home,
@@ -119,7 +123,7 @@ async def test_events_json_lines_reads_local_events(
     workspace = tmp_path / "workspace"
     workspace.mkdir()
     project_home = Path.home() / ".situ"
-    app = HarnessApp(
+    app = await HarnessApp.create(
         workspace,
         app_root=Path.cwd(),
         project_home=project_home,
@@ -157,7 +161,7 @@ async def test_clear_removes_local_state_for_workspace(
     workspace = tmp_path / "workspace"
     workspace.mkdir()
     project_home = Path.home() / ".situ"
-    app = HarnessApp(
+    app = await HarnessApp.create(
         workspace,
         app_root=Path.cwd(),
         project_home=project_home,
@@ -193,11 +197,14 @@ def test_clear_refuses_active_harness_without_force(
     workspace = tmp_path / "workspace"
     workspace.mkdir()
     project_home = Path.home() / ".situ"
-    context = ProjectContext(repo_root=workspace, home=project_home)
+    context = asyncio.run(ProjectContext.create(repo_root=workspace, home=project_home))
+
+    async def fake_read_live_session(_workspace: Path) -> dict[str, Any]:
+        return {"pid": 123, "url": "http://127.0.0.1:1", "token": "token"}
 
     monkeypatch.setattr(
         "situ.harness.cli.headless.clear.command.read_live_session",
-        lambda _workspace: {"pid": 123, "url": "http://127.0.0.1:1", "token": "token"},
+        fake_read_live_session,
     )
 
     code = cli.main(["clear", str(workspace)])
@@ -218,17 +225,23 @@ def test_clear_force_terminates_active_harness_then_removes_state(
     workspace = tmp_path / "workspace"
     workspace.mkdir()
     project_home = Path.home() / ".situ"
-    context = ProjectContext(repo_root=workspace, home=project_home)
+    context = asyncio.run(ProjectContext.create(repo_root=workspace, home=project_home))
     terminated: list[dict[str, Any]] = []
     session: dict[str, Any] = {"pid": 123, "url": "http://127.0.0.1:1", "token": "token"}
 
+    async def fake_read_live_session(_workspace: Path) -> dict[str, Any]:
+        return session
+
+    async def fake_terminate_live_session(*, session: dict[str, Any]) -> None:
+        terminated.append(session)
+
     monkeypatch.setattr(
         "situ.harness.cli.headless.clear.command.read_live_session",
-        lambda _workspace: session,
+        fake_read_live_session,
     )
     monkeypatch.setattr(
         "situ.harness.cli.headless.clear.command.terminate_live_session",
-        lambda *, session: terminated.append(session),
+        fake_terminate_live_session,
     )
 
     code = cli.main(["clear", str(workspace), "--force"])
@@ -250,7 +263,7 @@ def test_exec_uses_shared_rpc_lifecycle_and_prints_final_json(
     workspace.mkdir()
     calls: list[tuple[str, dict[str, Any]]] = []
 
-    def fake_start_session_server(
+    async def fake_start_session_server(
         workspace: Path,
         env: dict[str, str],
         *,
@@ -357,7 +370,7 @@ def test_exec_resumes_latest_session_when_requested_without_id(
     workspace.mkdir()
     calls: list[tuple[str, dict[str, Any]]] = []
 
-    def fake_start_session_server(
+    async def fake_start_session_server(
         _workspace: Path,
         _env: dict[str, str],
         *,
@@ -494,12 +507,12 @@ def test_exec_returns_failure_when_closed_session_has_failed_event(
             }
         raise AssertionError(f"unexpected RPC method {method}")
 
+    async def fake_start_session_server(*_args: Any, **_kwargs: Any) -> tuple[Any, dict[str, str]]:
+        return object(), {"url": "http://127.0.0.1:1", "token": "token"}
+
     monkeypatch.setattr(
         "situ.harness.cli.headless.exec.command.start_session_server",
-        lambda *_args, **_kwargs: (
-            object(),
-            {"url": "http://127.0.0.1:1", "token": "token"},
-        ),
+        fake_start_session_server,
     )
     monkeypatch.setattr(
         "situ.harness.cli.headless.exec.command.stop_process",
@@ -626,9 +639,12 @@ def test_web_skips_build_when_dist_exists(
         return Completed()
 
     monkeypatch.chdir(launch_directory)
+    async def fake_should_build_web(_root: Path, *, rebuild: bool) -> bool:
+        return False
+
     monkeypatch.setattr(
         "situ.harness.cli.commands.web.command.should_build_web",
-        lambda _root, *, rebuild: False,
+        fake_should_build_web,
     )
     monkeypatch.setattr("situ.harness.cli.commands.web.command.subprocess.run", fake_run)
 
@@ -648,19 +664,20 @@ def test_web_skips_build_when_dist_exists(
     ]
 
 
-def test_should_build_web_detects_missing_build(tmp_path: Path) -> None:
+@pytest.mark.asyncio
+async def test_should_build_web_detects_missing_build(tmp_path: Path) -> None:
     from situ.harness.cli.commands.web.command import should_build_web
 
     web_root = tmp_path / "web"
     index = web_root / "dist" / "index.html"
 
-    assert should_build_web(web_root, rebuild=False) is True
+    assert await should_build_web(web_root, rebuild=False) is True
 
     index.parent.mkdir(parents=True)
     index.write_text("<main>Situ</main>")
 
-    assert should_build_web(web_root, rebuild=False) is False
-    assert should_build_web(web_root, rebuild=True) is True
+    assert await should_build_web(web_root, rebuild=False) is False
+    assert await should_build_web(web_root, rebuild=True) is True
 
 
 def test_tui_uses_existing_app_server(
@@ -680,9 +697,12 @@ def test_tui_uses_existing_app_server(
         calls.append({"runtime": runtime, "env": env})
         return 0
 
+    async def fake_read_live_app() -> dict[str, str]:
+        return {"url": "http://127.0.0.1:1", "token": "token"}
+
     monkeypatch.setattr(
         "situ.harness.cli.commands._shared.tui.read_live_app",
-        lambda: {"url": "http://127.0.0.1:1", "token": "token"},
+        fake_read_live_app,
     )
     monkeypatch.setattr(
         "situ.harness.cli.commands._shared.tui.run_tui",
@@ -709,9 +729,12 @@ def test_tui_refuses_dirty_git_workspace_before_launch(
     _git(workspace, "init")
     (workspace / "dirty.txt").write_text("dirty\n")
 
+    async def fake_read_live_app() -> None:
+        pytest.fail("app discovery should not run for a dirty workspace")
+
     monkeypatch.setattr(
         "situ.harness.cli.commands._shared.tui.read_live_app",
-        lambda: pytest.fail("app discovery should not run for a dirty workspace"),
+        fake_read_live_app,
     )
     monkeypatch.setattr(
         "situ.harness.cli.commands._shared.tui.run_tui",

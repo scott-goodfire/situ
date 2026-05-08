@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import asyncio
 import logging
 import sys
 from pathlib import Path
@@ -36,7 +37,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"{name}\t{cls.__module__}.{cls.__name__}")
         return 0
 
-    configure_eval_observability()
+    asyncio.run(configure_eval_observability())
 
     if not eval_classes:
         print(f"No eval groups found in {args.path}", file=sys.stderr)

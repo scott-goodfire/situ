@@ -27,7 +27,7 @@ async def run_repo_bootstrap_agent(args: RepoBootstrapEvalInput) -> RepoBootstra
             emit_event=world.emit_event,
         )
         agent = ResearchAgent(
-            model=eval_model_name(),
+            model=await eval_model_name(),
             capabilities=[capture],
         )
         result = await agent.run(

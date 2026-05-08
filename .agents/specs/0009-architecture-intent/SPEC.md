@@ -95,25 +95,6 @@ Python harness, not as a new product surface.
 This keeps creativity in the agent layer while preserving Situ as the
 control plane.
 
-## Reference Prototype
-
-The earlier `~/macromackie/almanac` project proved a useful local vertical
-slice:
-
-- TypeScript terminal UI
-- Python harness
-- JSON-RPC over stdio
-- SQLite state
-- Agent/tool-driven proposer
-- Worker subprocess
-- Shared Python/TypeScript protocol generation
-
-This repo should borrow the useful engineering pattern: clear local process
-boundaries, durable state, explicit protocol contracts, and small command
-scripts behind `mise` tasks.
-
-Situ stays close to that structure:
-
 ```text
 projects/tui                  projects/harness
 TypeScript + Ink   HTTP/SSE   local app server   JSON-RPC   Python

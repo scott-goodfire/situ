@@ -6,6 +6,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
+import aiofiles.ospath
+
 from .resolve import resolve_app_root
 
 
@@ -26,7 +28,7 @@ class BundledRuntime:
         return ["bun", "run", "dev"], self.source_cwd
 
 
-def find_bundled_resource(name: str) -> Path | None:
+async def find_bundled_resource(name: str) -> Path | None:
     try:
         anchor = ires.files(BUNDLED_PACKAGE)
     except ModuleNotFoundError:
@@ -36,20 +38,22 @@ def find_bundled_resource(name: str) -> Path | None:
         path = Path(os.fspath(target))
     except (TypeError, NotImplementedError):
         return None
-    if not path.exists():
+    if not await aiofiles.ospath.exists(path):
         return None
     return path
 
 
-def resolve_bundled_runtime(name: str, *, source_dir: str | None = None) -> BundledRuntime | None:
-    bundled = find_bundled_resource(name)
+async def resolve_bundled_runtime(
+    name: str, *, source_dir: str | None = None
+) -> BundledRuntime | None:
+    bundled = await find_bundled_resource(name)
     if bundled is not None:
         return BundledRuntime(kind="installed", path=bundled, source_cwd=None)
 
-    app_root = resolve_app_root(Path(__file__))
+    app_root = await resolve_app_root(Path(__file__))
     if app_root is None:
         return None
     source_cwd = app_root / "projects" / (source_dir or name)
-    if not source_cwd.is_dir():
+    if not await aiofiles.ospath.isdir(source_cwd):
         return None
     return BundledRuntime(kind="source", path=source_cwd, source_cwd=source_cwd)

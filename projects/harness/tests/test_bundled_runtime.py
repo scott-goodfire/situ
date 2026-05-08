@@ -11,27 +11,34 @@ from situ.harness.core.paths.bundled import (
 )
 
 
-def test_find_bundled_resource_returns_path_for_present_file() -> None:
-    path = find_bundled_resource("__init__.py")
+@pytest.mark.asyncio
+async def test_find_bundled_resource_returns_path_for_present_file() -> None:
+    path = await find_bundled_resource("__init__.py")
     assert path is not None
     assert path.name == "__init__.py"
     assert path.exists()
 
 
-def test_find_bundled_resource_returns_none_for_missing_file() -> None:
-    assert find_bundled_resource("definitely-not-bundled-xyz123") is None
+@pytest.mark.asyncio
+async def test_find_bundled_resource_returns_none_for_missing_file() -> None:
+    assert await find_bundled_resource("definitely-not-bundled-xyz123") is None
 
 
-def test_resolve_bundled_runtime_returns_installed_when_resource_found(
+@pytest.mark.asyncio
+async def test_resolve_bundled_runtime_returns_installed_when_resource_found(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     fake = Path("/fake/binary")
+
+    async def fake_find_bundled_resource(_name: str) -> Path | None:
+        return fake
+
     monkeypatch.setattr(
         "situ.harness.core.paths.bundled.find_bundled_resource",
-        lambda _name: fake,
+        fake_find_bundled_resource,
     )
 
-    runtime = resolve_bundled_runtime("anything")
+    runtime = await resolve_bundled_runtime("anything")
 
     assert runtime is not None
     assert runtime.kind == "installed"
@@ -39,19 +46,24 @@ def test_resolve_bundled_runtime_returns_installed_when_resource_found(
     assert runtime.source_cwd is None
 
 
-def test_resolve_bundled_runtime_falls_back_to_source_dir(
+@pytest.mark.asyncio
+async def test_resolve_bundled_runtime_falls_back_to_source_dir(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     project_dir = tmp_path / "projects" / "thing"
     project_dir.mkdir(parents=True)
+
+    async def fake_find_bundled_resource(_name: str) -> Path | None:
+        return None
+
     monkeypatch.setattr(
         "situ.harness.core.paths.bundled.find_bundled_resource",
-        lambda _name: None,
+        fake_find_bundled_resource,
     )
     monkeypatch.setenv("SITU_APP_ROOT", str(tmp_path))
 
-    runtime = resolve_bundled_runtime("anything", source_dir="thing")
+    runtime = await resolve_bundled_runtime("anything", source_dir="thing")
 
     assert runtime is not None
     assert runtime.kind == "source"
@@ -59,36 +71,45 @@ def test_resolve_bundled_runtime_falls_back_to_source_dir(
     assert runtime.source_cwd == project_dir
 
 
-def test_resolve_bundled_runtime_defaults_source_dir_to_name(
+@pytest.mark.asyncio
+async def test_resolve_bundled_runtime_defaults_source_dir_to_name(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     project_dir = tmp_path / "projects" / "thing"
     project_dir.mkdir(parents=True)
+
+    async def fake_find_bundled_resource(_name: str) -> Path | None:
+        return None
+
     monkeypatch.setattr(
         "situ.harness.core.paths.bundled.find_bundled_resource",
-        lambda _name: None,
+        fake_find_bundled_resource,
     )
     monkeypatch.setenv("SITU_APP_ROOT", str(tmp_path))
 
-    runtime = resolve_bundled_runtime("thing")
+    runtime = await resolve_bundled_runtime("thing")
 
     assert runtime is not None
     assert runtime.kind == "source"
     assert runtime.source_cwd == project_dir
 
 
-def test_resolve_bundled_runtime_returns_none_when_neither_present(
+@pytest.mark.asyncio
+async def test_resolve_bundled_runtime_returns_none_when_neither_present(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    async def fake_find_bundled_resource(_name: str) -> Path | None:
+        return None
+
     monkeypatch.setattr(
         "situ.harness.core.paths.bundled.find_bundled_resource",
-        lambda _name: None,
+        fake_find_bundled_resource,
     )
     monkeypatch.setenv("SITU_APP_ROOT", str(tmp_path))
 
-    assert resolve_bundled_runtime("anything") is None
+    assert await resolve_bundled_runtime("anything") is None
 
 
 def test_subprocess_args_for_installed_runtime() -> None:

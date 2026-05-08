@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import asyncio
 import subprocess
 import sys
 import time
@@ -22,9 +23,13 @@ from .._shared.workspace import (
 
 
 def run(args: argparse.Namespace) -> int:
-    app_root = resolve_app_root(Path(__file__))
+    return asyncio.run(run_async(args))
 
-    workspace = resolve_existing_workspace(args)
+
+async def run_async(args: argparse.Namespace) -> int:
+    app_root = await resolve_app_root(Path(__file__))
+
+    workspace = await resolve_existing_workspace(args)
     if workspace is None:
         return 1
 
@@ -35,7 +40,7 @@ def run(args: argparse.Namespace) -> int:
     session_id = None
 
     try:
-        session_process, session = start_session_server(
+        session_process, session = await start_session_server(
             workspace,
             env,
             quiet=True,

@@ -49,7 +49,7 @@ async def run_research_tool_agent(args: ResearchToolEvalInput) -> ResearchToolEv
             worker_manager=_EvalWorkerManager(),
             emit_event=world.emit_event,
         )
-        agent = _build_agent(capture, toolset=args.toolset)
+        agent = await _build_agent(capture, toolset=args.toolset)
         result = await agent.run(args.prompt, deps=deps)
         return ResearchToolEvalOutput(
             content=str(result.output),
@@ -65,13 +65,13 @@ async def run_research_tool_agent(args: ResearchToolEvalInput) -> ResearchToolEv
         world.teardown()
 
 
-def _build_agent(
+async def _build_agent(
     capture: ToolCallCaptureCapability,
     *,
     toolset: str,
 ) -> Agent[SituToolDeps, str]:
     return Agent[SituToolDeps, str](
-        eval_model_name(),
+        await eval_model_name(),
         name=RESEARCH_TOOL_AGENT_NAME,
         deps_type=SituToolDeps,
         output_type=str,

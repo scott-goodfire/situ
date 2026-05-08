@@ -10,13 +10,13 @@ from ...config import DEFAULTS, SituSecrets
 _CONFIGURED = False
 
 
-def configure_observability(project_dir: Path | None = None) -> None:
+async def configure_observability(project_dir: Path | None = None) -> None:
     global _CONFIGURED
     if _CONFIGURED:
         return
 
     secrets_home = project_dir.parent.parent if project_dir is not None else None
-    SituSecrets().apply_local_sdk_environment(home=secrets_home)
+    await SituSecrets().apply_local_sdk_environment(home=secrets_home)
 
     if project_dir is not None:
         os.environ.setdefault("LOGFIRE_DATA_DIR", str(project_dir / "logfire"))

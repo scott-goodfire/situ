@@ -40,7 +40,7 @@ from situ.harness.records.base import DbRecord
 from situ.harness.tools import (
     build_critic_toolset,
     build_manager_toolset,
-    build_research_toolset,
+    build_scientist_toolset,
 )
 from situ.harness.tools.common import BaseSituTool, SituToolReturn
 
@@ -178,13 +178,13 @@ def test_situ_tool_folders_match_toolset_registration() -> None:
         tool_classes[tool_class.name] = tool_class
 
     registered_tools = (
-        set(build_research_toolset().tools)
+        set(build_scientist_toolset().tools)
         | set(build_manager_toolset().tools)
         | set(build_critic_toolset().tools)
     )
     assert registered_tools == set(tool_classes)
-    assert "request_project_close" not in build_research_toolset().tools
-    assert "confirm_project_close" not in build_research_toolset().tools
+    assert "request_project_close" not in build_scientist_toolset().tools
+    assert "confirm_project_close" not in build_scientist_toolset().tools
     assert "request_project_close" in build_manager_toolset().tools
     assert "confirm_project_close" in build_manager_toolset().tools
 

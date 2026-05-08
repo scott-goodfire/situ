@@ -16,7 +16,9 @@ def run(args: argparse.Namespace) -> int:
 
 
 async def run_async(args: argparse.Namespace) -> int:
-    context = ProjectContext(resolve_workspace(Path.cwd(), args.workspace))
+    context = await ProjectContext.create(
+        await resolve_workspace(Path.cwd(), args.workspace)
+    )
     db = Database(
         context.database_path,
         workspace_id=context.workspace_id,

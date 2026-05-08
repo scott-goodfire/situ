@@ -32,19 +32,19 @@ class AppSessionLoopWorld:
         self._tmp = TemporaryDirectory()
         self.root = Path(self._tmp.name)
         self.workspace_path = self.root / "fixture-repo"
-
-        self.app = HarnessApp(
-            self.workspace_path,
-            app_root=Path.cwd(),
-            project_home=self.root / "home",
-            notify=lambda _method, _params: None,
-        )
+        self.app: HarnessApp
         self.session_id = SESSION_ID
 
     @classmethod
     async def create(cls, args: AppSessionLoopEvalInput) -> "AppSessionLoopWorld":
         world = cls(args)
         await aiofiles.os.makedirs(world.workspace_path, exist_ok=True)
+        world.app = await HarnessApp.create(
+            world.workspace_path,
+            app_root=Path.cwd(),
+            project_home=world.root / "home",
+            notify=lambda _method, _params: None,
+        )
         await world._write_fixture_repo()
         await world._init_git_repo()
         world.workspace = await world.app.repos.workspaces.ensure()
@@ -81,7 +81,7 @@ class AppSessionLoopWorld:
         return world
 
     async def run(self) -> None:
-        self._install_eval_runtime_secrets()
+        await self._install_eval_runtime_secrets()
         await self.app._execute_session_async(
             session_id=self.session_id,
             max_experiments=self.args.max_experiments,
@@ -113,12 +113,12 @@ class AppSessionLoopWorld:
             files[artifact_id] = path.read_text(encoding="utf-8", errors="replace")
         return files
 
-    def _install_eval_runtime_secrets(self) -> None:
+    async def _install_eval_runtime_secrets(self) -> None:
         secrets = SituSecrets()
-        secrets.require_eval_environment()
+        await secrets.require_eval_environment()
         store = LocalSecretStore(home=self.app.context.home)
-        store.set_anthropic_key(secrets.require_eval_anthropic_key())
-        store.set_logfire_token(secrets.require_eval_logfire_token())
+        await store.set_anthropic_key(await secrets.require_eval_anthropic_key())
+        await store.set_logfire_token(await secrets.require_eval_logfire_token())
 
     async def events(self) -> list[EvalEvent]:
         return [

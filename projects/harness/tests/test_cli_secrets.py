@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 from pathlib import Path
 
@@ -52,7 +53,7 @@ def test_secrets_set_anthropic_prompts_and_redacts_output(
     store = LocalSecretStore()
     assert code == 0
     assert captured.err == ""
-    assert store.get_anthropic_key() == "sk-cli-test"
+    assert asyncio.run(store.get_anthropic_key()) == "sk-cli-test"
     assert payload["secret"] == "anthropic"
     assert payload["changed"] is True
     assert payload["anthropic"] == {"configured": True, "source": "local"}
@@ -77,7 +78,7 @@ def test_secrets_set_logfire_prompts_and_redacts_output(
     store = LocalSecretStore()
     assert code == 0
     assert captured.err == ""
-    assert store.get_logfire_token() == "logfire-cli-test"
+    assert asyncio.run(store.get_logfire_token()) == "logfire-cli-test"
     assert payload["secret"] == "logfire"
     assert payload["changed"] is True
     assert payload["anthropic"] == {"configured": False, "source": "missing"}
@@ -90,8 +91,8 @@ def test_secrets_unset_one_secret_and_clear_all(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     store = LocalSecretStore()
-    store.set_anthropic_key("sk-cli-test")
-    store.set_logfire_token("logfire-cli-test")
+    asyncio.run(store.set_anthropic_key("sk-cli-test"))
+    asyncio.run(store.set_logfire_token("logfire-cli-test"))
 
     unset_code = cli.main(["secrets", "unset", "logfire", "--json"])
     unset_capture = capsys.readouterr()
@@ -102,8 +103,8 @@ def test_secrets_unset_one_secret_and_clear_all(
     assert unset_payload["changed"] is True
     assert unset_payload["anthropic"] == {"configured": True, "source": "local"}
     assert unset_payload["logfire"] == {"configured": False, "source": "missing"}
-    assert store.get_anthropic_key() == "sk-cli-test"
-    assert store.get_logfire_token() is None
+    assert asyncio.run(store.get_anthropic_key()) == "sk-cli-test"
+    assert asyncio.run(store.get_logfire_token()) is None
 
     clear_code = cli.main(["secrets", "clear", "--json"])
     clear_capture = capsys.readouterr()
@@ -113,7 +114,7 @@ def test_secrets_unset_one_secret_and_clear_all(
     assert clear_payload["changed"] is True
     assert clear_payload["anthropic"] == {"configured": False, "source": "missing"}
     assert clear_payload["logfire"] == {"configured": False, "source": "missing"}
-    assert store.get_anthropic_key() is None
+    assert asyncio.run(store.get_anthropic_key()) is None
     assert store.path.exists() is False
 
 
@@ -121,7 +122,7 @@ def test_secrets_status_human_output_is_redacted(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     store = LocalSecretStore()
-    store.set_anthropic_key("sk-cli-test")
+    asyncio.run(store.set_anthropic_key("sk-cli-test"))
 
     code = cli.main(["secrets", "status"])
 

@@ -1,9 +1,13 @@
 from __future__ import annotations
 
 import json
+import asyncio
 import os
 from pathlib import Path
 from typing import Any
+
+import aiofiles
+import aiofiles.os
 
 from ..defaults import DEFAULTS
 
@@ -16,61 +20,62 @@ class LocalSecretStore:
         self.home = home.expanduser() if home is not None else DEFAULTS.local_state_home_path()
         self.path = self.home / "secrets.json"
 
-    def get_anthropic_key(self) -> str | None:
-        return self._get_secret(ANTHROPIC_KEY_NAME)
+    async def get_anthropic_key(self) -> str | None:
+        return await self._get_secret(ANTHROPIC_KEY_NAME)
 
-    def set_anthropic_key(self, value: str) -> None:
-        self._set_secret(ANTHROPIC_KEY_NAME, value, label="Anthropic key")
+    async def set_anthropic_key(self, value: str) -> None:
+        await self._set_secret(ANTHROPIC_KEY_NAME, value, label="Anthropic key")
 
-    def unset_anthropic_key(self) -> bool:
-        return self._unset_secret(ANTHROPIC_KEY_NAME)
+    async def unset_anthropic_key(self) -> bool:
+        return await self._unset_secret(ANTHROPIC_KEY_NAME)
 
-    def get_logfire_token(self) -> str | None:
-        return self._get_secret(LOGFIRE_TOKEN_NAME)
+    async def get_logfire_token(self) -> str | None:
+        return await self._get_secret(LOGFIRE_TOKEN_NAME)
 
-    def set_logfire_token(self, value: str) -> None:
-        self._set_secret(LOGFIRE_TOKEN_NAME, value, label="Logfire token")
+    async def set_logfire_token(self, value: str) -> None:
+        await self._set_secret(LOGFIRE_TOKEN_NAME, value, label="Logfire token")
 
-    def unset_logfire_token(self) -> bool:
-        return self._unset_secret(LOGFIRE_TOKEN_NAME)
+    async def unset_logfire_token(self) -> bool:
+        return await self._unset_secret(LOGFIRE_TOKEN_NAME)
 
-    def clear(self) -> bool:
+    async def clear(self) -> bool:
         try:
-            self.path.unlink()
+            await aiofiles.os.remove(self.path)
         except FileNotFoundError:
             return False
         return True
 
-    def _get_secret(self, name: str) -> str | None:
-        value = self._read().get(name)
+    async def _get_secret(self, name: str) -> str | None:
+        value = (await self._read()).get(name)
         if not isinstance(value, str):
             return None
         stripped = value.strip()
         return stripped or None
 
-    def _set_secret(self, name: str, value: str, *, label: str) -> None:
+    async def _set_secret(self, name: str, value: str, *, label: str) -> None:
         stripped = value.strip()
         if not stripped:
             raise ValueError(f"{label} cannot be empty.")
-        secrets = self._read()
+        secrets = await self._read()
         secrets[name] = stripped
-        self._write(secrets)
+        await self._write(secrets)
 
-    def _unset_secret(self, name: str) -> bool:
-        secrets = self._read()
+    async def _unset_secret(self, name: str) -> bool:
+        secrets = await self._read()
         if name not in secrets:
             return False
 
         del secrets[name]
         if secrets:
-            self._write(secrets)
+            await self._write(secrets)
         else:
-            self.clear()
+            await self.clear()
         return True
 
-    def _read(self) -> dict[str, Any]:
+    async def _read(self) -> dict[str, Any]:
         try:
-            raw = self.path.read_text()
+            async with aiofiles.open(self.path, encoding="utf-8") as file:
+                raw = await file.read()
         except FileNotFoundError:
             return {}
 
@@ -81,22 +86,17 @@ class LocalSecretStore:
 
         return parsed if isinstance(parsed, dict) else {}
 
-    def _write(self, value: dict[str, Any]) -> None:
-        self.home.mkdir(parents=True, exist_ok=True)
+    async def _write(self, value: dict[str, Any]) -> None:
+        await aiofiles.os.makedirs(self.home, exist_ok=True)
         try:
-            os.chmod(self.home, 0o700)
+            await asyncio.to_thread(os.chmod, self.home, 0o700)
         except OSError:
             pass
 
         payload = json.dumps(value, indent=2, sort_keys=True) + "\n"
-        fd = os.open(
-            self.path,
-            os.O_WRONLY | os.O_CREAT | os.O_TRUNC,
-            0o600,
-        )
-        with os.fdopen(fd, "w") as file:
-            file.write(payload)
+        async with aiofiles.open(self.path, "w", encoding="utf-8") as file:
+            await file.write(payload)
         try:
-            os.chmod(self.path, 0o600)
+            await asyncio.to_thread(os.chmod, self.path, 0o600)
         except OSError:
             pass

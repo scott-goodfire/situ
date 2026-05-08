@@ -172,7 +172,7 @@ async def test_harness_prepares_experiment_task_checkout_and_records_final_state
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     repo = _repo(tmp_path)
-    app = HarnessApp(
+    app = await HarnessApp.create(
         repo,
         notify=lambda _method, _params: None,
         project_home=tmp_path / "situ-home",

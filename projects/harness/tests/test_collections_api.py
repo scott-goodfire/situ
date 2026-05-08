@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+import pytest_asyncio
 from situ.protocol import (
     CollectionUpsertedParams,
     CollectionsBootstrapResult,
@@ -16,6 +17,10 @@ class FakeAgentRuntime:
     def __init__(self, _project_dir: Path) -> None:
         pass
 
+    @classmethod
+    async def create(cls, project_dir: Path) -> "FakeAgentRuntime":
+        return cls(project_dir)
+
     async def plan_session(self, **_kwargs: Any):
         class Plan:
             summary = "fake plan"
@@ -26,12 +31,12 @@ class FakeAgentRuntime:
         return Plan()
 
 
-@pytest.fixture
-def app(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> HarnessApp:
+@pytest_asyncio.fixture
+async def app(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> HarnessApp:
     monkeypatch.setattr("situ.harness.app.AgentRuntime", FakeAgentRuntime)
     workspace = tmp_path / "workspace"
     workspace.mkdir()
-    return HarnessApp(
+    return await HarnessApp.create(
         workspace,
         app_root=Path.cwd(),
         project_home=tmp_path / "home",
@@ -175,7 +180,7 @@ async def test_collections_subscribe_emits_event_upserts(
     workspace = tmp_path / "workspace"
     workspace.mkdir()
     notifications: list[tuple[str, dict[str, Any]]] = []
-    app = HarnessApp(
+    app = await HarnessApp.create(
         workspace,
         app_root=Path.cwd(),
         project_home=tmp_path / "home",

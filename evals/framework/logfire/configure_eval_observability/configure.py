@@ -7,12 +7,12 @@ from situ.harness.config import DEFAULTS, SituSecrets
 _CONFIGURED = False
 
 
-def configure_eval_observability() -> None:
+async def configure_eval_observability() -> None:
     global _CONFIGURED
     if _CONFIGURED:
         return
 
-    SituSecrets().require_eval_environment()
+    await SituSecrets().require_eval_environment()
 
     logfire.configure(
         send_to_logfire="always",

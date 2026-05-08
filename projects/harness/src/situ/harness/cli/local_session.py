@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import os
 import subprocess
@@ -7,6 +8,10 @@ import time
 import urllib.error
 import urllib.request
 from pathlib import Path
+
+import aiofiles
+import aiofiles.os
+import aiofiles.ospath
 
 from ..config import DEFAULTS
 from ..core.paths import resolve_bundled_runtime
@@ -35,14 +40,17 @@ def base_env(app_root: Path | None, workspace: Path | None = None) -> dict[str, 
     return env
 
 
-def start_app_server(
+async def start_app_server(
     env: dict[str, str],
     *,
     quiet: bool = False,
 ) -> tuple[subprocess.Popen[bytes], dict[str, str]]:
     path = app_path()
-    path.unlink(missing_ok=True)
-    argv, cwd = _session_server_command()
+    try:
+        await aiofiles.os.remove(path)
+    except FileNotFoundError:
+        pass
+    argv, cwd = await _session_server_command()
     stdout = subprocess.DEVNULL if quiet else None
     process = subprocess.Popen(
         argv,
@@ -51,21 +59,24 @@ def start_app_server(
         stdout=stdout,
     )
     try:
-        return process, wait_for_app(path, process)
+        return process, await wait_for_app(path, process)
     except Exception:
         stop_process(process)
         raise
 
 
-def start_session_server(
+async def start_session_server(
     workspace: Path,
     env: dict[str, str],
     *,
     quiet: bool = False,
 ) -> tuple[subprocess.Popen[bytes], dict[str, str]]:
     path = session_path(workspace)
-    path.unlink(missing_ok=True)
-    argv, cwd = _session_server_command()
+    try:
+        await aiofiles.os.remove(path)
+    except FileNotFoundError:
+        pass
+    argv, cwd = await _session_server_command()
     stdout = subprocess.DEVNULL if quiet else None
     process = subprocess.Popen(
         argv,
@@ -74,14 +85,14 @@ def start_session_server(
         stdout=stdout,
     )
     try:
-        return process, wait_for_session(path, process)
+        return process, await wait_for_session(path, process)
     except Exception:
         stop_process(process)
         raise
 
 
-def _session_server_command() -> tuple[list[str], Path | None]:
-    runtime = resolve_bundled_runtime("session-server")
+async def _session_server_command() -> tuple[list[str], Path | None]:
+    runtime = await resolve_bundled_runtime("session-server")
     if runtime is None:
         raise RuntimeError(
             "could not resolve session-server runtime; "
@@ -90,45 +101,48 @@ def _session_server_command() -> tuple[list[str], Path | None]:
     return runtime.subprocess_args()
 
 
-def wait_for_session(path: Path, process: subprocess.Popen[bytes]) -> dict[str, str]:
+async def wait_for_session(path: Path, process: subprocess.Popen[bytes]) -> dict[str, str]:
     deadline = time.monotonic() + 10
     while time.monotonic() < deadline:
         if process.poll() is not None:
             raise RuntimeError(f"Situ app server exited with code {process.returncode}")
-        if path.exists():
-            session = json.loads(path.read_text())
-            if ping_session(session):
+        if await aiofiles.ospath.exists(path):
+            async with aiofiles.open(path, encoding="utf-8") as file:
+                session = json.loads(await file.read())
+            if await ping_session(session):
                 return session
-        time.sleep(0.05)
+        await asyncio.sleep(0.05)
     raise TimeoutError("timed out waiting for Situ app server")
 
 
-def wait_for_app(path: Path, process: subprocess.Popen[bytes]) -> dict[str, str]:
+async def wait_for_app(path: Path, process: subprocess.Popen[bytes]) -> dict[str, str]:
     deadline = time.monotonic() + 10
     while time.monotonic() < deadline:
         if process.poll() is not None:
             raise RuntimeError(f"Situ app server exited with code {process.returncode}")
-        if path.exists():
-            app = json.loads(path.read_text())
-            if ping_session(app):
+        if await aiofiles.ospath.exists(path):
+            async with aiofiles.open(path, encoding="utf-8") as file:
+                app = json.loads(await file.read())
+            if await ping_session(app):
                 return app
-        time.sleep(0.05)
+        await asyncio.sleep(0.05)
     raise TimeoutError("timed out waiting for Situ app server")
 
 
-def read_live_app() -> dict[str, str] | None:
-    app = read_app_record()
+async def read_live_app() -> dict[str, str] | None:
+    app = await read_app_record()
     if app is None:
         return None
-    return app if ping_session(app) else None
+    return app if await ping_session(app) else None
 
 
-def read_app_record() -> dict[str, str] | None:
+async def read_app_record() -> dict[str, str] | None:
     path = app_path()
-    if not path.exists():
+    if not await aiofiles.ospath.exists(path):
         return None
     try:
-        app = json.loads(path.read_text())
+        async with aiofiles.open(path, encoding="utf-8") as file:
+            app = json.loads(await file.read())
     except json.JSONDecodeError:
         return None
     if not isinstance(app, dict):
@@ -136,19 +150,20 @@ def read_app_record() -> dict[str, str] | None:
     return app
 
 
-def read_live_session(workspace: Path) -> dict[str, str] | None:
-    session = read_session_record(workspace)
+async def read_live_session(workspace: Path) -> dict[str, str] | None:
+    session = await read_session_record(workspace)
     if session is None:
         return None
-    return session if ping_session(session) else None
+    return session if await ping_session(session) else None
 
 
-def read_session_record(workspace: Path) -> dict[str, str] | None:
+async def read_session_record(workspace: Path) -> dict[str, str] | None:
     path = session_path(workspace)
-    if not path.exists():
+    if not await aiofiles.ospath.exists(path):
         return None
     try:
-        session = json.loads(path.read_text())
+        async with aiofiles.open(path, encoding="utf-8") as file:
+            session = json.loads(await file.read())
     except json.JSONDecodeError:
         return None
     if not isinstance(session, dict):
@@ -164,7 +179,11 @@ def app_path() -> Path:
     return DEFAULTS.local_state_home_path() / "app.json"
 
 
-def ping_session(session: dict[str, str]) -> bool:
+async def ping_session(session: dict[str, str]) -> bool:
+    return await asyncio.to_thread(_ping_session_sync, session)
+
+
+def _ping_session_sync(session: dict[str, str]) -> bool:
     try:
         request = urllib.request.Request(
             f"{session['url']}/health",

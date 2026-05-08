@@ -296,10 +296,6 @@ def build_scientist_toolset() -> FunctionToolset[SituToolDeps]:
     )
 
 
-def build_research_toolset() -> FunctionToolset[SituToolDeps]:
-    return build_scientist_toolset()
-
-
 def build_manager_toolset() -> FunctionToolset[SituToolDeps]:
     return FunctionToolset[SituToolDeps](
         id="situ.manager.v1",

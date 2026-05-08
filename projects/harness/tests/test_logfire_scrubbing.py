@@ -7,12 +7,14 @@ from types import ModuleType
 from typing import Any
 
 import logfire
+import pytest
 
 from situ.harness.core import observability
 from situ.harness.core.observability import configure as observability_configure
 
 
-def test_harness_logfire_configuration_disables_scrubbing(
+@pytest.mark.asyncio
+async def test_harness_logfire_configuration_disables_scrubbing(
     monkeypatch,
     tmp_path: Path,
 ) -> None:
@@ -25,14 +27,15 @@ def test_harness_logfire_configuration_disables_scrubbing(
     monkeypatch.setattr(logfire, "configure", lambda **kwargs: configure_calls.append(kwargs))
     monkeypatch.setattr(logfire, "instrument_pydantic_ai", lambda: None)
 
-    observability.configure_observability()
+    await observability.configure_observability()
 
     assert configure_calls
     assert configure_calls[0]["scrubbing"] is False
     assert "LOGFIRE_TOKEN" not in os.environ
 
 
-def test_eval_logfire_configuration_disables_scrubbing(monkeypatch) -> None:
+@pytest.mark.asyncio
+async def test_eval_logfire_configuration_disables_scrubbing(monkeypatch) -> None:
     configure_calls: list[dict[str, Any]] = []
     module = _load_eval_observability_module()
 
@@ -42,7 +45,7 @@ def test_eval_logfire_configuration_disables_scrubbing(monkeypatch) -> None:
     monkeypatch.setattr(logfire, "configure", lambda **kwargs: configure_calls.append(kwargs))
     monkeypatch.setattr(logfire, "instrument_pydantic_ai", lambda: None)
 
-    module.configure_eval_observability()
+    await module.configure_eval_observability()
 
     assert configure_calls
     assert configure_calls[0]["scrubbing"] is False

@@ -15,7 +15,7 @@ from pydantic_ai.usage import RunUsage
 from situ.harness.core.db import Database
 from situ.harness.core.workers import WorkerManager
 from situ.harness.repositories import Repositories
-from situ.harness.tools import build_research_toolset, build_workspace_toolset
+from situ.harness.tools import build_scientist_toolset, build_workspace_toolset
 from situ.harness.tools.activities import (
     ListAnalysisActivitiesTool,
     ListEvaluationActivitiesTool,
@@ -1252,7 +1252,7 @@ async def test_workspace_backend_records_command_receipt_artifacts(
 
 
 async def test_research_toolset_includes_workspace_state_inspector() -> None:
-    toolset = build_research_toolset()
+    toolset = build_scientist_toolset()
 
     assert "inspect_workspace_state" in toolset.tools
 

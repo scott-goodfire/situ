@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import asyncio
 import getpass
 import sys
 from typing import Any, Literal
@@ -17,35 +18,39 @@ SECRET_LABELS: dict[SecretName, str] = {
 
 
 def run(args: argparse.Namespace) -> int:
+    return asyncio.run(run_async(args))
+
+
+async def run_async(args: argparse.Namespace) -> int:
     store = LocalSecretStore()
     command = getattr(args, "secrets_command", None)
 
     if command == "status":
-        return status(store=store, as_json=bool(getattr(args, "json", False)))
+        return await status(store=store, as_json=bool(getattr(args, "json", False)))
 
     if command == "set":
-        return set_secret(
+        return await set_secret(
             store=store,
             secret_name=args.secret_name,
             as_json=bool(getattr(args, "json", False)),
         )
 
     if command == "unset":
-        return unset_secret(
+        return await unset_secret(
             store=store,
             secret_name=args.secret_name,
             as_json=bool(getattr(args, "json", False)),
         )
 
     if command == "clear":
-        return clear_secrets(store=store, as_json=bool(getattr(args, "json", False)))
+        return await clear_secrets(store=store, as_json=bool(getattr(args, "json", False)))
 
     sys.stderr.write("unknown secrets command\n")
     return 2
 
 
-def status(*, store: LocalSecretStore, as_json: bool) -> int:
-    payload = status_payload(store=store)
+async def status(*, store: LocalSecretStore, as_json: bool) -> int:
+    payload = await status_payload(store=store)
     if as_json:
         write_json(payload)
         return 0
@@ -56,7 +61,7 @@ def status(*, store: LocalSecretStore, as_json: bool) -> int:
     return 0
 
 
-def set_secret(
+async def set_secret(
     *,
     store: LocalSecretStore,
     secret_name: SecretName,
@@ -77,11 +82,11 @@ def set_secret(
         return 1
 
     if secret_name == "anthropic":
-        store.set_anthropic_key(value)
+        await store.set_anthropic_key(value)
     else:
-        store.set_logfire_token(value)
+        await store.set_logfire_token(value)
 
-    payload = mutation_payload(
+    payload = await mutation_payload(
         store=store,
         secret_name=secret_name,
         action="set",
@@ -94,18 +99,18 @@ def set_secret(
     return 0
 
 
-def unset_secret(
+async def unset_secret(
     *,
     store: LocalSecretStore,
     secret_name: SecretName,
     as_json: bool,
 ) -> int:
     if secret_name == "anthropic":
-        changed = store.unset_anthropic_key()
+        changed = await store.unset_anthropic_key()
     else:
-        changed = store.unset_logfire_token()
+        changed = await store.unset_logfire_token()
 
-    payload = mutation_payload(
+    payload = await mutation_payload(
         store=store,
         secret_name=secret_name,
         action="unset",
@@ -119,8 +124,8 @@ def unset_secret(
     return 0
 
 
-def clear_secrets(*, store: LocalSecretStore, as_json: bool) -> int:
-    changed = store.clear()
+async def clear_secrets(*, store: LocalSecretStore, as_json: bool) -> int:
+    changed = await store.clear()
     payload = {
         "action": "clear",
         "changed": changed,
@@ -136,22 +141,24 @@ def clear_secrets(*, store: LocalSecretStore, as_json: bool) -> int:
     return 0
 
 
-def status_payload(*, store: LocalSecretStore) -> dict[str, Any]:
+async def status_payload(*, store: LocalSecretStore) -> dict[str, Any]:
     return {
         "path": str(store.path),
-        "anthropic": secret_status(configured=store.get_anthropic_key() is not None),
-        "logfire": secret_status(configured=store.get_logfire_token() is not None),
+        "anthropic": secret_status(
+            configured=await store.get_anthropic_key() is not None
+        ),
+        "logfire": secret_status(configured=await store.get_logfire_token() is not None),
     }
 
 
-def mutation_payload(
+async def mutation_payload(
     *,
     store: LocalSecretStore,
     secret_name: SecretName,
     action: str,
     changed: bool,
 ) -> dict[str, Any]:
-    payload = status_payload(store=store)
+    payload = await status_payload(store=store)
     payload.update(
         {
             "action": action,

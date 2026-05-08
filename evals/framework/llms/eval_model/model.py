@@ -3,10 +3,10 @@ from __future__ import annotations
 from situ.harness.config import DEFAULTS, SituSecrets
 
 
-def eval_model_name() -> str:
-    ensure_eval_model_credentials()
+async def eval_model_name() -> str:
+    await ensure_eval_model_credentials()
     return DEFAULTS.eval_model
 
 
-def ensure_eval_model_credentials() -> None:
-    SituSecrets().require_eval_environment()
+async def ensure_eval_model_credentials() -> None:
+    await SituSecrets().require_eval_environment()

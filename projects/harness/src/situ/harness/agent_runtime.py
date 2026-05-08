@@ -40,7 +40,7 @@ from .tools import (
     build_critic_toolset,
     build_manager_toolset,
     build_researcher_toolset,
-    build_research_toolset,
+    build_scientist_toolset,
     build_workspace_readonly_toolset,
     build_workspace_toolset,
 )
@@ -56,13 +56,6 @@ class AgentRuntime:
     def __init__(self, project_dir: Path, *, database_path: Path | None = None) -> None:
         self.project_dir = project_dir
         self.database_path = database_path or project_dir.parent.parent / "situ.sqlite"
-        secrets = SituSecrets()
-        secrets_home = project_dir.parent.parent
-        secrets.require_local_anthropic_key(home=secrets_home)
-        secrets.apply_local_sdk_environment(home=secrets_home)
-
-        configure_observability(project_dir)
-        configure_dbos(project_dir)
 
         self.model_name = DEFAULTS.agent_model
         self.agent: Agent[SituToolDeps, AgentPlan] = Agent(
@@ -71,7 +64,7 @@ class AgentRuntime:
             output_type=AgentPlan,
             instructions=RESEARCH_AGENT_INSTRUCTIONS,
             toolsets=[
-                build_research_toolset(),
+                build_scientist_toolset(),
                 build_workspace_toolset(),
             ],
             model_settings=DEFAULTS.model_settings(),
@@ -142,7 +135,24 @@ class AgentRuntime:
             self.critic_agent,
             name=CRITIC_AGENT_NAME,
         )
+
+    @classmethod
+    async def create(
+        cls,
+        project_dir: Path,
+        *,
+        database_path: Path | None = None,
+    ) -> "AgentRuntime":
+        secrets = SituSecrets()
+        secrets_home = project_dir.parent.parent
+        await secrets.require_local_anthropic_key(home=secrets_home)
+        await secrets.apply_local_sdk_environment(home=secrets_home)
+
+        await configure_observability(project_dir)
+        configure_dbos(project_dir)
+        runtime = cls(project_dir, database_path=database_path)
         launch_dbos()
+        return runtime
 
     async def plan_session(
         self,
@@ -479,7 +489,7 @@ class AgentRuntime:
             return await run(*args, **kwargs)
 
 
-def get_agent_runtime(
+async def get_agent_runtime(
     project_dir: Path,
     *,
     database_path: Path | None = None,
@@ -487,6 +497,6 @@ def get_agent_runtime(
     key = project_dir.resolve()
     runtime = _RUNTIMES.get(key)
     if runtime is None:
-        runtime = AgentRuntime(project_dir, database_path=database_path)
+        runtime = await AgentRuntime.create(project_dir, database_path=database_path)
         _RUNTIMES[key] = runtime
     return runtime

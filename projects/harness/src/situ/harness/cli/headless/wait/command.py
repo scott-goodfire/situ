@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import argparse
+import asyncio
 import sys
-import time
 
 from ...local_session import read_live_session
 from .._shared.output import error_message, write_json
@@ -12,16 +12,20 @@ from .._shared.workspace import resolve_existing_workspace
 
 
 def run(args: argparse.Namespace) -> int:
-    workspace = resolve_existing_workspace(args)
+    return asyncio.run(run_async(args))
+
+
+async def run_async(args: argparse.Namespace) -> int:
+    workspace = await resolve_existing_workspace(args)
     if workspace is None:
         return 1
 
     deadline = timeout_deadline(args.timeout)
 
     while True:
-        live_session = read_live_session(workspace)
+        live_session = await read_live_session(workspace)
         try:
-            source, snapshot = load_snapshot(workspace)
+            source, snapshot = await load_snapshot(workspace)
         except Exception as error:
             print(error_message(error), file=sys.stderr)
             return 1
@@ -78,4 +82,4 @@ def run(args: argparse.Namespace) -> int:
             )
             return 124
 
-        time.sleep(0.5)
+        await asyncio.sleep(0.5)

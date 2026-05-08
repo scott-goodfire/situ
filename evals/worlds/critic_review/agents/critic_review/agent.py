@@ -85,7 +85,7 @@ async def _run_critic_pass(
     active_task: TaskRecord,
 ) -> ResearchAgentOutput:
     agent = CriticAgent(
-        model=eval_model_name(),
+        model=await eval_model_name(),
         capabilities=[capture],
     )
     result = await agent.run(

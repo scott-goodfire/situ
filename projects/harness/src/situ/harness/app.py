@@ -98,12 +98,11 @@ class PreparedExperimentTask:
 class HarnessApp:
     def __init__(
         self,
-        workspace_root: Path,
+        context: ProjectContext,
         notify: NotificationWriter,
         app_root: Path | None = None,
-        project_home: Path | None = None,
     ) -> None:
-        self.context = ProjectContext(workspace_root, home=project_home)
+        self.context = context
         self.db = Database(
             self.context.database_path,
             workspace_id=self.context.workspace_id,
@@ -121,6 +120,17 @@ class HarnessApp:
         self.subscribed = False
         self.collection_subscribed = False
         self._session_setup: dict[str, dict[str, str]] = {}
+
+    @classmethod
+    async def create(
+        cls,
+        workspace_root: Path,
+        notify: NotificationWriter,
+        app_root: Path | None = None,
+        project_home: Path | None = None,
+    ) -> "HarnessApp":
+        context = await ProjectContext.create(workspace_root, home=project_home)
+        return cls(context=context, notify=notify, app_root=app_root)
 
     async def handle_async(
         self,
@@ -171,8 +181,8 @@ class HarnessApp:
     async def secrets_status(self, params: dict[str, Any]) -> dict[str, Any]:
         SecretsStatusParams.model_validate(params)
         secrets = SituSecrets()
-        source = secrets.anthropic_key_source(home=self.context.home)
-        logfire_source = secrets.logfire_token_source(home=self.context.home)
+        source = await secrets.anthropic_key_source(home=self.context.home)
+        logfire_source = await secrets.logfire_token_source(home=self.context.home)
         return SecretsStatusResult(
             anthropic_key_configured=source != "missing",
             anthropic_key_source=source,
@@ -183,11 +193,12 @@ class HarnessApp:
     async def secrets_set_anthropic_key(self, params: dict[str, Any]) -> dict[str, Any]:
         secret = SecretsSetAnthropicKeyParams.model_validate(params)
         store = LocalSecretStore(home=self.context.home)
-        store.set_anthropic_key(secret.anthropic_key)
+        await store.set_anthropic_key(secret.anthropic_key)
         if secret.logfire_token is not None and secret.logfire_token.strip():
-            store.set_logfire_token(secret.logfire_token)
-        SituSecrets().apply_local_sdk_environment(home=self.context.home)
-        logfire_source = SituSecrets().logfire_token_source(home=self.context.home)
+            await store.set_logfire_token(secret.logfire_token)
+        secrets = SituSecrets()
+        await secrets.apply_local_sdk_environment(home=self.context.home)
+        logfire_source = await secrets.logfire_token_source(home=self.context.home)
         return SecretsSetAnthropicKeyResult(
             logfire_token_configured=logfire_source != "missing",
             logfire_token_source=logfire_source,
@@ -1080,7 +1091,7 @@ class HarnessApp:
             setup = self._session_setup.get(session_id) or await self._setup_from_records(
                 session_id
             )
-            runtime = self._get_agent_runtime()
+            runtime = await self._get_agent_runtime()
             no_progress_plans = 0
             agent_passes = 0
             max_agent_passes = max(
@@ -1873,9 +1884,9 @@ class HarnessApp:
             "research_context": project.research_context if project is not None else "",
         }
 
-    def _get_agent_runtime(self) -> AgentRuntime:
+    async def _get_agent_runtime(self) -> AgentRuntime:
         if self._agent_runtime is None:
-            self._agent_runtime = AgentRuntime(self.context.project_dir)
+            self._agent_runtime = await AgentRuntime.create(self.context.project_dir)
         return self._agent_runtime
 
     def _start_session_thread(

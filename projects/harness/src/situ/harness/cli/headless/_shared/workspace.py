@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import asyncio
 import os
 import signal
 import sys
@@ -14,8 +15,8 @@ from ....core.paths import resolve_workspace
 DEFAULT_MAX_EXPERIMENTS = 6
 
 
-def resolve_existing_workspace(args: argparse.Namespace) -> Path | None:
-    workspace = resolve_workspace(Path.cwd(), args.workspace)
+async def resolve_existing_workspace(args: argparse.Namespace) -> Path | None:
+    workspace = await resolve_workspace(Path.cwd(), args.workspace)
     if workspace.is_dir():
         return workspace
 
@@ -23,7 +24,7 @@ def resolve_existing_workspace(args: argparse.Namespace) -> Path | None:
     return None
 
 
-def terminate_live_session(*, session: dict[str, str]) -> None:
+async def terminate_live_session(*, session: dict[str, str]) -> None:
     raw_pid = session.get("pid")
     if raw_pid is None:
         raise RuntimeError("active harness has no pid; stop it before clearing state")
@@ -35,9 +36,9 @@ def terminate_live_session(*, session: dict[str, str]) -> None:
         return
     deadline = time.monotonic() + 5
     while time.monotonic() < deadline:
-        if not ping_session(session):
+        if not await ping_session(session):
             return
-        time.sleep(0.1)
+        await asyncio.sleep(0.1)
 
     try:
         os.kill(pid, signal.SIGKILL)
@@ -45,9 +46,9 @@ def terminate_live_session(*, session: dict[str, str]) -> None:
         return
     deadline = time.monotonic() + 2
     while time.monotonic() < deadline:
-        if not ping_session(session):
+        if not await ping_session(session):
             return
-        time.sleep(0.1)
+        await asyncio.sleep(0.1)
 
 
 def session_start_params(

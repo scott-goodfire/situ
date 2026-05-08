@@ -220,7 +220,7 @@ async def _run_manager_pass(
     active_task: TaskRecord | None,
 ) -> ResearchAgentOutput:
     agent = ManagerAgent(
-        model=eval_model_name(),
+        model=await eval_model_name(),
         capabilities=[capture],
     )
     result = await agent.run(
@@ -243,7 +243,7 @@ async def _run_scientist_pass(
     active_task: TaskRecord,
 ) -> ResearchAgentOutput:
     agent = ScientistAgent(
-        model=eval_model_name(),
+        model=await eval_model_name(),
         capabilities=[capture],
     )
     result = await agent.run(
@@ -267,7 +267,7 @@ async def _run_researcher_pass(
     active_task: TaskRecord,
 ) -> ResearchAgentOutput:
     agent = ResearcherAgent(
-        model=eval_model_name(),
+        model=await eval_model_name(),
         capabilities=[capture],
     )
     result = await agent.run(

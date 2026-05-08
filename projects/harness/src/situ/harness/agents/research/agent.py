@@ -18,7 +18,7 @@ from ...config import DEFAULTS
 from ...tools import (
     build_critic_toolset,
     build_manager_toolset,
-    build_research_toolset,
+    build_scientist_toolset,
     build_researcher_toolset,
     build_workspace_readonly_toolset,
     build_workspace_toolset,
@@ -114,7 +114,7 @@ class ResearchAgent(
     ) -> Agent[SituToolDeps, ResearchAgentOutput]:
         _ = (context, prompt)
         toolsets = list(self.toolsets) or [
-            build_research_toolset(),
+            build_scientist_toolset(),
             build_workspace_toolset(),
         ]
         return Agent[SituToolDeps, ResearchAgentOutput](
@@ -202,7 +202,7 @@ class ScientistAgent(BaseSituAgent[ScientistAgentContext, ResearchAgentOutput]):
             output_type=ResearchAgentOutput,
             instructions=RESEARCH_AGENT_INSTRUCTIONS,
             toolsets=[
-                build_research_toolset(),
+                build_scientist_toolset(),
                 build_workspace_toolset(),
             ],
             model_settings=DEFAULTS.model_settings(),

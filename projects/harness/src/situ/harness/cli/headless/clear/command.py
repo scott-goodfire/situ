@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import asyncio
 import shutil
 import sqlite3
 
@@ -11,13 +12,17 @@ from .._shared.workspace import resolve_existing_workspace, terminate_live_sessi
 
 
 def run(args: argparse.Namespace) -> int:
-    workspace = resolve_existing_workspace(args)
+    return asyncio.run(run_async(args))
+
+
+async def run_async(args: argparse.Namespace) -> int:
+    workspace = await resolve_existing_workspace(args)
     if workspace is None:
         return 1
 
-    live_session = read_live_session(workspace)
+    live_session = await read_live_session(workspace)
     force = bool(getattr(args, "force", False))
-    context = ProjectContext(repo_root=workspace)
+    context = await ProjectContext.create(repo_root=workspace)
 
     if live_session is not None and not force:
         write_json(
@@ -34,7 +39,7 @@ def run(args: argparse.Namespace) -> int:
         return 1
 
     if live_session is not None:
-        terminate_live_session(session=live_session)
+        await terminate_live_session(session=live_session)
 
     clear_workspace_records(context)
     shutil.rmtree(context.project_dir, ignore_errors=True)

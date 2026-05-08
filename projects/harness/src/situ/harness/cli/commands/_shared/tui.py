@@ -22,7 +22,15 @@ def launch_app_tui(
     args: argparse.Namespace,
     mode: str,
 ) -> int:
-    runtime = resolve_bundled_runtime("tui")
+    return asyncio.run(launch_app_tui_async(args=args, mode=mode))
+
+
+async def launch_app_tui_async(
+    *,
+    args: argparse.Namespace,
+    mode: str,
+) -> int:
+    runtime = await resolve_bundled_runtime("tui")
     if runtime is None:
         print(
             "could not resolve TUI runtime; "
@@ -31,29 +39,27 @@ def launch_app_tui(
         )
         return 1
 
-    workspace = resolve_workspace(Path.cwd(), args.workspace)
+    workspace = await resolve_workspace(Path.cwd(), args.workspace)
     if not workspace.is_dir():
         print(f"workspace does not exist or is not a directory: {workspace}", file=sys.stderr)
         return 1
 
     if mode == "start":
         try:
-            asyncio.run(
-                require_clean_if_git_workspace(
-                    workspace,
-                    action="starting a Situ session",
-                )
+            await require_clean_if_git_workspace(
+                workspace,
+                action="starting a Situ session",
             )
         except RuntimeError as error:
             print(str(error), file=sys.stderr)
             return 1
 
-    app = read_live_app()
+    app = await read_live_app()
     if app is None:
         print("no active Situ app found; run situ app in another terminal", file=sys.stderr)
         return 1
 
-    app_root = resolve_app_root(Path(__file__)) if runtime.kind == "source" else None
+    app_root = await resolve_app_root(Path(__file__)) if runtime.kind == "source" else None
     env = base_env(app_root, workspace)
     apply_session_env(env, args)
     env["SITU_SESSION_MODE"] = mode

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import asyncio
 import sys
 from pathlib import Path
 
@@ -17,15 +18,19 @@ from .._shared.workspace import resolve_existing_workspace
 
 
 def run(args: argparse.Namespace) -> int:
-    workspace = resolve_existing_workspace(args)
+    return asyncio.run(run_async(args))
+
+
+async def run_async(args: argparse.Namespace) -> int:
+    workspace = await resolve_existing_workspace(args)
     if workspace is None:
         return 1
 
     if args.follow:
-        return follow_live_events(workspace)
+        return await follow_live_events(workspace)
 
     try:
-        _source, snapshot = load_snapshot(workspace)
+        _source, snapshot = await load_snapshot(workspace)
     except Exception as error:
         print(error_message(error), file=sys.stderr)
         return 1
@@ -35,8 +40,8 @@ def run(args: argparse.Namespace) -> int:
     return 0
 
 
-def follow_live_events(workspace: Path) -> int:
-    session = read_live_session(workspace)
+async def follow_live_events(workspace: Path) -> int:
+    session = await read_live_session(workspace)
     if session is None:
         write_json(
             {

@@ -14,13 +14,22 @@ from situ.harness.records import TaskEntityKind, TaskKind, TaskStatus, TaskWorkT
 pytestmark = pytest.mark.asyncio
 
 
+def _agent_runtime_factory(runtime: Any) -> type:
+    class FakeAgentRuntime:
+        @classmethod
+        async def create(cls, _project_dir: Path) -> Any:
+            return runtime
+
+    return FakeAgentRuntime
+
+
 async def test_session_loop_replans_after_baseline_before_closing(
     tmp_path: Path,
     monkeypatch,
 ) -> None:
     app, session_id, project_id = await _app_with_initial_plan(tmp_path)
     runtime = BaselineThenExperimentRuntime()
-    monkeypatch.setattr("situ.harness.app.AgentRuntime", lambda _project_dir: runtime)
+    monkeypatch.setattr("situ.harness.app.AgentRuntime", _agent_runtime_factory(runtime))
 
     await app._execute_session_async(session_id=session_id, max_experiments=1)
 
@@ -94,7 +103,7 @@ async def test_baseline_only_work_does_not_create_critic_review(
 ) -> None:
     app, session_id, _project_id = await _app_with_initial_plan(tmp_path)
     runtime = BaselineOnlyRuntime()
-    monkeypatch.setattr("situ.harness.app.AgentRuntime", lambda _project_dir: runtime)
+    monkeypatch.setattr("situ.harness.app.AgentRuntime", _agent_runtime_factory(runtime))
 
     await app._execute_session_async(session_id=session_id, max_experiments=1)
 
@@ -442,7 +451,7 @@ async def test_default_session_start_creates_fresh_project_per_session(
 ) -> None:
     workspace = tmp_path / "workspace"
     workspace.mkdir()
-    app = HarnessApp(
+    app = await HarnessApp.create(
         workspace,
         app_root=Path.cwd(),
         project_home=tmp_path / "home",
@@ -504,7 +513,7 @@ async def test_session_start_refuses_dirty_git_workspace_before_creating_records
     workspace.mkdir()
     _git(workspace, "init")
     (workspace / "dirty.txt").write_text("dirty\n")
-    app = HarnessApp(
+    app = await HarnessApp.create(
         workspace,
         app_root=Path.cwd(),
         project_home=tmp_path / "home",
@@ -541,7 +550,7 @@ async def test_session_loop_retries_manager_before_no_progress_close(
 ) -> None:
     app, session_id, _project_id = await _app_with_initial_plan(tmp_path)
     runtime = NoProgressRuntime()
-    monkeypatch.setattr("situ.harness.app.AgentRuntime", lambda _project_dir: runtime)
+    monkeypatch.setattr("situ.harness.app.AgentRuntime", _agent_runtime_factory(runtime))
 
     await app._execute_session_async(session_id=session_id, max_experiments=1)
 
@@ -581,7 +590,7 @@ async def test_session_loop_closes_immediately_when_project_is_closed_by_manager
 ) -> None:
     app, session_id, project_id = await _app_with_initial_plan(tmp_path)
     runtime = CloseProjectRuntime()
-    monkeypatch.setattr("situ.harness.app.AgentRuntime", lambda _project_dir: runtime)
+    monkeypatch.setattr("situ.harness.app.AgentRuntime", _agent_runtime_factory(runtime))
 
     await app._execute_session_async(session_id=session_id, max_experiments=10)
 
@@ -607,7 +616,7 @@ async def test_session_loop_runs_researcher_tasks_before_scientist_work(
 ) -> None:
     app, session_id, _project_id = await _app_with_initial_plan(tmp_path)
     runtime = ResearcherThenNoProgressRuntime()
-    monkeypatch.setattr("situ.harness.app.AgentRuntime", lambda _project_dir: runtime)
+    monkeypatch.setattr("situ.harness.app.AgentRuntime", _agent_runtime_factory(runtime))
 
     await app._execute_session_async(session_id=session_id, max_experiments=1)
 
@@ -630,7 +639,7 @@ async def test_failed_experiment_task_still_records_worktree_state(
 ) -> None:
     app, session_id, _project_id = await _app_with_initial_plan(tmp_path)
     runtime = FailingExperimentRuntime()
-    monkeypatch.setattr("situ.harness.app.AgentRuntime", lambda _project_dir: runtime)
+    monkeypatch.setattr("situ.harness.app.AgentRuntime", _agent_runtime_factory(runtime))
 
     await app._execute_session_async(session_id=session_id, max_experiments=1)
 
@@ -661,7 +670,7 @@ async def test_session_loop_retries_timed_out_agent_pass_and_records_activity(
 ) -> None:
     app, session_id, project_id = await _app_with_initial_plan(tmp_path)
     runtime = TimeoutThenCloseRuntime()
-    monkeypatch.setattr("situ.harness.app.AgentRuntime", lambda _project_dir: runtime)
+    monkeypatch.setattr("situ.harness.app.AgentRuntime", _agent_runtime_factory(runtime))
 
     await app._execute_session_async(session_id=session_id, max_experiments=1)
 
@@ -1007,7 +1016,7 @@ async def _app_with_initial_plan(tmp_path: Path) -> tuple[HarnessApp, str, str]:
     (workspace / "README.md").write_text("test workspace\n")
     _git(workspace, "add", ".")
     _commit(workspace, "initial")
-    app = HarnessApp(
+    app = await HarnessApp.create(
         workspace,
         app_root=Path.cwd(),
         project_home=tmp_path / "home",

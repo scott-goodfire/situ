@@ -45,8 +45,12 @@ def write_notification(method: str, params: dict[str, Any]) -> None:
 
 
 async def main_async() -> None:
-    workspace = resolve_workspace(Path.cwd())
-    app = HarnessApp(workspace, notify=write_notification, app_root=resolve_app_root(Path(__file__)))
+    workspace = await resolve_workspace(Path.cwd())
+    app = await HarnessApp.create(
+        workspace,
+        notify=write_notification,
+        app_root=await resolve_app_root(Path(__file__)),
+    )
     for line in sys.stdin:
         line = line.strip()
         if not line:

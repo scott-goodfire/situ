@@ -97,15 +97,18 @@ def _reset_dbos() -> None:
     reset_dbos_for_tests()
 
 
-def test_agent_runtime_wraps_research_agent_with_dbos_agent(
+@pytest.mark.asyncio
+async def test_agent_runtime_wraps_research_agent_with_dbos_agent(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     project_dir = tmp_path / ".situ" / "projects" / "workspace"
     project_dir.mkdir(parents=True)
-    LocalSecretStore(home=tmp_path / ".situ").set_anthropic_key("test-anthropic-key")
+    await LocalSecretStore(home=tmp_path / ".situ").set_anthropic_key(
+        "test-anthropic-key"
+    )
 
-    runtime = AgentRuntime(project_dir)
+    runtime = await AgentRuntime.create(project_dir)
 
     assert runtime.model_name == DEFAULTS.agent_model
     assert runtime.agent.name == RESEARCH_AGENT_NAME
