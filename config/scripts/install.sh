@@ -102,10 +102,17 @@ resolve_python() {
 extract_asset_url() {
   local release_json="$1"
   local asset_name="$2"
-  printf '%s' "$release_json" \
-    | tr -d '\r\n' \
-    | sed -n "s/.*\"url\":\"\\([^\"]*\\/releases\\/assets\\/[0-9][0-9]*\\)\"[^{}]*\"name\":\"$asset_name\".*/\\1/p" \
-    | head -n 1
+  printf '%s' "$release_json" | "$PYTHON_BIN" -c '
+import json, sys
+asset_name = sys.argv[1]
+data = json.load(sys.stdin)
+if isinstance(data, list):
+    data = data[0] if data else {}
+for asset in data.get("assets", []):
+    if asset.get("name") == asset_name:
+        print(asset.get("url", ""))
+        break
+' "$asset_name"
 }
 
 sha256_of() {
@@ -157,7 +164,13 @@ else
       || err "failed to query release $TAG for $REPO"
   fi
 
-  TAG="$(printf '%s' "$release_json" | tr -d '\r\n' | sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n 1)"
+  TAG="$(printf '%s' "$release_json" | "$PYTHON_BIN" -c '
+import json, sys
+data = json.load(sys.stdin)
+if isinstance(data, list):
+    data = data[0] if data else {}
+print(data.get("tag_name", ""))
+')"
   [ -n "$TAG" ] || err "could not resolve release tag from $REPO"
   info "installing $TAG"
 
