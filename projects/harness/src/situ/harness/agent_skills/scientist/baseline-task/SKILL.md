@@ -14,7 +14,7 @@ description: Use when a Scientist is assigned a `baseline` task to establish pro
 5. Run the measurement command with `execute`.
 6. Create or select a `Baseline`.
 7. Create a baseline-associated `Evaluation`.
-8. Record useful plaintext command output and interpretation with `add_evaluation_result`.
+8. Record useful plaintext command output and interpretation with `add_measurement`.
 9. Put comparable values in `payload.metrics` using stable metric keys when possible.
 10. Link the task to the baseline, evaluation, and central measurement evidence.
 11. Mark the task done with the command, headline metrics, and comparability caveats.

@@ -36,7 +36,6 @@ from situ.harness.tools.baselines import (
 from situ.harness.tools.analysis_activities import AddAnalysisCommentTool
 from situ.harness.tools.common import BaseSituTool, SituToolDeps
 from situ.harness.tools.evaluations import (
-    AddEvaluationResultTool,
     CreateEvaluationTool,
     ListEvaluationsTool,
     UpdateEvaluationTool,
@@ -60,7 +59,10 @@ from situ.harness.tools.hypotheses import (
 )
 from situ.harness.tools.hypothesis_activities import AddHypothesisCommentTool
 from situ.harness.tools.links import LinkHypothesisExperimentTool
-from situ.harness.tools.measurements import ListMeasurementsTool
+from situ.harness.tools.measurements import (
+    AddMeasurementTool,
+    ListMeasurementsTool,
+)
 from situ.harness.tools.projects import (
     ConfirmProjectCloseTool,
     CreateProjectTool,
@@ -781,7 +783,7 @@ async def test_evaluation_tools_create_update_list_and_add_results(
     assert created.evaluation["associated_baseline_id"] == baseline.baseline["id"]
 
     result = await invoke_situ_tool(
-        tool=AddEvaluationResultTool(),
+        tool=AddMeasurementTool(),
         deps=deps,
         evaluation_id="EV1",
         result="Baseline command passed with score 0.71.",
@@ -825,7 +827,7 @@ async def test_evaluation_tools_create_update_list_and_add_results(
     assert [event["type"] for event in emitted] == [
         "baseline.created",
         "evaluation.created",
-        "evaluation.result_added",
+        "measurement.added",
         "evaluation.updated",
     ]
 

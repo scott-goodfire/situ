@@ -27,7 +27,18 @@ class CreateArtifactTool(BaseSituTool[SituToolDeps, CreateArtifactResult]):
         size_bytes: int | None = None,
         **_kwargs: Any,
     ) -> CreateArtifactResult:
-        """Create an artifact reference for a project, hypothesis, or experiment."""
+        """Create an artifact reference for a project, hypothesis, or experiment.
+
+        An artifact is a durable receipt: a log file, command-output capture,
+        patch handoff, screenshot, generated diff, or other on-disk evidence
+        produced during a run. Pass `path` as a path the harness can resolve
+        (typically under `SITU_ARTIFACT_DIR`); the artifact record points at
+        it rather than copying the bytes. Use `kind` for a short tag like
+        `command_receipt`, `patch_handoff`, `log`, or `screenshot`. By default
+        the artifact attaches to the current project; set
+        `associated_entity_kind` and `associated_entity_id` to attach to a
+        specific hypothesis or experiment instead.
+        """
         repos = await ctx.deps.get_repos()
         project_id = await ctx.deps.require_project_id()
         session_id = ctx.deps.session_id

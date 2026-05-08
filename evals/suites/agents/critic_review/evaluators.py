@@ -382,7 +382,7 @@ class CriticDidNotCreateExperimentOrMeasurement(
             "create_baseline",
             "create_experiment",
             "create_evaluation",
-            "add_evaluation_result",
+            "add_measurement",
         }
         calls = [
             call.tool_name

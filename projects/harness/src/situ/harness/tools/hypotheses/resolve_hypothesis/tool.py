@@ -33,7 +33,17 @@ class ResolveHypothesisTool(
         actor: str = "agent",
         **_kwargs: Any,
     ) -> ResolveHypothesisResult:
-        """Close a hypothesis with an explicit resolution activity."""
+        """Close a hypothesis with an explicit resolution activity.
+
+        Resolutions: `supported` when recorded measurement evidence backs the
+        claim, `rejected` when evidence contradicts it, `superseded` when a
+        better-stated hypothesis replaces it (pass `superseded_by_hypothesis_id`),
+        `inconclusive` when the empirical work was attempted but the evidence
+        cannot decide. Pass `evidence_entity_ids` to link the analyses,
+        experiments, evaluations, measurements, or artifacts that justify the
+        resolution. The hypothesis is moved to `closed` and the resolution
+        activity carries the durable rationale.
+        """
         repos = await ctx.deps.get_repos()
         hypothesis = await repos.hypotheses.get(hypothesis_id=hypothesis_id)
         if hypothesis is None:

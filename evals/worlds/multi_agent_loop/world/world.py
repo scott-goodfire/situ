@@ -269,7 +269,7 @@ def _plan_task_content(seed: MultiAgentLoopSeed) -> str:
             "COMPONENT becomes 'component_a', running python train.py, creating "
             "an experiment titled 'Try component A', linking it to the active "
             "hypothesis, creating an experiment-linked evaluation, recording "
-            "the raw output with add_evaluation_result, confirming prepare.py "
+            "the raw output with add_measurement, confirming prepare.py "
             "is unchanged, linking the task to produced records, and marking "
             "the task done."
         ),

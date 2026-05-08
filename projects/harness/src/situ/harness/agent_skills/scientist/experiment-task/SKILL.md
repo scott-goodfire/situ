@@ -15,7 +15,7 @@ description: Use when a Scientist is assigned an `experiment` task to make one f
 6. Call `inspect_workspace_state` before interpreting candidate results.
 7. Run the project-native measurement command with `execute`.
 8. Create or update an experiment-associated `Evaluation`.
-9. Record useful plaintext output, workspace-state context, metrics, and interpretation with `add_evaluation_result`.
+9. Record useful plaintext output, workspace-state context, metrics, and interpretation with `add_measurement`.
 10. Link hypotheses to the experiment when the task probes a hypothesis.
 11. Add an experiment comment explaining what changed and what the result means.
 12. Link the task to the experiment, evaluation, and central evidence.

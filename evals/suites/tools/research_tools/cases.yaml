@@ -232,14 +232,14 @@ cases:
         summary 'Reference behavior.' Create an evaluation associated with
         that baseline using create_evaluation titled 'Baseline command
         output' and summary 'Record baseline score output.' Add an
-        evaluation result with add_evaluation_result using result
+        evaluation result with add_measurement using result
         'score=0.730 latency=120'. Then call list_measurements and
         list_evaluation_activities for that evaluation and report the
         measurement body and activity kind.
     evaluators:
       - ToolCalledSuccessfully: create_baseline
       - ToolCalledSuccessfully: create_evaluation
-      - ToolCalledSuccessfully: add_evaluation_result
+      - ToolCalledSuccessfully: add_measurement
       - ToolCalledSuccessfully: list_measurements
       - ToolResultContains:
           tool_name: list_measurements

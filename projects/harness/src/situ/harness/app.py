@@ -48,6 +48,8 @@ from .core.notifications import (
     set_project_collections_subscribed,
     set_project_events_subscribed,
 )
+import logfire
+
 from .core.observability import span
 from .core.project_context import ProjectContext
 from .core.worktrees import WorktreeManager, require_clean_if_git_workspace
@@ -1104,7 +1106,18 @@ class HarnessApp:
                 session_id=session_id,
                 workspace=workspace.repo_path,
             ):
+                logfire.info(
+                    "session loop start session={session_id} max_experiments={max_experiments} max_passes={max_passes}",
+                    session_id=session_id,
+                    max_experiments=max_experiments,
+                    max_passes=max_agent_passes,
+                )
                 while True:
+                    logfire.info(
+                        "session loop tick agent_passes={agent_passes} no_progress_plans={no_progress_plans}",
+                        agent_passes=agent_passes,
+                        no_progress_plans=no_progress_plans,
+                    )
                     session = await self.repos.sessions.get(session_id=session_id)
                     if session is None or session.status == SessionStatus.CLOSED:
                         return
@@ -1122,9 +1135,14 @@ class HarnessApp:
                         )
                         break
 
+                    logfire.info("claiming next critic task")
                     critic_task = await self._claim_next_task(
                         session_id=session_id,
                         agent_kind=AgentKind.CRITIC,
+                    )
+                    logfire.info(
+                        "critic claim result task_id={task_id}",
+                        task_id=critic_task.id if critic_task else None,
                     )
                     if critic_task is not None:
                         active_task = critic_task
@@ -1195,13 +1213,22 @@ class HarnessApp:
                         )
                         break
 
+                    logfire.info("claiming next manager task")
                     manager_task = await self._claim_next_task(
                         session_id=session_id,
                         agent_kind=AgentKind.MANAGER,
                     )
+                    logfire.info(
+                        "manager claim result task_id={task_id}",
+                        task_id=manager_task.id if manager_task else None,
+                    )
                     if manager_task is not None:
                         active_task = manager_task
                         agent_passes += 1
+                        logfire.info(
+                            "manager pass start task_id={task_id}",
+                            task_id=manager_task.id,
+                        )
                         manager_result = await self._run_agent_pass(
                             session_id=session_id,
                             project_id=manager_task.project_id,
@@ -1237,14 +1264,23 @@ class HarnessApp:
                             )
                             break
 
+                    logfire.info("claiming next researcher task")
                     researcher_task = await self._claim_next_task(
                         session_id=session_id,
                         agent_kind=AgentKind.RESEARCHER,
+                    )
+                    logfire.info(
+                        "researcher claim result task_id={task_id}",
+                        task_id=researcher_task.id if researcher_task else None,
                     )
                     if researcher_task is not None:
                         active_task = researcher_task
                         no_progress_plans = 0
                         agent_passes += 1
+                        logfire.info(
+                            "researcher pass start task_id={task_id}",
+                            task_id=researcher_task.id,
+                        )
                         result = await self._run_agent_pass(
                             session_id=session_id,
                             project_id=researcher_task.project_id,
@@ -1290,14 +1326,24 @@ class HarnessApp:
                         )
                         continue
 
+                    logfire.info("claiming next scientist task")
                     scientist_task = await self._claim_next_task(
                         session_id=session_id,
                         agent_kind=AgentKind.SCIENTIST,
+                    )
+                    logfire.info(
+                        "scientist claim result task_id={task_id} kind={kind}",
+                        task_id=scientist_task.id if scientist_task else None,
+                        kind=scientist_task.kind.value if scientist_task else None,
                     )
                     if scientist_task is not None:
                         active_task = scientist_task
                         no_progress_plans = 0
                         agent_passes += 1
+                        logfire.info(
+                            "scientist pass start task_id={task_id}",
+                            task_id=scientist_task.id,
+                        )
                         prepared_experiment: PreparedExperimentTask | None = None
                         execution_repo_path = workspace.repo_path
                         active_experiment_id: str | None = None

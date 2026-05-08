@@ -18,7 +18,7 @@ cases:
       - ToolResultContains: {tool_name: execute, text: val_bpb}
       - RoleToolCalledSuccessfully: {role: scientist, tool_name: create_baseline}
       - RoleToolCalledSuccessfully: {role: scientist, tool_name: create_evaluation}
-      - RoleToolCalledSuccessfully: {role: scientist, tool_name: add_evaluation_result}
+      - RoleToolCalledSuccessfully: {role: scientist, tool_name: add_measurement}
       - RoleToolCalledSuccessfully: {role: scientist, tool_name: update_task}
       - ToolWasCalled: create_task
       - EventWasEmitted: task.claimed
@@ -59,7 +59,7 @@ cases:
       - ToolResultContains: {tool_name: execute, text: component_a}
       - ToolResultContains: {tool_name: execute, text: val_bpb}
       - RoleToolCalledSuccessfully: {role: scientist, tool_name: create_evaluation}
-      - RoleToolCalledSuccessfully: {role: scientist, tool_name: add_evaluation_result}
+      - RoleToolCalledSuccessfully: {role: scientist, tool_name: add_measurement}
       - EventWasEmitted: session.agent_completed
       - ProjectBoardContains: component_a
       - ProjectBoardContains: val_bpb
@@ -84,7 +84,7 @@ cases:
       - ToolResultContains: {tool_name: execute, text: component_a}
       - ToolResultContains: {tool_name: execute, text: val_bpb}
       - RoleToolCalledSuccessfully: {role: scientist, tool_name: create_evaluation}
-      - RoleToolCalledSuccessfully: {role: scientist, tool_name: add_evaluation_result}
+      - RoleToolCalledSuccessfully: {role: scientist, tool_name: add_measurement}
       - RoleToolCalledSuccessfully: {role: scientist, tool_name: update_task}
       - EventWasEmitted: task.done
       - ProjectBoardContains: component_a

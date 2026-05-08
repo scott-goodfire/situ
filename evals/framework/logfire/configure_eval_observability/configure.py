@@ -18,7 +18,7 @@ async def configure_eval_observability() -> None:
         send_to_logfire="always",
         service_name=DEFAULTS.eval_logfire_service_name,
         environment=DEFAULTS.eval_environment,
-        console=False,
+        console=logfire.ConsoleOptions(min_log_level="info", show_project_link=False),
         scrubbing=False,
     )
     logfire.instrument_pydantic_ai()

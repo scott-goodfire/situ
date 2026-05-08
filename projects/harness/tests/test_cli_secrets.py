@@ -29,12 +29,26 @@ def test_secrets_status_uses_only_local_store(
 
     captured = capsys.readouterr()
     payload = json.loads(captured.out)
-    assert code == 0
+    assert code == 1
     assert captured.err == ""
     assert payload["anthropic"] == {"configured": False, "source": "missing"}
     assert payload["logfire"] == {"configured": False, "source": "missing"}
     assert "sk-env-test" not in captured.out
     assert "logfire-env-test" not in captured.out
+
+
+def test_secrets_status_exits_zero_when_anthropic_configured(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    store = LocalSecretStore()
+    asyncio.run(store.set_anthropic_key("sk-cli-test"))
+
+    code = cli.main(["secrets", "status", "--json"])
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+    assert code == 0
+    assert payload["anthropic"]["configured"] is True
 
 
 def test_secrets_set_anthropic_prompts_and_redacts_output(

@@ -51,14 +51,16 @@ async def run_async(args: argparse.Namespace) -> int:
 
 async def status(*, store: LocalSecretStore, as_json: bool) -> int:
     payload = await status_payload(store=store)
+    exit_code = 0 if payload["anthropic"]["configured"] else 1
+
     if as_json:
         write_json(payload)
-        return 0
+        return exit_code
 
     sys.stdout.write(f"local secret store: {payload['path']}\n")
     sys.stdout.write(f"anthropic: {configured_label(payload['anthropic']['configured'])}\n")
     sys.stdout.write(f"logfire: {configured_label(payload['logfire']['configured'])}\n")
-    return 0
+    return exit_code
 
 
 async def set_secret(

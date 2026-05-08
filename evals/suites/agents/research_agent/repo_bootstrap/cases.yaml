@@ -10,7 +10,7 @@ cases:
         the project-native measurement command, create a baseline record,
         create an evaluation associated with that baseline, and record the
         raw stdout/stderr plus your interpretation through
-        add_evaluation_result. Do not create a candidate experiment until
+        add_measurement. Do not create a candidate experiment until
         baseline evidence exists.
     evaluators:
       - ToolWasCalled: get_project_board
@@ -21,8 +21,8 @@ cases:
       - ToolResultContains: {tool_name: execute, text: val_bpb}
       - ToolCalledSuccessfully: create_baseline
       - ToolCalledSuccessfully: create_evaluation
-      - ToolCalledSuccessfully: add_evaluation_result
-      - ToolCallOrder: {before: execute, after: add_evaluation_result}
+      - ToolCalledSuccessfully: add_measurement
+      - ToolCallOrder: {before: execute, after: add_measurement}
       - ToolWasCalled: {tool_name: create_experiment, expected: false}
       - ProjectBoardContains: val_bpb
       - ProjectBoardContains: baseline
@@ -36,7 +36,7 @@ cases:
         run the same project-native measurement command, create an
         experiment titled "Try component A", link it to hypothesis H1,
         create an evaluation associated with that experiment, and record
-        the plaintext command output with add_evaluation_result. Do not
+        the plaintext command output with add_measurement. Do not
         edit prepare.py.
     evaluators:
       - ToolWasCalled: get_project_board
@@ -48,7 +48,7 @@ cases:
       - ToolArgsContain: {tool_name: execute, text: train.py}
       - ToolResultContains: {tool_name: execute, text: component_a}
       - ToolResultContains: {tool_name: execute, text: val_bpb}
-      - ToolCalledSuccessfully: add_evaluation_result
+      - ToolCalledSuccessfully: add_measurement
       - EvaluationResultLinkedToExperiment
       - ProjectBoardContains: component_a
       - ProjectBoardContains: val_bpb

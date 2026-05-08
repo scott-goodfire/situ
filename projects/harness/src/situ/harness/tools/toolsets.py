@@ -27,7 +27,6 @@ from .analyses import (
 )
 from .analysis_activities import AddAnalysisCommentTool
 from .evaluations import (
-    AddEvaluationResultTool,
     CreateEvaluationTool,
     GetEvaluationTool,
     ListEvaluationsTool,
@@ -55,7 +54,11 @@ from .hypotheses import (
 from .hypothesis_activities import AddHypothesisCommentTool, AddHypothesisReviewTool
 from .common import SituToolDeps
 from .links import LinkHypothesisExperimentTool
-from .measurements import GetMeasurementTool, ListMeasurementsTool
+from .measurements import (
+    AddMeasurementTool,
+    GetMeasurementTool,
+    ListMeasurementsTool,
+)
 from .projects import (
     ConfirmProjectCloseTool,
     CreateProjectTool,
@@ -79,45 +82,29 @@ RESEARCH_TOOLSET_INSTRUCTIONS = inspect.cleandoc(
     """
     This toolset reads and writes Situ research records.
 
-    On kickoff, make sure the current run has a project when the objective and
-    research context are known. Use `create_project` if the run is projectless,
-    and `update_project` when the project objective or research context needs
-    refinement.
+    Tool surface:
+    - Project: `create_project`, `update_project`, `get_project`,
+      `get_project_board`. On kickoff make sure the current run has a project
+      when the objective and research context are known.
+    - Tasks: `get_task`, `get_task_board`, `create_task`, `update_task`,
+      `claim_task`, `link_task_entity`, `add_task_comment`. Read each assigned
+      task explicitly before doing work.
+    - Research records: analyses for context, hypotheses for testable claims,
+      baselines and experiments for the empirical work, evaluations and
+      measurements for the evidence under each. Each record kind has
+      `create_*`, `update_*`, `list_*`, and `get_*` tools.
+    - Activity writers: `add_*_comment` for durable judgment, `add_measurement`
+      for evaluation evidence, `add_experiment_review` /
+      `add_hypothesis_review` for Critic verdicts.
+    - Workspace: `inspect_workspace_state` for git/comparability state, plus
+      the workspace console tools for files and project-native commands.
+      During an active experiment task those tools are rooted in the managed
+      experiment worktree.
 
-    If the prompt gives you task IDs, first read each assigned task with
-    `get_task(task_id=...)`. Use `get_project_board` when you need the current
-    board: hypotheses, analyses, baselines, experiments, evaluations,
-    measurements, activities, artifacts, and events.
-    Use analysis tools for codebase/domain understanding before it becomes a
-    hypothesis. Use the hypothesis, experiment, and evaluation tools to keep
-    the research structure clear.
-
-    Use task tools for coordination: inspect the task board, file focused work,
-    read assigned task IDs, leave task comments, update task status, and link
-    tasks to the research records they produce. Prefer explicit task IDs over
-    implicit task selection.
-
-    Use comments for durable research judgment: an interpretation, a risk, a
-    useful decision, raw command evidence, or a next step. Avoid comments that
-    only narrate routine tool use.
-
-    Before treating candidate experiments as comparable, create or select a
-    baseline, create an evaluation associated with that baseline, and record
-    measurement evidence with `add_evaluation_result`. Use evaluations as named
-    checks, measurements for concrete observed results, and experiments for the
-    attempted change. When recording metrics, use stable keys under
-    `payload.metrics` and a typed value object such as
-    `{"score": {"value": 0.73, "direction": "higher_is_better"}}`.
-
-    Use `inspect_workspace_state` before baseline interpretation and after
-    candidate changes. Record dirty starts, changed tests/evals, dependency
-    changes, generated-file clutter, branch, commit, and eval command when they
-    affect comparability.
-
-    To inspect files or run project-native commands, use the workspace console
-    tools. During an active experiment task, those tools are rooted in the
-    managed experiment worktree. Keep Situ responsible for project state and the
-    workspace tools responsible for bash/filesystem interaction.
+    The procedural flow for a baseline or experiment task lives in the
+    `baseline-task` and `experiment-task` SKILLs — load the matching SKILL
+    before executing one. Use comments only for durable research judgment, not
+    routine tool-call narration.
     """
 )
 
@@ -175,30 +162,20 @@ CRITIC_TOOLSET_INSTRUCTIONS = inspect.cleandoc(
     """
     This toolset is the Situ critic surface.
 
-    Use it to review a record as the proposed change. If the prompt gives you
-    an assigned review task ID, call `get_task(task_id=...)` first and inspect
-    its `work_type` to pick the right review method:
+    Read the assigned review task first with `get_task(task_id=...)` and
+    dispatch on its `work_type`:
 
-    - `review_experiment` reviews a completed candidate experiment. Read the
-      experiment, linked task, evaluations, measurements, artifacts,
-      workspace-state activities, and prior concerns before writing judgment.
-      Look for seed hacking, selection on noisy measurements, adaptive
-      overfitting to the same evaluation surface, greedy hill-climbing that
-      discards useful partial results too early, and comparability breaks such
-      as changed tests, evals, fixtures, dependencies, toolchains, commands,
-      or result shapes. Write exactly one experiment review with
-      `add_experiment_review` unless the task is blocked.
-    - `review_hypothesis` reviews a hypothesis as a research thread before it
-      drives empirical work. Read the hypothesis, its activity trail, related
-      analyses, and any prior reviews. Check that the hypothesis is concrete,
-      testable, grounded in observed evidence, distinguishable from existing
-      hypotheses, and worded so an experiment can be designed against it.
-      Write exactly one hypothesis review with `add_hypothesis_review` unless
-      the task is blocked.
+    - `review_experiment` -> load the `review-experiment` SKILL and write one
+      `add_experiment_review` against the experiment named in the task.
+    - `review_hypothesis` -> load the `review-hypothesis` SKILL and write one
+      `add_hypothesis_review` against the hypothesis named in the task.
 
-    Use comments only for extra context that should remain separate from the
-    review. Link the active task to the records that were central to the
-    review, and mark the review task done when complete.
+    Pass the assigned task id as `review_task_id` so the routing layer can tie
+    the review activity to the task. Use `add_*_comment` only for extra
+    context that should remain separate from the review. Link the active task
+    to the records that were central to the review and mark the review task
+    done when complete. The per-method review bar (what to look for, when to
+    pick which verdict) lives in the matching SKILL.
     """
 )
 
@@ -210,7 +187,7 @@ WORKSPACE_EXECUTE_DESCRIPTION = inspect.cleandoc(
     package-manager commands, and quick environment probes. Treat the returned
     output as plaintext evidence. Do not deterministically parse metrics from
     it inside the tool layer; when the output matters, record the raw text and
-    a concise LLM interpretation with `add_evaluation_result`. When an
+    a concise LLM interpretation with `add_measurement`. When an
     experiment task is active, this command runs inside that experiment's
     managed worktree.
 
@@ -309,7 +286,7 @@ def build_scientist_toolset() -> FunctionToolset[SituToolDeps]:
             AddAnalysisCommentTool().as_tool(),
             AddHypothesisCommentTool().as_tool(),
             AddExperimentCommentTool().as_tool(),
-            AddEvaluationResultTool().as_tool(),
+            AddMeasurementTool().as_tool(),
             ListAnalysisActivitiesTool().as_tool(),
             ListHypothesisActivitiesTool().as_tool(),
             ListExperimentActivitiesTool().as_tool(),

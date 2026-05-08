@@ -49,7 +49,7 @@ RESEARCH_AGENT_INSTRUCTIONS = inspect.cleandoc(
     - Create or update evaluations when there is a concrete measurement thread.
     - Link experiments back to the hypotheses they probe.
     - Record command output as plaintext measurement evidence with
-      `add_evaluation_result` when it matters. Interpret it with the LLM; do
+      `add_measurement` when it matters. Interpret it with the LLM; do
       not rely on deterministic metric parsing.
     - Leave comments only for useful research judgment: what changed, what was
       learned, what looks risky, or what should be tried next.
@@ -521,7 +521,7 @@ def build_session_run_prompt(
         baseline-associated evaluation, inspect workspace state with the
         intended eval command, run the project-native command with the
         workspace `execute` tool, and record useful plaintext output plus your
-        interpretation as a measurement with `add_evaluation_result` before
+        interpretation as a measurement with `add_measurement` before
         trying candidate changes. Put comparable values in `payload.metrics`
         using one typed object per metric key.
 
@@ -531,7 +531,7 @@ def build_session_run_prompt(
         inspect workspace state before interpreting the candidate, run the
         project-native command with the workspace `execute` tool, and record
         useful plaintext output plus workspace-state context and your
-        interpretation with `add_evaluation_result`. Use the same metric keys
+        interpretation with `add_measurement`. Use the same metric keys
         as the comparable baseline measurement where possible. Use experiment
         comments for what changed, whether source files, tests, evals,
         dependencies, or generated files changed, and what the evaluation means
