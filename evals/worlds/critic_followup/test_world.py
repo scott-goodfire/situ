@@ -24,7 +24,7 @@ from evals.worlds.critic_followup.world import (
 async def test_critic_followup_world_seeds_reviewed_experiment(
     seed: CriticFollowupSeed,
 ) -> None:
-    world = CriticFollowupWorld(seed=seed)
+    world = await CriticFollowupWorld.create(seed=seed)
     try:
         board = await world.project_board()
         plan_tasks = [task for task in board["tasks"] if task["kind"] == "plan"]

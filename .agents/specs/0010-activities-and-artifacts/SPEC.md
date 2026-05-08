@@ -84,14 +84,12 @@ Examples:
 - `Candidate includes dependency changes; environment comparability needs
   review.`
 
-Concerns replace any standalone warning model. They should be
-distinguishable through body text and optional payload metadata rather than
-a separate database status or activity kind.
+Concerns are distinguishable through body text and optional payload
+metadata.
 
 ## Interpretations
 
-Interpretations and lightweight findings should be written as comment activities
-rather than a standalone Finding model.
+Interpretations and lightweight findings are written as comment activities.
 
 Examples:
 
@@ -238,14 +236,13 @@ Artifacts may still attach to projects, hypotheses, baselines, experiments,
 evaluations, measurements, or activities through the generic association
 fields.
 
-Artifacts always belong to a project. Use the generic associated entity fields
-instead of a widening set of nullable foreign keys. This keeps the record
-understandable without forcing Situ to predict every artifact attachment
-target.
+Artifacts always belong to a project. Use the generic associated entity
+fields. This keeps the record understandable without forcing Situ to
+predict every artifact attachment target.
 
 Structured artifact metadata lives in the artifact file itself or in the
-nearby activity payload. A separate artifact metadata table is out of scope
-until querying those fields becomes necessary.
+nearby activity payload. A separate artifact metadata table is out of
+scope.
 
 ## Product Rule
 

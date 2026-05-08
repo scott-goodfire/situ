@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import subprocess
+import asyncio
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -39,11 +39,18 @@ class CandidateState:
     post_commit_worktree: WorktreeState
 
 
-def require_clean_if_git_workspace(workspace_path: Path, *, action: str) -> None:
-    git_root = _git_root_or_none(workspace_path.resolve())
+@dataclass(frozen=True, slots=True)
+class _GitResult:
+    returncode: int
+    stdout: str
+    stderr: str
+
+
+async def require_clean_if_git_workspace(workspace_path: Path, *, action: str) -> None:
+    git_root = await _git_root_or_none(workspace_path.resolve())
     if git_root is None:
         return
-    _require_clean_git_root(git_root, action=action)
+    await _require_clean_git_root(git_root, action=action)
 
 
 class WorktreeManager:
@@ -51,7 +58,7 @@ class WorktreeManager:
         self.workspace_path = workspace_path.resolve()
         self.worktrees_dir = worktrees_dir
 
-    def prepare(
+    async def prepare(
         self,
         *,
         experiment_id: str,
@@ -59,36 +66,34 @@ class WorktreeManager:
         existing_base_commit: str | None = None,
         requested_base_commit: str | None = None,
     ) -> ExperimentWorktree:
-        git_root = self._git_root(self.workspace_path)
+        git_root = await self._git_root(self.workspace_path)
         relative_workspace = self._relative_workspace(git_root)
-        _require_clean_git_root(git_root, action="starting an isolated experiment")
+        await _require_clean_git_root(git_root, action="starting an isolated experiment")
 
-        base_commit = (
-            existing_base_commit
-            or requested_base_commit
-            or self._git_text(git_root, "rev-parse", "HEAD")
-        )
+        base_commit = existing_base_commit or requested_base_commit
+        if base_commit is None:
+            base_commit = await self._git_text(git_root, "rev-parse", "HEAD")
         if not base_commit:
             raise RuntimeError("could not resolve git HEAD for experiment worktree")
-        resolved_base_commit = self._git_text(git_root, "rev-parse", base_commit)
+        resolved_base_commit = await self._git_text(git_root, "rev-parse", base_commit)
         if not resolved_base_commit:
             raise RuntimeError(f"could not resolve base commit for experiment: {base_commit}")
 
         worktree_root = (
-            self._existing_worktree_root(existing_worktree_path)
+            await self._existing_worktree_root(existing_worktree_path)
             if existing_worktree_path is not None
             else (self.worktrees_dir / experiment_id).resolve()
         )
         if worktree_root.exists():
-            self._require_existing_worktree(worktree_root)
+            await self._require_existing_worktree(worktree_root)
         else:
             worktree_root.parent.mkdir(parents=True, exist_ok=True)
             # Prune stale registrations whose directories were deleted out
             # of band (e.g. by `situ clear` or manual cleanup). Without this,
             # `git worktree add` fails with "missing but already registered"
             # if the same path was used by a previous run.
-            self._git_output(git_root, "worktree", "prune")
-            self._run_git(
+            await self._git_output(git_root, "worktree", "prune")
+            await self._run_git(
                 git_root,
                 "worktree",
                 "add",
@@ -104,18 +109,19 @@ class WorktreeManager:
             workspace_path=worktree_root / relative_workspace,
         )
 
-    def inspect(self, workspace_path: Path) -> WorktreeState:
+    async def inspect(self, workspace_path: Path) -> WorktreeState:
         workspace = workspace_path.resolve()
-        git_root = self._git_root(workspace)
-        commit = self._git_text(workspace, "rev-parse", "--short=12", "HEAD") or None
+        git_root = await self._git_root(workspace)
+        commit = await self._git_text(workspace, "rev-parse", "--short=12", "HEAD") or None
+        status_lines = await self._git_lines(
+            workspace,
+            "status",
+            "--porcelain=v1",
+            "--untracked-files=all",
+        )
         changes = [
             _parse_status_line(line)
-            for line in self._git_lines(
-                workspace,
-                "status",
-                "--porcelain=v1",
-                "--untracked-files=all",
-            )
+            for line in status_lines
         ]
         return WorktreeState(
             workspace=str(workspace),
@@ -125,19 +131,19 @@ class WorktreeManager:
             changes=changes,
         )
 
-    def capture_candidate_state(
+    async def capture_candidate_state(
         self,
         workspace_path: Path,
         *,
         experiment_id: str,
         base_commit: str | None,
     ) -> CandidateState:
-        worktree = self.inspect(workspace_path)
+        worktree = await self.inspect(workspace_path)
         workspace = workspace_path.resolve()
 
         if worktree.dirty:
-            self._run_git(workspace, "add", "-A")
-            self._run_git(
+            await self._run_git(workspace, "add", "-A")
+            await self._run_git(
                 workspace,
                 "-c",
                 "user.email=situ@example.local",
@@ -148,10 +154,10 @@ class WorktreeManager:
                 f"situ candidate {experiment_id}",
             )
 
-        post_commit_worktree = self.inspect(workspace_path)
-        head_commit = self._git_text(workspace, "rev-parse", "HEAD")
+        post_commit_worktree = await self.inspect(workspace_path)
+        head_commit = await self._git_text(workspace, "rev-parse", "HEAD")
         resolved_base_commit = (
-            self._git_text(workspace, "rev-parse", base_commit)
+            await self._git_text(workspace, "rev-parse", base_commit)
             if base_commit is not None
             else ""
         )
@@ -163,7 +169,7 @@ class WorktreeManager:
         candidate_ref = None
         if candidate_commit is not None:
             candidate_ref = f"refs/situ/experiments/{experiment_id}"
-            self._run_git(workspace, "update-ref", candidate_ref, candidate_commit)
+            await self._run_git(workspace, "update-ref", candidate_ref, candidate_commit)
 
         return CandidateState(
             worktree=worktree,
@@ -178,53 +184,53 @@ class WorktreeManager:
         except ValueError:
             return Path(".")
 
-    def _existing_worktree_root(self, existing_worktree_path: str) -> Path:
+    async def _existing_worktree_root(self, existing_worktree_path: str) -> Path:
         existing = Path(existing_worktree_path).expanduser().resolve()
         if not existing.exists():
             raise RuntimeError(
                 f"experiment worktree path does not exist: {existing}"
             )
-        return self._git_root(existing)
+        return await self._git_root(existing)
 
-    def _require_existing_worktree(self, worktree_root: Path) -> None:
-        result = self._git_output(worktree_root, "rev-parse", "--show-toplevel")
+    async def _require_existing_worktree(self, worktree_root: Path) -> None:
+        result = await self._git_output(worktree_root, "rev-parse", "--show-toplevel")
         if result.returncode != 0:
             raise RuntimeError(
                 f"experiment worktree path already exists but is not a git worktree: "
                 f"{worktree_root}"
             )
 
-    def _git_root(self, cwd: Path) -> Path:
-        git_root = self._git_text(cwd, "rev-parse", "--show-toplevel")
+    async def _git_root(self, cwd: Path) -> Path:
+        git_root = await self._git_text(cwd, "rev-parse", "--show-toplevel")
         if not git_root:
             raise RuntimeError(f"workspace is not a git repository: {cwd}")
         return Path(git_root).resolve()
 
-    def _run_git(self, cwd: Path, *args: str) -> subprocess.CompletedProcess[str]:
-        result = self._git_output(cwd, *args)
+    async def _run_git(self, cwd: Path, *args: str) -> _GitResult:
+        result = await self._git_output(cwd, *args)
         if result.returncode != 0:
             error = result.stderr.strip() or result.stdout.strip()
             raise RuntimeError(f"git {' '.join(args)} failed: {error}")
         return result
 
-    def _git_text(self, cwd: Path, *args: str) -> str:
-        result = self._git_output(cwd, *args)
+    async def _git_text(self, cwd: Path, *args: str) -> str:
+        result = await self._git_output(cwd, *args)
         if result.returncode != 0:
             return ""
         return result.stdout.strip()
 
-    def _git_lines(self, cwd: Path, *args: str) -> list[str]:
-        result = self._git_output(cwd, *args)
+    async def _git_lines(self, cwd: Path, *args: str) -> list[str]:
+        result = await self._git_output(cwd, *args)
         if result.returncode != 0:
             return []
         return result.stdout.splitlines()
 
-    def _git_output(self, cwd: Path, *args: str) -> subprocess.CompletedProcess[str]:
-        return _git_output(cwd, *args)
+    async def _git_output(self, cwd: Path, *args: str) -> _GitResult:
+        return await _git_output(cwd, *args)
 
 
-def _require_clean_git_root(git_root: Path, *, action: str) -> None:
-    dirty_lines = _git_lines(
+async def _require_clean_git_root(git_root: Path, *, action: str) -> None:
+    dirty_lines = await _git_lines(
         git_root,
         "status",
         "--porcelain=v1",
@@ -245,32 +251,41 @@ def _require_clean_git_root(git_root: Path, *, action: str) -> None:
     )
 
 
-def _git_root_or_none(cwd: Path) -> Path | None:
-    git_root = _git_text(cwd, "rev-parse", "--show-toplevel")
+async def _git_root_or_none(cwd: Path) -> Path | None:
+    git_root = await _git_text(cwd, "rev-parse", "--show-toplevel")
     return Path(git_root).resolve() if git_root else None
 
 
-def _git_text(cwd: Path, *args: str) -> str:
-    result = _git_output(cwd, *args)
+async def _git_text(cwd: Path, *args: str) -> str:
+    result = await _git_output(cwd, *args)
     if result.returncode != 0:
         return ""
     return result.stdout.strip()
 
 
-def _git_lines(cwd: Path, *args: str) -> list[str]:
-    result = _git_output(cwd, *args)
+async def _git_lines(cwd: Path, *args: str) -> list[str]:
+    result = await _git_output(cwd, *args)
     if result.returncode != 0:
         return []
     return result.stdout.splitlines()
 
 
-def _git_output(cwd: Path, *args: str) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
-        ["git", *args],
-        cwd=cwd,
-        text=True,
-        capture_output=True,
-        check=False,
+async def _git_output(cwd: Path, *args: str) -> _GitResult:
+    try:
+        process = await asyncio.create_subprocess_exec(
+            "git",
+            *args,
+            cwd=cwd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+    except OSError as error:
+        return _GitResult(returncode=127, stdout="", stderr=str(error))
+    stdout, stderr = await process.communicate()
+    return _GitResult(
+        returncode=process.returncode if process.returncode is not None else 0,
+        stdout=stdout.decode(errors="replace"),
+        stderr=stderr.decode(errors="replace"),
     )
 
 

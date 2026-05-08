@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import asyncio
+import inspect
 import json
 import os
-import subprocess
 import sys
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Awaitable, Callable
 
 from situ.protocol import (
     ExperimentRunParams,
@@ -14,7 +15,7 @@ from situ.protocol import (
     WorkerInitializeResult,
 )
 
-ProgressHandler = Callable[[dict[str, Any]], None]
+ProgressHandler = Callable[[dict[str, Any]], Awaitable[None] | None]
 
 
 class WorkerManager:
@@ -22,19 +23,18 @@ class WorkerManager:
         self.workspace_root = workspace_root
         self.app_root = app_root
 
-    def run_experiment(
+    async def run_experiment(
         self,
         params: ExperimentRunParams,
         on_progress: ProgressHandler,
     ) -> ExperimentRunResult:
         command, cwd = self._worker_command()
-        process = subprocess.Popen(
-            command,
+        process = await asyncio.create_subprocess_exec(
+            *command,
             cwd=cwd,
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
             env={
                 **os.environ,
                 "PYTHONDONTWRITEBYTECODE": "1",
@@ -44,36 +44,61 @@ class WorkerManager:
         )
         assert process.stdin is not None
         assert process.stdout is not None
+        stderr_task: asyncio.Task[bytes] | None = (
+            asyncio.create_task(process.stderr.read())
+            if process.stderr is not None
+            else None
+        )
 
         try:
-            init = self._request(
+            init = await self._request(
                 process,
                 "worker.initialize",
                 WorkerInitializeParams().model_dump(),
                 request_id="1",
+                stderr_task=stderr_task,
             )
             WorkerInitializeResult.model_validate(init)
 
-            result = self._request(
+            result = await self._request(
                 process,
                 "experiment.run",
                 params.model_dump(),
                 request_id="2",
                 on_notification=on_progress,
+                stderr_task=stderr_task,
             )
             return ExperimentRunResult.model_validate(result)
         finally:
-            process.stdin.close()
-            process.terminate()
-            process.wait(timeout=5)
+            if process.stdin is not None:
+                process.stdin.close()
+                try:
+                    await process.stdin.wait_closed()
+                except (BrokenPipeError, ConnectionResetError):
+                    pass
+            if process.returncode is None:
+                process.terminate()
+                try:
+                    await asyncio.wait_for(process.wait(), timeout=5)
+                except TimeoutError:
+                    process.kill()
+                    await process.wait()
+            if stderr_task is not None:
+                if not stderr_task.done():
+                    stderr_task.cancel()
+                try:
+                    await stderr_task
+                except asyncio.CancelledError:
+                    pass
 
-    def _request(
+    async def _request(
         self,
-        process: subprocess.Popen[str],
+        process: asyncio.subprocess.Process,
         method: str,
         params: dict[str, Any],
         request_id: str,
         on_notification: ProgressHandler | None = None,
+        stderr_task: asyncio.Task[bytes] | None = None,
     ) -> dict[str, Any]:
         assert process.stdin is not None
         assert process.stdout is not None
@@ -87,15 +112,18 @@ class WorkerManager:
                     "params": params,
                 }
             )
-            + "\n"
+            .encode()
+            + b"\n"
         )
-        process.stdin.flush()
+        await process.stdin.drain()
 
-        for line in process.stdout:
+        while line := await process.stdout.readline():
             message = json.loads(line)
             if "method" in message and "id" not in message:
                 if on_notification is not None:
-                    on_notification(message)
+                    result = on_notification(message)
+                    if inspect.isawaitable(result):
+                        await result
                 continue
 
             if message.get("id") != request_id:
@@ -106,7 +134,7 @@ class WorkerManager:
 
             return message.get("result") or {}
 
-        stderr = process.stderr.read() if process.stderr is not None else ""
+        stderr = await _stderr_text(stderr_task)
         raise RuntimeError(f"worker exited before responding: {stderr}")
 
     def _worker_command(self) -> tuple[list[str], Path]:
@@ -118,3 +146,12 @@ class WorkerManager:
             "No worker configured. Add situ_worker.py to the workspace or use "
             "workspace tools such as execute for project-native commands."
         )
+
+
+async def _stderr_text(stderr_task: asyncio.Task[bytes] | None) -> str:
+    if stderr_task is None:
+        return ""
+    try:
+        return (await stderr_task).decode(errors="replace")
+    except asyncio.CancelledError:
+        return ""

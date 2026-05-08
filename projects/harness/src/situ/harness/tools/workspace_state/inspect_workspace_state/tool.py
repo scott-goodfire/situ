@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-import subprocess
+import asyncio
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -56,7 +57,7 @@ class InspectWorkspaceStateTool(
             )
 
         repo_path = Path(ctx.deps.repo_path).resolve()
-        git_root = _git_output(repo_path, "rev-parse", "--show-toplevel")
+        git_root = await _git_output(repo_path, "rev-parse", "--show-toplevel")
         if git_root.returncode != 0:
             return InspectWorkspaceState(
                 success=True,
@@ -68,9 +69,9 @@ class InspectWorkspaceStateTool(
                 },
             )
 
-        branch = _git_text(repo_path, "branch", "--show-current")
-        commit = _git_text(repo_path, "rev-parse", "--short=12", "HEAD")
-        status_lines = _git_lines(repo_path, "status", "--porcelain=v1")
+        branch = await _git_text(repo_path, "branch", "--show-current")
+        commit = await _git_text(repo_path, "rev-parse", "--short=12", "HEAD")
+        status_lines = await _git_lines(repo_path, "status", "--porcelain=v1")
         changes = [_parse_status_line(line) for line in status_lines]
         categories = _category_counts(changes)
         concerns = _concerns(changes, categories)
@@ -92,25 +93,41 @@ class InspectWorkspaceStateTool(
         )
 
 
-def _git_output(repo_path: Path, *args: str) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
-        ["git", *args],
-        cwd=repo_path,
-        text=True,
-        capture_output=True,
-        check=False,
+@dataclass(frozen=True, slots=True)
+class _GitResult:
+    returncode: int
+    stdout: str
+    stderr: str
+
+
+async def _git_output(repo_path: Path, *args: str) -> _GitResult:
+    try:
+        process = await asyncio.create_subprocess_exec(
+            "git",
+            *args,
+            cwd=repo_path,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+    except OSError as error:
+        return _GitResult(returncode=127, stdout="", stderr=str(error))
+    stdout, stderr = await process.communicate()
+    return _GitResult(
+        returncode=process.returncode if process.returncode is not None else 0,
+        stdout=stdout.decode(errors="replace"),
+        stderr=stderr.decode(errors="replace"),
     )
 
 
-def _git_text(repo_path: Path, *args: str) -> str:
-    result = _git_output(repo_path, *args)
+async def _git_text(repo_path: Path, *args: str) -> str:
+    result = await _git_output(repo_path, *args)
     if result.returncode != 0:
         return ""
     return result.stdout.strip()
 
 
-def _git_lines(repo_path: Path, *args: str) -> list[str]:
-    output = _git_text(repo_path, *args)
+async def _git_lines(repo_path: Path, *args: str) -> list[str]:
+    output = await _git_text(repo_path, *args)
     if not output:
         return []
     return output.splitlines()

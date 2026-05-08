@@ -72,9 +72,7 @@ Sessions own lifecycle and runtime attachment state. Starting Situ creates a
 fresh session by default; resuming an existing session must be explicit. There
 is no stored "active session" pointer on the workspace; the most-recently-
 updated session is derived on demand. Agent and task records describe
-coordination and handoffs around the research-record work rather than replacing
-hypotheses, baselines, experiments, evaluations, measurements, activities,
-artifacts, or events.
+coordination and handoffs around the research-record work.
 
 ## Workspace
 
@@ -134,8 +132,7 @@ improvement directions are pulled into hypotheses.
 
 Analyses should be status-light: open, active, or closed. If one analysis
 replaces another, link it with `supersedes_analysis_id` and explain the
-relationship in an analysis activity rather than adding a broad versioning
-system.
+relationship in an analysis activity.
 
 Analyses are required to belong to a project (`project_id` FK, NOT NULL). If a
 session created the analysis, store that provenance as `created_in_session_id`.
@@ -146,8 +143,8 @@ If an agent created it, store `created_by_agent_id` when available.
 A research thread inside a project.
 
 Hypotheses should be lightweight and status-light. A hypothesis can be open,
-active, or closed. Whether it is promising, weakened, suspicious, or mostly
-supported should be explained through activities rather than status explosion.
+active, or closed. Promising, weakened, suspicious, or mostly-supported
+nuance is carried in activities; the row status stays light.
 
 Closing a hypothesis requires an explicit resolution activity. The hypothesis
 row should remain status-light (`closed`), while the resolution activity says
@@ -176,9 +173,8 @@ evidence, and review trail can be inspected together.
 When Situ is running lineage-aware autoresearch, an experiment may also record
 which prior candidate or base commit it builds on, the durable candidate commit
 it produced, and the research thread it belongs to. That lineage context stays
-lightweight and experiment-shaped; do not introduce a separate Variant,
-Branch, Promotion, or Champion model until multiple runtime paths require that
-shape. See
+lightweight and experiment-shaped. Separate Variant, Branch, Promotion, or
+Champion models are out of scope. See
 [0015-experiment-lineage-portfolio-search/SPEC.md](../0015-experiment-lineage-portfolio-search/SPEC.md).
 
 Experiments should also be status-light: open, active, or closed. Details such
@@ -217,10 +213,10 @@ of the researched workspace before autonomous candidate changes begin, but a
 project may record more than one baseline over time when the comparison anchor
 meaningfully changes.
 
-Baselines should be status-light: open, active, or closed. Whether a baseline is
-noisy, incomplete, dirty, suspicious, or accepted for comparison should be
-explained through measurement evidence, concerns, and activities rather than a
-large baseline status vocabulary.
+Baselines should be status-light: open, active, or closed. Noisy,
+incomplete, dirty, suspicious, or accepted-for-comparison nuance is
+carried in measurement evidence, concerns, and activities; the row
+status stays light.
 
 Baselines are required to belong to a project (`project_id` FK, NOT NULL). If a
 session created the baseline, store that provenance as
@@ -247,9 +243,9 @@ synonym for a single command run; repeated command runs and their outputs are
 measurements under the evaluation.
 
 Evaluations should be status-light: open, active, or closed. Repeated runs,
-stdout/stderr, observed signals, interpretations, concerns, and reproduction
-notes should be recorded as measurements and activities rather than columns on
-the evaluation itself.
+stdout/stderr, observed signals, interpretations, concerns, and
+reproduction notes live as measurements and activities under the
+evaluation.
 
 Evaluations are required to belong to a project (`project_id` FK, NOT NULL)
 and must point at exactly one measured subject:
@@ -288,9 +284,9 @@ Measurements are project-owned through their evaluation. If a session created a
 measurement, store that provenance as `created_in_session_id`.
 
 Measurements preserve repeated observations, variance, failed attempts, and
-reproduction evidence under the same evaluation. Summary fields on baselines,
-experiments, or evaluations should be derived from measurements or explained in
-activities rather than becoming the source of truth.
+reproduction evidence under the same evaluation. Measurements are the
+source of truth; any summary fields on baselines, experiments, or
+evaluations are derived from measurements or explained in activities.
 
 Measurement bodies should remain human-readable. Structured payload metadata can
 hold machine-readable details such as:

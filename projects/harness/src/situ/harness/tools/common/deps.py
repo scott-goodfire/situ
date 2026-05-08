@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import asyncio
+import inspect
 import json
 import re
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from pathlib import Path
-from threading import Thread
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
@@ -17,34 +17,12 @@ from ...core.notifications import emit_project_event
 from ...core.workers import WorkerManager
 from ...records.base import DbRecord
 from ...repositories import Repositories
-from .backend import SituLocalBackend, command_artifact_dir_for
+from .backend import CommandReceiptDraft, SituLocalBackend, command_artifact_dir_for
 
 EventEmitter = Callable[
     [str, str, str | None, str | None, dict[str, Any] | None],
-    dict[str, Any],
+    dict[str, Any] | Awaitable[dict[str, Any]],
 ]
-
-
-def _run_awaitable_sync(awaitable: Any) -> Any:
-    try:
-        asyncio.get_running_loop()
-    except RuntimeError:
-        return asyncio.run(awaitable)
-
-    result: dict[str, Any] = {}
-
-    def run() -> None:
-        try:
-            result["value"] = asyncio.run(awaitable)
-        except BaseException as error:
-            result["error"] = error
-
-    thread = Thread(target=run)
-    thread.start()
-    thread.join()
-    if "error" in result:
-        raise result["error"]
-    return result.get("value")
 
 
 class SituToolDeps(BaseModel):
@@ -87,14 +65,13 @@ class SituToolDeps(BaseModel):
                 active_task_id=self.active_task_id,
                 active_experiment_id=self.active_experiment_id,
             ),
-            command_receipt_recorder=self.record_command_receipt,
         )
         return self._workspace_backend
 
     async def get_repos(self) -> Repositories:
-        return self._get_repos_sync()
+        return self._get_repos()
 
-    def _get_repos_sync(self) -> Repositories:
+    def _get_repos(self) -> Repositories:
         if self.repos is not None:
             return self.repos
         if self._opened_repos is not None:
@@ -134,14 +111,6 @@ class SituToolDeps(BaseModel):
         session = await (await self.get_repos()).sessions.get(session_id=self.session_id)
         return session.project_id if session is not None else None
 
-    def _current_project_id_sync(self) -> str | None:
-        if self.project_id is not None:
-            return self.project_id
-        session = _run_awaitable_sync(
-            self._get_repos_sync().sessions.get(session_id=self.session_id)
-        )
-        return session.project_id if session is not None else None
-
     async def record_event(
         self,
         *,
@@ -162,56 +131,17 @@ class SituToolDeps(BaseModel):
             emit_project_event(project_id=self.workspace_id or self.project_id, event=event_dump)
             await self.publish_record(record=event, cursor=event.id)
             return event_dump
-        event = self.emit_event(
+        maybe_event = self.emit_event(
             event_type,
             message,
             associated_project_id,
             self.session_id,
             payload,
         )
-        event_id = event.get("id") if event is not None else None
+        event = await maybe_event if inspect.isawaitable(maybe_event) else maybe_event
         return event
 
-    def _record_event_sync(
-        self,
-        *,
-        event_type: str,
-        message: str,
-        payload: dict[str, Any] | None = None,
-    ) -> dict[str, Any] | None:
-        associated_project_id = self._current_project_id_sync()
-        if self.emit_event is None:
-            event = _run_awaitable_sync(
-                self._get_repos_sync().events.add(
-                    event_type=event_type,
-                    message=message,
-                    associated_project_id=associated_project_id,
-                    associated_session_id=self.session_id,
-                    payload=payload,
-                )
-            )
-            event_dump = event.model_dump()
-            emit_project_event(project_id=self.workspace_id or self.project_id, event=event_dump)
-            self._publish_record_sync(record=event, cursor=event.id)
-            return event_dump
-        return self.emit_event(
-            event_type,
-            message,
-            associated_project_id,
-            self.session_id,
-            payload,
-        )
-
     async def publish_record(
-        self,
-        *,
-        record: DbRecord,
-        event: dict[str, Any] | None = None,
-        cursor: int | None = None,
-    ) -> None:
-        self._publish_record_sync(record=record, event=event, cursor=cursor)
-
-    def _publish_record_sync(
         self,
         *,
         record: DbRecord,
@@ -228,27 +158,20 @@ class SituToolDeps(BaseModel):
             cursor=resolved_cursor,
         )
 
-    def record_command_receipt(
-        self,
-        *,
-        command: str,
-        rewritten_command: str,
-        cwd: str,
-        timeout: int | None,
-        output: str,
-        exit_code: int,
-        truncated: bool,
-        command_artifact_dir: str,
-        run_log_path: str,
-    ) -> None:
-        project_id = self._current_project_id_sync()
+    async def flush_command_receipts(self) -> None:
+        backend = self._workspace_backend
+        if not isinstance(backend, SituLocalBackend):
+            return
+        for draft in backend.pop_command_receipts():
+            await self.record_command_receipt(draft)
+
+    async def record_command_receipt(self, draft: CommandReceiptDraft) -> None:
+        project_id = await self.current_project_id()
         if project_id is None or self.project_dir is None:
             return
 
-        repos = self._get_repos_sync()
-        artifact_id = _run_awaitable_sync(
-            repos.artifacts.next_id(project_id=project_id)
-        )
+        repos = await self.get_repos()
+        artifact_id = await repos.artifacts.next_id(project_id=project_id)
         owner = self.active_experiment_id or self.active_task_id or self.agent_id or "unscoped"
         receipt_dir = (
             self.project_dir
@@ -261,22 +184,22 @@ class SituToolDeps(BaseModel):
         receipt_path = receipt_dir / f"{artifact_id}-command-receipt.json"
         receipt = {
             "receipt_type": "command",
-            "command": command,
+            "command": draft.command,
             "rewritten_command": (
-                rewritten_command if rewritten_command != command else None
+                draft.rewritten_command if draft.rewritten_command != draft.command else None
             ),
-            "cwd": cwd,
-            "timeout_seconds": timeout,
-            "exit_code": exit_code,
-            "truncated": truncated,
-            "output_summary": _summarize_output(output),
-            "output": output,
-            "metrics": _metric_hints_from_output(output),
+            "cwd": draft.cwd,
+            "timeout_seconds": draft.timeout,
+            "exit_code": draft.exit_code,
+            "truncated": draft.truncated,
+            "output_summary": _summarize_output(draft.output),
+            "output": draft.output,
+            "metrics": _metric_hints_from_output(draft.output),
             "runtime_paths": {
-                "artifact_dir": command_artifact_dir,
-                "run_log": run_log_path,
+                "artifact_dir": draft.command_artifact_dir,
+                "run_log": draft.run_log_path,
             },
-            "git": _git_state_for_receipt(Path(cwd)),
+            "git": await _git_state_for_receipt(Path(draft.cwd)),
         }
         receipt_path.write_text(
             json.dumps(receipt, indent=2, sort_keys=True) + "\n",
@@ -292,49 +215,45 @@ class SituToolDeps(BaseModel):
             associated_entity_kind = "experiment"
             associated_entity_id = self.active_experiment_id
 
-        artifact = _run_awaitable_sync(
-            repos.artifacts.create(
-                artifact_id=artifact_id,
-                project_id=project_id,
-                created_in_session_id=self.session_id,
-                associated_entity_kind=associated_entity_kind,
-                associated_entity_id=associated_entity_id,
-                kind="command_receipt",
-                title=_command_receipt_title(command),
-                path=_artifact_path_for_record(
-                    artifact_path=receipt_path,
-                    project_dir=self.project_dir,
-                ),
-                media_type="application/json",
-                size_bytes=receipt_path.stat().st_size,
-            )
+        artifact = await repos.artifacts.create(
+            artifact_id=artifact_id,
+            project_id=project_id,
+            created_in_session_id=self.session_id,
+            associated_entity_kind=associated_entity_kind,
+            associated_entity_id=associated_entity_id,
+            kind="command_receipt",
+            title=_command_receipt_title(draft.command),
+            path=_artifact_path_for_record(
+                artifact_path=receipt_path,
+                project_dir=self.project_dir,
+            ),
+            media_type="application/json",
+            size_bytes=receipt_path.stat().st_size,
         )
         if self.active_task_id is not None:
-            link = _run_awaitable_sync(
-                repos.task_entity_links.create(
-                    project_id=project_id,
-                    task_id=self.active_task_id,
-                    entity_kind="artifact",
-                    entity_id=artifact.id,
-                    relationship="receipt",
-                )
+            link = await repos.task_entity_links.create(
+                project_id=project_id,
+                task_id=self.active_task_id,
+                entity_kind="artifact",
+                entity_id=artifact.id,
+                relationship="receipt",
             )
         else:
             link = None
-        event = self._record_event_sync(
+        event = await self.record_event(
             event_type="artifact.command_receipt_created",
             message=f"Captured command receipt {artifact.id}",
             payload={
                 "artifact_id": artifact.id,
-                "command": command,
-                "exit_code": exit_code,
+                "command": draft.command,
+                "exit_code": draft.exit_code,
                 "associated_entity_kind": associated_entity_kind,
                 "associated_entity_id": associated_entity_id,
             },
         )
-        self._publish_record_sync(record=artifact, event=event)
+        await self.publish_record(record=artifact, event=event)
         if link is not None:
-            self._publish_record_sync(record=link, event=event)
+            await self.publish_record(record=link, event=event)
 
 
 _METRIC_LINE_RE = re.compile(
@@ -367,35 +286,48 @@ def _metric_hints_from_output(output: str) -> dict[str, dict[str, Any]]:
     return metrics
 
 
-def _git_state_for_receipt(cwd: Path) -> dict[str, Any]:
-    git_root = _git_text(cwd, "rev-parse", "--show-toplevel")
+async def _git_state_for_receipt(cwd: Path) -> dict[str, Any]:
+    git_root = await _git_text(cwd, "rev-parse", "--show-toplevel")
     if not git_root:
         return {"available": False}
     return {
         "available": True,
         "root": git_root,
-        "branch": _git_text(cwd, "branch", "--show-current") or None,
-        "commit": _git_text(cwd, "rev-parse", "HEAD") or None,
-        "dirty": bool(_git_lines(cwd, "status", "--porcelain=v1", "--untracked-files=all")),
+        "branch": await _git_text(cwd, "branch", "--show-current") or None,
+        "commit": await _git_text(cwd, "rev-parse", "HEAD") or None,
+        "dirty": bool(
+            await _git_lines(cwd, "status", "--porcelain=v1", "--untracked-files=all")
+        ),
     }
 
 
-def _git_text(cwd: Path, *args: str) -> str:
-    import subprocess
-
-    result = subprocess.run(
-        ["git", *args],
-        cwd=cwd,
-        text=True,
-        capture_output=True,
-        check=False,
-    )
-    return result.stdout.strip() if result.returncode == 0 else ""
+async def _git_text(cwd: Path, *args: str) -> str:
+    returncode, stdout, _stderr = await _git_output(cwd, *args)
+    return stdout.strip() if returncode == 0 else ""
 
 
-def _git_lines(cwd: Path, *args: str) -> list[str]:
-    text = _git_text(cwd, *args)
+async def _git_lines(cwd: Path, *args: str) -> list[str]:
+    text = await _git_text(cwd, *args)
     return text.splitlines() if text else []
+
+
+async def _git_output(cwd: Path, *args: str) -> tuple[int, str, str]:
+    try:
+        process = await asyncio.create_subprocess_exec(
+            "git",
+            *args,
+            cwd=cwd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+    except OSError as error:
+        return 127, "", str(error)
+    stdout, stderr = await process.communicate()
+    return (
+        process.returncode if process.returncode is not None else 0,
+        stdout.decode(errors="replace"),
+        stderr.decode(errors="replace"),
+    )
 
 
 def _artifact_path_for_record(*, artifact_path: Path, project_dir: Path) -> str:

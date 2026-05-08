@@ -30,4 +30,4 @@ Situ supervises the session. Agents and workers perform concrete work.
 - Worker internals become the only source of durable research state.
 - Agent prompts become the only source of trust checks or user decisions.
 - The UI talks directly to worker internals instead of the control plane.
-- The current slice requires a specific hosted agent service.
+- Situ requires a specific hosted agent service.

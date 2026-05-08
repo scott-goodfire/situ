@@ -130,9 +130,8 @@ SQLite is per project:
 ~/.situ/projects/<project-id>/dbos.sqlite
 ```
 
-Combining DBOS into the canonical product database is out of scope until
-the app runtime has a clear multi-project DBOS story; product state
-converges first.
+Combining DBOS into the canonical product database is out of scope; DBOS
+state remains per-project.
 
 Managed experiment worktrees may live under the project runtime directory, for
 example:

@@ -23,9 +23,6 @@ from .._shared.workspace import (
 
 def run(args: argparse.Namespace) -> int:
     app_root = resolve_app_root(Path(__file__))
-    if app_root is None:
-        print("could not find Situ app root; set SITU_APP_ROOT", file=sys.stderr)
-        return 1
 
     workspace = resolve_existing_workspace(args)
     if workspace is None:

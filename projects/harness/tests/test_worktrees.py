@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 from situ.harness.app import HarnessApp
-from situ.harness.cli.commands.apply.command import run as apply_patch_artifact
+from situ.harness.cli.commands.apply.command import run_async as apply_patch_artifact
 from situ.harness.core.worktrees import WorktreeManager
 from situ.harness.records import AgentKind, TaskKind
 from situ.harness.tools.tasks.eligibility import eligible_task_kinds_for_agent
@@ -49,13 +49,14 @@ def _repo(tmp_path: Path) -> Path:
     return repo
 
 
-def test_worktree_manager_creates_detached_worktree_for_clean_repo(
+@pytest.mark.asyncio
+async def test_worktree_manager_creates_detached_worktree_for_clean_repo(
     tmp_path: Path,
 ) -> None:
     repo = _repo(tmp_path)
     base_commit = _git(repo, "rev-parse", "HEAD")
 
-    worktree = WorktreeManager(
+    worktree = await WorktreeManager(
         workspace_path=repo / "pkg",
         worktrees_dir=tmp_path / "worktrees",
     ).prepare(experiment_id="EX1")
@@ -66,7 +67,8 @@ def test_worktree_manager_creates_detached_worktree_for_clean_repo(
     assert _git(worktree.worktree_root, "branch", "--show-current") == ""
 
 
-def test_worktree_manager_can_prepare_from_selected_base_commit(
+@pytest.mark.asyncio
+async def test_worktree_manager_can_prepare_from_selected_base_commit(
     tmp_path: Path,
 ) -> None:
     repo = _repo(tmp_path)
@@ -75,7 +77,7 @@ def test_worktree_manager_can_prepare_from_selected_base_commit(
     _git(repo, "add", ".")
     _commit(repo, "second")
 
-    worktree = WorktreeManager(
+    worktree = await WorktreeManager(
         workspace_path=repo / "pkg",
         worktrees_dir=tmp_path / "worktrees",
     ).prepare(
@@ -87,18 +89,19 @@ def test_worktree_manager_can_prepare_from_selected_base_commit(
     assert (worktree.workspace_path / "module.py").read_text() == "VALUE = 1\n"
 
 
-def test_worktree_manager_captures_candidate_commit_and_ref(
+@pytest.mark.asyncio
+async def test_worktree_manager_captures_candidate_commit_and_ref(
     tmp_path: Path,
 ) -> None:
     repo = _repo(tmp_path)
     base_commit = _git(repo, "rev-parse", "HEAD")
-    worktree = WorktreeManager(
+    worktree = await WorktreeManager(
         workspace_path=repo / "pkg",
         worktrees_dir=tmp_path / "worktrees",
     ).prepare(experiment_id="EX1")
     (worktree.workspace_path / "module.py").write_text("VALUE = 2\n")
 
-    candidate = WorktreeManager(
+    candidate = await WorktreeManager(
         workspace_path=repo / "pkg",
         worktrees_dir=tmp_path / "worktrees",
     ).capture_candidate_state(
@@ -114,16 +117,17 @@ def test_worktree_manager_captures_candidate_commit_and_ref(
     assert _git(repo, "rev-parse", "refs/situ/experiments/EX1") == candidate.candidate_commit
 
 
-def test_worktree_manager_reuses_nested_workspace_path_without_double_append(
+@pytest.mark.asyncio
+async def test_worktree_manager_reuses_nested_workspace_path_without_double_append(
     tmp_path: Path,
 ) -> None:
     repo = _repo(tmp_path)
 
-    first = WorktreeManager(
+    first = await WorktreeManager(
         workspace_path=repo / "pkg",
         worktrees_dir=tmp_path / "worktrees",
     ).prepare(experiment_id="EX1")
-    second = WorktreeManager(
+    second = await WorktreeManager(
         workspace_path=repo / "pkg",
         worktrees_dir=tmp_path / "worktrees",
     ).prepare(
@@ -137,22 +141,24 @@ def test_worktree_manager_reuses_nested_workspace_path_without_double_append(
     assert second.workspace_path.exists()
 
 
-def test_worktree_manager_rejects_dirty_base_repo(tmp_path: Path) -> None:
+@pytest.mark.asyncio
+async def test_worktree_manager_rejects_dirty_base_repo(tmp_path: Path) -> None:
     repo = _repo(tmp_path)
     (repo / "untracked.txt").write_text("dirty\n")
 
     with pytest.raises(RuntimeError, match="workspace must be clean"):
-        WorktreeManager(
+        await WorktreeManager(
             workspace_path=repo,
             worktrees_dir=tmp_path / "worktrees",
         ).prepare(experiment_id="EX1")
 
 
-def test_worktree_manager_inspect_preserves_unstaged_status_paths(tmp_path: Path) -> None:
+@pytest.mark.asyncio
+async def test_worktree_manager_inspect_preserves_unstaged_status_paths(tmp_path: Path) -> None:
     repo = _repo(tmp_path)
     (repo / "pkg" / "module.py").write_text("VALUE = 2\n")
 
-    state = WorktreeManager(
+    state = await WorktreeManager(
         workspace_path=repo / "pkg",
         worktrees_dir=tmp_path / "worktrees",
     ).inspect(repo / "pkg")
@@ -310,9 +316,8 @@ async def test_harness_prepares_experiment_task_checkout_and_records_final_state
         "situ.harness.cli.commands.apply.command.ProjectContext",
         lambda _workspace: app.context,
     )
-    pytest.xfail("apply_patch_artifact still reads async repositories synchronously")
     assert (
-        apply_patch_artifact(
+        await apply_patch_artifact(
             argparse.Namespace(
                 artifact_id=patch_artifacts[0].id,
                 workspace=str(repo),

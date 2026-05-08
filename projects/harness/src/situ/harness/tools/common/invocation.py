@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 from dataclasses import dataclass
 from typing import Any, Generic, TypeVar, cast
 
@@ -25,12 +24,3 @@ async def invoke_situ_tool(
         ctx=cast(Any, _DirectSituToolContext(deps=deps)),
         **kwargs,
     )
-
-
-def invoke_situ_tool_sync(
-    *,
-    tool: BaseSituTool[DepsT, ResultT],
-    deps: DepsT,
-    **kwargs: Any,
-) -> ResultT:
-    return asyncio.run(invoke_situ_tool(tool=tool, deps=deps, **kwargs))

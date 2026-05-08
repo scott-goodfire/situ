@@ -23,31 +23,39 @@ INTERPRET_EVALUATION_ID = "EV2"
 
 
 class MultiAgentLoopWorld:
-    def __init__(self, *, seed: MultiAgentLoopSeed) -> None:
-        self._repo_world = RepoBootstrapWorld(seed=_repo_bootstrap_seed(seed))
+    def __init__(self, *, repo_world: RepoBootstrapWorld, seed: MultiAgentLoopSeed) -> None:
+        self._repo_world = repo_world
         self.seed = seed
-        self.repos.agents.ensure_project_agent(
+
+    @classmethod
+    async def create(cls, *, seed: MultiAgentLoopSeed) -> "MultiAgentLoopWorld":
+        world = cls(
+            repo_world=await RepoBootstrapWorld.create(seed=_repo_bootstrap_seed(seed)),
+            seed=seed,
+        )
+        await world.repos.agents.ensure_project_agent(
             project_id=PROJECT_ID,
             created_in_session_id=SESSION_ID,
             kind="manager",
             display_name="Manager",
             model_name="eval:model",
         )
-        self.repos.agents.ensure_project_agent(
+        await world.repos.agents.ensure_project_agent(
             project_id=PROJECT_ID,
             created_in_session_id=SESSION_ID,
             kind="researcher",
             display_name="Researcher",
             model_name="eval:model",
         )
-        self.repos.agents.ensure_project_agent(
+        await world.repos.agents.ensure_project_agent(
             project_id=PROJECT_ID,
             created_in_session_id=SESSION_ID,
             kind="scientist",
             display_name="Scientist",
             model_name="eval:model",
         )
-        self._seed_tasks()
+        await world._seed_tasks()
+        return world
 
     @property
     def repos(self) -> Repositories:
@@ -64,7 +72,7 @@ class MultiAgentLoopWorld:
     def teardown(self) -> None:
         self._repo_world.teardown()
 
-    def emit_event(
+    async def emit_event(
         self,
         event_type: str,
         message: str,
@@ -72,7 +80,7 @@ class MultiAgentLoopWorld:
         associated_session_id: str | None,
         payload: dict[str, Any] | None,
     ) -> dict[str, Any]:
-        return self._repo_world.emit_event(
+        return await self._repo_world.emit_event(
             event_type,
             message,
             associated_project_id,
@@ -89,10 +97,10 @@ class MultiAgentLoopWorld:
     def changed_files(self) -> list[str]:
         return self._repo_world.changed_files()
 
-    def _seed_tasks(self) -> None:
+    async def _seed_tasks(self) -> None:
         if self.seed == "with_existing_experiment_result":
-            self._seed_existing_experiment_result()
-        self._create_task(
+            await self._seed_existing_experiment_result()
+        await self._create_task(
             title=_plan_task_title(self.seed),
             content=_plan_task_content(self.seed),
             kind=TaskKind.PLAN,
@@ -100,7 +108,7 @@ class MultiAgentLoopWorld:
             source_kind="system",
         )
         if self.seed == "with_user_urgent_task":
-            self._create_task(
+            await self._create_task(
                 title="Normal backlog baseline task",
                 content=(
                     "Normal-priority backlog work. Establish baseline evidence "
@@ -111,7 +119,7 @@ class MultiAgentLoopWorld:
                 priority="normal",
                 source_kind="manager",
             )
-            self._create_task(
+            await self._create_task(
                 title="User urgent: inspect eval-surface risk",
                 content=(
                     "Urgent user steering. Inspect README.md and prepare.py, "
@@ -126,8 +134,8 @@ class MultiAgentLoopWorld:
                 source_kind="user",
             )
 
-    def _seed_existing_experiment_result(self) -> None:
-        experiment = self.repos.experiments.create(
+    async def _seed_existing_experiment_result(self) -> None:
+        experiment = await self.repos.experiments.create(
             experiment_id=INTERPRET_EXPERIMENT_ID,
             project_id=PROJECT_ID,
             created_in_session_id=SESSION_ID,
@@ -142,7 +150,7 @@ class MultiAgentLoopWorld:
             candidate_commit="eval-component-a",
             research_thread="component-choice",
         )
-        evaluation = self.repos.evaluations.create(
+        evaluation = await self.repos.evaluations.create(
             evaluation_id=INTERPRET_EVALUATION_ID,
             project_id=PROJECT_ID,
             created_in_session_id=SESSION_ID,
@@ -151,7 +159,7 @@ class MultiAgentLoopWorld:
             associated_experiment_id=experiment.id,
             status="closed",
         )
-        measurement = self.repos.measurements.add(
+        measurement = await self.repos.measurements.add(
             evaluation_id=evaluation.id,
             created_in_session_id=SESSION_ID,
             actor="scientist",
@@ -177,7 +185,7 @@ class MultiAgentLoopWorld:
                 "comparison_baseline_id": BASELINE_ID,
             },
         )
-        self.repos.evaluation_activities.add(
+        await self.repos.evaluation_activities.add(
             evaluation_id=evaluation.id,
             created_in_session_id=SESSION_ID,
             actor="scientist",
@@ -188,7 +196,7 @@ class MultiAgentLoopWorld:
                 "measurement_id": measurement.id,
             },
         )
-        self.repos.experiment_activities.add(
+        await self.repos.experiment_activities.add(
             experiment_id=experiment.id,
             created_in_session_id=SESSION_ID,
             actor="scientist",
@@ -200,12 +208,12 @@ class MultiAgentLoopWorld:
             ),
             payload={"activity_type": "interpretation"},
         )
-        self.repos.hypothesis_experiment_links.create(
+        await self.repos.hypothesis_experiment_links.create(
             hypothesis_id="H1",
             experiment_id=experiment.id,
         )
 
-    def _create_task(
+    async def _create_task(
         self,
         *,
         title: str,
@@ -214,8 +222,8 @@ class MultiAgentLoopWorld:
         priority: str,
         source_kind: str,
     ) -> None:
-        task = self.repos.tasks.create(
-            task_id=self.repos.tasks.next_id(project_id=PROJECT_ID),
+        task = await self.repos.tasks.create(
+            task_id=await self.repos.tasks.next_id(project_id=PROJECT_ID),
             project_id=PROJECT_ID,
             created_in_session_id=SESSION_ID,
             title=title,
@@ -224,7 +232,7 @@ class MultiAgentLoopWorld:
             priority=priority,
             source_kind=source_kind,
         )
-        self.emit_event(
+        await self.emit_event(
             "task.created",
             f"Created task {task.id}",
             PROJECT_ID,

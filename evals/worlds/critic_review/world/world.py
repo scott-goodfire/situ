@@ -23,17 +23,25 @@ CANDIDATE_EVALUATION_ID = "EV2"
 
 
 class CriticReviewWorld:
-    def __init__(self, *, seed: CriticReviewSeed) -> None:
-        self._repo_world = RepoBootstrapWorld(seed="with_baseline_result")
+    def __init__(self, *, repo_world: RepoBootstrapWorld, seed: CriticReviewSeed) -> None:
+        self._repo_world = repo_world
         self.seed = seed
-        self.repos.agents.ensure_project_agent(
+
+    @classmethod
+    async def create(cls, *, seed: CriticReviewSeed) -> "CriticReviewWorld":
+        world = cls(
+            repo_world=await RepoBootstrapWorld.create(seed="with_baseline_result"),
+            seed=seed,
+        )
+        await world.repos.agents.ensure_project_agent(
             project_id=PROJECT_ID,
             created_in_session_id=SESSION_ID,
             kind="critic",
             display_name="Critic",
             model_name="eval:model",
         )
-        self.review_task_id = self._seed_review_case(seed)
+        world.review_task_id = await world._seed_review_case(seed)
+        return world
 
     @property
     def repos(self) -> Repositories:
@@ -50,7 +58,7 @@ class CriticReviewWorld:
     def teardown(self) -> None:
         self._repo_world.teardown()
 
-    def emit_event(
+    async def emit_event(
         self,
         event_type: str,
         message: str,
@@ -58,7 +66,7 @@ class CriticReviewWorld:
         associated_session_id: str | None,
         payload: dict[str, Any] | None,
     ) -> dict[str, Any]:
-        return self._repo_world.emit_event(
+        return await self._repo_world.emit_event(
             event_type,
             message,
             associated_project_id,
@@ -79,9 +87,9 @@ class CriticReviewWorld:
     def changed_files(self) -> list[str]:
         return self._repo_world.changed_files()
 
-    def _seed_review_case(self, seed: CriticReviewSeed) -> str:
-        baseline_measurement_ids = _add_baseline_context(self.repos, seed)
-        experiment = self.repos.experiments.create(
+    async def _seed_review_case(self, seed: CriticReviewSeed) -> str:
+        baseline_measurement_ids = await _add_baseline_context(self.repos, seed)
+        experiment = await self.repos.experiments.create(
             experiment_id=CANDIDATE_EXPERIMENT_ID,
             project_id=PROJECT_ID,
             created_in_session_id=SESSION_ID,
@@ -91,7 +99,7 @@ class CriticReviewWorld:
             worktree_path=str(self.workspace_path),
             base_commit="eval-fixture-base",
         )
-        evaluation = self.repos.evaluations.create(
+        evaluation = await self.repos.evaluations.create(
             evaluation_id=CANDIDATE_EVALUATION_ID,
             project_id=PROJECT_ID,
             created_in_session_id=SESSION_ID,
@@ -100,8 +108,8 @@ class CriticReviewWorld:
             associated_experiment_id=experiment.id,
             status="closed",
         )
-        candidate_measurement_ids = _add_candidate_measurements(self.repos, seed)
-        self.repos.experiment_activities.add(
+        candidate_measurement_ids = await _add_candidate_measurements(self.repos, seed)
+        await self.repos.experiment_activities.add(
             experiment_id=experiment.id,
             created_in_session_id=SESSION_ID,
             actor="harness",
@@ -113,7 +121,7 @@ class CriticReviewWorld:
                 "worktree": _workspace_state_payload(seed),
             },
         )
-        self.repos.experiment_activities.add(
+        await self.repos.experiment_activities.add(
             experiment_id=experiment.id,
             created_in_session_id=SESSION_ID,
             actor="scientist",
@@ -121,8 +129,8 @@ class CriticReviewWorld:
             body=_scientist_interpretation(seed),
             payload={"activity_type": "interpretation"},
         )
-        task = self.repos.tasks.create(
-            task_id=self.repos.tasks.next_id(project_id=PROJECT_ID),
+        task = await self.repos.tasks.create(
+            task_id=await self.repos.tasks.next_id(project_id=PROJECT_ID),
             project_id=PROJECT_ID,
             created_in_session_id=SESSION_ID,
             title=_review_task_title(seed),
@@ -141,14 +149,14 @@ class CriticReviewWorld:
                 "failure_mode": seed,
             },
         )
-        _link_review_evidence(
+        await _link_review_evidence(
             self.repos,
             task_id=task.id,
             experiment_id=experiment.id,
             evaluation_id=evaluation.id,
             measurement_ids=candidate_measurement_ids,
         )
-        self.emit_event(
+        await self.emit_event(
             "task.created",
             f"Created Critic review task {task.id}",
             PROJECT_ID,
@@ -162,17 +170,17 @@ class CriticReviewWorld:
         return task.id
 
 
-def _add_baseline_context(repos: Repositories, seed: CriticReviewSeed) -> list[str]:
+async def _add_baseline_context(repos: Repositories, seed: CriticReviewSeed) -> list[str]:
     if seed != "selection_on_noise":
         return [
             measurement.id
-            for measurement in repos.measurements.list_for_evaluation(
+            for measurement in await repos.measurements.list_for_evaluation(
                 evaluation_id=BASELINE_EVALUATION_ID
             )
         ]
 
     for index, val_bpb in enumerate([2.705, 2.721], start=2):
-        measurement = repos.measurements.add(
+        measurement = await repos.measurements.add(
             evaluation_id=BASELINE_EVALUATION_ID,
             created_in_session_id=SESSION_ID,
             actor="worker",
@@ -197,7 +205,7 @@ def _add_baseline_context(repos: Repositories, seed: CriticReviewSeed) -> list[s
                 },
             },
         )
-        repos.evaluation_activities.add(
+        await repos.evaluation_activities.add(
             evaluation_id=BASELINE_EVALUATION_ID,
             created_in_session_id=SESSION_ID,
             actor="worker",
@@ -210,13 +218,13 @@ def _add_baseline_context(repos: Repositories, seed: CriticReviewSeed) -> list[s
         )
     return [
         measurement.id
-        for measurement in repos.measurements.list_for_evaluation(
+        for measurement in await repos.measurements.list_for_evaluation(
             evaluation_id=BASELINE_EVALUATION_ID
         )
     ]
 
 
-def _add_candidate_measurements(
+async def _add_candidate_measurements(
     repos: Repositories,
     seed: CriticReviewSeed,
 ) -> list[str]:
@@ -297,7 +305,7 @@ def _add_candidate_measurements(
             "```\n\n"
             "Scientist interpretation: candidate appears to improve val_bpb."
         )
-        measurement = repos.measurements.add(
+        measurement = await repos.measurements.add(
             evaluation_id=CANDIDATE_EVALUATION_ID,
             created_in_session_id=SESSION_ID,
             actor="scientist",
@@ -315,7 +323,7 @@ def _add_candidate_measurements(
             },
         )
         ids.append(measurement.id)
-        repos.evaluation_activities.add(
+        await repos.evaluation_activities.add(
             evaluation_id=CANDIDATE_EVALUATION_ID,
             created_in_session_id=SESSION_ID,
             actor="scientist",
@@ -329,7 +337,7 @@ def _add_candidate_measurements(
     return ids
 
 
-def _link_review_evidence(
+async def _link_review_evidence(
     repos: Repositories,
     *,
     task_id: str,
@@ -337,14 +345,14 @@ def _link_review_evidence(
     evaluation_id: str,
     measurement_ids: list[str],
 ) -> None:
-    repos.task_entity_links.create(
+    await repos.task_entity_links.create(
         project_id=PROJECT_ID,
         task_id=task_id,
         entity_kind=TaskEntityKind.EXPERIMENT,
         entity_id=experiment_id,
         relationship="reviews",
     )
-    repos.task_entity_links.create(
+    await repos.task_entity_links.create(
         project_id=PROJECT_ID,
         task_id=task_id,
         entity_kind=TaskEntityKind.EVALUATION,
@@ -352,7 +360,7 @@ def _link_review_evidence(
         relationship="reviews",
     )
     for measurement_id in measurement_ids:
-        repos.task_entity_links.create(
+        await repos.task_entity_links.create(
             project_id=PROJECT_ID,
             task_id=task_id,
             entity_kind=TaskEntityKind.MEASUREMENT,

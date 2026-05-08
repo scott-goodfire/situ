@@ -128,5 +128,4 @@ attached to zero or one project; the full project-owned research and
 coordination record set with parent-scoped activities, artifact
 references, and an internal event log; the TypeScript Ink TUI.
 
-Out of scope until the agent/tool loop is trustworthy: parallelism,
-plugins, and remote workers.
+Out of scope: parallelism, plugins, and remote workers.

@@ -15,18 +15,21 @@ The goal is to keep the agent surface small, numbered, discoverable, and useful.
 ## Add Or Update A Spec
 
 1. Read `.agents/policies/0009-good-specs/POLICY.md`.
-2. Read adjacent specs in `.agents/specs/*/SPEC.md`.
-3. Add a new spec only when it captures a durable product or architecture
+2. Read `.agents/policies/0033-specs-as-end-state/POLICY.md`.
+3. Read `.agents/policies/0034-specs-describe-what-is/POLICY.md`.
+4. Read adjacent specs in `.agents/specs/*/SPEC.md`.
+5. Add a new spec only when it captures a durable product or architecture
    contract.
-4. Use the next numbered directory:
+6. Use the next numbered directory:
    ```text
    .agents/specs/0010-some-name/SPEC.md
    ```
-5. Update `.agents/specs/README.md`.
-6. Run the LLM lint workflow in this skill.
+7. Update `.agents/specs/README.md`.
+8. Run the LLM lint workflow in this skill.
 
 Specs should explain scope, intent, deferred work, and reviewable criteria. Do
-not put implementation plans in specs unless they define a boundary.
+not put implementation plans, directional roadmap language, or defensive
+contrast against absent alternatives in specs.
 
 ## Add Or Update A Policy
 
@@ -73,7 +76,10 @@ Read:
 2. `.agents/specs/README.md`
 3. `.agents/policies/DOC.md`
 4. `.agents/policies/0009-good-specs/POLICY.md`
-5. Changed specs, policies, docs, and skills
+5. `.agents/policies/0033-specs-as-end-state/POLICY.md`
+6. `.agents/policies/0034-specs-describe-what-is/POLICY.md`
+7. `.agents/policies/0035-docs-without-overlap/POLICY.md` when docs changed
+8. Changed specs, policies, docs, and skills
 
 Check:
 
@@ -84,11 +90,17 @@ Check:
 - Index files link to the current numbered paths.
 - Specs meet the good-spec policy: clear purpose, intent, scope, deferred work,
   and reviewable criteria.
+- Specs are end-state contracts, not implementation plans, migration recipes,
+  rollout phases, or test-writing checklists.
+- Specs describe what the system is. They avoid defensive contrast against
+  absent alternatives and directional language about where the system is
+  heading.
 - Policies are concrete review rubrics, not generic documentation.
-- Product specs preserve the current slice language: objective, session,
+- Product specs preserve the core product language: objective, session,
   research context, hypotheses, experiments, comment activities, artifacts,
   automated trust concerns, and TUI-first observability.
-- Docs explain durable context that is not better as a spec or policy.
+- Docs explain durable context that is not better as a spec or policy, and
+  link to contracts instead of restating them.
 - Skills describe a repeatable workflow and do not depend on stale scripts.
 - Links referenced in changed files are plausible and current.
 

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+import asyncio
 import inspect
-import subprocess
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any
@@ -136,7 +136,6 @@ class RepoBootstrapWorld:
         self.workspace_path = self.root / "fixture-repo"
         self.workspace_path.mkdir(parents=True)
         self._write_fixture_repo()
-        self._init_git_repo()
 
         self.repos: Repositories
         self.events: list[EvalEvent] = []
@@ -145,6 +144,7 @@ class RepoBootstrapWorld:
     @classmethod
     async def create(cls, *, seed: RepoBootstrapSeed) -> "RepoBootstrapWorld":
         world = cls(seed=seed)
+        await world._init_git_repo()
         world.repos = await _build_repos(world.root / "state", world.workspace_path)
         await _seed(world.repos, seed)
         return world
@@ -152,7 +152,7 @@ class RepoBootstrapWorld:
     def teardown(self) -> None:
         self._tmp.cleanup()
 
-    def emit_event(
+    async def emit_event(
         self,
         event_type: str,
         message: str,
@@ -160,7 +160,7 @@ class RepoBootstrapWorld:
         associated_session_id: str | None,
         payload: dict[str, Any] | None,
     ) -> dict[str, Any]:
-        record = self.repos.events.add(
+        record = await self.repos.events.add(
             event_type=event_type,
             message=message,
             associated_project_id=associated_project_id,
@@ -243,12 +243,12 @@ class RepoBootstrapWorld:
                 encoding="utf-8",
             )
 
-    def _init_git_repo(self) -> None:
-        _run_git(self.workspace_path, "init")
-        _run_git(self.workspace_path, "config", "user.email", "situ-eval@example.com")
-        _run_git(self.workspace_path, "config", "user.name", "Situ Eval")
-        _run_git(self.workspace_path, "add", ".")
-        _run_git(self.workspace_path, "commit", "-m", "fixture baseline")
+    async def _init_git_repo(self) -> None:
+        await _run_git(self.workspace_path, "init")
+        await _run_git(self.workspace_path, "config", "user.email", "situ-eval@example.com")
+        await _run_git(self.workspace_path, "config", "user.name", "Situ Eval")
+        await _run_git(self.workspace_path, "add", ".")
+        await _run_git(self.workspace_path, "commit", "-m", "fixture baseline")
 
 
 async def _build_repos(path: Path, workspace_path: Path) -> Repositories:
@@ -284,14 +284,23 @@ async def _build_repos(path: Path, workspace_path: Path) -> Repositories:
     return repos
 
 
-def _run_git(cwd: Path, *args: str) -> None:
-    subprocess.run(
-        ["git", *args],
-        cwd=cwd,
-        check=True,
-        capture_output=True,
-        text=True,
-    )
+async def _run_git(cwd: Path, *args: str) -> None:
+    try:
+        process = await asyncio.create_subprocess_exec(
+            "git",
+            *args,
+            cwd=cwd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+    except OSError as error:
+        raise RuntimeError(f"git {' '.join(args)} failed: {error}") from error
+    stdout, stderr = await process.communicate()
+    if process.returncode != 0:
+        error = stderr.decode(errors="replace").strip() or stdout.decode(
+            errors="replace"
+        ).strip()
+        raise RuntimeError(f"git {' '.join(args)} failed: {error}")
 
 
 async def _seed(repos: Repositories, seed: RepoBootstrapSeed) -> None:

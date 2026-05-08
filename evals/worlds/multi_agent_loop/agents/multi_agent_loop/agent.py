@@ -35,7 +35,7 @@ from evals.worlds.multi_agent_loop.world import (
 
 
 async def run_multi_agent_loop(args: MultiAgentLoopEvalInput) -> MultiAgentLoopEvalOutput:
-    world = MultiAgentLoopWorld(seed=args.seed)
+    world = await MultiAgentLoopWorld.create(seed=args.seed)
     manager_capture = ToolCallCaptureCapability()
     researcher_capture = ToolCallCaptureCapability()
     scientist_capture = ToolCallCaptureCapability()
@@ -44,7 +44,7 @@ async def run_multi_agent_loop(args: MultiAgentLoopEvalInput) -> MultiAgentLoopE
     researcher_outputs: list[ResearchAgentOutput] = []
     scientist_outputs: list[ResearchAgentOutput] = []
     try:
-        manager_task = _claim_next_task(world, AgentKind.MANAGER)
+        manager_task = await _claim_next_task(world, AgentKind.MANAGER)
         manager_outputs.append(
             await _run_manager_pass(
                 world=world,
@@ -54,14 +54,14 @@ async def run_multi_agent_loop(args: MultiAgentLoopEvalInput) -> MultiAgentLoopE
             )
         )
         if manager_task is not None:
-            _finish_task(
+            await _finish_task(
                 world,
                 task_id=manager_task.id,
                 status=TaskStatus.DONE,
                 result_summary=manager_outputs[-1].summary,
             )
 
-        researcher_task = _claim_next_task(world, AgentKind.RESEARCHER)
+        researcher_task = await _claim_next_task(world, AgentKind.RESEARCHER)
         if researcher_task is not None:
             researcher_outputs.append(
                 await _run_researcher_pass(
@@ -71,20 +71,20 @@ async def run_multi_agent_loop(args: MultiAgentLoopEvalInput) -> MultiAgentLoopE
                     active_task=researcher_task,
                 )
             )
-            _finish_task(
+            await _finish_task(
                 world,
                 task_id=researcher_task.id,
                 status=TaskStatus.DONE,
                 result_summary=researcher_outputs[-1].summary,
             )
-            world.emit_event(
+            await world.emit_event(
                 "session.researcher_completed",
                 researcher_outputs[-1].summary,
                 PROJECT_ID,
                 SESSION_ID,
                 researcher_outputs[-1].model_dump(),
             )
-            _enqueue_plan_task(
+            await _enqueue_plan_task(
                 world,
                 title="Plan after Researcher task completion",
                 content=(
@@ -94,7 +94,7 @@ async def run_multi_agent_loop(args: MultiAgentLoopEvalInput) -> MultiAgentLoopE
                     "keeps moving."
                 ),
             )
-            manager_task = _claim_next_task(world, AgentKind.MANAGER)
+            manager_task = await _claim_next_task(world, AgentKind.MANAGER)
             if manager_task is not None:
                 manager_outputs.append(
                     await _run_manager_pass(
@@ -104,14 +104,14 @@ async def run_multi_agent_loop(args: MultiAgentLoopEvalInput) -> MultiAgentLoopE
                         active_task=manager_task,
                     )
                 )
-                _finish_task(
+                await _finish_task(
                     world,
                     task_id=manager_task.id,
                     status=TaskStatus.DONE,
                     result_summary=manager_outputs[-1].summary,
                 )
 
-        scientist_task = _claim_next_task(world, AgentKind.SCIENTIST)
+        scientist_task = await _claim_next_task(world, AgentKind.SCIENTIST)
         if scientist_task is not None:
             scientist_outputs.append(
                 await _run_scientist_pass(
@@ -121,20 +121,20 @@ async def run_multi_agent_loop(args: MultiAgentLoopEvalInput) -> MultiAgentLoopE
                     active_task=scientist_task,
                 )
             )
-            _finish_task(
+            await _finish_task(
                 world,
                 task_id=scientist_task.id,
                 status=TaskStatus.DONE,
                 result_summary=scientist_outputs[-1].summary,
             )
-            world.emit_event(
+            await world.emit_event(
                 "session.agent_completed",
                 scientist_outputs[-1].summary,
                 PROJECT_ID,
                 SESSION_ID,
                 scientist_outputs[-1].model_dump(),
             )
-            _enqueue_plan_task(
+            await _enqueue_plan_task(
                 world,
                 title="Plan after Scientist task completion",
                 content=(
@@ -144,7 +144,7 @@ async def run_multi_agent_loop(args: MultiAgentLoopEvalInput) -> MultiAgentLoopE
                     "research loop keeps moving."
                 ),
             )
-            manager_task = _claim_next_task(world, AgentKind.MANAGER)
+            manager_task = await _claim_next_task(world, AgentKind.MANAGER)
             if manager_task is not None:
                 manager_outputs.append(
                     await _run_manager_pass(
@@ -154,7 +154,7 @@ async def run_multi_agent_loop(args: MultiAgentLoopEvalInput) -> MultiAgentLoopE
                         active_task=manager_task,
                     )
                 )
-                _finish_task(
+                await _finish_task(
                     world,
                     task_id=manager_task.id,
                     status=TaskStatus.DONE,
@@ -296,18 +296,18 @@ def _tool_deps(world: MultiAgentLoopWorld, agent_id: str) -> SituToolDeps:
     )
 
 
-def _claim_next_task(
+async def _claim_next_task(
     world: MultiAgentLoopWorld,
     agent_kind: AgentKind,
 ) -> TaskRecord | None:
-    agent = world.repos.agents.ensure_project_agent(
+    agent = await world.repos.agents.ensure_project_agent(
         project_id=PROJECT_ID,
         created_in_session_id=SESSION_ID,
         kind=agent_kind,
         display_name=_agent_display_name(agent_kind),
         model_name="eval:model",
     )
-    task = world.repos.tasks.claim_next(
+    task = await world.repos.tasks.claim_next(
         project_id=PROJECT_ID,
         agent_id=agent.id,
         eligible_kinds=eligible_task_kinds_for_agent(agent.kind),
@@ -315,8 +315,8 @@ def _claim_next_task(
     )
     if task is None:
         return None
-    world.repos.agents.update(agent_id=agent.id, status=AgentStatus.ACTIVE)
-    world.emit_event(
+    await world.repos.agents.update(agent_id=agent.id, status=AgentStatus.ACTIVE)
+    await world.emit_event(
         "task.claimed",
         f"Claimed task {task.id}",
         PROJECT_ID,
@@ -326,21 +326,21 @@ def _claim_next_task(
     return task
 
 
-def _finish_task(
+async def _finish_task(
     world: MultiAgentLoopWorld,
     *,
     task_id: str,
     status: TaskStatus,
     result_summary: str,
 ) -> None:
-    task = world.repos.tasks.get(task_id=task_id)
+    task = await world.repos.tasks.get(task_id=task_id)
     if task is None:
         return
     if task.status in {TaskStatus.DONE, TaskStatus.ABANDONED, TaskStatus.FAILED}:
         if task.assignee_id is not None:
-            world.repos.agents.update(agent_id=task.assignee_id, status=AgentStatus.IDLE)
+            await world.repos.agents.update(agent_id=task.assignee_id, status=AgentStatus.IDLE)
         return
-    updated = world.repos.tasks.update(
+    updated = await world.repos.tasks.update(
         task_id=task.id,
         status=status,
         result_summary=result_summary,
@@ -349,8 +349,8 @@ def _finish_task(
     if updated is None:
         return
     if updated.assignee_id is not None:
-        world.repos.agents.update(agent_id=updated.assignee_id, status=AgentStatus.IDLE)
-    world.emit_event(
+        await world.repos.agents.update(agent_id=updated.assignee_id, status=AgentStatus.IDLE)
+    await world.emit_event(
         f"task.{updated.status.value}",
         f"Finished task {updated.id}",
         PROJECT_ID,
@@ -359,14 +359,14 @@ def _finish_task(
     )
 
 
-def _enqueue_plan_task(
+async def _enqueue_plan_task(
     world: MultiAgentLoopWorld,
     *,
     title: str,
     content: str,
 ) -> None:
-    task = world.repos.tasks.create(
-        task_id=world.repos.tasks.next_id(project_id=PROJECT_ID),
+    task = await world.repos.tasks.create(
+        task_id=await world.repos.tasks.next_id(project_id=PROJECT_ID),
         project_id=PROJECT_ID,
         created_in_session_id=SESSION_ID,
         title=title,
@@ -375,7 +375,7 @@ def _enqueue_plan_task(
         priority="high",
         source_kind="system",
     )
-    world.emit_event(
+    await world.emit_event(
         "task.created",
         f"Created task {task.id}",
         PROJECT_ID,

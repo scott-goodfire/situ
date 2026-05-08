@@ -21,6 +21,7 @@ Read in this order:
 14. [0014-local-app-runtime/SPEC.md](./0014-local-app-runtime/SPEC.md)
 15. [0015-experiment-lineage-portfolio-search/SPEC.md](./0015-experiment-lineage-portfolio-search/SPEC.md)
 16. [0016-task-work-types-and-reviews/SPEC.md](./0016-task-work-types-and-reviews/SPEC.md)
+17. [0017-distribution-and-install/SPEC.md](./0017-distribution-and-install/SPEC.md)
 
 ## Product Thesis
 
@@ -57,7 +58,8 @@ Specs live in numbered directories:
 ```
 
 Use the next zero-padded number when adding a spec. See
-[../policies/0009-good-specs/POLICY.md](../policies/0009-good-specs/POLICY.md)
+[../policies/0009-good-specs/POLICY.md](../policies/0009-good-specs/POLICY.md),
+[../policies/0033-specs-as-end-state/POLICY.md](../policies/0033-specs-as-end-state/POLICY.md),
 and
-[../policies/0033-specs-as-end-state/POLICY.md](../policies/0033-specs-as-end-state/POLICY.md)
+[../policies/0034-specs-describe-what-is/POLICY.md](../policies/0034-specs-describe-what-is/POLICY.md)
 for the writing bar.

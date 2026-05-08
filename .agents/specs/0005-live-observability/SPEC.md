@@ -39,8 +39,7 @@ Examples:
 - `A+C looks promising, but C explains most of the lift`
 - `decision: keep retrieval hypothesis active; pause prompt-ordering thread`
 
-Best observed signal can still be shown when meaningful, but it is supporting
-context rather than the central product object.
+Best observed signal can be shown as supporting context when meaningful.
 
 ## Concerns
 

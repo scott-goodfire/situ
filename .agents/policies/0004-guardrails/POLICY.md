@@ -12,9 +12,9 @@ interpretation activities.
 
 ## Rule
 
-In the first slice, "guardrails" means automated trust checks. They should be
-concrete enough to prevent obviously invalid results from silently shaping
-interpretation without requiring the user to predeclare every risk.
+"Guardrails" means automated trust checks. They are concrete enough to
+prevent obviously invalid results from silently shaping interpretation
+without requiring the user to predeclare every risk.
 
 ## Required Checks
 

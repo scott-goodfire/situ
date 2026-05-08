@@ -98,12 +98,12 @@ class _EvalWorkerManager(WorkerManager):
     def __init__(self) -> None:
         pass
 
-    def run_experiment(
+    async def run_experiment(
         self,
         params: ExperimentRunParams,
         on_progress: Any,
     ) -> ExperimentRunResult:
-        on_progress(
+        await on_progress(
             {
                 "params": {
                     "session_id": params.session_id,

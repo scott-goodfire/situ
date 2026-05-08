@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import subprocess
 import threading
 from dataclasses import dataclass
 from pathlib import Path
@@ -235,7 +234,7 @@ class HarnessApp:
 
     async def session_start(self, params: dict[str, Any]) -> dict[str, Any]:
         start = SessionStartParams.model_validate(params)
-        require_clean_if_git_workspace(
+        await require_clean_if_git_workspace(
             self.context.repo_root,
             action="starting a Situ session",
         )
@@ -1243,7 +1242,7 @@ class HarnessApp:
             if existing is not None and existing.base_commit is not None
             else _requested_base_commit_from_task(task, parent_experiment)
         )
-        worktree = WorktreeManager(
+        worktree = await WorktreeManager(
             workspace_path=Path(workspace_repo_path),
             worktrees_dir=self.context.project_dir / "worktrees" / task.project_id,
         ).prepare(
@@ -1361,7 +1360,7 @@ class HarnessApp:
             state = {"error": "experiment has no worktree_path"}
         else:
             try:
-                candidate_state = WorktreeManager(
+                candidate_state = await WorktreeManager(
                     workspace_path=Path(workspace_repo_path),
                     worktrees_dir=self.context.project_dir / "worktrees" / experiment.project_id,
                 ).capture_candidate_state(
@@ -1438,27 +1437,27 @@ class HarnessApp:
             return None
 
         worktree_path = Path(experiment.worktree_path)
-        git_root = _git_text(worktree_path, "rev-parse", "--show-toplevel")
+        git_root = await _git_text(worktree_path, "rev-parse", "--show-toplevel")
         if not git_root:
             raise RuntimeError(
                 f"could not resolve git root for experiment {experiment.id}"
             )
 
-        patch = _git_stdout(
+        patch = await _git_stdout(
             Path(git_root),
             "diff",
             "--binary",
             experiment.base_commit,
             candidate_commit,
         )
-        changed_files = _git_lines(
+        changed_files = await _git_lines(
             Path(git_root),
             "diff",
             "--name-only",
             experiment.base_commit,
             candidate_commit,
         )
-        diff_stat = _git_text(
+        diff_stat = await _git_text(
             Path(git_root),
             "diff",
             "--stat",
@@ -1729,26 +1728,46 @@ def _research_thread_from_task(task: TaskRecord) -> str | None:
     return research_thread if isinstance(research_thread, str) and research_thread else None
 
 
-def _git_text(cwd: Path, *args: str) -> str:
-    return _git_stdout(cwd, *args).strip()
+@dataclass(frozen=True, slots=True)
+class _GitResult:
+    returncode: int
+    stdout: str
+    stderr: str
 
 
-def _git_stdout(cwd: Path, *args: str) -> str:
-    result = subprocess.run(
-        ["git", *args],
-        cwd=cwd,
-        text=True,
-        capture_output=True,
-        check=False,
-    )
+async def _git_text(cwd: Path, *args: str) -> str:
+    return (await _git_stdout(cwd, *args)).strip()
+
+
+async def _git_stdout(cwd: Path, *args: str) -> str:
+    result = await _git_output(cwd, *args)
     if result.returncode != 0:
         error = result.stderr.strip() or result.stdout.strip()
         raise RuntimeError(f"git {' '.join(args)} failed: {error}")
     return result.stdout
 
 
-def _git_lines(cwd: Path, *args: str) -> list[str]:
-    text = _git_text(cwd, *args)
+async def _git_output(cwd: Path, *args: str) -> _GitResult:
+    try:
+        process = await asyncio.create_subprocess_exec(
+            "git",
+            *args,
+            cwd=cwd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+    except OSError as error:
+        return _GitResult(returncode=127, stdout="", stderr=str(error))
+    stdout, stderr = await process.communicate()
+    return _GitResult(
+        returncode=process.returncode if process.returncode is not None else 0,
+        stdout=stdout.decode(errors="replace"),
+        stderr=stderr.decode(errors="replace"),
+    )
+
+
+async def _git_lines(cwd: Path, *args: str) -> list[str]:
+    text = await _git_text(cwd, *args)
     return text.splitlines() if text else []
 
 

@@ -23,6 +23,9 @@ not so detailed that it prematurely designs code.
 - The spec defines what is in scope and what is intentionally deferred.
 - The spec describes end state, not implementation steps. See
   [`../0033-specs-as-end-state/POLICY.md`](../0033-specs-as-end-state/POLICY.md).
+- The spec describes what is, not what was rejected or where things are
+  heading. See
+  [`../0034-specs-describe-what-is/POLICY.md`](../0034-specs-describe-what-is/POLICY.md).
 - The spec uses product language first and implementation details only when they
   define a boundary or guarantee.
 - The spec is actionable for future implementation and review.
@@ -36,7 +39,7 @@ not so detailed that it prematurely designs code.
 - The spec locks in database schemas, file names, or framework details before
   they are necessary.
 - The spec repeats another spec instead of narrowing or clarifying it.
-- The spec describes a future platform while the current slice remains
+- The spec describes a future platform while the existing surface remains
   undefined.
 - The spec uses vague phrases like "make it robust" without observable criteria.
 
@@ -45,9 +48,13 @@ not so detailed that it prematurely designs code.
 Good:
 
 ```md
-The first slice has no primary web UI. The TypeScript Ink TUI is the product
-surface and must show objective, session status, active hypotheses, active
-experiment, recent activities, artifacts when useful, and timeline.
+The TypeScript Ink TUI is the primary product surface and must show
+objective, session status, active hypotheses, active experiment, recent
+activities, artifacts when useful, and timeline.
+
+## Out of Scope
+
+- Web UI as the primary product surface.
 ```
 
 Weak:

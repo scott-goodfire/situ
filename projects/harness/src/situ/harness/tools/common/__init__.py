@@ -1,6 +1,6 @@
 from .base import SituToolErrorDetail, SituToolReturn, BaseSituTool
 from .deps import SituToolDeps
-from .invocation import invoke_situ_tool, invoke_situ_tool_sync
+from .invocation import invoke_situ_tool
 
 __all__ = [
     "SituToolDeps",
@@ -8,5 +8,4 @@ __all__ = [
     "SituToolReturn",
     "BaseSituTool",
     "invoke_situ_tool",
-    "invoke_situ_tool_sync",
 ]

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import subprocess
+import asyncio
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any
@@ -32,7 +32,6 @@ class AppSessionLoopWorld:
         self.workspace_path = self.root / "fixture-repo"
         self.workspace_path.mkdir(parents=True)
         self._write_fixture_repo()
-        self._init_git_repo()
 
         self.app = HarnessApp(
             self.workspace_path,
@@ -45,6 +44,7 @@ class AppSessionLoopWorld:
     @classmethod
     async def create(cls, args: AppSessionLoopEvalInput) -> "AppSessionLoopWorld":
         world = cls(args)
+        await world._init_git_repo()
         world.workspace = await world.app.repos.workspaces.ensure()
         world.project = await world.app.repos.projects.create(
             project_id=await world.app.repos.projects.next_id(
@@ -158,12 +158,12 @@ class AppSessionLoopWorld:
                 encoding="utf-8",
             )
 
-    def _init_git_repo(self) -> None:
-        _run_git(self.workspace_path, "init")
-        _run_git(self.workspace_path, "config", "user.email", "situ-eval@example.com")
-        _run_git(self.workspace_path, "config", "user.name", "Situ Eval")
-        _run_git(self.workspace_path, "add", ".")
-        _run_git(self.workspace_path, "commit", "-m", "fixture baseline")
+    async def _init_git_repo(self) -> None:
+        await _run_git(self.workspace_path, "init")
+        await _run_git(self.workspace_path, "config", "user.email", "situ-eval@example.com")
+        await _run_git(self.workspace_path, "config", "user.name", "Situ Eval")
+        await _run_git(self.workspace_path, "add", ".")
+        await _run_git(self.workspace_path, "commit", "-m", "fixture baseline")
 
     async def _seed(self, seed: AppSessionLoopSeed) -> None:
         if seed not in {"with_baseline_no_hypothesis", "with_baseline_result"}:
@@ -273,11 +273,20 @@ def _initial_plan_content(seed: AppSessionLoopSeed) -> str:
     )
 
 
-def _run_git(cwd: Path, *args: str) -> None:
-    subprocess.run(
-        ["git", *args],
-        cwd=cwd,
-        text=True,
-        capture_output=True,
-        check=True,
-    )
+async def _run_git(cwd: Path, *args: str) -> None:
+    try:
+        process = await asyncio.create_subprocess_exec(
+            "git",
+            *args,
+            cwd=cwd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+    except OSError as error:
+        raise RuntimeError(f"git {' '.join(args)} failed: {error}") from error
+    stdout, stderr = await process.communicate()
+    if process.returncode != 0:
+        error = stderr.decode(errors="replace").strip() or stdout.decode(
+            errors="replace"
+        ).strip()
+        raise RuntimeError(f"git {' '.join(args)} failed: {error}")

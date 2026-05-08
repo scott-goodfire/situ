@@ -42,6 +42,7 @@ or agent/worker flows.
 - [0032-command-task-surface/POLICY.md](./0032-command-task-surface/POLICY.md) - keep routine workflows discoverable through strict command wrappers and mise tasks
 - [0033-specs-as-end-state/POLICY.md](./0033-specs-as-end-state/POLICY.md) - keep specs end-state contracts and let agents derive deltas; no implementation plans in specs
 - [0034-specs-describe-what-is/POLICY.md](./0034-specs-describe-what-is/POLICY.md) - keep specs descriptive of what is, not defensive against absent alternatives or directional toward future state
+- [0035-docs-without-overlap/POLICY.md](./0035-docs-without-overlap/POLICY.md) - keep docs reserved for content specs and policies cannot carry; link to the contract instead of paraphrasing it
 
 ## Review Style
 

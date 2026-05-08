@@ -204,7 +204,7 @@ them into a full feature browser until the session data model needs that.
 
 ## Product Rule
 
-The TUI is the product surface and the observability output for now. Keep it
+The TUI is the product surface and the observability output. Keep it
 boring, dense, and legible.
 
 The top-level live view should summarize long evidence instead of printing raw

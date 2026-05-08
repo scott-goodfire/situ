@@ -190,18 +190,18 @@ evidence and recommendations. The Manager allocates the next portfolio step.
 
 ## TUI Shape
 
-The terminal surface should eventually show lineage without becoming a full Git
-visualizer.
+The terminal surface shows lineage compactly. Full Git-visualizer shapes
+are out of scope.
 
-Useful first views:
+Useful views:
 
 - Experiments grouped by research thread.
 - Parent/child relationship when one experiment builds on another.
 - Base and candidate commit/ref for each candidate.
 - Patch handoff artifact when a candidate diff was captured.
 - Latest Critic verdict and latest lineage decision.
-- Thread-level hints such as promising, needs reproduction, stale, or abandoned,
-  derived from activities rather than stored as a large status taxonomy.
+- Thread-level hints such as promising, needs reproduction, stale, or
+  abandoned, derived from activities.
 
 The TUI should make it clear that these are Situ-managed candidate states, not
 changes applied to the user's selected checkout.

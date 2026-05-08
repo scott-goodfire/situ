@@ -3,7 +3,7 @@ from __future__ import annotations
 import inspect
 from typing import cast
 
-from pydantic_ai import FunctionToolset
+from pydantic_ai import FunctionToolset, RunContext
 from pydantic_ai_backends import READONLY_RULESET, create_console_toolset
 
 from .activities import (
@@ -346,19 +346,17 @@ def build_critic_toolset() -> FunctionToolset[SituToolDeps]:
 
 
 def build_workspace_toolset() -> FunctionToolset[SituToolDeps]:
-    return cast(
+    toolset = cast(
         FunctionToolset[SituToolDeps],
         create_console_toolset(
             id="situ.workspace.v1",
-            include_execute=True,
+            include_execute=False,
             require_write_approval=False,
-            require_execute_approval=False,
             default_ignore_hidden=True,
-            descriptions={
-                "execute": WORKSPACE_EXECUTE_DESCRIPTION,
-            },
         ),
     )
+    _add_execute_tool(toolset, requires_approval=False)
+    return toolset
 
 
 def build_workspace_readonly_toolset() -> FunctionToolset[SituToolDeps]:
@@ -366,8 +364,50 @@ def build_workspace_readonly_toolset() -> FunctionToolset[SituToolDeps]:
         FunctionToolset[SituToolDeps],
         create_console_toolset(
             id="situ.workspace.readonly.v1",
-            include_execute=True,
+            include_execute=False,
             permissions=READONLY_RULESET,
             default_ignore_hidden=True,
         ),
     )
+
+
+def _add_execute_tool(
+    toolset: FunctionToolset[SituToolDeps],
+    *,
+    requires_approval: bool,
+) -> None:
+    @toolset.tool(
+        name="execute",
+        description=WORKSPACE_EXECUTE_DESCRIPTION,
+        requires_approval=requires_approval,
+    )
+    async def execute(
+        ctx: RunContext[SituToolDeps],
+        command: str,
+        timeout: int | None = 120,
+    ) -> str:
+        """Execute a shell command in the working directory.
+
+        Args:
+            command: Shell command to execute.
+            timeout: Maximum execution time in seconds.
+        """
+        backend = ctx.deps.backend
+        if not hasattr(backend, "execute_async"):
+            return "Error: Backend does not support async command execution"
+
+        try:
+            result = await backend.execute_async(command, timeout=timeout)
+        except RuntimeError as error:
+            return f"Error: {error}"
+
+        await ctx.deps.flush_command_receipts()
+
+        output = result.output
+        if result.truncated:
+            output += "\n\n... (output truncated)"
+
+        if result.exit_code is not None and result.exit_code != 0:
+            return f"Command failed (exit code {result.exit_code}):\n{output}"
+
+        return str(output)

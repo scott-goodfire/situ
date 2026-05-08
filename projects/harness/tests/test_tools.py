@@ -1238,6 +1238,7 @@ async def test_workspace_backend_records_command_receipt_artifacts(
     )
 
     result = deps.backend.execute("cat metric.txt", timeout=5)
+    await deps.flush_command_receipts()
 
     artifacts = await repos.artifacts.list_for_project(project_id="P1")
     assert result.exit_code == 0
@@ -1423,12 +1424,12 @@ class FakeWorkerManager(WorkerManager):
     def __init__(self) -> None:
         pass
 
-    def run_experiment(
+    async def run_experiment(
         self,
         params: ExperimentRunParams,
         on_progress: Any,
     ) -> ExperimentRunResult:
-        on_progress(
+        await on_progress(
             {
                 "params": {
                     "session_id": params.session_id,

@@ -9,6 +9,7 @@ import urllib.request
 from pathlib import Path
 
 from ..config import DEFAULTS
+from ..core.paths import resolve_bundled_runtime
 from ..core.project_context import ProjectContext
 
 LOCAL_RUNTIME_SECRET_ENV = (
@@ -19,11 +20,14 @@ LOCAL_RUNTIME_SECRET_ENV = (
 )
 
 
-def base_env(app_root: Path, workspace: Path | None = None) -> dict[str, str]:
+def base_env(app_root: Path | None, workspace: Path | None = None) -> dict[str, str]:
     env = os.environ.copy()
     for name in LOCAL_RUNTIME_SECRET_ENV:
         env.pop(name, None)
-    env["SITU_APP_ROOT"] = str(app_root)
+    if app_root is not None:
+        env["SITU_APP_ROOT"] = str(app_root)
+    else:
+        env.pop("SITU_APP_ROOT", None)
     if workspace is not None:
         env["SITU_WORKSPACE"] = str(workspace)
     else:
@@ -32,17 +36,18 @@ def base_env(app_root: Path, workspace: Path | None = None) -> dict[str, str]:
 
 
 def start_app_server(
-    app_root: Path,
+    app_root: Path | None,
     env: dict[str, str],
     *,
     quiet: bool = False,
 ) -> tuple[subprocess.Popen[bytes], dict[str, str]]:
     path = app_path()
     path.unlink(missing_ok=True)
+    argv, cwd = _session_server_command()
     stdout = subprocess.DEVNULL if quiet else None
     process = subprocess.Popen(
-        ["bun", "run", "dev"],
-        cwd=app_root / "projects" / "session-server",
+        argv,
+        cwd=cwd,
         env=env,
         stdout=stdout,
     )
@@ -54,7 +59,7 @@ def start_app_server(
 
 
 def start_session_server(
-    app_root: Path,
+    app_root: Path | None,
     workspace: Path,
     env: dict[str, str],
     *,
@@ -62,10 +67,11 @@ def start_session_server(
 ) -> tuple[subprocess.Popen[bytes], dict[str, str]]:
     path = session_path(workspace)
     path.unlink(missing_ok=True)
+    argv, cwd = _session_server_command()
     stdout = subprocess.DEVNULL if quiet else None
     process = subprocess.Popen(
-        ["bun", "run", "dev"],
-        cwd=app_root / "projects" / "session-server",
+        argv,
+        cwd=cwd,
         env=env,
         stdout=stdout,
     )
@@ -74,6 +80,18 @@ def start_session_server(
     except Exception:
         stop_process(process)
         raise
+
+
+def _session_server_command() -> tuple[list[str], Path | None]:
+    runtime = resolve_bundled_runtime("session-server", source_dir="session-server")
+    if runtime is None:
+        raise RuntimeError(
+            "could not resolve session-server runtime; "
+            "set SITU_APP_ROOT for source mode or reinstall Situ"
+        )
+    if runtime.kind == "installed":
+        return [str(runtime.path)], None
+    return ["bun", "run", "dev"], runtime.source_cwd
 
 
 def wait_for_session(path: Path, process: subprocess.Popen[bytes]) -> dict[str, str]:

@@ -80,9 +80,19 @@ Check whether the meta layer:
 - Reflects the latest product contract.
 - Avoids duplicate concepts under different names.
 - Keeps specs product-shaped rather than implementation-heavy.
+- Keeps specs as end-state contracts in present tense — no implementation
+  plans, migration recipes, or "first slice / later slice" timelines (see
+  [`../../policies/0033-specs-as-end-state/POLICY.md`](../../policies/0033-specs-as-end-state/POLICY.md)).
+- Keeps specs descriptive of what is — no negation against absent
+  alternatives ("X replaces Y", "instead of Y", "rather than Y") and no
+  directional language ("for now", "eventually", "moving toward",
+  "should converge first") (see
+  [`../../policies/0034-specs-describe-what-is/POLICY.md`](../../policies/0034-specs-describe-what-is/POLICY.md)).
 - Keeps policies concrete enough for review.
 - Keeps skills as repeatable workflows, not generic docs.
-- Keeps docs reserved for durable explanation that is not a spec or policy.
+- Keeps docs reserved for content specs and policies cannot carry, linking
+  to the contract instead of paraphrasing it (see
+  [`../../policies/0035-docs-without-overlap/POLICY.md`](../../policies/0035-docs-without-overlap/POLICY.md)).
 - Preserves numbered spec/policy conventions.
 - Avoids stale references to removed concepts or tools.
 - Helps future agents act with less context, not more.
@@ -126,3 +136,12 @@ Ground truth checked:
 
 Omit empty buckets unless their absence is itself useful. Keep recommendations
 grounded in actual repo artifacts or current conversation decisions.
+
+## Related
+
+- [`../../policies/0009-good-specs/POLICY.md`](../../policies/0009-good-specs/POLICY.md)
+- [`../../policies/0033-specs-as-end-state/POLICY.md`](../../policies/0033-specs-as-end-state/POLICY.md)
+- [`../../policies/0034-specs-describe-what-is/POLICY.md`](../../policies/0034-specs-describe-what-is/POLICY.md)
+- [`../../policies/0035-docs-without-overlap/POLICY.md`](../../policies/0035-docs-without-overlap/POLICY.md)
+- [`../situ-spec-policy-maintenance/SKILL.md`](../situ-spec-policy-maintenance/SKILL.md) — adding/numbering/linting a single spec or policy
+- [`../verify-specs-against-project/SKILL.md`](../verify-specs-against-project/SKILL.md) — spec ↔ code drift audit

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 from typing import Any
 
 from situ.protocol import ExperimentRunParams
@@ -142,8 +141,7 @@ async def _run_experiment_impl(
     await _upsert(deps, active, event)
 
     worker_manager = await deps.get_worker_manager()
-    worker_result = await asyncio.to_thread(
-        worker_manager.run_experiment,
+    worker_result = await worker_manager.run_experiment(
         ExperimentRunParams(
             session_id=deps.session_id,
             experiment_id=experiment_id,
@@ -218,14 +216,12 @@ async def _run_experiment_impl(
     )
 
 
-def _record_worker_progress(deps: SituToolDeps, notification: dict[str, Any]) -> None:
+async def _record_worker_progress(deps: SituToolDeps, notification: dict[str, Any]) -> None:
     params = notification.get("params") or {}
-    asyncio.run(
-        deps.record_event(
-            event_type="worker.progress",
-            message=str(params.get("message", "worker progress")),
-            payload=params,
-        )
+    await deps.record_event(
+        event_type="worker.progress",
+        message=str(params.get("message", "worker progress")),
+        payload=params,
     )
 
 

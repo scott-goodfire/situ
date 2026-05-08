@@ -83,7 +83,8 @@ def test_local_session_env_strips_eval_and_provider_secrets(
     assert "LOGFIRE_TOKEN" not in env
 
 
-def test_snapshot_json_reads_local_state_without_live_session(
+@pytest.mark.asyncio
+async def test_snapshot_json_reads_local_state_without_live_session(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
@@ -96,9 +97,9 @@ def test_snapshot_json_reads_local_state_without_live_session(
         project_home=project_home,
         notify=lambda _method, _params: None,
     )
-    app.handle("setup.complete", {})
+    await app.handle_async("setup.complete", {})
 
-    code = cli.main(["snapshot", str(workspace), "--json"])
+    code = await asyncio.to_thread(cli.main, ["snapshot", str(workspace), "--json"])
 
     captured = capsys.readouterr()
     payload = json.loads(captured.out)
@@ -110,7 +111,8 @@ def test_snapshot_json_reads_local_state_without_live_session(
     assert payload["snapshot"]["events"][0]["type"] == "setup.completed"
 
 
-def test_events_json_lines_reads_local_events(
+@pytest.mark.asyncio
+async def test_events_json_lines_reads_local_events(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
@@ -123,9 +125,9 @@ def test_events_json_lines_reads_local_events(
         project_home=project_home,
         notify=lambda _method, _params: None,
     )
-    asyncio.run(app.record_event(event_type="system.ready", message="Harness ready"))
+    await app.record_event(event_type="system.ready", message="Harness ready")
 
-    code = cli.main(["events", str(workspace), "--json"])
+    code = await asyncio.to_thread(cli.main, ["events", str(workspace), "--json"])
 
     captured = capsys.readouterr()
     lines = [json.loads(line) for line in captured.out.splitlines()]
@@ -147,7 +149,8 @@ def test_events_json_lines_reads_local_events(
     ]
 
 
-def test_clear_removes_local_state_for_workspace(
+@pytest.mark.asyncio
+async def test_clear_removes_local_state_for_workspace(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
@@ -160,10 +163,10 @@ def test_clear_removes_local_state_for_workspace(
         project_home=project_home,
         notify=lambda _method, _params: None,
     )
-    asyncio.run(app.record_event(event_type="system.ready", message="Harness ready"))
+    await app.record_event(event_type="system.ready", message="Harness ready")
     context = ProjectContext(repo_root=workspace, home=project_home)
 
-    code = cli.main(["clear", str(workspace), "--json"])
+    code = await asyncio.to_thread(cli.main, ["clear", str(workspace), "--json"])
 
     captured = capsys.readouterr()
     payload = json.loads(captured.out)

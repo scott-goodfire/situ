@@ -16,11 +16,11 @@ from evals.worlds.repo_bootstrap.world.world import PROJECT_ID, SESSION_ID, WORK
 
 
 async def run_critic_followup(args: CriticFollowupEvalInput) -> CriticFollowupEvalOutput:
-    world = CriticFollowupWorld(seed=args.seed)
+    world = await CriticFollowupWorld.create(seed=args.seed)
     capture = ToolCallCaptureCapability()
     manager_outputs: list[ResearchAgentOutput] = []
     try:
-        plan_task = _claim_next_task(world)
+        plan_task = await _claim_next_task(world)
         if plan_task is not None:
             manager_outputs.append(
                 await _run_manager_pass(
@@ -30,13 +30,13 @@ async def run_critic_followup(args: CriticFollowupEvalInput) -> CriticFollowupEv
                     active_task=plan_task,
                 )
             )
-            _finish_task(
+            await _finish_task(
                 world,
                 task_id=plan_task.id,
                 status=TaskStatus.DONE,
                 result_summary=manager_outputs[-1].summary,
             )
-            world.emit_event(
+            await world.emit_event(
                 "session.manager_completed",
                 manager_outputs[-1].summary,
                 PROJECT_ID,
@@ -97,15 +97,15 @@ async def _run_manager_pass(
     return result.output
 
 
-def _claim_next_task(world: CriticFollowupWorld) -> TaskRecord | None:
-    agent = world.repos.agents.ensure_project_agent(
+async def _claim_next_task(world: CriticFollowupWorld) -> TaskRecord | None:
+    agent = await world.repos.agents.ensure_project_agent(
         project_id=PROJECT_ID,
         created_in_session_id=SESSION_ID,
         kind=AgentKind.MANAGER,
         display_name="Manager",
         model_name="eval:model",
     )
-    task = world.repos.tasks.claim_next(
+    task = await world.repos.tasks.claim_next(
         project_id=PROJECT_ID,
         agent_id=agent.id,
         eligible_kinds=eligible_task_kinds_for_agent(agent.kind),
@@ -113,8 +113,8 @@ def _claim_next_task(world: CriticFollowupWorld) -> TaskRecord | None:
     )
     if task is None:
         return None
-    world.repos.agents.update(agent_id=agent.id, status=AgentStatus.ACTIVE)
-    world.emit_event(
+    await world.repos.agents.update(agent_id=agent.id, status=AgentStatus.ACTIVE)
+    await world.emit_event(
         "task.claimed",
         f"Claimed task {task.id}",
         PROJECT_ID,
@@ -124,21 +124,21 @@ def _claim_next_task(world: CriticFollowupWorld) -> TaskRecord | None:
     return task
 
 
-def _finish_task(
+async def _finish_task(
     world: CriticFollowupWorld,
     *,
     task_id: str,
     status: TaskStatus,
     result_summary: str,
 ) -> None:
-    task = world.repos.tasks.get(task_id=task_id)
+    task = await world.repos.tasks.get(task_id=task_id)
     if task is None:
         return
     if task.status in {TaskStatus.DONE, TaskStatus.ABANDONED, TaskStatus.FAILED}:
         if task.assignee_id is not None:
-            world.repos.agents.update(agent_id=task.assignee_id, status=AgentStatus.IDLE)
+            await world.repos.agents.update(agent_id=task.assignee_id, status=AgentStatus.IDLE)
         return
-    updated = world.repos.tasks.update(
+    updated = await world.repos.tasks.update(
         task_id=task.id,
         status=status,
         result_summary=result_summary,
@@ -147,8 +147,8 @@ def _finish_task(
     if updated is None:
         return
     if updated.assignee_id is not None:
-        world.repos.agents.update(agent_id=updated.assignee_id, status=AgentStatus.IDLE)
-    world.emit_event(
+        await world.repos.agents.update(agent_id=updated.assignee_id, status=AgentStatus.IDLE)
+    await world.emit_event(
         f"task.{updated.status.value}",
         f"Finished task {updated.id}",
         PROJECT_ID,

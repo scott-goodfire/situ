@@ -32,8 +32,18 @@ from the terminal.
 For product-significant changes, update the relevant spec before implementing.
 For code changes, check the applicable policies in `.agents/policies/`.
 
+When writing or editing specs, policies, and docs, the shape rules to know:
+
+- [.agents/policies/0033-specs-as-end-state/POLICY.md](./.agents/policies/0033-specs-as-end-state/POLICY.md) — specs are end-state contracts, not implementation plans.
+- [.agents/policies/0034-specs-describe-what-is/POLICY.md](./.agents/policies/0034-specs-describe-what-is/POLICY.md) — no negation against absent alternatives, no directional language.
+- [.agents/policies/0035-docs-without-overlap/POLICY.md](./.agents/policies/0035-docs-without-overlap/POLICY.md) — docs link to the contract instead of paraphrasing it.
+
 Use [.agents/skills/situ-spec-policy-maintenance/SKILL.md](./.agents/skills/situ-spec-policy-maintenance/SKILL.md)
 when adding, changing, or linting specs and policies.
+
+Use [.agents/skills/verify-specs-against-project/SKILL.md](./.agents/skills/verify-specs-against-project/SKILL.md)
+when checking spec ↔ code drift and proposing surgical updates to one side or
+the other.
 
 Use [.agents/skills/curate-meta-layer/SKILL.md](./.agents/skills/curate-meta-layer/SKILL.md)
 when the goal is to reduce entropy across specs, policies, docs, skills, recent

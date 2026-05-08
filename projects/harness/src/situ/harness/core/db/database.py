@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-import asyncio
 import sqlite3
-import threading
-from collections.abc import Coroutine, Sequence
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -35,7 +33,6 @@ class Database:
         self.project_id = self.workspace_id
         self.repo_path = repo_path
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        self._sync_lock = threading.Lock()
         self._run_migrations()
 
     async def execute(self, sql: str, params: Sequence[Any] = ()) -> CursorResult:
@@ -71,27 +68,7 @@ class Database:
             await cursor.close()
             return list(rows)
 
-    def execute_blocking(self, sql: str, params: Sequence[Any] = ()) -> CursorResult:
-        return self._run_blocking(self.execute(sql, params))
-
-    def fetchone_blocking(
-        self,
-        sql: str,
-        params: Sequence[Any] = (),
-    ) -> sqlite3.Row | None:
-        return self._run_blocking(self.fetchone(sql, params))
-
-    def fetchall_blocking(
-        self,
-        sql: str,
-        params: Sequence[Any] = (),
-    ) -> list[sqlite3.Row]:
-        return self._run_blocking(self.fetchall(sql, params))
-
     async def close(self) -> None:
-        return None
-
-    def close_blocking(self) -> None:
         return None
 
     def _run_migrations(self) -> None:
@@ -105,12 +82,3 @@ class Database:
         db.row_factory = sqlite3.Row
         await db.execute("PRAGMA journal_mode = WAL")
         await db.execute("PRAGMA foreign_keys = ON")
-
-    def _run_blocking(self, awaitable: Coroutine[Any, Any, Any]) -> Any:
-        with self._sync_lock:
-            try:
-                asyncio.get_running_loop()
-            except RuntimeError:
-                return asyncio.run(awaitable)
-            awaitable.close()
-            raise RuntimeError("Database blocking methods cannot run in an event loop")

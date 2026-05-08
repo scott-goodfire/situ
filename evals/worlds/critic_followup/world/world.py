@@ -30,24 +30,32 @@ FOLLOWUP_RESEARCH_THREAD = "component_a"
 
 
 class CriticFollowupWorld:
-    def __init__(self, *, seed: CriticFollowupSeed) -> None:
-        self._repo_world = RepoBootstrapWorld(seed="with_baseline_result")
+    def __init__(self, *, repo_world: RepoBootstrapWorld, seed: CriticFollowupSeed) -> None:
+        self._repo_world = repo_world
         self.seed = seed
-        self.repos.agents.ensure_project_agent(
+
+    @classmethod
+    async def create(cls, *, seed: CriticFollowupSeed) -> "CriticFollowupWorld":
+        world = cls(
+            repo_world=await RepoBootstrapWorld.create(seed="with_baseline_result"),
+            seed=seed,
+        )
+        await world.repos.agents.ensure_project_agent(
             project_id=PROJECT_ID,
             created_in_session_id=SESSION_ID,
             kind=AgentKind.MANAGER,
             display_name="Manager",
             model_name="eval:model",
         )
-        self.repos.agents.ensure_project_agent(
+        await world.repos.agents.ensure_project_agent(
             project_id=PROJECT_ID,
             created_in_session_id=SESSION_ID,
             kind=AgentKind.CRITIC,
             display_name="Critic",
             model_name="eval:model",
         )
-        self.plan_task_id = self._seed_review_followup(seed)
+        world.plan_task_id = await world._seed_review_followup(seed)
+        return world
 
     @property
     def repos(self) -> Repositories:
@@ -64,7 +72,7 @@ class CriticFollowupWorld:
     def teardown(self) -> None:
         self._repo_world.teardown()
 
-    def emit_event(
+    async def emit_event(
         self,
         event_type: str,
         message: str,
@@ -72,7 +80,7 @@ class CriticFollowupWorld:
         associated_session_id: str | None,
         payload: dict[str, Any] | None,
     ) -> dict[str, Any]:
-        return self._repo_world.emit_event(
+        return await self._repo_world.emit_event(
             event_type,
             message,
             associated_project_id,
@@ -93,8 +101,8 @@ class CriticFollowupWorld:
     def changed_files(self) -> list[str]:
         return self._repo_world.changed_files()
 
-    def _seed_review_followup(self, seed: CriticFollowupSeed) -> str:
-        experiment = self.repos.experiments.create(
+    async def _seed_review_followup(self, seed: CriticFollowupSeed) -> str:
+        experiment = await self.repos.experiments.create(
             experiment_id=FOLLOWUP_EXPERIMENT_ID,
             project_id=PROJECT_ID,
             created_in_session_id=SESSION_ID,
@@ -106,7 +114,7 @@ class CriticFollowupWorld:
             candidate_commit=FOLLOWUP_CANDIDATE_COMMIT,
             research_thread=FOLLOWUP_RESEARCH_THREAD,
         )
-        evaluation = self.repos.evaluations.create(
+        evaluation = await self.repos.evaluations.create(
             evaluation_id=FOLLOWUP_EVALUATION_ID,
             project_id=PROJECT_ID,
             created_in_session_id=SESSION_ID,
@@ -115,7 +123,7 @@ class CriticFollowupWorld:
             associated_experiment_id=experiment.id,
             status="closed",
         )
-        measurement = self.repos.measurements.add(
+        measurement = await self.repos.measurements.add(
             evaluation_id=evaluation.id,
             created_in_session_id=SESSION_ID,
             actor="scientist",
@@ -131,7 +139,7 @@ class CriticFollowupWorld:
                 "comparison_baseline_id": BASELINE_ID,
             },
         )
-        self.repos.evaluation_activities.add(
+        await self.repos.evaluation_activities.add(
             evaluation_id=evaluation.id,
             created_in_session_id=SESSION_ID,
             actor="scientist",
@@ -142,7 +150,7 @@ class CriticFollowupWorld:
                 "measurement_id": measurement.id,
             },
         )
-        self.repos.experiment_activities.add(
+        await self.repos.experiment_activities.add(
             experiment_id=experiment.id,
             created_in_session_id=SESSION_ID,
             actor="critic",
@@ -158,8 +166,8 @@ class CriticFollowupWorld:
                 "reviewed_measurement_ids": [measurement.id],
             },
         )
-        review_task = self.repos.tasks.create(
-            task_id=self.repos.tasks.next_id(project_id=PROJECT_ID),
+        review_task = await self.repos.tasks.create(
+            task_id=await self.repos.tasks.next_id(project_id=PROJECT_ID),
             project_id=PROJECT_ID,
             created_in_session_id=SESSION_ID,
             title=f"Completed Critic review for {experiment.title}",
@@ -173,13 +181,13 @@ class CriticFollowupWorld:
                 "measurement_ids": [measurement.id],
             },
         )
-        critic = self.repos.agents.ensure_project_agent(
+        critic = await self.repos.agents.ensure_project_agent(
             project_id=PROJECT_ID,
             created_in_session_id=SESSION_ID,
             kind=AgentKind.CRITIC,
             display_name="Critic",
         )
-        self.repos.tasks.update(
+        await self.repos.tasks.update(
             task_id=review_task.id,
             assignee_id=critic.id,
             status=TaskStatus.DONE,
@@ -191,7 +199,7 @@ class CriticFollowupWorld:
             (TaskEntityKind.EVALUATION, evaluation.id),
             (TaskEntityKind.MEASUREMENT, measurement.id),
         ):
-            self.repos.task_entity_links.create(
+            await self.repos.task_entity_links.create(
                 project_id=PROJECT_ID,
                 task_id=review_task.id,
                 entity_kind=entity_kind,
@@ -199,8 +207,8 @@ class CriticFollowupWorld:
                 relationship="reviews",
             )
 
-        plan_task = self.repos.tasks.create(
-            task_id=self.repos.tasks.next_id(project_id=PROJECT_ID),
+        plan_task = await self.repos.tasks.create(
+            task_id=await self.repos.tasks.next_id(project_id=PROJECT_ID),
             project_id=PROJECT_ID,
             created_in_session_id=SESSION_ID,
             title=f"Plan after {_review_verdict(seed)} Critic review",
@@ -216,7 +224,7 @@ class CriticFollowupWorld:
                 "research_thread": experiment.research_thread,
             },
         )
-        self.emit_event(
+        await self.emit_event(
             "task.created",
             f"Created Manager follow-up task {plan_task.id}",
             PROJECT_ID,

@@ -88,10 +88,10 @@ The agent path should express active behavior through approved harness tools.
 Getting the project board, creating analyses, creating hypotheses,
 creating baselines, creating/running experiments, creating evaluations,
 recording measurements, linking hypotheses and experiments, attaching
-artifacts, and recording comments should have typed tool envelopes. Situ should
-persist Pydantic AI message history as the durable project agent transcript and
-use events/collection upserts for live tool-call observability rather than
-making a separate tool-call table the source of truth.
+artifacts, and recording comments should have typed tool envelopes. Situ
+persists Pydantic AI message history as the durable project agent
+transcript and uses events/collection upserts for live tool-call
+observability.
 
 Candidate experiment evidence should be interpreted with workspace state in
 view. Before treating a result as comparable to baseline, the agent should know

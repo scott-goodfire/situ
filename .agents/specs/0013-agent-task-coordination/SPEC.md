@@ -86,10 +86,10 @@ link to produced or referenced research records through explicit entity links.
 These links are what let the TUI answer "what did this task create?" without
 guessing from timestamps.
 
-Generic replanning should reuse a canonical project planning task rather than
-creating a new durable task row for every wakeup. The repeated work is still a
-task: the task moves back to runnable state, gets claimed again by the Manager,
-and records each pass in task activity. This keeps the task board focused on
+Generic replanning reuses a canonical project planning task. The repeated
+work is still a task: the task moves back to runnable state, gets claimed
+again by the Manager, and records each pass in task activity. This keeps
+the task board focused on
 durable work while preserving the planning history. The canonical title should
 read like a human work item such as "Plan next step"; trigger details such as
 "after Critic review" or "after Researcher completion" belong in the task
@@ -249,7 +249,7 @@ we learn?"
 - Task claims are atomic enough to prevent double-claiming.
 - Dependencies are explicit records rather than unvalidated JSON lists.
 - Task-to-research record links are explicit records.
-- Task activities remain plain-language first and do not hide research
-  evidence that belongs on research records or measurement evidence.
+- Task activities are plain-language first; research evidence lives on
+  research records and measurements.
 - Early project/session close requires the explicit request/confirm tool
   handshake, with an agent-readable warning on the request step.

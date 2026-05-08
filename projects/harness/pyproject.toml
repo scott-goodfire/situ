@@ -32,3 +32,4 @@ namespaces = true
 
 [tool.setuptools.package-data]
 "situ.harness.agent_skills" = ["**/*.md"]
+"situ._bundled" = ["**/*"]

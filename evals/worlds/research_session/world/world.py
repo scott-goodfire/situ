@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import subprocess
+import asyncio
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any
@@ -38,8 +38,6 @@ class ResearchSessionWorld:
         self.path = Path(self._tmp.name)
         self.repo_path = self.path / "workspace"
         self.repo_path.mkdir()
-        if seed == "with_dirty_workspace":
-            _seed_dirty_workspace(self.repo_path)
         self.repos: Repositories
         self.events: list[EvalEvent] = []
         self.seed = seed
@@ -47,6 +45,8 @@ class ResearchSessionWorld:
     @classmethod
     async def create(cls, *, seed: ResearchSessionSeed) -> "ResearchSessionWorld":
         world = cls(seed=seed)
+        if seed == "with_dirty_workspace":
+            await _seed_dirty_workspace(world.repo_path)
         world.repos = await _build_repos(
             world.path,
             repo_path=world.repo_path,
@@ -58,7 +58,7 @@ class ResearchSessionWorld:
     def teardown(self) -> None:
         self._tmp.cleanup()
 
-    def emit_event(
+    async def emit_event(
         self,
         event_type: str,
         message: str,
@@ -66,7 +66,7 @@ class ResearchSessionWorld:
         associated_session_id: str | None,
         payload: dict[str, Any] | None,
     ) -> dict[str, Any]:
-        record = self.repos.events.add(
+        record = await self.repos.events.add(
             event_type=event_type,
             message=message,
             associated_project_id=associated_project_id,
@@ -424,18 +424,18 @@ def _metric_values(
     return {key: value for key, value in signals.items() if value is not None}
 
 
-def _seed_dirty_workspace(repo_path: Path) -> None:
-    _git(repo_path, "init")
-    _git(repo_path, "config", "user.email", "situ@example.com")
-    _git(repo_path, "config", "user.name", "Situ")
+async def _seed_dirty_workspace(repo_path: Path) -> None:
+    await _git(repo_path, "init")
+    await _git(repo_path, "config", "user.email", "situ@example.com")
+    await _git(repo_path, "config", "user.name", "Situ")
     (repo_path / "train.py").write_text("COMPONENT = 'baseline'\n", encoding="utf-8")
     (repo_path / "tests").mkdir()
     (repo_path / "tests" / "test_train.py").write_text(
         "def test_train(): pass\n",
         encoding="utf-8",
     )
-    _git(repo_path, "add", ".")
-    _git(repo_path, "commit", "-m", "baseline")
+    await _git(repo_path, "add", ".")
+    await _git(repo_path, "commit", "-m", "baseline")
 
     (repo_path / "train.py").write_text("COMPONENT = 'component_a'\n", encoding="utf-8")
     (repo_path / "tests" / "test_train.py").write_text(
@@ -448,11 +448,20 @@ def _seed_dirty_workspace(repo_path: Path) -> None:
     )
 
 
-def _git(repo_path: Path, *args: str) -> None:
-    subprocess.run(
-        ["git", *args],
-        cwd=repo_path,
-        check=True,
-        capture_output=True,
-        text=True,
-    )
+async def _git(repo_path: Path, *args: str) -> None:
+    try:
+        process = await asyncio.create_subprocess_exec(
+            "git",
+            *args,
+            cwd=repo_path,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+    except OSError as error:
+        raise RuntimeError(f"git {' '.join(args)} failed: {error}") from error
+    stdout, stderr = await process.communicate()
+    if process.returncode != 0:
+        error = stderr.decode(errors="replace").strip() or stdout.decode(
+            errors="replace"
+        ).strip()
+        raise RuntimeError(f"git {' '.join(args)} failed: {error}")

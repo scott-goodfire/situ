@@ -20,7 +20,7 @@ from evals.worlds.critic_review.world import CriticReviewWorld
 async def test_critic_review_world_seeds_linked_review_task(
     seed: CriticReviewSeed,
 ) -> None:
-    world = CriticReviewWorld(seed=seed)
+    world = await CriticReviewWorld.create(seed=seed)
     try:
         board = await world.project_board()
         review_tasks = [task for task in board["tasks"] if task["kind"] == "review"]

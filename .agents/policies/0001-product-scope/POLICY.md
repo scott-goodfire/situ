@@ -27,8 +27,9 @@ tracker.
 - The change does not make chat the primary product surface.
 - The change does not make raw logs the primary product surface.
 - The change does not require a specific agent provider.
-- The change does not introduce web UI as the primary surface, live guidance,
-  final reports, or broad health scoring into the first slice.
+- The change does not introduce web UI as the primary surface, live
+  guidance, final reports, or broad health scoring; those are out of
+  scope.
 
 ## Red Flags
 

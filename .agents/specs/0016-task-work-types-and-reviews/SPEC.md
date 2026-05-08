@@ -44,9 +44,8 @@ It is stable enough for display, skill dispatch, and review, but it should not
 be used to create a second task lifecycle when the `kind` lifecycle is enough.
 
 Work types must not contradict task kinds. A `review_hypothesis` task is a
-`review` task and is claimed by the Critic. It is not Researcher work, because
-its purpose is to independently check a hypothesis rather than create or refine
-one.
+`review` task claimed by the Critic; its purpose is to independently
+check a hypothesis.
 
 When a task has no work type, the task is understood by its kind, title,
 content, payload, and links.
@@ -72,7 +71,7 @@ durable record exists
   -> Critic reads the task and target record through tools
   -> Critic writes a target-owned review activity
   -> Critic marks the review task done
-  -> Manager reads the review before trusting the target
+  -> producer lane or Manager reads the review before trusting the target
 ```
 
 The review task is the visible request for independent judgment. The review
@@ -137,10 +136,46 @@ title and content explain why the review exists when that is useful. Durable
 relationships to research records should also be represented with task entity
 links when the relationship matters for querying or rendering.
 
+## Simplicity Boundary
+
+Review tasks should stay small. The task's `kind`, `work_type`, direct target
+ID, title, content, and task entity links should be enough to understand and
+route the assignment.
+
+The normal review task shape should not add parallel generic fields for the
+same meaning:
+
+```text
+review_target_kind
+review_target_id
+review_rubric
+review_trigger
+evidence_ids
+verification_status
+verified_at
+repair_attempt_count
+```
+
+`work_type` implies the review method or runtime skill. For example,
+`review_hypothesis` implies the hypothesis review method. The task title,
+content, associated IDs, and links explain why the review exists. The Critic
+gets evidence by reading records and activities through tools, not from a
+copied `evidence_ids` bundle.
+
+The reviewed record should not carry denormalized review fields such as
+`latest_review_verdict`, `review_status`, or `verified_by_default` while review
+activities can answer those questions. Views and agents may derive the latest
+review from target-owned activities and task links.
+
+The task model should not add extra lifecycle states for review loops while the
+existing task statuses are sufficient. `abandoned` covers graceful stop and
+cancelled/not-worth-pursuing work. `failed` covers attempted work blocked by an
+error or missing evidence. Hypotheses and experiments remain status-light and
+do not gain `void`, `cancelled`, or `verified` statuses.
+
 ## Context Acquisition
 
-The Critic should acquire context through explicit tools rather than receiving a
-large prefilled state blob.
+The Critic acquires context through explicit tools.
 
 A review pass starts from the assigned task ID. The Critic reads the task, then
 uses target-specific readers, activity readers, task links, and project/task
@@ -208,6 +243,114 @@ Verdicts are intentionally lightweight. Useful review verdicts include:
 Each work type may use the subset that fits its target. For example,
 `needs_reproduction` is natural for experiment evidence and usually not the
 right vocabulary for a hypothesis review.
+
+## Review Feedback And Repair
+
+Critic feedback is task-shaped. A review activity does not silently mutate the
+reviewed record, rewrite another agent's work, or trigger hidden chat
+continuation. It becomes visible project state that the Manager and future
+task-scoped agents read through tools.
+
+Critic review supports two feedback paths:
+
+- Local repair sends bounded follow-up work back to the same work lane that
+  produced the reviewed record. A Researcher handles hypothesis repair. A
+  Scientist handles experiment reproduction, extra measurement, or focused
+  candidate cleanup.
+- Strategic routing sends the review to the Manager when the project needs a
+  direction decision: continue, discard, fork, combine, investigate, ask for
+  human review, or close a thread.
+
+The Critic names what is trustworthy, weak, missing, or invalid. It does not
+own the fix. The producing lane handles scoped repair when repair is plausible.
+The Manager consumes reviewed or repaired work when the next project direction
+is at stake.
+
+Usable reviews can unblock the next empirical or interpretive task. Concern
+reviews can lead to focused repair work. Invalid reviews prevent the target
+from being treated as decision-grade unless a later task addresses the problem
+or a human explicitly overrides the concern. Human-review verdicts should make
+the need for human judgment visible before more autonomous work depends on the
+target.
+
+Follow-up tasks should carry the relevant reviewed entity as assignment context
+and should link to the review activity that motivated the follow-up. Payload
+fields use the same direct and associated naming posture:
+
+```text
+associated_hypothesis_id
+associated_experiment_id
+associated_review_activity_id
+```
+
+The agent that handles a follow-up task is usually a fresh task-scoped pass, not
+the same chat session continuing from the Critic's message. A
+`review_hypothesis` concern may create a Researcher repair task. That
+Researcher reads the task, the hypothesis, and the Critic review activity
+before writing new hypothesis activity or creating a replacement hypothesis.
+
+This keeps iteration inspectable:
+
+```text
+Researcher creates H7
+  -> Critic reviews H7
+  -> review activity flags missing expected evidence
+  -> focused Researcher repair task is filed
+  -> Researcher updates or supersedes H7 with a visible activity trail
+  -> Manager decides whether H7 is ready for Scientist work
+```
+
+For experiment review, the same shape applies:
+
+```text
+Scientist records EX4 evidence
+  -> Critic reviews EX4
+  -> review activity asks for reproduction or flags invalid evidence
+  -> focused Scientist repair task is filed when the problem is local
+  -> Scientist records reproduction, extra measurement, or cleanup evidence
+  -> Manager decides whether to continue, fork, discard, or stop that thread
+```
+
+## Bounded Iteration And Graceful Exit
+
+Review-driven iteration should be bounded. Situ should not bounce a target
+between a producer and the Critic indefinitely.
+
+Each follow-up task should have a narrow repair question, a clear associated
+review activity, and an exit path. A follow-up can end by:
+
+- producing the missing record or activity the Critic asked for;
+- creating a replacement hypothesis or experiment;
+- recording why the concern cannot be resolved autonomously;
+- marking the task abandoned when the work is no longer worth pursuing;
+- marking the task failed when it was attempted but blocked by setup, evidence,
+  tool, or execution failure.
+
+Task status carries coordination outcome. `abandoned` is the graceful stop for
+work that is intentionally not pursued further, including cancelled,
+superseded, duplicate, out-of-scope, or no-longer-useful work. `failed` is for
+attempted work that could not complete because of an error, blocker, or missing
+required evidence. A separate `cancelled` task status is out of scope while
+`abandoned` covers the user-visible stop case.
+
+Hypotheses and experiments remain status-light. They should not gain a `void`
+status. A hypothesis that should not drive more work is closed with an explicit
+resolution activity such as `rejected`, `superseded`, or `inconclusive`. The
+activity body explains whether the hypothesis was unsupported, duplicated, too
+vague, not actionable, or no longer useful.
+
+An experiment that should not be continued is closed with experiment activity
+that explains the stop reason, such as invalid evidence, failed reproduction,
+changed evaluation surface, unpromising result, or supersession by a better
+candidate. Lineage or portfolio decisions should say whether the path was
+rejected, abandoned, revised, reproduced, or forked rather than encoding those
+judgments as experiment statuses.
+
+After a bounded repair task completes, the target may be reviewed again when the
+new evidence materially changes the concern. Re-review is not automatic churn.
+If the same concern persists, the next visible action should normally be a
+Manager decision, human-review handoff, hypothesis resolution, experiment
+abandonment, or project/thread stop.
 
 ## Hypothesis Reviews
 
