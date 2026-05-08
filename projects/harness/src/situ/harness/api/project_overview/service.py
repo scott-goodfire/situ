@@ -3,15 +3,15 @@ from __future__ import annotations
 from pydantic import BaseModel, ConfigDict
 
 from ...repositories import Repositories
-from .schemas import ProjectBoardSchema
+from .schemas import ProjectOverviewSchema
 
 
-class ProjectBoardService(BaseModel):
+class ProjectOverviewService(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     repos: Repositories
 
-    async def get_project_board(self, *, session_id: str) -> ProjectBoardSchema:
+    async def get_project_overview(self, *, session_id: str) -> ProjectOverviewSchema:
         session = await self.repos.sessions.get(session_id=session_id)
         workspace = (
             await self.repos.workspaces.get(workspace_id=session.workspace_id)
@@ -84,7 +84,7 @@ class ProjectBoardService(BaseModel):
             for link in await self.repos.task_entity_links.list_all()
             if link.task_id in task_ids
         ]
-        return ProjectBoardSchema(
+        return ProjectOverviewSchema(
             workspace=workspace,
             project=project,
             session=session,

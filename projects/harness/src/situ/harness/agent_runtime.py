@@ -145,15 +145,23 @@ class AgentRuntime:
         *,
         database_path: Path | None = None,
     ) -> "AgentRuntime":
+        import logfire as _lf
+        _lf.info("AgentRuntime.create require_local_anthropic_key")
         secrets = SituSecrets()
         secrets_home = project_dir.parent.parent
         await secrets.require_local_anthropic_key(home=secrets_home)
+        _lf.info("AgentRuntime.create apply_local_sdk_environment")
         await secrets.apply_local_sdk_environment(home=secrets_home)
 
+        _lf.info("AgentRuntime.create configure_observability")
         await configure_observability(project_dir)
+        _lf.info("AgentRuntime.create configure_dbos")
         configure_dbos(project_dir)
+        _lf.info("AgentRuntime.create instantiate")
         runtime = cls(project_dir, database_path=database_path)
+        _lf.info("AgentRuntime.create launch_dbos")
         launch_dbos()
+        _lf.info("AgentRuntime.create done")
         return runtime
 
     async def plan_session(

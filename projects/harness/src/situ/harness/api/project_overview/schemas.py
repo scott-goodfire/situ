@@ -27,7 +27,7 @@ from ...records import (
 )
 
 
-class ProjectBoardSchema(BaseModel):
+class ProjectOverviewSchema(BaseModel):
     workspace: WorkspaceRecord | None = None
     project: ProjectRecord | None = None
     session: SessionRecord | None = None

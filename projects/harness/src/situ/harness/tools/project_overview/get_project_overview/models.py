@@ -7,7 +7,7 @@ from pydantic import Field
 from ...common import SituToolReturn
 
 
-class GetProjectBoardResult(SituToolReturn):
+class GetProjectOverviewResult(SituToolReturn):
     workspace: dict[str, Any] | None = None
     project: dict[str, Any] | None = None
     hypotheses: list[dict[str, Any]] = Field(default_factory=list)
