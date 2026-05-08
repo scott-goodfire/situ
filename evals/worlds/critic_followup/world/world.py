@@ -140,22 +140,6 @@ class CriticFollowupWorld:
                 "comparison_baseline_id": BASELINE_ID,
             },
         )
-        await self.repos.experiment_activities.add(
-            experiment_id=experiment.id,
-            created_in_session_id=SESSION_ID,
-            actor="critic",
-            kind="comment",
-            body=_review_body(seed),
-            payload={
-                "activity_type": "critic_review",
-                "verdict": _review_verdict(seed),
-                "recommended_next_step": _recommended_next_step(seed),
-                "evidence_summary": _review_evidence_summary(seed),
-                "concern_kinds": _concern_kinds(seed),
-                "reviewed_evaluation_ids": [evaluation.id],
-                "reviewed_measurement_ids": [measurement.id],
-            },
-        )
         review_task = await self.repos.tasks.create(
             task_id=await self.repos.tasks.next_id(project_id=PROJECT_ID),
             project_id=PROJECT_ID,
@@ -170,6 +154,24 @@ class CriticFollowupWorld:
                 "experiment_id": experiment.id,
                 "evaluation_ids": [evaluation.id],
                 "measurement_ids": [measurement.id],
+            },
+        )
+        await self.repos.experiment_activities.add(
+            experiment_id=experiment.id,
+            created_in_session_id=SESSION_ID,
+            actor="critic",
+            kind="comment",
+            body=_review_body(seed),
+            payload={
+                "activity_type": "critic_review",
+                "work_type": "review_experiment",
+                "verdict": _review_verdict(seed),
+                "recommended_next_step": _recommended_next_step(seed),
+                "evidence_summary": _review_evidence_summary(seed),
+                "concern_kinds": _concern_kinds(seed),
+                "reviewed_evaluation_ids": [evaluation.id],
+                "reviewed_measurement_ids": [measurement.id],
+                "review_task_id": review_task.id,
             },
         )
         critic = await self.repos.agents.ensure_project_agent(

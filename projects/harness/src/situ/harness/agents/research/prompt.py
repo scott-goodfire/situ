@@ -452,6 +452,10 @@ def build_critic_review_prompt(
           payload or entity links. Check that the hypothesis is concrete,
           testable, grounded, and distinguishable from existing hypotheses.
 
+        Pass the assigned review task id as `review_task_id` when calling the
+        review tool so the routing layer can tie the review activity to this
+        task.
+
         Inspect focused experiment, hypothesis, evaluation, measurement,
         activity, artifact, and project-board readers as needed. Load
         `review-task` if the dispatch is unclear.

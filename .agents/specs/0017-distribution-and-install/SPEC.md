@@ -108,12 +108,8 @@ the same `~/.situ/` runtime state.
 - Homebrew tap, `apt`, `dnf`, or other OS-package channels.
 - Auto-update on CLI launch.
 - Air-gapped install.
-- PyPI publication of the harness wheel. The current wheel is tagged
-  `py3-none-any` while its `_bundled/` payload is platform-specific; this is
-  safe because each release tarball ships the correct wheel for its own
-  platform, but a PyPI publication would require real platform tags
-  (`...macosx_11_0_arm64.whl`, `...manylinux_2_17_x86_64.whl`, etc.) so pip
-  routes users to the wheel matching their machine.
+- PyPI publication of the harness wheel.
+- Platform-tagged Python wheels.
 
 ## Review Criteria
 

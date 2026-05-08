@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import threading
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Awaitable, Callable
@@ -53,7 +54,9 @@ from .records import (
     AgentKind,
     AgentStatus,
     EventRecord,
+    ExperimentActivityRecord,
     ExperimentRecord,
+    HypothesisActivityRecord,
     ProjectRecord,
     ProjectStatus,
     SessionStatus,
@@ -64,6 +67,8 @@ from .records import (
     TaskWorkType,
     WorkStatus,
 )
+
+ReviewActivity = HypothesisActivityRecord | ExperimentActivityRecord
 from .records.base import DbRecord
 from .repositories import Repositories
 from .tools.tasks.eligibility import eligible_task_kinds_for_agent
@@ -730,8 +735,8 @@ class HarnessApp:
         *,
         session_id: str,
         review_task_id: str,
-        activities: list[Any],
-    ) -> Any:
+        activities: Sequence[ReviewActivity],
+    ) -> ReviewActivity | None:
         """Find the Critic review activity tied to this review task.
 
         Prefers an exact `review_task_id` payload match (set by the review tools
@@ -739,14 +744,12 @@ class HarnessApp:
         `critic_review` activity for backward compatibility with prior reviews.
         """
         for activity in reversed(activities):
-            payload = getattr(activity, "payload", {}) or {}
-            if payload.get("review_task_id") == review_task_id:
+            if activity.payload.get("review_task_id") == review_task_id:
                 return activity
         for activity in reversed(activities):
-            payload = getattr(activity, "payload", {}) or {}
             if (
-                getattr(activity, "created_in_session_id", None) == session_id
-                and payload.get("activity_type") == "critic_review"
+                activity.created_in_session_id == session_id
+                and activity.payload.get("activity_type") == "critic_review"
             ):
                 return activity
         return None

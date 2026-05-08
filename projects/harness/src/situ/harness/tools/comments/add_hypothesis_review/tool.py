@@ -61,6 +61,14 @@ class AddHypothesisReviewTool(
                     code="review_task_not_found",
                     message=f"review_task_id not found: {review_task_id}",
                 )
+            if review_task.project_id != hypothesis.project_id:
+                return self._failure(
+                    code="review_task_project_mismatch",
+                    message=(
+                        f"review_task_id {review_task_id!r} belongs to a "
+                        "different project than the hypothesis."
+                    ),
+                )
             if (
                 review_task.work_type is not None
                 and review_task.work_type.value != "review_hypothesis"
