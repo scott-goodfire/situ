@@ -7,8 +7,9 @@ from collections.abc import Awaitable, Callable
 from pathlib import Path
 from typing import Any
 
+import aiofiles
+import aiofiles.os
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
-from pydantic_ai_backends import LocalBackend
 
 from ...api.collections import publish_record_upsert
 from ...core.db import Database
@@ -44,10 +45,10 @@ class SituToolDeps(BaseModel):
 
     _opened_db: Database | None = PrivateAttr(default=None)
     _opened_repos: Repositories | None = PrivateAttr(default=None)
-    _workspace_backend: LocalBackend | None = PrivateAttr(default=None)
+    _workspace_backend: SituLocalBackend | None = PrivateAttr(default=None)
 
     @property
-    def backend(self) -> LocalBackend:
+    def backend(self) -> SituLocalBackend:
         if self._workspace_backend is not None:
             return self._workspace_backend
         if self.repo_path is None:
@@ -69,9 +70,6 @@ class SituToolDeps(BaseModel):
         return self._workspace_backend
 
     async def get_repos(self) -> Repositories:
-        return self._get_repos()
-
-    def _get_repos(self) -> Repositories:
         if self.repos is not None:
             return self.repos
         if self._opened_repos is not None:
@@ -80,7 +78,7 @@ class SituToolDeps(BaseModel):
         if resolved_workspace_id is None or self.project_dir is None or self.repo_path is None:
             raise RuntimeError("tool deps require repos or workspace_id/project_dir/repo_path")
 
-        self._opened_db = Database(
+        self._opened_db = await Database.open(
             self.database_path or self.project_dir / "situ.sqlite",
             workspace_id=resolved_workspace_id,
             repo_path=self.repo_path,
@@ -160,7 +158,7 @@ class SituToolDeps(BaseModel):
 
     async def flush_command_receipts(self) -> None:
         backend = self._workspace_backend
-        if not isinstance(backend, SituLocalBackend):
+        if backend is None:
             return
         for draft in backend.pop_command_receipts():
             await self.record_command_receipt(draft)
@@ -180,7 +178,7 @@ class SituToolDeps(BaseModel):
             / self.session_id
             / owner
         )
-        receipt_dir.mkdir(parents=True, exist_ok=True)
+        await aiofiles.os.makedirs(receipt_dir, exist_ok=True)
         receipt_path = receipt_dir / f"{artifact_id}-command-receipt.json"
         receipt = {
             "receipt_type": "command",
@@ -201,10 +199,8 @@ class SituToolDeps(BaseModel):
             },
             "git": await _git_state_for_receipt(Path(draft.cwd)),
         }
-        receipt_path.write_text(
-            json.dumps(receipt, indent=2, sort_keys=True) + "\n",
-            encoding="utf-8",
-        )
+        async with aiofiles.open(receipt_path, "w", encoding="utf-8") as file:
+            await file.write(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
 
         associated_entity_kind = "session"
         associated_entity_id = self.session_id

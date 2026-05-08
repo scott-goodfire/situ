@@ -9,7 +9,7 @@ import pytest
 
 from situ.harness.agents import ResearchAgentOutput
 from situ.harness.app import HarnessApp, MANAGER_NO_PROGRESS_LIMIT
-from situ.harness.records import TaskEntityKind, TaskKind, TaskStatus
+from situ.harness.records import TaskEntityKind, TaskKind, TaskStatus, TaskWorkType
 
 pytestmark = pytest.mark.asyncio
 
@@ -160,6 +160,235 @@ async def test_experiment_review_task_is_not_duplicated_for_same_experiment(
 
     assert second.id == first.id
     assert len(review_tasks) == 1
+
+
+async def test_route_review_followup_files_hypothesis_repair_task(
+    tmp_path: Path,
+) -> None:
+    app, session_id, project_id = await _app_with_initial_plan(tmp_path)
+    hypothesis = await app.repos.hypotheses.create(
+        hypothesis_id="H1",
+        project_id=project_id,
+        created_in_session_id=session_id,
+        title="Component A helps",
+        summary="Component A may improve score.",
+        status="active",
+    )
+    review_task = await app.repos.tasks.create(
+        task_id=await app.repos.tasks.next_id(project_id=project_id),
+        project_id=project_id,
+        created_in_session_id=session_id,
+        title=f"Review {hypothesis.title}",
+        content="Review this hypothesis.",
+        kind=TaskKind.REVIEW,
+        work_type=TaskWorkType.REVIEW_HYPOTHESIS,
+        priority="high",
+        source_kind="system",
+        payload={"hypothesis_id": hypothesis.id},
+    )
+    review_activity = await app.repos.hypothesis_activities.add(
+        hypothesis_id=hypothesis.id,
+        created_in_session_id=session_id,
+        actor="critic",
+        kind="comment",
+        body="Hypothesis is too vague to test.",
+        payload={
+            "activity_type": "critic_review",
+            "work_type": "review_hypothesis",
+            "verdict": "concern",
+            "recommended_next_step": "revise",
+            "review_task_id": review_task.id,
+            "concern_kinds": ["vague"],
+        },
+    )
+
+    followup = await app._route_review_followup(
+        session_id=session_id,
+        review_task=review_task,
+    )
+
+    assert followup is not None
+    assert followup.kind == TaskKind.HYPOTHESIZE
+    assert followup.payload["associated_hypothesis_id"] == hypothesis.id
+    assert (
+        followup.payload["associated_review_activity_id"] == review_activity.id
+    )
+    assert followup.payload["associated_review_task_id"] == review_task.id
+
+    links = await app.repos.task_entity_links.list_for_task(task_id=followup.id)
+    linked = {(link.entity_kind, link.entity_id) for link in links}
+    assert (TaskEntityKind.HYPOTHESIS, hypothesis.id) in linked
+    assert (
+        TaskEntityKind.HYPOTHESIS_ACTIVITY,
+        str(review_activity.id),
+    ) in linked
+
+
+async def test_route_review_followup_dedups_repeated_calls(
+    tmp_path: Path,
+) -> None:
+    app, session_id, project_id = await _app_with_initial_plan(tmp_path)
+    hypothesis = await app.repos.hypotheses.create(
+        hypothesis_id="H1",
+        project_id=project_id,
+        created_in_session_id=session_id,
+        title="Component A helps",
+        summary="Component A may improve score.",
+        status="active",
+    )
+    review_task = await app.repos.tasks.create(
+        task_id=await app.repos.tasks.next_id(project_id=project_id),
+        project_id=project_id,
+        created_in_session_id=session_id,
+        title=f"Review {hypothesis.title}",
+        content="Review this hypothesis.",
+        kind=TaskKind.REVIEW,
+        work_type=TaskWorkType.REVIEW_HYPOTHESIS,
+        priority="high",
+        source_kind="system",
+        payload={"hypothesis_id": hypothesis.id},
+    )
+    await app.repos.hypothesis_activities.add(
+        hypothesis_id=hypothesis.id,
+        created_in_session_id=session_id,
+        actor="critic",
+        kind="comment",
+        body="Vague.",
+        payload={
+            "activity_type": "critic_review",
+            "verdict": "concern",
+            "recommended_next_step": "revise",
+            "review_task_id": review_task.id,
+        },
+    )
+
+    first = await app._route_review_followup(
+        session_id=session_id,
+        review_task=review_task,
+    )
+    second = await app._route_review_followup(
+        session_id=session_id,
+        review_task=review_task,
+    )
+
+    assert first is not None
+    assert second is None
+    repair_tasks = [
+        task
+        for task in await app.repos.tasks.list_for_project(project_id=project_id)
+        if task.kind == TaskKind.HYPOTHESIZE
+        and task.payload.get("associated_hypothesis_id") == hypothesis.id
+    ]
+    assert len(repair_tasks) == 1
+
+
+async def test_route_review_followup_returns_none_for_usable_verdict(
+    tmp_path: Path,
+) -> None:
+    app, session_id, project_id = await _app_with_initial_plan(tmp_path)
+    experiment_id, _evaluation_id, _measurement_id = (
+        await _seed_closed_experiment_with_measurement(app, session_id, project_id)
+    )
+    review_task = await app._enqueue_experiment_review_task(
+        session_id=session_id,
+        project_id=project_id,
+        experiment_id=experiment_id,
+        source_task_id="T999",
+    )
+    await app.repos.experiment_activities.add(
+        experiment_id=experiment_id,
+        created_in_session_id=session_id,
+        actor="critic",
+        kind="comment",
+        body="Looks good.",
+        payload={
+            "activity_type": "critic_review",
+            "verdict": "usable",
+            "recommended_next_step": "accept",
+            "review_task_id": review_task.id,
+        },
+    )
+
+    followup = await app._route_review_followup(
+        session_id=session_id,
+        review_task=review_task,
+    )
+
+    assert followup is None
+
+
+async def test_route_review_followup_files_experiment_reproduction_task(
+    tmp_path: Path,
+) -> None:
+    app, session_id, project_id = await _app_with_initial_plan(tmp_path)
+    experiment_id, _evaluation_id, _measurement_id = (
+        await _seed_closed_experiment_with_measurement(app, session_id, project_id)
+    )
+    review_task = await app._enqueue_experiment_review_task(
+        session_id=session_id,
+        project_id=project_id,
+        experiment_id=experiment_id,
+        source_task_id="T999",
+    )
+    review_activity = await app.repos.experiment_activities.add(
+        experiment_id=experiment_id,
+        created_in_session_id=session_id,
+        actor="critic",
+        kind="comment",
+        body="Promising but thin.",
+        payload={
+            "activity_type": "critic_review",
+            "work_type": "review_experiment",
+            "verdict": "needs_reproduction",
+            "recommended_next_step": "reproduce",
+            "review_task_id": review_task.id,
+            "concern_kinds": ["selection_on_noise"],
+        },
+    )
+
+    followup = await app._route_review_followup(
+        session_id=session_id,
+        review_task=review_task,
+    )
+
+    assert followup is not None
+    assert followup.kind == TaskKind.EXPERIMENT
+    assert followup.payload["associated_experiment_id"] == experiment_id
+    assert followup.payload["parent_experiment_id"] == experiment_id
+    assert followup.payload["base_selector"] == "parent_experiment"
+    assert followup.payload["associated_review_activity_id"] == review_activity.id
+
+    links = await app.repos.task_entity_links.list_for_task(task_id=followup.id)
+    linked = {(link.entity_kind, link.entity_id) for link in links}
+    assert (TaskEntityKind.EXPERIMENT, experiment_id) in linked
+    assert (
+        TaskEntityKind.EXPERIMENT_ACTIVITY,
+        str(review_activity.id),
+    ) in linked
+
+
+async def test_route_review_followup_returns_none_when_work_type_missing(
+    tmp_path: Path,
+) -> None:
+    app, session_id, project_id = await _app_with_initial_plan(tmp_path)
+    review_task = await app.repos.tasks.create(
+        task_id=await app.repos.tasks.next_id(project_id=project_id),
+        project_id=project_id,
+        created_in_session_id=session_id,
+        title="Legacy review",
+        content="Legacy review without a work_type.",
+        kind=TaskKind.REVIEW,
+        priority="high",
+        source_kind="system",
+        payload={"experiment_id": "EX-NONE"},
+    )
+
+    followup = await app._route_review_followup(
+        session_id=session_id,
+        review_task=review_task,
+    )
+
+    assert followup is None
 
 
 async def test_reusable_plan_task_is_requeued_for_replanning(
@@ -539,13 +768,6 @@ class BaselineThenExperimentRuntime:
                 actor="agent",
                 body="baseline result",
             )
-            await repos.evaluation_activities.add(
-                evaluation_id=evaluation.id,
-                created_in_session_id=session_id,
-                actor="agent",
-                kind="result",
-                body="baseline result",
-            )
             return ResearchAgentOutput(summary="baseline done")
 
         experiment_id = task.payload["experiment_id"]
@@ -850,14 +1072,6 @@ async def _seed_closed_experiment_with_measurement(
         created_in_session_id=session_id,
         actor="agent",
         body="candidate result",
-    )
-    await app.repos.evaluation_activities.add(
-        evaluation_id=evaluation.id,
-        created_in_session_id=session_id,
-        actor="agent",
-        kind="result",
-        body="candidate result",
-        payload={"measurement_id": measurement.id},
     )
     return experiment.id, evaluation.id, measurement.id
 

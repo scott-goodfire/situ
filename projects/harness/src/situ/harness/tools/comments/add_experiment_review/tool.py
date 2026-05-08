@@ -40,6 +40,7 @@ class AddExperimentReviewTool(
         review: str,
         verdict: ExperimentReviewVerdict,
         recommended_next_step: ExperimentReviewNextStep,
+        review_task_id: str | None = None,
         evidence_summary: str = "",
         concern_kinds: list[str] | None = None,
         reviewed_evaluation_ids: list[str] | None = None,
@@ -56,6 +57,34 @@ class AddExperimentReviewTool(
                 code="experiment_not_found",
                 message=f"experiment not found: {experiment_id}",
             )
+
+        if review_task_id is not None:
+            review_task = await repos.tasks.get(task_id=review_task_id)
+            if review_task is None:
+                return self._failure(
+                    code="review_task_not_found",
+                    message=f"review_task_id not found: {review_task_id}",
+                )
+            if (
+                review_task.work_type is not None
+                and review_task.work_type.value != "review_experiment"
+            ):
+                return self._failure(
+                    code="review_task_work_type_mismatch",
+                    message=(
+                        "add_experiment_review requires a task with "
+                        f"work_type=review_experiment, got {review_task.work_type.value!r}."
+                    ),
+                )
+            task_target_id = review_task.payload.get("experiment_id")
+            if task_target_id is not None and task_target_id != experiment_id:
+                return self._failure(
+                    code="review_target_mismatch",
+                    message=(
+                        f"experiment_id {experiment_id!r} does not match the "
+                        f"review task target {task_target_id!r}."
+                    ),
+                )
 
         evaluation_ids = reviewed_evaluation_ids or []
         measurement_ids = reviewed_measurement_ids or []
@@ -110,14 +139,17 @@ class AddExperimentReviewTool(
 
         review_payload = {
             "activity_type": "critic_review",
+            "work_type": "review_experiment",
             "verdict": verdict,
             "recommended_next_step": recommended_next_step,
             "evidence_summary": evidence_summary,
             "concern_kinds": concern_kinds or [],
             "reviewed_evaluation_ids": evaluation_ids,
             "reviewed_measurement_ids": measurement_ids,
-            **(payload or {}),
         }
+        if review_task_id is not None:
+            review_payload["review_task_id"] = review_task_id
+        review_payload.update(payload or {})
         activity = await repos.experiment_activities.add(
             experiment_id=experiment_id,
             created_in_session_id=ctx.deps.session_id,
@@ -134,6 +166,7 @@ class AddExperimentReviewTool(
                 "experiment_id": experiment_id,
                 "verdict": verdict,
                 "recommended_next_step": recommended_next_step,
+                "review_task_id": review_task_id,
             },
         )
         await ctx.deps.publish_record(record=activity, event=event)

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 from pydantic_evals.evaluators import EvaluationReason, Evaluator, EvaluatorContext
@@ -25,10 +25,7 @@ class ChangedFilesDoNotInclude(Evaluator[Any, Any, Any]):
 
 @dataclass
 class ChangedFilesExactly(Evaluator[Any, Any, Any]):
-    paths: tuple[str, ...]
-
-    def __init__(self, *paths: str) -> None:
-        self.paths = tuple(paths)
+    paths: list[str] = field(default_factory=list)
 
     def evaluate(self, ctx: EvaluatorContext[Any, Any, Any]) -> EvaluationReason:
         expected = sorted(self.paths)

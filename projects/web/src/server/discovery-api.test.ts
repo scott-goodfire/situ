@@ -89,37 +89,6 @@ describe("discovery api", () => {
     });
   });
 
-  test("lists registry-only projects with missing workspaces", async () => {
-    await withTemporaryHome(async ({ home }) => {
-      writeRegistryDatabase({
-        home,
-        projectId: STOPPED_PROJECT_ID,
-        repoPath: join(home, "missing-workspace"),
-        label: "Missing workspace",
-        lastSeenAt: "2026-05-05T02:00:00.000Z",
-      });
-
-      const app = createTestDiscoveryApi({ home });
-      const response = await app.request("/api/projects");
-      const payload = (await response.json()) as ProjectListResponse;
-
-      expect(response.status).toBe(200);
-      expect(payload.projects).toEqual([
-        {
-          project_id: STOPPED_PROJECT_ID,
-          label: "missing-workspace",
-          workspace: join(home, "missing-workspace"),
-          objective_title: null,
-          status: "missing_workspace",
-          status_reason: "Workspace path no longer exists",
-          started_at: null,
-          last_seen_at: "2026-05-05T02:00:00.000Z",
-          url: null,
-        },
-      ]);
-    });
-  });
-
   test("returns a healthy running session for a project", async () => {
     await withTemporaryHome(async ({ home }) => {
       const token = "test-token";
@@ -197,47 +166,6 @@ async function withTemporaryHome(
     await run({ home });
   } finally {
     rmSync(home, { recursive: true, force: true });
-  }
-}
-
-function writeRegistryDatabase({
-  home,
-  projectId,
-  repoPath,
-  label,
-  lastSeenAt,
-}: {
-  home: string;
-  projectId: string;
-  repoPath: string;
-  label: string;
-  lastSeenAt: string;
-}): void {
-  const databasePath = join(home, ".situ", "situ.sqlite");
-  mkdirSync(join(home, ".situ"), { recursive: true });
-  const database = new Database(databasePath);
-
-  try {
-    database.run(`
-      CREATE TABLE projects (
-        project_id TEXT PRIMARY KEY,
-        repo_path TEXT,
-        label TEXT,
-        discovered_at TEXT NOT NULL,
-        last_seen_at TEXT,
-        last_opened_at TEXT,
-        archived_at TEXT
-      )
-    `);
-    database
-      .query(`
-        INSERT INTO projects
-          (project_id, repo_path, label, discovered_at, last_seen_at, last_opened_at, archived_at)
-        VALUES (?, ?, ?, ?, ?, NULL, NULL)
-      `)
-      .run(projectId, repoPath, label, "2026-05-05T00:00:00.000Z", lastSeenAt);
-  } finally {
-    database.close();
   }
 }
 

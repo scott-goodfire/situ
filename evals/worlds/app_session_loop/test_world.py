@@ -8,7 +8,7 @@ from evals.worlds.app_session_loop.world import AppSessionLoopWorld
 
 @pytest.mark.asyncio
 async def test_app_session_loop_world_starts_from_clean_git_repo() -> None:
-    world = AppSessionLoopWorld(
+    world = await AppSessionLoopWorld.create(
         AppSessionLoopEvalInput(
             case_id="clean_git_repo",
             seed="empty_repo",

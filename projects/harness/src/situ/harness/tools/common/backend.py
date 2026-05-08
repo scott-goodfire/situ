@@ -8,10 +8,11 @@ import threading
 from dataclasses import dataclass
 from pathlib import Path
 
+import aiofiles.os
+
 from pydantic_ai_backends import LocalBackend
 from pydantic_ai_backends.types import ExecuteResponse
 
-_ENV_LOCK = threading.Lock()
 _RUN_LOG_PATTERN = re.compile(r"(?<![\w./-])(?:\./)?run\.log(?![\w./-])")
 
 
@@ -42,59 +43,7 @@ class SituLocalBackend(LocalBackend):
         self._command_receipts: list[CommandReceiptDraft] = []
         self._command_receipt_lock = threading.Lock()
 
-    def execute(
-        self,
-        command: str,
-        timeout: int | None = None,
-    ) -> ExecuteResponse:
-        command_artifact_dir = self.command_artifact_dir
-        if command_artifact_dir is None:
-            return super().execute(command, timeout=timeout)
-
-        command_artifact_dir.mkdir(parents=True, exist_ok=True)
-        run_log_path = command_artifact_dir / "run.log"
-        execute_env = {
-            "SITU_ARTIFACT_DIR": str(command_artifact_dir),
-            "SITU_RUN_LOG": str(run_log_path),
-        }
-        rewritten_command = _rewrite_run_log_references(
-            command=command,
-            run_log_path=run_log_path,
-        )
-
-        with _ENV_LOCK:
-            previous = {name: os.environ.get(name) for name in execute_env}
-            os.environ.update(execute_env)
-            try:
-                response = super().execute(rewritten_command, timeout=timeout)
-            finally:
-                for name, value in previous.items():
-                    if value is None:
-                        os.environ.pop(name, None)
-                    else:
-                        os.environ[name] = value
-
-        self._record_command_receipt(
-            command=command,
-            rewritten_command=rewritten_command,
-            timeout=timeout,
-            response=response,
-            command_artifact_dir=command_artifact_dir,
-            run_log_path=run_log_path,
-        )
-
-        if rewritten_command == command:
-            return response
-
-        note = f"[Situ] Routed run.log to {run_log_path}\n"
-        output = f"{response.output}{note}" if response.output else note
-        return ExecuteResponse(
-            output=output,
-            exit_code=response.exit_code,
-            truncated=response.truncated,
-        )
-
-    async def execute_async(
+    async def execute(
         self,
         command: str,
         timeout: int | None = None,
@@ -103,7 +52,7 @@ class SituLocalBackend(LocalBackend):
         if command_artifact_dir is None:
             return await self._execute_shell_async(command, timeout=timeout)
 
-        command_artifact_dir.mkdir(parents=True, exist_ok=True)
+        await aiofiles.os.makedirs(command_artifact_dir, exist_ok=True)
         run_log_path = command_artifact_dir / "run.log"
         rewritten_command = _rewrite_run_log_references(
             command=command,

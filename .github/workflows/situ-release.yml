@@ -61,24 +61,12 @@ jobs:
 
       - name: Smoke-test installer
         env:
-          SITU_TAG: ${{ steps.tag.outputs.tag }}
+          SITU_VERSION: ${{ steps.tag.outputs.tag }}
+          SITU_RELEASE_TARBALL: ${{ github.workspace }}/dist/release/situ-${{ steps.tag.outputs.tag }}-${{ matrix.platform }}.tar.gz
+          SITU_INSTALL_HOME: ${{ runner.temp }}/situ
+          SITU_BIN_DIR: ${{ runner.temp }}/bin
         run: |
-          set -euo pipefail
-          STAGE="$(mktemp -d)"
-          export SITU_INSTALL_HOME="$STAGE/situ"
-          export SITU_BIN_DIR="$STAGE/bin"
-          mkdir -p "$SITU_INSTALL_HOME/versions/$SITU_TAG"
-          tar -xzf "dist/release/situ-${SITU_TAG}-${{ matrix.platform }}.tar.gz" \
-            -C "$SITU_INSTALL_HOME/versions/$SITU_TAG"
-          python3 -m venv "$SITU_INSTALL_HOME/versions/$SITU_TAG/venv"
-          "$SITU_INSTALL_HOME/versions/$SITU_TAG/venv/bin/python" -m pip install --quiet --upgrade pip
-          "$SITU_INSTALL_HOME/versions/$SITU_TAG/venv/bin/python" -m pip install --quiet \
-            "$SITU_INSTALL_HOME/versions/$SITU_TAG/wheels/"*.whl
-          mkdir -p "$SITU_INSTALL_HOME/versions/$SITU_TAG/bin"
-          ln -sfn "../venv/bin/situ" "$SITU_INSTALL_HOME/versions/$SITU_TAG/bin/situ"
-          ln -sfn "versions/$SITU_TAG" "$SITU_INSTALL_HOME/current"
-          mkdir -p "$SITU_BIN_DIR"
-          ln -sfn "$SITU_INSTALL_HOME/current/bin/situ" "$SITU_BIN_DIR/situ"
+          ./config/scripts/install.sh
           "$SITU_BIN_DIR/situ" --help
 
       - uses: actions/upload-artifact@v4

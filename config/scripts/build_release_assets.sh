@@ -74,13 +74,13 @@ MANIFEST
 echo "==> creating tarball"
 tar -czf "$TARBALL" -C "$STAGE_DIR" .
 
-echo "==> updating checksums"
+echo "==> writing checksum"
 (
   cd "$DIST_DIR"
   if command -v sha256sum >/dev/null 2>&1; then
-    sha256sum "$TARBALL_NAME" >> checksums.txt
+    sha256sum "$TARBALL_NAME" > checksums.txt
   else
-    shasum -a 256 "$TARBALL_NAME" >> checksums.txt
+    shasum -a 256 "$TARBALL_NAME" > checksums.txt
   fi
 )
 

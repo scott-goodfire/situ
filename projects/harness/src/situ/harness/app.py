@@ -6,6 +6,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Awaitable, Callable
 
+import aiofiles
+import aiofiles.os
 from situ.protocol import (
     CollectionsBootstrapParams,
     CollectionsBootstrapResult,
@@ -631,6 +633,284 @@ class HarnessApp:
                 return task
         return None
 
+    async def _route_review_followup(
+        self,
+        *,
+        session_id: str,
+        review_task: TaskRecord,
+    ) -> TaskRecord | None:
+        """File one bounded producer-lane repair task when a review asks for it.
+
+        Returns the new task, or None when the review needs no scoped repair
+        (Manager handles direction, human review, or accepted results).
+        """
+        if review_task.work_type is None:
+            return None
+
+        if review_task.work_type == TaskWorkType.REVIEW_HYPOTHESIS:
+            return await self._route_hypothesis_review_followup(
+                session_id=session_id,
+                review_task=review_task,
+            )
+        if review_task.work_type == TaskWorkType.REVIEW_EXPERIMENT:
+            return await self._route_experiment_review_followup(
+                session_id=session_id,
+                review_task=review_task,
+            )
+        return None
+
+    async def _route_hypothesis_review_followup(
+        self,
+        *,
+        session_id: str,
+        review_task: TaskRecord,
+    ) -> TaskRecord | None:
+        hypothesis_id = review_task.payload.get("hypothesis_id")
+        if not isinstance(hypothesis_id, str):
+            return None
+        latest = await self._review_activity_for_task(
+            session_id=session_id,
+            review_task_id=review_task.id,
+            activities=await self.repos.hypothesis_activities.list_for_hypothesis(
+                hypothesis_id=hypothesis_id
+            ),
+        )
+        if latest is None:
+            return None
+        if not _review_wants_scoped_repair(latest.payload):
+            return None
+        if await self._existing_followup_for_review(
+            project_id=review_task.project_id,
+            review_activity_id=latest.id,
+        ) is not None:
+            return None
+        return await self._create_hypothesis_repair_task(
+            session_id=session_id,
+            review_task=review_task,
+            hypothesis_id=hypothesis_id,
+            review_activity_id=latest.id,
+            review_payload=latest.payload,
+        )
+
+    async def _route_experiment_review_followup(
+        self,
+        *,
+        session_id: str,
+        review_task: TaskRecord,
+    ) -> TaskRecord | None:
+        experiment_id = review_task.payload.get("experiment_id")
+        if not isinstance(experiment_id, str):
+            return None
+        latest = await self._review_activity_for_task(
+            session_id=session_id,
+            review_task_id=review_task.id,
+            activities=await self.repos.experiment_activities.list_for_experiment(
+                experiment_id=experiment_id
+            ),
+        )
+        if latest is None:
+            return None
+        if not _experiment_review_wants_reproduction(latest.payload):
+            return None
+        if await self._existing_followup_for_review(
+            project_id=review_task.project_id,
+            review_activity_id=latest.id,
+        ) is not None:
+            return None
+        return await self._create_experiment_reproduction_task(
+            session_id=session_id,
+            review_task=review_task,
+            experiment_id=experiment_id,
+            review_activity_id=latest.id,
+            review_payload=latest.payload,
+        )
+
+    async def _review_activity_for_task(
+        self,
+        *,
+        session_id: str,
+        review_task_id: str,
+        activities: list[Any],
+    ) -> Any:
+        """Find the Critic review activity tied to this review task.
+
+        Prefers an exact `review_task_id` payload match (set by the review tools
+        in current versions). Falls back to the most recent same-session
+        `critic_review` activity for backward compatibility with prior reviews.
+        """
+        for activity in reversed(activities):
+            payload = getattr(activity, "payload", {}) or {}
+            if payload.get("review_task_id") == review_task_id:
+                return activity
+        for activity in reversed(activities):
+            payload = getattr(activity, "payload", {}) or {}
+            if (
+                getattr(activity, "created_in_session_id", None) == session_id
+                and payload.get("activity_type") == "critic_review"
+            ):
+                return activity
+        return None
+
+    async def _existing_followup_for_review(
+        self,
+        *,
+        project_id: str,
+        review_activity_id: int,
+    ) -> TaskRecord | None:
+        for task in await self.repos.tasks.list_for_project(project_id=project_id):
+            if task.payload.get("associated_review_activity_id") == review_activity_id:
+                return task
+        return None
+
+    async def _create_hypothesis_repair_task(
+        self,
+        *,
+        session_id: str,
+        review_task: TaskRecord,
+        hypothesis_id: str,
+        review_activity_id: int,
+        review_payload: dict[str, Any],
+    ) -> TaskRecord:
+        project_id = review_task.project_id
+        hypothesis = await self.repos.hypotheses.get(hypothesis_id=hypothesis_id)
+        title = (
+            f"Revise {hypothesis.title}"
+            if hypothesis is not None and hypothesis.title
+            else f"Revise {hypothesis_id}"
+        )
+        verdict = review_payload.get("verdict", "concern")
+        concern_kinds = review_payload.get("concern_kinds") or []
+        concern_summary = ", ".join(concern_kinds) if concern_kinds else "the recorded concerns"
+        task = await self.repos.tasks.create(
+            task_id=await self.repos.tasks.next_id(project_id=project_id),
+            project_id=project_id,
+            created_in_session_id=session_id,
+            title=title,
+            content=(
+                f"Address the Critic review on {hypothesis_id}. The verdict was "
+                f"`{verdict}`. Read the review activity, the hypothesis, and any "
+                "linked analyses, then revise or supersede the hypothesis to "
+                f"resolve {concern_summary}. Stop when the hypothesis is concrete "
+                "and grounded enough for an experiment, or record why the concern "
+                "cannot be resolved without human input."
+            ),
+            kind=TaskKind.HYPOTHESIZE,
+            priority="high",
+            source_kind="system",
+            payload={
+                "associated_hypothesis_id": hypothesis_id,
+                "associated_review_activity_id": review_activity_id,
+                "associated_review_task_id": review_task.id,
+            },
+        )
+        links = [
+            await self.repos.task_entity_links.create(
+                project_id=project_id,
+                task_id=task.id,
+                entity_kind=TaskEntityKind.HYPOTHESIS,
+                entity_id=hypothesis_id,
+                relationship="revises",
+            ),
+            await self.repos.task_entity_links.create(
+                project_id=project_id,
+                task_id=task.id,
+                entity_kind=TaskEntityKind.HYPOTHESIS_ACTIVITY,
+                entity_id=str(review_activity_id),
+                relationship="addresses",
+            ),
+        ]
+        event = await self.record_event(
+            event_type="task.created",
+            message=f"Created hypothesis repair task {task.id}",
+            session_id=session_id,
+            project_id=project_id,
+            payload={
+                "task_id": task.id,
+                "kind": task.kind.value,
+                "hypothesis_id": hypothesis_id,
+                "review_activity_id": review_activity_id,
+            },
+        )
+        self.publish_record(record=task, cursor=event.id)
+        for link in links:
+            self.publish_record(record=link, cursor=event.id)
+        return task
+
+    async def _create_experiment_reproduction_task(
+        self,
+        *,
+        session_id: str,
+        review_task: TaskRecord,
+        experiment_id: str,
+        review_activity_id: int,
+        review_payload: dict[str, Any],
+    ) -> TaskRecord:
+        project_id = review_task.project_id
+        experiment = await self.repos.experiments.get(experiment_id=experiment_id)
+        title = (
+            f"Reproduce {experiment.title}"
+            if experiment is not None and experiment.title
+            else f"Reproduce {experiment_id}"
+        )
+        verdict = review_payload.get("verdict", "needs_reproduction")
+        concern_kinds = review_payload.get("concern_kinds") or []
+        concern_summary = ", ".join(concern_kinds) if concern_kinds else "the recorded concerns"
+        task = await self.repos.tasks.create(
+            task_id=await self.repos.tasks.next_id(project_id=project_id),
+            project_id=project_id,
+            created_in_session_id=session_id,
+            title=title,
+            content=(
+                f"Address the Critic review on {experiment_id}. The verdict was "
+                f"`{verdict}`. Re-run the experiment under controlled conditions "
+                "and record fresh measurement evidence so the result can be "
+                f"trusted, focusing on {concern_summary}. Stop when the new "
+                "evidence either supports or refutes the prior result."
+            ),
+            kind=TaskKind.EXPERIMENT,
+            priority="high",
+            source_kind="system",
+            payload={
+                "associated_experiment_id": experiment_id,
+                "parent_experiment_id": experiment_id,
+                "base_selector": "parent_experiment",
+                "associated_review_activity_id": review_activity_id,
+                "associated_review_task_id": review_task.id,
+            },
+        )
+        links = [
+            await self.repos.task_entity_links.create(
+                project_id=project_id,
+                task_id=task.id,
+                entity_kind=TaskEntityKind.EXPERIMENT,
+                entity_id=experiment_id,
+                relationship="reproduces",
+            ),
+            await self.repos.task_entity_links.create(
+                project_id=project_id,
+                task_id=task.id,
+                entity_kind=TaskEntityKind.EXPERIMENT_ACTIVITY,
+                entity_id=str(review_activity_id),
+                relationship="addresses",
+            ),
+        ]
+        event = await self.record_event(
+            event_type="task.created",
+            message=f"Created experiment reproduction task {task.id}",
+            session_id=session_id,
+            project_id=project_id,
+            payload={
+                "task_id": task.id,
+                "kind": task.kind.value,
+                "experiment_id": experiment_id,
+                "review_activity_id": review_activity_id,
+            },
+        )
+        self.publish_record(record=task, cursor=event.id)
+        for link in links:
+            self.publish_record(record=link, cursor=event.id)
+        return task
+
     async def _claim_next_task(
         self,
         *,
@@ -868,17 +1148,24 @@ class HarnessApp:
                         )
                         active_task = None
 
-                        if await self._experiment_count(session_id) < max_experiments:
+                        followup = await self._route_review_followup(
+                            session_id=session_id,
+                            review_task=critic_task,
+                        )
+
+                        if followup is None and await self._experiment_count(
+                            session_id
+                        ) < max_experiments:
                             await self._enqueue_plan_task(
                                 session_id=session_id,
                                 project_id=critic_task.project_id,
                                 title="Plan from critic review",
                                 content=(
                                     "A Critic review just completed. Review the "
-                                    "experiment review activity, concerns, project "
-                                    "project state, task board, and experiment budget. "
-                                    "File the next focused Researcher or Scientist "
-                                    "task so the research loop keeps moving."
+                                    "review activity, concerns, project state, "
+                                    "task board, and experiment budget. File the "
+                                    "next focused Researcher or Scientist task so "
+                                    "the research loop keeps moving."
                                 ),
                                 source_kind="system",
                             )
@@ -1472,9 +1759,10 @@ class HarnessApp:
 
         artifact_id = await self.repos.artifacts.next_id(project_id=experiment.project_id)
         patch_dir = self.context.project_dir / "artifacts" / "patches" / experiment.project_id
-        patch_dir.mkdir(parents=True, exist_ok=True)
+        await aiofiles.os.makedirs(patch_dir, exist_ok=True)
         patch_path = patch_dir / f"{artifact_id}-{experiment.id}.patch"
-        patch_path.write_text(patch, encoding="utf-8")
+        async with aiofiles.open(patch_path, "w", encoding="utf-8") as file:
+            await file.write(patch)
 
         artifact = await self.repos.artifacts.create(
             artifact_id=artifact_id,
@@ -1622,6 +1910,30 @@ def _is_reusable_plan_task(task: TaskRecord) -> bool:
     return (
         task.kind == TaskKind.PLAN
         and task.payload.get("reuse_key") == REUSABLE_PLAN_TASK_KEY
+    )
+
+
+_HYPOTHESIS_REPAIR_VERDICTS = {"concern", "needs_more_evidence"}
+_HYPOTHESIS_REPAIR_NEXT_STEPS = {"revise"}
+_EXPERIMENT_REPRODUCE_VERDICTS = {"concern", "needs_reproduction"}
+_EXPERIMENT_REPRODUCE_NEXT_STEPS = {"reproduce", "revise"}
+
+
+def _review_wants_scoped_repair(payload: dict[str, Any]) -> bool:
+    verdict = payload.get("verdict")
+    next_step = payload.get("recommended_next_step")
+    return (
+        verdict in _HYPOTHESIS_REPAIR_VERDICTS
+        and next_step in _HYPOTHESIS_REPAIR_NEXT_STEPS
+    )
+
+
+def _experiment_review_wants_reproduction(payload: dict[str, Any]) -> bool:
+    verdict = payload.get("verdict")
+    next_step = payload.get("recommended_next_step")
+    return (
+        verdict in _EXPERIMENT_REPRODUCE_VERDICTS
+        and next_step in _EXPERIMENT_REPRODUCE_NEXT_STEPS
     )
 
 

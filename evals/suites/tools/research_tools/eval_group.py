@@ -1,13 +1,21 @@
 from __future__ import annotations
 
-from typing import Any, ClassVar, Sequence
+from pathlib import Path
+from typing import ClassVar, Sequence
 
-from pydantic_evals import Case, set_eval_attribute
+from pydantic_evals import set_eval_attribute
 from pydantic_evals.dataset import increment_eval_metric
 from pydantic_evals.evaluators import Evaluator
 
 from evals.framework import BaseSituEvalGroup
-from evals.suites.tools.research_tools.cases import research_tool_cases
+from evals.framework.evaluators import (
+    EventWasEmitted,
+    ProjectBoardContains,
+    ToolArgsContain,
+    ToolCalledSuccessfully,
+    ToolResultContains,
+)
+from evals.suites.tools.research_tools.evaluators import ProjectBoardHasLink
 from evals.worlds.research_session import (
     ResearchToolEvalInput,
     ResearchToolEvalOutput,
@@ -20,11 +28,19 @@ class ResearchToolsEvalGroup(
 ):
     suite_name: ClassVar[str] = "tools"
     world_name: ClassVar[str] = "research_tools"
+    cases_path: ClassVar[Path] = Path(__file__).parent / "cases.yaml"
+    custom_evaluator_types: ClassVar[Sequence[type[Evaluator]]] = (
+        EventWasEmitted,
+        ProjectBoardContains,
+        ProjectBoardHasLink,
+        ToolArgsContain,
+        ToolCalledSuccessfully,
+        ToolResultContains,
+    )
 
     async def task(self, args: ResearchToolEvalInput) -> ResearchToolEvalOutput:
         set_eval_attribute("suite", self.suite_name)
         set_eval_attribute("world", self.world_name)
-        set_eval_attribute("case_id", args.case_id)
         set_eval_attribute("seed", args.seed)
         set_eval_attribute("toolset", args.toolset)
         output = await run_research_tool_agent(args)
@@ -39,9 +55,3 @@ class ResearchToolsEvalGroup(
             len(output.project_board.get("experiments", [])),
         )
         return output
-
-    def eval_cases(self) -> list[Case[ResearchToolEvalInput, ResearchToolEvalOutput]]:
-        return research_tool_cases()
-
-    def dataset_evaluators(self) -> Sequence[Evaluator[Any, Any, Any]]:
-        return []

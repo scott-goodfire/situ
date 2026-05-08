@@ -4,6 +4,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any
 
+import aiofiles
+import aiofiles.os
 from situ.harness.api.project_board import ProjectBoardService
 from situ.harness.core.db import Database
 from situ.harness.core.git import run_git
@@ -333,21 +335,6 @@ async def _create_experiment_with_result(
             "raw": {"shape": "standard"},
         },
     )
-    await repos.evaluation_activities.add(
-        evaluation_id=evaluation_id,
-        created_in_session_id=SESSION_ID,
-        actor="worker",
-        kind="result",
-        body=result_body,
-        payload={
-            "metrics": _metric_values(signals),
-            "signals": [
-                {"key": key, "value": value}
-                for key, value in signals.items()
-            ],
-            "raw": {"shape": "standard"},
-        },
-    )
     await repos.experiment_activities.add(
         experiment_id=experiment_id,
         actor="worker",
@@ -397,17 +384,6 @@ async def _create_baseline_measurement(
             "raw": {"shape": "standard"},
         },
     )
-    await repos.evaluation_activities.add(
-        evaluation_id=BASELINE_EVALUATION_ID,
-        created_in_session_id=SESSION_ID,
-        actor="worker",
-        kind="result",
-        body=result_body,
-        payload={
-            "metrics": _metric_values(metrics),
-            "raw": {"shape": "standard"},
-        },
-    )
 
 
 def _evaluation_id_for_experiment(experiment_id: str) -> str:
@@ -428,21 +404,25 @@ async def _seed_dirty_workspace(repo_path: Path) -> None:
     await run_git(repo_path, "init")
     await run_git(repo_path, "config", "user.email", "situ@example.com")
     await run_git(repo_path, "config", "user.name", "Situ")
-    (repo_path / "train.py").write_text("COMPONENT = 'baseline'\n", encoding="utf-8")
-    (repo_path / "tests").mkdir()
-    (repo_path / "tests" / "test_train.py").write_text(
-        "def test_train(): pass\n",
+    async with aiofiles.open(repo_path / "train.py", "w", encoding="utf-8") as file:
+        await file.write("COMPONENT = 'baseline'\n")
+    await aiofiles.os.makedirs(repo_path / "tests", exist_ok=True)
+    async with aiofiles.open(
+        repo_path / "tests" / "test_train.py",
+        "w",
         encoding="utf-8",
-    )
+    ) as file:
+        await file.write("def test_train(): pass\n")
     await run_git(repo_path, "add", ".")
     await run_git(repo_path, "commit", "-m", "baseline")
 
-    (repo_path / "train.py").write_text("COMPONENT = 'component_a'\n", encoding="utf-8")
-    (repo_path / "tests" / "test_train.py").write_text(
-        "def test_train(): pass\ndef test_component_a(): pass\n",
+    async with aiofiles.open(repo_path / "train.py", "w", encoding="utf-8") as file:
+        await file.write("COMPONENT = 'component_a'\n")
+    async with aiofiles.open(
+        repo_path / "tests" / "test_train.py",
+        "w",
         encoding="utf-8",
-    )
-    (repo_path / "pyproject.toml").write_text(
-        "[project]\nname = 'situ-eval-world'\n",
-        encoding="utf-8",
-    )
+    ) as file:
+        await file.write("def test_train(): pass\ndef test_component_a(): pass\n")
+    async with aiofiles.open(repo_path / "pyproject.toml", "w", encoding="utf-8") as file:
+        await file.write("[project]\nname = 'situ-eval-world'\n")

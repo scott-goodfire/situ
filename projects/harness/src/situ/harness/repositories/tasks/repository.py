@@ -17,7 +17,7 @@ from ...records import (
     TaskSourceKind,
     TaskStatus,
     TaskWorkType,
-    ensure_work_type_compatible_with_kind,
+    ensure_work_type_matches_kind,
     parse_task_kind,
     parse_task_priority,
     parse_task_source_kind,
@@ -92,7 +92,7 @@ class TasksRepository(BaseRepository):
         )
         parsed_kind = parse_task_kind(kind)
         parsed_work_type = parse_task_work_type(work_type) if work_type is not None else None
-        ensure_work_type_compatible_with_kind(kind=parsed_kind, work_type=parsed_work_type)
+        ensure_work_type_matches_kind(kind=parsed_kind, work_type=parsed_work_type)
         command = CreateTask(
             task_id=task_id,
             project_id=project_id,

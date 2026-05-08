@@ -7,4 +7,3 @@ from ...common import SituToolReturn
 
 class AddEvaluationResult(SituToolReturn):
     measurement: dict[str, Any] | None = None
-    activity: dict[str, Any] | None = None

@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
+import aiofiles.os
+
 from ..git import (
     git_lines,
     git_output,
@@ -88,7 +90,7 @@ class WorktreeManager:
         if worktree_root.exists():
             await self._require_existing_worktree(worktree_root)
         else:
-            worktree_root.parent.mkdir(parents=True, exist_ok=True)
+            await aiofiles.os.makedirs(worktree_root.parent, exist_ok=True)
             # Prune stale registrations whose directories were deleted out
             # of band (e.g. by `situ clear` or manual cleanup). Without this,
             # `git worktree add` fails with "missing but already registered"

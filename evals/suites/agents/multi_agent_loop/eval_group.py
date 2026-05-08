@@ -1,13 +1,37 @@
 from __future__ import annotations
 
-from typing import Any, ClassVar, Sequence
+from pathlib import Path
+from typing import ClassVar, Sequence
 
-from pydantic_evals import Case, set_eval_attribute
+from pydantic_evals import set_eval_attribute
 from pydantic_evals.dataset import increment_eval_metric
 from pydantic_evals.evaluators import Evaluator
 
 from evals.framework import BaseSituEvalGroup
-from evals.suites.agents.multi_agent_loop.cases import multi_agent_loop_cases
+from evals.framework.evaluators import (
+    ChangedFilesDoNotInclude,
+    ChangedFilesExactly,
+    EventWasEmitted,
+    ProjectBoardContains,
+    ToolArgsContain,
+    ToolResultContains,
+    ToolWasCalled,
+)
+from evals.suites.agents.multi_agent_loop.evaluators import (
+    AnalysisRecorded,
+    BaselineEvaluationRecorded,
+    CandidateExperimentRecorded,
+    FollowupTaskCreatedAfterBaseline,
+    ResearcherHandoffRecorded,
+    RoleToolArgsContain,
+    RoleToolCalledSuccessfully,
+    RoleToolSucceeded,
+    RoleToolWasCalled,
+    ScientistCompletedBaselineTask,
+    TaskClaimedByRole,
+    UserUrgentTaskPreemptedBacklog,
+    WebSourceAnalysisRecorded,
+)
 from evals.worlds.multi_agent_loop import (
     MultiAgentLoopEvalInput,
     MultiAgentLoopEvalOutput,
@@ -20,11 +44,33 @@ class MultiAgentLoopEvalGroup(
 ):
     suite_name: ClassVar[str] = "agents"
     world_name: ClassVar[str] = "multi_agent_loop"
+    cases_path: ClassVar[Path] = Path(__file__).parent / "cases.yaml"
+    custom_evaluator_types: ClassVar[Sequence[type[Evaluator]]] = (
+        AnalysisRecorded,
+        BaselineEvaluationRecorded,
+        CandidateExperimentRecorded,
+        ChangedFilesDoNotInclude,
+        ChangedFilesExactly,
+        EventWasEmitted,
+        FollowupTaskCreatedAfterBaseline,
+        ProjectBoardContains,
+        ResearcherHandoffRecorded,
+        RoleToolArgsContain,
+        RoleToolCalledSuccessfully,
+        RoleToolSucceeded,
+        RoleToolWasCalled,
+        ScientistCompletedBaselineTask,
+        TaskClaimedByRole,
+        ToolArgsContain,
+        ToolResultContains,
+        ToolWasCalled,
+        UserUrgentTaskPreemptedBacklog,
+        WebSourceAnalysisRecorded,
+    )
 
     async def task(self, args: MultiAgentLoopEvalInput) -> MultiAgentLoopEvalOutput:
         set_eval_attribute("suite", self.suite_name)
         set_eval_attribute("world", self.world_name)
-        set_eval_attribute("case_id", args.case_id)
         set_eval_attribute("seed", args.seed)
         output = await run_multi_agent_loop(args)
         increment_eval_metric("tool_calls", len(output.captured_tool_calls))
@@ -62,14 +108,8 @@ class MultiAgentLoopEvalGroup(
             len(output.project_board.get("evaluations", [])),
         )
         increment_eval_metric(
-            "evaluation_activities",
-            len(output.project_board.get("evaluation_activities", [])),
+            "measurements",
+            len(output.project_board.get("measurements", [])),
         )
         increment_eval_metric("changed_files", len(output.changed_files))
         return output
-
-    def eval_cases(self) -> list[Case[MultiAgentLoopEvalInput, MultiAgentLoopEvalOutput]]:
-        return multi_agent_loop_cases()
-
-    def dataset_evaluators(self) -> Sequence[Evaluator[Any, Any, Any]]:
-        return []

@@ -83,6 +83,8 @@ SCIENTIST_SKILLS = {
 }
 CRITIC_SKILLS = {
     "review-task",
+    "review-experiment",
+    "review-hypothesis",
     "source-grounding",
     "task-execution",
 }

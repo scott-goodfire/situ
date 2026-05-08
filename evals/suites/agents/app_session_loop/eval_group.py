@@ -1,13 +1,33 @@
 from __future__ import annotations
 
-from typing import Any, ClassVar, Sequence
+from pathlib import Path
+from typing import ClassVar, Sequence
 
-from pydantic_evals import Case, set_eval_attribute
+from pydantic_evals import set_eval_attribute
 from pydantic_evals.dataset import increment_eval_metric
 from pydantic_evals.evaluators import Evaluator
 
 from evals.framework import BaseSituEvalGroup
-from evals.suites.agents.app_session_loop.cases import app_session_loop_cases
+from evals.framework.evaluators import (
+    ChangedFilesDoNotInclude,
+    ChangedFilesExactly,
+    EventWasEmitted,
+    ProjectBoardContains,
+)
+from evals.suites.agents.app_session_loop.evaluators import (
+    BaselineThenFollowupWork,
+    CommandReceiptArtifactCaptured,
+    DoneTaskKindAtLeast,
+    ExperimentCandidateStateRecorded,
+    ExperimentCountAtLeast,
+    ExperimentReviewRecorded,
+    ManagerCompletedAfterCriticReview,
+    PatchHandoffArtifactCaptured,
+    PlanningPassCountAtLeast,
+    RecordCountAtLeast,
+    ReviewTaskLinksComplete,
+    TaskDoneByAgentKind,
+)
 from evals.worlds.app_session_loop import (
     AppSessionLoopEvalInput,
     AppSessionLoopEvalOutput,
@@ -20,11 +40,29 @@ class AppSessionLoopEvalGroup(
 ):
     suite_name: ClassVar[str] = "agents"
     world_name: ClassVar[str] = "app_session_loop"
+    cases_path: ClassVar[Path] = Path(__file__).parent / "cases.yaml"
+    custom_evaluator_types: ClassVar[Sequence[type[Evaluator]]] = (
+        BaselineThenFollowupWork,
+        ChangedFilesDoNotInclude,
+        ChangedFilesExactly,
+        CommandReceiptArtifactCaptured,
+        DoneTaskKindAtLeast,
+        EventWasEmitted,
+        ExperimentCandidateStateRecorded,
+        ExperimentCountAtLeast,
+        ExperimentReviewRecorded,
+        ManagerCompletedAfterCriticReview,
+        PatchHandoffArtifactCaptured,
+        PlanningPassCountAtLeast,
+        ProjectBoardContains,
+        RecordCountAtLeast,
+        ReviewTaskLinksComplete,
+        TaskDoneByAgentKind,
+    )
 
     async def task(self, args: AppSessionLoopEvalInput) -> AppSessionLoopEvalOutput:
         set_eval_attribute("suite", self.suite_name)
         set_eval_attribute("world", self.world_name)
-        set_eval_attribute("case_id", args.case_id)
         set_eval_attribute("seed", args.seed)
         output = await run_app_session_loop(args)
         increment_eval_metric("events", len(output.events))
@@ -68,9 +106,3 @@ class AppSessionLoopEvalGroup(
         )
         increment_eval_metric("changed_files", len(output.changed_files))
         return output
-
-    def eval_cases(self) -> list[Case[AppSessionLoopEvalInput, AppSessionLoopEvalOutput]]:
-        return app_session_loop_cases()
-
-    def dataset_evaluators(self) -> Sequence[Evaluator[Any, Any, Any]]:
-        return []

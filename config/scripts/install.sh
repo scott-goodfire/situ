@@ -8,6 +8,8 @@
 #   SITU_RELEASE_REPO    GitHub <org>/<repo> (default: scott-goodfire/autoresearch-harness)
 #   SITU_INSTALL_HOME    install dir (default: $HOME/.local/share/situ)
 #   SITU_BIN_DIR         PATH-symlink dir (default: $HOME/.local/bin)
+#   SITU_RELEASE_TARBALL absolute path to a local tarball (skips GitHub download).
+#                        Requires SITU_VERSION. Used by CI smoke tests.
 #
 # See .agents/specs/0017-distribution-and-install/SPEC.md for the contract.
 
@@ -72,6 +74,9 @@ if [ -z "${PYTHON_BIN:-}" ]; then
 fi
 info "using $PYTHON_BIN ($($PYTHON_BIN --version 2>&1))"
 
+if [ -n "${SITU_RELEASE_TARBALL:-}" ] && [ "$VERSION" = "latest" ]; then
+  err "SITU_RELEASE_TARBALL requires SITU_VERSION to be set explicitly"
+fi
 if [ "$VERSION" = "latest" ]; then
   VERSION="$(resolve_latest_tag)"
   [ -n "$VERSION" ] || err "could not resolve latest release tag for $REPO"
@@ -89,13 +94,20 @@ RELEASE_BASE="https://github.com/${REPO}/releases/download/${TAG}"
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TMP_DIR"' EXIT
 
-info "downloading $TARBALL_NAME"
-curl -fsSL "${RELEASE_BASE}/${TARBALL_NAME}" -o "$TMP_DIR/$TARBALL_NAME" || \
-  err "failed to download $TARBALL_NAME from $RELEASE_BASE"
+if [ -n "${SITU_RELEASE_TARBALL:-}" ]; then
+  [ -f "$SITU_RELEASE_TARBALL" ] || err "SITU_RELEASE_TARBALL not found: $SITU_RELEASE_TARBALL"
+  info "using local tarball: $SITU_RELEASE_TARBALL"
+  cp "$SITU_RELEASE_TARBALL" "$TMP_DIR/$TARBALL_NAME"
+  printf '%s  %s\n' "$(sha256_of "$TMP_DIR/$TARBALL_NAME")" "$TARBALL_NAME" > "$TMP_DIR/checksums.txt"
+else
+  info "downloading $TARBALL_NAME"
+  curl -fsSL "${RELEASE_BASE}/${TARBALL_NAME}" -o "$TMP_DIR/$TARBALL_NAME" || \
+    err "failed to download $TARBALL_NAME from $RELEASE_BASE"
 
-info "downloading checksums.txt"
-curl -fsSL "${RELEASE_BASE}/checksums.txt" -o "$TMP_DIR/checksums.txt" || \
-  err "failed to download checksums.txt from $RELEASE_BASE"
+  info "downloading checksums.txt"
+  curl -fsSL "${RELEASE_BASE}/checksums.txt" -o "$TMP_DIR/checksums.txt" || \
+    err "failed to download checksums.txt from $RELEASE_BASE"
+fi
 
 EXPECTED="$(awk -v name="$TARBALL_NAME" '$2 == name || $2 == "*"name {print $1}' "$TMP_DIR/checksums.txt")"
 [ -n "$EXPECTED" ] || err "checksum for $TARBALL_NAME missing from checksums.txt"

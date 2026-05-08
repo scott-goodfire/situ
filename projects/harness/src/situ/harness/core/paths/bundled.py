@@ -20,6 +20,11 @@ class BundledRuntime:
     path: Path
     source_cwd: Path | None
 
+    def subprocess_args(self) -> tuple[list[str], Path | None]:
+        if self.kind == "installed":
+            return [str(self.path)], None
+        return ["bun", "run", "dev"], self.source_cwd
+
 
 def find_bundled_resource(name: str) -> Path | None:
     try:
@@ -36,7 +41,7 @@ def find_bundled_resource(name: str) -> Path | None:
     return path
 
 
-def resolve_bundled_runtime(name: str, *, source_dir: str) -> BundledRuntime | None:
+def resolve_bundled_runtime(name: str, *, source_dir: str | None = None) -> BundledRuntime | None:
     bundled = find_bundled_resource(name)
     if bundled is not None:
         return BundledRuntime(kind="installed", path=bundled, source_cwd=None)
@@ -44,7 +49,7 @@ def resolve_bundled_runtime(name: str, *, source_dir: str) -> BundledRuntime | N
     app_root = resolve_app_root(Path(__file__))
     if app_root is None:
         return None
-    source_cwd = app_root / "projects" / source_dir
+    source_cwd = app_root / "projects" / (source_dir or name)
     if not source_cwd.is_dir():
         return None
     return BundledRuntime(kind="source", path=source_cwd, source_cwd=source_cwd)

@@ -8,6 +8,7 @@ from situ.harness.records import (
     TaskEntityKind,
     TaskKind,
     TaskStatus,
+    TaskWorkType,
 )
 from situ.harness.repositories import Repositories
 
@@ -139,17 +140,6 @@ class CriticFollowupWorld:
                 "comparison_baseline_id": BASELINE_ID,
             },
         )
-        await self.repos.evaluation_activities.add(
-            evaluation_id=evaluation.id,
-            created_in_session_id=SESSION_ID,
-            actor="scientist",
-            kind="result",
-            body=measurement.body,
-            payload={
-                **measurement.payload.to_storage_dict(),
-                "measurement_id": measurement.id,
-            },
-        )
         await self.repos.experiment_activities.add(
             experiment_id=experiment.id,
             created_in_session_id=SESSION_ID,
@@ -173,6 +163,7 @@ class CriticFollowupWorld:
             title=f"Completed Critic review for {experiment.title}",
             content="Critic review has been recorded for this experiment.",
             kind=TaskKind.REVIEW,
+            work_type=TaskWorkType.REVIEW_EXPERIMENT,
             priority="high",
             source_kind="system",
             payload={

@@ -185,17 +185,6 @@ class MultiAgentLoopWorld:
                 "comparison_baseline_id": BASELINE_ID,
             },
         )
-        await self.repos.evaluation_activities.add(
-            evaluation_id=evaluation.id,
-            created_in_session_id=SESSION_ID,
-            actor="scientist",
-            kind="result",
-            body=measurement.body,
-            payload={
-                **measurement.payload.to_storage_dict(),
-                "measurement_id": measurement.id,
-            },
-        )
         await self.repos.experiment_activities.add(
             experiment_id=experiment.id,
             created_in_session_id=SESSION_ID,

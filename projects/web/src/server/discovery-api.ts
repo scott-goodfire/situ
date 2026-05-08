@@ -39,7 +39,6 @@ type ProjectStatusReason =
   | "session_health_failed"
   | "invalid_session_file"
   | "workspace_missing"
-  | "project_database_unreadable"
   | "no_active_session";
 
 type ProjectStatusDetails = {
@@ -54,7 +53,7 @@ type ProjectMetadata = {
   objectiveTitle: string | null;
   updatedAt: string | null;
   activeSessionStartedAt: string | null;
-  readStatus: "found" | "missing" | "unreadable";
+  readStatus: "found" | "missing";
 };
 
 type ProductProjectRow = {
@@ -67,15 +66,7 @@ type ProductProjectRow = {
   active_session_created_at: string | null;
 };
 
-type LegacyRegistryRow = {
-  project_id: string;
-  repo_path: string | null;
-  label: string | null;
-  last_seen_at: string | null;
-  last_opened_at: string | null;
-};
-
-const PROJECT_ID_PATTERN = /^(?:[a-f0-9]{16}|project_[a-f0-9]{16}_\d{3})$/;
+const PROJECT_ID_PATTERN = /^[a-f0-9]{16}$/;
 
 export function createDiscoveryApi({
   situHome = defaultSituHome(),
@@ -123,8 +114,8 @@ async function listProjects({
 }): Promise<ProjectSummary[]> {
   const metadata = await readProductProjectMetadata({ discoveryContext });
   const projectIds = new Set(metadata.map((project) => project.projectId));
-  const legacyProjectIds = await listLegacyProjectIds({ discoveryContext });
-  for (const projectId of legacyProjectIds) {
+  const projectDirectoryIds = await listProjectDirectoryIds({ discoveryContext });
+  for (const projectId of projectDirectoryIds) {
     projectIds.add(projectId);
   }
 
@@ -135,7 +126,7 @@ async function listProjects({
         projectId,
         metadata:
           metadata.find((project) => project.projectId === projectId) ??
-          (await readLegacyProjectMetadata({ discoveryContext, projectId })),
+          emptyProjectMetadata({ projectId, readStatus: "missing" }),
       }),
     ),
   );
@@ -154,13 +145,12 @@ async function findProject({
     return null;
   }
 
-  const metadata =
-    (await readProductProjectMetadata({ discoveryContext })).find(
-      (project) => project.projectId === projectId,
-    ) ?? (await readLegacyProjectMetadata({ discoveryContext, projectId }));
-  if (metadata.readStatus === "missing") {
-    const legacyProjectIds = await listLegacyProjectIds({ discoveryContext });
-    if (!legacyProjectIds.includes(projectId)) {
+  const metadata = (await readProductProjectMetadata({ discoveryContext })).find(
+    (project) => project.projectId === projectId,
+  );
+  if (!metadata) {
+    const projectDirectoryIds = await listProjectDirectoryIds({ discoveryContext });
+    if (!projectDirectoryIds.includes(projectId)) {
       return null;
     }
   }
@@ -168,7 +158,7 @@ async function findProject({
   return projectSummary({
     discoveryContext,
     projectId,
-    metadata,
+    metadata: metadata ?? emptyProjectMetadata({ projectId, readStatus: "missing" }),
   });
 }
 
@@ -297,7 +287,7 @@ async function readProductProjectMetadata({
     });
     try {
       if (!isProductDatabase({ database })) {
-        return legacyRegistryRows({ database }).map(metadataFromLegacyRegistryRow);
+        return [];
       }
 
       return (
@@ -329,72 +319,6 @@ async function readProductProjectMetadata({
   }
 }
 
-async function readLegacyProjectMetadata({
-  discoveryContext,
-  projectId,
-}: {
-  discoveryContext: DiscoveryContext;
-  projectId: string;
-}): Promise<ProjectMetadata> {
-  const path = legacyProjectDatabasePath({ discoveryContext, projectId });
-  const exists = await pathExists({ path });
-  if (!exists) {
-    return emptyProjectMetadata({ projectId, readStatus: "missing" });
-  }
-
-  try {
-    const database = await openSqliteDatabase({
-      path,
-      fileMustExist: true,
-      readonly: true,
-    });
-    try {
-      const project = readMaybeRow<{
-        id: string;
-        workspace_id: string;
-        title: string | null;
-        objective: string | null;
-        updated_at: string | null;
-      }>({
-        database,
-        sql: `
-          SELECT id, workspace_id, title, objective, updated_at
-          FROM projects
-          WHERE workspace_id = ? OR id = ?
-          ORDER BY updated_at DESC, id DESC
-          LIMIT 1
-        `,
-        params: [projectId, projectId],
-      });
-      const workspace = project
-        ? readMaybeRow<{ repo_path: string }>({
-            database,
-            sql: "SELECT repo_path FROM workspaces WHERE id = ? LIMIT 1",
-            params: [project.workspace_id],
-          })
-        : null;
-
-      if (!project) {
-        return emptyProjectMetadata({ projectId, readStatus: "missing" });
-      }
-
-      return {
-        projectId,
-        workspaceId: project.workspace_id,
-        repoPath: workspace?.repo_path ?? null,
-        objectiveTitle: project.title ?? project.objective ?? null,
-        updatedAt: project.updated_at ?? null,
-        activeSessionStartedAt: null,
-        readStatus: "found",
-      };
-    } finally {
-      database.close();
-    }
-  } catch {
-    return emptyProjectMetadata({ projectId, readStatus: "unreadable" });
-  }
-}
-
 function metadataFromProductRow(row: ProductProjectRow): ProjectMetadata {
   return {
     projectId: row.project_id,
@@ -407,41 +331,7 @@ function metadataFromProductRow(row: ProductProjectRow): ProjectMetadata {
   };
 }
 
-function metadataFromLegacyRegistryRow(row: LegacyRegistryRow): ProjectMetadata {
-  return {
-    projectId: row.project_id,
-    workspaceId: row.project_id,
-    repoPath: row.repo_path,
-    objectiveTitle: null,
-    updatedAt: latestTimestamp({
-      values: [row.last_seen_at, row.last_opened_at],
-    }),
-    activeSessionStartedAt: null,
-    readStatus: "found",
-  };
-}
-
-function readMaybeRow<RowType>({
-  database,
-  sql,
-  params = [],
-}: {
-  database: SqliteDatabase;
-  sql: string;
-  params?: unknown[];
-}): RowType | null {
-  try {
-    return (database.get(sql, params) as RowType | null) ?? null;
-  } catch (error) {
-    if (isMissingTableError({ error })) {
-      return null;
-    }
-
-    throw error;
-  }
-}
-
-async function listLegacyProjectIds({
+async function listProjectDirectoryIds({
   discoveryContext,
 }: {
   discoveryContext: DiscoveryContext;
@@ -463,59 +353,7 @@ async function listLegacyProjectIds({
     }
   }
 
-  for (const row of await readLegacyRegistryMetadata({ discoveryContext })) {
-    if (isProjectId({ value: row.projectId })) {
-      projectIds.add(row.projectId);
-    }
-  }
-
   return Array.from(projectIds);
-}
-
-async function readLegacyRegistryMetadata({
-  discoveryContext,
-}: {
-  discoveryContext: DiscoveryContext;
-}): Promise<ProjectMetadata[]> {
-  const path = productDatabasePath({ discoveryContext });
-  const exists = await pathExists({ path });
-  if (!exists) {
-    return [];
-  }
-
-  try {
-    const database = await openSqliteDatabase({
-      path,
-      readonly: true,
-      fileMustExist: true,
-    });
-    try {
-      if (isProductDatabase({ database })) {
-        return [];
-      }
-      return legacyRegistryRows({ database }).map(metadataFromLegacyRegistryRow);
-    } finally {
-      database.close();
-    }
-  } catch {
-    return [];
-  }
-}
-
-function legacyRegistryRows({ database }: { database: SqliteDatabase }): LegacyRegistryRow[] {
-  try {
-    return database.all(`
-      SELECT project_id, repo_path, label, last_seen_at, last_opened_at
-      FROM projects
-      WHERE archived_at IS NULL
-      ORDER BY COALESCE(last_seen_at, last_opened_at, discovered_at) DESC
-    `) as LegacyRegistryRow[];
-  } catch (error) {
-    if (isMissingTableError({ error })) {
-      return [];
-    }
-    throw error;
-  }
 }
 
 async function readSessionRecord({
@@ -756,13 +594,6 @@ function storedProjectStatusDetails({
     };
   }
 
-  if (metadata.readStatus === "unreadable") {
-    return {
-      status: "stale",
-      reason: "project_database_unreadable",
-    };
-  }
-
   return {
     status: "stopped",
     reason: "no_active_session",
@@ -792,10 +623,6 @@ function statusReasonLabel({
 
   if (reason === "invalid_session_file") {
     return "Session file is invalid";
-  }
-
-  if (reason === "project_database_unreadable") {
-    return "Project database could not be read";
   }
 
   return "No active session found";
@@ -862,16 +689,6 @@ function productDatabasePath({
   return resolve(discoveryContext.situHome, "situ.sqlite");
 }
 
-function legacyProjectDatabasePath({
-  discoveryContext,
-  projectId,
-}: {
-  discoveryContext: DiscoveryContext;
-  projectId: string;
-}): string {
-  return resolve(projectsDirectory({ discoveryContext }), projectId, "situ.sqlite");
-}
-
 function sessionPath({
   discoveryContext,
   projectId,
@@ -918,10 +735,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function isMissingPathError({ error }: { error: unknown }): boolean {
   return error instanceof Error && "code" in error && error.code === "ENOENT";
-}
-
-function isMissingTableError({ error }: { error: unknown }): boolean {
-  return error instanceof Error && error.message.includes("no such table:");
 }
 
 async function pathExists({ path }: { path: string }): Promise<boolean> {

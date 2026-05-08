@@ -731,7 +731,7 @@ async def test_baseline_tools_create_update_and_list(repos: Repositories) -> Non
         deps=deps,
         baseline_id="B1",
         status="closed",
-        summary="Baseline accepted for comparison.",
+        summary="Baseline selected for comparison.",
     )
     assert updated.success is True
     assert updated.baseline is not None
@@ -794,11 +794,6 @@ async def test_evaluation_tools_create_update_list_and_add_results(
     assert result.measurement["payload"]["metrics"] == {
         "score": {"value": 0.71}
     }
-    assert result.activity is not None
-    assert result.activity["kind"] == "result"
-    assert result.activity["body"] == "Baseline command passed with score 0.71."
-    assert result.activity["payload"]["activity_type"] == "result"
-    assert result.activity["payload"]["measurement_id"] == result.measurement["id"]
 
     updated = await invoke_situ_tool(
         tool=UpdateEvaluationTool(),
@@ -817,11 +812,6 @@ async def test_evaluation_tools_create_update_list_and_add_results(
         deps=deps,
         baseline_id=baseline.baseline["id"],
     )
-    activities = await invoke_situ_tool(
-        tool=ListEvaluationActivitiesTool(),
-        deps=deps,
-        evaluation_id="EV1",
-    )
     measurements = await repos.measurements.list_for_evaluation(evaluation_id="EV1")
 
     assert listed.success is True
@@ -832,7 +822,6 @@ async def test_evaluation_tools_create_update_list_and_add_results(
         "M1"
     ]
     assert [measurement.id for measurement in measurements] == ["M1"]
-    assert [activity["id"] for activity in activities.activities] == [1]
     assert [event["type"] for event in emitted] == [
         "baseline.created",
         "evaluation.created",
@@ -1044,6 +1033,7 @@ async def test_comment_tools_write_activity_records(repos: Repositories) -> None
     assert experiment_review.activity["actor"] == "critic"
     assert experiment_review.activity["payload"] == {
         "activity_type": "critic_review",
+        "work_type": "review_experiment",
         "verdict": "needs_reproduction",
         "recommended_next_step": "reproduce",
         "evidence_summary": "One measurement improved, but there is no repeated run.",
@@ -1139,7 +1129,7 @@ async def test_workspace_toolset_uses_repo_path_backend(tmp_path: Path) -> None:
     marker.write_text("workspace marker", encoding="utf-8")
     deps = SituToolDeps(session_id="S1", repo_path=str(tmp_path))
 
-    result = deps.backend.execute(
+    result = await deps.backend.execute(
         "pwd && printf '\\n---\\n' && cat marker.txt",
         timeout=5,
     )
@@ -1176,11 +1166,11 @@ async def test_workspace_backend_routes_run_log_to_runtime_artifacts(tmp_path: P
         repo_path=str(workspace),
     )
 
-    write_result = deps.backend.execute(
+    write_result = await deps.backend.execute(
         "printf 'score: 1\\n' > run.log 2>&1",
         timeout=5,
     )
-    read_result = deps.backend.execute("grep '^score:' run.log", timeout=5)
+    read_result = await deps.backend.execute("grep '^score:' run.log", timeout=5)
 
     runtime_log = (
         project_dir
@@ -1237,7 +1227,7 @@ async def test_workspace_backend_records_command_receipt_artifacts(
         source_kind="manager",
     )
 
-    result = deps.backend.execute("cat metric.txt", timeout=5)
+    result = await deps.backend.execute("cat metric.txt", timeout=5)
     await deps.flush_command_receipts()
 
     artifacts = await repos.artifacts.list_for_project(project_id="P1")

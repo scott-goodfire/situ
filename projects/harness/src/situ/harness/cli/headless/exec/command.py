@@ -36,7 +36,6 @@ def run(args: argparse.Namespace) -> int:
 
     try:
         session_process, session = start_session_server(
-            app_root,
             workspace,
             env,
             quiet=True,

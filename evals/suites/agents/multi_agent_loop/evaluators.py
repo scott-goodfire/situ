@@ -138,6 +138,51 @@ class RoleToolSucceeded(
         )
 
 
+@dataclass
+class RoleToolCalledSuccessfully(
+    Evaluator[MultiAgentLoopEvalInput, MultiAgentLoopEvalOutput, Any]
+):
+    role: str
+    tool_name: str
+
+    def evaluate(
+        self,
+        ctx: EvaluatorContext[
+            MultiAgentLoopEvalInput,
+            MultiAgentLoopEvalOutput,
+            Any,
+        ],
+    ) -> EvaluationReason:
+        matches = [
+            call
+            for call in calls_for_role(ctx.output, self.role)
+            if call.tool_name == self.tool_name
+        ]
+        if not matches:
+            return EvaluationReason(
+                value=False,
+                reason=f"{self.role} did not call {self.tool_name}",
+            )
+        failures = [
+            call.result
+            for call in matches
+            if call.result.get("success") is not True or call.result.get("error")
+        ]
+        if failures:
+            return EvaluationReason(
+                value=False,
+                reason=f"{self.role} {self.tool_name} failures: {failures}",
+            )
+        return EvaluationReason(
+            value=True,
+            reason=(
+                f"{self.role} {self.tool_name} called successfully "
+                f"{len(matches)} time(s)"
+            ),
+        )
+
+
+@dataclass
 class ScientistCompletedBaselineTask(
     Evaluator[MultiAgentLoopEvalInput, MultiAgentLoopEvalOutput, Any]
 ):
@@ -166,6 +211,7 @@ class ScientistCompletedBaselineTask(
         )
 
 
+@dataclass
 class BaselineEvaluationRecorded(
     Evaluator[MultiAgentLoopEvalInput, MultiAgentLoopEvalOutput, Any]
 ):
@@ -176,39 +222,32 @@ class BaselineEvaluationRecorded(
             MultiAgentLoopEvalOutput,
             Any,
         ],
-    ) -> EvaluationReason:
+        ) -> EvaluationReason:
         evaluations = ctx.output.project_board.get("evaluations", [])
         measurements = ctx.output.project_board.get("measurements", [])
-        activities = ctx.output.project_board.get("evaluation_activities", [])
         result_measurements = [
             measurement
             for measurement in measurements
             if "val_bpb" in json.dumps(measurement, sort_keys=True).lower()
         ]
-        result_activities = [
-            activity
-            for activity in activities
-            if activity.get("kind") == "result"
-            and "val_bpb" in json.dumps(activity, sort_keys=True).lower()
-        ]
-        if evaluations and (result_measurements or result_activities):
+        if evaluations and result_measurements:
             return EvaluationReason(
                 value=True,
                 reason=(
                     "Found evaluation measurement evidence: "
-                    f"{[item.get('id') for item in result_measurements or result_activities]}"
+                    f"{[item.get('id') for item in result_measurements]}"
                 ),
             )
         return EvaluationReason(
             value=False,
             reason=(
                 "Missing baseline evaluation/measurement evidence. "
-                f"Evaluations: {evaluations}; measurements: {measurements}; "
-                f"activities: {activities}"
+                f"Evaluations: {evaluations}; measurements: {measurements}"
             ),
         )
 
 
+@dataclass
 class FollowupTaskCreatedAfterBaseline(
     Evaluator[MultiAgentLoopEvalInput, MultiAgentLoopEvalOutput, Any]
 ):
@@ -240,6 +279,7 @@ class FollowupTaskCreatedAfterBaseline(
         )
 
 
+@dataclass
 class CandidateExperimentRecorded(
     Evaluator[MultiAgentLoopEvalInput, MultiAgentLoopEvalOutput, Any]
 ):
@@ -254,7 +294,7 @@ class CandidateExperimentRecorded(
         graph = ctx.output.project_board
         experiments = graph.get("experiments", [])
         evaluations = graph.get("evaluations", [])
-        activities = graph.get("evaluation_activities", [])
+        measurements = graph.get("measurements", [])
         experiment_ids = {
             experiment.get("id")
             for experiment in experiments
@@ -267,10 +307,10 @@ class CandidateExperimentRecorded(
             if evaluation.get("associated_experiment_id") in experiment_ids
         ]
         component_results = [
-            activity
-            for activity in activities
-            if "component_a" in json.dumps(activity, sort_keys=True).lower()
-            and "val_bpb" in json.dumps(activity, sort_keys=True).lower()
+            measurement
+            for measurement in measurements
+            if "component_a" in json.dumps(measurement, sort_keys=True).lower()
+            and "val_bpb" in json.dumps(measurement, sort_keys=True).lower()
         ]
         if experiment_ids and linked_evaluations and component_results:
             return EvaluationReason(
@@ -285,11 +325,12 @@ class CandidateExperimentRecorded(
             reason=(
                 "Missing component A experiment/evaluation/result. "
                 f"Experiments: {experiments}; evaluations: {evaluations}; "
-                f"activities: {activities}"
+                f"measurements: {measurements}"
             ),
         )
 
 
+@dataclass
 class AnalysisRecorded(
     Evaluator[MultiAgentLoopEvalInput, MultiAgentLoopEvalOutput, Any]
 ):
@@ -374,6 +415,7 @@ class TaskClaimedByRole(
         )
 
 
+@dataclass
 class ResearcherHandoffRecorded(
     Evaluator[MultiAgentLoopEvalInput, MultiAgentLoopEvalOutput, Any]
 ):
@@ -422,6 +464,7 @@ class ResearcherHandoffRecorded(
         )
 
 
+@dataclass
 class WebSourceAnalysisRecorded(
     Evaluator[MultiAgentLoopEvalInput, MultiAgentLoopEvalOutput, Any]
 ):
@@ -470,6 +513,7 @@ class WebSourceAnalysisRecorded(
         )
 
 
+@dataclass
 class UserUrgentTaskPreemptedBacklog(
     Evaluator[MultiAgentLoopEvalInput, MultiAgentLoopEvalOutput, Any]
 ):

@@ -21,6 +21,7 @@ from .comments import (
     AddExperimentLineageDecisionTool,
     AddExperimentReviewTool,
     AddHypothesisCommentTool,
+    AddHypothesisReviewTool,
 )
 from .evaluations import (
     AddEvaluationResultTool,
@@ -162,25 +163,30 @@ CRITIC_TOOLSET_INSTRUCTIONS = inspect.cleandoc(
     """
     This toolset is the Situ critic surface.
 
-    Use it to review a completed candidate experiment as the proposed change.
-    If the prompt gives you an assigned review task ID, call
-    `get_task(task_id=...)` first. Read the experiment, linked task,
-    evaluations, measurements, artifacts,
-    workspace-state activities, and prior concerns before writing judgment.
-    Focus on whether the recorded evidence is decision-grade, suspicious,
-    invalid, or needs reproduction.
+    Use it to review a record as the proposed change. If the prompt gives you
+    an assigned review task ID, call `get_task(task_id=...)` first and inspect
+    its `work_type` to pick the right review method:
 
-    Look specifically for seed hacking, selection on noisy measurements,
-    adaptive overfitting to the same evaluation surface, greedy hill-climbing
-    that discards useful partial results too early, and comparability breaks
-    such as changed tests, evals, fixtures, dependencies, toolchains, commands,
-    or result shapes.
+    - `review_experiment` reviews a completed candidate experiment. Read the
+      experiment, linked task, evaluations, measurements, artifacts,
+      workspace-state activities, and prior concerns before writing judgment.
+      Look for seed hacking, selection on noisy measurements, adaptive
+      overfitting to the same evaluation surface, greedy hill-climbing that
+      discards useful partial results too early, and comparability breaks such
+      as changed tests, evals, fixtures, dependencies, toolchains, commands,
+      or result shapes. Write exactly one experiment review with
+      `add_experiment_review` unless the task is blocked.
+    - `review_hypothesis` reviews a hypothesis as a research thread before it
+      drives empirical work. Read the hypothesis, its activity trail, related
+      analyses, and any prior reviews. Check that the hypothesis is concrete,
+      testable, grounded in observed evidence, distinguishable from existing
+      hypotheses, and worded so an experiment can be designed against it.
+      Write exactly one hypothesis review with `add_hypothesis_review` unless
+      the task is blocked.
 
-    Write exactly one experiment review with `add_experiment_review` for the
-    active review task unless the task is blocked. Use experiment comments only
-    for extra context that should remain separate from the review. Link the
-    active task to the experiment, evaluations, measurements, or artifacts that
-    were central to the review, and mark the review task done when complete.
+    Use comments only for extra context that should remain separate from the
+    review. Link the active task to the records that were central to the
+    review, and mark the review task done when complete.
     """
 )
 
@@ -336,11 +342,15 @@ def build_critic_toolset() -> FunctionToolset[SituToolDeps]:
             ListExperimentsTool().as_tool(),
             ListEvaluationsTool().as_tool(),
             ListMeasurementsTool().as_tool(),
+            ListAnalysisActivitiesTool().as_tool(),
+            ListHypothesisActivitiesTool().as_tool(),
             ListExperimentActivitiesTool().as_tool(),
             ListEvaluationActivitiesTool().as_tool(),
             ListArtifactsTool().as_tool(),
             AddExperimentCommentTool().as_tool(),
             AddExperimentReviewTool().as_tool(),
+            AddHypothesisCommentTool().as_tool(),
+            AddHypothesisReviewTool().as_tool(),
         ],
     )
 
@@ -393,11 +403,8 @@ def _add_execute_tool(
             timeout: Maximum execution time in seconds.
         """
         backend = ctx.deps.backend
-        if not hasattr(backend, "execute_async"):
-            return "Error: Backend does not support async command execution"
-
         try:
-            result = await backend.execute_async(command, timeout=timeout)
+            result = await backend.execute(command, timeout=timeout)
         except RuntimeError as error:
             return f"Error: {error}"
 

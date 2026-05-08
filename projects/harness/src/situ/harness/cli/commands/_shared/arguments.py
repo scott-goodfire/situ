@@ -11,14 +11,6 @@ def add_workspace_argument(parser: argparse.ArgumentParser) -> None:
     )
 
 
-def add_json_argument(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument(
-        "--json",
-        action="store_true",
-        help="accepted for agent CLI compatibility; output is always JSON/JSONL",
-    )
-
-
 def add_setup_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--objective", help="initial objective for first-time setup")
     parser.add_argument(

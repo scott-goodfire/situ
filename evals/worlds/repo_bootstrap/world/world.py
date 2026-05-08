@@ -5,6 +5,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any
 
+import aiofiles
+import aiofiles.os
 from situ.harness.api.project_board import ProjectBoardService
 from situ.harness.core.db import Database
 from situ.harness.core.git import run_git
@@ -134,8 +136,6 @@ class RepoBootstrapWorld:
         self._tmp = TemporaryDirectory()
         self.root = Path(self._tmp.name)
         self.workspace_path = self.root / "fixture-repo"
-        self.workspace_path.mkdir(parents=True)
-        self._write_fixture_repo()
 
         self.repos: Repositories
         self.events: list[EvalEvent] = []
@@ -144,6 +144,8 @@ class RepoBootstrapWorld:
     @classmethod
     async def create(cls, *, seed: RepoBootstrapSeed) -> "RepoBootstrapWorld":
         world = cls(seed=seed)
+        await aiofiles.os.makedirs(world.workspace_path, exist_ok=True)
+        await world._write_fixture_repo()
         await world._init_git_repo()
         world.repos = await _build_repos(world.root / "state", world.workspace_path)
         await _seed(world.repos, seed)
@@ -206,6 +208,7 @@ class RepoBootstrapWorld:
             "hypotheses": [item.model_dump() for item in graph.hypotheses],
             "experiments": [item.model_dump() for item in graph.experiments],
             "evaluations": [item.model_dump() for item in graph.evaluations],
+            "measurements": [item.model_dump() for item in graph.measurements],
             "hypothesis_experiment_links": [
                 item.model_dump() for item in graph.hypothesis_experiment_links
             ],
@@ -236,12 +239,14 @@ class RepoBootstrapWorld:
             if current.get(relative_path) != f"{original}\n"
         ]
 
-    def _write_fixture_repo(self) -> None:
+    async def _write_fixture_repo(self) -> None:
         for relative_path, content in FIXTURE_FILES.items():
-            (self.workspace_path / relative_path).write_text(
-                f"{content}\n",
+            async with aiofiles.open(
+                self.workspace_path / relative_path,
+                "w",
                 encoding="utf-8",
-            )
+            ) as file:
+                await file.write(f"{content}\n")
 
     async def _init_git_repo(self) -> None:
         await run_git(self.workspace_path, "init")
@@ -252,7 +257,7 @@ class RepoBootstrapWorld:
 
 
 async def _build_repos(path: Path, workspace_path: Path) -> Repositories:
-    path.mkdir(parents=True)
+    await aiofiles.os.makedirs(path, exist_ok=True)
     db = Database(
         path / "situ.sqlite",
         workspace_id=WORKSPACE_ID,
@@ -316,24 +321,6 @@ async def _seed(repos: Repositories, seed: RepoBootstrapSeed) -> None:
             evaluation_id=BASELINE_EVALUATION_ID,
             created_in_session_id=SESSION_ID,
             actor="worker",
-            body=(
-                "Baseline command: `python train.py`\n\n"
-                "```text\n"
-                "component: baseline\n"
-                "val_bpb: 2.713\n"
-                "train_time_s: 0.18\n"
-                "status: ok\n"
-                "```\n\n"
-                "Interpretation: baseline evidence is available; lower "
-                "val_bpb is better."
-            ),
-            payload={},
-        )
-        await repos.evaluation_activities.add(
-            evaluation_id=BASELINE_EVALUATION_ID,
-            created_in_session_id=SESSION_ID,
-            actor="worker",
-            kind="result",
             body=(
                 "Baseline command: `python train.py`\n\n"
                 "```text\n"

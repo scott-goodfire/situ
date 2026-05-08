@@ -36,7 +36,6 @@ def base_env(app_root: Path | None, workspace: Path | None = None) -> dict[str, 
 
 
 def start_app_server(
-    app_root: Path | None,
     env: dict[str, str],
     *,
     quiet: bool = False,
@@ -59,7 +58,6 @@ def start_app_server(
 
 
 def start_session_server(
-    app_root: Path | None,
     workspace: Path,
     env: dict[str, str],
     *,
@@ -83,15 +81,13 @@ def start_session_server(
 
 
 def _session_server_command() -> tuple[list[str], Path | None]:
-    runtime = resolve_bundled_runtime("session-server", source_dir="session-server")
+    runtime = resolve_bundled_runtime("session-server")
     if runtime is None:
         raise RuntimeError(
             "could not resolve session-server runtime; "
             "set SITU_APP_ROOT for source mode or reinstall Situ"
         )
-    if runtime.kind == "installed":
-        return [str(runtime.path)], None
-    return ["bun", "run", "dev"], runtime.source_cwd
+    return runtime.subprocess_args()
 
 
 def wait_for_session(path: Path, process: subprocess.Popen[bytes]) -> dict[str, str]:

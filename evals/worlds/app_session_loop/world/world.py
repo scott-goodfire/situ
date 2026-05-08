@@ -4,6 +4,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any
 
+import aiofiles
+import aiofiles.os
 from situ.harness.app import HarnessApp
 from situ.harness.config import LocalSecretStore, SituSecrets
 from situ.harness.core.dbos.runtime import reset_dbos_for_tests
@@ -30,8 +32,6 @@ class AppSessionLoopWorld:
         self._tmp = TemporaryDirectory()
         self.root = Path(self._tmp.name)
         self.workspace_path = self.root / "fixture-repo"
-        self.workspace_path.mkdir(parents=True)
-        self._write_fixture_repo()
 
         self.app = HarnessApp(
             self.workspace_path,
@@ -44,6 +44,8 @@ class AppSessionLoopWorld:
     @classmethod
     async def create(cls, args: AppSessionLoopEvalInput) -> "AppSessionLoopWorld":
         world = cls(args)
+        await aiofiles.os.makedirs(world.workspace_path, exist_ok=True)
+        await world._write_fixture_repo()
         await world._init_git_repo()
         world.workspace = await world.app.repos.workspaces.ensure()
         world.project = await world.app.repos.projects.create(
@@ -151,12 +153,14 @@ class AppSessionLoopWorld:
             if current.get(relative_path) != f"{original}\n"
         ]
 
-    def _write_fixture_repo(self) -> None:
+    async def _write_fixture_repo(self) -> None:
         for relative_path, content in FIXTURE_FILES.items():
-            (self.workspace_path / relative_path).write_text(
-                f"{content}\n",
+            async with aiofiles.open(
+                self.workspace_path / relative_path,
+                "w",
                 encoding="utf-8",
-            )
+            ) as file:
+                await file.write(f"{content}\n")
 
     async def _init_git_repo(self) -> None:
         await run_git(self.workspace_path, "init")
@@ -198,24 +202,6 @@ class AppSessionLoopWorld:
             evaluation_id=BASELINE_EVALUATION_ID,
             created_in_session_id=self.session_id,
             actor="worker",
-            body=(
-                "Baseline command: `python train.py`\n\n"
-                "```text\n"
-                "component: baseline\n"
-                "val_bpb: 2.713\n"
-                "train_time_s: 0.18\n"
-                "status: ok\n"
-                "```\n\n"
-                "Interpretation: baseline evidence is available; lower "
-                "val_bpb is better."
-            ),
-            payload={},
-        )
-        await self.app.repos.evaluation_activities.add(
-            evaluation_id=BASELINE_EVALUATION_ID,
-            created_in_session_id=self.session_id,
-            actor="worker",
-            kind="result",
             body=(
                 "Baseline command: `python train.py`\n\n"
                 "```text\n"

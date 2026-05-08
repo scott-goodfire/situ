@@ -27,10 +27,8 @@ class AddEvaluationResultTool(
     ) -> AddEvaluationResult:
         """Record one measurement under an evaluation.
 
-        The tool name is kept for existing agents, but the durable evidence
-        record is a measurement. A legacy evaluation activity is also written
-        while existing UI surfaces still read that trail. Metric payloads may
-        use shorthand values, but are normalized to typed metric value objects.
+        Metric payloads may use shorthand values, but are normalized to typed
+        metric value objects.
         """
         result_payload = {
             "activity_type": "result",
@@ -45,27 +43,16 @@ class AddEvaluationResultTool(
             body=result,
             payload=result_payload,
         )
-        activity = await repos.evaluation_activities.add(
-            evaluation_id=evaluation_id,
-            created_in_session_id=ctx.deps.session_id,
-            actor=actor,
-            kind="result",
-            body=result,
-            payload={**result_payload, "measurement_id": measurement.id},
-        )
         event = await ctx.deps.record_event(
             event_type="evaluation.result_added",
             message=result,
             payload={
                 "measurement_id": measurement.id,
-                "activity_id": activity.id,
                 "evaluation_id": evaluation_id,
             },
         )
         await ctx.deps.publish_record(record=measurement, event=event)
-        await ctx.deps.publish_record(record=activity, event=event)
         return AddEvaluationResult(
             success=True,
             measurement=measurement.model_dump(),
-            activity=activity.model_dump(),
         )

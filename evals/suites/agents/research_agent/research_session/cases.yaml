@@ -1,0 +1,60 @@
+# yaml-language-server: $schema=cases.schema.json
+name: research_session_planning
+cases:
+  - name: creates_baseline_measurement_thread
+    inputs:
+      seed: needs_baseline
+      prompt: |
+        Take a look at the current project first. We do not have a baseline
+        yet, so create a baseline titled "Baseline first" with the summary
+        "Reference condition before variants." Then create an evaluation
+        associated with that baseline titled "Baseline measurement plan"
+        with the summary "Record a baseline before variants." Mention
+        "baseline is the first step" in your summary.
+    evaluators:
+      - ToolCalledSuccessfully: get_project_board
+      - ToolCalledSuccessfully: create_baseline
+      - ToolCalledSuccessfully: create_evaluation
+      - ToolArgsContain: {tool_name: create_baseline, text: Baseline first}
+      - ToolArgsContain: {tool_name: create_evaluation, text: Baseline measurement plan}
+      - ProjectBoardContains: Baseline measurement plan
+      - ContentContains: baseline is the first step
+
+  - name: creates_followup_after_baseline
+    inputs:
+      seed: with_baseline_result
+      prompt: |
+        Please review the current project. The baseline result is already
+        recorded, so set up the next experiment as "Try component A" with
+        the summary "Compare component A against baseline." Connect it to
+        hypothesis H1, leave an experiment comment that says "compare
+        against baseline", and make component A the clear next focus in
+        your response.
+    evaluators:
+      - ToolCalledSuccessfully: get_project_board
+      - ToolCalledSuccessfully: create_experiment
+      - ToolCalledSuccessfully: link_hypothesis_experiment
+      - ToolCalledSuccessfully: add_experiment_comment
+      - ToolArgsContain: {tool_name: create_experiment, text: Try component A}
+      - ProjectBoardContains: compare against baseline
+      - ContentContains: component A
+
+  - name: proposes_combination_from_promising_results
+    inputs:
+      seed: with_promising_results
+      prompt: |
+        Look over the project board. The recent results make A and C look
+        promising, so propose the combined follow-up as an experiment titled
+        "Try A+C" with the summary "Combine the two promising components."
+        Link it to hypothesis H1. Also leave a hypothesis comment that says
+        "A and C are promising", and make sure your response names A+C as
+        the next move.
+    evaluators:
+      - ToolCalledSuccessfully: get_project_board
+      - ToolCalledSuccessfully: create_experiment
+      - ToolCalledSuccessfully: link_hypothesis_experiment
+      - ToolCalledSuccessfully: add_hypothesis_comment
+      - ToolArgsContain: {tool_name: create_experiment, text: Try A+C}
+      - ProjectBoardContains: A and C are promising
+      - ProjectBoardContains: Try A+C
+      - ContentContains: A+C

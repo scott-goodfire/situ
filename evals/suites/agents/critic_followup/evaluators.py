@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 from pydantic_evals.evaluators import EvaluationReason, Evaluator, EvaluatorContext
@@ -105,6 +105,43 @@ class ManagerToolSucceeded(
         )
 
 
+@dataclass
+class ManagerToolCalledSuccessfully(
+    Evaluator[CriticFollowupEvalInput, CriticFollowupEvalOutput, Any]
+):
+    tool_name: str
+
+    def evaluate(
+        self,
+        ctx: EvaluatorContext[CriticFollowupEvalInput, CriticFollowupEvalOutput, Any],
+    ) -> EvaluationReason:
+        matches = [
+            call
+            for call in ctx.output.manager_tool_calls
+            if call.tool_name == self.tool_name
+        ]
+        if not matches:
+            return EvaluationReason(
+                value=False,
+                reason=f"Manager did not call {self.tool_name}",
+            )
+        failures = [
+            call.result
+            for call in matches
+            if call.result.get("success") is not True or call.result.get("error")
+        ]
+        if failures:
+            return EvaluationReason(
+                value=False,
+                reason=f"Manager {self.tool_name} failures: {failures}",
+            )
+        return EvaluationReason(
+            value=True,
+            reason=f"Manager {self.tool_name} called successfully {len(matches)} time(s)",
+        )
+
+
+@dataclass
 class ManagerCreatedFollowupTask(
     Evaluator[CriticFollowupEvalInput, CriticFollowupEvalOutput, Any]
 ):
@@ -128,10 +165,7 @@ class ManagerCreatedFollowupTask(
 class FollowupTaskKindIn(
     Evaluator[CriticFollowupEvalInput, CriticFollowupEvalOutput, Any]
 ):
-    allowed: tuple[str, ...]
-
-    def __init__(self, *allowed: str) -> None:
-        self.allowed = allowed
+    allowed: list[str] = field(default_factory=list)
 
     def evaluate(
         self,
@@ -157,10 +191,7 @@ class FollowupTaskKindIn(
 class FollowupTaskMentionsAny(
     Evaluator[CriticFollowupEvalInput, CriticFollowupEvalOutput, Any]
 ):
-    needles: tuple[str, ...]
-
-    def __init__(self, *needles: str) -> None:
-        self.needles = needles
+    needles: list[str] = field(default_factory=list)
 
     def evaluate(
         self,

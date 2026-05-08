@@ -50,7 +50,7 @@ def test_status_json_reports_no_active_harness(
     workspace = tmp_path / "workspace"
     workspace.mkdir()
 
-    code = cli.main(["status", str(workspace), "--json"])
+    code = cli.main(["status", str(workspace)])
 
     captured = capsys.readouterr()
     payload = json.loads(captured.out)
@@ -99,7 +99,7 @@ async def test_snapshot_json_reads_local_state_without_live_session(
     )
     await app.handle_async("setup.complete", {})
 
-    code = await asyncio.to_thread(cli.main, ["snapshot", str(workspace), "--json"])
+    code = await asyncio.to_thread(cli.main, ["snapshot", str(workspace)])
 
     captured = capsys.readouterr()
     payload = json.loads(captured.out)
@@ -127,7 +127,7 @@ async def test_events_json_lines_reads_local_events(
     )
     await app.record_event(event_type="system.ready", message="Harness ready")
 
-    code = await asyncio.to_thread(cli.main, ["events", str(workspace), "--json"])
+    code = await asyncio.to_thread(cli.main, ["events", str(workspace)])
 
     captured = capsys.readouterr()
     lines = [json.loads(line) for line in captured.out.splitlines()]
@@ -166,7 +166,7 @@ async def test_clear_removes_local_state_for_workspace(
     await app.record_event(event_type="system.ready", message="Harness ready")
     context = ProjectContext(repo_root=workspace, home=project_home)
 
-    code = await asyncio.to_thread(cli.main, ["clear", str(workspace), "--json"])
+    code = await asyncio.to_thread(cli.main, ["clear", str(workspace)])
 
     captured = capsys.readouterr()
     payload = json.loads(captured.out)
@@ -200,7 +200,7 @@ def test_clear_refuses_active_harness_without_force(
         lambda _workspace: {"pid": 123, "url": "http://127.0.0.1:1", "token": "token"},
     )
 
-    code = cli.main(["clear", str(workspace), "--json"])
+    code = cli.main(["clear", str(workspace)])
 
     captured = capsys.readouterr()
     payload = json.loads(captured.out)
@@ -231,7 +231,7 @@ def test_clear_force_terminates_active_harness_then_removes_state(
         lambda *, session: terminated.append(session),
     )
 
-    code = cli.main(["clear", str(workspace), "--json", "--force"])
+    code = cli.main(["clear", str(workspace), "--force"])
 
     captured = capsys.readouterr()
     payload = json.loads(captured.out)
@@ -251,7 +251,6 @@ def test_exec_uses_shared_rpc_lifecycle_and_prints_final_json(
     calls: list[tuple[str, dict[str, Any]]] = []
 
     def fake_start_session_server(
-        app_root: Path,
         workspace: Path,
         env: dict[str, str],
         *,
@@ -314,7 +313,6 @@ def test_exec_uses_shared_rpc_lifecycle_and_prints_final_json(
         [
             "exec",
             str(workspace),
-            "--json",
             "--objective",
             "Improve the score",
             "--context",
@@ -360,7 +358,6 @@ def test_exec_resumes_latest_session_when_requested_without_id(
     calls: list[tuple[str, dict[str, Any]]] = []
 
     def fake_start_session_server(
-        _app_root: Path,
         _workspace: Path,
         _env: dict[str, str],
         *,
@@ -430,7 +427,6 @@ def test_exec_resumes_latest_session_when_requested_without_id(
         [
             "exec",
             str(workspace),
-            "--json",
             "--resume",
             "--max-experiments",
             "3",
@@ -518,7 +514,6 @@ def test_exec_returns_failure_when_closed_session_has_failed_event(
         [
             "exec",
             str(workspace),
-            "--json",
             "--objective",
             "Improve the score",
             "--context",
@@ -587,7 +582,7 @@ def test_web_launches_project_home_without_workspace(
     monkeypatch.delenv("SITU_WORKSPACE", raising=False)
     monkeypatch.setattr("situ.harness.cli.commands.web.command.subprocess.run", fake_run)
 
-    code = cli.main(["web", str(launch_directory / "missing-workspace"), "--rebuild"])
+    code = cli.main(["web", "--rebuild"])
 
     assert code == 0
     assert len(calls) == 2
@@ -679,10 +674,10 @@ def test_tui_uses_existing_app_server(
 
     def fake_run_tui(
         *,
-        app_root: Path,
+        runtime: Any,
         env: dict[str, str],
     ) -> int:
-        calls.append({"app_root": app_root, "env": env})
+        calls.append({"runtime": runtime, "env": env})
         return 0
 
     monkeypatch.setattr(

@@ -65,7 +65,7 @@ def parse_task_work_type(work_type: TaskWorkType | str) -> TaskWorkType:
 REVIEW_WORK_TYPES = frozenset({TaskWorkType.REVIEW_HYPOTHESIS, TaskWorkType.REVIEW_EXPERIMENT})
 
 
-def ensure_work_type_compatible_with_kind(
+def ensure_work_type_matches_kind(
     *, kind: TaskKind, work_type: TaskWorkType | None
 ) -> None:
     if work_type is None:

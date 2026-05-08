@@ -1442,6 +1442,17 @@
         "kind": {
           "$ref": "#/$defs/TaskKind"
         },
+        "work_type": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TaskWorkType"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "status": {
           "$ref": "#/$defs/TaskStatus"
         },
@@ -1611,6 +1622,14 @@
         "failed"
       ],
       "title": "TaskStatus",
+      "type": "string"
+    },
+    "TaskWorkType": {
+      "enum": [
+        "review_hypothesis",
+        "review_experiment"
+      ],
+      "title": "TaskWorkType",
       "type": "string"
     },
     "WorkStatus": {

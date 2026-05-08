@@ -88,6 +88,7 @@ class PlanningPassCountAtLeast(
         )
 
 
+@dataclass
 class BaselineThenFollowupWork(
     Evaluator[AppSessionLoopEvalInput, AppSessionLoopEvalOutput, Any]
 ):
@@ -149,6 +150,7 @@ class ExperimentCountAtLeast(
         )
 
 
+@dataclass
 class ManagerCompletedAfterCriticReview(
     Evaluator[AppSessionLoopEvalInput, AppSessionLoopEvalOutput, Any]
 ):
@@ -249,6 +251,7 @@ class RecordCountAtLeast(
         )
 
 
+@dataclass
 class ExperimentReviewRecorded(
     Evaluator[AppSessionLoopEvalInput, AppSessionLoopEvalOutput, Any]
 ):
@@ -279,6 +282,7 @@ class ExperimentReviewRecorded(
         )
 
 
+@dataclass
 class ReviewTaskLinksComplete(
     Evaluator[AppSessionLoopEvalInput, AppSessionLoopEvalOutput, Any]
 ):
@@ -317,6 +321,7 @@ class ReviewTaskLinksComplete(
         )
 
 
+@dataclass
 class CommandReceiptArtifactCaptured(
     Evaluator[AppSessionLoopEvalInput, AppSessionLoopEvalOutput, Any]
 ):
@@ -369,6 +374,7 @@ class CommandReceiptArtifactCaptured(
         )
 
 
+@dataclass
 class PatchHandoffArtifactCaptured(
     Evaluator[AppSessionLoopEvalInput, AppSessionLoopEvalOutput, Any]
 ):
@@ -426,6 +432,7 @@ class PatchHandoffArtifactCaptured(
         )
 
 
+@dataclass
 class ExperimentCandidateStateRecorded(
     Evaluator[AppSessionLoopEvalInput, AppSessionLoopEvalOutput, Any]
 ):

@@ -178,6 +178,7 @@ export interface TaskRecord {
   title: string;
   content: string;
   kind: "plan" | "research" | "baseline" | "hypothesize" | "experiment" | "interpret" | "review";
+  work_type?: "review_hypothesis" | "review_experiment" | null;
   status: "backlog" | "in_progress" | "done" | "abandoned" | "failed";
   priority: "urgent" | "high" | "normal" | "low";
   source_kind: "manager" | "user" | "system";

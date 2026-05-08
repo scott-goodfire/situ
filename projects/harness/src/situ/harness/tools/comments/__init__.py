@@ -6,6 +6,7 @@ from .add_experiment_lineage_decision import (
 )
 from .add_experiment_review import AddExperimentReviewResult, AddExperimentReviewTool
 from .add_hypothesis_comment import AddHypothesisCommentResult, AddHypothesisCommentTool
+from .add_hypothesis_review import AddHypothesisReviewResult, AddHypothesisReviewTool
 
 __all__ = [
     "AddAnalysisCommentResult",
@@ -18,4 +19,6 @@ __all__ = [
     "AddExperimentReviewTool",
     "AddHypothesisCommentResult",
     "AddHypothesisCommentTool",
+    "AddHypothesisReviewResult",
+    "AddHypothesisReviewTool",
 ]

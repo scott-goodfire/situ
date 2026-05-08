@@ -12,7 +12,7 @@ RepoBootstrapSeed = Literal[
 
 
 class RepoBootstrapEvalInput(EvalModel):
-    case_id: str
+    case_id: str = ""
     seed: RepoBootstrapSeed
     objective: str = "Improve validation bits per byte while preserving comparison integrity."
     prompt: str

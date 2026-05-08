@@ -10,7 +10,7 @@ from ...local_session import base_env, read_live_app
 
 
 def run(args: argparse.Namespace) -> int:
-    runtime = resolve_bundled_runtime("session-server", source_dir="session-server")
+    runtime = resolve_bundled_runtime("session-server")
     if runtime is None:
         print(
             "could not resolve session-server runtime; "
@@ -26,12 +26,5 @@ def run(args: argparse.Namespace) -> int:
 
     app_root = resolve_app_root(Path(__file__)) if runtime.kind == "source" else None
     env = base_env(app_root)
-
-    if runtime.kind == "installed":
-        argv: list[str] = [str(runtime.path)]
-        cwd: Path | None = None
-    else:
-        argv = ["bun", "run", "dev"]
-        cwd = runtime.source_cwd
-
+    argv, cwd = runtime.subprocess_args()
     return subprocess.run(argv, cwd=cwd, env=env).returncode

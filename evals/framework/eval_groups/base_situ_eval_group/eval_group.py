@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from pathlib import Path
 import re
-from typing import Any, ClassVar, Generic, Sequence, TypeVar, get_args
+from typing import Any, ClassVar, Generic, Sequence, TypeVar
 
 from pydantic import BaseModel, ConfigDict
 from pydantic_evals import Case, Dataset
@@ -73,9 +73,12 @@ class BaseSituEvalGroup(BaseModel, Generic[T_Input, T_Output]):
 
     @classmethod
     def _concrete_io_types(cls) -> tuple[type, type]:
-        for base in getattr(cls, "__orig_bases__", ()):
-            args = get_args(base)
-            if len(args) >= 2:
+        for ancestor in cls.__mro__:
+            meta = getattr(ancestor, "__pydantic_generic_metadata__", None)
+            if not meta:
+                continue
+            args = meta.get("args") or ()
+            if len(args) >= 2 and not _is_typevar(args[0]) and not _is_typevar(args[1]):
                 return args[0], args[1]
         raise RuntimeError(
             f"Cannot resolve T_Input/T_Output for {cls.__name__}; "
@@ -105,3 +108,7 @@ def _autofill_case_id(case: Case[Any, Any]) -> None:
 
 def _eval_name_segment(value: str) -> str:
     return re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")
+
+
+def _is_typevar(value: Any) -> bool:
+    return isinstance(value, TypeVar)

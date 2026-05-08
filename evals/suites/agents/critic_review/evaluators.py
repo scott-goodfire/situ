@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 from pydantic_evals.evaluators import EvaluationReason, Evaluator, EvaluatorContext
@@ -129,6 +129,43 @@ class CriticToolSucceeded(
         )
 
 
+@dataclass
+class CriticToolCalledSuccessfully(
+    Evaluator[CriticReviewEvalInput, CriticReviewEvalOutput, Any]
+):
+    tool_name: str
+
+    def evaluate(
+        self,
+        ctx: EvaluatorContext[CriticReviewEvalInput, CriticReviewEvalOutput, Any],
+    ) -> EvaluationReason:
+        matches = [
+            call
+            for call in ctx.output.critic_tool_calls
+            if call.tool_name == self.tool_name
+        ]
+        if not matches:
+            return EvaluationReason(
+                value=False,
+                reason=f"Critic did not call {self.tool_name}",
+            )
+        failures = [
+            call.result
+            for call in matches
+            if call.result.get("success") is not True or call.result.get("error")
+        ]
+        if failures:
+            return EvaluationReason(
+                value=False,
+                reason=f"Critic {self.tool_name} failures: {failures}",
+            )
+        return EvaluationReason(
+            value=True,
+            reason=f"Critic {self.tool_name} called successfully {len(matches)} time(s)",
+        )
+
+
+@dataclass
 class CriticReviewRecorded(
     Evaluator[CriticReviewEvalInput, CriticReviewEvalOutput, Any]
 ):
@@ -151,6 +188,7 @@ class CriticReviewRecorded(
         )
 
 
+@dataclass
 class CriticReviewReferencesEvidence(
     Evaluator[CriticReviewEvalInput, CriticReviewEvalOutput, Any]
 ):
@@ -249,10 +287,7 @@ class CriticReviewReferencesEvidence(
 class CriticVerdictIn(
     Evaluator[CriticReviewEvalInput, CriticReviewEvalOutput, Any]
 ):
-    allowed: tuple[str, ...]
-
-    def __init__(self, *allowed: str) -> None:
-        self.allowed = allowed
+    allowed: list[str] = field(default_factory=list)
 
     def evaluate(
         self,
@@ -277,10 +312,7 @@ class CriticVerdictIn(
 class CriticReviewMentionsAny(
     Evaluator[CriticReviewEvalInput, CriticReviewEvalOutput, Any]
 ):
-    needles: tuple[str, ...]
-
-    def __init__(self, *needles: str) -> None:
-        self.needles = needles
+    needles: list[str] = field(default_factory=list)
 
     def evaluate(
         self,
@@ -302,6 +334,7 @@ class CriticReviewMentionsAny(
         )
 
 
+@dataclass
 class ReviewTaskCompletedByCritic(
     Evaluator[CriticReviewEvalInput, CriticReviewEvalOutput, Any]
 ):
@@ -337,6 +370,7 @@ class ReviewTaskCompletedByCritic(
         )
 
 
+@dataclass
 class CriticDidNotCreateExperimentOrMeasurement(
     Evaluator[CriticReviewEvalInput, CriticReviewEvalOutput, Any]
 ):

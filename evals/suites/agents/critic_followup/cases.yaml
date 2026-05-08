@@ -1,0 +1,74 @@
+# yaml-language-server: $schema=cases.schema.json
+name: critic_followup
+cases:
+  - name: needs_reproduction_creates_reproduction_task
+    inputs:
+      seed: needs_reproduction
+    evaluators:
+      - ManagerToolWasCalled: get_task
+      - ManagerToolWasCalled: get_project_board
+      - ManagerToolCalledSuccessfully: add_experiment_lineage_decision
+      - ManagerToolCalledSuccessfully: create_task
+      - ProjectBoardContainsReviewVerdict: needs_reproduction
+      - LineageDecisionRecorded:
+          decision: reproduce
+          experiment_id: EX1
+      - ManagerCreatedFollowupTask
+      - FollowupTaskKindIn:
+          allowed: [experiment]
+      - FollowupTaskCarriesLineagePayload:
+          parent_experiment_id: EX1
+          research_thread: component_a
+          base_commit: eval-fixture-candidate-component-a
+      - FollowupTaskMentionsAny:
+          needles: [reproduce, repeat, replicate]
+
+  - name: invalid_review_creates_revise_or_discard_task
+    inputs:
+      seed: invalid
+    evaluators:
+      - ManagerToolWasCalled: get_task
+      - ManagerToolWasCalled: get_project_board
+      - ManagerToolCalledSuccessfully: create_task
+      - ProjectBoardContainsReviewVerdict: invalid
+      - ManagerCreatedFollowupTask
+      - FollowupTaskKindIn:
+          allowed: [research, interpret, experiment]
+      - FollowupTaskMentionsAny:
+          needles: [invalid, discard, revise, comparability, prepare.py]
+
+  - name: human_review_escalates_without_new_candidate
+    inputs:
+      seed: human_review
+    evaluators:
+      - ManagerToolWasCalled: get_task
+      - ManagerToolWasCalled: get_project_board
+      - ManagerToolCalledSuccessfully: create_task
+      - ProjectBoardContainsReviewVerdict: human_review
+      - ManagerCreatedFollowupTask
+      - FollowupTaskKindIn:
+          allowed: [research, interpret]
+      - FollowupTaskMentionsAny:
+          needles: [human, review, blocker, decision]
+
+  - name: usable_review_does_not_overblock
+    inputs:
+      seed: usable
+    evaluators:
+      - ManagerToolWasCalled: get_task
+      - ManagerToolWasCalled: get_project_board
+      - ManagerToolCalledSuccessfully: add_experiment_lineage_decision
+      - ManagerToolCalledSuccessfully: create_task
+      - ProjectBoardContainsReviewVerdict: usable
+      - LineageDecisionRecorded:
+          decision: continue
+          experiment_id: EX1
+      - ManagerCreatedFollowupTask
+      - FollowupTaskKindIn:
+          allowed: [experiment]
+      - FollowupTaskCarriesLineagePayload:
+          parent_experiment_id: EX1
+          research_thread: component_a
+          base_commit: eval-fixture-candidate-component-a
+      - FollowupTaskMentionsAny:
+          needles: [build, combine, next, component]

@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+import aiofiles.os
 import aiosqlite
 
 from .migrations import run_migrations
@@ -32,10 +33,38 @@ class Database:
             raise ValueError("workspace_id is required")
         self.project_id = self.workspace_id
         self.repo_path = repo_path
-        self.path.parent.mkdir(parents=True, exist_ok=True)
-        self._run_migrations()
+        self._initialized = False
+
+    @classmethod
+    async def open(
+        cls,
+        path: Path,
+        *,
+        workspace_id: str | None = None,
+        project_id: str | None = None,
+        repo_path: str,
+    ) -> "Database":
+        db = cls(
+            path,
+            workspace_id=workspace_id,
+            project_id=project_id,
+            repo_path=repo_path,
+        )
+        await db.initialize()
+        return db
+
+    async def initialize(self) -> None:
+        if self._initialized:
+            return
+        await aiofiles.os.makedirs(self.path.parent, exist_ok=True)
+        async with aiosqlite.connect(self.path) as db:
+            await self._configure(db)
+            await run_migrations(db)
+            await db.commit()
+        self._initialized = True
 
     async def execute(self, sql: str, params: Sequence[Any] = ()) -> CursorResult:
+        await self.initialize()
         async with aiosqlite.connect(self.path) as db:
             await self._configure(db)
             cursor = await db.execute(sql, tuple(params))
@@ -49,6 +78,7 @@ class Database:
         sql: str,
         params: Sequence[Any] = (),
     ) -> sqlite3.Row | None:
+        await self.initialize()
         async with aiosqlite.connect(self.path) as db:
             await self._configure(db)
             cursor = await db.execute(sql, tuple(params))
@@ -61,22 +91,13 @@ class Database:
         sql: str,
         params: Sequence[Any] = (),
     ) -> list[sqlite3.Row]:
+        await self.initialize()
         async with aiosqlite.connect(self.path) as db:
             await self._configure(db)
             cursor = await db.execute(sql, tuple(params))
             rows = await cursor.fetchall()
             await cursor.close()
             return list(rows)
-
-    async def close(self) -> None:
-        return None
-
-    def _run_migrations(self) -> None:
-        with sqlite3.connect(self.path) as db:
-            db.row_factory = sqlite3.Row
-            db.execute("PRAGMA journal_mode = WAL")
-            db.execute("PRAGMA foreign_keys = ON")
-            run_migrations(db)
 
     async def _configure(self, db: aiosqlite.Connection) -> None:
         db.row_factory = sqlite3.Row

@@ -17,7 +17,7 @@ MultiAgentLoopSeed = Literal[
 
 
 class MultiAgentLoopEvalInput(EvalModel):
-    case_id: str
+    case_id: str = ""
     seed: MultiAgentLoopSeed
     objective: str = (
         "Improve validation bits per byte while preserving comparison integrity."

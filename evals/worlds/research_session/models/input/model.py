@@ -21,14 +21,14 @@ ResearchSessionSeed = Literal[
 
 
 class ResearchToolEvalInput(EvalModel):
-    case_id: str
+    case_id: str = ""
     seed: ResearchSessionSeed
     prompt: str
     toolset: Literal["scientist", "manager"] = "scientist"
 
 
 class ResearchAgentEvalInput(EvalModel):
-    case_id: str
+    case_id: str = ""
     seed: ResearchSessionSeed
     objective: str = "Improve validation score without worsening latency."
     prompt: str

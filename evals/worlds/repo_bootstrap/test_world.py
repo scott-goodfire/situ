@@ -42,7 +42,7 @@ async def test_repo_bootstrap_world_runs_native_measurement() -> None:
             repos=world.repos,
         )
 
-        result = deps.backend.execute("python train.py", timeout=5)
+        result = await deps.backend.execute("python train.py", timeout=5)
         workspace_state = await _invoke_situ_tool(
             tool=InspectWorkspaceStateTool(),
             deps=deps,
@@ -70,7 +70,7 @@ async def test_repo_bootstrap_world_seeds_baseline_evaluation() -> None:
         assert [item["id"] for item in graph["evaluations"]] == [
             BASELINE_EVALUATION_ID
         ]
-        assert "val_bpb: 2.713" in graph["evaluation_activities"][0]["body"]
+        assert "val_bpb: 2.713" in graph["measurements"][0]["body"]
     finally:
         world.teardown()
 

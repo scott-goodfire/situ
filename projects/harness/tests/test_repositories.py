@@ -251,33 +251,48 @@ async def test_tasks_repository_requeue_moves_task_back_to_backlog(
     assert requeued.payload["planning_pass_count"] == 2
 
 
-async def test_database_hard_resets_legacy_product_record_ids(tmp_path: Path) -> None:
-    db_path = tmp_path / "situ.sqlite"
-    db = Database(
-        db_path,
-        workspace_id="workspace_test",
-        repo_path="/tmp/project",
-    )
-    repos = Repositories.create(db)
+async def test_tasks_repository_persists_work_type_for_review_tasks(
+    repos: Repositories,
+) -> None:
     project = await create_project(repos)
-    await db.execute(
-        "UPDATE projects SET id = ? WHERE id = ?",
-        ("project_legacy_001", project.id),
-    )
-    await db.close()
+    session = await create_session(repos)
 
-    reopened = Database(
-        db_path,
-        workspace_id="workspace_test",
-        repo_path="/tmp/project",
+    task = await repos.tasks.create(
+        task_id="T1",
+        project_id=project.id,
+        created_in_session_id=session.id,
+        title="Review hypothesis H1",
+        content="Review the hypothesis as a research thread.",
+        kind="review",
+        work_type="review_hypothesis",
+        payload={"hypothesis_id": "H1"},
     )
-    reopened_repos = Repositories.create(reopened)
 
-    try:
-        assert await reopened_repos.projects.list_all() == []
-        assert await reopened_repos.workspaces.get() is None
-    finally:
-        await reopened.close()
+    assert task.work_type is not None
+    assert task.work_type.value == "review_hypothesis"
+
+    fetched = await repos.tasks.get(task_id=task.id)
+    assert fetched is not None
+    assert fetched.work_type is not None
+    assert fetched.work_type.value == "review_hypothesis"
+
+
+async def test_tasks_repository_rejects_review_work_type_on_non_review_kind(
+    repos: Repositories,
+) -> None:
+    project = await create_project(repos)
+    session = await create_session(repos)
+
+    with pytest.raises(ValueError, match="requires kind 'review'"):
+        await repos.tasks.create(
+            task_id="T1",
+            project_id=project.id,
+            created_in_session_id=session.id,
+            title="Plan next step",
+            content="File first work.",
+            kind="plan",
+            work_type="review_hypothesis",
+        )
 
 
 async def test_workspace_repository_ensure_get_and_idempotent(repos: Repositories) -> None:
@@ -441,11 +456,11 @@ async def test_baselines_repository_create_update_get_and_list(repos: Repositori
     updated = await repos.baselines.update(
         baseline_id="B1",
         status="closed",
-        summary="Baseline accepted for comparison.",
+        summary="Baseline selected for comparison.",
     )
     assert updated is not None
     assert updated.status == "closed"
-    assert updated.summary == "Baseline accepted for comparison."
+    assert updated.summary == "Baseline selected for comparison."
     assert await repos.baselines.get(baseline_id="B1") == updated
     assert [item.id for item in await repos.baselines.list_for_project(project_id="P1")] == [
         "B1"

@@ -204,9 +204,7 @@ async def run_multi_agent_loop(args: MultiAgentLoopEvalInput) -> MultiAgentLoopE
                     ]
                 ),
                 "evaluations": len(project_board.get("evaluations", [])),
-                "evaluation_activities": len(
-                    project_board.get("evaluation_activities", [])
-                ),
+                "measurements": len(project_board.get("measurements", [])),
                 "changed_files": len(world.changed_files()),
             },
         )

@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from situ.harness.api.project_board import ProjectBoardService
-from situ.harness.records import TaskEntityKind, TaskKind
+from situ.harness.records import TaskEntityKind, TaskKind, TaskWorkType
 from situ.harness.repositories import Repositories
 
 from evals.framework.models import EvalEvent
@@ -140,6 +140,7 @@ class CriticReviewWorld:
                 baseline_measurement_ids=baseline_measurement_ids,
             ),
             kind=TaskKind.REVIEW,
+            work_type=TaskWorkType.REVIEW_EXPERIMENT,
             priority="urgent",
             source_kind="system",
             payload={
@@ -203,17 +204,6 @@ async def _add_baseline_context(repos: Repositories, seed: CriticReviewSeed) -> 
                         "direction": "lower_is_better",
                     }
                 },
-            },
-        )
-        await repos.evaluation_activities.add(
-            evaluation_id=BASELINE_EVALUATION_ID,
-            created_in_session_id=SESSION_ID,
-            actor="worker",
-            kind="result",
-            body=measurement.body,
-            payload={
-                **measurement.payload.to_storage_dict(),
-                "measurement_id": measurement.id,
             },
         )
     return [
@@ -323,17 +313,6 @@ async def _add_candidate_measurements(
             },
         )
         ids.append(measurement.id)
-        await repos.evaluation_activities.add(
-            evaluation_id=CANDIDATE_EVALUATION_ID,
-            created_in_session_id=SESSION_ID,
-            actor="scientist",
-            kind="result",
-            body=body,
-            payload={
-                **measurement.payload.to_storage_dict(),
-                "measurement_id": measurement.id,
-            },
-        )
     return ids
 
 

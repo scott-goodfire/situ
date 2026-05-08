@@ -60,9 +60,7 @@ async def run_repo_bootstrap_agent(args: RepoBootstrapEvalInput) -> RepoBootstra
                 "hypotheses": len(project_board.get("hypotheses", [])),
                 "experiments": len(project_board.get("experiments", [])),
                 "evaluations": len(project_board.get("evaluations", [])),
-                "evaluation_activities": len(
-                    project_board.get("evaluation_activities", [])
-                ),
+                "measurements": len(project_board.get("measurements", [])),
                 "prepare_changed": "prepare.py" in changed_files,
             },
         )

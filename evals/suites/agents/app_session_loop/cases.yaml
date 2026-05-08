@@ -1,0 +1,78 @@
+# yaml-language-server: $schema=cases.schema.json
+name: app_session_loop
+cases:
+  - name: continues_after_baseline_completion
+    inputs:
+      seed: empty_repo
+      max_experiments: 2
+    evaluators:
+      - EventWasEmitted: task.done
+      - EventWasEmitted: session.manager_completed
+      - EventWasEmitted: session.agent_completed
+      - EventWasEmitted: session.completed
+      - PlanningPassCountAtLeast: 2
+      - DoneTaskKindAtLeast: baseline
+      - BaselineThenFollowupWork
+      - ProjectBoardContains: baseline
+      - ChangedFilesDoNotInclude: prepare.py
+
+  - name: candidate_gets_critic_review
+    inputs:
+      seed: with_baseline_result
+      max_experiments: 1
+    evaluators:
+      - EventWasEmitted: task.done
+      - EventWasEmitted: session.manager_completed
+      - EventWasEmitted: session.agent_completed
+      - EventWasEmitted: session.critic_completed
+      - EventWasEmitted: session.completed
+      - EventWasEmitted: artifact.command_receipt_created
+      - EventWasEmitted: experiment.worktree_completed
+      - EventWasEmitted: experiment.patch_captured
+      - TaskDoneByAgentKind: {task_kind: experiment, agent_kind: scientist}
+      - TaskDoneByAgentKind: {task_kind: review, agent_kind: critic}
+      - ExperimentCountAtLeast: 1
+      - ExperimentCandidateStateRecorded
+      - CommandReceiptArtifactCaptured
+      - PatchHandoffArtifactCaptured
+      - ExperimentReviewRecorded
+      - ReviewTaskLinksComplete
+      - ProjectBoardContains: critic_review
+      - ProjectBoardContains: verdict
+      - ProjectBoardContains: component_a
+      - ProjectBoardContains: val_bpb
+      - ChangedFilesExactly: []
+      - ChangedFilesDoNotInclude: prepare.py
+
+  - name: manager_replans_after_critic_review
+    inputs:
+      seed: with_baseline_result
+      max_experiments: 2
+    evaluators:
+      - EventWasEmitted: session.critic_completed
+      - EventWasEmitted: session.manager_completed
+      - ManagerCompletedAfterCriticReview
+      - TaskDoneByAgentKind: {task_kind: review, agent_kind: critic}
+      - PlanningPassCountAtLeast: 2
+      - ProjectBoardContains: critic_review
+      - ChangedFilesDoNotInclude: prepare.py
+
+  - name: researcher_handoff_to_scientist_candidate
+    inputs:
+      seed: with_baseline_no_hypothesis
+      max_experiments: 1
+    evaluators:
+      - EventWasEmitted: task.done
+      - EventWasEmitted: session.manager_completed
+      - EventWasEmitted: session.researcher_completed
+      - EventWasEmitted: session.agent_completed
+      - EventWasEmitted: session.completed
+      - PlanningPassCountAtLeast: 2
+      - TaskDoneByAgentKind: {task_kind: research, agent_kind: researcher}
+      - RecordCountAtLeast: analyses
+      - RecordCountAtLeast: hypotheses
+      - TaskDoneByAgentKind: {task_kind: experiment, agent_kind: scientist}
+      - ExperimentCountAtLeast: 1
+      - ProjectBoardContains: component_a
+      - ProjectBoardContains: val_bpb
+      - ChangedFilesDoNotInclude: prepare.py

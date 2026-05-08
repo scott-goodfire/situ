@@ -12,7 +12,6 @@ from ..headless import (
     headless_wait,
 )
 from ._shared.arguments import (
-    add_json_argument,
     add_setup_arguments,
     add_workspace_argument,
 )
@@ -105,7 +104,6 @@ def main(argv: list[str] | None = None) -> int:
 
     exec_parser = subparsers.add_parser("exec", help="run a headless local session")
     add_workspace_argument(exec_parser)
-    add_json_argument(exec_parser)
     add_setup_arguments(exec_parser)
     exec_parser.add_argument(
         "--resume",
@@ -124,19 +122,15 @@ def main(argv: list[str] | None = None) -> int:
 
     status_parser = subparsers.add_parser("status", help="print local harness status as JSON")
     add_workspace_argument(status_parser)
-    add_json_argument(status_parser)
 
     snapshot_parser = subparsers.add_parser("snapshot", help="print current local state as JSON")
     add_workspace_argument(snapshot_parser)
-    add_json_argument(snapshot_parser)
 
     sessions_parser = subparsers.add_parser("sessions", help="list local sessions as JSON")
     add_workspace_argument(sessions_parser)
-    add_json_argument(sessions_parser)
 
     events_parser = subparsers.add_parser("events", help="print events as JSON Lines")
     add_workspace_argument(events_parser)
-    add_json_argument(events_parser)
     events_parser.add_argument(
         "--follow",
         action="store_true",
@@ -145,7 +139,7 @@ def main(argv: list[str] | None = None) -> int:
 
     patches_parser = subparsers.add_parser("patches", help="list local patch artifacts")
     add_workspace_argument(patches_parser)
-    add_json_argument(patches_parser)
+    add_machine_json_argument(patches_parser)
 
     apply_parser = subparsers.add_parser("apply", help="apply a Situ patch artifact")
     apply_parser.add_argument("artifact_id", help="patch artifact id, such as ART3")
@@ -164,7 +158,6 @@ def main(argv: list[str] | None = None) -> int:
 
     wait_parser = subparsers.add_parser("wait", help="wait for the active session to close")
     add_workspace_argument(wait_parser)
-    add_json_argument(wait_parser)
     wait_parser.add_argument(
         "--timeout",
         type=float,
@@ -173,7 +166,6 @@ def main(argv: list[str] | None = None) -> int:
 
     clear_parser = subparsers.add_parser("clear", help="clear local Situ state for a workspace")
     add_workspace_argument(clear_parser)
-    add_json_argument(clear_parser)
     clear_parser.add_argument(
         "--force",
         action="store_true",
@@ -183,11 +175,6 @@ def main(argv: list[str] | None = None) -> int:
     web_parser = subparsers.add_parser(
         "web",
         help="serve the local project home and attach-only web monitors",
-    )
-    web_parser.add_argument(
-        "workspace",
-        nargs="?",
-        help="accepted for compatibility; the web monitor lists all local projects",
     )
     web_parser.add_argument(
         "--host",

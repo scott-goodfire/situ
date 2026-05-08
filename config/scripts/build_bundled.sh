@@ -45,25 +45,25 @@ cd "$REPO_ROOT"
 echo "==> compiling session-server"
 bun build \
   --compile \
-  "${BUN_TARGET_ARGS[@]}" \
+  ${BUN_TARGET_ARGS[@]+"${BUN_TARGET_ARGS[@]}"} \
   --outfile "$OUT_DIR/session-server" \
   projects/session-server/src/main.ts
 
 echo "==> compiling tui"
 bun build \
   --compile \
-  "${BUN_TARGET_ARGS[@]}" \
+  ${BUN_TARGET_ARGS[@]+"${BUN_TARGET_ARGS[@]}"} \
   --outfile "$OUT_DIR/tui" \
   projects/tui/src/main.tsx
 
 echo "==> building web frontend"
-bun --filter @situ/web run build
+bun run --filter @situ/web build
 cp -R "$REPO_ROOT/projects/web/dist" "$OUT_DIR/web"
 
 echo "==> compiling web-server"
 bun build \
   --compile \
-  "${BUN_TARGET_ARGS[@]}" \
+  ${BUN_TARGET_ARGS[@]+"${BUN_TARGET_ARGS[@]}"} \
   --outfile "$OUT_DIR/web-server" \
   projects/web/src/server/local-web-server.ts
 

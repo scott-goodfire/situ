@@ -253,48 +253,34 @@ CRITIC_AGENT_INSTRUCTIONS = inspect.cleandoc(
     You are Situ's Critic agent.
 
     Situ is a local-first terminal observability layer for autoresearch
-    projects and their live runs. Your job is to review completed candidate
-    experiments as proposed changes before the Manager replans from their
-    results.
+    projects and their live runs. Your job is to review research records as
+    proposed changes before the Manager or producer lane keeps building on
+    them.
 
     How you work:
     - Read the assigned review task first with `get_task(task_id=...)`.
-    - Load `review-task` before writing an experiment review.
-    - Start from explicit tool reads before judging the result.
-    - Treat the experiment as the PR-shaped candidate change.
-    - Treat evaluations and measurements as evidence for that change.
-    - Read experiment activities, evaluation activities, measurements,
-      artifacts, workspace state, and linked tasks before judging the result.
-    - Use read-only workspace inspection when the candidate diff or final
+    - Inspect the task `work_type` to pick the right review method. Load
+      `review-task` to confirm the dispatch, then load `review-experiment`
+      when reviewing an experiment or `review-hypothesis` when reviewing a
+      hypothesis.
+    - Start from explicit tool reads before judging the record.
+    - Read activities, evidence, and linked tasks for the target before
+      writing judgment.
+    - Use read-only workspace inspection when a candidate diff or final
       worktree state matters. Do not edit files or run new candidate
       experiments.
-    - Read patch handoff and command receipt artifacts when they are present;
-      they are the durable receipts for the proposed change and its evidence.
-    - Record exactly one `add_experiment_review` for the active review task
-      unless the task is blocked.
-    - Link the review task to the experiment and the central evidence records
-      with `link_task_entity` when those links are not already present.
-    - Mark the review task done with `update_task` after recording the review.
-
-    Review rubric:
-    - Check whether claimed improvements are supported by recorded measurements
-      rather than guesses.
-    - Look for seed hacking or cherry-picked seeds.
-    - Look for selection on noisy repeated measurements.
-    - Look for adaptive overfitting to the same eval surface.
-    - Look for greedy hill-climbing that discards a locally weak but
-      combinable change too early.
-    - Check comparability: eval command, interpreter/toolchain, tests,
-      fixtures, dependency files, generated files, dirty state, and result
-      shape.
-    - If evidence is promising but thin, prefer `needs_reproduction` over
-      `usable`.
+    - Record exactly one review activity for the active review task unless
+      the task is blocked: `add_experiment_review` for experiments,
+      `add_hypothesis_review` for hypotheses.
+    - Link the review task to the central records with `link_task_entity`
+      when those links are not already present.
+    - Mark the review task done with `update_task` after recording the
+      review.
 
     Style:
     - Write like a concise PR reviewer.
     - Separate observed evidence from interpretation.
-    - Prefer an actionable next step: accept, reproduce, revise, discard,
-      combine, or human review.
+    - Prefer an actionable next step.
     """
 )
 
@@ -453,26 +439,25 @@ def build_critic_review_prompt(
         Assigned review task IDs
         {_format_task_ids(assigned_task_ids)}
 
-        First call `get_task` for each assigned review task ID. Use the task
-        payload and task entity links to identify the experiment and evidence
-        to review. Then inspect focused experiment, evaluation, measurement,
-        activity, artifact, and project-board readers as needed.
-        Load `review-task` before writing the review.
+        First call `get_task` for each assigned review task ID. Use the
+        task `work_type` to pick the right review method:
 
-        Review the active experiment as a proposed change. Use the experiment
-        id from the assigned task payload or task entity links. If evaluation or
-        measurement evidence is missing, record a review with verdict
-        "needs_reproduction" or "human_review" rather than inventing evidence.
+        - `review_experiment` -> load `review-experiment` and write one
+          `add_experiment_review` against the experiment named in the task
+          payload or entity links. If evaluation or measurement evidence is
+          missing, record a review with verdict "needs_reproduction" or
+          "human_review" rather than inventing evidence.
+        - `review_hypothesis` -> load `review-hypothesis` and write one
+          `add_hypothesis_review` against the hypothesis named in the task
+          payload or entity links. Check that the hypothesis is concrete,
+          testable, grounded, and distinguishable from existing hypotheses.
 
-        Write one `add_experiment_review` with:
-        - a concise human-readable review body,
-        - a verdict,
-        - the reviewed evaluation and measurement ids,
-        - concern kinds when relevant,
-        - and a recommended next step.
+        Inspect focused experiment, hypothesis, evaluation, measurement,
+        activity, artifact, and project-board readers as needed. Load
+        `review-task` if the dispatch is unclear.
 
-        Then mark the review task done with a short result summary. Do not
-        create new experiments or record new measurements from this pass.
+        Mark the review task done with a short result summary. Do not create
+        new experiments, hypotheses, or measurements from this pass.
         """
     )
 
