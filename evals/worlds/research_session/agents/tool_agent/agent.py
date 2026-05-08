@@ -38,7 +38,7 @@ RESEARCH_TOOL_AGENT_INSTRUCTIONS = inspect.cleandoc(
 
 
 async def run_research_tool_agent(args: ResearchToolEvalInput) -> ResearchToolEvalOutput:
-    world = ResearchSessionWorld(seed=args.seed)
+    world = await ResearchSessionWorld.create(seed=args.seed)
     capture = ToolCallCaptureCapability()
     try:
         deps = SituToolDeps(

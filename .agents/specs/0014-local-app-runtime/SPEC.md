@@ -202,12 +202,12 @@ they are isolated with an explicit blocking adapter such as a worker thread.
 Long-running agent passes must have layered timeouts so local sessions do not
 hang forever without a visible state transition.
 
-The runtime should bound model requests at the model-provider layer so a stuck
-Responses API call raises into the session loop. The runtime should also bound
-DBOS-backed agent workflows so an agent pass cannot run indefinitely across
-durable recovery. DBOS workflow timeouts are pass-level guardrails, not a
-substitute for model request timeouts, because workflow cancellation is observed
-at workflow or step boundaries.
+The runtime should bound model requests at the provider layer so a stuck model
+call raises into the session loop. The runtime should also bound DBOS-backed
+agent workflows so an agent pass cannot run indefinitely across durable
+recovery. DBOS workflow timeouts are pass-level guardrails, not a substitute
+for model request timeouts, because workflow cancellation is observed at
+workflow or step boundaries.
 
 When a timeout or cancellation reaches the session loop, Situ should record a
 clear event and task/activity outcome. Automated retry is allowed only when it

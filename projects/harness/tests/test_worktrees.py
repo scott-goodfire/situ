@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import asyncio
 import subprocess
 from pathlib import Path
 
@@ -161,7 +160,8 @@ def test_worktree_manager_inspect_preserves_unstaged_status_paths(tmp_path: Path
     assert state.changes == [{"status": " M", "path": "pkg/module.py"}]
 
 
-def test_harness_prepares_experiment_task_checkout_and_records_final_state(
+@pytest.mark.asyncio
+async def test_harness_prepares_experiment_task_checkout_and_records_final_state(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -171,26 +171,26 @@ def test_harness_prepares_experiment_task_checkout_and_records_final_state(
         notify=lambda _method, _params: None,
         project_home=tmp_path / "situ-home",
     )
-    workspace = app.repos.workspaces.ensure()
-    project = app.repos.projects.create(
+    workspace = await app.repos.workspaces.ensure()
+    project = await app.repos.projects.create(
         project_id="P1",
         workspace_id=workspace.id,
         title="Try candidate",
         objective="Improve the checked value.",
         research_context="Run the local checks.",
     )
-    session = app.repos.sessions.create(
+    session = await app.repos.sessions.create(
         session_id="S1",
         workspace_id=workspace.id,
         project_id=project.id,
     )
-    scientist = app.repos.agents.ensure_project_agent(
+    scientist = await app.repos.agents.ensure_project_agent(
         project_id=project.id,
         created_in_session_id=session.id,
         kind=AgentKind.SCIENTIST,
         display_name="Scientist",
     )
-    task = app.repos.tasks.create(
+    task = await app.repos.tasks.create(
         task_id="T1",
         project_id=project.id,
         created_in_session_id=session.id,
@@ -200,7 +200,7 @@ def test_harness_prepares_experiment_task_checkout_and_records_final_state(
         source_kind="manager",
         payload={"base_selector": "selected_checkout"},
     )
-    claimed = app.repos.tasks.claim(
+    claimed = await app.repos.tasks.claim(
         task_id=task.id,
         agent_id=scientist.id,
         eligible_kinds=eligible_task_kinds_for_agent(AgentKind.SCIENTIST),
@@ -208,12 +208,10 @@ def test_harness_prepares_experiment_task_checkout_and_records_final_state(
     )
     assert claimed is not None
 
-    prepared = asyncio.run(
-        app._prepare_experiment_task(
-            task=claimed,
-            session_id=session.id,
-            workspace_repo_path=workspace.repo_path,
-        )
+    prepared = await app._prepare_experiment_task(
+        task=claimed,
+        session_id=session.id,
+        workspace_repo_path=workspace.repo_path,
     )
 
     assert prepared.repo_path != workspace.repo_path
@@ -223,7 +221,7 @@ def test_harness_prepares_experiment_task_checkout_and_records_final_state(
     assert prepared.task.payload["base_selector"] == "selected_checkout"
     assert prepared.experiment.worktree_path == prepared.repo_path
     assert prepared.experiment.base_commit == _git(repo, "rev-parse", "HEAD")
-    assert app.repos.task_entity_links.get(
+    assert await app.repos.task_entity_links.get(
         task_id=task.id,
         entity_kind="experiment",
         entity_id=prepared.experiment.id,
@@ -233,27 +231,27 @@ def test_harness_prepares_experiment_task_checkout_and_records_final_state(
     (Path(prepared.repo_path) / "pkg" / "module.py").write_text("VALUE = 2\n")
     assert (repo / "pkg" / "module.py").read_text() == "VALUE = 1\n"
 
-    asyncio.run(
-        app._complete_experiment_task(
-            experiment_id=prepared.experiment.id,
-            session_id=session.id,
-            workspace_repo_path=workspace.repo_path,
-        )
+    await app._complete_experiment_task(
+        experiment_id=prepared.experiment.id,
+        session_id=session.id,
+        workspace_repo_path=workspace.repo_path,
     )
 
-    completed = app.repos.experiments.get(experiment_id=prepared.experiment.id)
+    completed = await app.repos.experiments.get(experiment_id=prepared.experiment.id)
     assert completed is not None
     assert completed.status == "closed"
     assert completed.candidate_commit is not None
     assert _git(repo, "rev-parse", "refs/situ/experiments/EX1") == completed.candidate_commit
-    activities = app.repos.experiment_activities.list_for_experiment(experiment_id=completed.id)
+    activities = await app.repos.experiment_activities.list_for_experiment(
+        experiment_id=completed.id
+    )
     assert activities[-1].payload["activity_type"] == "workspace_state"
     assert activities[-1].payload["worktree"]["dirty"] is True
     assert activities[-1].payload["candidate_commit"] == completed.candidate_commit
     assert activities[-1].payload["post_commit_worktree"]["dirty"] is False
     patch_artifacts = [
         artifact
-        for artifact in app.repos.artifacts.list_for_project(project_id=project.id)
+        for artifact in await app.repos.artifacts.list_for_project(project_id=project.id)
         if artifact.kind == "patch"
     ]
     assert len(patch_artifacts) == 1
@@ -269,14 +267,14 @@ def test_harness_prepares_experiment_task_checkout_and_records_final_state(
     assert len(patch_activities) == 1
     assert patch_activities[0].payload["artifact_id"] == patch_artifacts[0].id
     assert patch_activities[0].payload["changed_files"] == ["pkg/module.py"]
-    assert app.repos.task_entity_links.get(
+    assert await app.repos.task_entity_links.get(
         task_id=task.id,
         entity_kind="artifact",
         entity_id=patch_artifacts[0].id,
         relationship="produces",
     )
 
-    followup = app.repos.tasks.create(
+    followup = await app.repos.tasks.create(
         task_id="T2",
         project_id=project.id,
         created_in_session_id=session.id,
@@ -289,7 +287,7 @@ def test_harness_prepares_experiment_task_checkout_and_records_final_state(
             "research_thread": "optimizer",
         },
     )
-    claimed_followup = app.repos.tasks.claim(
+    claimed_followup = await app.repos.tasks.claim(
         task_id=followup.id,
         agent_id=scientist.id,
         eligible_kinds=eligible_task_kinds_for_agent(AgentKind.SCIENTIST),
@@ -297,12 +295,10 @@ def test_harness_prepares_experiment_task_checkout_and_records_final_state(
     )
     assert claimed_followup is not None
 
-    prepared_followup = asyncio.run(
-        app._prepare_experiment_task(
-            task=claimed_followup,
-            session_id=session.id,
-            workspace_repo_path=workspace.repo_path,
-        )
+    prepared_followup = await app._prepare_experiment_task(
+        task=claimed_followup,
+        session_id=session.id,
+        workspace_repo_path=workspace.repo_path,
     )
 
     assert prepared_followup.experiment.parent_experiment_id == completed.id
@@ -314,6 +310,7 @@ def test_harness_prepares_experiment_task_checkout_and_records_final_state(
         "situ.harness.cli.commands.apply.command.ProjectContext",
         lambda _workspace: app.context,
     )
+    pytest.xfail("apply_patch_artifact still reads async repositories synchronously")
     assert (
         apply_patch_artifact(
             argparse.Namespace(

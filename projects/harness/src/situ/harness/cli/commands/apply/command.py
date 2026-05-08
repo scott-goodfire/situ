@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import asyncio
 import subprocess
 import sys
 from pathlib import Path
@@ -12,6 +13,10 @@ from ....repositories import Repositories
 
 
 def run(args: argparse.Namespace) -> int:
+    return asyncio.run(run_async(args))
+
+
+async def run_async(args: argparse.Namespace) -> int:
     context = ProjectContext(resolve_workspace(Path.cwd(), args.workspace))
     db = Database(
         context.database_path,
@@ -19,7 +24,7 @@ def run(args: argparse.Namespace) -> int:
         repo_path=str(context.repo_root),
     )
     repos = Repositories.create(db)
-    artifact = repos.artifacts.get(artifact_id=args.artifact_id)
+    artifact = await repos.artifacts.get(artifact_id=args.artifact_id)
     if artifact is None or artifact.kind != "patch":
         print(f"patch artifact not found: {args.artifact_id}", file=sys.stderr)
         return 1
@@ -59,7 +64,7 @@ def run(args: argparse.Namespace) -> int:
         if _run_git(git_root_path, "checkout", "-b", branch) != 0:
             return 1
 
-    base_commit = _base_commit_for_patch(repos, artifact.id)
+    base_commit = await _base_commit_for_patch(repos, artifact.id)
     current_commit = _git_text(git_root_path, "rev-parse", "HEAD")
     if base_commit and current_commit and base_commit != current_commit:
         print(
@@ -88,8 +93,8 @@ def _resolve_artifact_path(*, project_dir: Path, artifact_path: str) -> Path:
     return path if path.is_absolute() else project_dir / path
 
 
-def _base_commit_for_patch(repos: Repositories, artifact_id: str) -> str | None:
-    for activity in repos.experiment_activities.list_all():
+async def _base_commit_for_patch(repos: Repositories, artifact_id: str) -> str | None:
+    for activity in await repos.experiment_activities.list_all():
         payload = activity.payload or {}
         if (
             payload.get("activity_type") == "patch_handoff"

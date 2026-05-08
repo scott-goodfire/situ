@@ -25,6 +25,28 @@ EventEmitter = Callable[
 ]
 
 
+def _run_awaitable_sync(awaitable: Any) -> Any:
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.run(awaitable)
+
+    result: dict[str, Any] = {}
+
+    def run() -> None:
+        try:
+            result["value"] = asyncio.run(awaitable)
+        except BaseException as error:
+            result["error"] = error
+
+    thread = Thread(target=run)
+    thread.start()
+    thread.join()
+    if "error" in result:
+        raise result["error"]
+    return result.get("value")
+
+
 class SituToolDeps(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 

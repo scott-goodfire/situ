@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 from pathlib import Path
 
 import pytest
@@ -134,7 +133,8 @@ def test_agent_runtime_wraps_research_agent_with_dbos_agent(
     assert _agent_skill_names(runtime.critic_agent) == CRITIC_SKILLS
 
 
-def test_agent_runtime_wraps_agent_calls_with_dbos_workflow_timeout(
+@pytest.mark.asyncio
+async def test_agent_runtime_wraps_agent_calls_with_dbos_workflow_timeout(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     seen: list[float] = []
@@ -157,12 +157,10 @@ def test_agent_runtime_wraps_agent_calls_with_dbos_workflow_timeout(
         FakeWorkflowTimeout,
     )
 
-    result = asyncio.run(
-        AgentRuntime._run_with_workflow_timeout(
-            fake_run,
-            "prompt",
-            value="ok",
-        )
+    result = await AgentRuntime._run_with_workflow_timeout(
+        fake_run,
+        "prompt",
+        value="ok",
     )
 
     assert result == "prompt:ok"
