@@ -95,6 +95,7 @@ def test_agent_runtime_wraps_research_agent_with_dbos_agent(
     assert runtime.agent.model_settings == {
         "thinking": "low",
         "openai_reasoning_effort": "low",
+        "timeout": DEFAULTS.agent_model_request_timeout_seconds,
     }
     assert isinstance(runtime.dbos_agent, DBOSAgent)
     assert runtime.agent.toolsets
@@ -114,6 +115,39 @@ def test_agent_runtime_wraps_research_agent_with_dbos_agent(
     assert _agent_skill_names(runtime.researcher_agent) == RESEARCHER_SKILLS
     assert not _agent_has_web_search(runtime.critic_agent)
     assert _agent_skill_names(runtime.critic_agent) == CRITIC_SKILLS
+
+
+def test_agent_runtime_wraps_agent_calls_with_dbos_workflow_timeout(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    seen: list[float] = []
+
+    class FakeWorkflowTimeout:
+        def __init__(self, timeout: float) -> None:
+            seen.append(timeout)
+
+        def __enter__(self) -> None:
+            return None
+
+        def __exit__(self, *_args: object) -> bool:
+            return False
+
+    def fake_run_sync(prompt: str, *, value: str) -> str:
+        return f"{prompt}:{value}"
+
+    monkeypatch.setattr(
+        "situ.harness.agent_runtime.SetWorkflowTimeout",
+        FakeWorkflowTimeout,
+    )
+
+    result = AgentRuntime._run_with_workflow_timeout(
+        fake_run_sync,
+        "prompt",
+        value="ok",
+    )
+
+    assert result == "prompt:ok"
+    assert seen == [DEFAULTS.agent_workflow_timeout_seconds]
 
 
 def test_runtime_agent_skill_capabilities_discover_expected_skills() -> None:

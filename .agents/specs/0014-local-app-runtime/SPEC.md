@@ -9,6 +9,8 @@ Situ should be easy to reason about operationally:
 
 - `situ app` starts the long-running local app server.
 - `situ tui` opens the terminal observability surface for one workspace.
+- `situ exec` runs the same session lifecycle through a headless automation
+  surface.
 - `situ web` opens the local project home and web monitors.
 
 The app server is unrelated to any one session. It is the local control plane
@@ -56,6 +58,28 @@ windows created or resumed through clients.
 - Supports explicit attach-only mode, for example `situ tui --attach`.
 - Does not spawn or stop the app server.
 
+`situ exec [workspace]`:
+
+- Runs the same session lifecycle through a headless automation surface.
+- Works without a TTY and keeps machine-readable output on stdout.
+- Starts a fresh project and fresh attached session by default, matching the
+  fresh-session default of the interactive TUI flow.
+- Supports explicit resume, for example `situ exec --resume <session-id>`.
+- When `--resume` is provided without a session id, resolves the latest local
+  session for the selected workspace and resumes that session instead of
+  creating a new project.
+- Preserves the resumed session's existing project association so project
+  lineage and project-scoped records continue under the same project id.
+- Provides explicit timeout controls for automation. A headless wait timeout is
+  different from a model request timeout: the command may stop waiting, but the
+  runtime must still have model/workflow timeouts so stuck agent passes can fail
+  visibly.
+- Uses predictable exit codes: success for clean completion, failure for a
+  failed session, timeout for a headless wait timeout, and interrupted for user
+  interruption.
+- Does not render the TUI, require interactive prompts, or depend on screen
+  scraping.
+
 `situ web`:
 
 - Requires or discovers the local app server for live monitor attachment.
@@ -63,11 +87,14 @@ windows created or resumed through clients.
 - Lists all known local projects and sessions from the canonical app state.
 - Does not start, resume, or attach a session on its own.
 
-The session-facing command vocabulary is `app`, `tui`, and `web`. Maintenance
-commands such as `secrets` may manage local runtime state without starting,
-resuming, or attaching sessions. Do not keep a `start` compatibility command;
-starting a project-backed session happens from the interactive `situ tui` flow
-after the app server is already running.
+The primary human-facing command vocabulary is `app`, `tui`, and `web`.
+Maintenance commands such as `secrets` may manage local runtime state without
+starting, resuming, or attaching sessions. Headless automation commands such as
+`exec`, `status`, `snapshot`, `events`, `sessions`, and `wait` are siblings
+over the same backend, not aliases for the TUI. Do not keep a `start`
+compatibility command; starting a project-backed interactive session happens
+from the interactive `situ tui` flow after the app server is already running,
+while headless starts happen explicitly through `situ exec`.
 
 ## State Contract
 
@@ -124,13 +151,14 @@ SQLite product database, events, collection updates, app/session discovery
 records, worker payloads, or observability attributes.
 
 Local app, TUI, web, and manual headless execution use the local Situ secret
-store as their provider-secret source. The local OpenAI key is required before
-agent execution. The local Logfire token is optional; when present, local runs
-may use it for SDK Logfire export, and when absent, local runs continue without
-remote Logfire export. Local runtime paths must not treat `SITU_OPENAI_KEY` or
-`SITU_LOGFIRE_TOKEN` as credentials. Those Situ-scoped environment secrets
-belong to eval execution, where they are required so evals fail clearly instead
-of silently reusing a developer's saved local runtime credentials.
+store as their provider-secret source. The local Anthropic key is required
+before agent execution. The local Logfire token is optional; when present,
+local runs may use it for SDK Logfire export, and when absent, local runs
+continue without remote Logfire export. Local runtime paths must not treat
+`SITU_ANTHROPIC_KEY` or `SITU_LOGFIRE_TOKEN` as credentials. Those Situ-scoped
+environment secrets belong to eval execution, where they are required so evals
+fail clearly instead of silently reusing a developer's saved local runtime
+credentials.
 
 ## Runtime Boundary
 
@@ -154,6 +182,23 @@ harness subprocesses. Either implementation is valid if these guarantees hold:
 - The app can route client RPC and events by workspace/project scope.
 - Product records are durable in the single canonical SQLite database.
 - DBOS state remains isolated per project until a future spec changes that.
+
+## Runtime Timeouts
+
+Long-running agent passes must have layered timeouts so local sessions do not
+hang forever without a visible state transition.
+
+The runtime should bound model requests at the model-provider layer so a stuck
+Responses API call raises into the session loop. The runtime should also bound
+DBOS-backed agent workflows so an agent pass cannot run indefinitely across
+durable recovery. DBOS workflow timeouts are pass-level guardrails, not a
+substitute for model request timeouts, because workflow cancellation is observed
+at workflow or step boundaries.
+
+When a timeout or cancellation reaches the session loop, Situ should record a
+clear event and task/activity outcome. Automated retry is allowed only when it
+is bounded and visible; silent infinite retry is a failed local observability
+experience.
 
 ## Web Project Home
 
@@ -186,17 +231,27 @@ The browser remains a client. It should not own workers or session lifecycle.
   before the fullscreen TUI opens or a project/session is created.
 - Starting `situ tui` without setup inputs shows onboarding before creating a
   project/session.
-- Starting `situ tui` without a required model provider secret shows secret
+- Starting `situ tui` without a required Anthropic provider secret shows secret
   onboarding before creating or resuming agent work, saves a submitted secret
   locally, and then continues to the normal setup/session flow.
 - Secret onboarding may also collect an optional local Logfire token. Skipping
   it must not block local agent execution.
-- `situ secrets status`, `situ secrets set openai`,
-  `situ secrets set logfire`, `situ secrets unset openai`,
+- `situ secrets status`, `situ secrets set anthropic`,
+  `situ secrets set logfire`, `situ secrets unset anthropic`,
   `situ secrets unset logfire`, and `situ secrets clear` manage only local
   runtime secrets and never reveal saved values.
 - Headless or non-interactive local execution uses the local secret store and
   otherwise fails clearly without prompting.
+- `situ exec` starts a fresh project/session by default and prints the final
+  machine-readable result on stdout.
+- `situ exec --resume <session-id>` resumes the named session and keeps its
+  existing project id.
+- `situ exec --resume` without an id resumes the latest workspace session
+  instead of creating a new project.
+- `situ exec` returns a non-zero failed-session exit code when the session ends
+  in failure, even if the session record is closed.
+- `situ exec --timeout` returns the timeout exit code when the command stops
+  waiting for a still-active session.
 - Eval execution requires `SITU_OPENAI_KEY` and `SITU_LOGFIRE_TOKEN` from the
   launch environment and does not fall back to the local secret store.
 - Confirming onboarding or providing setup inputs creates a fresh project and

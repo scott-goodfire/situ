@@ -51,6 +51,8 @@ Then Situ:
 - Records measurement evidence, experiment results, concerns, interpretations,
   and decisions as inspectable research records.
 - Renders a live terminal dashboard.
+- Supports a headless `situ exec` sibling for automation over the same session
+  lifecycle when a TUI is not appropriate.
 
 The Situ install/dev root and the researched workspace are separate
 concepts. Runtime state, project identity, worker current directory, and trust
@@ -59,7 +61,7 @@ code are launched from the Situ repository.
 
 ## Current Slice Includes
 
-- One app server plus one TUI command
+- One app server plus TUI and headless exec commands
 - Explicit workspace argument for sandbox/project testing
 - Sparse session setup inputs through objective/context
 - Local/private project context

@@ -403,6 +403,43 @@ def test_failed_experiment_task_still_records_worktree_state(
     )
 
 
+def test_session_loop_retries_timed_out_agent_pass_and_records_activity(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    app, session_id, project_id = _app_with_initial_plan(tmp_path)
+    runtime = TimeoutThenCloseRuntime()
+    monkeypatch.setattr("situ.harness.app.AgentRuntime", lambda _project_dir: runtime)
+
+    app._execute_session(session_id, max_experiments=1)
+
+    session = app.repos.sessions.get(session_id=session_id)
+    task = app.repos.tasks.list_for_session(session_id=session_id)[0]
+    activities = app.repos.task_activities.list_for_task(task_id=task.id)
+    timeout_events = [
+        event
+        for event in app.repos.events.list_for_session(session_id=session_id)
+        if event.type == "session.agent_timeout"
+    ]
+
+    assert session is not None
+    assert session.status == "closed"
+    assert runtime.plan_calls == 2
+    assert task.status == TaskStatus.DONE
+    assert [event.associated_project_id for event in timeout_events] == [project_id]
+    assert timeout_events[0].payload["will_retry"] is True
+    assert any(
+        activity.payload.get("activity_type") == "agent_pass_timeout"
+        and activity.payload["will_retry"] is True
+        for activity in activities
+    )
+    assert not [
+        event
+        for event in app.repos.events.list_for_session(session_id=session_id)
+        if event.type == "session.failed"
+    ]
+
+
 class BaselineThenExperimentRuntime:
     def __init__(self) -> None:
         self.plan_calls = 0
@@ -688,6 +725,25 @@ class FailingExperimentRuntime:
         self.scientist_repo_path = repo_path
         (Path(repo_path) / "README.md").write_text("partial candidate\n")
         raise RuntimeError("candidate crashed")
+
+
+class TimeoutThenCloseRuntime:
+    def __init__(self) -> None:
+        self.plan_calls = 0
+
+    def plan_session(self, **kwargs: Any) -> ResearchAgentOutput:
+        self.plan_calls += 1
+        if self.plan_calls == 1:
+            raise TimeoutError("model request timed out")
+        repos = kwargs["repos"]
+        session_id = kwargs["session_id"]
+        project_id = repos.sessions.get(session_id=session_id).project_id
+        assert project_id is not None
+        repos.projects.update(project_id=project_id, status="closed")
+        return ResearchAgentOutput(summary="closed after retry")
+
+    def run_session(self, **_kwargs: Any) -> ResearchAgentOutput:
+        return ResearchAgentOutput(summary="should not run")
 
 
 def _app_with_initial_plan(tmp_path: Path) -> tuple[HarnessApp, str, str]:

@@ -30,8 +30,9 @@ Commands should be thin, explicit, and safe to run repeatedly.
 - Commands that accept caller options forward `"$@"`.
 - Use `uv run --package ...` for Python package entrypoints and `bun --filter`
   or a scoped project `bun run` for TypeScript packages.
-- Keep command names aligned with product vocabulary: `app`, `tui`, `web`,
-  `secrets`, `sessions`, `evals`, `e2e`, `storybook`, and `protocol:generate`.
+- Keep command names aligned with product vocabulary: `app`, `tui`, `exec`,
+  `web`, `secrets`, `sessions`, `evals`, `e2e`, `storybook`, and
+  `protocol:generate`.
 - Long-running development commands should bind to localhost by default and
   print enough information for a user to attach.
 - Structured headless command output must follow the headless/interactive

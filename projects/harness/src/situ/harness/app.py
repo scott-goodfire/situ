@@ -69,6 +69,7 @@ NotificationWriter = Callable[[str, dict[str, Any]], None]
 MANAGER_NO_PROGRESS_LIMIT = 25
 SESSION_AGENT_PASS_LIMIT_MINIMUM = 32
 SESSION_AGENT_PASS_LIMIT_PER_EXPERIMENT = 8
+AGENT_PASS_TIMEOUT_RETRIES = 1
 REUSABLE_PLAN_TASK_TITLE = "Plan next step"
 REUSABLE_PLAN_TASK_KEY = "project-next-step"
 EXPERIMENT_BASE_SELECTORS = {
@@ -292,6 +293,7 @@ class HarnessApp:
             event_type="session.resumed",
             message=f"Resumed {resume.session_id}",
             session_id=resume.session_id,
+            project_id=session.project_id,
         )
         self.publish_record(record=session, cursor=event.id)
 
@@ -779,14 +781,20 @@ class HarnessApp:
                         active_task = critic_task
                         no_progress_plans = 0
                         agent_passes += 1
-                        result = runtime.run_review(
-                            workspace=workspace.model_dump(),
-                            setup_objective=setup.get("objective", ""),
-                            setup_research_context=setup.get("research_context", ""),
+                        result = self._run_agent_pass(
                             session_id=session_id,
-                            assigned_task_ids=[critic_task.id],
-                            app_root=self.app_root,
-                            repos=self.repos,
+                            project_id=critic_task.project_id,
+                            task=critic_task,
+                            agent_kind=AgentKind.CRITIC,
+                            run=lambda: runtime.run_review(
+                                workspace=workspace.model_dump(),
+                                setup_objective=setup.get("objective", ""),
+                                setup_research_context=setup.get("research_context", ""),
+                                session_id=session_id,
+                                assigned_task_ids=[critic_task.id],
+                                app_root=self.app_root,
+                                repos=self.repos,
+                            ),
                         )
                         completion_summary = result.summary
                         self._finish_claimed_task(
@@ -838,13 +846,19 @@ class HarnessApp:
                     if manager_task is not None:
                         active_task = manager_task
                         agent_passes += 1
-                        manager_result = runtime.plan_session(
-                            workspace=workspace.model_dump(),
-                            setup_objective=setup.get("objective", ""),
-                            setup_research_context=setup.get("research_context", ""),
-                            assigned_task_ids=[manager_task.id],
+                        manager_result = self._run_agent_pass(
                             session_id=session_id,
-                            repos=self.repos,
+                            project_id=manager_task.project_id,
+                            task=manager_task,
+                            agent_kind=AgentKind.MANAGER,
+                            run=lambda: runtime.plan_session(
+                                workspace=workspace.model_dump(),
+                                setup_objective=setup.get("objective", ""),
+                                setup_research_context=setup.get("research_context", ""),
+                                assigned_task_ids=[manager_task.id],
+                                session_id=session_id,
+                                repos=self.repos,
+                            ),
                         )
                         completion_summary = manager_result.summary
                         self.record_event(
@@ -875,14 +889,20 @@ class HarnessApp:
                         active_task = researcher_task
                         no_progress_plans = 0
                         agent_passes += 1
-                        result = runtime.run_research(
-                            workspace=workspace.model_dump(),
-                            setup_objective=setup.get("objective", ""),
-                            setup_research_context=setup.get("research_context", ""),
+                        result = self._run_agent_pass(
                             session_id=session_id,
-                            assigned_task_ids=[researcher_task.id],
-                            app_root=self.app_root,
-                            repos=self.repos,
+                            project_id=researcher_task.project_id,
+                            task=researcher_task,
+                            agent_kind=AgentKind.RESEARCHER,
+                            run=lambda: runtime.run_research(
+                                workspace=workspace.model_dump(),
+                                setup_objective=setup.get("objective", ""),
+                                setup_research_context=setup.get("research_context", ""),
+                                session_id=session_id,
+                                assigned_task_ids=[researcher_task.id],
+                                app_root=self.app_root,
+                                repos=self.repos,
+                            ),
                         )
                         completion_summary = result.summary
                         self._finish_claimed_task(
@@ -937,17 +957,25 @@ class HarnessApp:
                             active_experiment_id = prepared_experiment.experiment.id
 
                         try:
-                            result = runtime.run_session(
-                                workspace=workspace.model_dump(),
-                                setup_objective=setup.get("objective", ""),
-                                setup_research_context=setup.get("research_context", ""),
+                            result = self._run_agent_pass(
                                 session_id=session_id,
-                                max_experiments=remaining_experiments,
-                                assigned_task_ids=[scientist_task.id],
-                                app_root=self.app_root,
-                                repos=self.repos,
-                                repo_path=execution_repo_path,
-                                active_experiment_id=active_experiment_id,
+                                project_id=scientist_task.project_id,
+                                task=scientist_task,
+                                agent_kind=AgentKind.SCIENTIST,
+                                run=lambda: runtime.run_session(
+                                    workspace=workspace.model_dump(),
+                                    setup_objective=setup.get("objective", ""),
+                                    setup_research_context=setup.get(
+                                        "research_context", ""
+                                    ),
+                                    session_id=session_id,
+                                    max_experiments=remaining_experiments,
+                                    assigned_task_ids=[scientist_task.id],
+                                    app_root=self.app_root,
+                                    repos=self.repos,
+                                    repo_path=execution_repo_path,
+                                    active_experiment_id=active_experiment_id,
+                                ),
                             )
                         finally:
                             if prepared_experiment is not None:
@@ -1044,6 +1072,85 @@ class HarnessApp:
                 message=f"Session failed: {error}",
                 payload={"error": str(error)},
             )
+
+    def _run_agent_pass(
+        self,
+        *,
+        session_id: str,
+        project_id: str,
+        task: TaskRecord,
+        agent_kind: AgentKind,
+        run: Callable[[], Any],
+    ) -> Any:
+        max_attempts = AGENT_PASS_TIMEOUT_RETRIES + 1
+        for attempt in range(1, max_attempts + 1):
+            try:
+                return run()
+            except Exception as error:
+                if not _is_timeout_or_cancellation_error(error):
+                    raise
+                will_retry = attempt < max_attempts
+                self._record_agent_pass_timeout(
+                    session_id=session_id,
+                    project_id=project_id,
+                    task=task,
+                    agent_kind=agent_kind,
+                    error=error,
+                    attempt=attempt,
+                    max_attempts=max_attempts,
+                    will_retry=will_retry,
+                )
+                if not will_retry:
+                    raise
+        raise RuntimeError("agent pass retry loop ended unexpectedly")
+
+    def _record_agent_pass_timeout(
+        self,
+        *,
+        session_id: str,
+        project_id: str,
+        task: TaskRecord,
+        agent_kind: AgentKind,
+        error: Exception,
+        attempt: int,
+        max_attempts: int,
+        will_retry: bool,
+    ) -> None:
+        action = "retrying" if will_retry else "failing session"
+        label = agent_kind.value.capitalize()
+        payload = {
+            "activity_type": "agent_pass_timeout",
+            "agent_kind": agent_kind.value,
+            "task_id": task.id,
+            "attempt": attempt,
+            "max_attempts": max_attempts,
+            "will_retry": will_retry,
+            "error_type": type(error).__name__,
+            "error": str(error),
+        }
+        activity = self.repos.task_activities.add(
+            project_id=project_id,
+            task_id=task.id,
+            actor="system",
+            kind="comment",
+            body=(
+                f"{label} pass timed out or was cancelled on attempt "
+                f"{attempt}/{max_attempts}; {action}."
+            ),
+            created_in_session_id=session_id,
+            payload=payload,
+        )
+        event = self.record_event(
+            event_type="session.agent_timeout",
+            message=(
+                f"{label} pass timed out on {task.id}; "
+                f"{'retrying' if will_retry else 'no retries remain'}."
+            ),
+            session_id=session_id,
+            project_id=project_id,
+            payload=payload,
+        )
+        self.publish_record(record=activity, cursor=event.id)
 
     def _prepare_experiment_task(
         self,
@@ -1453,6 +1560,32 @@ def _is_reusable_plan_task(task: TaskRecord) -> bool:
         task.kind == TaskKind.PLAN
         and task.payload.get("reuse_key") == REUSABLE_PLAN_TASK_KEY
     )
+
+
+def _is_timeout_or_cancellation_error(error: BaseException) -> bool:
+    seen: set[int] = set()
+    stack: list[BaseException | None] = [error]
+    while stack:
+        current = stack.pop()
+        if current is None or id(current) in seen:
+            continue
+        seen.add(id(current))
+        name = type(current).__name__.lower()
+        message = str(current).lower()
+        if (
+            "timeout" in name
+            or "timedout" in name
+            or name in {
+                "dbosworkflowcancellederror",
+                "dbosawaitedworkflowcancellederror",
+            }
+            or ("workflow" in name and "cancel" in name)
+            or "timed out" in message
+            or "timeout" in message
+        ):
+            return True
+        stack.extend((current.__cause__, current.__context__))
+    return False
 
 
 def _experiment_id_from_task(task: TaskRecord) -> str | None:

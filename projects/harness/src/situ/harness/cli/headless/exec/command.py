@@ -10,10 +10,15 @@ from typing import Any
 from ..._shared import apply_session_env
 from ...local_session import base_env, start_session_server, stop_process
 from ....core.paths import resolve_app_root
+from ...commands.tui.command import LATEST_SENTINEL
 from .._shared.output import error_message, write_json
 from .._shared.rpc import rpc_request
-from .._shared.timing import is_deadline_expired, timeout_deadline
-from .._shared.workspace import resolve_existing_workspace, session_start_params
+from .._shared.timing import is_deadline_expired, latest_record, timeout_deadline
+from .._shared.workspace import (
+    max_experiments,
+    resolve_existing_workspace,
+    session_start_params,
+)
 
 
 def run(args: argparse.Namespace) -> int:
@@ -39,32 +44,34 @@ def run(args: argparse.Namespace) -> int:
             env,
             quiet=True,
         )
-        start_result = rpc_request(
-            session,
-            "session.start",
-            session_start_params(
-                args=args,
-                workspace=workspace,
-            ),
+        start_result = start_or_resume_session(
+            session=session,
+            args=args,
+            workspace=workspace,
         )
         session_id = str(start_result["session_id"])
-        print(f"started {session_id}", file=sys.stderr)
+        action = "resumed" if getattr(args, "resume", None) else "started"
+        print(f"{action} {session_id}", file=sys.stderr)
 
         wait_result = wait_for_rpc_session_to_close(
             session=session,
             session_id=session_id,
             timeout_seconds=args.timeout,
         )
+        final_status = final_session_status(
+            session_id=session_id,
+            snapshot=wait_result["snapshot"],
+        )
         write_json(
             {
                 "workspace": str(workspace),
-                "status": "completed",
+                "status": final_status,
                 "session_id": session_id,
                 "session": wait_result["session"],
                 "snapshot": wait_result["snapshot"],
             }
         )
-        return 0
+        return 1 if final_status == "failed" else 0
     except TimeoutError:
         write_json(
             {
@@ -91,6 +98,49 @@ def run(args: argparse.Namespace) -> int:
             stop_process(session_process)
 
 
+def start_or_resume_session(
+    *,
+    session: dict[str, str],
+    args: argparse.Namespace,
+    workspace: Path,
+) -> dict[str, Any]:
+    resume = getattr(args, "resume", None)
+    if resume is not None:
+        session_id = (
+            latest_session_id(session=session)
+            if resume == LATEST_SENTINEL
+            else str(resume)
+        )
+        return rpc_request(
+            session,
+            "session.resume",
+            {
+                "session_id": session_id,
+                "max_experiments": max_experiments(args),
+            },
+        )
+
+    return rpc_request(
+        session,
+        "session.start",
+        session_start_params(
+            args=args,
+            workspace=workspace,
+        ),
+    )
+
+
+def latest_session_id(*, session: dict[str, str]) -> str:
+    snapshot = rpc_request(session, "collections.bootstrap", {})
+    latest = latest_record(snapshot.get("sessions", []))
+    if latest is None:
+        raise RuntimeError("no local session found to resume")
+    session_id = latest.get("id")
+    if not isinstance(session_id, str) or not session_id:
+        raise RuntimeError("latest local session has no id")
+    return session_id
+
+
 def wait_for_rpc_session_to_close(
     *,
     session: dict[str, str],
@@ -113,3 +163,15 @@ def wait_for_rpc_session_to_close(
             raise TimeoutError(f"timed out waiting for {session_id}")
 
         time.sleep(0.5)
+
+
+def final_session_status(*, session_id: str, snapshot: dict[str, Any]) -> str:
+    for event in snapshot.get("events", []):
+        if not isinstance(event, dict):
+            continue
+        if (
+            event.get("associated_session_id") == session_id
+            and event.get("type") == "session.failed"
+        ):
+            return "failed"
+    return "completed"

@@ -346,6 +346,191 @@ def test_exec_uses_shared_rpc_lifecycle_and_prints_final_json(
     ]
 
 
+def test_exec_resumes_latest_session_when_requested_without_id(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    calls: list[tuple[str, dict[str, Any]]] = []
+
+    def fake_start_session_server(
+        _app_root: Path,
+        _workspace: Path,
+        _env: dict[str, str],
+        *,
+        quiet: bool,
+    ) -> tuple[Any, dict[str, str]]:
+        assert quiet is True
+        return object(), {"url": "http://127.0.0.1:1", "token": "token"}
+
+    def fake_rpc_request(
+        _session: dict[str, str],
+        method: str,
+        params: dict[str, Any] | None = None,
+        **_kwargs: Any,
+    ) -> dict[str, Any]:
+        calls.append((method, params or {}))
+        if method == "collections.bootstrap" and len(calls) == 1:
+            return {
+                "sessions": [
+                    {
+                        "id": "S1",
+                        "workspace_id": "workspace_test",
+                        "project_id": "P1",
+                        "status": "closed",
+                    }
+                ],
+                "events": [],
+            }
+        if method == "session.resume":
+            return {"session_id": "S1", "status": "active"}
+        if method == "session.status":
+            return {
+                "session": {
+                    "id": "S1",
+                    "workspace_id": "workspace_test",
+                    "project_id": "P1",
+                    "status": "closed",
+                }
+            }
+        if method == "collections.bootstrap":
+            return {
+                "sessions": [
+                    {
+                        "id": "S1",
+                        "workspace_id": "workspace_test",
+                        "project_id": "P1",
+                        "status": "closed",
+                    }
+                ],
+                "events": [],
+            }
+        raise AssertionError(f"unexpected RPC method {method}")
+
+    monkeypatch.setattr(
+        "situ.harness.cli.headless.exec.command.start_session_server",
+        fake_start_session_server,
+    )
+    monkeypatch.setattr(
+        "situ.harness.cli.headless.exec.command.stop_process",
+        lambda _process: None,
+    )
+    monkeypatch.setattr(
+        "situ.harness.cli.headless.exec.command.rpc_request",
+        fake_rpc_request,
+    )
+
+    code = cli.main(
+        [
+            "exec",
+            str(workspace),
+            "--json",
+            "--resume",
+            "--max-experiments",
+            "3",
+            "--timeout",
+            "1",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+    assert code == 0
+    assert "resumed S1" in captured.err
+    assert payload["status"] == "completed"
+    assert payload["session"]["project_id"] == "P1"
+    assert calls == [
+        ("collections.bootstrap", {}),
+        ("session.resume", {"session_id": "S1", "max_experiments": 3}),
+        ("session.status", {"session_id": "S1"}),
+        ("collections.bootstrap", {}),
+    ]
+
+
+def test_exec_returns_failure_when_closed_session_has_failed_event(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+
+    def fake_rpc_request(
+        _session: dict[str, str],
+        method: str,
+        params: dict[str, Any] | None = None,
+        **_kwargs: Any,
+    ) -> dict[str, Any]:
+        if method == "session.start":
+            return {"session_id": "S1", "status": "active"}
+        if method == "session.status":
+            return {
+                "session": {
+                    "id": "S1",
+                    "workspace_id": "workspace_test",
+                    "project_id": "P1",
+                    "status": "closed",
+                }
+            }
+        if method == "collections.bootstrap":
+            return {
+                "sessions": [
+                    {
+                        "id": "S1",
+                        "workspace_id": "workspace_test",
+                        "project_id": "P1",
+                        "status": "closed",
+                    }
+                ],
+                "events": [
+                    {
+                        "type": "session.failed",
+                        "associated_session_id": "S1",
+                        "associated_project_id": "P1",
+                    }
+                ],
+            }
+        raise AssertionError(f"unexpected RPC method {method}")
+
+    monkeypatch.setattr(
+        "situ.harness.cli.headless.exec.command.start_session_server",
+        lambda *_args, **_kwargs: (
+            object(),
+            {"url": "http://127.0.0.1:1", "token": "token"},
+        ),
+    )
+    monkeypatch.setattr(
+        "situ.harness.cli.headless.exec.command.stop_process",
+        lambda _process: None,
+    )
+    monkeypatch.setattr(
+        "situ.harness.cli.headless.exec.command.rpc_request",
+        fake_rpc_request,
+    )
+
+    code = cli.main(
+        [
+            "exec",
+            str(workspace),
+            "--json",
+            "--objective",
+            "Improve the score",
+            "--context",
+            "Run local evals.",
+            "--timeout",
+            "1",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+    assert code == 1
+    assert payload["status"] == "failed"
+    assert payload["session_id"] == "S1"
+
+
 def test_session_start_params_keeps_context_vague_and_signal_oriented() -> None:
     args = argparse.Namespace(
         objective=None,

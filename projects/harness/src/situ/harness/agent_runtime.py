@@ -4,6 +4,7 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
+from dbos import SetWorkflowTimeout
 from pydantic_ai import Agent
 from pydantic_ai.durable_exec.dbos import DBOSAgent
 
@@ -185,7 +186,8 @@ class AgentRuntime:
             workspace=workspace.get("repo_path", ""),
             objective=setup_objective,
         ):
-            result = self.dbos_manager_agent.run_sync(
+            result = self._run_with_workflow_timeout(
+                self.dbos_manager_agent.run_sync,
                 prompt,
                 deps=tool_deps,
                 message_history=message_history,
@@ -270,7 +272,8 @@ class AgentRuntime:
             objective=setup_objective,
             session_id=session_id,
         ):
-            result = self.dbos_researcher_agent.run_sync(
+            result = self._run_with_workflow_timeout(
+                self.dbos_researcher_agent.run_sync,
                 prompt,
                 deps=tool_deps,
                 message_history=message_history,
@@ -360,7 +363,8 @@ class AgentRuntime:
             objective=setup_objective,
             session_id=session_id,
         ):
-            result = self.dbos_agent.run_sync(
+            result = self._run_with_workflow_timeout(
+                self.dbos_agent.run_sync,
                 prompt,
                 deps=tool_deps,
                 message_history=message_history,
@@ -445,7 +449,8 @@ class AgentRuntime:
             objective=setup_objective,
             session_id=session_id,
         ):
-            result = self.dbos_critic_agent.run_sync(
+            result = self._run_with_workflow_timeout(
+                self.dbos_critic_agent.run_sync,
                 prompt,
                 deps=tool_deps,
                 message_history=message_history,
@@ -462,6 +467,15 @@ class AgentRuntime:
                 conversation_id=getattr(result, "conversation_id", None),
             )
         return result.output
+
+    @staticmethod
+    def _run_with_workflow_timeout(
+        run_sync: Any,
+        *args: Any,
+        **kwargs: Any,
+    ) -> Any:
+        with SetWorkflowTimeout(DEFAULTS.agent_workflow_timeout_seconds):
+            return run_sync(*args, **kwargs)
 
 
 def get_agent_runtime(

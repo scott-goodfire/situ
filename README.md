@@ -2,10 +2,11 @@
 
 A local-first terminal observability layer for autoresearch sessions.
 
-The first runnable slice is a local TypeScript Ink TUI talking JSON-RPC to a
-local session server backed by the Python harness. The harness records sessions,
-session-owned objectives, hypotheses, experiments, evaluations, activities,
-artifacts, and events in local SQLite state under
+The first runnable slice is a local TypeScript Ink TUI and headless command
+surface talking JSON-RPC to the Python harness. The harness records workspaces,
+projects, sessions, hypotheses, experiments, evaluations, activities,
+artifacts, and events in the local canonical SQLite database at
+`~/.situ/situ.sqlite`, with per-project runtime files under
 `~/.situ/projects/<project-id>/`.
 
 Start here:
@@ -19,26 +20,31 @@ Start here:
 
 ```bash
 mise run update
-mise run start
+mise run app
 ```
 
-Equivalent start path:
+Open the TUI from another terminal:
 
 ```bash
-mise run start
+mise run tui -- .
 ```
 
-`start` opens an interactive preflight prompt and creates a fresh session only
-after you select Start session. Use `resume` when you intentionally want to
-continue an older session id, and `attach` when a harness is already running
-and you only want the TUI monitor.
+`tui` opens the interactive terminal monitor over the local app. Use `resume`
+when you intentionally want to continue an older session id, and `attach` when
+a harness is already running and you only want the TUI monitor.
 
-Run against another local workspace:
+Run headlessly against another local workspace:
 
 ```bash
-mise run start -- ~/sandbox/some-repo \
+mise run exec -- ~/sandbox/some-repo \
   --objective "Improve the project behavior without breaking correctness." \
   --context "Run make eval from the repo root. It prints the metrics and checks that matter."
+```
+
+Resume the latest local session for a workspace explicitly:
+
+```bash
+mise run exec -- ~/sandbox/some-repo --resume
 ```
 
 ## Commands
@@ -49,7 +55,9 @@ mise run check
 mise run protocol:generate
 mise run dev:harness
 mise run dev:tui
-mise run start
+mise run app
+mise run tui -- ~/sandbox/some-repo
+mise run exec -- ~/sandbox/some-repo
 mise run secrets -- status
 mise run secrets -- set openai
 mise run secrets -- set logfire

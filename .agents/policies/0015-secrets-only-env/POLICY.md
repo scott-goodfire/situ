@@ -22,10 +22,10 @@ The current user-facing secret env vars are:
 
 ```text
 SITU_LOGFIRE_TOKEN
-SITU_OPENAI_KEY
+SITU_ANTHROPIC_KEY
 ```
 
-Provider-native SDK env vars like `LOGFIRE_TOKEN` and `OPENAI_API_KEY` may be
+Provider-native SDK env vars like `LOGFIRE_TOKEN` and `ANTHROPIC_API_KEY` may be
 set internally immediately before calling SDKs, but docs and examples should
 prefer Situ-scoped names.
 
@@ -50,6 +50,6 @@ prefer Situ-scoped names.
   the same secret.
 - A non-secret default is configurable only through an environment variable.
 - A deterministic test depends on shell environment state.
-- An eval silently uses `OPENAI_API_KEY` when `SITU_OPENAI_KEY` is missing.
+- An eval silently uses `ANTHROPIC_API_KEY` when `SITU_ANTHROPIC_KEY` is missing.
 - Operational knobs creep into `.env.example` before the product has a real
   configuration story for them.

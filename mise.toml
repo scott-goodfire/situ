@@ -48,6 +48,10 @@ run = "./commands/secrets.sh"
 description = "Open the Situ TUI over the local app"
 run = "./commands/tui.sh"
 
+[tasks.exec]
+description = "Run a headless Situ session"
+run = "./commands/exec.sh"
+
 [tasks.resume]
 description = "Resume an existing Situ session in the TUI"
 run = "./commands/resume.sh"

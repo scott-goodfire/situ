@@ -108,6 +108,15 @@ def main(argv: list[str] | None = None) -> int:
     add_json_argument(exec_parser)
     add_setup_arguments(exec_parser)
     exec_parser.add_argument(
+        "--resume",
+        nargs="?",
+        const=LATEST_SENTINEL,
+        help=(
+            "resume an existing session id headlessly; defaults to the latest "
+            "local session for the workspace"
+        ),
+    )
+    exec_parser.add_argument(
         "--timeout",
         type=float,
         help="maximum seconds to wait for the session to close",

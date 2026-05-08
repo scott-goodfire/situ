@@ -173,3 +173,10 @@ explicitly.
 Agents should read that working truth through tools. Prompt-injected project
 board slices are acceptable only as emergency fallback or for tiny bootstrap
 facts that are not durable research records.
+
+The Manager may be an exception in one narrow way: it can carry compacted
+conversation history across planning passes so it remembers the project
+trajectory. That memory must stay subordinate to durable Situ records. Worker
+roles such as Researcher, Scientist, and Critic should start from their task
+assignment and explicit tool reads rather than inheriting another worker pass's
+raw conversation.
