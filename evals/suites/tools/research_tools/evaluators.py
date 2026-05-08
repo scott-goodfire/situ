@@ -12,7 +12,7 @@ from evals.worlds.research_session.models import (
 
 
 @dataclass
-class ProjectBoardHasLink(
+class ProjectOverviewHasLink(
     Evaluator[ResearchToolEvalInput, ResearchToolEvalOutput, Any]
 ):
     hypothesis_id: str
@@ -22,7 +22,7 @@ class ProjectBoardHasLink(
         self,
         ctx: EvaluatorContext[ResearchToolEvalInput, ResearchToolEvalOutput, Any],
     ) -> EvaluationReason:
-        links = ctx.output.project_board.get("hypothesis_experiment_links", [])
+        links = ctx.output.project_overview.get("hypothesis_experiment_links", [])
         for link in links:
             if (
                 link.get("hypothesis_id") == self.hypothesis_id
@@ -31,14 +31,14 @@ class ProjectBoardHasLink(
                 return EvaluationReason(
                     value=True,
                     reason=(
-                        "Project board links "
+                        "Project overview links "
                         f"{self.hypothesis_id} to {self.experiment_id}"
                     ),
                 )
         return EvaluationReason(
             value=False,
             reason=(
-                "Project board did not link "
+                "Project overview did not link "
                 f"{self.hypothesis_id} to {self.experiment_id}"
             ),
         )

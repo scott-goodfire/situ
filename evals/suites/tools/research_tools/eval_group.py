@@ -10,12 +10,12 @@ from pydantic_evals.evaluators import Evaluator
 from evals.framework import BaseSituEvalGroup
 from evals.framework.evaluators import (
     EventWasEmitted,
-    ProjectBoardContains,
+    ProjectOverviewContains,
     ToolArgsContain,
     ToolCalledSuccessfully,
     ToolResultContains,
 )
-from evals.suites.tools.research_tools.evaluators import ProjectBoardHasLink
+from evals.suites.tools.research_tools.evaluators import ProjectOverviewHasLink
 from evals.worlds.research_session import (
     ResearchToolEvalInput,
     ResearchToolEvalOutput,
@@ -31,8 +31,8 @@ class ResearchToolsEvalGroup(
     cases_path: ClassVar[Path] = Path(__file__).parent / "cases.yaml"
     custom_evaluator_types: ClassVar[Sequence[type[Evaluator]]] = (
         EventWasEmitted,
-        ProjectBoardContains,
-        ProjectBoardHasLink,
+        ProjectOverviewContains,
+        ProjectOverviewHasLink,
         ToolArgsContain,
         ToolCalledSuccessfully,
         ToolResultContains,
@@ -48,10 +48,10 @@ class ResearchToolsEvalGroup(
         increment_eval_metric("events", len(output.events))
         increment_eval_metric(
             "hypotheses",
-            len(output.project_board.get("hypotheses", [])),
+            len(output.project_overview.get("hypotheses", [])),
         )
         increment_eval_metric(
             "experiments",
-            len(output.project_board.get("experiments", [])),
+            len(output.project_overview.get("experiments", [])),
         )
         return output

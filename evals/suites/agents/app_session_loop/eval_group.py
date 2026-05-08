@@ -12,7 +12,7 @@ from evals.framework.evaluators import (
     ChangedFilesDoNotInclude,
     ChangedFilesExactly,
     EventWasEmitted,
-    ProjectBoardContains,
+    ProjectOverviewContains,
 )
 from evals.suites.agents.app_session_loop.evaluators import (
     BaselineThenFollowupWork,
@@ -54,7 +54,7 @@ class AppSessionLoopEvalGroup(
         ManagerCompletedAfterCriticReview,
         PatchHandoffArtifactCaptured,
         PlanningPassCountAtLeast,
-        ProjectBoardContains,
+        ProjectOverviewContains,
         RecordCountAtLeast,
         ReviewTaskLinksComplete,
         TaskDoneByAgentKind,
@@ -66,7 +66,7 @@ class AppSessionLoopEvalGroup(
         set_eval_attribute("seed", args.seed)
         output = await run_app_session_loop(args)
         increment_eval_metric("events", len(output.events))
-        increment_eval_metric("tasks", len(output.project_board.get("tasks", [])))
+        increment_eval_metric("tasks", len(output.project_overview.get("tasks", [])))
         increment_eval_metric("done_tasks", output.signals.get("done_tasks") or 0)
         increment_eval_metric(
             "manager_done_tasks",
@@ -90,15 +90,15 @@ class AppSessionLoopEvalGroup(
         )
         increment_eval_metric(
             "experiments",
-            len(output.project_board.get("experiments", [])),
+            len(output.project_overview.get("experiments", [])),
         )
         increment_eval_metric(
             "evaluations",
-            len(output.project_board.get("evaluations", [])),
+            len(output.project_overview.get("evaluations", [])),
         )
         increment_eval_metric(
             "artifacts",
-            len(output.project_board.get("artifacts", [])),
+            len(output.project_overview.get("artifacts", [])),
         )
         increment_eval_metric(
             "artifact_files",

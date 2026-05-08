@@ -13,7 +13,7 @@ cases:
       - PlanningPassCountAtLeast: 2
       - DoneTaskKindAtLeast: baseline
       - BaselineThenFollowupWork
-      - ProjectBoardContains: baseline
+      - ProjectOverviewContains: baseline
       - ChangedFilesDoNotInclude: prepare.py
 
   - name: candidate_gets_critic_review
@@ -37,10 +37,10 @@ cases:
       - PatchHandoffArtifactCaptured
       - ExperimentReviewRecorded
       - ReviewTaskLinksComplete
-      - ProjectBoardContains: critic_review
-      - ProjectBoardContains: verdict
-      - ProjectBoardContains: component_a
-      - ProjectBoardContains: val_bpb
+      - ProjectOverviewContains: critic_review
+      - ProjectOverviewContains: verdict
+      - ProjectOverviewContains: component_a
+      - ProjectOverviewContains: val_bpb
       - ChangedFilesExactly: []
       - ChangedFilesDoNotInclude: prepare.py
 
@@ -54,7 +54,7 @@ cases:
       - ManagerCompletedAfterCriticReview
       - TaskDoneByAgentKind: {task_kind: review, agent_kind: critic}
       - PlanningPassCountAtLeast: 2
-      - ProjectBoardContains: critic_review
+      - ProjectOverviewContains: critic_review
       - ChangedFilesDoNotInclude: prepare.py
 
   - name: researcher_handoff_to_scientist_candidate
@@ -73,6 +73,6 @@ cases:
       - RecordCountAtLeast: hypotheses
       - TaskDoneByAgentKind: {task_kind: experiment, agent_kind: scientist}
       - ExperimentCountAtLeast: 1
-      - ProjectBoardContains: component_a
-      - ProjectBoardContains: val_bpb
+      - ProjectOverviewContains: component_a
+      - ProjectOverviewContains: val_bpb
       - ChangedFilesDoNotInclude: prepare.py
