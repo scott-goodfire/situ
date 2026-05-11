@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1778469513930,
+      "tag": "0000_conscious_vulture",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1778476164521,
+      "tag": "0001_light_taskmaster",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1778485136101,
+      "tag": "0002_flaky_ares",
+      "breakpoints": true
+    }
+  ]
+}

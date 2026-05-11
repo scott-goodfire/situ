@@ -1,0 +1,5 @@
+# Used by oxfmt (which reads .gitignore + .prettierignore by default).
+# /examples/ holds pristine third-party fixtures for laboratory runs —
+# preserve them byte-for-byte so the Norvig corpus and program.md match
+# their upstream shape. See .agents/skills/situ-run-laboratory-example.
+examples/

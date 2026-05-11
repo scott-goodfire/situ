@@ -1,0 +1,72 @@
+import { z } from "zod";
+
+import { researchProjectInteractionRepository } from "../../../data/repositories/research-project-interactions";
+import { researchProjectRepository } from "../../../data/repositories/research-projects";
+import { researchTaskRepository } from "../../../data/repositories/research-tasks";
+import { defineTool } from "./__shared__/define-tool";
+import { toolContextModule } from "./__shared__/tool-context-module";
+
+const inputSchema = z.object({
+  researchProjectId: z
+    .string()
+    .describe("ResearchProject id. Defaults to the active ResearchProject work item.")
+    .optional(),
+  resultSummary: z
+    .string()
+    .describe("Compact human-sounding completion summary: 1-2 sentences plus bullets when useful."),
+});
+
+export const completeResearchProjectTool = defineTool({
+  name: "complete_research_project",
+  description:
+    "Mark the active ResearchProject done after verified evidence, durable next steps, or final results exist.",
+  roles: ["manager"],
+  inputSchema,
+  handler: async ({ input, context }) => {
+    const researchProjectId = toolContextModule.researchProjectId({
+      explicit: input.researchProjectId,
+      context,
+    });
+    await assertResearchProjectCanComplete({ researchProjectId });
+    const researchProject = await researchProjectRepository.transition({
+      researchProjectId,
+      status: "complete",
+      resultSummary: input.resultSummary,
+    });
+    return { researchProject };
+  },
+});
+
+async function assertResearchProjectCanComplete({
+  researchProjectId,
+}: {
+  researchProjectId: string;
+}): Promise<void> {
+  const project = await researchProjectRepository.require({ researchProjectId });
+  const interactions = await researchProjectInteractionRepository.listByResearchProject({
+    researchProjectId,
+    limit: 50,
+  });
+  const pendingInteraction = interactions.find((interaction) => interaction.status === "pending");
+  if (pendingInteraction) {
+    throw new Error(
+      `complete_research_project is blocked by pending user interaction: ${pendingInteraction.id}`,
+    );
+  }
+  if (project.phase === "onboarding") {
+    throw new Error(
+      "complete_research_project is blocked while ResearchProject phase is onboarding.",
+    );
+  }
+
+  const tasks = await researchTaskRepository.listByResearchProject({
+    researchProjectId,
+    limit: 100,
+  });
+  const hasVerifiedEvidence = tasks.some((task) => task.status === "verified");
+  if (!hasVerifiedEvidence && project.phase !== "reporting") {
+    throw new Error(
+      "complete_research_project requires verified ResearchTask evidence or reporting phase final output.",
+    );
+  }
+}
