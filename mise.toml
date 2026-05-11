@@ -1,0 +1,232 @@
+[tools]
+bun = "1.2.20"
+typos = "latest"
+actionlint = "latest"
+hyperfine = "latest"
+ripgrep = "latest"
+
+[tasks.update]
+description = "Install Bun workspace dependencies and sync git hooks"
+dir = "{{ config_root }}"
+run = '''
+bun install
+bun x lefthook install
+'''
+
+[tasks.check]
+description = "Typecheck, lint and format-check the Situ app and web packages"
+dir = "{{ config_root }}"
+run = "bash scripts/check.sh"
+
+[tasks.lint]
+description = "Run oxlint across the repo"
+dir = "{{ config_root }}"
+run = 'bun x oxlint "$@"'
+
+[tasks.format]
+description = "Format the repo with oxfmt (writes in place)"
+dir = "{{ config_root }}"
+run = 'bun x oxfmt "$@"'
+
+[tasks."format:check"]
+description = "Verify the repo is formatted (oxfmt --check)"
+dir = "{{ config_root }}"
+run = 'bun x oxfmt --check "$@"'
+
+[tasks.audit]
+description = "Audit installed packages for known vulnerabilities (bun audit)"
+dir = "{{ config_root }}"
+run = 'bun audit "$@"'
+
+[tasks.markdownlint]
+description = "Lint markdown structure with markdownlint-cli2"
+dir = "{{ config_root }}"
+run = 'bun x markdownlint-cli2 "$@"'
+
+[tasks.typos]
+description = "Spell-check source and prose with typos"
+dir = "{{ config_root }}"
+run = 'typos --force-exclude "$@"'
+
+[tasks.actionlint]
+description = "Lint GitHub Actions workflow YAML"
+dir = "{{ config_root }}"
+run = 'actionlint "$@"'
+
+[tasks."lint:policies"]
+description = "Mechanical lint of the .agents skill set (cross-refs, sections, voice, format)"
+dir = "{{ config_root }}"
+run = "bash scripts/lint-policies.sh"
+
+[tasks."drizzle:check"]
+description = "Validate drizzle migrations are consistent (no race conditions)"
+dir = "{{ config_root }}/projects/app"
+run = 'bun x drizzle-kit check'
+
+[tasks."coverage:app"]
+description = "Collect bun:test line coverage for projects/app (informational, lcov)"
+dir = "{{ config_root }}/projects/app"
+run = "bash ../../scripts/coverage-app.sh"
+
+[tasks."coverage:web"]
+description = "Collect vitest line coverage for projects/web (informational, lcov + html)"
+dir = "{{ config_root }}"
+run = '''
+mkdir -p .coverage/web
+bun x vitest run --coverage --coverage.reporter=lcov --coverage.reporter=html --coverage.reportsDirectory=.coverage/web
+'''
+
+[tasks."coverage:summary"]
+description = "Print the N least-covered source files across .coverage/**/lcov.info"
+dir = "{{ config_root }}"
+run = 'bash scripts/coverage-summary.sh "$@"'
+
+[tasks."bench:cli"]
+description = "Time CLI boot for common entry points (hyperfine — informational)"
+dir = "{{ config_root }}"
+run = '''
+hyperfine --warmup 3 --runs 10 \
+  "bun run projects/app/src/cli.ts --help" \
+  "bun run projects/app/src/cli.ts --version" \
+  "bun run projects/app/src/cli.ts doctor --json"
+'''
+
+[tasks."bench:micro"]
+description = "Run in-process micro-benchmarks (mitata — informational)"
+dir = "{{ config_root }}"
+run = 'bun --filter=@situ/app run bench "$@"'
+
+[tasks.fallow]
+description = "Run Fallow codebase intelligence (dead code, duplication, complexity, architecture)"
+dir = "{{ config_root }}"
+run = 'bun x fallow "$@"'
+
+[tasks."fallow:audit"]
+description = "Run Fallow on changed files only (PR quality gate)"
+dir = "{{ config_root }}"
+run = 'bash scripts/fallow-audit.sh "$@"'
+
+[tasks."fallow:fix"]
+description = "Apply Fallow auto-fixes (use --dry-run first)"
+dir = "{{ config_root }}"
+run = 'bun x fallow fix "$@"'
+
+[tasks."fallow:baseline"]
+description = "Refresh per-analysis Fallow baselines under .fallow/"
+dir = "{{ config_root }}"
+run = '''
+bun x fallow dead-code --save-baseline .fallow/dead-code-baseline.json
+bun x fallow health    --save-baseline .fallow/health-baseline.json
+bun x fallow dupes     --save-baseline .fallow/dupes-baseline.json
+'''
+
+[tasks.test]
+description = "Run unit tests: bun:test for app, vitest for web packages"
+dir = "{{ config_root }}"
+run = "bash scripts/test.sh"
+
+[tasks."e2e-tests"]
+description = "Run local end-to-end tests against the Situ app"
+dir = "{{ config_root }}"
+run = 'bun --filter=@situ/e2e-tests run test "$@"'
+
+[tasks.evals]
+description = "Run live agent evals against Claude Managed Agents"
+dir = "{{ config_root }}"
+run = 'bun --filter=@situ/evals run evals "$@"'
+
+[tasks.app]
+description = "Run the local Situ web app"
+dir = "{{ config_root }}"
+run = '''
+export SITU_REPO_PATH="${SITU_REPO_PATH:-$MISE_ORIGINAL_CWD}"
+bun --filter=@situ/app run app "$@"
+'''
+
+[tasks.exec]
+description = "Run a headless local Situ session"
+dir = "{{ config_root }}"
+run = '''
+export SITU_REPO_PATH="${SITU_REPO_PATH:-$MISE_ORIGINAL_CWD}"
+bun --filter=@situ/app run app -- exec "$@"
+'''
+
+[tasks.resume]
+description = "Resume a local Situ session in foreground exec mode"
+dir = "{{ config_root }}"
+run = '''
+export SITU_REPO_PATH="${SITU_REPO_PATH:-$MISE_ORIGINAL_CWD}"
+bun --filter=@situ/app run app -- resume "$@"
+'''
+
+[tasks.status]
+description = "Summarize the latest local Situ session"
+dir = "{{ config_root }}"
+run = '''
+export SITU_REPO_PATH="${SITU_REPO_PATH:-$MISE_ORIGINAL_CWD}"
+bun --filter=@situ/app run app -- status "$@"
+'''
+
+[tasks.sessions]
+description = "List local Situ sessions"
+dir = "{{ config_root }}"
+run = '''
+export SITU_REPO_PATH="${SITU_REPO_PATH:-$MISE_ORIGINAL_CWD}"
+bun --filter=@situ/app run app -- sessions "$@"
+'''
+
+[tasks.events]
+description = "Print or follow local Situ session events"
+dir = "{{ config_root }}"
+run = '''
+export SITU_REPO_PATH="${SITU_REPO_PATH:-$MISE_ORIGINAL_CWD}"
+bun --filter=@situ/app run app -- events "$@"
+'''
+
+[tasks."release:build"]
+description = "Build a local release tarball for the current platform"
+dir = "{{ config_root }}"
+run = "./config/scripts/build_release_assets.sh"
+
+[tasks."db:generate"]
+description = "Generate Drizzle migrations"
+dir = "{{ config_root }}"
+run = "bun --filter=@situ/app run db:generate"
+
+[tasks."db:migrate"]
+description = "Apply local SQLite migrations"
+dir = "{{ config_root }}"
+run = "bun --filter=@situ/app run db:migrate"
+
+[tasks."storybook:ui"]
+description = "Run Storybook for reusable web UI primitives (port 6006)"
+dir = "{{ config_root }}"
+run = "bun --filter=@situ/web-ui storybook"
+
+[tasks."storybook:app-ui"]
+description = "Run Storybook for Situ app views (port 6007)"
+dir = "{{ config_root }}"
+run = "bun --filter=@situ/web-app-ui storybook"
+
+[tasks."docs:dev"]
+description = "Run the VitePress dev server for the Situ docs site"
+dir = "{{ config_root }}"
+run = "bun --filter=@situ/docs run docs:dev"
+
+[tasks."docs:build"]
+description = "Build the VitePress static site to projects/docs/.vitepress/dist"
+dir = "{{ config_root }}"
+run = "bun --filter=@situ/docs run docs:build"
+
+[tasks."docs:preview"]
+description = "Preview the built docs site locally"
+dir = "{{ config_root }}"
+run = "bun --filter=@situ/docs run docs:preview"
+
+[tasks."docs:deploy"]
+description = "Build the docs site and deploy it to Cloudflare Pages via wrangler"
+dir = "{{ config_root }}"
+run = '''
+mise run docs:build
+bun --filter=@situ/docs run docs:deploy
+'''

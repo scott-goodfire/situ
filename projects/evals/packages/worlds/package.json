@@ -1,0 +1,22 @@
+{
+  "name": "@situ/evals-worlds",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./tiny-autoresearch": "./src/tiny-autoresearch/index.ts"
+  },
+  "scripts": {
+    "check": "tsgo --noEmit -p tsconfig.json",
+    "test": "bun test src/**/*.test.ts"
+  },
+  "dependencies": {
+    "@situ/evals-fixtures": "workspace:*",
+    "luxon": "catalog:"
+  },
+  "devDependencies": {
+    "@types/bun": "catalog:",
+    "@types/luxon": "catalog:"
+  }
+}

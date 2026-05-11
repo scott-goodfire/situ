@@ -1,0 +1,21 @@
+import { z } from "zod";
+
+import { researchTaskRepository } from "../../../data/repositories/research-tasks";
+import { defineTool } from "./__shared__/define-tool";
+import { allRoles } from "./__shared__/roles";
+
+const inputSchema = z.object({
+  limit: z.number().describe("Maximum rows to return.").optional(),
+});
+
+export const listResearchTasksTool = defineTool({
+  name: "list_research_tasks",
+  description: "List recent ResearchTasks.",
+  roles: allRoles,
+  inputSchema,
+  handler: async ({ input }) => ({
+    researchTasks: await researchTaskRepository.list({
+      limit: input.limit ?? 20,
+    }),
+  }),
+});
