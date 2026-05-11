@@ -18,7 +18,7 @@ import {
   researchTasks,
 } from "../../../data/db/schema";
 import { baselineRepository } from "../../../data/repositories/baselines";
-import { computeTargetRepository } from "../../../data/repositories/compute-targets";
+import { computeTargetRepository } from "@situ/compute";
 import { hypothesisRepository } from "../../../data/repositories/hypotheses";
 import { researchProjectInteractionRepository } from "../../../data/repositories/research-project-interactions";
 import { researchProjectRepository } from "../../../data/repositories/research-projects";

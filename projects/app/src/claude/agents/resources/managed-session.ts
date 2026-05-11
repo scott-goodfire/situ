@@ -18,7 +18,7 @@ import {
   ensureClaudeAgentEnvironment,
   ensureStoredClaudeAgentEnvironment,
 } from "./claude-environment";
-import { ensureClaudeMemoryStore, MEMORY_STORE_INSTRUCTIONS } from "./claude-memory-store";
+import { buildSessionResources } from "./claude-memory-store";
 import { ensureLocalSession } from "./local-session";
 import type { ManagedSessionRecord } from "./types";
 
@@ -219,17 +219,7 @@ async function createClaudeManagedSession({
     beta,
     existingClaudeEnvironmentId,
   });
-  const resources =
-    blueprint.role === "manager"
-      ? [
-          {
-            type: "memory_store" as const,
-            memory_store_id: (await ensureClaudeMemoryStore({ beta })).claudeMemoryStoreId,
-            access: "read_write" as const,
-            instructions: MEMORY_STORE_INSTRUCTIONS,
-          },
-        ]
-      : undefined;
+  const resources = await buildSessionResources({ blueprint, beta });
   const claudeSession = await beta.sessions.create({
     agent: agent.claudeAgentId,
     environment_id: environment.claudeEnvironmentId,

@@ -9,6 +9,7 @@
 import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 import { Database } from "bun:sqlite";
+import { COMPUTE_TARGETS_TABLE_SQL } from "@situ/compute";
 import { ensureRuntimeContext, migrationSessionId } from "../../config/session-context";
 import { sqlitePath } from "../../config/paths";
 
@@ -95,7 +96,7 @@ CREATE TABLE IF NOT EXISTS session (
 
 CREATE TABLE IF NOT EXISTS claude_agents (
   id TEXT PRIMARY KEY,
-  kind TEXT NOT NULL CHECK (kind IN ('manager', 'scientist', 'verifier')),
+  kind TEXT NOT NULL CHECK (kind IN ('manager', 'scientist', 'verifier', 'scribe', 'reporter')),
   display_name TEXT NOT NULL,
   claude_agent_id TEXT UNIQUE,
   claude_agent_version INTEGER,
@@ -385,21 +386,7 @@ CREATE TABLE IF NOT EXISTS evaluation_activities (
   ${CREATED_AT}
 );
 
-CREATE TABLE IF NOT EXISTS compute_targets (
-  id TEXT PRIMARY KEY,
-  pool TEXT NOT NULL,
-  kind TEXT NOT NULL DEFAULT 'local',
-  label TEXT,
-  status TEXT NOT NULL DEFAULT 'idle'
-    CHECK (status IN ('idle', 'claimed', 'draining', 'dead')),
-  claimed_by_research_task_id TEXT REFERENCES research_tasks(id),
-  claimed_at TEXT,
-  lease_expires_at TEXT,
-  last_heartbeat TEXT,
-  metadata_json TEXT NOT NULL DEFAULT '{}',
-  ${SYNC_COLUMNS},
-  ${TIMESTAMPS}
-);
+${COMPUTE_TARGETS_TABLE_SQL}
 
 CREATE TABLE IF NOT EXISTS claude_agent_events (
   id TEXT PRIMARY KEY,
@@ -440,8 +427,6 @@ CREATE INDEX IF NOT EXISTS feed_entries_project_created_idx
   ON feed_entries(research_project_id, created_at);
 CREATE INDEX IF NOT EXISTS claude_agent_events_created_idx
   ON claude_agent_events(created_at);
-CREATE INDEX IF NOT EXISTS compute_targets_pool_status_idx
-  ON compute_targets(pool, status);
 CREATE INDEX IF NOT EXISTS research_projects_status_created_idx
   ON research_projects(status, created_at);
 CREATE INDEX IF NOT EXISTS research_project_interactions_status_idx

@@ -4,6 +4,7 @@
   "workspaces": {
     "packages": [
       "projects/app",
+      "projects/app/packages/*",
       "projects/docs",
       "projects/e2e-tests",
       "projects/evals",

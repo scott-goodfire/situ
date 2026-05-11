@@ -57,6 +57,7 @@ function CodeBlock({ lang, children }: { lang: string; children: string }) {
           defaultColor: "light",
         });
         setHtml(rendered);
+        return;
       })
       .catch(() => {
         // Highlight failure leaves the plain fallback in place.

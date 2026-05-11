@@ -93,7 +93,8 @@ function seedName({ value }: { value: string | undefined }): TinyAutoresearchSee
     seed === "large_search_ridge" ||
     seed === "exploit_drift_lineage" ||
     seed === "healthy_exploit_window" ||
-    seed === "exploit_drift_with_mixed_triage"
+    seed === "exploit_drift_with_mixed_triage" ||
+    seed === "two_orthogonal_wins_for_combiner"
   ) {
     return seed;
   }

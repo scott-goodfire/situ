@@ -4,9 +4,9 @@ import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 
 import { ensureRuntimeContext } from "../../config/session-context";
+import { computeTargetRepository } from "@situ/compute";
 import { artifactRepository } from "./artifacts";
 import { baselineRepository } from "./baselines";
-import { computeTargetRepository } from "./compute-targets";
 import { entityLinkRepository } from "./entity-links";
 import { evaluationRepository } from "./evaluations";
 import { experimentRepository } from "./experiments";

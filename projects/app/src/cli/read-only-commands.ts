@@ -9,11 +9,11 @@ import {
   type SessionRegistryEntry,
 } from "../config/session-context";
 import {
-  computeBlockersForPlannedResearchTasks,
+  computeModule,
   type ComputeBlocker,
   type ComputeBlockerResearchTaskRow,
   type ComputeBlockerTargetRow,
-} from "../runtime/compute";
+} from "@situ/compute";
 import { git } from "../runtime/worktrees/git-command";
 
 type ExperimentWorktreeRow = {
@@ -148,7 +148,7 @@ function readStatus({ entry }: { entry: SessionRegistryEntry }): {
       hypotheses: db
         .query("select status, count(*) as count from hypotheses group by status order by status")
         .all() as Row[],
-      computeBlockers: computeBlockersForPlannedResearchTasks({
+      computeBlockers: computeModule.blockersForPlannedResearchTasks({
         researchTasks: db
           .query(
             "select id, type, title, payload_json as payloadJson from research_tasks where status = 'planned' order by created_at, id",

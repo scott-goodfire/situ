@@ -1,10 +1,7 @@
 import { reconcileClaudeManagedSession } from "../../claude/agents/runs";
 import { maxScientistConcurrency, maxVerifierConcurrency } from "../../config/runtime";
-import {
-  ensureDefaultLocalComputeTargets,
-  liveComputeTargetCount,
-  recoverOrphanComputeLeases,
-} from "../compute";
+import { computeModule } from "@situ/compute";
+import { recoverOrphanComputeLeases } from "../lease-recovery";
 import {
   dispatchActiveResearchProject,
   dispatchAwaitingResearchTaskVerification,
@@ -38,7 +35,7 @@ function runtimeSchedulerJobs(): SchedulerJob[] {
       name: "compute-target-bootstrap",
       intervalMs: 10_000,
       run: async () => {
-        await ensureDefaultLocalComputeTargets({ desiredCount: maxScientistConcurrency() });
+        await computeModule.ensureDefaultLocalTargets({ desiredCount: maxScientistConcurrency() });
       },
     },
     {
@@ -157,7 +154,7 @@ export async function canClaimScientistWorkItem(): Promise<boolean> {
   const activeCount = await countClaimedWorkItems({
     purpose: CLAUDE_SCIENTIST_RESEARCH_TASK_WORK_ITEM_PURPOSE,
   });
-  const liveCount = await liveComputeTargetCount();
+  const liveCount = await computeModule.liveTargetCount();
   const concurrencyLimit =
     liveCount === 0 ? maxScientistConcurrency() : Math.min(maxScientistConcurrency(), liveCount);
   return activeCount < concurrencyLimit;

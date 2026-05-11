@@ -5,7 +5,7 @@ import { getDb } from "../../data/db/client";
 import { workItems, type WorkItem } from "../../data/db/schema";
 import { runSyncedWrite } from "../../data/db/sync";
 import { dateTimeModule } from "../../modules/date-time";
-import { releaseComputeForWorkItem } from "../compute";
+import { computeModule } from "@situ/compute";
 import { failOrRetryWorkItem } from "./fail-work-item";
 
 export async function extendWorkItemLease({
@@ -47,7 +47,7 @@ export async function recoverExpiredWorkItemLeases({
       error: new Error("Work item lease expired."),
     });
     if (outcome === "failed") {
-      await releaseComputeForWorkItem({ workItem, reason: "work_item_lease_expired" });
+      await computeModule.releaseForWorkItem({ workItem, reason: "work_item_lease_expired" });
     }
   }
 }

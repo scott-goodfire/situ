@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { COMPUTE_TARGET_STATUSES } from "@situ/protocol";
 
-import { computeTargetRepository } from "../../../data/repositories/compute-targets";
+import { computeTargetRepository } from "@situ/compute";
 import { defineTool } from "./__shared__/define-tool";
 import { Result } from "./__shared__/result";
 import { allRoles } from "./__shared__/roles";

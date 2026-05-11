@@ -17,7 +17,7 @@ import {
   workItems,
 } from "../../data/db/schema";
 import { baselineRepository } from "../../data/repositories/baselines";
-import { computeTargetRepository } from "../../data/repositories/compute-targets";
+import { computeTargetRepository } from "@situ/compute";
 import { experimentRepository } from "../../data/repositories/experiments";
 import { hypothesisRepository } from "../../data/repositories/hypotheses";
 import { researchProjectRepository } from "../../data/repositories/research-projects";

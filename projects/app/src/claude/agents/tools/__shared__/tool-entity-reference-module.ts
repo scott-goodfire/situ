@@ -1,6 +1,6 @@
 import { artifactRepository } from "../../../../data/repositories/artifacts";
 import { baselineRepository } from "../../../../data/repositories/baselines";
-import { computeTargetRepository } from "../../../../data/repositories/compute-targets";
+import { computeTargetRepository } from "@situ/compute";
 import { evaluationRepository } from "../../../../data/repositories/evaluations";
 import { experimentRepository } from "../../../../data/repositories/experiments";
 import { hypothesisRepository } from "../../../../data/repositories/hypotheses";

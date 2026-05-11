@@ -151,6 +151,14 @@ export SITU_REPO_PATH="${SITU_REPO_PATH:-$MISE_ORIGINAL_CWD}"
 bun --filter=@situ/app run app -- exec "$@"
 '''
 
+[tasks.report]
+description = "Generate a written report for a Situ session"
+dir = "{{ config_root }}"
+run = '''
+export SITU_REPO_PATH="${SITU_REPO_PATH:-$MISE_ORIGINAL_CWD}"
+bun --filter=@situ/app run app -- report "$@"
+'''
+
 [tasks.status]
 description = "Summarize the latest local Situ session"
 dir = "{{ config_root }}"

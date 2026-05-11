@@ -19,13 +19,12 @@ import {
   workItems,
 } from "../../data/db/schema";
 import { baselineRepository } from "../../data/repositories/baselines";
-import { computeTargetRepository } from "../../data/repositories/compute-targets";
+import { computeModule, computeTargetRepository } from "@situ/compute";
 import { researchProjectInteractionRepository } from "../../data/repositories/research-project-interactions";
 import { researchProjectRepository } from "../../data/repositories/research-projects";
 import { researchTaskVerificationRepository } from "../../data/repositories/research-task-verifications";
 import { researchTaskRepository } from "../../data/repositories/research-tasks";
 import { createApp } from "../../server";
-import { ensureDefaultLocalComputeTargets } from "../compute";
 import {
   CLAUDE_MANAGER_RESEARCH_PROJECT_WORK_ITEM_PURPOSE,
   CLAUDE_SCIENTIST_RESEARCH_TASK_WORK_ITEM_PURPOSE,
@@ -65,7 +64,7 @@ describe("researchProject runtime flow", () => {
 
   beforeEach(async () => {
     resetTables();
-    await ensureDefaultLocalComputeTargets({ desiredCount: 12 });
+    await computeModule.ensureDefaultLocalTargets({ desiredCount: 12 });
   });
 
   afterAll(async () => {

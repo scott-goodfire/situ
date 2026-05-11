@@ -1,8 +1,4 @@
-import { emptyComputeStatusCounts } from "../../../../runtime/compute";
-import {
-  computeTargetRepository,
-  type ComputeTargetStatus,
-} from "../../../../data/repositories/compute-targets";
+import { computeModule, computeTargetRepository, type ComputeTargetStatus } from "@situ/compute";
 
 export async function computePoolsOverview(): Promise<{
   pools: Array<{
@@ -39,7 +35,7 @@ export async function computePoolsOverview(): Promise<{
       pool: target.pool,
       total: 0,
       active: 0,
-      statuses: emptyComputeStatusCounts(),
+      statuses: computeModule.emptyStatusCounts(),
     };
     pool.total += 1;
     if (target.status !== "dead") {

@@ -1,4 +1,4 @@
-export { claudeAgentSkillDefinitions } from "./definitions";
+export { claudeAgentSkillDefinitionByName, claudeAgentSkillDefinitions } from "./definitions";
 export {
   claudeAgentSkillParamsForBlueprint,
   runtimeSkillDiagnostics,

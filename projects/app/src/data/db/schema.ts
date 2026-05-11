@@ -564,30 +564,9 @@ export const evaluationActivities = sqliteTable("evaluation_activities", {
   ...createdAtOnly(),
 });
 
-export const computeTargets = sqliteTable(
-  "compute_targets",
-  {
-    id: text("id").primaryKey(),
-    pool: text("pool").notNull(),
-    kind: text("kind").notNull().default("local"),
-    label: text("label"),
-    status: text("status", {
-      enum: ["idle", "claimed", "draining", "dead"],
-    })
-      .notNull()
-      .default("idle"),
-    claimedByResearchTaskId: text("claimed_by_research_task_id").references(() => researchTasks.id),
-    claimedAt: text("claimed_at"),
-    leaseExpiresAt: text("lease_expires_at"),
-    lastHeartbeat: text("last_heartbeat"),
-    metadataJson: text("metadata_json").notNull().default("{}"),
-    ...syncTracking(),
-    ...timestamps(),
-  },
-  (table) => ({
-    poolStatusIdx: index("compute_targets_pool_status_idx").on(table.pool, table.status),
-  }),
-);
+// The compute_targets table lives in @situ/compute; re-exported here so the
+// drizzle client's schema includes it and existing import paths still work.
+export { computeTargets } from "@situ/compute";
 
 export const claudeAgentEvents = sqliteTable(
   "claude_agent_events",

@@ -16,8 +16,9 @@ pre-commit:
       run: bun x oxfmt {staged_files}
       stage_fixed: true
     lint:
-      glob: "*.{ts,tsx,js,jsx,mjs,cjs}"
-      run: bun x oxlint {staged_files}
+      run: bun x oxlint
+    typecheck:
+      run: bun x tsgo --build
     typos:
       run: mise exec -- typos --force-exclude {staged_files}
     markdownlint:

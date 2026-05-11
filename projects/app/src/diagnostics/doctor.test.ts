@@ -66,6 +66,13 @@ describe("doctor report", () => {
     });
     expect(report.runtimeSkills.isPresent).toBe(true);
     expect(report.runtimeSkills.missing).toEqual([]);
+    expect(report.agentBlueprints.isHealthy).toBe(true);
+    const roles = report.agentBlueprints.perRole.map((entry) => entry.role).sort();
+    expect(roles).toEqual(["manager", "reporter", "scientist", "scribe", "verifier"]);
+    for (const entry of report.agentBlueprints.perRole) {
+      expect(entry.skillIssues).toEqual([]);
+      expect(entry.toolCount).toBeGreaterThan(0);
+    }
     expect(report.stateHome.writable).toBe(true);
     expect(report.secrets.anthropicKeyConfigured).toBe(true);
   });

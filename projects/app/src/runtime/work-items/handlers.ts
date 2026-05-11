@@ -1,6 +1,6 @@
 import { executeClaudeAgentTurn } from "../../claude/agents/runs";
 import { recordAppEvent } from "../../app-events";
-import { heartbeatComputeLeaseForWorkItem, releaseComputeForWorkItem } from "../compute";
+import { computeModule } from "@situ/compute";
 import { logModule } from "../../modules/log";
 import { obs, withSpan } from "../../observability";
 import { experimentRepository } from "../../data/repositories/experiments";
@@ -61,7 +61,7 @@ async function handleClaimedWorkItemInner({ workItem }: { workItem: WorkItem }):
     });
     if (outcome === "failed") {
       await finalizeDomainFailureForWorkItem({ workItem, error });
-      await releaseComputeForWorkItem({ workItem, reason: "work_item_failed" });
+      await computeModule.releaseForWorkItem({ workItem, reason: "work_item_failed" });
     }
     return;
   }
@@ -73,7 +73,7 @@ async function handleClaimedWorkItemInner({ workItem }: { workItem: WorkItem }):
         error,
       });
     });
-    void heartbeatComputeLeaseForWorkItem({ workItem }).catch((error) => {
+    void computeModule.heartbeatLeaseForWorkItem({ workItem }).catch((error) => {
       logModule.warn(obs.log.workItem.computeHeartbeatFailed, {
         [obs.attr.workItem.id]: workItem.id,
         error,
@@ -81,10 +81,10 @@ async function handleClaimedWorkItemInner({ workItem }: { workItem: WorkItem }):
     });
   }, HEARTBEAT_MS);
   try {
-    await heartbeatComputeLeaseForWorkItem({ workItem });
+    await computeModule.heartbeatLeaseForWorkItem({ workItem });
     await handler({ workItem });
     await completeWorkItem({ workItem });
-    await releaseComputeForWorkItem({ workItem, reason: "work_item_complete" });
+    await computeModule.releaseForWorkItem({ workItem, reason: "work_item_complete" });
   } catch (error) {
     const outcome = await failOrRetryWorkItem({
       workItem,
@@ -93,7 +93,7 @@ async function handleClaimedWorkItemInner({ workItem }: { workItem: WorkItem }):
     });
     if (outcome === "failed") {
       await finalizeDomainFailureForWorkItem({ workItem, error });
-      await releaseComputeForWorkItem({ workItem, reason: "work_item_failed" });
+      await computeModule.releaseForWorkItem({ workItem, reason: "work_item_failed" });
     }
   } finally {
     clearInterval(heartbeat);

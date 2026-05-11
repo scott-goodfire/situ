@@ -5,7 +5,7 @@ import {
   enqueueScientistResearchTaskWork,
   enqueueVerifierResearchTaskWork,
 } from "../../dispatch";
-import { ensureDefaultLocalComputeTargets } from "../../compute";
+import { computeModule } from "@situ/compute";
 import { createRuntimeScheduler } from "../../scheduler";
 import { claimDueWorkItem, handleClaimedWorkItem, workItemLeaseMs } from "../../work-items";
 import { readAutomationState, waitForAutomationUntilIdle } from "../runner";
@@ -80,7 +80,7 @@ async function runScientistVerifierLoop({
   config: LiveAgentSliceEvalConfig;
   researchProjectId: string;
 }): Promise<LiveAgentSliceSummary> {
-  await ensureDefaultLocalComputeTargets({ desiredCount: maxScientistConcurrency() });
+  await computeModule.ensureDefaultLocalTargets({ desiredCount: maxScientistConcurrency() });
   const task = await createConfiguredResearchTask({ config, researchProjectId });
   const queued = await enqueueScientistResearchTaskWork({ researchTaskId: task.id });
   if (queued.status !== "enqueued") {

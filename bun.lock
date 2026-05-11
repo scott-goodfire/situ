@@ -1,6 +1,5 @@
 {
   "lockfileVersion": 1,
-  "configVersion": 0,
   "workspaces": {
     "": {
       "name": "situ-workspace",
@@ -39,6 +38,7 @@
         "@opentelemetry/sdk-node": "catalog:",
         "@opentelemetry/sdk-trace-base": "catalog:",
         "@opentelemetry/semantic-conventions": "catalog:",
+        "@situ/compute": "workspace:*",
         "@situ/protocol": "workspace:*",
         "@situ/web-design-tokens": "workspace:*",
         "cac": "catalog:",
@@ -57,6 +57,18 @@
         "@types/luxon": "catalog:",
         "drizzle-kit": "^0.31.10",
         "mitata": "^1.0.34",
+      },
+    },
+    "projects/app/packages/compute": {
+      "name": "@situ/compute",
+      "version": "0.0.1",
+      "dependencies": {
+        "drizzle-orm": "^0.45.2",
+        "luxon": "catalog:",
+      },
+      "devDependencies": {
+        "@types/bun": "catalog:",
+        "@types/luxon": "catalog:",
       },
     },
     "projects/docs": {
@@ -863,6 +875,8 @@
     "@sindresorhus/merge-streams": ["@sindresorhus/merge-streams@4.0.0", "", {}, "sha512-tlqY9xq5ukxTUZBmoOp+m61cqwQD5pHJtFY3Mn8CA8ps6yghLH/Hw8UPdqg4OLmFW3IFlcXnQNmo/dh8HzXYIQ=="],
 
     "@situ/app": ["@situ/app@workspace:projects/app"],
+
+    "@situ/compute": ["@situ/compute@workspace:projects/app/packages/compute"],
 
     "@situ/docs": ["@situ/docs@workspace:projects/docs"],
 

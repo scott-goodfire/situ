@@ -208,6 +208,38 @@ const durableFixtureCases: DurableFixtureCase[] = [
     },
   },
   {
+    name: "two orthogonal wins seed preloads independent verified positives for the combiner",
+    seedName: "two_orthogonal_wins_for_combiner",
+    expected: {
+      minCounts: {
+        session: 1,
+        claudeAgents: 3,
+        researchProjects: 1,
+        researchTasks: 4,
+        hypotheses: 2,
+        baselines: 2,
+        experiments: 2,
+        evaluations: 3,
+        measurements: 3,
+        artifacts: 3,
+        entityLinks: 2,
+      },
+      requiredMarkers: [
+        "two_orthogonal_wins_for_combiner",
+        "ORTHO_WINS_EX_POOLING",
+        "ORTHO_WINS_EX_VOCAB",
+        "ORTHO_WINS_H_POOLING",
+        "ORTHO_WINS_H_VOCAB",
+        "val_bpb",
+        "2.681",
+        "2.689",
+      ],
+      requiredChangedFiles: ["train.py"],
+      requiredAssociatedHypothesisIds: ["ORTHO_WINS_H_POOLING", "ORTHO_WINS_H_VOCAB"],
+      requiredResearchTaskTypes: ["explore", "exploit"],
+    },
+  },
+  {
     name: "exploit drift with mixed triage splits same-axis and different-axis hypotheses",
     seedName: "exploit_drift_with_mixed_triage",
     expected: {

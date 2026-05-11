@@ -77,6 +77,11 @@ export async function ensureRuntimeContext(
   await persistRuntimeSession({ session });
 
   context = runtimeContextFromSession({ session });
+  // Wire @situ/compute lazily: importing the wiring module statically would
+  // form a cycle (it pulls in app-events → sync → db/client → paths →
+  // session-context). Dynamic import keeps the static graph acyclic.
+  const { configureComputePackage } = await import("../data/db/configure-compute-package");
+  configureComputePackage();
   return context;
 }
 

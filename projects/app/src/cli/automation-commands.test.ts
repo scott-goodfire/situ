@@ -179,6 +179,38 @@ describe("runExecCommand", () => {
 
     expect(exits).toEqual([]);
   });
+
+  test("runExecCommand cancels the hard-exit watchdog after teardown completes", async () => {
+    // Regression: previously the watchdog timer was armed but never
+    // cancelled. With .unref() it didn't block the event loop, but it would
+    // still fire its setTimeout callback ~5s later, calling process.exit and
+    // killing whatever was running in the shared process (e.g. the next
+    // test in the suite, or CI's test runner). Cancelling on the
+    // successful-teardown path keeps the timer scoped to this invocation.
+    const exits: number[] = [];
+
+    await withCapturedConsole(() =>
+      runExecCommand({
+        argv: ["--session", "ses_cli_exec", "--timeout", "1", "--json"],
+        beforeAutomation: async () => ({
+          teardown: async () => {},
+        }),
+        armWatchdog: (opts) =>
+          armExecHardExitWatchdog({
+            ...opts,
+            delayMs: 50,
+            onExit: (code) => exits.push(code),
+            onWarn: () => {},
+          }),
+      }),
+    );
+
+    // Wait well past the (50ms) delay. If runExecCommand failed to cancel
+    // the watchdog, the injected onExit would have been called by now.
+    await sleep(200);
+
+    expect(exits).toEqual([]);
+  });
 });
 
 function sleep(ms: number): Promise<void> {

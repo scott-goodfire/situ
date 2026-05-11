@@ -1,10 +1,7 @@
 import { commandLineModule } from "../modules/command-line";
 import { printResult } from "./__shared__";
 import { ensureRuntimeContext } from "../config/session-context";
-import {
-  computeTargetRepository,
-  type ComputeTargetStatus,
-} from "../data/repositories/compute-targets";
+import { computeTargetRepository, type ComputeTargetStatus } from "@situ/compute";
 
 type CommonOptions = {
   json: boolean;

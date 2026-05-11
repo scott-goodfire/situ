@@ -8,7 +8,8 @@ export type TinyAutoresearchSeedName =
   | "large_search_ridge"
   | "exploit_drift_lineage"
   | "healthy_exploit_window"
-  | "exploit_drift_with_mixed_triage";
+  | "exploit_drift_with_mixed_triage"
+  | "two_orthogonal_wins_for_combiner";
 
 export type TinyAutoresearchResearchStatus =
   | "triage"
@@ -2670,6 +2671,416 @@ function exploitDriftWithMixedTriageSeed(): TinyAutoresearchSeedRecords {
   };
 }
 
+const orthogonalWinsIds = {
+  researchProject: "research_project_orthogonal_wins",
+  planTask: "ORTHO_WINS_TASK_PLAN",
+  baselineTask: "ORTHO_WINS_TASK_BASELINE",
+  poolingExploitTask: "ORTHO_WINS_TASK_EXPLOIT_POOLING",
+  vocabExploitTask: "ORTHO_WINS_TASK_EXPLOIT_VOCAB",
+  projectBaseline: "ORTHO_WINS_PB1",
+  baseline: "ORTHO_WINS_B1",
+  baselineEvaluation: "ORTHO_WINS_EV1",
+  baselineMeasurement: "ORTHO_WINS_M1",
+  baselineArtifact: "ORTHO_WINS_A1",
+  poolingHypothesis: "ORTHO_WINS_H_POOLING",
+  vocabHypothesis: "ORTHO_WINS_H_VOCAB",
+  poolingExperiment: "ORTHO_WINS_EX_POOLING",
+  vocabExperiment: "ORTHO_WINS_EX_VOCAB",
+  poolingEvaluation: "ORTHO_WINS_EV_POOLING",
+  vocabEvaluation: "ORTHO_WINS_EV_VOCAB",
+  poolingMeasurement: "ORTHO_WINS_M_POOLING",
+  vocabMeasurement: "ORTHO_WINS_M_VOCAB",
+  poolingArtifact: "ORTHO_WINS_A_POOLING",
+  vocabArtifact: "ORTHO_WINS_A_VOCAB",
+  poolingLink: "ORTHO_WINS_LINK_POOLING",
+  vocabLink: "ORTHO_WINS_LINK_VOCAB",
+} as const;
+
+function twoOrthogonalWinsForCombinerSeed(): TinyAutoresearchSeedRecords {
+  return {
+    claudeAgents: agents,
+    researchProjects: [
+      {
+        id: orthogonalWinsIds.researchProject,
+        goal: "Lower val_bpb by trying small training changes that preserve the evaluation surface.",
+        phase: "search",
+        status: "active",
+        baselineSummary:
+          "Baseline ORTHO_WINS_B1 records val_bpb=2.713 from the unmodified python train.py command.",
+        resultSummary:
+          "Two independent axes have landed verified positive wins: mean-pooling (ORTHO_WINS_EX_POOLING) and wider vocabulary (ORTHO_WINS_EX_VOCAB).",
+        createdByAgentId: TINY_AUTORESEARCH_IDS.managerAgent,
+        payload: { fixture: "two_orthogonal_wins_for_combiner" },
+      },
+    ],
+    researchTasks: [
+      {
+        id: orthogonalWinsIds.planTask,
+        researchProjectId: orthogonalWinsIds.researchProject,
+        parentResearchTaskId: null,
+        type: "explore",
+        title: "Plan two_orthogonal_wins_for_combiner search",
+        workerPrompt: "Inspect the repo and propose independent hypotheses for lowering val_bpb.",
+        verificationPrompt:
+          "Confirm the plan lists at least two active hypotheses on independent axes.",
+        status: "verified",
+        priority: "high",
+        createdByAgentId: TINY_AUTORESEARCH_IDS.managerAgent,
+        resultSummary:
+          "Proposed mean-pooling and wider-vocabulary hypotheses on independent code regions.",
+        targetKind: null,
+        targetId: null,
+        payload: { fixture: "two_orthogonal_wins_for_combiner" },
+      },
+      {
+        id: orthogonalWinsIds.baselineTask,
+        researchProjectId: orthogonalWinsIds.researchProject,
+        parentResearchTaskId: orthogonalWinsIds.planTask,
+        type: "explore",
+        title: "Record reference val_bpb",
+        workerPrompt: "Run python train.py and record stdout.",
+        verificationPrompt: "Confirm baseline ORTHO_WINS_B1 has linked evaluation and measurement.",
+        status: "verified",
+        priority: "high",
+        createdByAgentId: TINY_AUTORESEARCH_IDS.scientistAgent,
+        resultSummary: "Baseline ORTHO_WINS_B1 recorded val_bpb=2.713.",
+        targetKind: "baseline",
+        targetId: orthogonalWinsIds.baseline,
+        payload: { fixture: "two_orthogonal_wins_for_combiner", command: "python train.py" },
+      },
+      {
+        id: orthogonalWinsIds.poolingExploitTask,
+        researchProjectId: orthogonalWinsIds.researchProject,
+        parentResearchTaskId: orthogonalWinsIds.baselineTask,
+        type: "exploit",
+        title: "Try mean pooling over CLS token",
+        workerPrompt:
+          "Change only the pooling region in train.py to use mean pooling over all tokens and re-run python train.py.",
+        verificationPrompt:
+          "Pass only if val_bpb improved against baseline and changedFiles touched only the pooling region of train.py.",
+        status: "verified",
+        priority: "high",
+        createdByAgentId: TINY_AUTORESEARCH_IDS.managerAgent,
+        resultSummary:
+          "ORTHO_WINS_EX_POOLING improved val_bpb from 2.713 to 2.681 with a train.py pooling-region change only.",
+        targetKind: "hypothesis",
+        targetId: orthogonalWinsIds.poolingHypothesis,
+        payload: {
+          fixture: "two_orthogonal_wins_for_combiner",
+          axis: "pooling",
+          changedFiles: ["train.py"],
+          val_bpb: 2.681,
+        },
+      },
+      {
+        id: orthogonalWinsIds.vocabExploitTask,
+        researchProjectId: orthogonalWinsIds.researchProject,
+        parentResearchTaskId: orthogonalWinsIds.baselineTask,
+        type: "exploit",
+        title: "Try wider vocabulary",
+        workerPrompt:
+          "Change only the vocabulary-size region in train.py to widen the vocabulary and re-run python train.py.",
+        verificationPrompt:
+          "Pass only if val_bpb improved against baseline and changedFiles touched only the vocabulary region of train.py.",
+        status: "verified",
+        priority: "high",
+        createdByAgentId: TINY_AUTORESEARCH_IDS.managerAgent,
+        resultSummary:
+          "ORTHO_WINS_EX_VOCAB improved val_bpb from 2.713 to 2.689 with a train.py vocabulary-region change only.",
+        targetKind: "hypothesis",
+        targetId: orthogonalWinsIds.vocabHypothesis,
+        payload: {
+          fixture: "two_orthogonal_wins_for_combiner",
+          axis: "vocab",
+          changedFiles: ["train.py"],
+          val_bpb: 2.689,
+        },
+      },
+    ],
+    hypotheses: [
+      {
+        id: orthogonalWinsIds.poolingHypothesis,
+        createdByResearchTaskId: orthogonalWinsIds.planTask,
+        createdByAgentId: TINY_AUTORESEARCH_IDS.managerAgent,
+        title: "Mean pooling over CLS token improves val_bpb",
+        summary:
+          "Pooling over all tokens instead of the CLS token may lower val_bpb. Touches the pooling region of train.py and is independent of vocabulary sizing.",
+        status: "active",
+      },
+      {
+        id: orthogonalWinsIds.vocabHypothesis,
+        createdByResearchTaskId: orthogonalWinsIds.planTask,
+        createdByAgentId: TINY_AUTORESEARCH_IDS.managerAgent,
+        title: "Wider vocabulary improves val_bpb",
+        summary:
+          "Widening the vocabulary may lower val_bpb. Touches the vocabulary region of train.py and is independent of the pooling region.",
+        status: "active",
+      },
+    ],
+    baselines: [
+      projectSetupBaselineSeed({
+        id: orthogonalWinsIds.projectBaseline,
+        researchProjectId: orthogonalWinsIds.researchProject,
+        summary:
+          "Project setup baseline: use python train.py val_bpb, compare against ORTHO_WINS_B1 / ORTHO_WINS_EV1 / ORTHO_WINS_M1, and preserve prepare.py.",
+        fixture: "two_orthogonal_wins_for_combiner",
+        evidenceBaselineId: orthogonalWinsIds.baseline,
+      }),
+      {
+        id: orthogonalWinsIds.baseline,
+        researchProjectId: orthogonalWinsIds.researchProject,
+        createdByResearchTaskId: orthogonalWinsIds.baselineTask,
+        createdByAgentId: TINY_AUTORESEARCH_IDS.scientistAgent,
+        title: "Reference train.py measurement",
+        summary: "Unmodified train.py reports val_bpb=2.713.",
+        status: "accepted",
+      },
+    ],
+    experiments: [
+      {
+        id: orthogonalWinsIds.poolingExperiment,
+        createdByResearchTaskId: orthogonalWinsIds.poolingExploitTask,
+        createdByAgentId: TINY_AUTORESEARCH_IDS.scientistAgent,
+        associatedHypothesisId: orthogonalWinsIds.poolingHypothesis,
+        parentExperimentId: null,
+        title: "Mean pooling first try",
+        summary:
+          "ORTHO_WINS_EX_POOLING improved val_bpb from baseline 2.713 to 2.681 by changing the pooling region of train.py only.",
+        status: "done",
+        worktreePath: "worktrees/orthogonal-wins/pooling",
+        baseCommit: "orthogonal-wins-baseline",
+        candidateCommit: "candidate-orthogonal-wins-pooling",
+      },
+      {
+        id: orthogonalWinsIds.vocabExperiment,
+        createdByResearchTaskId: orthogonalWinsIds.vocabExploitTask,
+        createdByAgentId: TINY_AUTORESEARCH_IDS.scientistAgent,
+        associatedHypothesisId: orthogonalWinsIds.vocabHypothesis,
+        parentExperimentId: null,
+        title: "Wider vocabulary first try",
+        summary:
+          "ORTHO_WINS_EX_VOCAB improved val_bpb from baseline 2.713 to 2.689 by changing the vocabulary region of train.py only.",
+        status: "done",
+        worktreePath: "worktrees/orthogonal-wins/vocab",
+        baseCommit: "orthogonal-wins-baseline",
+        candidateCommit: "candidate-orthogonal-wins-vocab",
+      },
+    ],
+    evaluations: [
+      {
+        id: orthogonalWinsIds.baselineEvaluation,
+        createdByResearchTaskId: orthogonalWinsIds.baselineTask,
+        createdByAgentId: TINY_AUTORESEARCH_IDS.scientistAgent,
+        title: "Baseline measurement",
+        summary: "Run python train.py before candidate changes.",
+        status: "done",
+        associatedBaselineId: orthogonalWinsIds.baseline,
+        associatedExperimentId: null,
+      },
+      {
+        id: orthogonalWinsIds.poolingEvaluation,
+        createdByResearchTaskId: orthogonalWinsIds.poolingExploitTask,
+        createdByAgentId: TINY_AUTORESEARCH_IDS.scientistAgent,
+        title: "Mean pooling measurement",
+        summary: "Run python train.py for ORTHO_WINS_EX_POOLING.",
+        status: "done",
+        associatedBaselineId: null,
+        associatedExperimentId: orthogonalWinsIds.poolingExperiment,
+      },
+      {
+        id: orthogonalWinsIds.vocabEvaluation,
+        createdByResearchTaskId: orthogonalWinsIds.vocabExploitTask,
+        createdByAgentId: TINY_AUTORESEARCH_IDS.scientistAgent,
+        title: "Wider vocabulary measurement",
+        summary: "Run python train.py for ORTHO_WINS_EX_VOCAB.",
+        status: "done",
+        associatedBaselineId: null,
+        associatedExperimentId: orthogonalWinsIds.vocabExperiment,
+      },
+    ],
+    measurements: [
+      {
+        id: orthogonalWinsIds.baselineMeasurement,
+        createdByResearchTaskId: orthogonalWinsIds.baselineTask,
+        createdByAgentId: TINY_AUTORESEARCH_IDS.scientistAgent,
+        evaluationId: orthogonalWinsIds.baselineEvaluation,
+        actor: "scientist",
+        body: "python train.py printed component=baseline, val_bpb=2.713, status=ok.",
+        payload: {
+          activityType: "measurement_recorded",
+          measurementType: "command_output",
+          command: "python train.py",
+          metrics: { val_bpb: { value: 2.713, direction: "lower_is_better" } },
+          rawOutputSummary: "component: baseline\nval_bpb: 2.713\nstatus: ok",
+        },
+      },
+      {
+        id: orthogonalWinsIds.poolingMeasurement,
+        createdByResearchTaskId: orthogonalWinsIds.poolingExploitTask,
+        createdByAgentId: TINY_AUTORESEARCH_IDS.scientistAgent,
+        evaluationId: orthogonalWinsIds.poolingEvaluation,
+        actor: "scientist",
+        body: "python train.py printed branch=ORTHO_WINS_EX_POOLING, val_bpb=2.681, status=ok.",
+        payload: {
+          activityType: "measurement_recorded",
+          measurementType: "command_output",
+          command: "python train.py",
+          changedFiles: ["train.py"],
+          metrics: { val_bpb: { value: 2.681, direction: "lower_is_better" } },
+          rawOutputSummary: "branch: ORTHO_WINS_EX_POOLING\nval_bpb: 2.681\nstatus: ok",
+          comparisonBaselineId: orthogonalWinsIds.baseline,
+          comparisonMeasurementId: orthogonalWinsIds.baselineMeasurement,
+          comparisonMetricDeltas: {
+            val_bpb: { value: -0.032, direction: "lower_is_better" },
+          },
+        },
+      },
+      {
+        id: orthogonalWinsIds.vocabMeasurement,
+        createdByResearchTaskId: orthogonalWinsIds.vocabExploitTask,
+        createdByAgentId: TINY_AUTORESEARCH_IDS.scientistAgent,
+        evaluationId: orthogonalWinsIds.vocabEvaluation,
+        actor: "scientist",
+        body: "python train.py printed branch=ORTHO_WINS_EX_VOCAB, val_bpb=2.689, status=ok.",
+        payload: {
+          activityType: "measurement_recorded",
+          measurementType: "command_output",
+          command: "python train.py",
+          changedFiles: ["train.py"],
+          metrics: { val_bpb: { value: 2.689, direction: "lower_is_better" } },
+          rawOutputSummary: "branch: ORTHO_WINS_EX_VOCAB\nval_bpb: 2.689\nstatus: ok",
+          comparisonBaselineId: orthogonalWinsIds.baseline,
+          comparisonMeasurementId: orthogonalWinsIds.baselineMeasurement,
+          comparisonMetricDeltas: {
+            val_bpb: { value: -0.024, direction: "lower_is_better" },
+          },
+        },
+      },
+    ],
+    artifacts: [
+      {
+        id: orthogonalWinsIds.baselineArtifact,
+        createdByResearchTaskId: orthogonalWinsIds.baselineTask,
+        createdByAgentId: TINY_AUTORESEARCH_IDS.scientistAgent,
+        entityKind: "evaluation",
+        entityId: orthogonalWinsIds.baselineEvaluation,
+        kind: "stdout",
+        title: "Baseline output",
+        path: "artifacts/orthogonal-wins/baseline.txt",
+        mediaType: "text/plain",
+        sizeBytes: 64,
+      },
+      {
+        id: orthogonalWinsIds.poolingArtifact,
+        createdByResearchTaskId: orthogonalWinsIds.poolingExploitTask,
+        createdByAgentId: TINY_AUTORESEARCH_IDS.scientistAgent,
+        entityKind: "evaluation",
+        entityId: orthogonalWinsIds.poolingEvaluation,
+        kind: "stdout",
+        title: "Mean pooling output",
+        path: "artifacts/orthogonal-wins/pooling.txt",
+        mediaType: "text/plain",
+        sizeBytes: 70,
+      },
+      {
+        id: orthogonalWinsIds.vocabArtifact,
+        createdByResearchTaskId: orthogonalWinsIds.vocabExploitTask,
+        createdByAgentId: TINY_AUTORESEARCH_IDS.scientistAgent,
+        entityKind: "evaluation",
+        entityId: orthogonalWinsIds.vocabEvaluation,
+        kind: "stdout",
+        title: "Wider vocabulary output",
+        path: "artifacts/orthogonal-wins/vocab.txt",
+        mediaType: "text/plain",
+        sizeBytes: 70,
+      },
+    ],
+    entityLinks: [
+      {
+        id: orthogonalWinsIds.poolingLink,
+        fromKind: "hypothesis",
+        fromId: orthogonalWinsIds.poolingHypothesis,
+        toKind: "experiment",
+        toId: orthogonalWinsIds.poolingExperiment,
+        relationship: "tests",
+      },
+      {
+        id: orthogonalWinsIds.vocabLink,
+        fromKind: "hypothesis",
+        fromId: orthogonalWinsIds.vocabHypothesis,
+        toKind: "experiment",
+        toId: orthogonalWinsIds.vocabExperiment,
+        relationship: "tests",
+      },
+    ],
+    activities: [
+      {
+        table: "baseline_activities",
+        entityId: orthogonalWinsIds.projectBaseline,
+        actorAgentId: TINY_AUTORESEARCH_IDS.managerAgent,
+        actor: "manager",
+        kind: "recorded",
+        body: "two_orthogonal_wins_for_combiner project setup baseline confirmed before search.",
+        payload: {
+          activityType: "project_baseline_created",
+          baselineKind: "project_setup",
+          fixture: "two_orthogonal_wins_for_combiner",
+        },
+      },
+      {
+        table: "baseline_activities",
+        entityId: orthogonalWinsIds.baseline,
+        actorAgentId: TINY_AUTORESEARCH_IDS.scientistAgent,
+        actor: "scientist",
+        kind: "recorded",
+        body: "two_orthogonal_wins_for_combiner baseline recorded.",
+        payload: {
+          activityType: "baseline_created",
+          fixture: "two_orthogonal_wins_for_combiner",
+        },
+      },
+      {
+        table: "experiment_activities",
+        entityId: orthogonalWinsIds.poolingExperiment,
+        actorAgentId: TINY_AUTORESEARCH_IDS.scientistAgent,
+        actor: "scientist",
+        kind: "completed",
+        body: "ORTHO_WINS_EX_POOLING improved val_bpb to 2.681 by changing only the pooling region of train.py.",
+        payload: {
+          activityType: "experiment_completed",
+          fixture: "two_orthogonal_wins_for_combiner",
+          axis: "pooling",
+          changedFiles: ["train.py"],
+          val_bpb: 2.681,
+        },
+      },
+      {
+        table: "experiment_activities",
+        entityId: orthogonalWinsIds.vocabExperiment,
+        actorAgentId: TINY_AUTORESEARCH_IDS.scientistAgent,
+        actor: "scientist",
+        kind: "completed",
+        body: "ORTHO_WINS_EX_VOCAB improved val_bpb to 2.689 by changing only the vocabulary region of train.py.",
+        payload: {
+          activityType: "experiment_completed",
+          fixture: "two_orthogonal_wins_for_combiner",
+          axis: "vocab",
+          changedFiles: ["train.py"],
+          val_bpb: 2.689,
+        },
+      },
+    ],
+    appEvents: [
+      {
+        type: "session.started",
+        message:
+          "two_orthogonal_wins_for_combiner fixture: two verified positive wins on independent axes (pooling and vocab), ready for a combiner exploit.",
+        payload: { fixture: "two_orthogonal_wins_for_combiner" },
+      },
+    ],
+  };
+}
+
 const seeds = {
   empty_repo: emptySeed,
   needs_baseline: needsBaselineSeed,
@@ -2681,6 +3092,7 @@ const seeds = {
   exploit_drift_lineage: exploitDriftLineageSeed(),
   healthy_exploit_window: healthyExploitWindowSeed(),
   exploit_drift_with_mixed_triage: exploitDriftWithMixedTriageSeed(),
+  two_orthogonal_wins_for_combiner: twoOrthogonalWinsForCombinerSeed(),
 } as const satisfies Record<TinyAutoresearchSeedName, TinyAutoresearchSeedRecords>;
 
 export function tinyAutoresearchSeed({

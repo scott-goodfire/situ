@@ -15,7 +15,8 @@ import { researchProjectInteractionRepository } from "../../data/repositories/re
 import { researchProjectRepository } from "../../data/repositories/research-projects";
 import { jsonModule } from "../../modules/json";
 import { hasAnthropicKey } from "../../secrets/local-secret-store";
-import { readComputeBlockers, type ComputeBlocker } from "../compute";
+import type { ComputeBlocker } from "@situ/compute";
+import { readComputeBlockers } from "../compute-blockers";
 import { enqueueManagerResearchProjectWork } from "../dispatch";
 
 export type AutomationState = {

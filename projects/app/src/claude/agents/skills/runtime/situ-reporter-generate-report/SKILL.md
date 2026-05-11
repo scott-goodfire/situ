@@ -1,116 +1,143 @@
 ---
 name: situ-reporter-generate-report
-description: Per-invocation procedure for the situ Reporter when producing REPORT.md and the trajectory chart.
+description: Per-invocation procedure for the situ Reporter when producing a session report directory.
 ---
 
 # Generate a Session Report
 
+## Goal
+
+Produce a short, opinionated session report that tells the story of what the
+research loop did — what stuck, what broke, what's worth applying next.
+Style reference: `logbooks/spelling-corrector/autoresearch.md` in this repo.
+
+Not a chronological dump. The reader should walk away knowing the headline,
+whether to trust it, what the named failure modes were, and which 1–2
+changes are worth applying.
+
+## Output Contract
+
+Files in the report output directory (working dir of `run_report_command`):
+
+- `REPORT.md` — the narrative. Target 60–100 lines. Hard cap 120.
+- `README.md` — short index of what each file in the directory is.
+- `trajectory.png` — chart of the primary metric across experiments.
+- `DETAILS.md` — audit appendix: per-experiment paragraphs with durable IDs.
+- `patches/<slug>/changes.patch` + `patches/<slug>/NOTES.md` — 1–2 patches
+  the Reporter recommends applying, up to 5 if there are genuinely distinct
+  directions. If no kept result is worth recommending, skip `patches/`
+  entirely and explain in REPORT.md and README.md.
+
+Do **not** leave a matplotlib script in the report directory. Render the
+chart from `/tmp/situ-report-<random>/` and copy only the PNG back.
+
 ## Step 1 — Gather
 
-Pull the data you need (see `situ-reporter-runtime`). At minimum: the research project, the chronological experiment list, per-experiment measurements, verifications, and the baseline. Skim hypotheses and entity links if relevant.
+See `situ-reporter-runtime` for the full read list. At minimum: research
+project, chronological experiments, per-experiment measurements,
+verifications, baseline, and `list_feed_entries` (the Scribe's running
+narration — use these as the chronological spine, not raw event logs).
 
-## Step 2 — Write `_make_trajectory.py` via heredoc
+## Step 2 — Outline before writing
 
-Use `run_report_command` with a heredoc. Approximate shape:
+Before any heredoc, decide:
 
-```bash
-cat > _make_trajectory.py <<'PYEOF'
-#!/usr/bin/env python3
-"""Trajectory chart for situ session <session-id>."""
-import matplotlib.pyplot as plt
+1. **Headline numbers.** Baseline → best on the primary metric; held-out
+   movement; whether they move together.
+2. **Phases.** Three to five clusters by hypothesis family or time. Name
+   each one for its theme, not its dates.
+3. **Defensibly real? per phase.** Use this rubric — write the value
+   into the phase table verbatim:
+   - **Yes** — delta exceeds 2× the metric's quantization floor, dev and
+     held-out move together, and the change is verified non-vacuous
+     (firing rate > 0).
+   - **Partly** — delta exceeds the floor but does not exceed 2×, or dev
+     moves while held-out is flat or noisy.
+   - **Partly noise** — delta sits at the quantization floor (single-item
+     flips). Single-experiment phases at this magnitude default here.
+   - **No (N in a row)** — multiple consecutive discards on the same
+     hypothesis without redesign; the phase is greedy-stuck.
+4. **What worked.** Two to four changes that produced real signal. Why
+   each one worked, not what it did. Cite the experiment ID and the delta.
+5. **What broke.** Three to five named failure modes ("dilution",
+   "vocabulary ceiling", "quantization-level keep"). Point at the
+   experiments that demonstrate each.
+6. **Patches to recommend.** One or two by default. PR-shaped: each one
+   is a coherent direction someone could apply. If the only kept result
+   was marginal, recommend zero and say so in the README.
+7. **Open threads.** ResearchTasks still `planned` or `running` at the
+   report cutoff. One line each.
 
-# (chronological_index_label, durable_id, "keep"|"discard", primary_metric, held_out_or_none, short_label)
-CHRONO = [
-    ("exp1", "abc1234", "discard", 0.737, None, "first attempt: no penalty"),
-    # ...
-]
+## Step 3 — Write REPORT.md
 
-PHASES = [
-    (0, 0, "Phase 0\nbaseline", "#eeeeee"),
-    (1, 7, "Phase 1\nexploratory search", "#fbe9e7"),
-    # ...
-]
+Sections, in order:
 
-fig, ax = plt.subplots(figsize=(13, 6))
+1. `# <slug> — session report` — one-line title.
+2. Headline paragraph — three to five lines. Baseline → best, held-out,
+   run duration, one-sentence verdict. If dev and held-out moved
+   together, say so — that is the main reassurance against adaptive
+   overfitting.
+3. `![trajectory](trajectory.png)` — embed the chart.
+4. `## Phase overview` — table with columns
+   `Phase | <primary metric> | Theme | Defensibly real?`. One row per
+   phase. Themes are short.
+5. `## What worked` — two to four bullets. Each bullet leads with the
+   change in bold, then two to four sentences on _why_ it worked, with
+   deltas and at least one experiment ID.
+6. `## What broke` — three to five bullets. Each leads with a **named
+   failure mode** in bold, then evidence. Failure modes the reader
+   should remember after closing the report.
+7. `## Patches` — one line per recommended patch:
+   `- [<slug>](patches/<slug>/) — one-line description.` Empty section
+   is allowed; the README explains.
+8. `## Open threads` — bulleted list, one line each.
 
-# 1) Phase backgrounds
-for start, end, label, color in PHASES:
-    ax.axvspan(start + 0.5, end + 1.5, color=color, alpha=0.6)
+Cite durable IDs sparingly — once per claim is enough. The audit trail
+lives in DETAILS.md.
 
-# 2) Compute running best for each row
-running_best = None
-spine_values = []
-for r in CHRONO:
-    if r[2] == "keep":
-        running_best = r[3]
-    spine_values.append(running_best)
+## Step 4 — Curate patches
 
-# 3) Kept spine
-keep_x = [i for i, r in enumerate(CHRONO) if r[2] == "keep"]
-keep_y = [r[3] for r in CHRONO if r[2] == "keep"]
-ax.plot(keep_x, keep_y, marker="o", color="#2e8b57", linewidth=2, label="kept (spine)")
+For each recommended patch:
 
-# 4) Discards
-disc_x = [i for i, r in enumerate(CHRONO) if r[2] == "discard"]
-disc_y = [r[3] for r in CHRONO if r[2] == "discard"]
-ax.scatter(disc_x, disc_y, marker="x", color="#cc3333", label="discarded")
+1. Find the experiment via `list_experiments` / `get_experiment`. Choose
+   experiments whose work you would tell the user to apply.
+2. Find the patch artifact:
+   `search_artifacts({ entityKind: "experiment", entityId, kind: "patch" })`.
+   The artifact's `path` field is the absolute on-disk location.
+3. `cp <path> patches/<slug>/changes.patch` via `run_report_command`.
+   Slug names the _recommendation_ (`common-typo-lookup`), not the
+   experiment ID.
+4. Write `patches/<slug>/NOTES.md` — PR description shape, around ten
+   lines:
+   - One paragraph: what the change does and why it is worth applying.
+   - Evidence: experiment ID, delta on dev, delta on held-out.
+   - Caveats: what to verify before merging; whether the gain sits near
+     the noise floor.
 
-# 5) Leader lines from discard points back to the running best
-for i, r in enumerate(CHRONO):
-    if r[2] == "discard" and spine_values[i] is not None:
-        ax.plot([i, i], [spine_values[i], r[3]], color="#cc3333", linewidth=0.8, alpha=0.5)
+If no kept result clears the noise floor, recommend zero patches.
 
-# 6) Annotations
-ax.annotate("first keep:\nfirst-letter penalty",
-            xy=(8, 0.762), xytext=(30, -60),
-            textcoords="offset points",
-            arrowprops=dict(arrowstyle="-", color="#666"))
+## Step 5 — Write README.md
 
-ax.set_xticks(range(len(CHRONO)))
-ax.set_xticklabels([r[0] for r in CHRONO], rotation=45, ha="right")
-ax.set_xlabel("experiment (chronological)")
-ax.set_ylabel("primary metric")
-ax.legend(loc="lower right")
-ax.set_title("situ session — kept-commit spine + discarded experiments")
-fig.tight_layout()
-fig.savefig("trajectory.png", dpi=120)
-PYEOF
-```
+Logbook-style. Project context paragraph plus a `## Files` list.
+Reference: `logbooks/spelling-corrector/README.md`. Five to fifteen lines
+total. If `patches/` is empty, the `## Files` section explains why.
 
-Adapt CHRONO, PHASES, and annotations to the actual session. `textcoords="offset points"` is what keeps callouts readable when y-range shifts — use it for every annotation.
+## Step 6 — Render trajectory.png
 
-## Step 3 — Render the chart
+Write the matplotlib script to a `/tmp/situ-report-$$/_make_trajectory.py`,
+run `python3 /tmp/situ-report-$$/_make_trajectory.py`, then `cp` the
+resulting PNG into the report directory. Do not leave the script behind.
+Annotation positioning uses `textcoords="offset points"` so callouts stay
+readable when the y-range shifts.
 
-Same tool, simpler call:
+## Step 7 — Write DETAILS.md
 
-```bash
-python3 _make_trajectory.py
-```
+Per-experiment paragraphs in chronological order, citing `exp_…`,
+`rtsk_…`, `msr_…`, and commit hashes. This is the audit trail. Density
+is fine here — REPORT.md absorbed the legibility budget.
 
-If it errors, the tool returns the stderr — fix the script and re-run. Iterate until `trajectory.png` exists.
+## Stop
 
-## Step 4 — Write `REPORT.md` via heredoc
-
-Markdown narrative with these sections:
-
-1. **Title** — `# situ / <goal slug> — session report`.
-2. **Bottom line** — baseline → best, held-out movement if known, run duration, conclusion in one sentence.
-3. **Trajectory chart** — embed via `![trajectory](trajectory.png)`.
-4. **Phase narratives** — one short section per phase: what was tried, what stuck, what was discarded and why.
-5. **Findings** — 2–5 bullet points distilled from the run.
-6. **Methodology footnote** — model, budget, compute, caveats.
-
-Use a heredoc like for the script:
-
-```bash
-cat > REPORT.md <<'MDEOF'
-# situ / spelling-corrector — session report
-...
-MDEOF
-```
-
-Cite IDs inline. Don't restate the same experiment in two places. Be terse.
-
-## Step 5 — Stop
-
-When REPORT.md, \_make_trajectory.py, and trajectory.png all exist, your turn is complete. Do not call additional tools.
+When `REPORT.md`, `README.md`, `trajectory.png`, and `DETAILS.md` exist
+(plus any patches the Reporter chose to include), the turn is complete.
+Do not call additional tools.

@@ -5,9 +5,6 @@ hero:
   name: situ
   text: autoresearch harness
   tagline: Run autoresearch on your codebase.
-  image:
-    src: /situ.png
-    alt: situ
   actions:
     - theme: brand
       text: Get started

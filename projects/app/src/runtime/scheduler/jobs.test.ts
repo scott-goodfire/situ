@@ -6,8 +6,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, test } from "bun:tes
 import { ensureRuntimeContext } from "../../config/session-context";
 import { getDb } from "../../data/db/client";
 import { computeTargets, workItems } from "../../data/db/schema";
-import { computeTargetRepository } from "../../data/repositories/compute-targets";
-import { ensureDefaultLocalComputeTargets } from "../compute";
+import { computeModule, computeTargetRepository } from "@situ/compute";
 import { CLAUDE_SCIENTIST_RESEARCH_TASK_WORK_ITEM_PURPOSE } from "../work-items";
 import { canClaimScientistWorkItem } from "./jobs";
 
@@ -54,7 +53,7 @@ describe("runtime scheduler jobs", () => {
 
   test("caps Scientist claims at the auto-created local pool size", async () => {
     process.env.MAX_SITU_SCIENTIST_CONCURRENCY = "4";
-    await ensureDefaultLocalComputeTargets({ desiredCount: 4 });
+    await computeModule.ensureDefaultLocalTargets({ desiredCount: 4 });
 
     insertClaimedScientistWorkItems(3);
     await expect(canClaimScientistWorkItem()).resolves.toBe(true);

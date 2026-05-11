@@ -42,6 +42,19 @@ Recent verified ResearchTasks (oldest first):
 
 You have one ResearchTask slot this turn. State the title of the ResearchTask you will file. Reply with only the title — no explanation, no other text.`;
 
+const singleWinSnapshot = `Project phase: search. Per-turn ResearchTask budget: 1.
+
+Your private memory at /mnt/memory/best-threads.md currently shows:
+
+| axis | parent experiment | parent commit | cumulative Δ | last touched | combinable with |
+|---|---|---|---|---|---|
+| first-letter prior | E_FL | abc1234 | +0.014 (0.748 → 0.762) | 2026-05-11T12:54Z | (no other wins yet) |
+
+Recent verified ResearchTasks (oldest first):
+  exploit (verified) · "Add first-letter prior" · hypothesis H_FL · Δ +0.014 dev_accuracy
+
+There is only one positive axis recorded. You have one ResearchTask slot this turn. State the title of the ResearchTask you will file. Reply with only the title — no explanation, no other text.`;
+
 const parallelSnapshot = `Project phase: search. Per-turn ResearchTask budget: 3.
 
 No exploit lineages have landed wins yet. /mnt/memory/best-threads.md is empty.
@@ -68,6 +81,24 @@ const cases: readonly PlanningCase[] = [
     expectation: {
       requiredAnyOf: ["H_LEN", "Length-asymmetric"],
       forbidden: ["only one", "one at a time", "wait for"],
+    },
+  },
+  {
+    name: "does_not_combine_with_only_one_win",
+    userMessage: singleWinSnapshot,
+    expectation: {
+      requiredAnyOf: [
+        "first-letter",
+        "deepen",
+        "extend",
+        "tune",
+        "sweep",
+        "explore",
+        "length",
+        "QWERTY",
+        "bigram",
+      ],
+      forbidden: ["combine:", "combiner"],
     },
   },
 ];

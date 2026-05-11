@@ -2,12 +2,11 @@ import { ensureRuntimeContext } from "../config/session-context";
 import type { SessionRuntimeContext } from "../config/session-context";
 import { defaultRuntimeHost, defaultRuntimePort } from "../config/runtime";
 import { recordAppEvent } from "../app-events";
-import { computeTargetRepository } from "../data/repositories/compute-targets";
+import { computeTargetRepository, CUDA_VISIBLE_DEVICES_METADATA_KEY } from "@situ/compute";
 import { commandLineModule } from "../modules/command-line";
 import { printResult } from "./__shared__";
 import { seedSessionObjective, waitForAutomationUntilIdle } from "../runtime/automation";
 import type { AutomationProgress } from "../runtime/automation";
-import { CUDA_VISIBLE_DEVICES_METADATA_KEY } from "../runtime/compute";
 import { hasAnthropicKey } from "../secrets/local-secret-store";
 
 export type ExecLifecycleHandle = {
@@ -51,12 +50,16 @@ type ExecComputeTarget = Awaited<ReturnType<typeof computeTargetRepository.upser
 
 export const EXEC_TEARDOWN_HARD_EXIT_MS = 5_000;
 
+export type ExecHardExitWatchdogFactory = typeof armExecHardExitWatchdog;
+
 export async function runExecCommand({
   argv,
   beforeAutomation,
+  armWatchdog = armExecHardExitWatchdog,
 }: {
   argv: string[];
   beforeAutomation?: ExecLifecycleHook;
+  armWatchdog?: ExecHardExitWatchdogFactory;
 }): Promise<number> {
   const options = parseExecOptions({ argv });
   await assertExecCanRun({ options });
@@ -64,6 +67,7 @@ export async function runExecCommand({
   const lifecycle = beforeAutomation
     ? await beforeAutomation({ runtime, server: options.server })
     : undefined;
+  let watchdog: ExecHardExitWatchdog | undefined;
   try {
     const computeTarget = await registerExecComputeTarget({ options });
     printExecStart({ runtime, lifecycle, computeTarget });
@@ -71,10 +75,16 @@ export async function runExecCommand({
     const summary = await runExecAutomation({ options });
     printExecResult({ options, runtime, lifecycle, researchProject, summary, computeTarget });
     const exitCode = exitCodeFromExecSummary({ summary });
-    armExecHardExitWatchdog({ exitCode });
+    watchdog = armWatchdog({ exitCode });
     return exitCode;
   } finally {
     await teardownExecLifecycle({ lifecycle });
+    // Once teardown finished, the watchdog is no longer needed. Cancelling
+    // here keeps the timer from leaking across test cases that reuse the
+    // process. In production this only matters if teardown returned quickly
+    // (good); if teardown hangs, the timer fires before we reach this line
+    // and force-exits, as designed.
+    watchdog?.cancel();
   }
 }
 

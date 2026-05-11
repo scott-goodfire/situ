@@ -1,11 +1,10 @@
 import { z } from "zod";
 import { RESEARCH_TASK_PRIORITIES, RESEARCH_TASK_TYPES } from "@situ/protocol";
 
+import { computeTargetRepository, DEFAULT_LOCAL_COMPUTE_POOL } from "@situ/compute";
 import { PreconditionError } from "../../../data/repositories/__shared__";
-import { computeTargetRepository } from "../../../data/repositories/compute-targets";
 import { researchProjectRepository } from "../../../data/repositories/research-projects";
 import { researchTaskRepository } from "../../../data/repositories/research-tasks";
-import { DEFAULT_LOCAL_COMPUTE_POOL } from "../../../runtime/compute";
 import { defineTool } from "./__shared__/define-tool";
 import { findExploitShapeTokens } from "./__shared__/explore-task-shape";
 import { Result } from "./__shared__/result";

@@ -1,5 +1,6 @@
 // Must be first — strips `--effort`/`-e` from argv and sets SITU_EFFORT
 // before any other module captures the env at load-time.
+// eslint-disable-next-line import/no-unassigned-import
 import "./cli/effort-bootstrap";
 import {
   runComputeCommand,

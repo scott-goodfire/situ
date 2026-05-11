@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { computeEnvForWorkItem } from "../../../runtime/compute";
+import { computeModule } from "@situ/compute";
 import { defineTool } from "./__shared__/define-tool";
 import { Result } from "./__shared__/result";
 import { allRoles } from "./__shared__/roles";
@@ -30,7 +30,7 @@ export const runReadonlyWorkspaceCommandTool = defineTool({
     return Result.ok({
       command: await runReadonlyWorkspaceCommand({
         command: input.command,
-        env: await computeEnvForWorkItem({ workItem: context.workItem }),
+        env: await computeModule.envForWorkItem({ workItem: context.workItem }),
         workingDirectory: input.workingDirectory,
         timeoutMs: timeoutSeconds === undefined ? undefined : timeoutSeconds * 1000,
         maxOutputBytes: input.maxOutputBytes,

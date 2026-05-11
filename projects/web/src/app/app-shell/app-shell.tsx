@@ -41,6 +41,7 @@ export function AppShell() {
   const synced = useReplicacheSynced();
   const localSettings = useLocalSettings();
   const researchProjects = useResearchProjects();
+  const isFullBleed = useIsFullBleedRoute();
   const currentResearchProject = researchProjectModule.currentResearchProjectFrom({
     researchProjects,
   });
@@ -99,9 +100,9 @@ export function AppShell() {
         </DxSidebar>
       }
       topBar={topBar}
-      fullBleed={useIsFullBleedRoute()}
+      fullBleed={isFullBleed}
     >
-      <ContentArea />
+      <ContentArea isFullBleed={isFullBleed} />
     </DxAppFrame>
   );
 }
@@ -111,8 +112,7 @@ function useIsFullBleedRoute(): boolean {
   return Boolean(matchRoute({ to: "/dashboard" }));
 }
 
-function ContentArea() {
-  const isFullBleed = useIsFullBleedRoute();
+function ContentArea({ isFullBleed }: { isFullBleed: boolean }) {
   return (
     <div className={isFullBleed ? s.contentFullBleed : s.content}>
       <Outlet />

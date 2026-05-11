@@ -1812,6 +1812,44 @@ export const tinyAutoresearchLiveAgentEvalCases = [
       forbiddenChangedFiles: ["prepare.py"],
     },
   },
+  {
+    name: "combiner_after_two_orthogonal_wins",
+    displayName: "Manager files combiner after two orthogonal wins",
+    description:
+      "Two independent verified positive wins (ORTHO_WINS_EX_POOLING on the pooling axis and ORTHO_WINS_EX_VOCAB on the vocabulary axis) are pre-seeded. The Manager's combiner-first instinct should fire: the next ResearchTask must be a combiner exploit that layers both axes on top of the lab baseline in a single candidate, not another single-axis tuning step.",
+    seedName: "two_orthogonal_wins_for_combiner",
+    exec: {
+      driver: "manager_turn",
+      goal: [
+        "Combiner-first eval: the two_orthogonal_wins_for_combiner durable state shows two verified positive exploit wins on independent axes — ORTHO_WINS_EX_POOLING (hypothesis ORTHO_WINS_H_POOLING) lowered val_bpb from 2.713 to 2.681 by changing the pooling region of train.py, and ORTHO_WINS_EX_VOCAB (hypothesis ORTHO_WINS_H_VOCAB) lowered val_bpb from 2.713 to 2.689 by changing the vocabulary region of train.py.",
+        "Both wins touch independent code regions, so a combiner is well-defined. /mnt/memory/best-threads.md would list both axes with positive cumulative deltas.",
+        "Per the Manager runtime combiner-first instinct, the next exploit must be a combiner, not another single-axis tuning step. Create exactly one ResearchTask of type exploit whose title starts with 'combine:' and names both axes (for example, 'combine: pooling + vocab').",
+        "The workerPrompt must ask the Scientist to start from the lab baseline (ORTHO_WINS_B1), layer both the mean-pooling and wider-vocabulary changes on top of the baseline in a single candidate, run python train.py, record the joint val_bpb, and cite both parent experiment ids (ORTHO_WINS_EX_POOLING and ORTHO_WINS_EX_VOCAB) and their commit shas.",
+        "The verificationPrompt must reject candidates that fork from one parent experiment, only apply one axis, change prepare.py, or fail to cite both parent experiment ids.",
+        "Do not create explore, debug, prune, synthesize, or verify tasks in this eval turn.",
+      ].join("\n\n"),
+      projectPhase: "search",
+      baselineSummary:
+        "two_orthogonal_wins_for_combiner baseline ORTHO_WINS_B1 records val_bpb=2.713; ORTHO_WINS_EX_POOLING landed 2.681 and ORTHO_WINS_EX_VOCAB landed 2.689 on independent axes.",
+    },
+    expected: {
+      minCounts: {
+        session: 1,
+        researchProjects: 2,
+        researchTasks: 5,
+        workItems: 1,
+        claudeAgentRuns: 1,
+        hypotheses: 2,
+        experiments: 2,
+      },
+      requiredMarkers: ["combine:", "ORTHO_WINS_EX_POOLING", "ORTHO_WINS_EX_VOCAB", "val_bpb"],
+      requiredResearchTaskMarkers: ["combine:", "ORTHO_WINS_EX_POOLING", "ORTHO_WINS_EX_VOCAB"],
+      requiredResearchTaskTypes: ["exploit"],
+      requiredToolUses: ["create_research_task"],
+      forbiddenToolUses: ["run_workspace_command"],
+      forbiddenChangedFiles: ["prepare.py"],
+    },
+  },
 ] satisfies readonly TinyAutoresearchLiveAgentEvalCase[];
 
 export const tinyAutoresearchLiveAgentEvalCaseNames = tinyAutoresearchLiveAgentEvalCases.map(

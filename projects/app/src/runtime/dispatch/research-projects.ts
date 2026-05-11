@@ -23,7 +23,7 @@ import { jsonModule } from "../../modules/json";
 import { logModule } from "../../modules/log";
 import { obs } from "../../observability";
 import { hasAnthropicKey } from "../../secrets/local-secret-store";
-import { claimComputeForResearchTask } from "../compute";
+import { computeModule } from "@situ/compute";
 import {
   CLAUDE_MANAGER_RESEARCH_PROJECT_WORK_ITEM_PURPOSE,
   CLAUDE_SCIENTIST_RESEARCH_TASK_WORK_ITEM_PURPOSE,
@@ -255,7 +255,7 @@ export async function enqueueScientistResearchTaskWork({
   ) {
     return skippedScientistEnqueue({ task, reason: "work_already_open" });
   }
-  const computeClaim = await claimComputeForResearchTask({ researchTask: task });
+  const computeClaim = await computeModule.claimForResearchTask({ researchTask: task });
   if (computeClaim.required && !computeClaim.target) {
     return skippedScientistEnqueue({
       task,

@@ -16,6 +16,7 @@ import { listResearchTasksTool } from "./list-research-tasks";
 import { submitResearchTaskForVerificationTool } from "./submit-research-task-for-verification";
 import { recordResearchTaskVerificationTool } from "./record-research-task-verification";
 import { runReportCommandTool } from "./run-report-command";
+import { listFeedEntriesTool } from "./list-feed-entries";
 import { writeFeedEntryTool } from "./write-feed-entry";
 import { failResearchTaskTool } from "./fail-research-task";
 import { createHypothesisTool } from "./create-hypothesis";
@@ -90,6 +91,7 @@ export const claudeAgentToolDefinitions: readonly ClaudeAgentToolDefinition[] = 
   submitResearchTaskForVerificationTool,
   recordResearchTaskVerificationTool,
   writeFeedEntryTool,
+  listFeedEntriesTool,
   runReportCommandTool,
   failResearchTaskTool,
   createHypothesisTool,

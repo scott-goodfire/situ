@@ -208,35 +208,90 @@ prefer headless `exec` unless the operator specifically wants the UI.
 
 ## Monitor (Active)
 
-While the run is in progress, keep three things going:
+While the run is in progress, keep four things going: an event tail, a
+heartbeat, deeper samples when the heartbeat moves, and a notes file.
 
-1. A persistent event tail to a file the agent can sample:
+### 1. Event tail (background)
 
-   ```bash
-   mise -C "$SITU_REPO" run events -- \
-     --follow --session "$(cat "$REPORT_DIR/session-id.txt")" \
-     > "$REPORT_DIR/events.log" 2>&1
-   ```
+Start the event tail once at launch and let it append to a file the
+later steps can sample:
 
-   Launch via Bash with `run_in_background: true`.
+```bash
+mise -C "$SITU_REPO" run events -- \
+  --follow --session "$(cat "$REPORT_DIR/session-id.txt")" \
+  > "$REPORT_DIR/events.log" 2>&1
+```
 
-2. Periodic state samples (every 10–20 minutes). Pair with `/loop` for
-   self-paced wakeups if the operator wants the agent to babysit the
-   run unattended. On each sample, read:
-   - `git -C "$LAB_DIR" log --oneline | head -30`
-   - `cat "$(cat "$REPORT_DIR/run-output-dir.txt")/results.tsv"` if present
-   - `tail -n 200 "$REPORT_DIR/events.log"`
-   - The latest `claude_agent_runs` and `work_items` rows from
-     `~/.situ/sessions/<session-id>/session.sqlite`. Use the read-only
-     query pattern in `situ-run-and-verify-evals`. Do not write to the
-     session db.
+Launch via Bash with `run_in_background: true`.
 
-3. A running notes file. Append observations to `$REPORT_DIR/notes.md`
-   with timestamps and the tool-call or event id that prompted each
-   note. The post-run REPORT.md grows out of these notes.
+### 2. Heartbeat (every 10–20 minutes)
 
-Flag immediately on these red flags — do not silently recover them,
-they belong in the report:
+This is the paste-able status check. Every input is pinned to
+`$REPORT_DIR` and `$SESSION_ID` read from the run's own state files —
+do not derive paths from `find ~/.situ/sessions` or "latest" heuristics
+(see Anti-patterns below). Substitute the `RUN_ID` set during Setup
+into the first line and run:
+
+```bash
+REPORT_DIR="$HOME/.situ/reports/<RUN_ID>"
+SESSION_ID="$(cat "$REPORT_DIR/session-id.txt")"
+LAB_DIR="$(cat "$REPORT_DIR/lab-dir.txt")"
+RUN_OUTPUT_DIR="$(cat "$REPORT_DIR/run-output-dir.txt")"
+WORKTREES_DIR="$HOME/.situ/sessions/$SESSION_ID/worktrees"
+
+rows=$(awk 'NR>1' "$RUN_OUTPUT_DIR/results.tsv" 2>/dev/null | wc -l | tr -d ' '); rows=${rows:-0}
+events=$( { wc -l < "$REPORT_DIR/events.log"; } 2>/dev/null | tr -d ' '); events=${events:-0}
+worktrees=$(ls "$WORKTREES_DIR" 2>/dev/null | wc -l | tr -d ' '); worktrees=${worktrees:-0}
+head=$(git -C "$LAB_DIR" log --oneline -1 2>/dev/null)
+printf '%s rows=%s events=%s worktrees=%s head="%s"\n' \
+  "$(date -u +%H:%M:%SZ)" "$rows" "$events" "$worktrees" "$head"
+```
+
+One line of output per call. Pair with `/loop` for self-paced wakeups
+if the operator wants the agent to babysit the run unattended.
+
+### 3. Deeper sample (when the heartbeat moves)
+
+When `rows`, `events`, or `worktrees` jumps (or stalls), pull the
+actual content:
+
+- `git -C "$LAB_DIR" log --oneline -n 30` — recent commits in the lab
+  branch.
+- `cat "$RUN_OUTPUT_DIR/results.tsv"` — the harness's own keep/discard
+  table. If the bundle doesn't write one, skip.
+- `tail -n 200 "$REPORT_DIR/events.log"` — last 200 event lines.
+- Latest `claude_agent_runs` and `work_items` rows from
+  `~/.situ/sessions/$SESSION_ID/session.sqlite`. Use the read-only
+  query pattern in `situ-run-and-verify-evals`. Do not write to the
+  session db.
+
+### 4. Notes file
+
+Append observations to `$REPORT_DIR/notes.md` with timestamps and the
+tool-call or event id that prompted each note. The lab-meta REPORT.md
+grows out of these notes.
+
+### Anti-patterns
+
+Do **not** derive session-scoped paths from filesystem scans:
+
+- `find ~/.situ/sessions -name worktrees | head -1` — picks an
+  arbitrary session when multiple labs coexist on disk.
+- `ls -t ~/.situ/sessions | head -1` — same failure mode, different
+  surface.
+- Anything that depends on "latest" or "most recent" ordering instead
+  of the `$SESSION_ID` written to `$REPORT_DIR/session-id.txt` during
+  Setup.
+
+Multiple laboratory runs share `~/.situ/sessions/`. The wrong one will
+silently shadow yours, the heartbeat will print plausible-looking
+numbers, and the report will reference experiments from a different
+run. Always pin to `$REPORT_DIR/session-id.txt`.
+
+### Red flags
+
+Flag immediately on these — do not silently recover them, they belong
+in the lab-meta REPORT.md:
 
 - A tool call references the held-out file named in the manifest
   (for `spelling-corrector`, that is `spell-testset2.txt`).
@@ -248,7 +303,17 @@ they belong in the report:
 
 ## Tear-down
 
-When the budget elapses or the run completes:
+When the budget elapses or the run completes, capture operator-facing
+telemetry: results table, sqlite dumps, fixture hashes, status snapshot.
+
+These artifacts are **not inputs to `situ report`** — the Reporter
+agent reads its own durable session records directly from the session
+sqlite. The dumps below exist so the operator (and the lab-meta
+REPORT.md the agent writes later) can spot-check things from outside
+the agent loop: did constraints hold, did fixtures get touched, what is
+the verifier verdict distribution, where did the loop slow down. Treat
+this as evidence for the lab-meta REPORT.md and as debugging fuel if
+something looks wrong — not as report-generation infrastructure.
 
 ```bash
 date -u +%FT%TZ > "$REPORT_DIR/ended-at.txt"
@@ -289,14 +354,68 @@ Stop the background event tail.
 
 ## Report
 
-Write `$REPORT_DIR/REPORT.md` against the example's `MANIFEST.md`. The
-manifest's **Report should capture** section is the canonical
-structure — do not invent sections; do not drop sections; write
-"none observed" rather than omitting.
+The report splits into two halves:
+
+1. **Research-loop story** — what the agent loop did: phases, what
+   worked, what broke, recommended patches. Generated by `situ report`,
+   written under `$REPORT_DIR/situ-report/`.
+2. **Lab-meta wrapper** — observations only the operator can produce:
+   constraint compliance, role behavior observed, friction log, Situ
+   improvement candidates. Written by hand to `$REPORT_DIR/REPORT.md`.
+
+### Step 1 — Generate the research-loop story
+
+```bash
+SITU_REPO="$(cat "$REPORT_DIR/situ-repo.txt")"
+SESSION_ID="$(cat "$REPORT_DIR/session-id.txt")"
+mkdir -p "$REPORT_DIR/situ-report"
+SITU_REPO_PATH="$LAB_DIR" mise -C "$SITU_REPO" run report -- \
+  "$SESSION_ID" \
+  --output-dir "$REPORT_DIR/situ-report" 2>&1 \
+  | sed 's/^@situ\/app app: //' \
+  | grep -v '^\[[a-z]*\] \$' \
+  | tee "$REPORT_DIR/situ-report.log"
+```
+
+`situ report` runs the Reporter agent against the session and produces
+`REPORT.md`, `README.md`, `trajectory.png`, `DETAILS.md`, and optional
+`patches/<slug>/` directories inside `$REPORT_DIR/situ-report/`. Do not
+re-derive that content in the lab-meta REPORT.md.
+
+If `situ report` fails (non-zero exit), capture stderr to
+`$REPORT_DIR/situ-report.log` and note the failure in the lab REPORT.md
+under a `## situ report failure` section. Do not block the lab-meta
+report on it.
+
+### Step 2 — Write the lab-meta REPORT.md
+
+Write `$REPORT_DIR/REPORT.md` against the example's `MANIFEST.md`,
+**skipping** the sections the Reporter already produced (outcome, dev
+metric trajectory, kept-vs-discarded counts) and **focusing on** the
+sections only the operator can observe from outside Situ:
+
+- Run identity (UUID, timestamps, doctor.json, session id) — links into
+  `situ-report/REPORT.md` for outcome.
+- Constraint compliance (fixture hash diff, held-out reads, non-stdlib
+  imports added).
+- Role behavior observed (Manager phase transitions, Scientist task
+  mix, Verifier verdicts).
+- Friction log (operator notes captured during monitoring).
+- Improvement candidates (specific, actionable Situ changes inferred
+  from the run).
+- Artifact paths (lab dir, situ-report dir, sqlite path, events.log).
+
+Open the lab REPORT.md with a one-line pointer:
+
+```markdown
+The research-loop story lives in [`situ-report/REPORT.md`](./situ-report/REPORT.md).
+This document covers what the operator observed about Situ itself
+while the loop ran.
+```
 
 Cross-reference every factual claim against an artifact under
 `$REPORT_DIR` (events.log line range, results.tsv row, fixture-hashes
-diff, sqlite row id). The report must be readable on its own,
+diff, sqlite row id). The lab REPORT.md must be readable on its own
 without the lab dir.
 
 Always distinguish the example harness decision from Situ verification:
@@ -316,11 +435,13 @@ Always distinguish the example harness decision from Situ verification:
 Tell the operator:
 
 - Lab dir path.
-- Report path.
+- Lab REPORT.md path (`$REPORT_DIR/REPORT.md`).
+- situ-report path (`$REPORT_DIR/situ-report/REPORT.md`).
 - One-line outcome (baseline vs best harness-kept primary metric, plus
   Situ verification state).
 - Whether the constraint-compliance section had any violations.
 - Count of improvement candidates surfaced.
+- Whether `situ report` succeeded.
 
 ## See also
 

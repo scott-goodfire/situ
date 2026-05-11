@@ -10,7 +10,7 @@ import {
   sourceSpaRootPath,
   type ViteDevHandler,
 } from "../spa";
-import { ensureDefaultLocalComputeTargets } from "../runtime/compute";
+import { computeModule } from "@situ/compute";
 import { createRuntimeScheduler, type RuntimeScheduler } from "../runtime/scheduler";
 import { installShutdownHandlers } from "../runtime/shutdown";
 import { serveWithPortFallback } from "./server-listen";
@@ -85,7 +85,7 @@ export async function startRuntimeApp({
 
 async function startAppScheduler(): Promise<RuntimeScheduler> {
   const scheduler = createRuntimeScheduler();
-  await ensureDefaultLocalComputeTargets({ desiredCount: maxScientistConcurrency() });
+  await computeModule.ensureDefaultLocalTargets({ desiredCount: maxScientistConcurrency() });
   if (!schedulerDisabled()) {
     scheduler.start();
   }

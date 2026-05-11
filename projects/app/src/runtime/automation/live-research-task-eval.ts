@@ -5,7 +5,7 @@ import { ensureRuntimeContext } from "../../config/session-context";
 import { maxScientistConcurrency } from "../../config/runtime";
 import { researchProjectRepository } from "../../data/repositories/research-projects";
 import { researchTaskRepository } from "../../data/repositories/research-tasks";
-import { ensureDefaultLocalComputeTargets } from "../compute";
+import { computeModule } from "@situ/compute";
 import { createRuntimeScheduler } from "../scheduler";
 import { waitForAutomationUntilIdle } from "./runner";
 
@@ -61,7 +61,7 @@ async function main(): Promise<void> {
     },
   });
 
-  await ensureDefaultLocalComputeTargets({ desiredCount: maxScientistConcurrency() });
+  await computeModule.ensureDefaultLocalTargets({ desiredCount: maxScientistConcurrency() });
   const scheduler = createRuntimeScheduler();
   scheduler.start();
   const summary = await waitForAutomationUntilIdle({
