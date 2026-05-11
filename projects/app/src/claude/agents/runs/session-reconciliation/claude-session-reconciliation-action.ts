@@ -5,6 +5,7 @@ export enum ClaudeSessionReconciliationActionKind {
   MarkAgentsIdle = "mark_agents_idle",
   None = "none",
   RecordSupervisorError = "record_supervisor_error",
+  ReplaceStalledSession = "replace_stalled_session",
   ReplaceTerminatedSession = "replace_terminated_session",
   ReplaceUnreachableSession = "replace_unreachable_session",
 }
@@ -24,6 +25,11 @@ export type ClaudeSessionReconciliationAction =
       error: unknown;
       kind: ClaudeSessionReconciliationActionKind.RecordSupervisorError;
       oldClaudeSessionId: string;
+    }
+  | {
+      kind: ClaudeSessionReconciliationActionKind.ReplaceStalledSession;
+      oldClaudeSessionId: string;
+      exhaustedCount: number;
     }
   | {
       kind: ClaudeSessionReconciliationActionKind.ReplaceTerminatedSession;
@@ -58,6 +64,20 @@ export function claudeSessionReconciliationAction({
     };
   }
   return { kind: ClaudeSessionReconciliationActionKind.None };
+}
+
+export function claudeSessionReplaceStalledAction({
+  claudeSessionId,
+  exhaustedCount,
+}: {
+  claudeSessionId: string;
+  exhaustedCount: number;
+}): ClaudeSessionReconciliationAction {
+  return {
+    kind: ClaudeSessionReconciliationActionKind.ReplaceStalledSession,
+    oldClaudeSessionId: claudeSessionId,
+    exhaustedCount,
+  };
 }
 
 export function claudeSessionRetrieveErrorAction({

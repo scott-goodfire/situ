@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import {
   claudeSessionReconciliationAction,
+  claudeSessionReplaceStalledAction,
   claudeSessionRetrieveErrorAction,
   ClaudeSessionReconciliationActionKind,
 } from "./claude-session-reconciliation-action";
@@ -44,6 +45,19 @@ describe("Claude session reconciliation action", () => {
         status: "starting",
       }),
     ).toEqual({ kind: ClaudeSessionReconciliationActionKind.None });
+  });
+
+  test("builds a ReplaceStalledSession action that carries the exhausted count", () => {
+    expect(
+      claudeSessionReplaceStalledAction({
+        claudeSessionId: "claude-session-1",
+        exhaustedCount: 12,
+      }),
+    ).toEqual({
+      kind: ClaudeSessionReconciliationActionKind.ReplaceStalledSession,
+      oldClaudeSessionId: "claude-session-1",
+      exhaustedCount: 12,
+    });
   });
 
   test("maps retrieve failures by error shape", () => {

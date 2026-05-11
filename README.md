@@ -13,6 +13,8 @@ measurements, and verifies findings you can inspect in a local web UI.
 
 [Docs](https://situ.science) | [Getting started](https://situ.science/getting-started) | [CLI reference](https://situ.science/cli)
 
+![situ](./projects/docs/public/situ.png)
+
 ## Quick Start
 
 Install:

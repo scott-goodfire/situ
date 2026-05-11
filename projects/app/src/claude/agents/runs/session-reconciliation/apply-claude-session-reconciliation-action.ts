@@ -32,6 +32,13 @@ export async function applyClaudeSessionReconciliationAction({
     });
     return;
   }
+  if (action.kind === ClaudeSessionReconciliationActionKind.ReplaceStalledSession) {
+    await replaceStalledSession({
+      oldClaudeSessionId: action.oldClaudeSessionId,
+      exhaustedCount: action.exhaustedCount,
+    });
+    return;
+  }
   if (action.kind === ClaudeSessionReconciliationActionKind.RecordSupervisorError) {
     await recordSupervisorError({
       error: action.error,
@@ -71,6 +78,31 @@ async function replaceUnreachableSession({
     payload: {
       oldClaudeSessionId,
       error: claudeSessionReconciliationErrorMessage({ error }),
+    },
+  });
+}
+
+async function replaceStalledSession({
+  oldClaudeSessionId,
+  exhaustedCount,
+}: {
+  oldClaudeSessionId: string;
+  exhaustedCount: number;
+}): Promise<void> {
+  await replaceManagedSession({
+    reason: `${exhaustedCount} consecutive retries_exhausted`,
+  });
+  await failRunningRunsForSession({
+    claudeSessionId: oldClaudeSessionId,
+    message: "Claude managed session swapped after stalled retries.",
+  });
+  await recordAppEvent({
+    type: "claude.session_replaced",
+    message: "Replaced stalled Claude managed session.",
+    payload: {
+      oldClaudeSessionId,
+      reason: "retries_exhausted_threshold",
+      exhaustedCount,
     },
   });
 }

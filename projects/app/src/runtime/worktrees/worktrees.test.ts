@@ -520,7 +520,7 @@ describe("experiment worktrees", () => {
     const commandTool = requireTool({ name: "run_readonly_workspace_command" });
     const dirtyFile = join(repoPath, "source-write.txt");
 
-    expect(commandTool.roles).toEqual(["manager", "scientist", "verifier", "reporter"]);
+    expect(commandTool.roles).toEqual(["manager", "scientist", "verifier", "reporter", "scribe"]);
 
     const command = (
       JSON.parse(
