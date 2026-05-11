@@ -41,6 +41,7 @@ export const obs = {
     },
     researchTask: {
       computeBlocked: "situ.research_task.compute.blocked",
+      enqueueSkipped: "situ.research_task.enqueue.skipped",
     },
     claude: {
       sessionReplaced: "situ.claude.session.replaced",

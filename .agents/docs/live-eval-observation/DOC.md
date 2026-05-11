@@ -28,7 +28,10 @@ so the run can be autopsied.
 
 ## Local SQLite
 
-Start with the local DB. It shows what Situ has accepted as durable state:
+Start with the local DB. It shows what Situ has accepted as durable state.
+Timestamp columns (`created_at`, `updated_at`, etc.) are ISO 8601 text, never
+unix milliseconds — see `.agents/docs/observability` for the column-type
+rules and the `datetime()` idiom for time windows.
 
 ```bash
 export SITU_WATCH_DB=/tmp/situ-eval-tiny-autoresearch-.../situ/sessions/.../session.sqlite

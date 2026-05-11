@@ -116,8 +116,10 @@ describe("Claude agent tool registry", () => {
     expect(managerTools.has("search_experiments")).toBe(true);
     expect(managerTools.has("list_artifacts")).toBe(true);
     expect(managerTools.has("ask_user_question")).toBe(true);
+    expect(managerTools.has("create_project_baseline")).toBe(true);
     expect(managerTools.has("present_baseline_for_confirmation")).toBe(true);
     expect(managerTools.has("create_research_task")).toBe(true);
+    expect(managerTools.has("get_planning_advice")).toBe(true);
     expect(managerTools.has("complete_research_project")).toBe(true);
     expect(managerTools.has("fail_research_project")).toBe(true);
     expect(managerTools.has("run_readonly_workspace_command")).toBe(true);
@@ -152,6 +154,16 @@ describe("Claude agent tool registry", () => {
     expect(verifierTools.has("record_research_task_verification")).toBe(true);
     expect(verifierTools.has("complete_experiment")).toBe(false);
     expect(verifierTools.has("add_evaluation_comment")).toBe(false);
+  });
+
+  test("hides user-question tool from headless manager tool params", () => {
+    const managerTools = roleToolNames({ role: "manager", executionMode: "headless" });
+
+    expect(managerTools.has("ask_user_question")).toBe(false);
+    expect(managerTools.has("create_project_baseline")).toBe(true);
+    expect(managerTools.has("present_baseline_for_confirmation")).toBe(true);
+    expect(managerTools.has("create_research_task")).toBe(true);
+    expect(managerTools.has("fail_research_project")).toBe(true);
   });
 
   test("guides record-writing tools toward short human prose", () => {
@@ -219,8 +231,16 @@ function toolNameSet(): Set<string> {
   return new Set(claudeAgentToolDefinitions.map((definition) => definition.name));
 }
 
-function roleToolNames({ role }: { role: ClaudeAgentRole }): Set<string> {
-  return new Set(claudeAgentToolParamsForRole({ role }).map((definition) => definition.name));
+function roleToolNames({
+  role,
+  executionMode,
+}: {
+  role: ClaudeAgentRole;
+  executionMode?: "interactive" | "headless";
+}): Set<string> {
+  return new Set(
+    claudeAgentToolParamsForRole({ role, executionMode }).map((definition) => definition.name),
+  );
 }
 
 function toolInputDescription({

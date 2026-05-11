@@ -86,7 +86,9 @@ function adaptInteraction({
 function statusForProject({ project }: { project: ResearchProjectRecord }): ResearchProjectStatus {
   switch (project.status) {
     case "active":
-      return project.phase === "onboarding" ? "onboarding" : "researching";
+      return project.phase === "onboarding" || project.phase === "baseline"
+        ? "onboarding"
+        : "researching";
     case "blocked_on_user":
       return "blocked";
     case "complete":

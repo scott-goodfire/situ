@@ -24,11 +24,15 @@ projects/evals/
     src/tiny-autoresearch/
   src/prompts.eval.ts
   src/runtime-skills.eval.ts
+  src/explore-task-shape.eval.ts
   src/worlds/tiny-autoresearch/state.eval.ts
   src/worlds/tiny-autoresearch/live-agent-eval.ts
 ```
 
-The prompt, runtime-skill, and state suites are tests and should run often.
+The prompt, runtime-skill, explore-task-shape, and state suites are tests
+and should run often. `explore-task-shape.eval.ts` is a deterministic
+suite of seven fixture cases that validates the Manager prompt against
+exploit-shape verbs being filed under the `explore` ResearchTask type.
 Fixture packages are TypeScript workspace packages so eval worlds can import
 typed repository files, scenario prompts, expectations, and durable-state seed
 records without parsing YAML at runtime.
@@ -86,10 +90,12 @@ work:
 - `baseline_scientist_verifier` checks baseline discovery and verification.
 - `verifier_abbreviated_ids` checks that Verifier recovers from abbreviated
   durable ids by listing/searching state.
-- `manager_onboarding_baseline` checks that Manager presents a baseline
-  confirmation checkpoint instead of starting autonomous work too early.
+- `manager_onboarding_baseline` checks that Manager creates a durable project
+  baseline with `create_project_baseline` and presents a confirmation
+  checkpoint that references it instead of starting autonomous work too early.
 - `manager_post_confirmation_task_planning` checks that Manager creates one
-  ResearchTask with concrete Scientist and Verifier prompts after onboarding.
+  ResearchTask with concrete Scientist and Verifier prompts only after project
+  phase is `search`.
 - `candidate_experiment_scientist` checks bounded candidate execution and
   comparability verification.
 - `adversarial_verifier` checks that Verifier marks evaluation-surface
@@ -126,6 +132,18 @@ work:
   artifact linked to durable evidence.
 - `final_report_lineage` checks that a Scientist reports winning lineage,
   rejected branches, and remaining uncertainty without overclaiming.
+- `verifier_holdout_divergence_signal` checks that Verifier emits
+  `signals.suspicious_holdout_divergence` on the verification payload when
+  the dev and held-out splits disagree on the same candidate.
+- `verifier_holdout_agreement_no_signal` checks that Verifier does not
+  emit the divergence signal when dev and held-out splits agree.
+- `verifier_holdout_only_dev_no_signal` checks that Verifier does not
+  invent the divergence signal when only a dev split is available and
+  no held-out comparison exists.
+- `manager_redesigns_on_holdout_divergence_signal` checks that Manager
+  files a redesign exploit task on top of an existing
+  `suspicious_holdout_divergence` signal instead of discarding the
+  branch outright.
 
 Run one case with `mise run evals -- --case <name>`. Run the whole suite with
 `mise run evals -- --case all`.

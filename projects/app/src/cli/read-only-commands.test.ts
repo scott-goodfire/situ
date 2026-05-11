@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { afterEach, describe, expect, test } from "bun:test";
 
 import { currentWorkspace } from "../config/session-context";
+import { git } from "../runtime/worktrees/git-command";
 import { runSessionsCommand, runStatusCommand } from "./read-only-commands";
 
 const originalEnv = {
@@ -68,16 +69,74 @@ describe("read-only CLI commands", () => {
       ],
     });
   });
+
+  test("status reports experiment worktree HEAD commits", async () => {
+    const fixture = await createSessionFixture({
+      experiments: [
+        { id: "expt_a", title: "Tweak chunker", worktree: { commitSubject: "tweak chunker" } },
+        { id: "expt_b", title: "Inspect baseline", worktree: { commitSubject: null } },
+        { id: "expt_c", title: "Ghost experiment", worktree: "missing" },
+        { id: "expt_d", title: "No worktree yet", worktree: "none" },
+      ],
+    });
+
+    process.env.SITU_REPO_PATH = fixture.labRepoPath;
+    const status = await withCapturedConsole(() => runStatusCommand({ argv: ["--json"] }));
+
+    expect(status.value).toBe(0);
+    const parsed = JSON.parse(status.stdout.join("\n")) as {
+      worktrees: ReadonlyArray<{
+        experimentId: string;
+        title: string;
+        worktreePath: string;
+        headCommit: string | null;
+        headSubject: string | null;
+      }>;
+    };
+    expect(parsed.worktrees).toHaveLength(3);
+
+    const byId = Object.fromEntries(parsed.worktrees.map((row) => [row.experimentId, row]));
+
+    expect(byId.expt_a).toMatchObject({
+      title: "Tweak chunker",
+      headSubject: "tweak chunker",
+    });
+    expect(byId.expt_a?.headCommit).toMatch(/^[0-9a-f]{40}$/);
+    expect(byId.expt_a?.headCommit).not.toBe(fixture.baseCommit);
+
+    expect(byId.expt_b).toMatchObject({
+      title: "Inspect baseline",
+      headCommit: fixture.baseCommit,
+      headSubject: "initial",
+    });
+
+    expect(byId.expt_c).toMatchObject({
+      title: "Ghost experiment",
+      headCommit: null,
+      headSubject: null,
+    });
+
+    expect(byId.expt_d).toBeUndefined();
+  });
 });
+
+type ExperimentSeed = {
+  id: string;
+  title: string;
+  worktree: { commitSubject: string | null } | "missing" | "none";
+};
 
 async function createSessionFixture({
   plannedComputePool,
+  experiments,
 }: {
   plannedComputePool?: string;
+  experiments?: ReadonlyArray<ExperimentSeed>;
 } = {}): Promise<{
   labRepoPath: string;
   otherRepoPath: string;
   sessionId: string;
+  baseCommit: string | undefined;
 }> {
   tempRoot = await mkdtemp(join(tmpdir(), "situ-read-only-commands-"));
   const stateHome = join(tempRoot, "state");
@@ -113,19 +172,108 @@ async function createSessionFixture({
       2,
     )}\n`,
   );
-  createStatusDb({ dbPath, plannedComputePool, sessionId });
 
-  return { labRepoPath: workspace.repoPath, otherRepoPath, sessionId };
+  let baseCommit: string | undefined;
+  let experimentRows: ReadonlyArray<{ id: string; title: string; worktreePath: string | null }> =
+    [];
+  if (experiments && experiments.length > 0) {
+    baseCommit = await initLabRepoWithCommit({ labRepoPath: workspace.repoPath });
+    experimentRows = await createExperimentWorktrees({
+      labRepoPath: workspace.repoPath,
+      sessionHome,
+      baseCommit,
+      experiments,
+    });
+  }
+
+  createStatusDb({ dbPath, plannedComputePool, sessionId, experimentRows });
+
+  return { labRepoPath: workspace.repoPath, otherRepoPath, sessionId, baseCommit };
+}
+
+async function initLabRepoWithCommit({ labRepoPath }: { labRepoPath: string }): Promise<string> {
+  await git({ cwd: labRepoPath, args: ["init", "--initial-branch", "main"] });
+  await writeFile(join(labRepoPath, "README.md"), "baseline\n");
+  await git({ cwd: labRepoPath, args: ["add", "README.md"] });
+  await git({
+    cwd: labRepoPath,
+    args: [
+      "-c",
+      "user.name=situ Test",
+      "-c",
+      "user.email=situ-test@local.invalid",
+      "commit",
+      "-m",
+      "initial",
+    ],
+  });
+  return git({ cwd: labRepoPath, args: ["rev-parse", "HEAD"], trimStdout: true });
+}
+
+async function createExperimentWorktrees({
+  labRepoPath,
+  sessionHome,
+  baseCommit,
+  experiments,
+}: {
+  labRepoPath: string;
+  sessionHome: string;
+  baseCommit: string;
+  experiments: ReadonlyArray<ExperimentSeed>;
+}): Promise<ReadonlyArray<{ id: string; title: string; worktreePath: string | null }>> {
+  const worktreesRoot = join(sessionHome, "worktrees");
+  await mkdir(worktreesRoot, { recursive: true });
+
+  const rows: Array<{ id: string; title: string; worktreePath: string | null }> = [];
+  for (const seed of experiments) {
+    if (seed.worktree === "none") {
+      rows.push({ id: seed.id, title: seed.title, worktreePath: null });
+      continue;
+    }
+    if (seed.worktree === "missing") {
+      rows.push({
+        id: seed.id,
+        title: seed.title,
+        worktreePath: join(worktreesRoot, seed.id),
+      });
+      continue;
+    }
+    const worktreePath = join(worktreesRoot, seed.id);
+    await git({
+      cwd: labRepoPath,
+      args: ["worktree", "add", "--detach", worktreePath, baseCommit],
+    });
+    if (seed.worktree.commitSubject) {
+      await writeFile(join(worktreePath, "note.txt"), `${seed.id}\n`);
+      await git({ cwd: worktreePath, args: ["add", "note.txt"] });
+      await git({
+        cwd: worktreePath,
+        args: [
+          "-c",
+          "user.name=situ Test",
+          "-c",
+          "user.email=situ-test@local.invalid",
+          "commit",
+          "-m",
+          seed.worktree.commitSubject,
+        ],
+      });
+    }
+    rows.push({ id: seed.id, title: seed.title, worktreePath });
+  }
+  return rows;
 }
 
 function createStatusDb({
   dbPath,
   plannedComputePool,
   sessionId,
+  experimentRows,
 }: {
   dbPath: string;
   plannedComputePool?: string;
   sessionId: string;
+  experimentRows: ReadonlyArray<{ id: string; title: string; worktreePath: string | null }>;
 }): void {
   const db = new Database(dbPath);
   try {
@@ -161,6 +309,12 @@ function createStatusDb({
         pool text not null,
         status text not null
       );
+      create table experiments (
+        id text primary key,
+        title text not null,
+        worktree_path text,
+        created_at text not null
+      );
     `);
     db.query(
       "insert into session (id, title, objective, status, created_at, updated_at) values ($id, 'Test', 'Objective', 'active', '2026-05-11T00:00:00.000Z', '2026-05-11T00:01:00.000Z')",
@@ -176,6 +330,19 @@ function createStatusDb({
       db.query(
         "insert into research_tasks (id, title, payload_json, status, type, created_at) values ('task_waiting_for_gpu', 'Waiting for GPU', $payloadJson, 'planned', 'explore', '2026-05-11T00:00:01.000Z')",
       ).run({ $payloadJson: JSON.stringify({ compute: { pool: plannedComputePool } }) });
+    }
+    let createdAtCounter = 0;
+    for (const row of experimentRows) {
+      createdAtCounter += 1;
+      const createdAt = `2026-05-11T00:0${createdAtCounter}:00.000Z`;
+      db.query(
+        "insert into experiments (id, title, worktree_path, created_at) values ($id, $title, $worktreePath, $createdAt)",
+      ).run({
+        $id: row.id,
+        $title: row.title,
+        $worktreePath: row.worktreePath,
+        $createdAt: createdAt,
+      });
     }
   } finally {
     db.close();

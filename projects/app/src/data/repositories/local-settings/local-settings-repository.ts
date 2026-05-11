@@ -4,6 +4,7 @@ import { getDb } from "../../db/client";
 import { localSettings } from "../../db/schema";
 import { runSyncedWrite } from "../../db/sync";
 import { dateTimeModule } from "../../../modules/date-time";
+import { PreconditionError } from "../__shared__";
 
 export type LocalSettingsRecord = typeof localSettings.$inferSelect;
 
@@ -27,7 +28,11 @@ export const localSettingsRepository = {
   } = {}): Promise<LocalSettingsRecord> {
     const settings = await localSettingsRepository.get({ localSettingsId });
     if (!settings) {
-      throw new Error(`LocalSettings not found: ${localSettingsId}`);
+      throw new PreconditionError({
+        code: "local_settings_not_found",
+        hint: "Call localSettingsRepository.upsert to initialize local settings before requiring them.",
+        details: { localSettingsId },
+      });
     }
     return settings;
   },

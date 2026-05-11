@@ -57,39 +57,30 @@ directories.
 
 ## 4. Register compute resources
 
-situ's scheduler only gates experiment concurrency on resources you have
-told it about. If you skip this step and the project needs a GPU,
-multiple Scientists will fire concurrent training runs on the same
-physical GPU and either slow each other down or OOM.
+situ's scheduler only gates experiment concurrency on compute registered
+when \`situ exec\` starts. If the project needs a GPU and no compute
+target is registered, the run can block instead of guessing how to use
+the machine.
 
 Glance at the project to decide whether it needs special compute (look
 for \`torch\`, \`cuda\`, \`vllm\`, large training scripts, \`.cu\` files,
 etc.). Then ask the user one short question: *"This project looks like
-it needs a GPU per experiment — should I register the available GPUs as
-situ compute targets so the scheduler serializes experiment dispatch?"*
+it needs a GPU per experiment — should I launch situ exec with a compute
+target so the scheduler serializes experiment dispatch?"*
 (Substitute "a GPU per experiment" with what you actually saw.)
 
 If yes (or if it's clearly a GPU workload):
 
 \`\`\`bash
-# Pick a session id and reuse it when launching situ exec.
-SESSION_ID="ses_$(date -u +%Y%m%d%H%M%S)"
-
 # Inspect what's available
 nvidia-smi --query-gpu=index,name,memory.total --format=csv,noheader
 
-# Register each visible GPU as its own compute target so the scheduler
-# pins one experiment per GPU
-situ compute add --session "$SESSION_ID" --pool local --kind local --label gpu0 --cuda-visible-devices 0
-# Repeat with --label gpu1 --cuda-visible-devices 1 etc. for additional GPUs.
-
-situ compute list --session "$SESSION_ID"
+# Later, launch situ exec with a compute target for the run.
+situ exec --objective "$OBJECTIVE" --compute-pool local --compute-label gpu0 --cuda-visible-devices 0
 \`\`\`
 
 Skip this step entirely if the project doesn't need accelerators (pure
-analysis, docs, lightweight CPU tasks). The user can always add targets
-later with \`situ compute add --session <session-id>\` and remove them with
-\`situ compute remove <target-id> --session <session-id>\`.
+analysis, docs, lightweight CPU tasks).
 
 ## 5. Define the research objective
 
@@ -106,15 +97,17 @@ default and they can override.
 
 ## 6. Launch (headless exec)
 
-\`situ exec\` is a long-running blocking command (up to the timeout the
-user picked). Launch it **in the background** so you stay responsive
-to the user — in Claude Code, that means \`Bash\` with
+\`situ exec\` starts the same app runtime as \`situ app\` — web server,
+scheduler, shutdown handlers, and local compute bootstrap — then waits
+until the run is idle or times out. It is a long-running blocking command
+(up to the timeout the user picked). Launch it **in the background** so
+you stay responsive to the user — in Claude Code, that means \`Bash\` with
 \`run_in_background: true\`. Equivalent backgrounding in other agents.
 
 \`\`\`bash
 # Run one of these.
-# If you registered compute above, reuse the same SESSION_ID:
-situ exec --session "$SESSION_ID" --objective "<their objective>" --timeout <seconds>
+# If the run needs one GPU-backed compute target:
+situ exec --objective "<their objective>" --timeout <seconds> --compute-pool local --compute-label gpu0 --cuda-visible-devices 0
 
 # Otherwise:
 situ exec --objective "<their objective>" --timeout <seconds>

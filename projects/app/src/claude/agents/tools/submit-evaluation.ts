@@ -1,15 +1,27 @@
-import type { ClaudeAgentToolDefinition } from "./types";
-import { evaluationRepository } from "../../../data/repositories/evaluations";
-import { scienceRoles } from "./__shared__/roles";
-import { toolTransitionModule } from "./__shared__/tool-transition-module";
+import { z } from "zod";
 
-export const submitEvaluationTool: ClaudeAgentToolDefinition = toolTransitionModule.define({
+import { evaluationRepository } from "../../../data/repositories/evaluations";
+import { defineTool } from "./__shared__/define-tool";
+import { Result } from "./__shared__/result";
+import { scienceRoles } from "./__shared__/roles";
+
+const inputSchema = z.object({
+  evaluationId: z.string().describe("Evaluation id to submit."),
+  comment: z.string().describe("Short transition comment explaining the decision."),
+});
+
+export const submitEvaluationTool = defineTool({
   name: "submit_evaluation",
   description: "Submit an evaluation for review with a transition comment.",
   roles: scienceRoles,
-  idKey: "evaluationId",
-  idDescription: "Evaluation id to submit.",
-  handler: ({ id, comment, actorAgentId }) =>
-    evaluationRepository.submit({ evaluationId: id, comment, actorAgentId }),
-  resultKey: "evaluation",
+  inputSchema,
+  resultEnvelope: true,
+  handler: async ({ input, context }) => {
+    const evaluation = await evaluationRepository.submit({
+      evaluationId: input.evaluationId,
+      comment: input.comment,
+      actorAgentId: context.agentId,
+    });
+    return Result.ok({ evaluation });
+  },
 });

@@ -1,18 +1,22 @@
 import type { BetaManagedAgentsCustomToolParams } from "@anthropic-ai/sdk/resources/beta/agents";
 
-import type { ClaudeAgentRole } from "../roles";
+import type { ClaudeAgentExecutionMode, ClaudeAgentRole } from "../roles";
 import type { ClaudeAgentToolDefinition } from "./types";
 import { askUserQuestionTool } from "./ask-user-question";
+import { createProjectBaselineTool } from "./create-project-baseline";
 import { presentBaselineForConfirmationTool } from "./present-baseline-for-confirmation";
 import { completeResearchProjectTool } from "./complete-research-project";
 import { failResearchProjectTool } from "./fail-research-project";
 import { runReadonlyWorkspaceCommandTool } from "./run-readonly-workspace-command";
 import { createResearchTaskTool } from "./create-research-task";
+import { getPlanningAdviceTool } from "./get-planning-advice";
 import { getResearchTaskTool } from "./get-research-task";
 import { searchResearchTasksTool } from "./search-research-tasks";
 import { listResearchTasksTool } from "./list-research-tasks";
 import { submitResearchTaskForVerificationTool } from "./submit-research-task-for-verification";
 import { recordResearchTaskVerificationTool } from "./record-research-task-verification";
+import { runReportCommandTool } from "./run-report-command";
+import { writeFeedEntryTool } from "./write-feed-entry";
 import { failResearchTaskTool } from "./fail-research-task";
 import { createHypothesisTool } from "./create-hypothesis";
 import { getHypothesisTool } from "./get-hypothesis";
@@ -70,16 +74,20 @@ import { searchComputeTargetsTool } from "./search-compute-targets";
 
 export const claudeAgentToolDefinitions: readonly ClaudeAgentToolDefinition[] = [
   askUserQuestionTool,
+  createProjectBaselineTool,
   presentBaselineForConfirmationTool,
   completeResearchProjectTool,
   failResearchProjectTool,
   runReadonlyWorkspaceCommandTool,
   createResearchTaskTool,
+  getPlanningAdviceTool,
   getResearchTaskTool,
   searchResearchTasksTool,
   listResearchTasksTool,
   submitResearchTaskForVerificationTool,
   recordResearchTaskVerificationTool,
+  writeFeedEntryTool,
+  runReportCommandTool,
   failResearchTaskTool,
   createHypothesisTool,
   getHypothesisTool,
@@ -138,17 +146,41 @@ export const claudeAgentToolDefinitions: readonly ClaudeAgentToolDefinition[] = 
 
 export function claudeAgentToolParamsForRole({
   role,
+  executionMode = "interactive",
 }: {
   role: ClaudeAgentRole;
+  executionMode?: ClaudeAgentExecutionMode;
 }): BetaManagedAgentsCustomToolParams[] {
   return claudeAgentToolDefinitions
-    .filter((definition) => definition.roles.includes(role))
+    .filter((definition) => toolIsVisibleForRole({ definition, role, executionMode }))
     .map((definition) => ({
       type: definition.type,
       name: definition.name,
       description: definition.description,
       input_schema: definition.input_schema,
     }));
+}
+
+function toolIsVisibleForRole({
+  definition,
+  role,
+  executionMode,
+}: {
+  definition: ClaudeAgentToolDefinition;
+  role: ClaudeAgentRole;
+  executionMode: ClaudeAgentExecutionMode;
+}): boolean {
+  if (!definition.roles.includes(role)) {
+    return false;
+  }
+  if (
+    role === "manager" &&
+    executionMode === "headless" &&
+    definition.name === "ask_user_question"
+  ) {
+    return false;
+  }
+  return true;
 }
 
 export function claudeAgentToolDefinitionByName({

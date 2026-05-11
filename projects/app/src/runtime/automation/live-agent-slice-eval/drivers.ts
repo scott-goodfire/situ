@@ -1,11 +1,14 @@
+import { maxScientistConcurrency } from "../../../config/runtime";
 import { researchTaskRepository } from "../../../data/repositories/research-tasks";
 import {
   enqueueManagerResearchProjectWork,
   enqueueScientistResearchTaskWork,
   enqueueVerifierResearchTaskWork,
 } from "../../dispatch";
+import { ensureDefaultLocalComputeTargets } from "../../compute";
+import { createRuntimeScheduler } from "../../scheduler";
 import { claimDueWorkItem, handleClaimedWorkItem, workItemLeaseMs } from "../../work-items";
-import { readAutomationState, runAutomationUntilIdle } from "../runner";
+import { readAutomationState, waitForAutomationUntilIdle } from "../runner";
 import { createConfiguredResearchTask } from "./seed-research-tasks";
 import type { LiveAgentSliceEvalConfig, LiveAgentSliceSummary } from "./types";
 
@@ -77,17 +80,22 @@ async function runScientistVerifierLoop({
   config: LiveAgentSliceEvalConfig;
   researchProjectId: string;
 }): Promise<LiveAgentSliceSummary> {
+  await ensureDefaultLocalComputeTargets({ desiredCount: maxScientistConcurrency() });
   const task = await createConfiguredResearchTask({ config, researchProjectId });
   const queued = await enqueueScientistResearchTaskWork({ researchTaskId: task.id });
   if (queued.status !== "enqueued") {
     throw new Error(`Scientist ResearchTask work was not enqueued: ${task.id} (${queued.reason})`);
   }
-  const automation = await runAutomationUntilIdle({
+  const scheduler = createRuntimeScheduler();
+  scheduler.start();
+  const automation = await waitForAutomationUntilIdle({
     timeoutSeconds: config.timeoutSeconds,
     ignoreTriageHypotheses: true,
     onProgress: ({ state }) => {
       console.error(`LIVE_AGENT_EVAL_PROGRESS ${JSON.stringify(state)}`);
     },
+  }).finally(async () => {
+    await scheduler.stop();
   });
   if (automation.status !== "idle") {
     throw new Error(`Live eval did not become idle before timeout: ${automation.status}`);

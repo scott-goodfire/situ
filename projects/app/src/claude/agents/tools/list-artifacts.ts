@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { artifactRepository } from "../../../data/repositories/artifacts";
 import { defineTool } from "./__shared__/define-tool";
+import { Result } from "./__shared__/result";
 import { allRoles } from "./__shared__/roles";
 
 const inputSchema = z.object({
@@ -13,9 +14,11 @@ export const listArtifactsTool = defineTool({
   description: "List recent situ artifacts.",
   roles: allRoles,
   inputSchema,
-  handler: async ({ input }) => ({
-    artifacts: await artifactRepository.list({
-      limit: input.limit ?? 10,
+  resultEnvelope: true,
+  handler: async ({ input }) =>
+    Result.ok({
+      artifacts: await artifactRepository.list({
+        limit: input.limit ?? 10,
+      }),
     }),
-  }),
 });

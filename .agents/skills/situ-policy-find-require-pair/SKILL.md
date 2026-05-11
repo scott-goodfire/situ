@@ -15,8 +15,17 @@ Two flavors prevent callers from second-guessing each other. `get` returns optio
 
 - Public surface: `get(input)` returns `<EntityRecord> | undefined`;
   `require(input)` throws when missing.
-- `require` throws `Error("<Entity> not found: ${id}")` — capitalized
-  entity name, explicit id.
+- `require` throws `PreconditionError` (from `data/repositories/__shared__/precondition-error.ts`) with `code: "not_found"`, a hint of `"<Entity> not found: <id>"` (capitalized entity name, explicit id), and `details` carrying the id under its named key:
+
+  ```ts
+  throw new PreconditionError({
+    code: "not_found",
+    hint: `Hypothesis not found: ${hypothesisId}`,
+    details: { hypothesisId },
+  });
+  ```
+
+- The downstream tool's `defineTool` envelope catches the `PreconditionError` and serializes it as `{ ok: false, code: "not_found", hint, details }` — handlers don't need their own try/catch.
 - `require` is the only path used by status-transition factories and any
   code that follows up with another mutation. Don't re-implement the throw
   inline.

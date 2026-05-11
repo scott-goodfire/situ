@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { baselineRepository } from "../../../data/repositories/baselines";
 import { defineTool } from "./__shared__/define-tool";
+import { Result } from "./__shared__/result";
 import { toolContextModule } from "./__shared__/tool-context-module";
 
 const inputSchema = z.object({
@@ -22,16 +23,18 @@ export const createBaselineTool = defineTool({
   description: "Create a durable baseline record for Scientist work.",
   roles: ["scientist"],
   inputSchema,
-  handler: async ({ input, context }) => ({
-    baseline: await baselineRepository.create({
-      title: input.title,
-      summary: input.summary,
-      createdByResearchTaskId: toolContextModule.researchTaskId({
-        explicit: input.researchTaskId,
-        context,
-        required: false,
+  resultEnvelope: true,
+  handler: async ({ input, context }) =>
+    Result.ok({
+      baseline: await baselineRepository.create({
+        title: input.title,
+        summary: input.summary,
+        createdByResearchTaskId: toolContextModule.researchTaskId({
+          explicit: input.researchTaskId,
+          context,
+          required: false,
+        }),
+        createdByAgentId: context.agentId,
       }),
-      createdByAgentId: context.agentId,
     }),
-  }),
 });

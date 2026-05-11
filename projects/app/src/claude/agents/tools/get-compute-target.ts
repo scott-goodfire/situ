@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { computeTargetRepository } from "../../../data/repositories/compute-targets";
 import { defineTool } from "./__shared__/define-tool";
+import { Result } from "./__shared__/result";
 import { allRoles } from "./__shared__/roles";
 
 const inputSchema = z.object({
@@ -13,9 +14,11 @@ export const getComputeTargetTool = defineTool({
   description: "Read one registered compute target by id.",
   roles: allRoles,
   inputSchema,
-  handler: async ({ input }) => ({
-    computeTarget: await computeTargetRepository.require({
-      computeTargetId: input.computeTargetId,
+  resultEnvelope: true,
+  handler: async ({ input }) =>
+    Result.ok({
+      computeTarget: await computeTargetRepository.require({
+        computeTargetId: input.computeTargetId,
+      }),
     }),
-  }),
 });

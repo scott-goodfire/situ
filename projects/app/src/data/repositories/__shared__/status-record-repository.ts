@@ -1,5 +1,6 @@
 import { runSyncedWrite, type SyncWriteDb } from "../../db/sync";
 import { dateTimeModule } from "../../../modules/date-time";
+import { PreconditionError } from "./precondition-error";
 import type { ResearchRecordStatus } from "./repository-utils";
 
 type StatusTransitionInput<IdKey extends string> = {
@@ -61,13 +62,18 @@ export function createStatusRecordTransitions<IdKey extends string, Row extends 
   ): Promise<Row> => {
     const id = input[idKey];
     if (!id) {
-      throw new Error(`${recordLabel} id is required`);
+      throw new PreconditionError({
+        code: "record_id_required",
+        hint: `Provide ${recordLabel} id when calling this transition; do not omit it.`,
+        details: { recordLabel, idKey },
+      });
     }
     const current = await requireRecord({ id });
     assertCanTransition({
       recordLabel,
       from: current.status,
       to: input.status,
+      id,
     });
     runSyncedWrite({
       write: ({ db, syncVersion }) => {
@@ -107,15 +113,21 @@ function assertCanTransition({
   recordLabel,
   from,
   to,
+  id,
 }: {
   recordLabel: string;
   from: ResearchRecordStatus;
   to: ResearchRecordStatus;
+  id: string;
 }): void {
   if (from === to) {
     return;
   }
   if (from === "done" || from === "canceled" || from === "failed") {
-    throw new Error(`${recordLabel} cannot transition from terminal status: ${from}`);
+    throw new PreconditionError({
+      code: "status_transition_terminal",
+      hint: `${recordLabel} is already in terminal status "${from}" and cannot be re-transitioned; create a new record instead.`,
+      details: { recordLabel, id, currentStatus: from, requestedStatus: to },
+    });
   }
 }

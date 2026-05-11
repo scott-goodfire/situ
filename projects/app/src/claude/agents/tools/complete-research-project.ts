@@ -1,9 +1,11 @@
 import { z } from "zod";
 
+import { PreconditionError } from "../../../data/repositories/__shared__";
 import { researchProjectInteractionRepository } from "../../../data/repositories/research-project-interactions";
 import { researchProjectRepository } from "../../../data/repositories/research-projects";
 import { researchTaskRepository } from "../../../data/repositories/research-tasks";
 import { defineTool } from "./__shared__/define-tool";
+import { Result } from "./__shared__/result";
 import { toolContextModule } from "./__shared__/tool-context-module";
 
 const inputSchema = z.object({
@@ -22,6 +24,7 @@ export const completeResearchProjectTool = defineTool({
     "Mark the active ResearchProject done after verified evidence, durable next steps, or final results exist.",
   roles: ["manager"],
   inputSchema,
+  resultEnvelope: true,
   handler: async ({ input, context }) => {
     const researchProjectId = toolContextModule.researchProjectId({
       explicit: input.researchProjectId,
@@ -33,7 +36,7 @@ export const completeResearchProjectTool = defineTool({
       status: "complete",
       resultSummary: input.resultSummary,
     });
-    return { researchProject };
+    return Result.ok({ researchProject });
   },
 });
 
@@ -49,14 +52,21 @@ async function assertResearchProjectCanComplete({
   });
   const pendingInteraction = interactions.find((interaction) => interaction.status === "pending");
   if (pendingInteraction) {
-    throw new Error(
-      `complete_research_project is blocked by pending user interaction: ${pendingInteraction.id}`,
-    );
+    throw new PreconditionError({
+      code: "complete_research_project_blocked_pending_interaction",
+      hint: "Resolve or cancel the pending user interaction before completing the ResearchProject.",
+      details: {
+        researchProjectId,
+        pendingInteractionId: pendingInteraction.id,
+      },
+    });
   }
-  if (project.phase === "onboarding") {
-    throw new Error(
-      "complete_research_project is blocked while ResearchProject phase is onboarding.",
-    );
+  if (project.phase === "onboarding" || project.phase === "baseline") {
+    throw new PreconditionError({
+      code: "wrong_project_phase",
+      hint: `complete_research_project is unavailable until baseline confirmation. Current phase is ${project.phase}. Use create_project_baseline and present_baseline_for_confirmation to advance the project.`,
+      details: { researchProjectId, currentPhase: project.phase },
+    });
   }
 
   const tasks = await researchTaskRepository.listByResearchProject({
@@ -65,8 +75,10 @@ async function assertResearchProjectCanComplete({
   });
   const hasVerifiedEvidence = tasks.some((task) => task.status === "verified");
   if (!hasVerifiedEvidence && project.phase !== "reporting") {
-    throw new Error(
-      "complete_research_project requires verified ResearchTask evidence or reporting phase final output.",
-    );
+    throw new PreconditionError({
+      code: "missing_verified_evidence",
+      hint: "complete_research_project requires at least one verified ResearchTask, or reporting phase with final output. Continue search or advance to reporting first.",
+      details: { researchProjectId, currentPhase: project.phase },
+    });
   }
 }

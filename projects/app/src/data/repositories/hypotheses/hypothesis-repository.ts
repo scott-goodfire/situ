@@ -8,6 +8,7 @@ import {
   clampRepositoryLimit,
   createStatusRecordTransitions,
   matchesRepositorySearch,
+  PreconditionError,
   type ResearchRecordStatus,
 } from "../__shared__";
 
@@ -59,7 +60,11 @@ async function findHypothesis({
 async function requireHypothesis({ hypothesisId }: HypothesisIdInput): Promise<Hypothesis> {
   const hypothesis = await findHypothesis({ hypothesisId });
   if (!hypothesis) {
-    throw new Error(`Hypothesis not found: ${hypothesisId}`);
+    throw new PreconditionError({
+      code: "hypothesis_not_found",
+      hint: "List or search hypotheses; this id may be abbreviated or stale.",
+      details: { hypothesisId },
+    });
   }
   return hypothesis;
 }
@@ -93,7 +98,11 @@ async function insertActivity({
     .orderBy(asc(hypothesisActivities.createdAt), asc(hypothesisActivities.id));
   const activity = rows.at(-1);
   if (!activity) {
-    throw new Error(`Hypothesis activity was not persisted: ${hypothesisId}`);
+    throw new PreconditionError({
+      code: "hypothesis_activity_not_persisted",
+      hint: "Hypothesis activity write did not produce a row; this is an internal invariant violation, retry or report.",
+      details: { hypothesisId },
+    });
   }
   return activity;
 }
@@ -164,7 +173,11 @@ export const hypothesisRepository = {
     });
     const hypothesis = await findHypothesis({ hypothesisId });
     if (!hypothesis) {
-      throw new Error(`Hypothesis was not persisted: ${hypothesisId}`);
+      throw new PreconditionError({
+        code: "hypothesis_not_persisted",
+        hint: "Hypothesis write did not produce a row; this is an internal invariant violation, retry or report.",
+        details: { hypothesisId },
+      });
     }
     return hypothesis;
   },

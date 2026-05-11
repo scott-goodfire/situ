@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { evaluationRepository } from "../../../data/repositories/evaluations";
 import { defineTool } from "./__shared__/define-tool";
+import { Result } from "./__shared__/result";
 import { allRoles } from "./__shared__/roles";
 
 const inputSchema = z.object({
@@ -13,9 +14,11 @@ export const listEvaluationsTool = defineTool({
   description: "List recent situ evaluations.",
   roles: allRoles,
   inputSchema,
-  handler: async ({ input }) => ({
-    evaluations: await evaluationRepository.list({
-      limit: input.limit ?? 10,
+  resultEnvelope: true,
+  handler: async ({ input }) =>
+    Result.ok({
+      evaluations: await evaluationRepository.list({
+        limit: input.limit ?? 10,
+      }),
     }),
-  }),
 });

@@ -1,9 +1,14 @@
 import { z } from "zod";
 import { RESEARCH_TASK_PRIORITIES, RESEARCH_TASK_TYPES } from "@situ/protocol";
 
+import { PreconditionError } from "../../../data/repositories/__shared__";
 import { computeTargetRepository } from "../../../data/repositories/compute-targets";
+import { researchProjectRepository } from "../../../data/repositories/research-projects";
 import { researchTaskRepository } from "../../../data/repositories/research-tasks";
+import { DEFAULT_LOCAL_COMPUTE_POOL } from "../../../runtime/compute";
 import { defineTool } from "./__shared__/define-tool";
+import { findExploitShapeTokens } from "./__shared__/explore-task-shape";
+import { Result } from "./__shared__/result";
 import { toolContextModule } from "./__shared__/tool-context-module";
 import { ENTITY_KINDS, toolEntityReferenceModule } from "./__shared__/tool-entity-reference-module";
 
@@ -59,6 +64,14 @@ const inputSchema = z
           'exploit ResearchTasks must target an existing hypothesis with targetKind: "hypothesis" and targetId. Create an explore task first if no hypothesis exists.',
       });
     }
+    if (input.type === "verify" && input.computePool) {
+      context.addIssue({
+        code: "custom",
+        path: ["computePool"],
+        message:
+          "computePool applies only to Scientist-routed ResearchTasks; type verify is routed directly to Verifier.",
+      });
+    }
   });
 
 export const createResearchTaskTool = defineTool({
@@ -67,27 +80,48 @@ export const createResearchTaskTool = defineTool({
     "Create a ResearchTask with workerPrompt assignment prose and Verifier verificationPrompt acceptance criteria.",
   roles: ["manager"],
   inputSchema,
+  resultEnvelope: true,
   handler: async ({ input, context }) => {
+    const researchProjectId = toolContextModule.researchProjectId({
+      explicit: input.researchProjectId,
+      context,
+    });
+    const project = await researchProjectRepository.require({ researchProjectId });
+    if (project.phase !== "search") {
+      throw new PreconditionError({
+        code: "wrong_project_phase",
+        hint: `create_research_task is only available after the project baseline is confirmed and the project is in search phase. Current phase is ${project.phase}. Use create_project_baseline and present_baseline_for_confirmation to get the project to search phase first.`,
+        details: { researchProjectId, currentPhase: project.phase },
+      });
+    }
+    if (input.type === "explore") {
+      const matchedTokens = findExploitShapeTokens({ workerPrompt: input.workerPrompt });
+      if (matchedTokens.length > 0) {
+        throw new PreconditionError({
+          code: "explore_prompt_has_exploit_shape",
+          hint: `The workerPrompt names exploit-shape verbs/tools (${matchedTokens.join(", ")}), so this ResearchTask should be type: 'exploit' with targetKind: 'hypothesis' and a hypothesis targetId. Recreate the task with the correct type, or rewrite the workerPrompt to a read-only investigation if it should remain explore.`,
+          details: { matchedTokens, suggestedType: "exploit" },
+        });
+      }
+    }
     if (input.targetKind && input.targetId) {
       await toolEntityReferenceModule.assertExists({
         kind: input.targetKind,
         id: input.targetId,
       });
     }
-    if (input.computePool) {
-      await assertComputePoolExists({ pool: input.computePool });
+    const computePool = scientistComputePool({ type: input.type, computePool: input.computePool });
+    if (computePool && computePool !== DEFAULT_LOCAL_COMPUTE_POOL) {
+      await assertComputePoolExists({ pool: computePool });
     }
     const payload: Record<string, unknown> = {
       createdByClaudeAgentRunId: context.claudeAgentRunId,
     };
-    if (input.computePool) {
-      payload.compute = { pool: input.computePool };
+    if (computePool) {
+      payload.compute = { pool: computePool };
     }
     const researchTask = await researchTaskRepository.create({
-      researchProjectId: toolContextModule.researchProjectId({
-        explicit: input.researchProjectId,
-        context,
-      }),
+      researchProjectId,
       type: input.type,
       title: input.title,
       workerPrompt: input.workerPrompt,
@@ -99,9 +133,22 @@ export const createResearchTaskTool = defineTool({
       createdByAgentId: context.agentId,
       payload,
     });
-    return { researchTask };
+    return Result.ok({ researchTask });
   },
 });
+
+function scientistComputePool({
+  type,
+  computePool,
+}: {
+  type: string;
+  computePool?: string;
+}): string | undefined {
+  if (type === "verify") {
+    return undefined;
+  }
+  return computePool ?? DEFAULT_LOCAL_COMPUTE_POOL;
+}
 
 async function assertComputePoolExists({ pool }: { pool: string }): Promise<void> {
   const targets = await computeTargetRepository.listAll();
@@ -110,7 +157,9 @@ async function assertComputePoolExists({ pool }: { pool: string }): Promise<void
     return;
   }
   const availablePools = Array.from(new Set(activeTargets.map((target) => target.pool))).sort();
-  throw new Error(
-    `computePool "${pool}" is not registered. Available compute pools: ${availablePools.length ? availablePools.join(", ") : "none"}. Register a target first, for example: situ compute add --session <session-id> --pool ${pool} --kind local --label ${pool}.`,
-  );
+  throw new PreconditionError({
+    code: "compute_pool_unknown",
+    hint: `computePool "${pool}" is not registered. ${availablePools.length ? `Available compute pools: ${availablePools.join(", ")}.` : "No compute pools are registered."} Register compute when launching a fresh run with situ exec --compute-pool ${pool}.`,
+    details: { requestedPool: pool, availablePools },
+  });
 }

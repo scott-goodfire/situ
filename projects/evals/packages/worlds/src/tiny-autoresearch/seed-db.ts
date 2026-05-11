@@ -138,19 +138,21 @@ export function seedTinyAutoresearchDb({
         .prepare(
           `
           INSERT OR REPLACE INTO baselines (
-            id, created_by_research_task_id, created_by_agent_id, title, summary, status,
-            sync_version, sync_deleted, created_at, updated_at
+            id, research_project_id, created_by_research_task_id, created_by_agent_id,
+            title, summary, status, payload_json, sync_version, sync_deleted, created_at, updated_at
           )
-          VALUES (?, ?, ?, ?, ?, ?, 1, 0, ?, ?)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, 0, ?, ?)
         `,
         )
         .run(
           record.id,
+          record.researchProjectId ?? seed.researchProjects[0]?.id,
           record.createdByResearchTaskId,
           record.createdByAgentId,
           record.title,
           record.summary,
           record.status,
+          JSON.stringify(record.payload ?? {}),
           now,
           now,
         );

@@ -2,9 +2,12 @@ import { RESEARCH_TASK_PRIORITIES, RESEARCH_TASK_TYPES } from "@situ/protocol";
 import { z } from "zod";
 
 import { ensureRuntimeContext } from "../../config/session-context";
+import { maxScientistConcurrency } from "../../config/runtime";
 import { researchProjectRepository } from "../../data/repositories/research-projects";
 import { researchTaskRepository } from "../../data/repositories/research-tasks";
-import { runAutomationUntilIdle } from "./runner";
+import { ensureDefaultLocalComputeTargets } from "../compute";
+import { createRuntimeScheduler } from "../scheduler";
+import { waitForAutomationUntilIdle } from "./runner";
 
 const liveResearchTaskEvalConfigSchema = z.object({
   goal: z.string().trim().min(1, "Live research task eval goal is required."),
@@ -58,11 +61,16 @@ async function main(): Promise<void> {
     },
   });
 
-  const summary = await runAutomationUntilIdle({
+  await ensureDefaultLocalComputeTargets({ desiredCount: maxScientistConcurrency() });
+  const scheduler = createRuntimeScheduler();
+  scheduler.start();
+  const summary = await waitForAutomationUntilIdle({
     timeoutSeconds: config.timeoutSeconds,
     onProgress: ({ state }) => {
       console.error(`LIVE_AGENT_EVAL_PROGRESS ${JSON.stringify(state)}`);
     },
+  }).finally(async () => {
+    await scheduler.stop();
   });
 
   const finalResearchProject = await researchProjectRepository.require({

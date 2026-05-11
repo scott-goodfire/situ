@@ -1,15 +1,19 @@
-import { asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, isNull } from "drizzle-orm";
 
 import { getDb } from "../../db/client";
-import { baselineActivities, baselines } from "../../db/schema";
+import { baselineActivities, baselines, researchProjects } from "../../db/schema";
 import { runSyncedWrite, type SyncWriteDb } from "../../db/sync";
 import { dateTimeModule } from "../../../modules/date-time";
+import { textModule } from "../../../modules/text";
 import {
   clampRepositoryLimit,
   createStatusRecordTransitions,
   matchesRepositorySearch,
+  PreconditionError,
   type ResearchRecordStatus,
 } from "../__shared__";
+import { researchProjectRepository } from "../research-projects";
+import { researchTaskRepository } from "../research-tasks";
 
 type BaselineRecord = typeof baselines.$inferSelect;
 type BaselineActivity = typeof baselineActivities.$inferSelect;
@@ -66,7 +70,11 @@ async function requireLatestBaselineActivity({
     .orderBy(asc(baselineActivities.createdAt), asc(baselineActivities.id));
   const activity = rows.at(-1);
   if (!activity) {
-    throw new Error(`Baseline activity was not persisted: ${baselineId}`);
+    throw new PreconditionError({
+      code: "baseline_activity_not_persisted",
+      hint: "Baseline activity write did not produce a row; this is an internal invariant violation, retry or report.",
+      details: { baselineId },
+    });
   }
   return activity;
 }
@@ -88,7 +96,11 @@ async function requireBaselineRecord({
 }): Promise<BaselineRecord> {
   const baseline = await getBaselineRecord({ baselineId });
   if (!baseline) {
-    throw new Error(`Baseline not found: ${baselineId}`);
+    throw new PreconditionError({
+      code: "baseline_not_found",
+      hint: "List or search baselines; this id may be abbreviated or stale.",
+      details: { baselineId },
+    });
   }
   return baseline;
 }
@@ -126,16 +138,24 @@ const transitions = createStatusRecordTransitions<"baselineId", BaselineRecord>(
 
 export const baselineRepository = {
   async create({
+    researchProjectId,
     title,
     summary,
     createdByResearchTaskId,
     createdByAgentId,
+    payload = {},
   }: {
+    researchProjectId?: string;
     title: string;
     summary: string;
     createdByResearchTaskId?: string;
     createdByAgentId?: string;
+    payload?: Record<string, unknown>;
   }): Promise<BaselineRecord> {
+    const resolvedResearchProjectId = await resolveResearchProjectId({
+      researchProjectId,
+      createdByResearchTaskId,
+    });
     const baselineId = crypto.randomUUID();
     const now = dateTimeModule.nowIso();
     runSyncedWrite({
@@ -143,11 +163,13 @@ export const baselineRepository = {
         db.insert(baselines)
           .values({
             id: baselineId,
+            researchProjectId: resolvedResearchProjectId,
             title,
             summary,
             createdByResearchTaskId,
             createdByAgentId,
             status: "active",
+            payloadJson: JSON.stringify(payload),
             syncVersion,
             syncDeleted: false,
             createdAt: now,
@@ -169,12 +191,124 @@ export const baselineRepository = {
     return requireBaselineRecord({ baselineId });
   },
 
+  async createOrUpdateProjectBaseline({
+    researchProjectId,
+    title,
+    summary,
+    createdByAgentId,
+    payload = {},
+  }: {
+    researchProjectId: string;
+    title: string;
+    summary: string;
+    createdByAgentId?: string;
+    payload?: Record<string, unknown>;
+  }): Promise<BaselineRecord> {
+    await researchProjectRepository.require({ researchProjectId });
+    const current = await baselineRepository.findProjectBaseline({ researchProjectId });
+    const normalizedTitle = textModule.requiredText({ value: title, label: "title" });
+    const normalizedSummary = textModule.requiredText({ value: summary, label: "summary" });
+    const now = dateTimeModule.nowIso();
+    if (!current) {
+      const baselineId = crypto.randomUUID();
+      runSyncedWrite({
+        write: ({ db, syncVersion }) => {
+          db.insert(baselines)
+            .values({
+              id: baselineId,
+              researchProjectId,
+              title: normalizedTitle,
+              summary: normalizedSummary,
+              createdByAgentId,
+              status: "active",
+              payloadJson: JSON.stringify(payload),
+              syncVersion,
+              syncDeleted: false,
+              createdAt: now,
+              updatedAt: now,
+            })
+            .run();
+          insertBaselineActivity({
+            db,
+            baselineId,
+            actor: "manager",
+            actorAgentId: createdByAgentId,
+            kind: "recorded",
+            body: normalizedSummary,
+            payload: { activityType: "project_baseline_created" },
+            syncVersion,
+          });
+          db.update(researchProjects)
+            .set({
+              phase: "baseline",
+              baselineSummary: normalizedSummary,
+              syncVersion,
+              updatedAt: now,
+            })
+            .where(eq(researchProjects.id, researchProjectId))
+            .run();
+        },
+      });
+      return requireBaselineRecord({ baselineId });
+    }
+
+    runSyncedWrite({
+      write: ({ db, syncVersion }) => {
+        db.update(baselines)
+          .set({
+            title: normalizedTitle,
+            summary: normalizedSummary,
+            status: "active",
+            payloadJson: JSON.stringify(payload),
+            syncVersion,
+            updatedAt: now,
+          })
+          .where(eq(baselines.id, current.id))
+          .run();
+        insertBaselineActivity({
+          db,
+          baselineId: current.id,
+          actor: "manager",
+          actorAgentId: createdByAgentId,
+          kind: "comment",
+          body: normalizedSummary,
+          payload: { activityType: "project_baseline_revised" },
+          syncVersion,
+        });
+        db.update(researchProjects)
+          .set({
+            phase: "baseline",
+            baselineSummary: normalizedSummary,
+            syncVersion,
+            updatedAt: now,
+          })
+          .where(eq(researchProjects.id, researchProjectId))
+          .run();
+      },
+    });
+    return requireBaselineRecord({ baselineId: current.id });
+  },
+
   async get({ baselineId }: { baselineId: string }): Promise<BaselineRecord | undefined> {
     return getBaselineRecord({ baselineId });
   },
 
   async require({ baselineId }: { baselineId: string }): Promise<BaselineRecord> {
     return requireBaselineRecord({ baselineId });
+  },
+
+  async findProjectBaseline({
+    researchProjectId,
+  }: {
+    researchProjectId: string;
+  }): Promise<BaselineRecord | undefined> {
+    return getDb().query.baselines.findFirst({
+      where: and(
+        eq(baselines.researchProjectId, researchProjectId),
+        isNull(baselines.createdByResearchTaskId),
+      ),
+      orderBy: [desc(baselines.updatedAt), desc(baselines.id)],
+    });
   },
 
   async getWithActivities({ baselineId }: { baselineId: string }): Promise<{
@@ -225,8 +359,10 @@ export const baselineRepository = {
             baseline.title,
             baseline.summary,
             baseline.status,
+            baseline.researchProjectId,
             baseline.createdByResearchTaskId,
             baseline.createdByAgentId,
+            baseline.payloadJson,
           ],
         }),
       )
@@ -260,3 +396,25 @@ export const baselineRepository = {
   cancel: transitions.cancel,
   fail: transitions.fail,
 };
+
+async function resolveResearchProjectId({
+  researchProjectId,
+  createdByResearchTaskId,
+}: {
+  researchProjectId?: string;
+  createdByResearchTaskId?: string;
+}): Promise<string> {
+  if (researchProjectId) {
+    await researchProjectRepository.require({ researchProjectId });
+    return researchProjectId;
+  }
+  if (createdByResearchTaskId) {
+    const task = await researchTaskRepository.require({ researchTaskId: createdByResearchTaskId });
+    return task.researchProjectId;
+  }
+  throw new PreconditionError({
+    code: "baseline_research_project_required",
+    hint: "Pass researchProjectId, or pass createdByResearchTaskId so the project can be inferred from the task.",
+    details: {},
+  });
+}

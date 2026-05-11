@@ -2,6 +2,7 @@ import { realpath, stat } from "node:fs/promises";
 import { isAbsolute, relative, resolve } from "node:path";
 
 import { getRuntimeContext, type SessionRuntimeContext } from "../../../../config/session-context";
+import { PreconditionError } from "../../../../data/repositories/__shared__";
 import { commandOutputEnv } from "../../../../runtime/worktrees/command-output-env";
 
 type SourceWorkspaceRuntimeContext = Pick<SessionRuntimeContext, "repoPath" | "sessionHome">;
@@ -49,7 +50,10 @@ export async function runReadonlyWorkspaceCommand({
   runtime?: SourceWorkspaceRuntimeContext;
 }): Promise<ReadonlyWorkspaceCommandResult> {
   if (!command.trim()) {
-    throw new Error("Read-only workspace command is required.");
+    throw new PreconditionError({
+      code: "workspace_command_required",
+      hint: "Provide a non-empty command string.",
+    });
   }
   const workspacePath = await sourceWorkspaceRoot({ repoPath: runtime.repoPath });
   const cwd = workingDirectory
@@ -225,7 +229,11 @@ async function resolveSourceWorkspaceDirectory({
   });
   const pathStat = await stat(resolvedPath);
   if (!pathStat.isDirectory()) {
-    throw new Error(`Source workspace path is not a directory: ${path}`);
+    throw new PreconditionError({
+      code: "workspace_path_not_directory",
+      hint: "Pass a path that resolves to a directory inside the source workspace.",
+      details: { path },
+    });
   }
   return resolvedPath;
 }
@@ -240,10 +248,17 @@ async function resolveSourceWorkspacePath({
   mustExist: boolean;
 }): Promise<string> {
   if (!path.trim()) {
-    throw new Error("Source workspace path is required.");
+    throw new PreconditionError({
+      code: "workspace_path_required",
+      hint: "Provide a non-empty workspace path.",
+    });
   }
   if (path.includes("\0")) {
-    throw new Error(`Source workspace path contains an invalid character: ${path}`);
+    throw new PreconditionError({
+      code: "workspace_path_invalid",
+      hint: "Workspace paths may not contain NUL characters.",
+      details: { path },
+    });
   }
 
   const root = await realpath(workspaceRoot);
@@ -262,7 +277,11 @@ function assertPathInside({ root, path }: { root: string; path: string }): void 
   if (rel === "" || (!rel.startsWith("..") && !isAbsolute(rel))) {
     return;
   }
-  throw new Error(`Source workspace path escapes workspace: ${path}`);
+  throw new PreconditionError({
+    code: "workspace_path_escape",
+    hint: "Use a path that stays inside the source workspace root.",
+    details: { path },
+  });
 }
 
 function clampNumber({ value, min, max }: { value: number; min: number; max: number }): number {

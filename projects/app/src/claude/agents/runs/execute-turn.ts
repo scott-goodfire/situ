@@ -1,6 +1,10 @@
 import { jsonModule } from "../../../modules/json";
+import {
+  researchProjectExecutionMode,
+  researchProjectRepository,
+} from "../../../data/repositories/research-projects";
 import { obs, withSpan } from "../../../observability";
-import type { ClaudeAgentRole } from "../roles";
+import type { ClaudeAgentExecutionMode, ClaudeAgentRole } from "../roles";
 import { workItemPayload } from "../../../runtime/work-items/payload";
 import type { WorkItem } from "../../../runtime/work-items/types";
 import { getAnthropicClient } from "../anthropic-client";
@@ -40,13 +44,16 @@ export async function executeClaudeAgentTurn({ workItem }: { workItem: WorkItem 
   }
 
   const role = roleForWorkItem({ workItem });
+  const executionMode = await claudeAgentExecutionModeForWorkItem({ role, workItem });
   const activeResearchTaskId = payload.activeResearchTaskId;
+  const modelOverride = payload.modelOverride;
 
   await withSpan({
     name: obs.span.claude.turn,
     attributes: {
       [obs.attr.claude.runId]: claudeAgentRunId,
       [obs.attr.claude.role]: role,
+      "claude.execution_mode": executionMode,
       [obs.attr.workItem.id]: workItem.id,
       [obs.attr.workItem.purpose]: workItem.purpose,
       [obs.attr.workItem.attempt]: workItem.attempt,
@@ -58,7 +65,9 @@ export async function executeClaudeAgentTurn({ workItem }: { workItem: WorkItem 
         content,
         claudeAgentRunId,
         role,
+        executionMode,
         activeResearchTaskId,
+        modelOverride,
       }),
   });
 }
@@ -68,13 +77,17 @@ async function executeClaudeAgentTurnInner({
   content,
   claudeAgentRunId,
   role,
+  executionMode,
   activeResearchTaskId,
+  modelOverride,
 }: {
   workItem: WorkItem;
   content: string;
   claudeAgentRunId: string;
   role: ClaudeAgentRole;
+  executionMode: ClaudeAgentExecutionMode;
   activeResearchTaskId?: string;
+  modelOverride?: string;
 }): Promise<void> {
   let managedSession: ManagedSessionRecord | undefined;
   markRunRunning({ claudeAgentRunId, attempt: workItem.attempt });
@@ -88,9 +101,9 @@ async function executeClaudeAgentTurnInner({
         [obs.attr.workItem.id]: workItem.id,
       },
       fn: () =>
-        role === "scientist"
-          ? createIsolatedManagedSessionForRole({ role })
-          : ensureManagedSessionForRole({ role }),
+        role === "scientist" || role === "verifier"
+          ? createIsolatedManagedSessionForRole({ role, modelOverride })
+          : ensureManagedSessionForRole({ role, executionMode, modelOverride }),
     });
     const activeManagedSession = managedSession;
     attachManagedSessionToRun({ claudeAgentRunId, managedSession: activeManagedSession });
@@ -115,6 +128,7 @@ async function executeClaudeAgentTurnInner({
             content,
             claudeAgentRunId,
             role,
+            executionMode,
             workItem,
             activeResearchTaskId,
             stats,
@@ -150,6 +164,7 @@ async function streamClaudeManagedEvents({
   content,
   claudeAgentRunId,
   role,
+  executionMode,
   workItem,
   activeResearchTaskId,
   stats,
@@ -159,6 +174,7 @@ async function streamClaudeManagedEvents({
   content: string;
   claudeAgentRunId: string;
   role: ClaudeAgentRole;
+  executionMode: ClaudeAgentExecutionMode;
   workItem: WorkItem;
   activeResearchTaskId?: string;
   stats: ManagedStreamStats;
@@ -179,6 +195,7 @@ async function streamClaudeManagedEvents({
       managedSession,
       claudeAgentRunId,
       role,
+      executionMode,
       workItem,
       activeResearchTaskId,
       stats,
@@ -194,6 +211,7 @@ async function handleManagedSessionEvent({
   managedSession,
   claudeAgentRunId,
   role,
+  executionMode,
   workItem,
   activeResearchTaskId,
   stats,
@@ -202,6 +220,7 @@ async function handleManagedSessionEvent({
   managedSession: ManagedSessionRecord;
   claudeAgentRunId: string;
   role: ClaudeAgentRole;
+  executionMode: ClaudeAgentExecutionMode;
   workItem: WorkItem;
   activeResearchTaskId?: string;
   stats: ManagedStreamStats;
@@ -240,7 +259,7 @@ async function handleManagedSessionEvent({
     return shouldStopForIdleEvent({ event });
   }
   if (type === "session.status_terminated" || type === "session.deleted") {
-    await handleTerminatedManagedSession({ role, reason: type });
+    await handleTerminatedManagedSession({ role, executionMode, reason: type });
   }
   return false;
 }
@@ -254,13 +273,31 @@ function shouldStopForIdleEvent({ event }: { event: unknown }): boolean {
 
 async function handleTerminatedManagedSession({
   role,
+  executionMode,
   reason,
 }: {
   role: ClaudeAgentRole;
+  executionMode: ClaudeAgentExecutionMode;
   reason: string;
 }): Promise<never> {
-  if (role !== "scientist") {
-    await replaceManagedSession({ role, reason });
+  if (role === "manager") {
+    await replaceManagedSession({ role, executionMode, reason });
   }
   throw new Error(`Managed Agent session ended with event ${reason}.`);
+}
+
+async function claudeAgentExecutionModeForWorkItem({
+  role,
+  workItem,
+}: {
+  role: ClaudeAgentRole;
+  workItem: WorkItem;
+}): Promise<ClaudeAgentExecutionMode> {
+  if (role !== "manager" || workItem.targetKind !== "researchProject") {
+    return "interactive";
+  }
+  const project = await researchProjectRepository.get({
+    researchProjectId: workItem.targetId,
+  });
+  return project ? researchProjectExecutionMode({ project }) : "interactive";
 }

@@ -1,3 +1,4 @@
+export { PreconditionError } from "./precondition-error";
 export {
   clampRepositoryLimit,
   matchesRepositorySearch,

@@ -2,11 +2,14 @@ import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from "bun:test";
+import { eq } from "drizzle-orm";
 
 import { ensureRuntimeContext } from "../../config/session-context";
 import { getDb } from "../../data/db/client";
 import {
   claudeAgentRuns,
+  baselineActivities,
+  baselines,
   computeTargets,
   hypotheses,
   researchProjectInteractions,
@@ -14,7 +17,14 @@ import {
   researchTasks,
   workItems,
 } from "../../data/db/schema";
-import { readAutomationState, runAutomationUntilIdle, type AutomationState } from ".";
+import { baselineRepository } from "../../data/repositories/baselines";
+import { researchProjectRepository } from "../../data/repositories/research-projects";
+import {
+  readAutomationState,
+  seedSessionObjective,
+  type AutomationState,
+  waitForAutomationUntilIdle,
+} from ".";
 
 const originalEnv = {
   SITU_ANTHROPIC_KEY: process.env.SITU_ANTHROPIC_KEY,
@@ -112,10 +122,47 @@ describe("automation runner", () => {
       failedResearchTasks: 1,
       failedWorkItems: 1,
       failedClaudeAgentRuns: 1,
-      computeBlockers: [],
+      computeBlockers: [
+        {
+          kind: "missing_pool",
+          researchTaskId: "research_task_active",
+          researchTaskTitle: "research_task_active",
+          pool: "local",
+          totalTargets: 0,
+          idleTargets: 0,
+          claimedTargets: 0,
+          message:
+            'ResearchTask research_task_active requires compute pool "local", but no active target is registered.',
+        },
+      ],
     };
 
     await expect(readAutomationState()).resolves.toEqual(expected);
+  });
+
+  test("seedSessionObjective marks headless project config and prompt", async () => {
+    const { researchProject } = await seedSessionObjective({
+      objective: "Run this project without interactive questions.",
+      executionMode: "headless",
+    });
+    const storedProject = await researchProjectRepository.require({
+      researchProjectId: researchProject.id,
+    });
+    const payload = jsonRecord(JSON.parse(storedProject.payloadJson) as unknown);
+    expect(payload).toMatchObject({
+      executionMode: "headless",
+      headless: true,
+      rootObjective: true,
+    });
+
+    const workItem = await getDb().query.workItems.findFirst({
+      where: eq(workItems.targetId, researchProject.id),
+    });
+    const workPayload = jsonRecord(JSON.parse(workItem?.payloadJson ?? "{}") as unknown);
+    expect(String(workPayload.content)).toContain("Execution mode: headless");
+    expect(String(workPayload.content)).toContain(
+      "Headless exec mode: do not call ask_user_question",
+    );
   });
 
   test("reports blocked_on_user when only a pending interaction remains", async () => {
@@ -138,7 +185,7 @@ describe("automation runner", () => {
       .run();
 
     await expect(
-      runAutomationUntilIdle({
+      waitForAutomationUntilIdle({
         timeoutSeconds: 1,
         pollMs: 10,
         settleMs: 10,
@@ -179,7 +226,7 @@ describe("automation runner", () => {
       .run();
 
     await expect(
-      runAutomationUntilIdle({
+      waitForAutomationUntilIdle({
         timeoutSeconds: 1,
         pollMs: 10,
         settleMs: 10,
@@ -218,7 +265,7 @@ describe("automation runner", () => {
       .run();
 
     await expect(
-      runAutomationUntilIdle({
+      waitForAutomationUntilIdle({
         timeoutSeconds: 1,
         pollMs: 10,
         settleMs: 10,
@@ -234,12 +281,67 @@ describe("automation runner", () => {
       },
     });
   });
+
+  test("auto-confirms pending project baseline confirmations in exec mode", async () => {
+    const project = await researchProjectRepository.create({
+      goal: "Auto-confirm the setup baseline.",
+    });
+    const baseline = await baselineRepository.createOrUpdateProjectBaseline({
+      researchProjectId: project.id,
+      title: "Exec setup baseline",
+      summary: "Exec should auto-confirm this setup baseline.",
+    });
+    getDb()
+      .insert(researchProjectInteractions)
+      .values({
+        id: "interaction_pending_baseline",
+        researchProjectId: project.id,
+        kind: "baseline_confirmation",
+        prompt: "Does this setup baseline look right?",
+        details: baseline.summary,
+        status: "pending",
+        payloadJson: JSON.stringify({ baselineId: baseline.id }),
+      })
+      .run();
+    await researchProjectRepository.transition({
+      researchProjectId: project.id,
+      status: "blocked_on_user",
+    });
+    getDb()
+      .insert(workItems)
+      .values({
+        id: "claimed_manager_work",
+        purpose: "claude.manager_research_project",
+        targetKind: "researchProject",
+        targetId: project.id,
+        status: "claimed",
+        attempt: 1,
+        leaseExpiresAt: "2999-01-01T00:00:00.000Z",
+      })
+      .run();
+
+    await expect(
+      waitForAutomationUntilIdle({
+        timeoutSeconds: 1,
+        pollMs: 10,
+        settleMs: 10,
+        autoConfirmBaselines: true,
+      }),
+    ).resolves.toMatchObject({ status: "timeout" });
+
+    expect((await researchProjectRepository.require({ researchProjectId: project.id })).phase).toBe(
+      "search",
+    );
+    expect((await baselineRepository.require({ baselineId: baseline.id })).status).toBe("accepted");
+  });
 });
 
 function resetAutomationTables(): void {
   const db = getDb();
   db.delete(claudeAgentRuns).run();
   db.delete(workItems).run();
+  db.delete(baselineActivities).run();
+  db.delete(baselines).run();
   db.delete(computeTargets).run();
   db.delete(hypotheses).run();
   db.delete(researchProjectInteractions).run();
@@ -282,6 +384,13 @@ function workItemValues({
     targetId: id,
     status,
   };
+}
+
+function jsonRecord(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error("Expected JSON object.");
+  }
+  return value as Record<string, unknown>;
 }
 
 function restoreEnv(): void {

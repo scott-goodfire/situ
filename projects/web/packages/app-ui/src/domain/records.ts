@@ -64,6 +64,19 @@ export type ResearchProjectInteractionRecord = {
   updatedAt: Timestamp;
 };
 
+export type FeedEntrySeverity = "info" | "progress" | "stuck" | "failure";
+
+export type FeedEntryRecord = {
+  id: string;
+  projectId: string;
+  summaryMarkdown: string;
+  severity: FeedEntrySeverity;
+  citedAppEventIds: string[];
+  windowStartedAt: Timestamp;
+  windowEndedAt: Timestamp;
+  createdAt: Timestamp;
+};
+
 export type ResearchTaskType = "explore" | "exploit" | "debug" | "verify" | "synthesize" | "prune";
 
 export type ResearchTaskStatus =

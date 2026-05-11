@@ -4,7 +4,7 @@ import { getDb } from "../../db/client";
 import { entityLinks } from "../../db/schema";
 import { runSyncedWrite } from "../../db/sync";
 import { dateTimeModule } from "../../../modules/date-time";
-import { clampRepositoryLimit, matchesRepositorySearch } from "../__shared__";
+import { clampRepositoryLimit, matchesRepositorySearch, PreconditionError } from "../__shared__";
 
 type EntityLinkRecord = typeof entityLinks.$inferSelect;
 
@@ -49,7 +49,11 @@ async function requireEntityLinkRecord({
 }: EntityLinkIdInput): Promise<EntityLinkRecord> {
   const entityLink = await getEntityLinkRecord({ entityLinkId });
   if (!entityLink) {
-    throw new Error(`Entity link not found: ${entityLinkId}`);
+    throw new PreconditionError({
+      code: "entity_link_not_found",
+      hint: "List or search entity links; this id may be abbreviated or stale.",
+      details: { entityLinkId },
+    });
   }
   return entityLink;
 }

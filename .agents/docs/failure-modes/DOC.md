@@ -20,6 +20,13 @@ Repeatedly querying a held-out set until decisions adapt to its noise. Situ
 should surface held-out query count and discourage treating frequently queried
 held-out results as independent confirmation.
 
+Situ now also surfaces held-out divergence directly: when a candidate's
+dev and held-out splits disagree, the Verifier emits a
+`suspicious_holdout_divergence` signal on the verification payload.
+The Manager uses that signal to file a redesign exploit task rather than
+discarding the branch, keeping the lineage and evidence visible while
+the search adapts to the disagreement.
+
 ## Greedy Hill-Climbing
 
 Rejecting intermediate regressions that could combine into a stronger result.

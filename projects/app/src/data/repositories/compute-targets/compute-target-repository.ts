@@ -5,7 +5,7 @@ import { getDb } from "../../db/client";
 import { computeTargets } from "../../db/schema";
 import { runSyncedWrite } from "../../db/sync";
 import { dateTimeModule } from "../../../modules/date-time";
-import { clampRepositoryLimit } from "../__shared__";
+import { clampRepositoryLimit, PreconditionError } from "../__shared__";
 
 export type ComputeTargetStatus = "idle" | "claimed" | "draining" | "dead";
 
@@ -193,7 +193,11 @@ export const computeTargetRepository = {
   }): Promise<ComputeTargetRecord> {
     const current = await computeTargetRepository.require({ computeTargetId });
     if (current.status !== "idle") {
-      throw new Error(`Compute target is not idle: ${computeTargetId}`);
+      throw new PreconditionError({
+        code: "compute_target_not_idle",
+        hint: "Wait for the compute target to be released or claim a different target via claimForPool.",
+        details: { computeTargetId, currentStatus: current.status },
+      });
     }
     const now = dateTimeModule.nowIso();
     runSyncedWrite({
@@ -217,7 +221,16 @@ export const computeTargetRepository = {
       target.status !== "claimed" ||
       (researchTaskId !== undefined && target.claimedByResearchTaskId !== researchTaskId)
     ) {
-      throw new Error(`Compute target is not idle: ${computeTargetId}`);
+      throw new PreconditionError({
+        code: "compute_target_claim_race",
+        hint: "Another claimer beat this attempt; re-fetch the target or claim a different one via claimForPool.",
+        details: {
+          computeTargetId,
+          currentStatus: target.status,
+          requestedResearchTaskId: researchTaskId,
+          claimedByResearchTaskId: target.claimedByResearchTaskId,
+        },
+      });
     }
     return target;
   },
@@ -366,10 +379,6 @@ export const computeTargetRepository = {
     return computeTargetRepository.require({ computeTargetId });
   },
 
-  async remove({ computeTargetId }: { computeTargetId: string }): Promise<ComputeTargetRecord> {
-    return computeTargetRepository.markDead({ computeTargetId });
-  },
-
   async get({
     computeTargetId,
   }: {
@@ -383,7 +392,11 @@ export const computeTargetRepository = {
   async require({ computeTargetId }: { computeTargetId: string }): Promise<ComputeTargetRecord> {
     const computeTarget = await computeTargetRepository.get({ computeTargetId });
     if (!computeTarget) {
-      throw new Error(`Compute target not found: ${computeTargetId}`);
+      throw new PreconditionError({
+        code: "compute_target_not_found",
+        hint: "List or search compute targets; this id may be abbreviated or stale.",
+        details: { computeTargetId },
+      });
     }
     return computeTarget;
   },

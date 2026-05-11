@@ -1,15 +1,27 @@
-import type { ClaudeAgentToolDefinition } from "./types";
-import { baselineRepository } from "../../../data/repositories/baselines";
-import { scienceRoles } from "./__shared__/roles";
-import { toolTransitionModule } from "./__shared__/tool-transition-module";
+import { z } from "zod";
 
-export const acceptBaselineTool: ClaudeAgentToolDefinition = toolTransitionModule.define({
+import { baselineRepository } from "../../../data/repositories/baselines";
+import { defineTool } from "./__shared__/define-tool";
+import { Result } from "./__shared__/result";
+import { scienceRoles } from "./__shared__/roles";
+
+const inputSchema = z.object({
+  baselineId: z.string().describe("Baseline id to accept."),
+  comment: z.string().describe("Short transition comment explaining the decision."),
+});
+
+export const acceptBaselineTool = defineTool({
   name: "accept_baseline",
   description: "Accept a baseline with a transition comment.",
   roles: scienceRoles,
-  idKey: "baselineId",
-  idDescription: "Baseline id to accept.",
-  handler: ({ id, comment, actorAgentId }) =>
-    baselineRepository.accept({ baselineId: id, comment, actorAgentId }),
-  resultKey: "baseline",
+  inputSchema,
+  resultEnvelope: true,
+  handler: async ({ input, context }) => {
+    const baseline = await baselineRepository.accept({
+      baselineId: input.baselineId,
+      comment: input.comment,
+      actorAgentId: context.agentId,
+    });
+    return Result.ok({ baseline });
+  },
 });

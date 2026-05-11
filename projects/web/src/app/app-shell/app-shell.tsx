@@ -14,7 +14,14 @@ import {
 } from "@situ/web-ui";
 import { useHotkey } from "@tanstack/react-hotkeys";
 import { Link, Outlet, useMatchRoute } from "@tanstack/react-router";
-import { ClipboardList, FolderOpen, LayoutDashboard, KeyRound, Save } from "lucide-react";
+import {
+  FolderOpen,
+  Home as HomeIcon,
+  LayoutDashboard,
+  KeyRound,
+  Newspaper,
+  Save,
+} from "lucide-react";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { useReplicacheSynced } from "../replicache";
 import { useLocalSettings } from "../../hooks/local-settings";
@@ -34,7 +41,6 @@ export function AppShell() {
   const synced = useReplicacheSynced();
   const localSettings = useLocalSettings();
   const researchProjects = useResearchProjects();
-  const researchGoalsCount = researchProjects.length;
   const currentResearchProject = researchProjectModule.currentResearchProjectFrom({
     researchProjects,
   });
@@ -80,21 +86,16 @@ export function AppShell() {
     <DxAppFrame
       sidebar={
         <DxSidebar footer={sidebarFooter}>
-          {!researchWorkspaceReady ? (
-            <DxSidebarSection title="Setup">
-              <NavItem
-                to="/research-project"
-                icon={<ClipboardList size={14} />}
-                label="Research Goal"
-                count={researchGoalsCount}
-              />
-            </DxSidebarSection>
-          ) : (
-            <DxSidebarSection title="Research">
-              <NavItem to="/" icon={<LayoutDashboard size={14} />} label="Dashboard" />
-              <NavItem to="/project" icon={<FolderOpen size={14} />} label="Project" />
-            </DxSidebarSection>
-          )}
+          <DxSidebarSection title="Workspace">
+            <NavItem to="/" icon={<HomeIcon size={14} />} label="Home" />
+            <NavItem to="/project" icon={<FolderOpen size={14} />} label="Project" />
+            {researchWorkspaceReady ? (
+              <>
+                <NavItem to="/feed" icon={<Newspaper size={14} />} label="Feed" />
+                <NavItem to="/dashboard" icon={<LayoutDashboard size={14} />} label="Dashboard" />
+              </>
+            ) : null}
+          </DxSidebarSection>
         </DxSidebar>
       }
       topBar={topBar}

@@ -56,6 +56,22 @@ describe("tiny autoresearch fixtures", () => {
     );
   });
 
+  test("includes a Manager-owned project setup baseline after confirmation", () => {
+    const seed = tinyAutoresearchSeed({ name: "with_baseline_result" });
+    const setupBaseline = seed.baselines.find(
+      (item) => item.id === TINY_AUTORESEARCH_IDS.projectBaseline,
+    );
+
+    expect(setupBaseline?.createdByResearchTaskId).toBeNull();
+    expect(setupBaseline?.createdByAgentId).toBe(TINY_AUTORESEARCH_IDS.managerAgent);
+    expect(setupBaseline?.payload).toEqual(
+      expect.objectContaining({
+        baselineKind: "project_setup",
+        evidenceBaselineId: TINY_AUTORESEARCH_IDS.baseline,
+      }),
+    );
+  });
+
   test("marks comparability-break seeds as concerns without hiding the changed surface", () => {
     const seed = tinyAutoresearchSeed({ name: "comparability_break" });
     const concern = seed.activities.find((activity) => activity.kind === "concern");

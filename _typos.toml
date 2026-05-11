@@ -26,4 +26,6 @@ extend-exclude = [
   # /examples/ holds pristine third-party fixtures (corpora, test sets, foreign
   # source) for laboratory runs — see .agents/skills/situ-run-laboratory-example.
   "examples/**",
+  # Logbooks quote raw experiment output and misspelling examples.
+  "logbooks/**",
 ]

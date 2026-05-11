@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { measurementRepository } from "../../../data/repositories/measurements";
 import { defineTool } from "./__shared__/define-tool";
+import { Result } from "./__shared__/result";
 import { allRoles } from "./__shared__/roles";
 
 const inputSchema = z.object({
@@ -16,12 +17,14 @@ export const searchMeasurementsTool = defineTool({
   description: "Search situ measurements by body, actor, ResearchTask, evaluation, or payload.",
   roles: allRoles,
   inputSchema,
-  handler: async ({ input }) => ({
-    measurements: await measurementRepository.search({
-      query: input.query,
-      evaluationId: input.evaluationId,
-      researchTaskId: input.researchTaskId,
-      limit: input.limit ?? 10,
+  resultEnvelope: true,
+  handler: async ({ input }) =>
+    Result.ok({
+      measurements: await measurementRepository.search({
+        query: input.query,
+        evaluationId: input.evaluationId,
+        researchTaskId: input.researchTaskId,
+        limit: input.limit ?? 10,
+      }),
     }),
-  }),
 });

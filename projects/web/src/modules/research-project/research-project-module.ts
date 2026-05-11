@@ -22,7 +22,10 @@ function isResearchProjectPastOnboarding({
 }: {
   researchProject: ResearchProjectRecord;
 }): boolean {
-  return researchProject.phase !== "onboarding" || researchProject.status === "complete";
+  return (
+    (researchProject.phase !== "onboarding" && researchProject.phase !== "baseline") ||
+    researchProject.status === "complete"
+  );
 }
 
 function isTerminalResearchProject({

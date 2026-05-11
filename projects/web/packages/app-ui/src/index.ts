@@ -7,6 +7,8 @@ export type {
   ClaudeAgentStatus,
   EntityLinkRecord,
   EvaluationRecord,
+  FeedEntryRecord,
+  FeedEntrySeverity,
   ExperimentRecord,
   HypothesisRecord,
   MeasurementRecord,
@@ -66,6 +68,8 @@ export {
 } from "./pages/dashboard-view";
 export { ProjectView, type ProjectViewProps } from "./pages/project-view";
 export { ActivitiesView } from "./pages/activities-view";
+export { FeedView, feedEntrySeverityLabel, feedEntrySeverityTone } from "./pages/feed-view";
+export { HomeCardsView, type HomeCardLink } from "./pages/home-cards-view";
 export {
   ResearchProjectSetupView,
   type CreateResearchProjectInput,

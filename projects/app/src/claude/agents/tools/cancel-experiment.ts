@@ -1,15 +1,27 @@
-import type { ClaudeAgentToolDefinition } from "./types";
-import { experimentRepository } from "../../../data/repositories/experiments";
-import { scienceRoles } from "./__shared__/roles";
-import { toolTransitionModule } from "./__shared__/tool-transition-module";
+import { z } from "zod";
 
-export const cancelExperimentTool: ClaudeAgentToolDefinition = toolTransitionModule.define({
+import { experimentRepository } from "../../../data/repositories/experiments";
+import { defineTool } from "./__shared__/define-tool";
+import { Result } from "./__shared__/result";
+import { scienceRoles } from "./__shared__/roles";
+
+const inputSchema = z.object({
+  experimentId: z.string().describe("Experiment id to cancel."),
+  comment: z.string().describe("Short transition comment explaining the decision."),
+});
+
+export const cancelExperimentTool = defineTool({
   name: "cancel_experiment",
   description: "Cancel an experiment with a transition comment.",
   roles: scienceRoles,
-  idKey: "experimentId",
-  idDescription: "Experiment id to cancel.",
-  handler: ({ id, comment, actorAgentId }) =>
-    experimentRepository.cancel({ experimentId: id, comment, actorAgentId }),
-  resultKey: "experiment",
+  inputSchema,
+  resultEnvelope: true,
+  handler: async ({ input, context }) => {
+    const experiment = await experimentRepository.cancel({
+      experimentId: input.experimentId,
+      comment: input.comment,
+      actorAgentId: context.agentId,
+    });
+    return Result.ok({ experiment });
+  },
 });

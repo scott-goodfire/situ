@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { evaluationRepository } from "../../../data/repositories/evaluations";
 import { defineTool } from "./__shared__/define-tool";
+import { Result } from "./__shared__/result";
 import { toolContextModule } from "./__shared__/tool-context-module";
 
 const inputSchema = z.object({
@@ -41,8 +42,9 @@ export const recordExperimentComparisonTool = defineTool({
     "Create an evaluation and measurement comparing a baseline to a captured experiment candidate.",
   roles: ["scientist"],
   inputSchema,
-  handler: async ({ input, context }) => ({
-    comparison: await evaluationRepository.recordExperimentComparison({
+  resultEnvelope: true,
+  handler: async ({ input, context }) => {
+    const comparison = await evaluationRepository.recordExperimentComparison({
       baselineId: input.baselineId,
       experimentId: input.experimentId,
       title: input.title,
@@ -58,6 +60,7 @@ export const recordExperimentComparisonTool = defineTool({
       baselineOutput: input.baselineOutput,
       candidateOutput: input.candidateOutput,
       payload: input.payload ?? {},
-    }),
-  }),
+    });
+    return Result.ok({ comparison });
+  },
 });

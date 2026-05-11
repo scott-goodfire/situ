@@ -3,6 +3,7 @@ import { RESEARCH_STATUSES } from "@situ/protocol";
 
 import { evaluationRepository } from "../../../data/repositories/evaluations";
 import { defineTool } from "./__shared__/define-tool";
+import { Result } from "./__shared__/result";
 import { allRoles } from "./__shared__/roles";
 
 const inputSchema = z.object({
@@ -17,11 +18,13 @@ export const searchEvaluationsTool = defineTool({
     "Search situ evaluations by id, title, summary, associated record, task id, or status.",
   roles: allRoles,
   inputSchema,
-  handler: async ({ input }) => ({
-    evaluations: await evaluationRepository.search({
-      query: input.query,
-      status: input.status,
-      limit: input.limit ?? 10,
+  resultEnvelope: true,
+  handler: async ({ input }) =>
+    Result.ok({
+      evaluations: await evaluationRepository.search({
+        query: input.query,
+        status: input.status,
+        limit: input.limit ?? 10,
+      }),
     }),
-  }),
 });

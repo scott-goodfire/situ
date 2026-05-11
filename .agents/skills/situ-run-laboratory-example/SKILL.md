@@ -147,9 +147,8 @@ reconstruct state without relying on shell variable persistence.
 
 From the lab dir, start the run with the bundle's OBJECTIVE.md as the
 objective text. Substitute `<LAB_DIR>` so the Manager learns its
-workspace from the first line of the objective — it does not read
-`session.researchContext` from `--context`, so do not rely on that.
-Run it in the background so monitoring can proceed.
+workspace from the first line of the objective. The objective text is
+the launch context. Run it in the background so monitoring can proceed.
 
 ```bash
 SITU_REPO="$(cat "$REPORT_DIR/situ-repo.txt")"
@@ -164,10 +163,15 @@ SITU_RUN_OUTPUT_DIR="$RUN_OUTPUT_DIR" mise -C "$SITU_REPO" run exec -- \
   --timeout "$BUDGET_SECONDS"
 ```
 
+If the bundle requires an accelerator, append compute flags to this fresh
+`exec` launch, for example `--compute-pool local --compute-label gpu0
+--cuda-visible-devices 0`. Fresh `exec` launches are the place to declare
+compute registration.
+
 Launch this via Bash with `run_in_background: true`. The exported
 `SITU_REPO_PATH` is what makes the session register against the lab
 dir (so `repoPath` in `mise run sessions --json` matches `$LAB_DIR`).
-Read-only workspace tools resolve against the lab dir. Candidate
+It does not register compute. Read-only workspace tools resolve against the lab dir. Candidate
 `run_workspace_command` calls that target an Experiment may execute in
 a per-experiment worktree under `~/.situ/sessions/<session>/worktrees`;
 that is expected, and the lab dir branch may remain at its initial

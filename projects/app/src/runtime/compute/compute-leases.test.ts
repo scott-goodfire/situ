@@ -26,8 +26,8 @@ import { dateTimeModule } from "../../modules/date-time";
 import {
   claimComputeForResearchTask,
   computeEnvForWorkItem,
-  ensureDefaultLocalComputeTarget,
-  explicitComputeTargetConcurrency,
+  ensureDefaultLocalComputeTargets,
+  liveComputeTargetCount,
   recoverOrphanComputeLeases,
   releaseComputeForWorkItem,
 } from ".";
@@ -103,6 +103,34 @@ describe("compute leases", () => {
     });
     expect(released.status).toBe("idle");
     expect(released.claimedByResearchTaskId).toBeNull();
+  });
+
+  test("defaults Scientist-routed tasks without compute payload to local", async () => {
+    await computeTargetRepository.upsert({
+      computeTargetId: "target-default-local",
+      pool: "local",
+      kind: "local",
+      label: "Default local",
+    });
+    const researchTask = await createResearchTask();
+
+    const claim = await claimComputeForResearchTask({ researchTask });
+
+    expect(claim.pool).toBe("local");
+    expect(claim.poolKnown).toBe(true);
+    expect(claim.required).toBe(true);
+    expect(claim.target?.id).toBe("target-default-local");
+    expect(claim.target?.claimedByResearchTaskId).toBe(researchTask.id);
+  });
+
+  test("does not claim compute for Verifier-owned tasks", async () => {
+    const researchTask = await createResearchTask({ type: "verify" });
+
+    const claim = await claimComputeForResearchTask({ researchTask });
+
+    expect(claim.required).toBe(false);
+    expect(claim.pool).toBeUndefined();
+    expect(claim.target).toBeUndefined();
   });
 
   test("treats malformed work item payloads and target metadata as empty records", async () => {
@@ -236,36 +264,66 @@ describe("compute leases", () => {
     expect(releaseReasons()).toContain("research_task_terminal");
   });
 
-  test("ensureDefaultLocalComputeTarget creates a local target once and returns it on subsequent calls", async () => {
-    const first = await ensureDefaultLocalComputeTarget();
-    expect(first.pool).toBe("local");
-    expect(first.kind).toBe("local");
-    expect(first.label).toBe("Local");
+  test("ensureDefaultLocalComputeTargets tops up the local pool to the desired count", async () => {
+    await ensureDefaultLocalComputeTargets({ desiredCount: 3 });
+    const firstPass = await getDb()
+      .select()
+      .from(computeTargets)
+      .where(eq(computeTargets.pool, "local"));
+    expect(firstPass).toHaveLength(3);
+    expect(firstPass.map((target) => target.label).sort()).toEqual([
+      "Local 1",
+      "Local 2",
+      "Local 3",
+    ]);
+    for (const target of firstPass) {
+      expect(target.kind).toBe("local");
+    }
 
-    const second = await ensureDefaultLocalComputeTarget();
-    expect(second.id).toBe(first.id);
+    await ensureDefaultLocalComputeTargets({ desiredCount: 3 });
+    const stillThree = await getDb()
+      .select()
+      .from(computeTargets)
+      .where(eq(computeTargets.pool, "local"));
+    expect(stillThree).toHaveLength(3);
 
-    const all = await getDb().select().from(computeTargets).where(eq(computeTargets.pool, "local"));
-    expect(all).toHaveLength(1);
+    await ensureDefaultLocalComputeTargets({ desiredCount: 5 });
+    const grown = await getDb()
+      .select()
+      .from(computeTargets)
+      .where(eq(computeTargets.pool, "local"));
+    expect(grown).toHaveLength(5);
+    expect(grown.map((target) => target.label).sort()).toEqual([
+      "Local 1",
+      "Local 2",
+      "Local 3",
+      "Local 4",
+      "Local 5",
+    ]);
   });
 
-  test("explicitComputeTargetConcurrency ignores the implicit local target", async () => {
-    await ensureDefaultLocalComputeTarget();
-    await expect(explicitComputeTargetConcurrency()).resolves.toBeUndefined();
+  test("ensureDefaultLocalComputeTargets does not reap when desiredCount drops", async () => {
+    await ensureDefaultLocalComputeTargets({ desiredCount: 5 });
+    await ensureDefaultLocalComputeTargets({ desiredCount: 2 });
+    const all = await getDb().select().from(computeTargets).where(eq(computeTargets.pool, "local"));
+    expect(all).toHaveLength(5);
+  });
 
+  test("liveComputeTargetCount counts non-dead targets across pools", async () => {
+    await ensureDefaultLocalComputeTargets({ desiredCount: 2 });
     await computeTargetRepository.upsert({
-      computeTargetId: "target-explicit-gpu",
+      computeTargetId: "target-gpu-live",
       pool: "gpu",
       kind: "local",
     });
     await computeTargetRepository.upsert({
-      computeTargetId: "target-dead-gpu",
+      computeTargetId: "target-gpu-dead",
       pool: "gpu",
       kind: "local",
     });
-    await computeTargetRepository.markDead({ computeTargetId: "target-dead-gpu" });
+    await computeTargetRepository.markDead({ computeTargetId: "target-gpu-dead" });
 
-    await expect(explicitComputeTargetConcurrency()).resolves.toBe(1);
+    await expect(liveComputeTargetCount()).resolves.toBe(3);
   });
 
   test("recoverOrphanComputeLeases returns expired running ResearchTasks to planned", async () => {
@@ -306,18 +364,25 @@ describe("compute leases", () => {
 
 async function createResearchTask({
   title = "Experiment ResearchTask",
+  type = "explore",
   payload = {},
 }: {
   title?: string;
+  type?: ResearchTaskRecord["type"];
   payload?: Record<string, unknown>;
 } = {}): Promise<ResearchTaskRecord> {
   const project = await researchProjectRepository.create({
     goal: `Compute test project ${crypto.randomUUID()}`,
   });
-  return researchTaskRepository.create({
+  const searchProject = await researchProjectRepository.updatePhase({
     researchProjectId: project.id,
+    phase: "search",
+    baselineSummary: "Confirmed setup baseline.",
+  });
+  return researchTaskRepository.create({
+    researchProjectId: searchProject.id,
     title,
-    type: "explore",
+    type,
     workerPrompt: "Exercise compute lease behavior.",
     verificationPrompt: "Check the compute lease result.",
     payload,

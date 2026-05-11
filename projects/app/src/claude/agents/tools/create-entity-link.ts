@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { entityLinkRepository } from "../../../data/repositories/entity-links";
 import { defineTool } from "./__shared__/define-tool";
+import { Result } from "./__shared__/result";
 import { ENTITY_KINDS, toolEntityReferenceModule } from "./__shared__/tool-entity-reference-module";
 
 const inputSchema = z.object({
@@ -17,12 +18,13 @@ export const createEntityLinkTool = defineTool({
   description: "Record a durable relationship between two situ entities.",
   roles: ["scientist"],
   inputSchema,
+  resultEnvelope: true,
   handler: async ({ input }) => {
     await Promise.all([
       toolEntityReferenceModule.assertExists({ kind: input.fromKind, id: input.fromId }),
       toolEntityReferenceModule.assertExists({ kind: input.toKind, id: input.toId }),
     ]);
-    return {
+    return Result.ok({
       entityLink: await entityLinkRepository.create({
         fromKind: input.fromKind,
         fromId: input.fromId,
@@ -30,6 +32,6 @@ export const createEntityLinkTool = defineTool({
         toId: input.toId,
         relationship: input.relationship,
       }),
-    };
+    });
   },
 });

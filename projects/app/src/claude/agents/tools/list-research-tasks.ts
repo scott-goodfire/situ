@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { researchTaskRepository } from "../../../data/repositories/research-tasks";
 import { defineTool } from "./__shared__/define-tool";
+import { Result } from "./__shared__/result";
 import { allRoles } from "./__shared__/roles";
 
 const inputSchema = z.object({
@@ -13,9 +14,11 @@ export const listResearchTasksTool = defineTool({
   description: "List recent ResearchTasks.",
   roles: allRoles,
   inputSchema,
-  handler: async ({ input }) => ({
-    researchTasks: await researchTaskRepository.list({
-      limit: input.limit ?? 20,
+  resultEnvelope: true,
+  handler: async ({ input }) =>
+    Result.ok({
+      researchTasks: await researchTaskRepository.list({
+        limit: input.limit ?? 20,
+      }),
     }),
-  }),
 });

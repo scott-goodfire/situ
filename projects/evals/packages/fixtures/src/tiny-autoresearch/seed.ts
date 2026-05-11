@@ -3,8 +3,12 @@ export type TinyAutoresearchSeedName =
   | "needs_baseline"
   | "with_baseline_result"
   | "with_candidate_result"
+  | "with_holdout_divergence"
   | "comparability_break"
-  | "large_search_ridge";
+  | "large_search_ridge"
+  | "exploit_drift_lineage"
+  | "healthy_exploit_window"
+  | "exploit_drift_with_mixed_triage";
 
 export type TinyAutoresearchResearchStatus =
   | "triage"
@@ -18,7 +22,7 @@ export type TinyAutoresearchResearchStatus =
 export type TinyAutoresearchResearchProjectSeed = Readonly<{
   id: string;
   goal: string;
-  phase: "onboarding" | "search" | "reporting" | "complete";
+  phase: "onboarding" | "baseline" | "search" | "reporting" | "complete";
   status: "active" | "blocked_on_user" | "complete" | "failed" | "canceled";
   baselineSummary: string | null;
   resultSummary: string | null;
@@ -81,11 +85,13 @@ export type TinyAutoresearchResearchTaskSeed = Readonly<{
 
 export type TinyAutoresearchResearchRecordSeed = Readonly<{
   id: string;
+  researchProjectId?: string;
   createdByResearchTaskId: string | null;
   createdByAgentId: string | null;
   title: string;
   summary: string;
   status: TinyAutoresearchResearchStatus;
+  payload?: Record<string, unknown>;
 }>;
 
 export type TinyAutoresearchExperimentSeed = TinyAutoresearchResearchRecordSeed &
@@ -103,6 +109,11 @@ export type TinyAutoresearchEvaluationSeed = TinyAutoresearchResearchRecordSeed 
     associatedExperimentId: string | null;
   }>;
 
+export type TinyAutoresearchMetricsPayload = Record<
+  string,
+  TinyAutoresearchMetricValue | Record<string, TinyAutoresearchMetricValue>
+>;
+
 export type TinyAutoresearchMeasurementSeed = Readonly<{
   id: string;
   createdByResearchTaskId: string | null;
@@ -114,7 +125,7 @@ export type TinyAutoresearchMeasurementSeed = Readonly<{
     activityType: string;
     measurementType: string;
     command: string;
-    metrics: Record<string, TinyAutoresearchMetricValue>;
+    metrics: TinyAutoresearchMetricsPayload;
     rawOutputSummary: string;
     comparisonBaselineId?: string;
     comparisonMeasurementId?: string;
@@ -190,6 +201,7 @@ export const TINY_AUTORESEARCH_IDS = {
   verificationTask: "research_task_tiny_verification",
   taskVerification: "research_task_verification_tiny_comparability",
   hypothesis: "H1",
+  projectBaseline: "PB1",
   baseline: "B1",
   baselineEvaluation: "EV1",
   baselineMeasurement: "M1",
@@ -334,12 +346,22 @@ const hypothesis: TinyAutoresearchResearchRecordSeed = {
 
 const baseline: TinyAutoresearchResearchRecordSeed = {
   id: TINY_AUTORESEARCH_IDS.baseline,
+  researchProjectId: TINY_AUTORESEARCH_IDS.researchProject,
   createdByResearchTaskId: TINY_AUTORESEARCH_IDS.baselineTask,
   createdByAgentId: TINY_AUTORESEARCH_IDS.scientistAgent,
   title: "Reference train.py measurement",
   summary: "Unmodified train.py reports val_bpb=2.713.",
   status: "accepted",
 };
+
+const projectSetupBaseline = projectSetupBaselineSeed({
+  id: TINY_AUTORESEARCH_IDS.projectBaseline,
+  researchProjectId: TINY_AUTORESEARCH_IDS.researchProject,
+  summary:
+    "Project setup baseline: use python train.py as the native command, compare val_bpb against B1 / EV1 / M1, and keep prepare.py unchanged.",
+  fixture: "tiny-autoresearch",
+  evidenceBaselineId: TINY_AUTORESEARCH_IDS.baseline,
+});
 
 const baselineEvaluation: TinyAutoresearchEvaluationSeed = {
   id: TINY_AUTORESEARCH_IDS.baselineEvaluation,
@@ -391,6 +413,47 @@ const baselineArtifact: TinyAutoresearchArtifactSeed = {
   mediaType: "text/plain",
   sizeBytes: 72,
 };
+
+function projectSetupBaselineSeed({
+  id,
+  researchProjectId,
+  summary,
+  fixture,
+  evidenceBaselineId,
+}: {
+  id: string;
+  researchProjectId: string;
+  summary: string;
+  fixture: string;
+  evidenceBaselineId: string;
+}): TinyAutoresearchResearchRecordSeed {
+  return {
+    id,
+    researchProjectId,
+    createdByResearchTaskId: null,
+    createdByAgentId: TINY_AUTORESEARCH_IDS.managerAgent,
+    title: "Confirmed project setup baseline",
+    summary,
+    status: "accepted",
+    payload: {
+      baselineKind: "project_setup",
+      metric: "val_bpb",
+      command: "python train.py",
+      evaluationPlan:
+        "Compare future candidate measurements against the referenced baseline evidence.",
+      assumptions: [
+        "The fixture's native metric is val_bpb.",
+        "prepare.py is part of the evaluation surface.",
+      ],
+      constraints: [
+        "Do not change prepare.py.",
+        "Record comparable measurements before promoting a result.",
+      ],
+      fixture,
+      evidenceBaselineId,
+    },
+  };
+}
 
 const candidateExperiment: TinyAutoresearchExperimentSeed = {
   id: TINY_AUTORESEARCH_IDS.candidateExperiment,
@@ -572,12 +635,24 @@ const needsBaselineSeed: TinyAutoresearchSeedRecords = {
 const withBaselineSeed: TinyAutoresearchSeedRecords = {
   ...needsBaselineSeed,
   researchTasks: [planTask, baselineTask],
-  baselines: [baseline],
+  baselines: [projectSetupBaseline, baseline],
   evaluations: [baselineEvaluation],
   measurements: [baselineMeasurement],
   artifacts: [baselineArtifact],
   activities: [
     ...needsBaselineSeed.activities,
+    {
+      table: "baseline_activities",
+      entityId: TINY_AUTORESEARCH_IDS.projectBaseline,
+      actorAgentId: TINY_AUTORESEARCH_IDS.managerAgent,
+      actor: "manager",
+      kind: "recorded",
+      body: "Manager-owned project setup baseline confirmed before search.",
+      payload: {
+        activityType: "project_baseline_created",
+        baselineKind: "project_setup",
+      },
+    },
     {
       table: "baseline_activities",
       entityId: TINY_AUTORESEARCH_IDS.baseline,
@@ -637,6 +712,81 @@ const withCandidateSeed: TinyAutoresearchSeedRecords = {
   ],
 };
 
+const divergentBaselineMeasurement: TinyAutoresearchMeasurementSeed = {
+  ...baselineMeasurement,
+  body: "python train.py printed component=baseline, dev val_bpb=2.713, holdout val_bpb=2.713, train_time_s=0.18, status=ok.",
+  payload: {
+    activityType: "measurement_recorded",
+    measurementType: "command_output",
+    command: "python train.py --report-splits",
+    metrics: {
+      dev: {
+        val_bpb: {
+          value: 2.713,
+          direction: "lower_is_better",
+          notes: "Dev-split validation bits per byte.",
+        },
+      },
+      holdout: {
+        val_bpb: {
+          value: 2.713,
+          direction: "lower_is_better",
+          notes:
+            "Held-out-split validation bits per byte; cross-check only, not optimization target.",
+        },
+      },
+      train_time_s: {
+        value: 0.18,
+        unit: "s",
+        direction: "informational",
+      },
+    },
+    rawOutputSummary:
+      "component: baseline\ndev val_bpb: 2.713\nholdout val_bpb: 2.713\ntrain_time_s: 0.18\nstatus: ok",
+  },
+};
+
+const divergentCandidateMeasurement: TinyAutoresearchMeasurementSeed = {
+  ...candidateMeasurement,
+  body: "python train.py printed component=component_a, dev val_bpb=2.739, holdout val_bpb=2.658, train_time_s=0.19, status=ok.",
+  payload: {
+    activityType: "measurement_recorded",
+    measurementType: "command_output",
+    command: "python train.py --report-splits",
+    metrics: {
+      dev: {
+        val_bpb: {
+          value: 2.739,
+          direction: "lower_is_better",
+          notes: "Dev-split val_bpb regressed by +0.026 vs baseline.",
+        },
+      },
+      holdout: {
+        val_bpb: {
+          value: 2.658,
+          direction: "lower_is_better",
+          notes:
+            "Held-out-split val_bpb improved by -0.055 vs baseline; well outside the project's ±0.01 noise floor.",
+        },
+      },
+      train_time_s: {
+        value: 0.19,
+        unit: "s",
+        direction: "informational",
+      },
+    },
+    rawOutputSummary:
+      "component: component_a\ndev val_bpb: 2.739\nholdout val_bpb: 2.658\ntrain_time_s: 0.19\nstatus: ok",
+    comparisonBaselineId: TINY_AUTORESEARCH_IDS.baseline,
+    comparisonMeasurementId: TINY_AUTORESEARCH_IDS.baselineMeasurement,
+  },
+};
+
+const withHoldoutDivergenceSeed: TinyAutoresearchSeedRecords = {
+  ...withCandidateSeed,
+  measurements: [divergentBaselineMeasurement, divergentCandidateMeasurement],
+};
+
 const comparabilitySeed: TinyAutoresearchSeedRecords = {
   ...withBaselineSeed,
   researchTasks: [planTask, baselineTask, experimentTask, verificationTask],
@@ -680,6 +830,7 @@ const largeSearchRidgeIds = {
   researchProject: "research_project_large_search_ridge",
   planTask: "LR_TASK_PLAN",
   baselineTask: "LR_TASK_BASELINE",
+  projectBaseline: "LR_PB1",
   baseline: "LR_B1",
   baselineEvaluation: "LR_EV_00",
   baselineMeasurement: "LR_M_00",
@@ -790,13 +941,26 @@ function largeSearchRidgeSeedRecords(): TinyAutoresearchSeedRecords {
     researchProjects: [largeSearchRidgeProject],
     researchTasks,
     hypotheses: largeSearchRidgeHypotheses(),
-    baselines: [largeSearchRidgeBaseline],
+    baselines: [largeSearchRidgeProjectBaseline, largeSearchRidgeBaseline],
     experiments: contexts.map((context) => largeSearchRidgeExperiment({ context })),
     evaluations,
     measurements,
     artifacts,
     entityLinks: contexts.map((context) => largeSearchRidgeEntityLink({ context })),
     activities: [
+      {
+        table: "baseline_activities",
+        entityId: largeSearchRidgeIds.projectBaseline,
+        actorAgentId: TINY_AUTORESEARCH_IDS.managerAgent,
+        actor: "manager",
+        kind: "recorded",
+        body: "large_search_ridge project setup baseline confirmed before search.",
+        payload: {
+          activityType: "project_baseline_created",
+          baselineKind: "project_setup",
+          fixture: "large_search_ridge",
+        },
+      },
       largeSearchRidgeBaselineActivity(),
       largeSearchRidgeBaselineEvaluationActivity(),
       ...contexts.map((context) => largeSearchRidgeExperimentActivity({ context })),
@@ -835,12 +999,22 @@ const largeSearchRidgeProject: TinyAutoresearchResearchProjectSeed = {
 
 const largeSearchRidgeBaseline: TinyAutoresearchResearchRecordSeed = {
   id: largeSearchRidgeIds.baseline,
+  researchProjectId: largeSearchRidgeIds.researchProject,
   createdByResearchTaskId: largeSearchRidgeIds.baselineTask,
   createdByAgentId: TINY_AUTORESEARCH_IDS.scientistAgent,
   title: "Large ridge reference train.py measurement",
   summary: "large_search_ridge baseline: python train.py reports val_bpb=2.713.",
   status: "accepted",
 };
+
+const largeSearchRidgeProjectBaseline = projectSetupBaselineSeed({
+  id: largeSearchRidgeIds.projectBaseline,
+  researchProjectId: largeSearchRidgeIds.researchProject,
+  summary:
+    "Project setup baseline: use python train.py val_bpb, compare against LR_B1 / LR_EV_00 / LR_M_00, preserve parentExperimentId lineage, and reject prepare.py shortcuts.",
+  fixture: "large_search_ridge",
+  evidenceBaselineId: largeSearchRidgeIds.baseline,
+});
 
 function largeSearchRidgePlanTask(): TinyAutoresearchResearchTaskSeed {
   return {
@@ -1460,13 +1634,1053 @@ function pad2({ value }: { value: number }): string {
   return value.toString().padStart(2, "0");
 }
 
+const exploitDriftIds = {
+  researchProject: "research_project_exploit_drift",
+  planTask: "EXP_DRIFT_TASK_PLAN",
+  baselineTask: "EXP_DRIFT_TASK_BASELINE",
+  projectBaseline: "EXP_DRIFT_PB1",
+  baseline: "EXP_DRIFT_B1",
+  baselineEvaluation: "EXP_DRIFT_EV1",
+  baselineMeasurement: "EXP_DRIFT_M1",
+  baselineArtifact: "EXP_DRIFT_A1",
+  hypothesisActive: "EXP_DRIFT_H_POOLING",
+} as const;
+
+const exploitDriftTriageHypothesisTitles = [
+  "Wider vocabulary",
+  "Longer context window",
+  "Mixed attention pooling",
+  "Tied embedding weights",
+  "Curriculum on rare tokens",
+] as const;
+
+const exploitDriftLineageValBpbSequence = [2.681, 2.674, 2.671, 2.671, 2.67] as const;
+
+function exploitDriftTriageHypothesisId({ index }: { index: number }): string {
+  return `EXP_DRIFT_H_TRIAGE_${index}`;
+}
+
+function exploitDriftTaskId({ index }: { index: number }): string {
+  return `EXP_DRIFT_TASK_EXPLOIT_${index}`;
+}
+
+function exploitDriftExperimentId({ index }: { index: number }): string {
+  return `EXP_DRIFT_EX_${index}`;
+}
+
+function exploitDriftEvaluationId({ index }: { index: number }): string {
+  return `EXP_DRIFT_EV_${index + 1}`;
+}
+
+function exploitDriftMeasurementId({ index }: { index: number }): string {
+  return `EXP_DRIFT_M_${index + 1}`;
+}
+
+function exploitDriftArtifactId({ index }: { index: number }): string {
+  return `EXP_DRIFT_A_${index + 1}`;
+}
+
+function exploitDriftLinkId({ index }: { index: number }): string {
+  return `EXP_DRIFT_LINK_${index}`;
+}
+
+const exploitDriftProject: TinyAutoresearchResearchProjectSeed = {
+  id: exploitDriftIds.researchProject,
+  goal: "Lower val_bpb by trying small training changes that preserve the evaluation surface.",
+  phase: "search",
+  status: "active",
+  baselineSummary:
+    "Baseline EXP_DRIFT_B1 records val_bpb=2.713 from the unmodified python train.py command.",
+  resultSummary:
+    "Mean-pooling lineage EXP_DRIFT_EX_1..5 was kept but recent val_bpb gains have flattened.",
+  createdByAgentId: TINY_AUTORESEARCH_IDS.managerAgent,
+  payload: { fixture: "exploit_drift_lineage" },
+};
+
+const exploitDriftActiveHypothesis: TinyAutoresearchResearchRecordSeed = {
+  id: exploitDriftIds.hypothesisActive,
+  createdByResearchTaskId: exploitDriftIds.planTask,
+  createdByAgentId: TINY_AUTORESEARCH_IDS.managerAgent,
+  title: "Mean pooling over CLS token improves val_bpb",
+  summary:
+    "Pooling over all tokens instead of relying on the CLS token may lower val_bpb without changing the evaluation surface.",
+  status: "active",
+};
+
+function exploitDriftTriageHypotheses(): TinyAutoresearchResearchRecordSeed[] {
+  return exploitDriftTriageHypothesisTitles.map((title, index) => ({
+    id: exploitDriftTriageHypothesisId({ index: index + 1 }),
+    createdByResearchTaskId: exploitDriftIds.planTask,
+    createdByAgentId: TINY_AUTORESEARCH_IDS.managerAgent,
+    title,
+    summary: `${title} is an untested idea from baseline analysis; no experiments yet.`,
+    status: "triage",
+  }));
+}
+
+const exploitDriftBaseline: TinyAutoresearchResearchRecordSeed = {
+  id: exploitDriftIds.baseline,
+  researchProjectId: exploitDriftIds.researchProject,
+  createdByResearchTaskId: exploitDriftIds.baselineTask,
+  createdByAgentId: TINY_AUTORESEARCH_IDS.scientistAgent,
+  title: "Reference train.py measurement",
+  summary: "Unmodified train.py reports val_bpb=2.713.",
+  status: "accepted",
+};
+
+const exploitDriftProjectBaseline = projectSetupBaselineSeed({
+  id: exploitDriftIds.projectBaseline,
+  researchProjectId: exploitDriftIds.researchProject,
+  summary:
+    "Project setup baseline: use python train.py val_bpb, compare against EXP_DRIFT_B1 / EXP_DRIFT_EV1 / EXP_DRIFT_M1, and treat prepare.py as the evaluation surface.",
+  fixture: "exploit_drift_lineage",
+  evidenceBaselineId: exploitDriftIds.baseline,
+});
+
+const exploitDriftBaselineEvaluation: TinyAutoresearchEvaluationSeed = {
+  id: exploitDriftIds.baselineEvaluation,
+  createdByResearchTaskId: exploitDriftIds.baselineTask,
+  createdByAgentId: TINY_AUTORESEARCH_IDS.scientistAgent,
+  title: "Baseline measurement",
+  summary: "Run python train.py before candidate changes.",
+  status: "done",
+  associatedBaselineId: exploitDriftIds.baseline,
+  associatedExperimentId: null,
+};
+
+const exploitDriftBaselineMeasurement: TinyAutoresearchMeasurementSeed = {
+  id: exploitDriftIds.baselineMeasurement,
+  createdByResearchTaskId: exploitDriftIds.baselineTask,
+  createdByAgentId: TINY_AUTORESEARCH_IDS.scientistAgent,
+  evaluationId: exploitDriftIds.baselineEvaluation,
+  actor: "scientist",
+  body: "python train.py printed component=baseline, val_bpb=2.713, status=ok.",
+  payload: {
+    activityType: "measurement_recorded",
+    measurementType: "command_output",
+    command: "python train.py",
+    metrics: { val_bpb: { value: 2.713, direction: "lower_is_better" } },
+    rawOutputSummary: "component: baseline\nval_bpb: 2.713\nstatus: ok",
+  },
+};
+
+const exploitDriftBaselineArtifact: TinyAutoresearchArtifactSeed = {
+  id: exploitDriftIds.baselineArtifact,
+  createdByResearchTaskId: exploitDriftIds.baselineTask,
+  createdByAgentId: TINY_AUTORESEARCH_IDS.scientistAgent,
+  entityKind: "evaluation",
+  entityId: exploitDriftIds.baselineEvaluation,
+  kind: "stdout",
+  title: "Baseline output",
+  path: "artifacts/exploit-drift/baseline.txt",
+  mediaType: "text/plain",
+  sizeBytes: 64,
+};
+
+function exploitDriftPlanTask(): TinyAutoresearchResearchTaskSeed {
+  return {
+    id: exploitDriftIds.planTask,
+    researchProjectId: exploitDriftIds.researchProject,
+    parentResearchTaskId: null,
+    type: "explore",
+    title: "Plan exploit_drift_lineage search",
+    workerPrompt: "Inspect the repo and propose hypotheses for lowering val_bpb.",
+    verificationPrompt:
+      "Confirm the plan lists at least one active hypothesis and triage candidates.",
+    status: "verified",
+    priority: "high",
+    createdByAgentId: TINY_AUTORESEARCH_IDS.managerAgent,
+    resultSummary: "Proposed mean-pooling hypothesis plus five triage candidates.",
+    targetKind: null,
+    targetId: null,
+    payload: { fixture: "exploit_drift_lineage" },
+  };
+}
+
+function exploitDriftBaselineTask(): TinyAutoresearchResearchTaskSeed {
+  return {
+    id: exploitDriftIds.baselineTask,
+    researchProjectId: exploitDriftIds.researchProject,
+    parentResearchTaskId: exploitDriftIds.planTask,
+    type: "explore",
+    title: "Record reference val_bpb",
+    workerPrompt: "Run python train.py and record stdout.",
+    verificationPrompt: "Confirm baseline EXP_DRIFT_B1 has linked evaluation and measurement.",
+    status: "verified",
+    priority: "high",
+    createdByAgentId: TINY_AUTORESEARCH_IDS.scientistAgent,
+    resultSummary: "Baseline EXP_DRIFT_B1 recorded val_bpb=2.713.",
+    targetKind: "baseline",
+    targetId: exploitDriftIds.baseline,
+    payload: { fixture: "exploit_drift_lineage", command: "python train.py" },
+  };
+}
+
+function exploitDriftExploitTask({ index }: { index: number }): TinyAutoresearchResearchTaskSeed {
+  const experimentId = exploitDriftExperimentId({ index });
+  const parentExperimentId = index === 1 ? null : exploitDriftExperimentId({ index: index - 1 });
+  return {
+    id: exploitDriftTaskId({ index }),
+    researchProjectId: exploitDriftIds.researchProject,
+    parentResearchTaskId:
+      index === 1 ? exploitDriftIds.baselineTask : exploitDriftTaskId({ index: index - 1 }),
+    type: "exploit",
+    title: `Deepen mean-pooling variant ${index}`,
+    workerPrompt: [
+      `Deepen the mean-pooling lineage with experiment ${experimentId}.`,
+      parentExperimentId
+        ? `Set parentExperimentId to ${parentExperimentId} on the new Experiment.`
+        : "Fork from the baseline as the first lineage child.",
+      "Only edit train.py; preserve the evaluation surface.",
+    ].join(" "),
+    verificationPrompt:
+      "Pass only if val_bpb improved against the parent and changedFiles did not include prepare.py.",
+    status: "verified",
+    priority: "normal",
+    createdByAgentId: TINY_AUTORESEARCH_IDS.managerAgent,
+    resultSummary: `${experimentId} ran the mean-pooling variant against ${
+      parentExperimentId ?? exploitDriftIds.baseline
+    }.`,
+    targetKind: "hypothesis",
+    targetId: exploitDriftIds.hypothesisActive,
+    payload: {
+      fixture: "exploit_drift_lineage",
+      parentExperimentId,
+      changedFiles: ["train.py"],
+      val_bpb: exploitDriftLineageValBpbSequence[index - 1],
+    },
+  };
+}
+
+function exploitDriftExperiment({ index }: { index: number }): TinyAutoresearchExperimentSeed {
+  const id = exploitDriftExperimentId({ index });
+  const parentExperimentId = index === 1 ? null : exploitDriftExperimentId({ index: index - 1 });
+  return {
+    id,
+    createdByResearchTaskId: exploitDriftTaskId({ index }),
+    createdByAgentId: TINY_AUTORESEARCH_IDS.scientistAgent,
+    associatedHypothesisId: exploitDriftIds.hypothesisActive,
+    parentExperimentId,
+    title: `Mean-pooling variant ${index}`,
+    summary: `${id} continues the mean-pooling lineage from ${
+      parentExperimentId ?? exploitDriftIds.baseline
+    }; val_bpb=${exploitDriftLineageValBpbSequence[index - 1]}.`,
+    status: "done",
+    worktreePath: `worktrees/exploit-drift/${id.toLowerCase()}`,
+    baseCommit: parentExperimentId
+      ? `candidate-${parentExperimentId.toLowerCase()}`
+      : "exploit-drift-baseline",
+    candidateCommit: `candidate-${id.toLowerCase()}`,
+  };
+}
+
+function exploitDriftEvaluation({ index }: { index: number }): TinyAutoresearchEvaluationSeed {
+  return {
+    id: exploitDriftEvaluationId({ index }),
+    createdByResearchTaskId: exploitDriftTaskId({ index }),
+    createdByAgentId: TINY_AUTORESEARCH_IDS.scientistAgent,
+    title: `Mean-pooling variant ${index} measurement`,
+    summary: `Run python train.py for ${exploitDriftExperimentId({ index })}.`,
+    status: "done",
+    associatedBaselineId: null,
+    associatedExperimentId: exploitDriftExperimentId({ index }),
+  };
+}
+
+function exploitDriftMeasurement({ index }: { index: number }): TinyAutoresearchMeasurementSeed {
+  const id = exploitDriftExperimentId({ index });
+  const valBpb = exploitDriftLineageValBpbSequence[index - 1];
+  const parentValBpb = index === 1 ? 2.713 : exploitDriftLineageValBpbSequence[index - 2];
+  return {
+    id: exploitDriftMeasurementId({ index }),
+    createdByResearchTaskId: exploitDriftTaskId({ index }),
+    createdByAgentId: TINY_AUTORESEARCH_IDS.scientistAgent,
+    evaluationId: exploitDriftEvaluationId({ index }),
+    actor: "scientist",
+    body: `python train.py printed branch=${id}, val_bpb=${valBpb}, status=ok.`,
+    payload: {
+      activityType: "measurement_recorded",
+      measurementType: "command_output",
+      command: "python train.py",
+      changedFiles: ["train.py"],
+      metrics: { val_bpb: { value: valBpb, direction: "lower_is_better" } },
+      rawOutputSummary: `branch: ${id}\nval_bpb: ${valBpb}\nstatus: ok`,
+      comparisonBaselineId: exploitDriftIds.baseline,
+      comparisonMeasurementId:
+        index === 1
+          ? exploitDriftIds.baselineMeasurement
+          : exploitDriftMeasurementId({ index: index - 1 }),
+      comparisonMetricDeltas: {
+        val_bpb: {
+          value: Number((valBpb - parentValBpb).toFixed(3)),
+          direction: "lower_is_better",
+        },
+      },
+    },
+  };
+}
+
+function exploitDriftArtifact({ index }: { index: number }): TinyAutoresearchArtifactSeed {
+  const id = exploitDriftExperimentId({ index });
+  return {
+    id: exploitDriftArtifactId({ index }),
+    createdByResearchTaskId: exploitDriftTaskId({ index }),
+    createdByAgentId: TINY_AUTORESEARCH_IDS.scientistAgent,
+    entityKind: "evaluation",
+    entityId: exploitDriftEvaluationId({ index }),
+    kind: "stdout",
+    title: `${id} output`,
+    path: `artifacts/exploit-drift/${id.toLowerCase()}.txt`,
+    mediaType: "text/plain",
+    sizeBytes: 70,
+  };
+}
+
+function exploitDriftLink({ index }: { index: number }): TinyAutoresearchEntityLinkSeed {
+  return {
+    id: exploitDriftLinkId({ index }),
+    fromKind: "hypothesis",
+    fromId: exploitDriftIds.hypothesisActive,
+    toKind: "experiment",
+    toId: exploitDriftExperimentId({ index }),
+    relationship: "tests",
+  };
+}
+
+function exploitDriftLineageSeed(): TinyAutoresearchSeedRecords {
+  const lineageIndexes = [1, 2, 3, 4, 5] as const;
+  return {
+    claudeAgents: agents,
+    researchProjects: [exploitDriftProject],
+    researchTasks: [
+      exploitDriftPlanTask(),
+      exploitDriftBaselineTask(),
+      ...lineageIndexes.map((index) => exploitDriftExploitTask({ index })),
+    ],
+    hypotheses: [exploitDriftActiveHypothesis, ...exploitDriftTriageHypotheses()],
+    baselines: [exploitDriftProjectBaseline, exploitDriftBaseline],
+    experiments: lineageIndexes.map((index) => exploitDriftExperiment({ index })),
+    evaluations: [
+      exploitDriftBaselineEvaluation,
+      ...lineageIndexes.map((index) => exploitDriftEvaluation({ index })),
+    ],
+    measurements: [
+      exploitDriftBaselineMeasurement,
+      ...lineageIndexes.map((index) => exploitDriftMeasurement({ index })),
+    ],
+    artifacts: [
+      exploitDriftBaselineArtifact,
+      ...lineageIndexes.map((index) => exploitDriftArtifact({ index })),
+    ],
+    entityLinks: lineageIndexes.map((index) => exploitDriftLink({ index })),
+    activities: [
+      {
+        table: "baseline_activities",
+        entityId: exploitDriftIds.projectBaseline,
+        actorAgentId: TINY_AUTORESEARCH_IDS.managerAgent,
+        actor: "manager",
+        kind: "recorded",
+        body: "exploit_drift_lineage project setup baseline confirmed before search.",
+        payload: {
+          activityType: "project_baseline_created",
+          baselineKind: "project_setup",
+          fixture: "exploit_drift_lineage",
+        },
+      },
+      {
+        table: "baseline_activities",
+        entityId: exploitDriftIds.baseline,
+        actorAgentId: TINY_AUTORESEARCH_IDS.scientistAgent,
+        actor: "scientist",
+        kind: "recorded",
+        body: "exploit_drift_lineage baseline recorded.",
+        payload: { activityType: "baseline_created", fixture: "exploit_drift_lineage" },
+      },
+      ...lineageIndexes.map((index) => ({
+        table: "experiment_activities" as const,
+        entityId: exploitDriftExperimentId({ index }),
+        actorAgentId: TINY_AUTORESEARCH_IDS.scientistAgent,
+        actor: "scientist",
+        kind: "completed",
+        body: `${exploitDriftExperimentId({ index })} ran the mean-pooling variant.`,
+        payload: {
+          activityType: "experiment_completed",
+          fixture: "exploit_drift_lineage",
+          changedFiles: ["train.py"],
+          val_bpb: exploitDriftLineageValBpbSequence[index - 1],
+        },
+      })),
+    ],
+    appEvents: [
+      {
+        type: "session.started",
+        message:
+          "exploit_drift_lineage fixture: five verified exploits on one lineage with five stranded triage hypotheses.",
+        payload: { fixture: "exploit_drift_lineage" },
+      },
+    ],
+  };
+}
+
+const healthyExploitIds = {
+  researchProject: "research_project_healthy_exploit",
+  planTask: "HEALTHY_EXPLOIT_TASK_PLAN",
+  baselineTask: "HEALTHY_EXPLOIT_TASK_BASELINE",
+  exploitTask: "HEALTHY_EXPLOIT_TASK_KEEP",
+  projectBaseline: "HEALTHY_EXPLOIT_PB1",
+  baseline: "HEALTHY_EXPLOIT_B1",
+  baselineEvaluation: "HEALTHY_EXPLOIT_EV1",
+  baselineMeasurement: "HEALTHY_EXPLOIT_M1",
+  baselineArtifact: "HEALTHY_EXPLOIT_A1",
+  hypothesis: "HEALTHY_EXPLOIT_H_ACTIVE",
+  experiment: "HEALTHY_EXPLOIT_EX1",
+  experimentEvaluation: "HEALTHY_EXPLOIT_EV2",
+  experimentMeasurement: "HEALTHY_EXPLOIT_M2",
+  experimentArtifact: "HEALTHY_EXPLOIT_A2",
+  link: "HEALTHY_EXPLOIT_LINK1",
+} as const;
+
+function healthyExploitWindowSeed(): TinyAutoresearchSeedRecords {
+  return {
+    claudeAgents: agents,
+    researchProjects: [
+      {
+        id: healthyExploitIds.researchProject,
+        goal: "Lower val_bpb without changing the evaluation surface.",
+        phase: "search",
+        status: "active",
+        baselineSummary: "HEALTHY_EXPLOIT_B1 records val_bpb=2.713 from python train.py.",
+        resultSummary: "HEALTHY_EXPLOIT_EX1 just landed val_bpb=2.681 over baseline.",
+        createdByAgentId: TINY_AUTORESEARCH_IDS.managerAgent,
+        payload: { fixture: "healthy_exploit_window" },
+      },
+    ],
+    researchTasks: [
+      {
+        id: healthyExploitIds.planTask,
+        researchProjectId: healthyExploitIds.researchProject,
+        parentResearchTaskId: null,
+        type: "explore",
+        title: "Plan healthy_exploit_window search",
+        workerPrompt: "Inspect the repo and pick the first variable to test.",
+        verificationPrompt: "Confirm the plan names one hypothesis worth testing.",
+        status: "verified",
+        priority: "high",
+        createdByAgentId: TINY_AUTORESEARCH_IDS.managerAgent,
+        resultSummary: "Mean-pooling identified as the first variable to test.",
+        targetKind: null,
+        targetId: null,
+        payload: { fixture: "healthy_exploit_window" },
+      },
+      {
+        id: healthyExploitIds.baselineTask,
+        researchProjectId: healthyExploitIds.researchProject,
+        parentResearchTaskId: healthyExploitIds.planTask,
+        type: "explore",
+        title: "Record reference val_bpb",
+        workerPrompt: "Run python train.py and record stdout.",
+        verificationPrompt: "Confirm baseline HEALTHY_EXPLOIT_B1 has linked evaluation evidence.",
+        status: "verified",
+        priority: "high",
+        createdByAgentId: TINY_AUTORESEARCH_IDS.scientistAgent,
+        resultSummary: "Baseline HEALTHY_EXPLOIT_B1 recorded val_bpb=2.713.",
+        targetKind: "baseline",
+        targetId: healthyExploitIds.baseline,
+        payload: { fixture: "healthy_exploit_window", command: "python train.py" },
+      },
+      {
+        id: healthyExploitIds.exploitTask,
+        researchProjectId: healthyExploitIds.researchProject,
+        parentResearchTaskId: healthyExploitIds.baselineTask,
+        type: "exploit",
+        title: "Try mean pooling variant",
+        workerPrompt: "Change only train.py to use mean pooling and re-run python train.py.",
+        verificationPrompt:
+          "Pass only if val_bpb improved against baseline and changedFiles did not include prepare.py.",
+        status: "verified",
+        priority: "high",
+        createdByAgentId: TINY_AUTORESEARCH_IDS.managerAgent,
+        resultSummary:
+          "HEALTHY_EXPLOIT_EX1 improved val_bpb from 2.713 to 2.681 with train.py only.",
+        targetKind: "hypothesis",
+        targetId: healthyExploitIds.hypothesis,
+        payload: {
+          fixture: "healthy_exploit_window",
+          changedFiles: ["train.py"],
+          val_bpb: 2.681,
+        },
+      },
+    ],
+    hypotheses: [
+      {
+        id: healthyExploitIds.hypothesis,
+        createdByResearchTaskId: healthyExploitIds.planTask,
+        createdByAgentId: TINY_AUTORESEARCH_IDS.managerAgent,
+        title: "Mean pooling over CLS token improves val_bpb",
+        summary:
+          "Pooling over all tokens may lower val_bpb without changing the evaluation surface.",
+        status: "active",
+      },
+    ],
+    baselines: [
+      projectSetupBaselineSeed({
+        id: healthyExploitIds.projectBaseline,
+        researchProjectId: healthyExploitIds.researchProject,
+        summary:
+          "Project setup baseline: use python train.py val_bpb, compare against HEALTHY_EXPLOIT_B1 / HEALTHY_EXPLOIT_EV1 / HEALTHY_EXPLOIT_M1, and preserve prepare.py.",
+        fixture: "healthy_exploit_window",
+        evidenceBaselineId: healthyExploitIds.baseline,
+      }),
+      {
+        id: healthyExploitIds.baseline,
+        researchProjectId: healthyExploitIds.researchProject,
+        createdByResearchTaskId: healthyExploitIds.baselineTask,
+        createdByAgentId: TINY_AUTORESEARCH_IDS.scientistAgent,
+        title: "Reference train.py measurement",
+        summary: "Unmodified train.py reports val_bpb=2.713.",
+        status: "accepted",
+      },
+    ],
+    experiments: [
+      {
+        id: healthyExploitIds.experiment,
+        createdByResearchTaskId: healthyExploitIds.exploitTask,
+        createdByAgentId: TINY_AUTORESEARCH_IDS.scientistAgent,
+        associatedHypothesisId: healthyExploitIds.hypothesis,
+        parentExperimentId: null,
+        title: "Mean pooling first try",
+        summary: "HEALTHY_EXPLOIT_EX1 improved val_bpb from baseline 2.713 to 2.681.",
+        status: "done",
+        worktreePath: "worktrees/healthy-exploit/ex1",
+        baseCommit: "healthy-exploit-baseline",
+        candidateCommit: "candidate-healthy-exploit-ex1",
+      },
+    ],
+    evaluations: [
+      {
+        id: healthyExploitIds.baselineEvaluation,
+        createdByResearchTaskId: healthyExploitIds.baselineTask,
+        createdByAgentId: TINY_AUTORESEARCH_IDS.scientistAgent,
+        title: "Baseline measurement",
+        summary: "Run python train.py before candidate changes.",
+        status: "done",
+        associatedBaselineId: healthyExploitIds.baseline,
+        associatedExperimentId: null,
+      },
+      {
+        id: healthyExploitIds.experimentEvaluation,
+        createdByResearchTaskId: healthyExploitIds.exploitTask,
+        createdByAgentId: TINY_AUTORESEARCH_IDS.scientistAgent,
+        title: "Mean pooling first try measurement",
+        summary: "Run python train.py for HEALTHY_EXPLOIT_EX1.",
+        status: "done",
+        associatedBaselineId: null,
+        associatedExperimentId: healthyExploitIds.experiment,
+      },
+    ],
+    measurements: [
+      {
+        id: healthyExploitIds.baselineMeasurement,
+        createdByResearchTaskId: healthyExploitIds.baselineTask,
+        createdByAgentId: TINY_AUTORESEARCH_IDS.scientistAgent,
+        evaluationId: healthyExploitIds.baselineEvaluation,
+        actor: "scientist",
+        body: "python train.py printed component=baseline, val_bpb=2.713, status=ok.",
+        payload: {
+          activityType: "measurement_recorded",
+          measurementType: "command_output",
+          command: "python train.py",
+          metrics: { val_bpb: { value: 2.713, direction: "lower_is_better" } },
+          rawOutputSummary: "component: baseline\nval_bpb: 2.713\nstatus: ok",
+        },
+      },
+      {
+        id: healthyExploitIds.experimentMeasurement,
+        createdByResearchTaskId: healthyExploitIds.exploitTask,
+        createdByAgentId: TINY_AUTORESEARCH_IDS.scientistAgent,
+        evaluationId: healthyExploitIds.experimentEvaluation,
+        actor: "scientist",
+        body: "python train.py printed branch=HEALTHY_EXPLOIT_EX1, val_bpb=2.681, status=ok.",
+        payload: {
+          activityType: "measurement_recorded",
+          measurementType: "command_output",
+          command: "python train.py",
+          changedFiles: ["train.py"],
+          metrics: { val_bpb: { value: 2.681, direction: "lower_is_better" } },
+          rawOutputSummary: "branch: HEALTHY_EXPLOIT_EX1\nval_bpb: 2.681\nstatus: ok",
+          comparisonBaselineId: healthyExploitIds.baseline,
+          comparisonMeasurementId: healthyExploitIds.baselineMeasurement,
+          comparisonMetricDeltas: {
+            val_bpb: { value: -0.032, direction: "lower_is_better" },
+          },
+        },
+      },
+    ],
+    artifacts: [
+      {
+        id: healthyExploitIds.baselineArtifact,
+        createdByResearchTaskId: healthyExploitIds.baselineTask,
+        createdByAgentId: TINY_AUTORESEARCH_IDS.scientistAgent,
+        entityKind: "evaluation",
+        entityId: healthyExploitIds.baselineEvaluation,
+        kind: "stdout",
+        title: "Baseline output",
+        path: "artifacts/healthy-exploit/baseline.txt",
+        mediaType: "text/plain",
+        sizeBytes: 64,
+      },
+      {
+        id: healthyExploitIds.experimentArtifact,
+        createdByResearchTaskId: healthyExploitIds.exploitTask,
+        createdByAgentId: TINY_AUTORESEARCH_IDS.scientistAgent,
+        entityKind: "evaluation",
+        entityId: healthyExploitIds.experimentEvaluation,
+        kind: "stdout",
+        title: "Mean pooling first try output",
+        path: "artifacts/healthy-exploit/ex1.txt",
+        mediaType: "text/plain",
+        sizeBytes: 70,
+      },
+    ],
+    entityLinks: [
+      {
+        id: healthyExploitIds.link,
+        fromKind: "hypothesis",
+        fromId: healthyExploitIds.hypothesis,
+        toKind: "experiment",
+        toId: healthyExploitIds.experiment,
+        relationship: "tests",
+      },
+    ],
+    activities: [
+      {
+        table: "baseline_activities",
+        entityId: healthyExploitIds.projectBaseline,
+        actorAgentId: TINY_AUTORESEARCH_IDS.managerAgent,
+        actor: "manager",
+        kind: "recorded",
+        body: "healthy_exploit_window project setup baseline confirmed before search.",
+        payload: {
+          activityType: "project_baseline_created",
+          baselineKind: "project_setup",
+          fixture: "healthy_exploit_window",
+        },
+      },
+      {
+        table: "baseline_activities",
+        entityId: healthyExploitIds.baseline,
+        actorAgentId: TINY_AUTORESEARCH_IDS.scientistAgent,
+        actor: "scientist",
+        kind: "recorded",
+        body: "healthy_exploit_window baseline recorded.",
+        payload: { activityType: "baseline_created", fixture: "healthy_exploit_window" },
+      },
+      {
+        table: "experiment_activities",
+        entityId: healthyExploitIds.experiment,
+        actorAgentId: TINY_AUTORESEARCH_IDS.scientistAgent,
+        actor: "scientist",
+        kind: "completed",
+        body: "HEALTHY_EXPLOIT_EX1 improved val_bpb to 2.681 with train.py only.",
+        payload: {
+          activityType: "experiment_completed",
+          fixture: "healthy_exploit_window",
+          changedFiles: ["train.py"],
+          val_bpb: 2.681,
+        },
+      },
+    ],
+    appEvents: [
+      {
+        type: "session.started",
+        message: "healthy_exploit_window fixture: fresh keep with no plateau or stranded triage.",
+        payload: { fixture: "healthy_exploit_window" },
+      },
+    ],
+  };
+}
+
+const exploitDriftMixedTriageIds = {
+  researchProject: "research_project_exploit_drift_mix",
+  planTask: "EXP_DRIFT_MIX_TASK_PLAN",
+  baselineTask: "EXP_DRIFT_MIX_TASK_BASELINE",
+  baseline: "EXP_DRIFT_MIX_B1",
+  baselineEvaluation: "EXP_DRIFT_MIX_EV1",
+  baselineMeasurement: "EXP_DRIFT_MIX_M1",
+  baselineArtifact: "EXP_DRIFT_MIX_A1",
+  hypothesisActive: "EXP_DRIFT_MIX_H_POOLING",
+} as const;
+
+const exploitDriftMixedSameAxisTriage = [
+  { id: "EXP_DRIFT_MIX_H_VARIANT_MAX", title: "Max pooling over CLS token" },
+  { id: "EXP_DRIFT_MIX_H_VARIANT_SUM", title: "Sum pooling over CLS token" },
+] as const;
+
+const exploitDriftMixedDifferentAxisTriage = [
+  { id: "EXP_DRIFT_MIX_H_VOCAB", title: "Wider vocabulary" },
+  { id: "EXP_DRIFT_MIX_H_CONTEXT", title: "Longer context window" },
+  { id: "EXP_DRIFT_MIX_H_EMBED", title: "Tied embedding weights" },
+] as const;
+
+function exploitDriftMixedTaskId({ index }: { index: number }): string {
+  return `EXP_DRIFT_MIX_TASK_EXPLOIT_${index}`;
+}
+function exploitDriftMixedExperimentId({ index }: { index: number }): string {
+  return `EXP_DRIFT_MIX_EX_${index}`;
+}
+function exploitDriftMixedEvaluationId({ index }: { index: number }): string {
+  return `EXP_DRIFT_MIX_EV_${index + 1}`;
+}
+function exploitDriftMixedMeasurementId({ index }: { index: number }): string {
+  return `EXP_DRIFT_MIX_M_${index + 1}`;
+}
+function exploitDriftMixedArtifactId({ index }: { index: number }): string {
+  return `EXP_DRIFT_MIX_A_${index + 1}`;
+}
+function exploitDriftMixedLinkId({ index }: { index: number }): string {
+  return `EXP_DRIFT_MIX_LINK_${index}`;
+}
+
+function exploitDriftMixedTriageHypotheses(): TinyAutoresearchResearchRecordSeed[] {
+  const sameAxis = exploitDriftMixedSameAxisTriage.map((entry) => ({
+    id: entry.id,
+    createdByResearchTaskId: exploitDriftMixedTriageIds.planTask,
+    createdByAgentId: TINY_AUTORESEARCH_IDS.managerAgent,
+    title: entry.title,
+    summary: `${entry.title} varies the same pooling parameter family as the active mean-pooling branch; untested.`,
+    status: "triage" as TinyAutoresearchResearchStatus,
+  }));
+  const differentAxis = exploitDriftMixedDifferentAxisTriage.map((entry) => ({
+    id: entry.id,
+    createdByResearchTaskId: exploitDriftMixedTriageIds.planTask,
+    createdByAgentId: TINY_AUTORESEARCH_IDS.managerAgent,
+    title: entry.title,
+    summary: `${entry.title} varies a different parameter from pooling; untested.`,
+    status: "triage" as TinyAutoresearchResearchStatus,
+  }));
+  return [...sameAxis, ...differentAxis];
+}
+
+function exploitDriftMixedExploitTask({
+  index,
+}: {
+  index: number;
+}): TinyAutoresearchResearchTaskSeed {
+  const experimentId = exploitDriftMixedExperimentId({ index });
+  const parentExperimentId =
+    index === 1 ? null : exploitDriftMixedExperimentId({ index: index - 1 });
+  return {
+    id: exploitDriftMixedTaskId({ index }),
+    researchProjectId: exploitDriftMixedTriageIds.researchProject,
+    parentResearchTaskId:
+      index === 1
+        ? exploitDriftMixedTriageIds.baselineTask
+        : exploitDriftMixedTaskId({ index: index - 1 }),
+    type: "exploit",
+    title: `Deepen mean-pooling variant ${index}`,
+    workerPrompt: [
+      `Deepen the mean-pooling lineage with experiment ${experimentId}.`,
+      parentExperimentId
+        ? `Set parentExperimentId to ${parentExperimentId} on the new Experiment.`
+        : "Fork from the baseline as the first lineage child.",
+      "Only edit train.py; preserve the evaluation surface.",
+    ].join(" "),
+    verificationPrompt:
+      "Pass only if val_bpb improved against the parent and changedFiles did not include prepare.py.",
+    status: "verified",
+    priority: "normal",
+    createdByAgentId: TINY_AUTORESEARCH_IDS.managerAgent,
+    resultSummary: `${experimentId} ran the mean-pooling variant against ${
+      parentExperimentId ?? exploitDriftMixedTriageIds.baseline
+    }.`,
+    targetKind: "hypothesis",
+    targetId: exploitDriftMixedTriageIds.hypothesisActive,
+    payload: {
+      fixture: "exploit_drift_with_mixed_triage",
+      parentExperimentId,
+      changedFiles: ["train.py"],
+      val_bpb: exploitDriftLineageValBpbSequence[index - 1],
+    },
+  };
+}
+
+function exploitDriftMixedExperiment({ index }: { index: number }): TinyAutoresearchExperimentSeed {
+  const id = exploitDriftMixedExperimentId({ index });
+  const parentExperimentId =
+    index === 1 ? null : exploitDriftMixedExperimentId({ index: index - 1 });
+  return {
+    id,
+    createdByResearchTaskId: exploitDriftMixedTaskId({ index }),
+    createdByAgentId: TINY_AUTORESEARCH_IDS.scientistAgent,
+    associatedHypothesisId: exploitDriftMixedTriageIds.hypothesisActive,
+    parentExperimentId,
+    title: `Mean-pooling variant ${index}`,
+    summary: `${id} continues the mean-pooling lineage from ${
+      parentExperimentId ?? exploitDriftMixedTriageIds.baseline
+    }; val_bpb=${exploitDriftLineageValBpbSequence[index - 1]}.`,
+    status: "done",
+    worktreePath: `worktrees/exploit-drift-mix/${id.toLowerCase()}`,
+    baseCommit: parentExperimentId
+      ? `candidate-${parentExperimentId.toLowerCase()}`
+      : "exploit-drift-mix-baseline",
+    candidateCommit: `candidate-${id.toLowerCase()}`,
+  };
+}
+
+function exploitDriftMixedEvaluation({ index }: { index: number }): TinyAutoresearchEvaluationSeed {
+  return {
+    id: exploitDriftMixedEvaluationId({ index }),
+    createdByResearchTaskId: exploitDriftMixedTaskId({ index }),
+    createdByAgentId: TINY_AUTORESEARCH_IDS.scientistAgent,
+    title: `Mean-pooling variant ${index} measurement`,
+    summary: `Run python train.py for ${exploitDriftMixedExperimentId({ index })}.`,
+    status: "done",
+    associatedBaselineId: null,
+    associatedExperimentId: exploitDriftMixedExperimentId({ index }),
+  };
+}
+
+function exploitDriftMixedMeasurement({
+  index,
+}: {
+  index: number;
+}): TinyAutoresearchMeasurementSeed {
+  const id = exploitDriftMixedExperimentId({ index });
+  const valBpb = exploitDriftLineageValBpbSequence[index - 1];
+  const parentValBpb = index === 1 ? 2.713 : exploitDriftLineageValBpbSequence[index - 2];
+  return {
+    id: exploitDriftMixedMeasurementId({ index }),
+    createdByResearchTaskId: exploitDriftMixedTaskId({ index }),
+    createdByAgentId: TINY_AUTORESEARCH_IDS.scientistAgent,
+    evaluationId: exploitDriftMixedEvaluationId({ index }),
+    actor: "scientist",
+    body: `python train.py printed branch=${id}, val_bpb=${valBpb}, status=ok.`,
+    payload: {
+      activityType: "measurement_recorded",
+      measurementType: "command_output",
+      command: "python train.py",
+      changedFiles: ["train.py"],
+      metrics: { val_bpb: { value: valBpb, direction: "lower_is_better" } },
+      rawOutputSummary: `branch: ${id}\nval_bpb: ${valBpb}\nstatus: ok`,
+      comparisonBaselineId: exploitDriftMixedTriageIds.baseline,
+      comparisonMeasurementId:
+        index === 1
+          ? exploitDriftMixedTriageIds.baselineMeasurement
+          : exploitDriftMixedMeasurementId({ index: index - 1 }),
+      comparisonMetricDeltas: {
+        val_bpb: {
+          value: Number((valBpb - parentValBpb).toFixed(3)),
+          direction: "lower_is_better",
+        },
+      },
+    },
+  };
+}
+
+function exploitDriftMixedArtifact({ index }: { index: number }): TinyAutoresearchArtifactSeed {
+  const id = exploitDriftMixedExperimentId({ index });
+  return {
+    id: exploitDriftMixedArtifactId({ index }),
+    createdByResearchTaskId: exploitDriftMixedTaskId({ index }),
+    createdByAgentId: TINY_AUTORESEARCH_IDS.scientistAgent,
+    entityKind: "evaluation",
+    entityId: exploitDriftMixedEvaluationId({ index }),
+    kind: "stdout",
+    title: `${id} output`,
+    path: `artifacts/exploit-drift-mix/${id.toLowerCase()}.txt`,
+    mediaType: "text/plain",
+    sizeBytes: 70,
+  };
+}
+
+function exploitDriftMixedLink({ index }: { index: number }): TinyAutoresearchEntityLinkSeed {
+  return {
+    id: exploitDriftMixedLinkId({ index }),
+    fromKind: "hypothesis",
+    fromId: exploitDriftMixedTriageIds.hypothesisActive,
+    toKind: "experiment",
+    toId: exploitDriftMixedExperimentId({ index }),
+    relationship: "tests",
+  };
+}
+
+function exploitDriftWithMixedTriageSeed(): TinyAutoresearchSeedRecords {
+  const lineageIndexes = [1, 2, 3, 4, 5] as const;
+  const activeHypothesis: TinyAutoresearchResearchRecordSeed = {
+    id: exploitDriftMixedTriageIds.hypothesisActive,
+    createdByResearchTaskId: exploitDriftMixedTriageIds.planTask,
+    createdByAgentId: TINY_AUTORESEARCH_IDS.managerAgent,
+    title: "Mean pooling over CLS token improves val_bpb",
+    summary:
+      "Pooling over all tokens instead of relying on the CLS token may lower val_bpb without changing the evaluation surface.",
+    status: "active",
+  };
+  return {
+    claudeAgents: agents,
+    researchProjects: [
+      {
+        id: exploitDriftMixedTriageIds.researchProject,
+        goal: "Lower val_bpb by trying small training changes that preserve the evaluation surface.",
+        phase: "search",
+        status: "active",
+        baselineSummary: "Baseline EXP_DRIFT_MIX_B1 records val_bpb=2.713 from python train.py.",
+        resultSummary:
+          "Mean-pooling lineage EXP_DRIFT_MIX_EX_1..5 was kept but val_bpb gains have flattened. Triage pool contains both pooling-variant and different-axis hypotheses.",
+        createdByAgentId: TINY_AUTORESEARCH_IDS.managerAgent,
+        payload: { fixture: "exploit_drift_with_mixed_triage" },
+      },
+    ],
+    researchTasks: [
+      {
+        id: exploitDriftMixedTriageIds.planTask,
+        researchProjectId: exploitDriftMixedTriageIds.researchProject,
+        parentResearchTaskId: null,
+        type: "explore",
+        title: "Plan exploit_drift_with_mixed_triage search",
+        workerPrompt: "Inspect the repo and propose hypotheses for lowering val_bpb.",
+        verificationPrompt:
+          "Confirm the plan lists at least one active hypothesis and several triage candidates.",
+        status: "verified",
+        priority: "high",
+        createdByAgentId: TINY_AUTORESEARCH_IDS.managerAgent,
+        resultSummary:
+          "Proposed mean-pooling hypothesis plus pooling-variant and different-axis triage candidates.",
+        targetKind: null,
+        targetId: null,
+        payload: { fixture: "exploit_drift_with_mixed_triage" },
+      },
+      {
+        id: exploitDriftMixedTriageIds.baselineTask,
+        researchProjectId: exploitDriftMixedTriageIds.researchProject,
+        parentResearchTaskId: exploitDriftMixedTriageIds.planTask,
+        type: "explore",
+        title: "Record reference val_bpb",
+        workerPrompt: "Run python train.py and record stdout.",
+        verificationPrompt:
+          "Confirm baseline EXP_DRIFT_MIX_B1 has linked evaluation and measurement.",
+        status: "verified",
+        priority: "high",
+        createdByAgentId: TINY_AUTORESEARCH_IDS.scientistAgent,
+        resultSummary: "Baseline EXP_DRIFT_MIX_B1 recorded val_bpb=2.713.",
+        targetKind: "baseline",
+        targetId: exploitDriftMixedTriageIds.baseline,
+        payload: {
+          fixture: "exploit_drift_with_mixed_triage",
+          command: "python train.py",
+        },
+      },
+      ...lineageIndexes.map((index) => exploitDriftMixedExploitTask({ index })),
+    ],
+    hypotheses: [activeHypothesis, ...exploitDriftMixedTriageHypotheses()],
+    baselines: [
+      {
+        id: exploitDriftMixedTriageIds.baseline,
+        researchProjectId: exploitDriftMixedTriageIds.researchProject,
+        createdByResearchTaskId: exploitDriftMixedTriageIds.baselineTask,
+        createdByAgentId: TINY_AUTORESEARCH_IDS.scientistAgent,
+        title: "Reference train.py measurement",
+        summary: "Unmodified train.py reports val_bpb=2.713.",
+        status: "accepted",
+      },
+    ],
+    experiments: lineageIndexes.map((index) => exploitDriftMixedExperiment({ index })),
+    evaluations: [
+      {
+        id: exploitDriftMixedTriageIds.baselineEvaluation,
+        createdByResearchTaskId: exploitDriftMixedTriageIds.baselineTask,
+        createdByAgentId: TINY_AUTORESEARCH_IDS.scientistAgent,
+        title: "Baseline measurement",
+        summary: "Run python train.py before candidate changes.",
+        status: "done",
+        associatedBaselineId: exploitDriftMixedTriageIds.baseline,
+        associatedExperimentId: null,
+      },
+      ...lineageIndexes.map((index) => exploitDriftMixedEvaluation({ index })),
+    ],
+    measurements: [
+      {
+        id: exploitDriftMixedTriageIds.baselineMeasurement,
+        createdByResearchTaskId: exploitDriftMixedTriageIds.baselineTask,
+        createdByAgentId: TINY_AUTORESEARCH_IDS.scientistAgent,
+        evaluationId: exploitDriftMixedTriageIds.baselineEvaluation,
+        actor: "scientist",
+        body: "python train.py printed component=baseline, val_bpb=2.713, status=ok.",
+        payload: {
+          activityType: "measurement_recorded",
+          measurementType: "command_output",
+          command: "python train.py",
+          metrics: { val_bpb: { value: 2.713, direction: "lower_is_better" } },
+          rawOutputSummary: "component: baseline\nval_bpb: 2.713\nstatus: ok",
+        },
+      },
+      ...lineageIndexes.map((index) => exploitDriftMixedMeasurement({ index })),
+    ],
+    artifacts: [
+      {
+        id: exploitDriftMixedTriageIds.baselineArtifact,
+        createdByResearchTaskId: exploitDriftMixedTriageIds.baselineTask,
+        createdByAgentId: TINY_AUTORESEARCH_IDS.scientistAgent,
+        entityKind: "evaluation",
+        entityId: exploitDriftMixedTriageIds.baselineEvaluation,
+        kind: "stdout",
+        title: "Baseline output",
+        path: "artifacts/exploit-drift-mix/baseline.txt",
+        mediaType: "text/plain",
+        sizeBytes: 64,
+      },
+      ...lineageIndexes.map((index) => exploitDriftMixedArtifact({ index })),
+    ],
+    entityLinks: lineageIndexes.map((index) => exploitDriftMixedLink({ index })),
+    activities: [
+      {
+        table: "baseline_activities",
+        entityId: exploitDriftMixedTriageIds.baseline,
+        actorAgentId: TINY_AUTORESEARCH_IDS.scientistAgent,
+        actor: "scientist",
+        kind: "recorded",
+        body: "exploit_drift_with_mixed_triage baseline recorded.",
+        payload: {
+          activityType: "baseline_created",
+          fixture: "exploit_drift_with_mixed_triage",
+        },
+      },
+      ...lineageIndexes.map((index) => ({
+        table: "experiment_activities" as const,
+        entityId: exploitDriftMixedExperimentId({ index }),
+        actorAgentId: TINY_AUTORESEARCH_IDS.scientistAgent,
+        actor: "scientist",
+        kind: "completed",
+        body: `${exploitDriftMixedExperimentId({ index })} ran the mean-pooling variant.`,
+        payload: {
+          activityType: "experiment_completed",
+          fixture: "exploit_drift_with_mixed_triage",
+          changedFiles: ["train.py"],
+          val_bpb: exploitDriftLineageValBpbSequence[index - 1],
+        },
+      })),
+    ],
+    appEvents: [
+      {
+        type: "session.started",
+        message:
+          "exploit_drift_with_mixed_triage fixture: pooling lineage exhausted, triage split between pooling variants and different-axis hypotheses.",
+        payload: { fixture: "exploit_drift_with_mixed_triage" },
+      },
+    ],
+  };
+}
+
 const seeds = {
   empty_repo: emptySeed,
   needs_baseline: needsBaselineSeed,
   with_baseline_result: withBaselineSeed,
   with_candidate_result: withCandidateSeed,
+  with_holdout_divergence: withHoldoutDivergenceSeed,
   comparability_break: comparabilitySeed,
   large_search_ridge: largeSearchRidgeSeedRecords(),
+  exploit_drift_lineage: exploitDriftLineageSeed(),
+  healthy_exploit_window: healthyExploitWindowSeed(),
+  exploit_drift_with_mixed_triage: exploitDriftWithMixedTriageSeed(),
 } as const satisfies Record<TinyAutoresearchSeedName, TinyAutoresearchSeedRecords>;
 
 export function tinyAutoresearchSeed({

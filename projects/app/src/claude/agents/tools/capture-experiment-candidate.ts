@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { captureExperimentCandidate } from "../../../runtime/worktrees";
 import { defineTool } from "./__shared__/define-tool";
+import { Result } from "./__shared__/result";
 
 const inputSchema = z.object({
   experimentId: z.string().describe("Experiment id to capture."),
@@ -14,10 +15,12 @@ export const captureExperimentCandidateTool = defineTool({
     "Commit changes in an experiment worktree, update candidate metadata, and record a patch artifact.",
   roles: ["scientist"],
   inputSchema,
-  handler: async ({ input }) => ({
-    candidate: await captureExperimentCandidate({
-      experimentId: input.experimentId,
-      commitMessage: input.commitMessage,
+  resultEnvelope: true,
+  handler: async ({ input }) =>
+    Result.ok({
+      candidate: await captureExperimentCandidate({
+        experimentId: input.experimentId,
+        commitMessage: input.commitMessage,
+      }),
     }),
-  }),
 });

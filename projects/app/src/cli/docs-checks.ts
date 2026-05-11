@@ -7,7 +7,7 @@ import { rootCommandKinds } from "./root-command";
  * Command kinds that exist in the CLI but are intentionally omitted from the
  * public docs site (internal operator surface, not user-facing).
  */
-const hiddenFromDocs = new Set<(typeof rootCommandKinds)[number]>(["skills"]);
+const hiddenFromDocs = new Set<(typeof rootCommandKinds)[number]>(["compute", "skills"]);
 
 const docsPath = join(import.meta.dir, "..", "..", "..", "docs", "cli.md");
 const content = await readFile(docsPath, "utf8");

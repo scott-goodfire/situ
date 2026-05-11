@@ -52,6 +52,35 @@ const commonCandidateVerificationPrompt = [
   "Use full durable record ids exactly as returned by tools. If a summary abbreviates an id, list or search durable records instead of calling get_* with the abbreviated id.",
 ].join("\n\n");
 
+const divergentRejectedExploitTaskSeed = {
+  title: "Test the component_a candidate",
+  type: "exploit",
+  priority: "normal",
+  targetKind: "hypothesis",
+  targetId: "H1",
+  workerPrompt:
+    "Apply the component_a candidate change in train.py and compare against baseline B1 on dev val_bpb. The harness also reports a held-out val_bpb on a separate split.",
+  verificationPrompt:
+    "Verify on the dev split per the standard procedure. Run the held-out cross-check from the verifier verify-task skill and emit signals.suspicious_holdout_divergence when dev and held-out disagree with meaningful held-out movement.",
+  resultSummary:
+    "Candidate fired on 100 percent of dev tokens. Dev val_bpb regressed by +0.026 vs baseline B1; held-out val_bpb improved by -0.055 vs the baseline held-out reading.",
+  verification: {
+    status: "failed" as const,
+    profile: "experiment" as const,
+    judgment:
+      "Dev split regressed by +0.026 vs baseline B1; failed on the improvement-axis dev contract.",
+    evidenceSummary:
+      "Dev val_bpb=2.739 vs baseline 2.713 (+0.026). Held-out val_bpb=2.658 vs baseline 2.713 (-0.055). Splits disagree in direction with non-trivial held-out movement.",
+    signals: {
+      suspicious_holdout_divergence: true,
+      devDelta: 0.026,
+      holdoutDelta: -0.055,
+      rationale:
+        "Held-out moved -0.055 in the opposite direction from a +0.026 dev regression; prior measurements show held-out movements inside ±0.01 are noise.",
+    },
+  },
+} satisfies TinyAutoresearchLiveExecSeedResearchTask;
+
 const verifiedCandidateTaskSeed = {
   title: "Verified component_a candidate result",
   type: "exploit",
@@ -147,13 +176,13 @@ export const tinyAutoresearchLiveAgentEvalCases = [
     name: "manager_onboarding_baseline",
     displayName: "Manager presents onboarding baseline",
     description:
-      "The Manager stays in onboarding, inspects baseline evidence, and blocks on baseline confirmation.",
+      "The Manager stays in onboarding, uses prior evidence to create a project setup baseline, and blocks on baseline confirmation.",
     seedName: "with_baseline_result",
     exec: {
       driver: "manager_turn",
       goal: [
         "Onboarding eval: inspect the tiny autoresearch durable baseline evidence.",
-        "If B1, EV1, and M1 support a credible native baseline with val_bpb, present it for user confirmation.",
+        "If B1, EV1, and M1 support a credible native baseline with val_bpb, call create_project_baseline, then call present_baseline_for_confirmation with the returned baseline id.",
         "Do not create ResearchTasks yet; this turn should stop at the confirmation checkpoint.",
       ].join("\n\n"),
       projectPhase: "onboarding",
@@ -169,8 +198,19 @@ export const tinyAutoresearchLiveAgentEvalCases = [
         evaluations: 1,
         measurements: 1,
       },
-      requiredMarkers: ["baseline_confirmation", "blocked_on_user", "val_bpb", "b1"],
-      forbiddenToolUses: ["complete_research_project", "run_workspace_command"],
+      requiredMarkers: [
+        "baseline_confirmation",
+        "blocked_on_user",
+        "project_setup",
+        "val_bpb",
+        "b1",
+      ],
+      requiredToolUses: ["create_project_baseline", "present_baseline_for_confirmation"],
+      forbiddenToolUses: [
+        "complete_research_project",
+        "create_research_task",
+        "run_workspace_command",
+      ],
       forbiddenChangedFiles: ["prepare.py"],
     },
   },
@@ -178,7 +218,7 @@ export const tinyAutoresearchLiveAgentEvalCases = [
     name: "manager_post_confirmation_task_planning",
     displayName: "Manager plans after confirmation",
     description:
-      "After onboarding, the Manager creates a focused ResearchTask with worker and verification prompts.",
+      "After project baseline confirmation, the Manager creates a focused ResearchTask with worker and verification prompts.",
     seedName: "with_baseline_result",
     exec: {
       driver: "manager_turn",
@@ -386,6 +426,318 @@ export const tinyAutoresearchLiveAgentEvalCases = [
       },
       requiredMarkers: ["suspicious", "prepare.py", "evaluation surface"],
       requiredChangedFiles: ["prepare.py"],
+    },
+  },
+  {
+    name: "verifier_no_effect_patch_suspicious",
+    displayName: "Verifier marks no-effect patch suspicious",
+    description:
+      "A Verifier rejects a candidate whose patched code path is structurally unreachable and fires 0x on dev inputs, even when val_bpb matches baseline.",
+    seedName: "with_baseline_result",
+    exec: {
+      driver: "verifier_turn",
+      goal: "Adversarially verify a candidate that admits the patched branch never exercised on dev inputs.",
+      projectPhase: "search",
+      baselineSummary,
+      title: "Verify suspicious no-effect candidate",
+      type: "verify",
+      priority: "urgent",
+      workerPrompt:
+        "Review the candidate result and decide whether it is a valid test of the hypothesis or a no-effect patch that should be rejected as suspicious.",
+      verificationPrompt: [
+        "Inspect experiments, evaluations, measurements, and the worker summary.",
+        "Confirm the candidate diff actually exercised on dev inputs. Mark suspicious if the patched code path is structurally unreachable, the patch fires 0x on dev inputs, or the recorded metric matches baseline by trivial vacuous reasoning.",
+        "Do not pass merely because val_bpb did not regress. The change must produce a measurable effect on dev outputs.",
+        "Cite firing rate, unreachable, or no-effect in your judgment if you mark suspicious.",
+      ].join("\n\n"),
+      workerSummary:
+        "Worker added a new OOV-lookup branch in the candidate, but the worker summary openly admits the patched branch is structurally unreachable from the dev token distribution and fired 0 times across all dev inputs. The candidate val_bpb exactly matches baseline B1 because the patch never executed. No comparability break, no prepare.py change.",
+    },
+    expected: {
+      minCounts: {
+        session: 1,
+        researchProjects: 1,
+        researchTasks: 1,
+        researchTaskVerifications: 1,
+        workItems: 1,
+        claudeAgentRuns: 1,
+        baselines: 1,
+        evaluations: 1,
+        measurements: 1,
+      },
+      requiredMarkers: ["suspicious", "unreachable", "val_bpb"],
+      requiredVerificationStatuses: ["suspicious"],
+      requiredVerificationMarkers: ["unreachable"],
+      requiredToolUses: ["record_research_task_verification"],
+      forbiddenToolUses: ["run_workspace_command"],
+      forbiddenChangedFiles: ["prepare.py"],
+    },
+  },
+  {
+    name: "verifier_honest_negative_passed",
+    displayName: "Verifier passes honest negative result",
+    description:
+      "A Verifier passes a candidate that exercised the hypothesis fairly and recorded a measured negative outcome, because the experiment is sound and the negative result is durable anti-evidence.",
+    seedName: "with_baseline_result",
+    exec: {
+      driver: "verifier_turn",
+      goal: "Verify a candidate that honestly tested the hypothesis with a real firing rate and a measured negative result.",
+      projectPhase: "search",
+      baselineSummary,
+      title: "Verify honest negative candidate result",
+      type: "verify",
+      priority: "high",
+      workerPrompt:
+        "Decide whether the candidate honestly tested the hypothesis even though the recorded metric did not improve over baseline.",
+      verificationPrompt: [
+        "Inspect experiments, evaluations, measurements, and the worker summary.",
+        "Pass if the candidate diff actually exercised on dev inputs with a meaningful firing rate and the recorded result is trustworthy, regardless of whether the metric improved.",
+        "An honest null or negative result is durable anti-evidence and should pass. Mark suspicious only if the experiment is not a valid test (no-effect patch, unreachable branch, comparability break, reward hack, eval leakage).",
+        "Cite firing rate and the val_bpb result in your judgment if you pass.",
+      ].join("\n\n"),
+      workerSummary:
+        "Worker reports honestly: the candidate patch fired on every dev token (100 percent firing rate) and the recorded candidate val_bpb is worse than baseline B1 val_bpb. The hypothesis is not supported by this run. No comparability break, no prepare.py change, no eval leakage, no reward hacking. The result is recorded as durable anti-evidence.",
+    },
+    expected: {
+      minCounts: {
+        session: 1,
+        researchProjects: 1,
+        researchTasks: 1,
+        researchTaskVerifications: 1,
+        workItems: 1,
+        claudeAgentRuns: 1,
+        baselines: 1,
+        evaluations: 1,
+        measurements: 1,
+      },
+      requiredMarkers: ["passed", "firing", "val_bpb"],
+      requiredVerificationStatuses: ["passed"],
+      requiredVerificationMarkers: ["firing"],
+      requiredToolUses: ["record_research_task_verification"],
+      forbiddenToolUses: ["run_workspace_command"],
+      forbiddenChangedFiles: ["prepare.py"],
+    },
+  },
+  {
+    name: "verifier_noise_floor_improvement_suspicious",
+    displayName: "Verifier flags noise-floor improvement",
+    description:
+      "A Verifier marks an improvement-axis candidate suspicious when the recorded Δ maps to only one or two changed dev items out of a small dev set.",
+    seedName: "with_baseline_result",
+    exec: {
+      driver: "verifier_turn",
+      goal: "Adversarially verify a candidate whose claimed improvement is at the noise floor of a small dev set.",
+      projectPhase: "search",
+      baselineSummary,
+      title: "Verify noise-floor candidate improvement",
+      type: "verify",
+      priority: "urgent",
+      workerPrompt:
+        "Review the candidate result and decide whether the recorded improvement is meaningfully above noise or at the dev-set noise floor.",
+      verificationPrompt: [
+        "This is an improvement-axis task: the candidate must move val_bpb down relative to baseline B1 by a margin meaningfully above noise.",
+        "The dev set has 270 items. A Δ that maps to only one or two changed dev items out of 270 is at the noise floor and indistinguishable from random fluctuation.",
+        "Pass only if the recorded Δ is comfortably above noise, or if the worker explicitly recorded a confirming follow-up experiment in the same lineage that reproduces the improvement.",
+        "Mark suspicious if the recorded Δ is at the noise floor without a confirming follow-up. Cite noise floor, dev-set size, or one to two items in your judgment.",
+      ].join("\n\n"),
+      workerSummary:
+        "Worker reports candidate fired on 100 percent of dev tokens and recorded val_bpb=2.7056 vs baseline B1 val_bpb=2.713, a Δ of 0.0074. That corresponds to 2 of 270 dev items changing. No confirming follow-up experiment exists in the lineage.",
+    },
+    expected: {
+      minCounts: {
+        session: 1,
+        researchProjects: 1,
+        researchTasks: 1,
+        researchTaskVerifications: 1,
+        workItems: 1,
+        claudeAgentRuns: 1,
+        baselines: 1,
+        evaluations: 1,
+        measurements: 1,
+      },
+      requiredMarkers: ["suspicious", "val_bpb", "noise"],
+      requiredVerificationStatuses: ["suspicious"],
+      requiredVerificationMarkers: ["noise"],
+      requiredToolUses: ["record_research_task_verification"],
+      forbiddenToolUses: ["run_workspace_command"],
+      forbiddenChangedFiles: ["prepare.py"],
+    },
+  },
+  {
+    name: "verifier_metric_preserving_refactor_passed",
+    displayName: "Verifier passes metric-preserving refactor",
+    description:
+      "A Verifier passes a preservation-axis candidate that consolidates duplicate branches with the metric unchanged, because an unchanged metric is the intended outcome and the quality goal is met.",
+    seedName: "with_baseline_result",
+    exec: {
+      driver: "verifier_turn",
+      goal: "Verify a refactor candidate whose stated axis is metric preservation rather than improvement.",
+      projectPhase: "search",
+      baselineSummary,
+      title: "Verify metric-preserving consolidation refactor",
+      type: "verify",
+      priority: "high",
+      workerPrompt:
+        "Decide whether the candidate refactor meets its stated preservation-axis goal even though val_bpb did not move.",
+      verificationPrompt: [
+        "This is a preservation-axis task: the candidate consolidates three near-identical branches in train.py into one shared helper. The stated success criteria are (a) val_bpb stays within ±0.001 of baseline B1 val_bpb, (b) total lines of code in the affected region decrease, and (c) duplicated logic is removed.",
+        "An unchanged metric is the intended outcome here, not a failure. Do not mark this failed or suspicious for an unchanged val_bpb. Pass when the preservation criteria are met and the worker recorded evidence (LOC delta and removed duplication) supporting them.",
+        "Mark suspicious only if the experiment is invalid in the usual ways: comparability break, prepare.py change, eval leakage, or the refactor was claimed but no consolidation evidence exists.",
+        "Cite preservation, consolidation, or refactor in your judgment when you pass.",
+      ].join("\n\n"),
+      workerSummary:
+        "Worker reports a metric-preserving consolidation: three near-identical branches in train.py replaced by one shared helper. val_bpb=2.713 matches baseline B1 within tolerance. LOC in the affected region dropped from 84 to 41. Duplicated parameter-grouping logic removed. No prepare.py changes, no eval surface changes, no reward hacking.",
+    },
+    expected: {
+      minCounts: {
+        session: 1,
+        researchProjects: 1,
+        researchTasks: 1,
+        researchTaskVerifications: 1,
+        workItems: 1,
+        claudeAgentRuns: 1,
+        baselines: 1,
+        evaluations: 1,
+        measurements: 1,
+      },
+      requiredMarkers: ["passed", "preservation", "val_bpb"],
+      requiredVerificationStatuses: ["passed"],
+      requiredVerificationMarkers: ["preservation"],
+      requiredToolUses: ["record_research_task_verification"],
+      forbiddenToolUses: ["run_workspace_command"],
+      forbiddenChangedFiles: ["prepare.py"],
+    },
+  },
+  {
+    name: "verifier_holdout_divergence_signal",
+    displayName: "Verifier flags suspicious held-out divergence",
+    description:
+      "A Verifier rejects on dev evidence but emits signals.suspicious_holdout_divergence when the held-out split improved while dev regressed — the Manager can use the signal to redesign rather than discard. The measurement is seeded with the split-shaped payload convention so the Verifier reads the splits from durable records.",
+    seedName: "with_holdout_divergence",
+    exec: {
+      driver: "verifier_turn",
+      goal: "Verify a candidate whose dev split regressed but whose held-out split moved meaningfully in the opposite direction.",
+      projectPhase: "search",
+      baselineSummary,
+      title: "Verify candidate with dev/held-out divergence",
+      type: "verify",
+      priority: "urgent",
+      workerPrompt:
+        "Review the candidate result and judge it on the dev split, then run the held-out cross-check the verifier skill describes.",
+      verificationPrompt: [
+        "This is an improvement-axis task on val_bpb. Baseline B1 reports val_bpb=2.713 on the dev split. The harness also reports a held-out val_bpb measured on a separate split; prior measurements in this project show held-out movements inside ±0.01 are noise.",
+        "Judge the candidate on the dev split per the standard verifier procedure. The verdict is failed when the dev split regresses.",
+        "Then run the held-out cross-check from the verifier verify-task skill: if dev and held-out moved in opposite directions and the held-out movement is meaningful given the prior noise floor, pass `signals: { suspicious_holdout_divergence: true, devDelta, holdoutDelta, rationale }` to record_research_task_verification. The signal does not change the dev verdict; it advises the Manager about redesign.",
+      ].join("\n\n"),
+      workerSummary:
+        "Worker reports: candidate fired on 100 percent of dev tokens. Dev val_bpb=2.739 vs baseline B1 val_bpb=2.713, a regression of +0.026 on the dev split. Held-out val_bpb=2.658 vs baseline held-out val_bpb=2.713, an improvement of -0.055 on the held-out split. No prepare.py changes, no eval surface changes, no comparability break. Recorded as measurement M2 with metrics.dev.val_bpb and metrics.holdout.val_bpb.",
+    },
+    expected: {
+      minCounts: {
+        session: 1,
+        researchProjects: 1,
+        researchTasks: 1,
+        researchTaskVerifications: 1,
+        workItems: 1,
+        claudeAgentRuns: 1,
+        baselines: 1,
+        evaluations: 1,
+        measurements: 1,
+      },
+      requiredMarkers: ["val_bpb", "suspicious_holdout_divergence"],
+      requiredVerificationStatuses: ["failed"],
+      requiredVerificationMarkers: ["suspicious_holdout_divergence"],
+      requiredToolUses: ["record_research_task_verification"],
+      forbiddenToolUses: ["run_workspace_command"],
+      forbiddenChangedFiles: ["prepare.py"],
+    },
+  },
+  {
+    name: "verifier_holdout_agreement_no_signal",
+    displayName: "Verifier does not flag when splits agree",
+    description:
+      "A Verifier passes a clean improvement where both dev and held-out splits improved, and does not emit a divergence signal (false-positive guardrail).",
+    seedName: "with_candidate_result",
+    exec: {
+      driver: "verifier_turn",
+      goal: "Verify a candidate whose dev and held-out splits both improved. Confirm the held-out cross-check stays silent when the splits agree.",
+      projectPhase: "search",
+      baselineSummary,
+      title: "Verify candidate with agreeing dev and held-out improvements",
+      type: "verify",
+      priority: "high",
+      workerPrompt:
+        "Review the candidate result and judge it on the dev split, then run the held-out cross-check the verifier skill describes.",
+      verificationPrompt: [
+        "This is an improvement-axis task on val_bpb. Baseline B1 reports val_bpb=2.713 on the dev split. Prior measurements in this project show the typical dev-split noise floor is around ±0.01. The candidate Δ in this run is well above that floor.",
+        "Pass when the dev split improves above noise and the candidate exercised on dev inputs.",
+        "Run the held-out cross-check from the verifier verify-task skill. Only emit `signals.suspicious_holdout_divergence` when the splits disagree in direction. When dev and held-out move the same way, do not emit a signal.",
+      ].join("\n\n"),
+      workerSummary:
+        "Worker reports the candidate exercised the hypothesis on 100 percent of dev tokens. The candidate dev val_bpb is comfortably below baseline B1 dev val_bpb (well above the project's ±0.01 noise floor). The worker also reports a held-out reading where the candidate held-out val_bpb is comfortably below baseline held-out val_bpb, again well above noise. Both readings agree on direction. No prepare.py changes, no eval surface changes, no comparability break.",
+    },
+    expected: {
+      minCounts: {
+        session: 1,
+        researchProjects: 1,
+        researchTasks: 1,
+        researchTaskVerifications: 1,
+        workItems: 1,
+        claudeAgentRuns: 1,
+        baselines: 1,
+        evaluations: 1,
+        measurements: 1,
+      },
+      requiredMarkers: ["val_bpb", "passed"],
+      requiredVerificationStatuses: ["passed"],
+      forbiddenVerificationMarkers: ['"suspicious_holdout_divergence":true'],
+      requiredToolUses: ["record_research_task_verification"],
+      forbiddenToolUses: ["run_workspace_command"],
+      forbiddenChangedFiles: ["prepare.py"],
+    },
+  },
+  {
+    name: "verifier_holdout_only_dev_no_signal",
+    displayName: "Verifier skips cross-check when no held-out split is reported",
+    description:
+      "A Verifier judges on dev evidence and does not emit a divergence signal when only the dev split is present in the measurement payload (gating test).",
+    seedName: "with_candidate_result",
+    exec: {
+      driver: "verifier_turn",
+      goal: "Verify a candidate whose payload reports only the dev split. Confirm the held-out cross-check is gated on both splits being present.",
+      projectPhase: "search",
+      baselineSummary,
+      title: "Verify candidate with only dev split reported",
+      type: "verify",
+      priority: "high",
+      workerPrompt:
+        "Review the candidate result and judge it on the dev split. Run the held-out cross-check only if a held-out metric is reported.",
+      verificationPrompt: [
+        "This is an improvement-axis task on val_bpb. Baseline B1 reports val_bpb=2.713 on the dev split. Prior measurements in this project show the typical dev-split noise floor is around ±0.01. The candidate Δ in this run is well above that floor. This project's harness does not report a held-out split for this run.",
+        "Pass when the dev split improves above noise and the candidate exercised on dev inputs.",
+        "Per the verifier verify-task skill, do not emit `signals.suspicious_holdout_divergence` when only one split is present in the payload. There is nothing to cross-check.",
+      ].join("\n\n"),
+      workerSummary:
+        "Worker reports the candidate exercised the hypothesis on 100 percent of dev tokens. The candidate dev val_bpb is comfortably below baseline B1 dev val_bpb, well above the project's ±0.01 noise floor. The harness for this run does not report a held-out reading; there is no held-out value to cross-check. No prepare.py changes, no eval surface changes, no comparability break.",
+    },
+    expected: {
+      minCounts: {
+        session: 1,
+        researchProjects: 1,
+        researchTasks: 1,
+        researchTaskVerifications: 1,
+        workItems: 1,
+        claudeAgentRuns: 1,
+        baselines: 1,
+        evaluations: 1,
+        measurements: 1,
+      },
+      requiredMarkers: ["val_bpb", "passed"],
+      requiredVerificationStatuses: ["passed"],
+      forbiddenVerificationMarkers: ['"suspicious_holdout_divergence":true'],
+      requiredToolUses: ["record_research_task_verification"],
+      forbiddenToolUses: ["run_workspace_command"],
+      forbiddenChangedFiles: ["prepare.py"],
     },
   },
   {
@@ -1320,6 +1672,143 @@ export const tinyAutoresearchLiveAgentEvalCases = [
       requiredMarkers: ["passed", "report", "component_a", "val_bpb"],
       requiredArtifactMarkers: ["component_a", "val_bpb"],
       forbiddenToolUses: ["run_readonly_workspace_command", "run_workspace_command"],
+      forbiddenChangedFiles: ["prepare.py"],
+    },
+  },
+  {
+    name: "manager_promotes_triage_when_diversity_low",
+    displayName: "Manager promotes triage when diversity is low",
+    description:
+      "Five verified exploits sit on one hypothesis branch and the triage pool has five untested hypotheses. The Manager calls get_planning_advice and creates an explore task that promotes a triage hypothesis.",
+    seedName: "exploit_drift_lineage",
+    exec: {
+      driver: "manager_turn",
+      goal: [
+        "Diversity eval: the exploit_drift_lineage durable state shows five verified exploit tasks on the mean-pooling lineage EXP_DRIFT_EX_1..5 and a triage pool of five untested hypotheses (EXP_DRIFT_H_TRIAGE_1..5).",
+        "Plan the next batch of ResearchTasks. Call get_planning_advice as part of your inspection and reference what it returned in your decision text.",
+        "Decide between continuing to exploit the mean-pooling branch and promoting one of the triage hypotheses; create at least one ResearchTask that reflects your decision.",
+      ].join("\n\n"),
+      projectPhase: "search",
+      baselineSummary:
+        "exploit_drift_lineage baseline EXP_DRIFT_B1 records val_bpb=2.713; the mean-pooling lineage's val_bpb has flattened around 2.670.",
+    },
+    expected: {
+      minCounts: {
+        session: 1,
+        researchProjects: 2,
+        researchTasks: 8,
+        workItems: 1,
+        claudeAgentRuns: 1,
+        hypotheses: 6,
+        experiments: 5,
+      },
+      requiredToolUses: ["get_planning_advice", "create_research_task"],
+      requiredResearchTaskTypes: ["explore"],
+      requiredResearchTaskMarkers: ["EXP_DRIFT_H_TRIAGE"],
+      forbiddenToolUses: ["run_workspace_command"],
+      forbiddenChangedFiles: ["prepare.py"],
+    },
+  },
+  {
+    name: "manager_holds_steady_on_fresh_keep",
+    displayName: "Manager holds steady when the keep is fresh and triage is empty",
+    description:
+      "A single verified exploit task just landed and the triage pool is empty. The Manager calls get_planning_advice and does not over-correct toward exploration.",
+    seedName: "healthy_exploit_window",
+    exec: {
+      driver: "manager_turn",
+      goal: [
+        "Diversity negative-case eval: the healthy_exploit_window durable state shows one verified exploit task that just landed val_bpb=2.681 over baseline 2.713, and the triage pool is empty.",
+        "Plan the next batch of ResearchTasks. Call get_planning_advice as part of your inspection and reference what it returned in your decision text.",
+        "Create at least one ResearchTask that reflects an appropriate next step. Do not invent triage hypotheses.",
+      ].join("\n\n"),
+      projectPhase: "search",
+      baselineSummary:
+        "healthy_exploit_window baseline HEALTHY_EXPLOIT_B1 records val_bpb=2.713; HEALTHY_EXPLOIT_EX1 just landed val_bpb=2.681.",
+    },
+    expected: {
+      minCounts: {
+        session: 1,
+        researchProjects: 2,
+        researchTasks: 4,
+        workItems: 1,
+        claudeAgentRuns: 1,
+        hypotheses: 1,
+        experiments: 1,
+      },
+      requiredToolUses: ["get_planning_advice", "create_research_task"],
+      forbiddenToolUses: ["run_workspace_command"],
+      forbiddenChangedFiles: ["prepare.py"],
+    },
+  },
+  {
+    name: "manager_skips_similar_triage_when_axis_exhausted",
+    displayName: "Manager skips same-axis triage when the active branch is exhausted",
+    description:
+      "The mean-pooling lineage is exhausted and the triage pool contains both pooling-variant hypotheses (same axis) and unrelated-axis hypotheses. The Manager calls get_planning_advice, the advice classifies the branch as exhausted, and the Manager promotes a different-axis triage rather than another pooling variant.",
+    seedName: "exploit_drift_with_mixed_triage",
+    exec: {
+      driver: "manager_turn",
+      goal: [
+        "Axis-exhaustion eval: the exploit_drift_with_mixed_triage durable state shows five verified exploit tasks on the mean-pooling lineage EXP_DRIFT_MIX_EX_1..5 whose val_bpb has flattened.",
+        "The triage pool contains two pooling-variant hypotheses (EXP_DRIFT_MIX_H_VARIANT_MAX, EXP_DRIFT_MIX_H_VARIANT_SUM) that vary the same axis, and three unrelated-axis hypotheses (EXP_DRIFT_MIX_H_VOCAB, EXP_DRIFT_MIX_H_CONTEXT, EXP_DRIFT_MIX_H_EMBED).",
+        "Call get_planning_advice as part of your inspection and reference its branch-status output in your decision text.",
+        "Create exactly one ResearchTask of type explore that targets one of the unrelated-axis triage hypotheses. Do not target a pooling-variant hypothesis.",
+      ].join("\n\n"),
+      projectPhase: "search",
+      baselineSummary:
+        "exploit_drift_with_mixed_triage baseline EXP_DRIFT_MIX_B1 records val_bpb=2.713; mean-pooling lineage val_bpb has flattened around 2.670.",
+    },
+    expected: {
+      minCounts: {
+        session: 1,
+        researchProjects: 2,
+        researchTasks: 8,
+        workItems: 1,
+        claudeAgentRuns: 1,
+        hypotheses: 6,
+        experiments: 5,
+      },
+      requiredToolUses: ["get_planning_advice", "create_research_task"],
+      requiredResearchTaskTypes: ["explore"],
+      requiredMarkers: ["exhausted"],
+      forbiddenResearchTaskMarkers: ["EXP_DRIFT_MIX_H_VARIANT_"],
+      forbiddenToolUses: ["run_workspace_command"],
+      forbiddenChangedFiles: ["prepare.py"],
+    },
+  },
+  {
+    name: "manager_redesigns_on_holdout_divergence_signal",
+    displayName: "Manager dispatches redesign on suspicious_holdout_divergence",
+    description:
+      "A prior exploit ResearchTask was rejected on dev evidence but its verification carries signals.suspicious_holdout_divergence. The Manager reads the signal and creates a redesign exploit ResearchTask targeting the same hypothesis instead of treating the verdict as a clean discard.",
+    seedName: "with_candidate_result",
+    exec: {
+      driver: "manager_turn",
+      goal: [
+        "You are deciding the next move after a prior exploit ResearchTask was rejected on its dev verdict.",
+        "Read the prior ResearchTaskVerification carefully, including the signals field on its payload. When signals.suspicious_holdout_divergence is set, the dev and held-out splits disagreed in direction with non-trivial held-out movement — the hypothesis is still alive, the candidate implementation is what failed.",
+        "Dispatch the next move accordingly. Do not treat the rejected dev verdict as a clean discard of hypothesis H1; create exactly one exploit ResearchTask targeting hypothesis H1 (targetKind: hypothesis, targetId: H1) that asks the Scientist for a redesigned candidate. Cite the dev and held-out deltas the Verifier recorded in the new workerPrompt so the Scientist understands what changed.",
+        "Do not optimize against the held-out metric. The redesign still earns its keep on the dev split.",
+      ].join("\n\n"),
+      projectPhase: "search",
+      baselineSummary,
+      seedResearchTasks: [divergentRejectedExploitTaskSeed],
+    },
+    expected: {
+      minCounts: {
+        session: 1,
+        researchProjects: 1,
+        researchTasks: 2,
+        researchTaskVerifications: 1,
+        workItems: 1,
+        claudeAgentRuns: 1,
+      },
+      requiredToolUses: ["create_research_task"],
+      requiredResearchTaskTypes: ["exploit"],
+      requiredAssociatedHypothesisIds: [],
+      requiredResearchTaskMarkers: ["H1"],
+      forbiddenToolUses: ["run_workspace_command"],
       forbiddenChangedFiles: ["prepare.py"],
     },
   },

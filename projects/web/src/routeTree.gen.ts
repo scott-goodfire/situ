@@ -10,10 +10,11 @@
 
 import { Route as rootRouteImport } from "./routes/__root";
 import { Route as WorkItemsRouteImport } from "./routes/work-items";
-import { Route as ResearchProjectRouteImport } from "./routes/research-project";
 import { Route as ProjectRouteImport } from "./routes/project";
 import { Route as MeasurementsRouteImport } from "./routes/measurements";
+import { Route as FeedRouteImport } from "./routes/feed";
 import { Route as EntityLinksRouteImport } from "./routes/entity-links";
+import { Route as DashboardRouteImport } from "./routes/dashboard";
 import { Route as ArtifactsRouteImport } from "./routes/artifacts";
 import { Route as AgentsRouteImport } from "./routes/agents";
 import { Route as ActivitiesRouteImport } from "./routes/activities";
@@ -32,11 +33,6 @@ const WorkItemsRoute = WorkItemsRouteImport.update({
   path: "/work-items",
   getParentRoute: () => rootRouteImport,
 } as any);
-const ResearchProjectRoute = ResearchProjectRouteImport.update({
-  id: "/research-project",
-  path: "/research-project",
-  getParentRoute: () => rootRouteImport,
-} as any);
 const ProjectRoute = ProjectRouteImport.update({
   id: "/project",
   path: "/project",
@@ -47,9 +43,19 @@ const MeasurementsRoute = MeasurementsRouteImport.update({
   path: "/measurements",
   getParentRoute: () => rootRouteImport,
 } as any);
+const FeedRoute = FeedRouteImport.update({
+  id: "/feed",
+  path: "/feed",
+  getParentRoute: () => rootRouteImport,
+} as any);
 const EntityLinksRoute = EntityLinksRouteImport.update({
   id: "/entity-links",
   path: "/entity-links",
+  getParentRoute: () => rootRouteImport,
+} as any);
+const DashboardRoute = DashboardRouteImport.update({
+  id: "/dashboard",
+  path: "/dashboard",
   getParentRoute: () => rootRouteImport,
 } as any);
 const ArtifactsRoute = ArtifactsRouteImport.update({
@@ -118,10 +124,11 @@ export interface FileRoutesByFullPath {
   "/activities": typeof ActivitiesRoute;
   "/agents": typeof AgentsRoute;
   "/artifacts": typeof ArtifactsRoute;
+  "/dashboard": typeof DashboardRoute;
   "/entity-links": typeof EntityLinksRoute;
+  "/feed": typeof FeedRoute;
   "/measurements": typeof MeasurementsRoute;
   "/project": typeof ProjectRoute;
-  "/research-project": typeof ResearchProjectRoute;
   "/work-items": typeof WorkItemsRoute;
   "/baselines/$baselineId": typeof BaselinesBaselineIdRoute;
   "/evaluations/$evaluationId": typeof EvaluationsEvaluationIdRoute;
@@ -137,10 +144,11 @@ export interface FileRoutesByTo {
   "/activities": typeof ActivitiesRoute;
   "/agents": typeof AgentsRoute;
   "/artifacts": typeof ArtifactsRoute;
+  "/dashboard": typeof DashboardRoute;
   "/entity-links": typeof EntityLinksRoute;
+  "/feed": typeof FeedRoute;
   "/measurements": typeof MeasurementsRoute;
   "/project": typeof ProjectRoute;
-  "/research-project": typeof ResearchProjectRoute;
   "/work-items": typeof WorkItemsRoute;
   "/baselines/$baselineId": typeof BaselinesBaselineIdRoute;
   "/evaluations/$evaluationId": typeof EvaluationsEvaluationIdRoute;
@@ -157,10 +165,11 @@ export interface FileRoutesById {
   "/activities": typeof ActivitiesRoute;
   "/agents": typeof AgentsRoute;
   "/artifacts": typeof ArtifactsRoute;
+  "/dashboard": typeof DashboardRoute;
   "/entity-links": typeof EntityLinksRoute;
+  "/feed": typeof FeedRoute;
   "/measurements": typeof MeasurementsRoute;
   "/project": typeof ProjectRoute;
-  "/research-project": typeof ResearchProjectRoute;
   "/work-items": typeof WorkItemsRoute;
   "/baselines/$baselineId": typeof BaselinesBaselineIdRoute;
   "/evaluations/$evaluationId": typeof EvaluationsEvaluationIdRoute;
@@ -178,10 +187,11 @@ export interface FileRouteTypes {
     | "/activities"
     | "/agents"
     | "/artifacts"
+    | "/dashboard"
     | "/entity-links"
+    | "/feed"
     | "/measurements"
     | "/project"
-    | "/research-project"
     | "/work-items"
     | "/baselines/$baselineId"
     | "/evaluations/$evaluationId"
@@ -197,10 +207,11 @@ export interface FileRouteTypes {
     | "/activities"
     | "/agents"
     | "/artifacts"
+    | "/dashboard"
     | "/entity-links"
+    | "/feed"
     | "/measurements"
     | "/project"
-    | "/research-project"
     | "/work-items"
     | "/baselines/$baselineId"
     | "/evaluations/$evaluationId"
@@ -216,10 +227,11 @@ export interface FileRouteTypes {
     | "/activities"
     | "/agents"
     | "/artifacts"
+    | "/dashboard"
     | "/entity-links"
+    | "/feed"
     | "/measurements"
     | "/project"
-    | "/research-project"
     | "/work-items"
     | "/baselines/$baselineId"
     | "/evaluations/$evaluationId"
@@ -236,10 +248,11 @@ export interface RootRouteChildren {
   ActivitiesRoute: typeof ActivitiesRoute;
   AgentsRoute: typeof AgentsRoute;
   ArtifactsRoute: typeof ArtifactsRoute;
+  DashboardRoute: typeof DashboardRoute;
   EntityLinksRoute: typeof EntityLinksRoute;
+  FeedRoute: typeof FeedRoute;
   MeasurementsRoute: typeof MeasurementsRoute;
   ProjectRoute: typeof ProjectRoute;
-  ResearchProjectRoute: typeof ResearchProjectRoute;
   WorkItemsRoute: typeof WorkItemsRoute;
   BaselinesBaselineIdRoute: typeof BaselinesBaselineIdRoute;
   EvaluationsEvaluationIdRoute: typeof EvaluationsEvaluationIdRoute;
@@ -260,13 +273,6 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof WorkItemsRouteImport;
       parentRoute: typeof rootRouteImport;
     };
-    "/research-project": {
-      id: "/research-project";
-      path: "/research-project";
-      fullPath: "/research-project";
-      preLoaderRoute: typeof ResearchProjectRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
     "/project": {
       id: "/project";
       path: "/project";
@@ -281,11 +287,25 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof MeasurementsRouteImport;
       parentRoute: typeof rootRouteImport;
     };
+    "/feed": {
+      id: "/feed";
+      path: "/feed";
+      fullPath: "/feed";
+      preLoaderRoute: typeof FeedRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     "/entity-links": {
       id: "/entity-links";
       path: "/entity-links";
       fullPath: "/entity-links";
       preLoaderRoute: typeof EntityLinksRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/dashboard": {
+      id: "/dashboard";
+      path: "/dashboard";
+      fullPath: "/dashboard";
+      preLoaderRoute: typeof DashboardRouteImport;
       parentRoute: typeof rootRouteImport;
     };
     "/artifacts": {
@@ -380,10 +400,11 @@ const rootRouteChildren: RootRouteChildren = {
   ActivitiesRoute: ActivitiesRoute,
   AgentsRoute: AgentsRoute,
   ArtifactsRoute: ArtifactsRoute,
+  DashboardRoute: DashboardRoute,
   EntityLinksRoute: EntityLinksRoute,
+  FeedRoute: FeedRoute,
   MeasurementsRoute: MeasurementsRoute,
   ProjectRoute: ProjectRoute,
-  ResearchProjectRoute: ResearchProjectRoute,
   WorkItemsRoute: WorkItemsRoute,
   BaselinesBaselineIdRoute: BaselinesBaselineIdRoute,
   EvaluationsEvaluationIdRoute: EvaluationsEvaluationIdRoute,

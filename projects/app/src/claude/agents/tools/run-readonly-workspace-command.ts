@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { computeEnvForWorkItem } from "../../../runtime/compute";
 import { defineTool } from "./__shared__/define-tool";
+import { Result } from "./__shared__/result";
 import { allRoles } from "./__shared__/roles";
 import { runReadonlyWorkspaceCommand } from "./__shared__/source-workspace";
 
@@ -23,9 +24,10 @@ export const runReadonlyWorkspaceCommandTool = defineTool({
     "Run a shell command in the source workspace for repo inspection, baseline evidence, or verification. The command may use normal shell syntax. Write temporary logs/results to $SITU_COMMAND_OUTPUT_DIR, not the source workspace; the result reports failure if the source workspace changed.",
   roles: allRoles,
   inputSchema,
+  resultEnvelope: true,
   handler: async ({ input, context }) => {
     const timeoutSeconds = input.timeoutSeconds;
-    return {
+    return Result.ok({
       command: await runReadonlyWorkspaceCommand({
         command: input.command,
         env: await computeEnvForWorkItem({ workItem: context.workItem }),
@@ -33,6 +35,6 @@ export const runReadonlyWorkspaceCommandTool = defineTool({
         timeoutMs: timeoutSeconds === undefined ? undefined : timeoutSeconds * 1000,
         maxOutputBytes: input.maxOutputBytes,
       }),
-    };
+    });
   },
 });

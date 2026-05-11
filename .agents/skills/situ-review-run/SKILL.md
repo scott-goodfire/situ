@@ -75,7 +75,7 @@ sqlite3 <db> "select id,type,message,substr(payload_json,1,400),created_at from 
 
 ## Review Checklist
 
-- Did the session create or resume the intended workspace?
+- Did the session target the intended workspace?
 - Was an Anthropic key available? Check status output, not secret values.
 - Which ResearchTasks were created, claimed, completed, failed, or left active?
 - Which work items are pending or claimed after the run?

@@ -3,6 +3,7 @@ import { RESEARCH_STATUSES } from "@situ/protocol";
 
 import { experimentRepository } from "../../../data/repositories/experiments";
 import { defineTool } from "./__shared__/define-tool";
+import { Result } from "./__shared__/result";
 import { allRoles } from "./__shared__/roles";
 
 const inputSchema = z.object({
@@ -17,11 +18,13 @@ export const searchExperimentsTool = defineTool({
     "Search situ experiments by id, title, summary, task id, primary hypothesis id, worktree, commit, or status.",
   roles: allRoles,
   inputSchema,
-  handler: async ({ input }) => ({
-    experiments: await experimentRepository.search({
-      query: input.query,
-      status: input.status,
-      limit: input.limit ?? 10,
+  resultEnvelope: true,
+  handler: async ({ input }) =>
+    Result.ok({
+      experiments: await experimentRepository.search({
+        query: input.query,
+        status: input.status,
+        limit: input.limit ?? 10,
+      }),
     }),
-  }),
 });

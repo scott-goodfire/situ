@@ -10,11 +10,13 @@ describe("computeBlockersForPlannedResearchTasks", () => {
         task({ id: "task_busy", pool: "h100" }),
         task({ id: "task_idle", pool: "cpu" }),
         task({ id: "task_no_compute" }),
+        task({ id: "task_verify_no_compute", type: "verify" }),
       ],
       computeTargets: [
         { id: "target_dead_gpu", pool: "gpu", status: "dead" },
         { id: "target_claimed_h100", pool: "h100", status: "claimed" },
         { id: "target_idle_cpu", pool: "cpu", status: "idle" },
+        { id: "target_idle_local", pool: "local", status: "idle" },
       ],
     });
 
@@ -36,15 +38,40 @@ describe("computeBlockersForPlannedResearchTasks", () => {
       },
     ]);
   });
+
+  test("defaults Scientist-routed tasks without compute payload to local", () => {
+    const blockers = computeBlockersForPlannedResearchTasks({
+      researchTasks: [task({ id: "task_default_local" })],
+      computeTargets: [],
+    });
+
+    expect(blockers).toMatchObject([
+      {
+        kind: "missing_pool",
+        researchTaskId: "task_default_local",
+        pool: "local",
+      },
+    ]);
+  });
 });
 
-function task({ id, pool }: { id: string; pool?: string }): {
+function task({
+  id,
+  pool,
+  type = "explore",
+}: {
   id: string;
+  pool?: string;
+  type?: "debug" | "exploit" | "explore" | "prune" | "synthesize" | "verify";
+}): {
+  id: string;
+  type: "debug" | "exploit" | "explore" | "prune" | "synthesize" | "verify";
   title: string;
   payloadJson: string;
 } {
   return {
     id,
+    type,
     title: id,
     payloadJson: JSON.stringify(pool ? { compute: { pool } } : {}),
   };

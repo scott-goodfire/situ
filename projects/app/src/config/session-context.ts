@@ -36,7 +36,6 @@ export type SessionRuntimeContext = {
 
 export type SessionRuntimeOptions = {
   sessionId?: string;
-  resume?: boolean;
 };
 
 export type SessionRegistryEntry = {
@@ -82,7 +81,6 @@ export async function ensureRuntimeContext(
 }
 
 async function prepareRuntimeSession({
-  resume = false,
   sessionId: requestedSessionId,
 }: SessionRuntimeOptions): Promise<PreparedRuntimeSession> {
   const home = runtimeLocalStateHome();
@@ -94,9 +92,6 @@ async function prepareRuntimeSession({
   const registry = await readRegistry({ path: registryPath });
   const sessionId = resolveRuntimeSessionId({
     requestedSessionId,
-    resume,
-    registry,
-    workspaceKey,
   });
   const sessionHome = join(home, "sessions", sessionId);
   const sqlitePath = dbPathOverride() ?? join(sessionHome, "session.sqlite");
@@ -133,6 +128,10 @@ export function getRuntimeContext(): SessionRuntimeContext {
 
 export function maybeRuntimeContext(): SessionRuntimeContext | undefined {
   return context;
+}
+
+export function resetRuntimeContextForTests(): void {
+  context = undefined;
 }
 
 export function runtimeLocalStateHome(): string {
@@ -179,21 +178,11 @@ export function latestSessionEntry({
 
 function resolveRuntimeSessionId({
   requestedSessionId,
-  resume,
-  registry,
-  workspaceKey,
 }: {
   requestedSessionId: string | undefined;
-  resume: boolean;
-  registry: SessionRegistry;
-  workspaceKey: string;
 }): string {
   const explicitSessionId = requestedSessionId ?? sessionIdFromEnv();
-  return (
-    explicitSessionId ??
-    (resume ? latestSessionId({ registry, workspaceKey }) : undefined) ??
-    createSessionId()
-  );
+  return explicitSessionId ?? createSessionId();
 }
 
 function createSessionRegistryEntry({
@@ -286,16 +275,6 @@ async function writeRegistry({
 }): Promise<void> {
   await mkdir(dirname(path), { recursive: true });
   await writeFile(path, `${JSON.stringify(registry, null, 2)}\n`);
-}
-
-function latestSessionId({
-  registry,
-  workspaceKey,
-}: {
-  registry: SessionRegistry;
-  workspaceKey: string;
-}): string | undefined {
-  return latestSessionEntry({ registry, workspaceKey })?.sessionId;
 }
 
 function upsertRegistryEntry({

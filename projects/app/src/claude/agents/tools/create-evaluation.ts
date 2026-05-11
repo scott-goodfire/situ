@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { evaluationRepository } from "../../../data/repositories/evaluations";
 import { defineTool } from "./__shared__/define-tool";
+import { Result } from "./__shared__/result";
 import { toolContextModule } from "./__shared__/tool-context-module";
 
 const inputSchema = z.object({
@@ -24,18 +25,20 @@ export const createEvaluationTool = defineTool({
   description: "Create a durable evaluation record connected to baseline and experiment records.",
   roles: ["scientist"],
   inputSchema,
-  handler: async ({ input, context }) => ({
-    evaluation: await evaluationRepository.create({
-      title: input.title,
-      summary: input.summary,
-      createdByResearchTaskId: toolContextModule.researchTaskId({
-        explicit: input.researchTaskId,
-        context,
-        required: false,
+  resultEnvelope: true,
+  handler: async ({ input, context }) =>
+    Result.ok({
+      evaluation: await evaluationRepository.create({
+        title: input.title,
+        summary: input.summary,
+        createdByResearchTaskId: toolContextModule.researchTaskId({
+          explicit: input.researchTaskId,
+          context,
+          required: false,
+        }),
+        createdByAgentId: context.agentId,
+        associatedBaselineId: input.associatedBaselineId,
+        associatedExperimentId: input.associatedExperimentId,
       }),
-      createdByAgentId: context.agentId,
-      associatedBaselineId: input.associatedBaselineId,
-      associatedExperimentId: input.associatedExperimentId,
     }),
-  }),
 });

@@ -17,6 +17,7 @@ import { researchProjectRepository } from "./research-projects";
 import { researchTaskVerificationRepository } from "./research-task-verifications";
 import type { ResearchTaskRecord } from "./research-tasks";
 import { researchTaskRepository } from "./research-tasks";
+import { feedEntryRepository } from "./feed-entries";
 import { clampRepositoryLimit } from "./__shared__";
 
 let tempRoot: string;
@@ -358,9 +359,9 @@ describe("repository contracts", () => {
       associatedHypothesisId: hypothesis.id,
     });
 
-    await expect(artifactRepository.require({ artifactId: "missing-artifact" })).rejects.toThrow(
-      "Artifact not found",
-    );
+    await expect(
+      artifactRepository.require({ artifactId: "missing-artifact" }),
+    ).rejects.toMatchObject({ code: "artifact_not_found" });
     expect(await artifactRepository.get({ artifactId: "missing-artifact" })).toBe(undefined);
     const artifact = await artifactRepository.create({
       title: "Repository artifact",
@@ -394,9 +395,9 @@ describe("repository contracts", () => {
     expect(inlineArtifact.path.startsWith("inline/")).toBe(true);
     expect(inlineArtifact.path.endsWith(".md")).toBe(true);
 
-    await expect(entityLinkRepository.require({ entityLinkId: "missing-link" })).rejects.toThrow(
-      "Entity link not found",
-    );
+    await expect(
+      entityLinkRepository.require({ entityLinkId: "missing-link" }),
+    ).rejects.toMatchObject({ code: "entity_link_not_found" });
     expect(await entityLinkRepository.get({ entityLinkId: "missing-link" })).toBe(undefined);
     const entityLink = await entityLinkRepository.create({
       fromKind: "research_task",
@@ -477,6 +478,54 @@ describe("repository contracts", () => {
         })
       )?.id,
     ).toBe(pooled.id);
+  });
+
+  test("persists feed entries with list/latest semantics keyed by research project", async () => {
+    const project = await researchProjectRepository.create({
+      goal: "Exercise the feed entry repository contract.",
+    });
+
+    const first = await feedEntryRepository.create({
+      researchProjectId: project.id,
+      summaryMarkdown: "First narration.",
+      severity: "info",
+      citedAppEventIds: ["evt_1"],
+      windowStartedAt: "2026-05-11T00:00:00.000Z",
+      windowEndedAt: "2026-05-11T00:05:00.000Z",
+    });
+    expect(first.severity).toBe("info");
+    expect((await feedEntryRepository.get({ feedEntryId: first.id }))?.id).toBe(first.id);
+    expect((await feedEntryRepository.require({ feedEntryId: first.id })).id).toBe(first.id);
+
+    await new Promise((resolveTimeout) => setTimeout(resolveTimeout, 5));
+    const second = await feedEntryRepository.create({
+      researchProjectId: project.id,
+      summaryMarkdown: "Second narration.",
+      severity: "stuck",
+      windowStartedAt: "2026-05-11T00:05:00.000Z",
+      windowEndedAt: "2026-05-11T00:10:00.000Z",
+    });
+
+    const list = await feedEntryRepository.list({ researchProjectId: project.id });
+    expect(list.map((entry) => entry.id)).toEqual([second.id, first.id]);
+
+    expect((await feedEntryRepository.latest({ researchProjectId: project.id }))?.id).toBe(
+      second.id,
+    );
+
+    await expect(feedEntryRepository.require({ feedEntryId: "feed_missing" })).rejects.toThrow(
+      "feed_entry_not_found",
+    );
+
+    await expect(
+      feedEntryRepository.create({
+        researchProjectId: "rp_does_not_exist",
+        summaryMarkdown: "Should not insert.",
+        severity: "info",
+        windowStartedAt: "2026-05-11T00:00:00.000Z",
+        windowEndedAt: "2026-05-11T00:05:00.000Z",
+      }),
+    ).rejects.toThrow();
   });
 });
 

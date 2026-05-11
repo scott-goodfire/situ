@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { evaluationRepository } from "../../../data/repositories/evaluations";
 import { defineTool } from "./__shared__/define-tool";
+import { Result } from "./__shared__/result";
 import { allRoles } from "./__shared__/roles";
 
 const inputSchema = z.object({
@@ -13,9 +14,11 @@ export const getEvaluationTool = defineTool({
   description: "Read one situ evaluation with activities and measurements.",
   roles: allRoles,
   inputSchema,
-  handler: async ({ input }) => ({
-    result: await evaluationRepository.getWithActivities({
-      evaluationId: input.evaluationId,
+  resultEnvelope: true,
+  handler: async ({ input }) =>
+    Result.ok({
+      result: await evaluationRepository.getWithActivities({
+        evaluationId: input.evaluationId,
+      }),
     }),
-  }),
 });

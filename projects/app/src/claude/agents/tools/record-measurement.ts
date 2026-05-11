@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { measurementRepository } from "../../../data/repositories/measurements";
 import { defineTool } from "./__shared__/define-tool";
+import { Result } from "./__shared__/result";
 import { toolContextModule } from "./__shared__/tool-context-module";
 
 const inputSchema = z.object({
@@ -26,17 +27,19 @@ export const recordMeasurementTool = defineTool({
   description: "Record a durable measurement or observation from Scientist work.",
   roles: ["scientist"],
   inputSchema,
-  handler: async ({ input, context }) => ({
-    measurement: await measurementRepository.record({
-      body: input.body,
-      evaluationId: input.evaluationId,
-      createdByResearchTaskId: toolContextModule.researchTaskId({
-        explicit: input.researchTaskId,
-        context,
-        required: false,
+  resultEnvelope: true,
+  handler: async ({ input, context }) =>
+    Result.ok({
+      measurement: await measurementRepository.record({
+        body: input.body,
+        evaluationId: input.evaluationId,
+        createdByResearchTaskId: toolContextModule.researchTaskId({
+          explicit: input.researchTaskId,
+          context,
+          required: false,
+        }),
+        createdByAgentId: context.agentId,
+        payload: input.payload ?? {},
       }),
-      createdByAgentId: context.agentId,
-      payload: input.payload ?? {},
     }),
-  }),
 });

@@ -12,7 +12,7 @@ import { computeStringPayloadValue, metadataEnvValue } from "./record-values";
 import { releaseComputeTarget } from "./release-compute-target";
 import type { ComputeTargetRecord } from "./types";
 
-const DEFAULT_COMPUTE_POOL = "local";
+export const DEFAULT_LOCAL_COMPUTE_POOL = "local";
 const DEFAULT_COMPUTE_LABEL = "Local";
 const COMPUTE_LEASE_SECONDS = 10 * 60;
 const COMPUTE_HEARTBEAT_SECONDS = COMPUTE_LEASE_SECONDS;
@@ -25,21 +25,24 @@ export type ResearchTaskComputeClaim = {
   required: boolean;
 };
 
-function researchTaskComputePool({
+export function computePoolForResearchTask({
   researchTask,
 }: {
-  researchTask: ResearchTaskRecord;
+  researchTask: Pick<ResearchTaskRecord, "payloadJson" | "type">;
 }): string | undefined {
+  if (researchTask.type === "verify") {
+    return undefined;
+  }
   const payload = researchTaskPayload({ researchTask });
   const compute = jsonModule.record({ value: payload.compute });
   const pool = compute.pool;
-  return typeof pool === "string" && pool.trim() ? pool.trim() : undefined;
+  return typeof pool === "string" && pool.trim() ? pool.trim() : DEFAULT_LOCAL_COMPUTE_POOL;
 }
 
 function researchTaskPayload({
   researchTask,
 }: {
-  researchTask: ResearchTaskRecord;
+  researchTask: Pick<ResearchTaskRecord, "payloadJson">;
 }): Record<string, unknown> {
   return jsonModule.parseRecord({ raw: researchTask.payloadJson });
 }
@@ -92,37 +95,49 @@ export async function computeEnvForWorkItem({
   return computeTargetExecutionEnv({ target });
 }
 
-export async function ensureDefaultLocalComputeTarget(): Promise<ComputeTargetRecord> {
-  const targets = await computeTargetRepository.listForPool({
-    pool: DEFAULT_COMPUTE_POOL,
-  });
-  const active = targets.find((target) => target.status !== "dead");
-  if (active) {
-    return active;
+export async function ensureDefaultLocalComputeTargets({
+  desiredCount,
+}: {
+  desiredCount: number;
+}): Promise<void> {
+  if (desiredCount <= 0) {
+    return;
   }
-  return computeTargetRepository.upsert({
-    pool: DEFAULT_COMPUTE_POOL,
-    kind: "local",
-    label: DEFAULT_COMPUTE_LABEL,
+  const existing = await computeTargetRepository.listForPool({
+    pool: DEFAULT_LOCAL_COMPUTE_POOL,
   });
-}
-
-export async function explicitComputeTargetConcurrency(): Promise<number | undefined> {
-  const targets = await computeTargetRepository.listAll();
-  const count = targets.filter((target) => isExplicitComputeTarget({ target })).length;
-  return count === 0 ? undefined : count;
-}
-
-function isExplicitComputeTarget({ target }: { target: ComputeTargetRecord }): boolean {
-  if (target.status === "dead") {
-    return false;
+  const live = existing.filter((target) => target.status !== "dead");
+  if (live.length >= desiredCount) {
+    return;
   }
-  return !(
-    target.pool === DEFAULT_COMPUTE_POOL &&
-    target.kind === "local" &&
-    target.label === DEFAULT_COMPUTE_LABEL &&
-    target.metadataJson === "{}"
+  const usedLabels = new Set(
+    live
+      .map((target) => target.label)
+      .filter((label): label is string => typeof label === "string" && label.length > 0),
   );
+  let slot = 1;
+  for (let created = 0; live.length + created < desiredCount; created += 1) {
+    while (usedLabels.has(localSlotLabel({ slot }))) {
+      slot += 1;
+    }
+    const label = localSlotLabel({ slot });
+    await computeTargetRepository.upsert({
+      pool: DEFAULT_LOCAL_COMPUTE_POOL,
+      kind: "local",
+      label,
+    });
+    usedLabels.add(label);
+    slot += 1;
+  }
+}
+
+function localSlotLabel({ slot }: { slot: number }): string {
+  return `${DEFAULT_COMPUTE_LABEL} ${slot}`;
+}
+
+export async function liveComputeTargetCount(): Promise<number> {
+  const targets = await computeTargetRepository.listAll();
+  return targets.filter((target) => target.status !== "dead").length;
 }
 
 export async function claimComputeForResearchTask({
@@ -130,7 +145,7 @@ export async function claimComputeForResearchTask({
 }: {
   researchTask: ResearchTaskRecord;
 }): Promise<ResearchTaskComputeClaim> {
-  const pool = researchTaskComputePool({ researchTask });
+  const pool = computePoolForResearchTask({ researchTask });
   if (!pool) {
     return { target: undefined, pool: undefined, poolKnown: false, required: false };
   }

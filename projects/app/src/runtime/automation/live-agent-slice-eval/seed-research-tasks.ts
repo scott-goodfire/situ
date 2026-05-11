@@ -29,6 +29,12 @@ export async function seedResearchTasks({
         status: "awaiting_verification",
         resultSummary: seed.resultSummary ?? seed.verification.evidenceSummary,
       });
+      const verificationPayload: Record<string, unknown> = {
+        source: "live-agent-eval-seed",
+      };
+      if (seed.verification.signals && Object.keys(seed.verification.signals).length > 0) {
+        verificationPayload.signals = seed.verification.signals;
+      }
       await researchTaskVerificationRepository.create({
         researchTaskId: task.id,
         status: seed.verification.status,
@@ -36,9 +42,7 @@ export async function seedResearchTasks({
         verifierPrompt: seed.verificationPrompt,
         judgment: seed.verification.judgment,
         evidenceSummary: seed.verification.evidenceSummary,
-        payload: {
-          source: "live-agent-eval-seed",
-        },
+        payload: verificationPayload,
       });
     } else if (seed.status && seed.status !== "planned") {
       await researchTaskRepository.transition({

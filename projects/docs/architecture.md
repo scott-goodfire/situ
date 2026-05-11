@@ -14,6 +14,11 @@ progress into the UI.
 - `ResearchProjectInteraction`
   - A pending user question or confirmation.
   - Used when the Manager needs a decision before continuing.
+- `Baseline`
+  - The Manager-owned project setup baseline records the metric, native command
+    or evaluation path, assumptions, and comparison standard the user confirms
+    before autonomous research starts.
+  - Scientists can also record task evidence baselines during ResearchTasks.
 - `ResearchTask`
   - A unit of work created by the Manager.
   - Includes a `workerPrompt` for the Scientist and a `verificationPrompt` for
@@ -36,10 +41,14 @@ progress into the UI.
 
 A user goal becomes a `ResearchProject`. situ then enqueues a Manager work item
 for that project. The `ManagerAgent` reads the project state, asks the user for
-input if needed, and creates `ResearchTask` records for concrete pieces of work.
+input if needed, creates or revises the project setup baseline, and presents it
+for confirmation. Interactive runs wait for the user; headless `situ exec`
+auto-confirms only after the baseline is saved.
 
-Planned tasks are dispatched to the `ScientistAgent`. The Scientist runs the
-task, usually in an isolated worktree, and records the evidence it produced:
+Once the baseline is confirmed, the project enters `search` phase and the
+Manager can create `ResearchTask` records for concrete pieces of work. Planned
+tasks are dispatched to the `ScientistAgent`. The Scientist runs the task,
+usually in an isolated worktree, and records the evidence it produced:
 hypotheses, experiments, evaluations, measurements, and artifacts. When the task
 is ready for review, it moves to `awaiting_verification`.
 
@@ -57,7 +66,9 @@ situ exec --objective "Improve spelling-corrector accuracy without slowing it do
 ```
 
 - situ creates a `ResearchProject` for the objective.
-- The `ManagerAgent` establishes a baseline.
+- The `ManagerAgent` creates a durable project setup baseline and presents it
+  for confirmation.
+- After confirmation, the project enters `search` phase.
 - The `ManagerAgent` creates or selects one primary `Hypothesis`, then
   creates a hypothesis-targeted `ResearchTask`, such as "try a candidate
   edit-distance pruning change."

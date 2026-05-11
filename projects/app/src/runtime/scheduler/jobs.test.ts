@@ -7,7 +7,7 @@ import { ensureRuntimeContext } from "../../config/session-context";
 import { getDb } from "../../data/db/client";
 import { computeTargets, workItems } from "../../data/db/schema";
 import { computeTargetRepository } from "../../data/repositories/compute-targets";
-import { ensureDefaultLocalComputeTarget } from "../compute";
+import { ensureDefaultLocalComputeTargets } from "../compute";
 import { CLAUDE_SCIENTIST_RESEARCH_TASK_WORK_ITEM_PURPOSE } from "../work-items";
 import { canClaimScientistWorkItem } from "./jobs";
 
@@ -42,9 +42,8 @@ describe("runtime scheduler jobs", () => {
     restoreEnv();
   });
 
-  test("treats zero explicit compute targets as unbounded by compute", async () => {
-    delete process.env.MAX_SITU_SCIENTIST_CONCURRENCY;
-    await ensureDefaultLocalComputeTarget();
+  test("falls back to MAX_SITU_SCIENTIST_CONCURRENCY when no compute targets are registered", async () => {
+    process.env.MAX_SITU_SCIENTIST_CONCURRENCY = "4";
 
     insertClaimedScientistWorkItems(3);
     await expect(canClaimScientistWorkItem()).resolves.toBe(true);
@@ -53,9 +52,20 @@ describe("runtime scheduler jobs", () => {
     await expect(canClaimScientistWorkItem()).resolves.toBe(false);
   });
 
-  test("caps Scientist claims by explicit compute target count when lower than config", async () => {
+  test("caps Scientist claims at the auto-created local pool size", async () => {
     process.env.MAX_SITU_SCIENTIST_CONCURRENCY = "4";
-    await insertExplicitComputeTargets(2);
+    await ensureDefaultLocalComputeTargets({ desiredCount: 4 });
+
+    insertClaimedScientistWorkItems(3);
+    await expect(canClaimScientistWorkItem()).resolves.toBe(true);
+
+    insertClaimedScientistWorkItems(1, { offset: 3 });
+    await expect(canClaimScientistWorkItem()).resolves.toBe(false);
+  });
+
+  test("caps Scientist claims by live compute target count when lower than config", async () => {
+    process.env.MAX_SITU_SCIENTIST_CONCURRENCY = "4";
+    await insertGpuComputeTargets(2);
 
     insertClaimedScientistWorkItems(1);
     await expect(canClaimScientistWorkItem()).resolves.toBe(true);
@@ -64,9 +74,9 @@ describe("runtime scheduler jobs", () => {
     await expect(canClaimScientistWorkItem()).resolves.toBe(false);
   });
 
-  test("caps Scientist claims by config when compute target count is higher", async () => {
+  test("caps Scientist claims by config when live compute target count is higher", async () => {
     process.env.MAX_SITU_SCIENTIST_CONCURRENCY = "2";
-    await insertExplicitComputeTargets(3);
+    await insertGpuComputeTargets(3);
 
     insertClaimedScientistWorkItems(1);
     await expect(canClaimScientistWorkItem()).resolves.toBe(true);
@@ -76,10 +86,10 @@ describe("runtime scheduler jobs", () => {
   });
 });
 
-async function insertExplicitComputeTargets(count: number): Promise<void> {
+async function insertGpuComputeTargets(count: number): Promise<void> {
   for (let index = 0; index < count; index += 1) {
     await computeTargetRepository.upsert({
-      computeTargetId: `target-explicit-${index}`,
+      computeTargetId: `target-gpu-${index}`,
       pool: "gpu",
       kind: "local",
     });

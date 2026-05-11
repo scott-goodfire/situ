@@ -8,6 +8,7 @@ import {
   clampRepositoryLimit,
   createStatusRecordTransitions,
   matchesRepositorySearch,
+  PreconditionError,
   type ResearchRecordStatus,
 } from "../__shared__";
 import { hypothesisRepository } from "../hypotheses";
@@ -67,7 +68,11 @@ async function requireLatestExperimentActivity({
     .orderBy(asc(experimentActivities.createdAt), asc(experimentActivities.id));
   const activity = rows.at(-1);
   if (!activity) {
-    throw new Error(`Experiment activity was not persisted: ${experimentId}`);
+    throw new PreconditionError({
+      code: "experiment_activity_not_persisted",
+      hint: "Experiment activity write did not produce a row; this is an internal invariant violation, retry or report.",
+      details: { experimentId },
+    });
   }
   return activity;
 }
@@ -89,7 +94,11 @@ async function requireExperimentRecord({
 }): Promise<ExperimentRecord> {
   const experiment = await getExperimentRecord({ experimentId });
   if (!experiment) {
-    throw new Error(`Experiment not found: ${experimentId}`);
+    throw new PreconditionError({
+      code: "experiment_not_found",
+      hint: "List or search experiments; this id may be abbreviated or stale.",
+      details: { experimentId },
+    });
   }
   return experiment;
 }

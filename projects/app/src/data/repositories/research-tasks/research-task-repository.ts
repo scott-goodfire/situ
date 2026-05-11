@@ -10,7 +10,7 @@ import { researchTasks } from "../../db/schema";
 import { runSyncedWrite } from "../../db/sync";
 import { dateTimeModule } from "../../../modules/date-time";
 import { textModule } from "../../../modules/text";
-import { clampRepositoryLimit, matchesRepositorySearch } from "../__shared__";
+import { clampRepositoryLimit, matchesRepositorySearch, PreconditionError } from "../__shared__";
 import { researchProjectRepository } from "../research-projects";
 
 export type ResearchTaskRecord = typeof researchTasks.$inferSelect;
@@ -62,7 +62,11 @@ export const researchTaskRepository = {
       await researchTaskRepository.require({ researchTaskId: parentResearchTaskId });
     }
     if (Boolean(targetKind) !== Boolean(targetId)) {
-      throw new Error("ResearchTask targetKind and targetId must be provided together.");
+      throw new PreconditionError({
+        code: "research_task_target_pair_required",
+        hint: "Provide both targetKind and targetId together, or omit both.",
+        details: { targetKind, targetId },
+      });
     }
     const now = dateTimeModule.nowIso();
     const researchTaskId = crypto.randomUUID();
@@ -110,7 +114,11 @@ export const researchTaskRepository = {
   async require({ researchTaskId }: { researchTaskId: string }): Promise<ResearchTaskRecord> {
     const task = await researchTaskRepository.get({ researchTaskId });
     if (!task) {
-      throw new Error(`ResearchTask not found: ${researchTaskId}`);
+      throw new PreconditionError({
+        code: "research_task_not_found",
+        hint: "List or search ResearchTasks; this id may be abbreviated or stale.",
+        details: { researchTaskId },
+      });
     }
     return task;
   },
@@ -259,9 +267,11 @@ function assertResearchTaskNotTerminal({
   operation: string;
 }): void {
   if (terminalResearchTaskStatuses.has(researchTask.status)) {
-    throw new Error(
-      `ResearchTask cannot ${operation} from terminal status: ${researchTask.status} (researchTaskId: ${researchTask.id})`,
-    );
+    throw new PreconditionError({
+      code: "research_task_terminal",
+      hint: `ResearchTask is in terminal status "${researchTask.status}" and cannot ${operation}; create a new ResearchTask instead.`,
+      details: { researchTaskId: researchTask.id, currentStatus: researchTask.status, operation },
+    });
   }
 }
 
@@ -269,7 +279,11 @@ function assertResearchTaskType(input: { type: string }): asserts input is {
   type: ResearchTaskType;
 } {
   if (!researchTaskTypes.has(input.type as ResearchTaskType)) {
-    throw new Error(`Invalid researchTask type: ${input.type}`);
+    throw new PreconditionError({
+      code: "research_task_invalid_type",
+      hint: "Use a type from RESEARCH_TASK_TYPES (e.g., explore, exploit, verify, debug, synthesize, prune).",
+      details: { type: input.type, allowed: Array.from(researchTaskTypes) },
+    });
   }
 }
 
@@ -277,7 +291,11 @@ function assertResearchTaskStatus(input: { status: string }): asserts input is {
   status: ResearchTaskStatus;
 } {
   if (!researchTaskStatuses.has(input.status as ResearchTaskStatus)) {
-    throw new Error(`Invalid researchTask status: ${input.status}`);
+    throw new PreconditionError({
+      code: "research_task_invalid_status",
+      hint: "Use a status from RESEARCH_TASK_STATUSES.",
+      details: { status: input.status, allowed: Array.from(researchTaskStatuses) },
+    });
   }
 }
 
@@ -285,6 +303,10 @@ function assertResearchTaskPriority(input: { priority: string }): asserts input 
   priority: ResearchTaskPriority;
 } {
   if (!researchTaskPriorities.has(input.priority as ResearchTaskPriority)) {
-    throw new Error(`Invalid researchTask priority: ${input.priority}`);
+    throw new PreconditionError({
+      code: "research_task_invalid_priority",
+      hint: "Use a priority from RESEARCH_TASK_PRIORITIES.",
+      details: { priority: input.priority, allowed: Array.from(researchTaskPriorities) },
+    });
   }
 }

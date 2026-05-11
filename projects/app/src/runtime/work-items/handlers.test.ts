@@ -26,7 +26,7 @@ import {
   CLAUDE_SCIENTIST_RESEARCH_TASK_WORK_ITEM_PURPOSE,
   CLAUDE_VERIFIER_RESEARCH_TASK_WORK_ITEM_PURPOSE,
 } from "./types";
-import { finalizeDomainFailureForWorkItem } from "./handlers";
+import { finalizeDomainFailureForWorkItem, verifierWorkItemHandler } from "./handlers";
 
 describe("work item domain failure finalization", () => {
   beforeAll(async () => {
@@ -91,6 +91,48 @@ describe("work item domain failure finalization", () => {
     const storedTask = await researchTaskRepository.require({ researchTaskId: task.id });
     expect(storedTask.status).toBe("failed");
     expect(storedTask.resultSummary).toContain("Verifier session failed");
+  });
+
+  test("verifierWorkItemHandler skips when ResearchTask is already verified", async () => {
+    const { task } = await createTaskWithExperiment();
+    await researchTaskRepository.claimPlanned({ researchTaskId: task.id });
+    await researchTaskRepository.transition({
+      researchTaskId: task.id,
+      status: "awaiting_verification",
+      resultSummary: "Scientist result awaits verification.",
+    });
+    await researchTaskRepository.transition({
+      researchTaskId: task.id,
+      status: "verified",
+      resultSummary: "Verified by a prior Verifier run.",
+    });
+    const workItem = workItemRecord({
+      purpose: CLAUDE_VERIFIER_RESEARCH_TASK_WORK_ITEM_PURPOSE,
+      targetKind: "researchTask",
+      targetId: task.id,
+    });
+
+    await verifierWorkItemHandler({ workItem });
+
+    const storedTask = await researchTaskRepository.require({ researchTaskId: task.id });
+    expect(storedTask.status).toBe("verified");
+    expect(verifierSkippedEvents()).toEqual([
+      { researchTaskId: task.id, researchTaskStatus: "verified" },
+    ]);
+  });
+
+  test("verifierWorkItemHandler skips when ResearchTask is missing", async () => {
+    const workItem = workItemRecord({
+      purpose: CLAUDE_VERIFIER_RESEARCH_TASK_WORK_ITEM_PURPOSE,
+      targetKind: "researchTask",
+      targetId: "rtsk_does_not_exist",
+    });
+
+    await verifierWorkItemHandler({ workItem });
+
+    expect(verifierSkippedEvents()).toEqual([
+      { researchTaskId: "rtsk_does_not_exist", researchTaskStatus: null },
+    ]);
   });
 });
 
@@ -163,6 +205,27 @@ function researchTaskFailureEvents(): string[] {
     .map((event) => {
       const payload = JSON.parse(event.payloadJson) as { researchTaskId?: string };
       return payload.researchTaskId ?? "";
+    });
+}
+
+function verifierSkippedEvents(): Array<{
+  researchTaskId: string;
+  researchTaskStatus: string | null;
+}> {
+  return getDb()
+    .select()
+    .from(appEvents)
+    .where(eq(appEvents.type, "work_item.verifier_skipped_already_resolved"))
+    .all()
+    .map((event) => {
+      const payload = JSON.parse(event.payloadJson) as {
+        researchTaskId?: string;
+        researchTaskStatus?: string | null;
+      };
+      return {
+        researchTaskId: payload.researchTaskId ?? "",
+        researchTaskStatus: payload.researchTaskStatus ?? null,
+      };
     });
 }
 

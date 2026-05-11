@@ -13,6 +13,7 @@ run_check_step "lint: markdownlint" bun x markdownlint-cli2
 run_check_step "lint: typos" typos
 run_check_step "lint: GitHub Actions" actionlint
 run_check_step "lint: .agents policies" mise run lint:policies
+run_check_step "lint: no bare throws in tools/repositories" bash scripts/lint-no-bare-throws.sh
 run_check_step "typecheck: TypeScript project references" bun x tsgo --build
 run_check_step "typecheck: @situ/app" bun --filter=@situ/app run check
 run_check_step "check: CLI command registry" bun --filter=@situ/app run check:cli

@@ -9,6 +9,7 @@ export type CliCommand =
   | { kind: "exec"; argv: string[] }
   | { kind: "help" }
   | { kind: "instructions"; argv: string[] }
+  | { kind: "report"; argv: string[] }
   | { kind: "sessions"; argv: string[] }
   | { kind: "self-update"; argv: string[] }
   | { kind: "skill"; argv: string[] }
@@ -27,6 +28,7 @@ export const rootCommandKinds = [
   "status",
   "events",
   "instructions",
+  "report",
   "self-update",
   "skill",
   "skills",
@@ -55,7 +57,6 @@ function specialRootCommand({ argv }: { argv: string[] }): CliCommand | undefine
     versionCommand({ argv }) ??
     helpCommand({ argv }) ??
     appFlagCommand({ argv }) ??
-    resumeCommand({ argv }) ??
     selfUpdateAliasCommand({ argv })
   );
 }
@@ -75,12 +76,6 @@ function appFlagCommand({ argv }: { argv: string[] }): CliCommand | undefined {
   return argv[0]?.startsWith("-") ? { kind: "app", argv } : undefined;
 }
 
-function resumeCommand({ argv }: { argv: string[] }): CliCommand | undefined {
-  return argv[0] === "resume"
-    ? { kind: "exec", argv: resumeArgs({ argv: argv.slice(1) }) }
-    : undefined;
-}
-
 function selfUpdateAliasCommand({ argv }: { argv: string[] }): CliCommand | undefined {
   return argv[0] === "self" && argv[1] === "update"
     ? { kind: "self-update", argv: argv.slice(2) }
@@ -94,12 +89,4 @@ function matchedRootCommandKind({ argv }: { argv: string[] }): RootCommandKind |
   }
   cli.parse(["bun", "situ", ...argv], { run: false });
   return rootCommandKinds.find((kind) => kind === cli.matchedCommandName);
-}
-
-function resumeArgs({ argv }: { argv: string[] }): string[] {
-  const [sessionId, ...rest] = argv;
-  if (!sessionId || sessionId.startsWith("-")) {
-    throw new Error("situ resume requires a session id");
-  }
-  return ["--resume", "--session", sessionId, ...rest];
 }

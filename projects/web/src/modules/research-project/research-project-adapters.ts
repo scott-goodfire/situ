@@ -48,6 +48,7 @@ function toProjectStatus({ project }: { project: ResearchProjectRecord }): Resea
   }
   switch (project.phase) {
     case "onboarding":
+    case "baseline":
       return "onboarding";
     case "search":
       return "researching";

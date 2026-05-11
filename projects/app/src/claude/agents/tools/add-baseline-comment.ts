@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { baselineRepository } from "../../../data/repositories/baselines";
 import { defineTool } from "./__shared__/define-tool";
+import { Result } from "./__shared__/result";
 import { scienceRoles } from "./__shared__/roles";
 
 const inputSchema = z.object({
@@ -14,11 +15,13 @@ export const addBaselineCommentTool = defineTool({
   description: "Add a durable comment to a situ baseline.",
   roles: scienceRoles,
   inputSchema,
-  handler: async ({ input, context }) => ({
-    activity: await baselineRepository.addComment({
+  resultEnvelope: true,
+  handler: async ({ input, context }) => {
+    const activity = await baselineRepository.addComment({
       baselineId: input.baselineId,
       actorAgentId: context.agentId,
       body: input.body,
-    }),
-  }),
+    });
+    return Result.ok({ activity });
+  },
 });

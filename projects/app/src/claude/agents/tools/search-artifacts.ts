@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { artifactRepository } from "../../../data/repositories/artifacts";
 import { defineTool } from "./__shared__/define-tool";
+import { Result } from "./__shared__/result";
 import { allRoles } from "./__shared__/roles";
 import { ENTITY_KINDS } from "./__shared__/tool-entity-reference-module";
 
@@ -18,13 +19,15 @@ export const searchArtifactsTool = defineTool({
   description: "Search situ artifacts by title, path, kind, or linked entity.",
   roles: allRoles,
   inputSchema,
-  handler: async ({ input }) => ({
-    artifacts: await artifactRepository.search({
-      query: input.query,
-      entityKind: input.entityKind,
-      entityId: input.entityId,
-      kind: input.kind,
-      limit: input.limit ?? 10,
+  resultEnvelope: true,
+  handler: async ({ input }) =>
+    Result.ok({
+      artifacts: await artifactRepository.search({
+        query: input.query,
+        entityKind: input.entityKind,
+        entityId: input.entityId,
+        kind: input.kind,
+        limit: input.limit ?? 10,
+      }),
     }),
-  }),
 });

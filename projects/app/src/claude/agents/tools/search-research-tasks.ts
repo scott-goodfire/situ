@@ -3,6 +3,7 @@ import { RESEARCH_TASK_STATUSES, RESEARCH_TASK_TYPES } from "@situ/protocol";
 
 import { researchTaskRepository } from "../../../data/repositories/research-tasks";
 import { defineTool } from "./__shared__/define-tool";
+import { Result } from "./__shared__/result";
 import { allRoles } from "./__shared__/roles";
 
 const inputSchema = z.object({
@@ -18,12 +19,14 @@ export const searchResearchTasksTool = defineTool({
     "Search ResearchTasks by id, project, type, status, title, prompts, result, or target.",
   roles: allRoles,
   inputSchema,
-  handler: async ({ input }) => ({
-    researchTasks: await researchTaskRepository.search({
-      query: input.query,
-      status: input.status,
-      type: input.type,
-      limit: input.limit ?? 20,
+  resultEnvelope: true,
+  handler: async ({ input }) =>
+    Result.ok({
+      researchTasks: await researchTaskRepository.search({
+        query: input.query,
+        status: input.status,
+        type: input.type,
+        limit: input.limit ?? 20,
+      }),
     }),
-  }),
 });

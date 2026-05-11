@@ -28,6 +28,12 @@ const checks: CommandCheck[] = [
     stdoutExcludes: "skills sync",
   },
   {
+    name: "help omits compute diagnostics",
+    argv: ["help"],
+    expectedExitCode: 0,
+    stdoutExcludes: "situ compute",
+  },
+  {
     name: "help omits internal self-update flags by default",
     argv: ["help"],
     expectedExitCode: 0,
@@ -75,25 +81,13 @@ const checks: CommandCheck[] = [
     name: "exec requires objective for new session",
     argv: ["exec"],
     expectedExitCode: 1,
-    stderrIncludes: "objective is required unless --resume or --session is provided",
+    stderrIncludes: "objective is required unless --session is provided",
   },
   {
     name: "compute requires explicit session",
     argv: ["compute", "list"],
     expectedExitCode: 1,
     stderrIncludes: "situ compute requires --session <session>.",
-  },
-  {
-    name: "compute rejects resume",
-    argv: ["compute", "list", "--resume"],
-    expectedExitCode: 1,
-    stderrIncludes: "situ compute does not support --resume",
-  },
-  {
-    name: "resume requires session id",
-    argv: ["resume"],
-    expectedExitCode: 1,
-    stderrIncludes: "situ resume requires a session id",
   },
   {
     name: "sessions json on empty home",
@@ -103,8 +97,8 @@ const checks: CommandCheck[] = [
     env: { SITU_HOME: await mkdtemp(join(tmpdir(), "situ-cli-check-")) },
   },
   {
-    name: "resume parses session and reaches key guard",
-    argv: ["resume", "ses_check", "--timeout", "1"],
+    name: "exec session reaches key guard",
+    argv: ["exec", "--session", "ses_check", "--timeout", "1"],
     expectedExitCode: 1,
     stderrIncludes: "SITU_ANTHROPIC_KEY is required for headless exec.",
     env: {

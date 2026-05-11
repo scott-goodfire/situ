@@ -5,6 +5,13 @@ description: Use when adding or changing an agent-facing custom tool in Situ's T
 
 # Situ Add Tool
 
+## Result Envelope
+
+Every new tool MUST use `resultEnvelope: true` and return `Result.ok(data)` on
+success. For state preconditions the model can't fix by retrying, throw
+`PreconditionError` from the repository or from the tool handler — don't fold
+those into the envelope as recoverable failures.
+
 ## Tool Surface
 
 Agent-facing custom tools live in:
@@ -56,6 +63,10 @@ sed -n '1,320p' projects/app/src/data/repositories/experiments/experiment-reposi
 - Tool output should be JSON text through `toolResultModule.json`.
 - Validate input with helpers from `tools/__shared__/`; do not trust arbitrary
   model input.
+- Use `resultEnvelope: true` with `Result.ok` / `Result.fail` when the failure
+  is model-recoverable (bad input, missing-but-fetchable precondition); use
+  plain throws (`PreconditionError`) for guardrails the model can't fix by
+  retrying (wrong role, headless project, situ bug).
 - Use `context.activeResearchTaskId` when a tool can default to the active
   ResearchTask.
 - Do not print or return secret values.
@@ -68,11 +79,13 @@ sed -n '1,320p' projects/app/src/data/repositories/experiments/experiment-reposi
 
 Use roles conservatively:
 
-- `manager`: planning ResearchTasks, defining workerPrompt and
-  verificationPrompt, creating hypotheses from observed state, reading
-  board state, asking the user, presenting baselines for confirmation,
-  running read-only workspace inspection when needed, and completing/failing
-  ResearchProjects.
+- `manager`: creating/revising the setup project baseline with
+  `create_project_baseline`, presenting it with
+  `present_baseline_for_confirmation`, planning ResearchTasks only after the
+  confirmed baseline moves the project to `search`, defining workerPrompt and
+  verificationPrompt, creating hypotheses from observed state, reading board
+  state, asking the user, running read-only workspace inspection when needed,
+  and completing/failing ResearchProjects.
 - `scientist`: exploration hypotheses, experiments, baselines, evaluations,
   measurements, artifacts, entity links, read-only source inspection, and
   experiment worktree commands when the active task skill allows them.
@@ -110,3 +123,8 @@ sqlite3 <db> "select status,error_message,payload_json from claude_agent_runs or
 
 Report which roles can see the tool, which helper persists state, and what
 tests/checks were run.
+
+## See also
+
+- `situ-policy-error-throwing`
+- `situ-policy-measurement-payload-shape`

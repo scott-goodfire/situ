@@ -9,6 +9,7 @@ export type ClaudeAgentEventRow = typeof schema.claudeAgentEvents.$inferSelect;
 export type AppEventRow = typeof schema.appEvents.$inferSelect;
 export type ResearchProjectRow = typeof schema.researchProjects.$inferSelect;
 export type ResearchProjectInteractionRow = typeof schema.researchProjectInteractions.$inferSelect;
+export type FeedEntryRow = typeof schema.feedEntries.$inferSelect;
 export type ResearchTaskRow = typeof schema.researchTasks.$inferSelect;
 export type ResearchTaskVerificationRow = typeof schema.researchTaskVerifications.$inferSelect;
 export type WorkItemRow = typeof schema.workItems.$inferSelect;

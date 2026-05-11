@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { hypothesisRepository } from "../../../data/repositories/hypotheses";
 import { defineTool } from "./__shared__/define-tool";
+import { Result } from "./__shared__/result";
 import { allRoles } from "./__shared__/roles";
 
 const inputSchema = z.object({
@@ -13,9 +14,11 @@ export const getHypothesisTool = defineTool({
   description: "Read one situ hypothesis with its activity timeline.",
   roles: allRoles,
   inputSchema,
-  handler: async ({ input }) => ({
-    result: await hypothesisRepository.getWithActivities({
-      hypothesisId: input.hypothesisId,
+  resultEnvelope: true,
+  handler: async ({ input }) =>
+    Result.ok({
+      result: await hypothesisRepository.getWithActivities({
+        hypothesisId: input.hypothesisId,
+      }),
     }),
-  }),
 });

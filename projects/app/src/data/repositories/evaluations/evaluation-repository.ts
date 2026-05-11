@@ -8,6 +8,7 @@ import {
   clampRepositoryLimit,
   createStatusRecordTransitions,
   matchesRepositorySearch,
+  PreconditionError,
   type ResearchRecordStatus,
 } from "../__shared__";
 import { baselineRepository } from "../baselines";
@@ -83,7 +84,11 @@ async function requireLatestEvaluationActivity({
     .orderBy(asc(evaluationActivities.createdAt), asc(evaluationActivities.id));
   const activity = rows.at(-1);
   if (!activity) {
-    throw new Error(`Evaluation activity was not persisted: ${evaluationId}`);
+    throw new PreconditionError({
+      code: "evaluation_activity_not_persisted",
+      hint: "Evaluation activity write did not produce a row; this is an internal invariant violation, retry or report.",
+      details: { evaluationId },
+    });
   }
   return activity;
 }
@@ -105,7 +110,11 @@ async function requireEvaluationRecord({
 }): Promise<EvaluationRecord> {
   const evaluation = await getEvaluationRecord({ evaluationId });
   if (!evaluation) {
-    throw new Error(`Evaluation not found: ${evaluationId}`);
+    throw new PreconditionError({
+      code: "evaluation_not_found",
+      hint: "List or search evaluations; this id may be abbreviated or stale.",
+      details: { evaluationId },
+    });
   }
   return evaluation;
 }
@@ -317,10 +326,18 @@ export const evaluationRepository = {
       experimentRepository.require({ experimentId }),
     ]);
     if (!experiment.baseCommit) {
-      throw new Error(`Experiment has no base commit: ${experimentId}`);
+      throw new PreconditionError({
+        code: "no_base_commit",
+        hint: "Experiment has no base commit recorded. Recreate the experiment via create_experiment so its worktree records a base commit before recording a comparison.",
+        details: { experimentId },
+      });
     }
     if (!experiment.candidateCommit) {
-      throw new Error(`Experiment has no captured candidate commit: ${experimentId}`);
+      throw new PreconditionError({
+        code: "no_candidate_commit",
+        hint: "Experiment has no captured candidate commit. Call capture_experiment_candidate({ experimentId }) before recording a comparison.",
+        details: { experimentId },
+      });
     }
 
     const evaluationId = crypto.randomUUID();

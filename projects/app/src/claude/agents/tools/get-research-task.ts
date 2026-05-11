@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { researchTaskRepository } from "../../../data/repositories/research-tasks";
 import { defineTool } from "./__shared__/define-tool";
+import { Result } from "./__shared__/result";
 import { allRoles } from "./__shared__/roles";
 import { toolContextModule } from "./__shared__/tool-context-module";
 
@@ -17,12 +18,14 @@ export const getResearchTaskTool = defineTool({
   description: "Read one ResearchTask.",
   roles: allRoles,
   inputSchema,
-  handler: async ({ input, context }) => ({
-    researchTask: await researchTaskRepository.require({
-      researchTaskId: toolContextModule.requiredResearchTaskId({
-        explicit: input.researchTaskId,
-        context,
+  resultEnvelope: true,
+  handler: async ({ input, context }) =>
+    Result.ok({
+      researchTask: await researchTaskRepository.require({
+        researchTaskId: toolContextModule.requiredResearchTaskId({
+          explicit: input.researchTaskId,
+          context,
+        }),
       }),
     }),
-  }),
 });

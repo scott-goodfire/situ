@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { researchTaskRepository } from "../../../data/repositories/research-tasks";
 import { defineTool } from "./__shared__/define-tool";
+import { Result } from "./__shared__/result";
 import { toolContextModule } from "./__shared__/tool-context-module";
 
 const inputSchema = z.object({
@@ -19,14 +20,16 @@ export const failResearchTaskTool = defineTool({
   description: "Mark the active ResearchTask failed with a durable failure summary.",
   roles: ["scientist"],
   inputSchema,
-  handler: async ({ input, context }) => ({
-    researchTask: await researchTaskRepository.transition({
-      researchTaskId: toolContextModule.requiredResearchTaskId({
-        explicit: input.researchTaskId,
-        context,
+  resultEnvelope: true,
+  handler: async ({ input, context }) =>
+    Result.ok({
+      researchTask: await researchTaskRepository.transition({
+        researchTaskId: toolContextModule.requiredResearchTaskId({
+          explicit: input.researchTaskId,
+          context,
+        }),
+        status: "failed",
+        resultSummary: input.resultSummary,
       }),
-      status: "failed",
-      resultSummary: input.resultSummary,
     }),
-  }),
 });

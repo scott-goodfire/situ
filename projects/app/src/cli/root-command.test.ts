@@ -44,22 +44,6 @@ describe("parseRootCommand", () => {
     });
   });
 
-  test("rewrites resume into exec resume args", () => {
-    expect(parseRootCommand({ argv: ["resume", "ses_123", "--timeout", "1"] })).toEqual({
-      kind: "exec",
-      argv: ["--resume", "--session", "ses_123", "--timeout", "1"],
-    });
-  });
-
-  test("rejects resume without a session id", () => {
-    expect(() => parseRootCommand({ argv: ["resume"] })).toThrow(
-      "situ resume requires a session id",
-    );
-    expect(() => parseRootCommand({ argv: ["resume", "--timeout", "1"] })).toThrow(
-      "situ resume requires a session id",
-    );
-  });
-
   test("parses self update aliases", () => {
     expect(parseRootCommand({ argv: ["self-update", "v1.2.3"] })).toEqual({
       kind: "self-update",

@@ -168,30 +168,25 @@ uv run train.py          # ~5 min baseline run — record the val_bpb at the end
 The baseline `val_bpb` is the floor you're trying to push below. Don't skip
 this — if the H100 can't run the baseline cleanly, situ won't fix it for you.
 
-## Step 7: Register the H100 as a situ compute target
+## Step 7: Note the H100 compute flag for `situ exec`
 
-::: danger Don't skip this — situ has no automatic GPU concurrency cap.
-The scheduler only gates experiment dispatch on resources you've **told it
-about**. If you launch situ without any registered compute targets and the
-Manager spawns multiple Scientists, each Scientist will fire its own
-`uv run train.py` on the **same physical H100** simultaneously — halving
-training speed at best, OOM'ing both at worst.
+::: danger Don't skip this — register compute when launching `situ exec`.
+The scheduler only gates experiment dispatch on compute registered at
+`situ exec` startup. If the workload needs a GPU and no target is registered,
+the run can block rather than guessing how to use the machine.
 
-Register the GPU now, before launching:
+Sanity-check the GPU now and use the matching flags when launching:
 
 ```bash
-nvidia-smi --query-gpu=index,name,memory.total --format=csv,noheader   # sanity-check the GPU
-export SITU_SESSION_ID="ses_autoresearch_h100"
-echo 'export SITU_SESSION_ID="ses_autoresearch_h100"' >> ~/.bashrc
-situ compute add --session "$SITU_SESSION_ID" --pool local --kind local --label gpu0 --cuda-visible-devices 0
-situ compute list --session "$SITU_SESSION_ID"
+nvidia-smi --query-gpu=index,name,memory.total --format=csv,noheader
+
+# The skill should launch with:
+situ exec --objective "$OBJECTIVE" --compute-pool local --compute-label gpu0 --cuda-visible-devices 0
 ```
 
 With one `gpu0` target registered, situ pins one `uv run train.py` to it at
 a time. Other Scientist agents can still plan and edit code in parallel —
-they just queue for the GPU. Reversible:
-`situ compute remove <target-id> --session "$SITU_SESSION_ID"` using the id
-printed by `situ compute list`.
+they just queue for the GPU.
 :::
 
 ## Step 8: Install Claude Code on the pod
@@ -249,12 +244,11 @@ with how situ runs experiments**:
   recorded as **Measurements in the session DB** rather than rows in a
   TSV on disk.
 
-If you tell the Scientist agent to "follow `program.md` exactly", `explore`-
-type tasks (e.g. the baseline reading task the Manager creates first) will
-trip situ's source-workspace safety guards and self-reject with messages
-like _"do not create run.log, results.tsv, or other command-output files
-in the source workspace."_ The `exploit`-type tasks will still run, but in
-worktrees — making half of `program.md` moot.
+If you tell the agents to "follow `program.md` exactly", read-only setup work
+and Scientist ResearchTasks can trip situ's source-workspace safety guards with
+messages like _"do not create run.log, results.tsv, or other command-output
+files in the source workspace."_ The `exploit`-type tasks will still run, but
+in worktrees — making half of `program.md` moot.
 
 **Use program.md as context on the project goals and the `train.py`
 knobs, but write the objective in situ-native terms** (single metric,
@@ -273,7 +267,8 @@ Claude follows the skill steps:
 1. Checks `situ --version`. ✅ already installed.
 2. Looks for the Anthropic key. ✅ found via `$SITU_ANTHROPIC_KEY`.
 3. **Asks which directory.** Say: _"the current one, `/workspace/autoresearch`"_.
-4. **Asks for the objective.** **Do not tell situ to follow `program.md`** —
+4. **Asks about compute.** Say yes and point it at GPU 0.
+5. **Asks for the objective.** **Do not tell situ to follow `program.md`** —
    see the danger callout above. Use a situ-native objective that just
    states the metric and constraints:
 
@@ -298,8 +293,9 @@ Claude follows the skill steps:
    - All else equal, prefer simpler changes. A val_bpb tie that removes
      code beats a val_bpb tie that adds it.
 
-   The first experiment is the unmodified baseline. Subsequent experiments
-   should explore meaningful axes: optimizer LRs (EMBEDDING_LR,
+   The setup baseline is the unmodified `uv run train.py` result. After
+   that baseline is confirmed, candidate experiments should explore
+   meaningful axes: optimizer LRs (EMBEDDING_LR,
    UNEMBEDDING_LR, MATRIX_LR, SCALAR_LR), WEIGHT_DECAY, ADAM_BETAS,
    WARMDOWN_RATIO, DEPTH, DEVICE_BATCH_SIZE, WINDOW_PATTERN, attention
    architecture (head count, head dim, GQA), MLP shape, activation,
@@ -316,11 +312,11 @@ Claude follows the skill steps:
 
    :::
 
-5. **Asks for the timeout.** Say "8 hours" (overnight) or accept the 4-hour
+6. **Asks for the timeout.** Say "8 hours" (overnight) or accept the 4-hour
    default for a first run.
-6. Launches `situ exec` in the background with the captured objective and
-   timeout, prints the local web URL.
-7. Starts tailing `situ events --follow` and translating events into
+7. Launches `situ exec` in the background with the captured objective,
+   timeout, and compute flags, then prints the local web URL.
+8. Starts tailing `situ events --follow` and translating events into
    plain-language updates.
 
 ## Step 13: Watch live
@@ -331,9 +327,10 @@ With the `ssh runpod_a` connection still open on your laptop, open
 http://127.0.0.1:5500
 ```
 
-in your laptop's browser. The situ Dashboard fills in as the Manager plans
-research tasks and the Scientist runs experiments. Switch to **Activities**
-in the sidebar if Claude says the run is blocked on a user question.
+in your laptop's browser. The situ Dashboard first shows the Manager saving and
+auto-confirming the setup baseline, then task planning begins after the project
+enters search. Switch to **Activities** in the sidebar if Claude says the run is
+blocked on a user question.
 
 ## Step 14: Disconnect and reconnect
 
@@ -362,13 +359,13 @@ In a second tmux pane (`Ctrl-b "` splits horizontally), terminal-side checks:
 ```bash
 situ status                       # one-glance summary
 situ events --follow --limit 50   # live event tail
-situ sessions                     # session id for `situ resume` later
+situ sessions                     # session id for later
 ```
 
 ## Step 15: Stop
 
-Either let the timeout expire (situ exits with code 0 when the loop reaches
-idle, 2 when timeout hits), or stop early:
+Either let the run reach idle (situ exits with code 0) or let the timeout expire
+(situ exits with code 5), or stop early:
 
 ```bash
 tmux attach -t situ
@@ -376,15 +373,20 @@ tmux attach -t situ
 pkill -f "situ exec"
 ```
 
-To resume the same session against the same repo later (e.g. after a pod
-restart), situ remembers it by working directory:
+To continue the same session against the same repo later (e.g. after a pod
+restart), pass the session id explicitly:
 
 ```bash
 cd /workspace/autoresearch
-situ resume <session-id> --timeout 7200
+situ exec --session <session-id> --timeout 7200
 ```
 
 `<session-id>` comes from `situ sessions`.
+
+Session-only exec commands do not register compute targets. If the pod was
+rebuilt or the GPU target must be registered again, launch a fresh
+`situ exec --objective ...` with `--compute-pool local --compute-label gpu0
+--cuda-visible-devices 0`.
 
 ## Cost & sizing notes
 
@@ -418,7 +420,8 @@ situ resume <session-id> --timeout 7200
   ```bash
   tmux new -s situ
   cd /workspace/autoresearch
-  situ exec --objective "<objective from step 12>" --timeout 28800
+  situ exec --objective "<objective from step 12>" --timeout 28800 \
+    --compute-pool local --compute-label gpu0 --cuda-visible-devices 0
   ```
 
   Same outcome, no narrator.

@@ -98,7 +98,7 @@ CREATE TABLE IF NOT EXISTS research_projects (
   id TEXT PRIMARY KEY,
   goal TEXT NOT NULL,
   phase TEXT NOT NULL DEFAULT 'onboarding'
-    CHECK (phase IN ('onboarding', 'search', 'reporting', 'complete')),
+    CHECK (phase IN ('onboarding', 'baseline', 'search', 'reporting', 'complete')),
   status TEXT NOT NULL DEFAULT 'active'
     CHECK (status IN ('active', 'blocked_on_user', 'complete', 'failed', 'canceled')),
   baseline_summary TEXT,
@@ -243,12 +243,14 @@ CREATE TABLE IF NOT EXISTS experiments (
 
 CREATE TABLE IF NOT EXISTS baselines (
   id TEXT PRIMARY KEY,
+  research_project_id TEXT NOT NULL REFERENCES research_projects(id),
   created_by_research_task_id TEXT REFERENCES research_tasks(id),
   created_by_agent_id TEXT REFERENCES claude_agents(id),
   title TEXT NOT NULL,
   summary TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'triage'
     CHECK (status IN ('triage', 'accepted', 'active', 'in_review', 'done', 'canceled', 'failed')),
+  ${PAYLOAD_JSON},
   ${SYNC_COLUMNS},
   ${TIMESTAMPS}
 );
@@ -389,6 +391,20 @@ CREATE TABLE IF NOT EXISTS claude_agent_events (
   ${CREATED_AT}
 );
 
+CREATE TABLE IF NOT EXISTS feed_entries (
+  id TEXT PRIMARY KEY,
+  research_project_id TEXT NOT NULL REFERENCES research_projects(id),
+  summary_markdown TEXT NOT NULL,
+  severity TEXT NOT NULL
+    CHECK (severity IN ('info', 'progress', 'stuck', 'failure')),
+  cited_app_event_ids_json TEXT NOT NULL DEFAULT '[]',
+  window_started_at TEXT NOT NULL,
+  window_ended_at TEXT NOT NULL,
+  created_by_agent_id TEXT REFERENCES claude_agents(id),
+  ${SYNC_COLUMNS},
+  ${TIMESTAMPS}
+);
+
 CREATE INDEX IF NOT EXISTS work_items_status_available_idx
   ON work_items(status, available_at);
 CREATE INDEX IF NOT EXISTS work_items_lease_idx
@@ -400,6 +416,8 @@ CREATE INDEX IF NOT EXISTS claude_agent_runs_status_idx
   ON claude_agent_runs(status, updated_at);
 CREATE INDEX IF NOT EXISTS app_events_created_idx
   ON app_events(created_at);
+CREATE INDEX IF NOT EXISTS feed_entries_project_created_idx
+  ON feed_entries(research_project_id, created_at);
 CREATE INDEX IF NOT EXISTS claude_agent_events_created_idx
   ON claude_agent_events(created_at);
 CREATE INDEX IF NOT EXISTS compute_targets_pool_status_idx

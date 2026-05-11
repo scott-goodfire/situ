@@ -21,6 +21,14 @@ Tool descriptions are the model's only signal for when to call a tool. A vague d
 - Repeated tool-only helpers (entity-reference assertions, transitions,
   result formatting) live in `claude/agents/tools/__shared__/`.
 - Tool results return concise JSON text. Never include secrets.
+- Tool results conform to the result envelope: success is
+  `{ ok: true, data }`, failure is `{ ok: false, code, hint, details? }`.
+  Use `defineTool({ ..., resultEnvelope: true })` and return
+  `Result.ok(data)` for success.
+- Handlers signal failure with `Result.fail({ code, hint, details })` for
+  local control flow, or let repository `PreconditionError` propagate —
+  the wrapper catches it and emits the envelope. Never `throw new
+Error(...)` from a handler.
 - Role prompts and runtime skills mention only tools available to that role.
 - Prefer bash-oriented workspace command tools for repository inspection,
   candidate edits, and experiment execution. Add bespoke custom tools only
@@ -38,8 +46,14 @@ Tool descriptions are the model's only signal for when to call a tool. A vague d
 - Hand-rolled JSON schemas, manual input parsing, or tool definitions that
   bypass `defineTool` — the helper is the only sanctioned way to declare a
   custom tool.
+- Bare strings, raw payloads, or thrown errors that escape the envelope —
+  the agent only reads `{ ok, data | code, hint }` shaped results.
+- `is_error: true` returns or other ad-hoc failure flags — failures are
+  always structured envelopes with a stable `code` the agent reads.
 
 ## See also
 
 - `situ-policy-one-agent-tool-per-file`
 - `situ-policy-agent-role-folder-shape`
+- `situ-add-tool`
+- `situ-policy-error-throwing`

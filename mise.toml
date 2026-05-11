@@ -1,5 +1,5 @@
 [tools]
-bun = "1.2.20"
+bun = "1.3.13"
 typos = "latest"
 actionlint = "latest"
 hyperfine = "latest"
@@ -149,14 +149,6 @@ dir = "{{ config_root }}"
 run = '''
 export SITU_REPO_PATH="${SITU_REPO_PATH:-$MISE_ORIGINAL_CWD}"
 bun --filter=@situ/app run app -- exec "$@"
-'''
-
-[tasks.resume]
-description = "Resume a local Situ session in foreground exec mode"
-dir = "{{ config_root }}"
-run = '''
-export SITU_REPO_PATH="${SITU_REPO_PATH:-$MISE_ORIGINAL_CWD}"
-bun --filter=@situ/app run app -- resume "$@"
 '''
 
 [tasks.status]

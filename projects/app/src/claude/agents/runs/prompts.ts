@@ -4,18 +4,23 @@ import type {
   researchTasks,
   researchTaskVerifications,
 } from "../../../data/db/schema";
+import { jsonModule } from "../../../modules/json";
 
 export function managerResearchProjectPrompt({
   researchProject,
   interactions,
   researchTasks: projectTasks,
   verifications,
+  plannedTaskBudget,
 }: {
   researchProject: typeof researchProjects.$inferSelect;
   interactions: (typeof researchProjectInteractions.$inferSelect)[];
   researchTasks: (typeof researchTasks.$inferSelect)[];
   verifications: (typeof researchTaskVerifications.$inferSelect)[];
+  plannedTaskBudget: number;
 }): string {
+  const taskBudget = Math.max(1, plannedTaskBudget);
+  const taskBudgetNoun = taskBudget === 1 ? "ResearchTask" : "ResearchTasks";
   const interactionLines = interactions.length
     ? interactions.flatMap((interaction) => [
         `- ${interaction.kind} ${interaction.id} (${interaction.status})`,
@@ -42,12 +47,21 @@ export function managerResearchProjectPrompt({
         verification.evidenceSummary ? `  Evidence: ${verification.evidenceSummary}` : undefined,
       ])
     : ["- none"];
+  const executionMode = researchProjectPromptExecutionMode({ project: researchProject });
+  const isHeadless = executionMode === "headless";
+  const onboardingQuestionInstruction = isHeadless
+    ? "3. Headless exec mode: do not call ask_user_question. If context is missing, proceed from the objective, repository evidence, and explicit assumptions in create_project_baseline; call fail_research_project only if no credible baseline can be stated."
+    : "3. During onboarding, decide whether you can state a credible setup baseline. If not, call ask_user_question with one concrete blocking question.";
+  const unfinishedProjectInstruction = isHeadless
+    ? "Do not leave the ResearchProject in progress without presenting a confirmation, creating durable ResearchTasks, or completing/failing the ResearchProject."
+    : "Do not leave the ResearchProject in progress without either asking the user, presenting a confirmation, creating durable ResearchTasks, or completing/failing the ResearchProject.";
 
   return [
     "You are situ Manager. Drive one ResearchProject through verified research tasks.",
     `ResearchProject id: ${researchProject.id}`,
     `Phase: ${researchProject.phase}`,
     `Status: ${researchProject.status}`,
+    `Execution mode: ${executionMode}`,
     `Research goal: ${researchProject.goal}`,
     researchProject.baselineSummary ? `Baseline summary: ${researchProject.baselineSummary}` : "",
     "",
@@ -68,26 +82,39 @@ export function managerResearchProjectPrompt({
     "Required procedure:",
     "1. Inspect current durable state before deciding: search_research_tasks, search_hypotheses, search_baselines, search_experiments, search_evaluations, list_measurements, list_artifacts, and list_entity_links.",
     "2. Use run_readonly_workspace_command only when source repository context is needed for onboarding, baseline wording, or precise ResearchTasks. Do not mutate source files or experiment worktrees from Manager. Before creating exploit or debug tasks, inspect the relevant files enough to identify local assertions, shape/count assumptions, batch-size or memory constants, metric parsing, and directly coupled invariants the worker must preserve.",
-    "3. During onboarding, decide whether you can state a credible baseline and research starting point. If not, call ask_user_question with one concrete blocking question.",
-    "4. When the onboarding baseline and assumptions are ready for human approval, call present_baseline_for_confirmation. Do not continue autonomous research until the user confirms.",
-    "5. Never treat a pending confirmation as approval. Only call complete_research_project after onboarding approval has been confirmed, no user interaction is pending, and the project has verified evidence or reporting-phase final output.",
-    "6. After confirmation, use create_research_task for discovery ResearchTasks when more reading is needed, or create/link one Hypothesis when you have a specific testable claim.",
-    '7. Candidate experiment ResearchTasks should target a hypothesis with targetKind="hypothesis" and targetId=<hypothesis id>. Do not bury the only testable claim in workerPrompt prose.',
-    "8. Each ResearchTask must include workerPrompt assignment prose and a verificationPrompt. For non-verify tasks, workerPrompt is for the Scientist. For type verify, workerPrompt is the Verifier assignment.",
-    "9. Write worker prompts as objective, constraints, sanity checks, run/evidence requirements, and acceptance criteria; do not give only a brittle literal edit recipe. Candidate prompts should preserve evaluation/data comparability, name allowed files or areas, require inspection of assertions, optimizer or parameter-grouping logic, shape/count assumptions, batch-size or memory constants, config-derived computations, metric-output parsing, and directly coupled constants, and require fresh parseable metrics or clear crash/OOM/timeout evidence.",
-    "10. Create up to five ResearchTasks in one turn when useful. Choose an explicit type: explore, exploit, debug, verify, synthesize, or prune. Queue one ResearchTask per independent candidate direction; do not bundle multiple exploit variants into one Scientist workerPrompt. When an exploit task deepens a verified experiment, name the parent experiment id in workerPrompt and require create_experiment.parentExperimentId in verificationPrompt. The runtime throttles parallel Scientist execution separately.",
-    "11. ResearchTasks with type verify are Verifier-owned direct checks; no Scientist worker will run. Use them for duplicate checks, comparability reviews, adversarial evidence review, and other verification-only work.",
-    "12. Compare only verified results when deciding whether to branch, retry, prune, ask the user, or report.",
-    "13. When this ResearchProject has verified evidence or reporting-phase final output, call complete_research_project with a concise result summary.",
-    "14. If the ResearchProject cannot proceed, call fail_research_project with the reason.",
+    onboardingQuestionInstruction,
+    "4. Before asking the user to approve the baseline, call create_project_baseline. The project baseline is Manager-owned setup state, not a Scientist ResearchTask.",
+    "5. When the project baseline is saved, call present_baseline_for_confirmation with that baseline id. If the user rejects or adjusts it, revise the same project baseline with create_project_baseline and present it again.",
+    "6. Never treat a pending confirmation as approval. Interactive runs wait for the user; headless exec auto-confirms baseline confirmations only after the baseline is durable.",
+    "7. Do not call create_research_task until the ResearchProject phase is search. After confirmation, use create_research_task for discovery ResearchTasks when more reading is needed, or create/link one Hypothesis when you have a specific testable claim.",
+    '8. Candidate experiment ResearchTasks should target a hypothesis with targetKind="hypothesis" and targetId=<hypothesis id>. Do not bury the only testable claim in workerPrompt prose.',
+    "9. Each ResearchTask must include workerPrompt assignment prose and a verificationPrompt. For non-verify tasks, workerPrompt is for the Scientist. For type verify, workerPrompt is the Verifier assignment.",
+    "10. Write worker prompts as objective, constraints, sanity checks, run/evidence requirements, and acceptance criteria; do not give only a brittle literal edit recipe. Candidate prompts should preserve evaluation/data comparability, name allowed files or areas, require inspection of assertions, optimizer or parameter-grouping logic, shape/count assumptions, batch-size or memory constants, config-derived computations, metric-output parsing, and directly coupled constants, and require fresh parseable metrics or clear crash/OOM/timeout evidence.",
+    `11. Create up to your per-turn ResearchTask budget of ${taskBudget} ${taskBudgetNoun} in this turn when useful. The budget reflects the current parallel-Scientist headroom (cap minus tasks already planned, running, or awaiting verification). Choose an explicit type: explore, exploit, debug, verify, synthesize, or prune. Queue one ResearchTask per independent candidate direction; do not bundle multiple exploit variants into one Scientist workerPrompt. When an exploit task deepens a verified experiment, name the parent experiment id in workerPrompt and require create_experiment.parentExperimentId in verificationPrompt.`,
+    "12. ResearchTasks with type verify are Verifier-owned direct checks; no Scientist worker will run. Use them for duplicate checks, comparability reviews, adversarial evidence review, and other verification-only work.",
+    "13. Compare only verified results when deciding whether to branch, retry, prune, ask the user, or report.",
+    "14. When this ResearchProject has verified evidence or reporting-phase final output, call complete_research_project with a concise result summary.",
+    "15. If the ResearchProject cannot proceed, call fail_research_project with the reason.",
     "",
     "A hypothesis is ready to create when it names one specific variable, implies an experiment that would settle it, and is supported by something already observed in the durable record.",
     "Use exploration tasks to widen the tree when evidence is thin. Use exploitation tasks to deepen branches with verified signal. Use verifier feedback to decide whether to retry, debug, prune, or synthesize.",
     "Do not treat Scientist completion as final success; verification must pass first.",
-    "Do not leave the ResearchProject in progress without either asking the user, presenting a confirmation, creating durable ResearchTasks, or completing/failing the ResearchProject.",
+    unfinishedProjectInstruction,
   ]
     .filter(Boolean)
     .join("\n");
+}
+
+function researchProjectPromptExecutionMode({
+  project,
+}: {
+  project: typeof researchProjects.$inferSelect;
+}): "interactive" | "headless" {
+  const payload = jsonModule.parseRecord({ raw: project.payloadJson });
+  if (payload.executionMode === "headless" || payload.headless === true) {
+    return "headless";
+  }
+  return "interactive";
 }
 
 export function scientistResearchTaskPrompt({
@@ -167,6 +194,8 @@ export function verifierResearchTaskPrompt({
     "4. Use full durable record ids exactly as returned by tools. If the worker summary abbreviates an id, list or search records instead of calling get_* with the abbreviated id.",
     "5. Use run_readonly_workspace_command for direct repository checks when needed; do not create or mutate experiment worktrees during verification.",
     "6. Check for missing evidence, missing primary hypothesis on experiments, missing or wrong parentExperimentId on deepening experiments, duplicated work, eval leakage, reward hacking, weak baselines, invalid comparisons, and overclaimed summaries as relevant to the verificationPrompt.",
-    "7. Call record_research_task_verification with status passed, failed, suspicious, or needs_more_evidence and a concise evidence-backed judgment. passed requires a non-empty evidenceSummary; failed and suspicious reject the task; needs_more_evidence reopens it as planned work.",
+    "7. Before judging a metric experiment, confirm the candidate diff actually exercised on dev inputs. If the patched code path is structurally unreachable, fires 0x on dev inputs, or the recorded metric matches baseline by trivial vacuous reasoning, the experiment did not test the hypothesis — use status suspicious, not passed.",
+    "8. Identify the evidence axis the verificationPrompt asked for: improvement (move a metric), preservation (refactor/simplification with metric unchanged within tolerance), behavioral (make a previously broken path correctly fire), or cleanup (shrink surface area). Judge against that axis. An unchanged metric is passed when the prompt framed the task as preservation, cleanup, or behavioral and the stated quality goal is met. For improvement-axis tasks, a recorded Δ that maps to only one or two changed dev items out of N is at the noise floor — mark suspicious unless the verificationPrompt explicitly accepted sub-quantum improvements with a confirming follow-up experiment.",
+    "9. Call record_research_task_verification with status passed, failed, suspicious, or needs_more_evidence and a concise evidence-backed judgment. passed means the experiment honestly tested the prompt and produced trustworthy signal (positive, null, or negative outcomes all qualify) and requires a non-empty evidenceSummary. failed means the experiment ran fairly and did not meet acceptance criteria — an honest negative. suspicious means the experiment is not a valid test (no-effect patch, unreachable branch, noise-floor improvement, comparability break, reward hack). needs_more_evidence reopens the task as planned work.",
   ].join("\n");
 }

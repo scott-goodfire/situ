@@ -88,8 +88,12 @@ function seedName({ value }: { value: string | undefined }): TinyAutoresearchSee
     seed === "needs_baseline" ||
     seed === "with_baseline_result" ||
     seed === "with_candidate_result" ||
+    seed === "with_holdout_divergence" ||
     seed === "comparability_break" ||
-    seed === "large_search_ridge"
+    seed === "large_search_ridge" ||
+    seed === "exploit_drift_lineage" ||
+    seed === "healthy_exploit_window" ||
+    seed === "exploit_drift_with_mixed_triage"
   ) {
     return seed;
   }

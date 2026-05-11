@@ -8,6 +8,7 @@ export type DurableStateExpectation = Readonly<{
   forbiddenResearchTaskMarkers?: string[];
   requiredExperimentMarkers?: string[];
   requiredVerificationMarkers?: string[];
+  forbiddenVerificationMarkers?: string[];
   requiredArtifactMarkers?: string[];
   requiredChangedFiles?: string[];
   forbiddenChangedFiles?: string[];
@@ -42,6 +43,7 @@ type DurableStateRequirementResult = Readonly<{
   forbiddenResearchTaskMarkers: string[];
   missingExperimentMarkers: string[];
   missingVerificationMarkers: string[];
+  forbiddenVerificationMarkers: string[];
   missingArtifactMarkers: string[];
   missingChangedFiles: string[];
   forbiddenChangedFiles: string[];
@@ -159,6 +161,7 @@ function durableStateMarkerResult({
   | "forbiddenResearchTaskMarkers"
   | "missingExperimentMarkers"
   | "missingVerificationMarkers"
+  | "forbiddenVerificationMarkers"
   | "missingArtifactMarkers"
 > {
   return {
@@ -185,6 +188,11 @@ function durableStateMarkerResult({
       state,
       collectionName: "researchTaskVerifications",
       requiredMarkers: expectation.requiredVerificationMarkers ?? [],
+    }),
+    forbiddenVerificationMarkers: presentForbiddenMarkersFromCollection({
+      state,
+      collectionName: "researchTaskVerifications",
+      forbiddenMarkers: expectation.forbiddenVerificationMarkers ?? [],
     }),
     missingArtifactMarkers: missingMarkersFromCollection({
       state,
@@ -350,6 +358,7 @@ function passesDurableStateRequirements({
     result.forbiddenResearchTaskMarkers,
     result.missingExperimentMarkers,
     result.missingVerificationMarkers,
+    result.forbiddenVerificationMarkers,
     result.missingArtifactMarkers,
     result.missingChangedFiles,
     result.forbiddenChangedFiles,

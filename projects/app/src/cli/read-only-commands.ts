@@ -14,6 +14,15 @@ import {
   type ComputeBlockerResearchTaskRow,
   type ComputeBlockerTargetRow,
 } from "../runtime/compute";
+import { git } from "../runtime/worktrees/git-command";
+
+type ExperimentWorktreeRow = {
+  experimentId: string;
+  title: string;
+  worktreePath: string;
+  headCommit: string | null;
+  headSubject: string | null;
+};
 
 type CommonReadOptions = {
   json: boolean;
@@ -56,7 +65,9 @@ export async function runSessionsCommand({ argv }: { argv: string[] }): Promise<
 export async function runStatusCommand({ argv }: { argv: string[] }): Promise<number> {
   const options = parseCommonReadOptions({ argv });
   const entry = await resolveSessionEntry({ sessionId: options.sessionId });
-  const status = readStatus({ entry });
+  const dbStatus = readStatus({ entry });
+  const worktrees = await readExperimentWorktrees({ entry });
+  const status = { ...dbStatus, worktrees };
   if (options.json) {
     console.log(JSON.stringify(status, null, 2));
     return 0;
@@ -71,6 +82,7 @@ export async function runStatusCommand({ argv }: { argv: string[] }): Promise<nu
   console.log(`Claude runs ${JSON.stringify(status.claudeAgentRuns)}`);
   console.log(`Hypotheses ${JSON.stringify(status.hypotheses)}`);
   console.log(`Compute blockers ${JSON.stringify(status.computeBlockers)}`);
+  console.log(`Worktrees ${JSON.stringify(status.worktrees)}`);
   return 0;
 }
 
@@ -139,7 +151,7 @@ function readStatus({ entry }: { entry: SessionRegistryEntry }): {
       computeBlockers: computeBlockersForPlannedResearchTasks({
         researchTasks: db
           .query(
-            "select id, title, payload_json as payloadJson from research_tasks where status = 'planned' order by created_at, id",
+            "select id, type, title, payload_json as payloadJson from research_tasks where status = 'planned' order by created_at, id",
           )
           .all() as ComputeBlockerResearchTaskRow[],
         computeTargets: db
@@ -149,6 +161,53 @@ function readStatus({ entry }: { entry: SessionRegistryEntry }): {
     };
   } finally {
     db.close();
+  }
+}
+
+async function readExperimentWorktrees({
+  entry,
+}: {
+  entry: SessionRegistryEntry;
+}): Promise<ExperimentWorktreeRow[]> {
+  const db = openReadonlyDb({ entry });
+  let rows: Array<{ id: string; title: string; worktreePath: string }>;
+  try {
+    rows = db
+      .query(
+        "select id, title, worktree_path as worktreePath from experiments where worktree_path is not null order by created_at, id",
+      )
+      .all() as Array<{ id: string; title: string; worktreePath: string }>;
+  } finally {
+    db.close();
+  }
+  return Promise.all(rows.map(async (row) => readWorktreeHead({ row })));
+}
+
+async function readWorktreeHead({
+  row,
+}: {
+  row: { id: string; title: string; worktreePath: string };
+}): Promise<ExperimentWorktreeRow> {
+  const base = {
+    experimentId: row.id,
+    title: row.title,
+    worktreePath: row.worktreePath,
+  };
+  if (!existsSync(row.worktreePath)) {
+    return { ...base, headCommit: null, headSubject: null };
+  }
+  try {
+    const output = await git({
+      cwd: row.worktreePath,
+      args: ["log", "-1", "--format=%H%n%s"],
+      trimStdout: true,
+    });
+    const newlineIndex = output.indexOf("\n");
+    const headCommit = newlineIndex === -1 ? output : output.slice(0, newlineIndex);
+    const headSubject = newlineIndex === -1 ? "" : output.slice(newlineIndex + 1);
+    return { ...base, headCommit, headSubject };
+  } catch {
+    return { ...base, headCommit: null, headSubject: null };
   }
 }
 

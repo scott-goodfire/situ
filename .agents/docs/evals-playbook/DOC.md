@@ -45,7 +45,7 @@ Prefer starting from a realistic fixture stage instead of booting every live
 eval from an empty world:
 
 - empty repo that needs baseline discovery
-- baseline already recorded
+- confirmed durable project setup baseline
 - candidate experiment already run
 - suspicious comparability-break state
 - pending review or follow-up task
@@ -83,7 +83,11 @@ Assert durable state, not final prose:
 
 - ResearchProjects created, blocked, started, completed, or failed
 - ResearchProjectInteractions record user questions and baseline confirmations
+- baseline confirmation interactions reference a Manager-owned project baseline
+  id, and the project reaches `search` before ResearchTasks are planned
 - ResearchTasks created, completed, failed, or submitted for verification
+- no ResearchTask or Scientist work item appears before the project reaches
+  `search`
 - ResearchTaskVerifications record pass, fail, suspicious, or needs-more-evidence
   outcomes
 - Claude runs and events recorded
@@ -91,6 +95,18 @@ Assert durable state, not final prose:
   entity links created in the expected shape
 - typed activities record comments, concerns, or review outcomes
 - forbidden workspace changes, such as editing `prepare.py`, are absent
+
+Live evals that exercise verification can also assert on advisory
+signals carried on the verification payload, not just the verdict.
+The first such signal is `verification.payload.signals.suspicious_holdout_divergence`,
+emitted by the Verifier skill when the dev and held-out splits disagree.
+Use `requiredVerificationMarkers` for structural emission cases
+(for example `"suspicious_holdout_divergence":true` should be present),
+and `forbiddenVerificationMarkers` for guardrail cases where the
+signal must not appear (agreement between splits, or missing
+held-out evidence). Manager-side cases can pair these with
+durable-state assertions on the redesign exploit task the Manager
+auto-dispatches when it sees the signal.
 
 Use final assistant prose only as debug context.
 

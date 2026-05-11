@@ -1,8 +1,10 @@
 import { Hono } from "hono";
 import { z } from "zod";
 
+import { baselineRepository } from "../data/repositories/baselines";
 import { researchProjectInteractionRepository } from "../data/repositories/research-project-interactions";
 import { researchProjectRepository } from "../data/repositories/research-projects";
+import { jsonModule } from "../modules/json";
 import { enqueueManagerResearchProjectWork } from "../runtime/dispatch";
 import { hasAnthropicKey } from "../secrets/local-secret-store";
 import { parseRouteBody } from "./__shared__/parse-route-body";
@@ -44,7 +46,7 @@ researchProjectRoutes.post("/research-projects", async (c) => {
 
   const researchProject = await researchProjectRepository.create({
     goal: body.value.goal,
-    payload: { source: "web" },
+    payload: { source: "web", executionMode: "interactive" },
   });
   const enqueued = await enqueueIfConfigured({ researchProjectId: researchProject.id });
   return c.json({
@@ -88,7 +90,7 @@ researchProjectRoutes.post("/research-project-interactions/:interactionId/confir
     status: "confirmed",
     response: body.value.response,
   });
-  const researchProject = await advanceOnboardingAfterConfirmation({
+  const researchProject = await advanceAfterBaselineConfirmation({
     interactionId,
     researchProjectId: interaction.researchProjectId,
   });
@@ -139,7 +141,7 @@ async function enqueueForInteraction({
   return enqueueIfConfigured({ researchProjectId: interaction.researchProjectId });
 }
 
-async function advanceOnboardingAfterConfirmation({
+async function advanceAfterBaselineConfirmation({
   interactionId,
   researchProjectId,
 }: {
@@ -147,13 +149,39 @@ async function advanceOnboardingAfterConfirmation({
   researchProjectId: string;
 }) {
   const project = await researchProjectRepository.require({ researchProjectId });
-  if (project.phase !== "onboarding") {
+  if (project.phase !== "baseline") {
     return project;
   }
   const interaction = await researchProjectInteractionRepository.require({ interactionId });
+  if (interaction.kind !== "baseline_confirmation") {
+    return project;
+  }
+  const payload = jsonModule.parseRecord({ raw: interaction.payloadJson });
+  const baselineId = payload.baselineId;
+  if (typeof baselineId !== "string" || !baselineId.trim()) {
+    throw new Error(`Baseline confirmation is missing baselineId: ${interactionId}`);
+  }
+  const baseline = await baselineRepository.require({ baselineId });
+  if (baseline.researchProjectId !== researchProjectId) {
+    throw new Error(
+      `Baseline ${baseline.id} does not belong to ResearchProject ${researchProjectId}.`,
+    );
+  }
+  if (baseline.createdByResearchTaskId) {
+    throw new Error(
+      `Baseline confirmation requires a Manager-created project baseline: ${baseline.id}`,
+    );
+  }
+  if (baseline.status !== "accepted") {
+    await baselineRepository.accept({
+      baselineId,
+      actor: "user",
+      comment: "Project baseline confirmed by user.",
+    });
+  }
   return researchProjectRepository.updatePhase({
     researchProjectId,
     phase: "search",
-    baselineSummary: interaction.details,
+    baselineSummary: baseline.summary,
   });
 }

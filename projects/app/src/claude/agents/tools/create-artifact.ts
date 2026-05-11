@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { artifactRepository } from "../../../data/repositories/artifacts";
 import { defineTool } from "./__shared__/define-tool";
+import { Result } from "./__shared__/result";
 import { ENTITY_KINDS, toolEntityReferenceModule } from "./__shared__/tool-entity-reference-module";
 
 const inputSchema = z
@@ -36,12 +37,13 @@ export const createArtifactTool = defineTool({
     "Record a durable artifact connected to a ResearchTask, hypothesis, baseline, experiment, or evaluation.",
   roles: ["scientist"],
   inputSchema,
+  resultEnvelope: true,
   handler: async ({ input, context }) => {
     await toolEntityReferenceModule.assertExists({
       kind: input.entityKind,
       id: input.entityId,
     });
-    return {
+    return Result.ok({
       artifact: await artifactRepository.create({
         title: input.title,
         path: input.path,
@@ -54,6 +56,6 @@ export const createArtifactTool = defineTool({
         mediaType: input.mediaType,
         sizeBytes: input.sizeBytes,
       }),
-    };
+    });
   },
 });

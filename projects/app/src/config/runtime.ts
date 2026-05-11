@@ -2,13 +2,13 @@ import { commandLineModule } from "../modules/command-line";
 
 export const defaultRuntimeHost = "127.0.0.1";
 export const defaultRuntimePort = 5500;
-export const defaultMaxScientistConcurrency = 4;
+export const defaultMaxScientistConcurrency = 12;
+export const defaultMaxVerifierConcurrency = 32;
 
 export type RuntimeOptions = {
   host: string;
   port: number;
   allowPortFallback: boolean;
-  resume: boolean;
   sessionId?: string;
 };
 
@@ -17,7 +17,6 @@ export function parseRuntimeOptions({ argv }: { argv: string[] }): RuntimeOption
     host: defaultRuntimeHost,
     port: defaultRuntimePort,
     allowPortFallback: true,
-    resume: false,
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -41,10 +40,6 @@ export function parseRuntimeOptions({ argv }: { argv: string[] }): RuntimeOption
       index += 1;
       continue;
     }
-    if (arg === "--resume") {
-      options.resume = true;
-      continue;
-    }
     if (commandLineModule.isHelpFlag({ arg })) {
       printHelp();
       process.exit(0);
@@ -57,7 +52,7 @@ export function parseRuntimeOptions({ argv }: { argv: string[] }): RuntimeOption
 
 function printHelp(): void {
   console.log(
-    `Usage: situ app [--host ${defaultRuntimeHost}] [--port ${defaultRuntimePort}] [--resume] [--session id]`,
+    `Usage: situ app [--host ${defaultRuntimeHost}] [--port ${defaultRuntimePort}] [--session id]`,
   );
 }
 
@@ -79,6 +74,18 @@ export function maxScientistConcurrency(): number {
   const parsed = Number(value);
   if (!Number.isInteger(parsed) || parsed < 1) {
     return defaultMaxScientistConcurrency;
+  }
+  return parsed;
+}
+
+export function maxVerifierConcurrency(): number {
+  const value = process.env.MAX_SITU_VERIFIER_CONCURRENCY?.trim();
+  if (!value) {
+    return defaultMaxVerifierConcurrency;
+  }
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 1) {
+    return defaultMaxVerifierConcurrency;
   }
   return parsed;
 }

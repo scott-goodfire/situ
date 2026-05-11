@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { hypothesisRepository } from "../../../data/repositories/hypotheses";
 import { defineTool } from "./__shared__/define-tool";
+import { Result } from "./__shared__/result";
 import { toolContextModule } from "./__shared__/tool-context-module";
 
 const inputSchema = z.object({
@@ -23,16 +24,18 @@ export const createHypothesisTool = defineTool({
     "Create a durable situ hypothesis record for Manager planning or Scientist explore work.",
   roles: ["manager", "scientist"],
   inputSchema,
-  handler: async ({ input, context }) => ({
-    hypothesis: await hypothesisRepository.create({
-      title: input.title,
-      summary: input.summary,
-      createdByResearchTaskId: toolContextModule.researchTaskId({
-        explicit: input.researchTaskId,
-        context,
-        required: false,
+  resultEnvelope: true,
+  handler: async ({ input, context }) =>
+    Result.ok({
+      hypothesis: await hypothesisRepository.create({
+        title: input.title,
+        summary: input.summary,
+        createdByResearchTaskId: toolContextModule.researchTaskId({
+          explicit: input.researchTaskId,
+          context,
+          required: false,
+        }),
+        createdByAgentId: context.agentId,
       }),
-      createdByAgentId: context.agentId,
     }),
-  }),
 });

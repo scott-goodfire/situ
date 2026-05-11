@@ -10,6 +10,7 @@ import { getAnthropicClient } from "../anthropic-client";
 import {
   claudeAgentBlueprintForRole,
   type ClaudeAgentBlueprint,
+  type ClaudeAgentExecutionMode,
   type ClaudeAgentRole,
 } from "../roles";
 import { ensureClaudeAgent } from "./claude-agent";
@@ -26,12 +27,16 @@ export async function ensureManagedSession(): Promise<ManagedSessionRecord> {
 
 export async function createIsolatedManagedSessionForRole({
   role,
+  executionMode,
+  modelOverride,
 }: {
   role: ClaudeAgentRole;
+  executionMode?: ClaudeAgentExecutionMode;
+  modelOverride?: string;
 }): Promise<ManagedSessionRecord> {
   const localSession = await ensureLocalSession();
   const managedSession = await createClaudeManagedSession({
-    blueprint: claudeAgentBlueprintForRole({ role }),
+    blueprint: claudeAgentBlueprintForRole({ role, executionMode, modelOverride }),
     existingClaudeEnvironmentId: localSession.claudeEnvironmentId,
   });
   if (!localSession.claudeEnvironmentId) {
@@ -57,12 +62,16 @@ export async function createIsolatedManagedSessionForRole({
 
 export async function ensureManagedSessionForRole({
   role,
+  executionMode,
+  modelOverride,
 }: {
   role: ClaudeAgentRole;
+  executionMode?: ClaudeAgentExecutionMode;
+  modelOverride?: string;
 }): Promise<ManagedSessionRecord> {
   const db = getDb();
   const localSession = await ensureLocalSession();
-  const blueprint = claudeAgentBlueprintForRole({ role });
+  const blueprint = claudeAgentBlueprintForRole({ role, executionMode, modelOverride });
   const existingAgent = await db.query.claudeAgents.findFirst({
     where: eq(claudeAgents.id, blueprint.dbId),
   });
@@ -116,13 +125,15 @@ export async function ensureManagedSessionForRole({
 export async function replaceManagedSession({
   reason,
   role = "manager",
+  executionMode,
 }: {
   reason: string;
   role?: ClaudeAgentRole;
+  executionMode?: ClaudeAgentExecutionMode;
 }): Promise<ManagedSessionRecord> {
   const localSession = await ensureLocalSession();
   const managedSession = await createClaudeManagedSession({
-    blueprint: claudeAgentBlueprintForRole({ role }),
+    blueprint: claudeAgentBlueprintForRole({ role, executionMode }),
     existingClaudeEnvironmentId: localSession.claudeEnvironmentId,
   });
   persistManagedSession({

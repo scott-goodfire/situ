@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { researchProjectRepository } from "../../../data/repositories/research-projects";
 import { defineTool } from "./__shared__/define-tool";
+import { Result } from "./__shared__/result";
 import { toolContextModule } from "./__shared__/tool-context-module";
 
 const inputSchema = z.object({
@@ -20,6 +21,7 @@ export const failResearchProjectTool = defineTool({
     "Mark the active ResearchProject failed when it cannot proceed and a durable failure reason is available.",
   roles: ["manager"],
   inputSchema,
+  resultEnvelope: true,
   handler: async ({ input, context }) => {
     const researchProject = await researchProjectRepository.transition({
       researchProjectId: toolContextModule.researchProjectId({
@@ -29,6 +31,6 @@ export const failResearchProjectTool = defineTool({
       status: "failed",
       resultSummary: input.resultSummary,
     });
-    return { researchProject };
+    return Result.ok({ researchProject });
   },
 });

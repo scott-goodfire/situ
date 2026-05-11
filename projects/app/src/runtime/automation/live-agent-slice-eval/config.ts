@@ -29,6 +29,7 @@ const seedVerificationSchema = z.object({
   profile: z.enum(VERIFICATION_PROFILES).default("general"),
   judgment: z.string().trim().min(1, "judgment is required."),
   evidenceSummary: z.string().trim().min(1, "evidenceSummary is required."),
+  signals: z.record(z.string(), z.unknown()).optional(),
 });
 
 const seedResearchTaskSchema = z

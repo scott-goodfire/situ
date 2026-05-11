@@ -1,4 +1,6 @@
 import type {
+  FeedEntryRecord,
+  FeedEntrySeverity,
   ResearchProjectInteractionRecord,
   ResearchProjectRecord,
   ResearchTaskRecord,
@@ -7,12 +9,44 @@ import type {
 } from "@situ/protocol";
 import { payloadRecord } from "./payload-record";
 import type {
+  FeedEntryRow,
   ResearchProjectInteractionRow,
   ResearchProjectRow,
   ResearchTaskRow,
   ResearchTaskVerificationRow,
   WorkItemRow,
 } from "./types";
+
+export function feedEntryRecord({ row }: { row: FeedEntryRow }): FeedEntryRecord {
+  return {
+    id: row.id,
+    researchProjectId: row.researchProjectId,
+    summaryMarkdown: row.summaryMarkdown,
+    severity: row.severity as FeedEntrySeverity,
+    citedAppEventIds: parseCitedAppEventIds({
+      raw: row.citedAppEventIdsJson,
+      label: `feedEntries/${row.id}`,
+    }),
+    windowStartedAt: row.windowStartedAt,
+    windowEndedAt: row.windowEndedAt,
+    createdByAgentId: row.createdByAgentId,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
+function parseCitedAppEventIds({ raw, label }: { raw: string; label: string }): string[] {
+  try {
+    const value = JSON.parse(raw);
+    if (Array.isArray(value) && value.every((item) => typeof item === "string")) {
+      return value;
+    }
+  } catch {
+    // fall through
+  }
+  console.warn(`Invalid citedAppEventIdsJson for ${label}; defaulting to [].`);
+  return [];
+}
 
 export function researchProjectRecord({ row }: { row: ResearchProjectRow }): ResearchProjectRecord {
   return {

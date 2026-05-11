@@ -10,7 +10,13 @@ import type {
 import type { AutomationState } from "../runner";
 
 export const DRIVERS = ["manager_turn", "scientist_verifier", "verifier_turn"] as const;
-export const PROJECT_PHASES = ["onboarding", "search", "reporting", "complete"] as const;
+export const PROJECT_PHASES = [
+  "onboarding",
+  "baseline",
+  "search",
+  "reporting",
+  "complete",
+] as const;
 export const RESEARCH_TASK_TYPES = [
   "explore",
   "exploit",
@@ -53,6 +59,7 @@ export type SeedVerificationConfig = Readonly<{
   profile: ResearchTaskVerificationProfile;
   judgment: string;
   evidenceSummary: string;
+  signals?: Readonly<Record<string, unknown>>;
 }>;
 
 export type SeedResearchTaskConfig = Readonly<{

@@ -9,7 +9,7 @@ import { researchTaskVerifications } from "../../db/schema";
 import { runSyncedWrite } from "../../db/sync";
 import { dateTimeModule } from "../../../modules/date-time";
 import { textModule } from "../../../modules/text";
-import { clampRepositoryLimit, matchesRepositorySearch } from "../__shared__";
+import { clampRepositoryLimit, matchesRepositorySearch, PreconditionError } from "../__shared__";
 import { researchTaskRepository, type ResearchTaskStatus } from "../research-tasks";
 
 export type ResearchTaskVerificationRecord = typeof researchTaskVerifications.$inferSelect;
@@ -100,7 +100,11 @@ export const researchTaskVerificationRepository = {
   }): Promise<ResearchTaskVerificationRecord> {
     const verification = await researchTaskVerificationRepository.get({ verificationId });
     if (!verification) {
-      throw new Error(`ResearchTaskVerification not found: ${verificationId}`);
+      throw new PreconditionError({
+        code: "research_task_verification_not_found",
+        hint: "List or search ResearchTaskVerifications; this id may be abbreviated or stale.",
+        details: { verificationId },
+      });
     }
     return verification;
   },
@@ -174,7 +178,11 @@ function assertVerificationProfile(input: { profile: string }): asserts input is
   profile: ResearchTaskVerificationProfile;
 } {
   if (!researchTaskVerificationProfiles.has(input.profile as ResearchTaskVerificationProfile)) {
-    throw new Error(`Invalid researchTaskVerification profile: ${input.profile}`);
+    throw new PreconditionError({
+      code: "research_task_verification_invalid_profile",
+      hint: "Use a profile from RESEARCH_TASK_VERIFICATION_PROFILES.",
+      details: { profile: input.profile, allowed: Array.from(researchTaskVerificationProfiles) },
+    });
   }
 }
 
@@ -182,7 +190,11 @@ function assertVerificationStatus(input: { status: string }): asserts input is {
   status: ResearchTaskVerificationStatus;
 } {
   if (!researchTaskVerificationStatuses.has(input.status as ResearchTaskVerificationStatus)) {
-    throw new Error(`Invalid researchTaskVerification status: ${input.status}`);
+    throw new PreconditionError({
+      code: "research_task_verification_invalid_status",
+      hint: "Use a status from RESEARCH_TASK_VERIFICATION_STATUSES.",
+      details: { status: input.status, allowed: Array.from(researchTaskVerificationStatuses) },
+    });
   }
 }
 
@@ -194,9 +206,11 @@ function assertResearchTaskCanBeVerified({
   researchTaskId: string;
 }): void {
   if (status !== "awaiting_verification") {
-    throw new Error(
-      `ResearchTaskVerification requires an awaiting_verification ResearchTask (researchTaskId: ${researchTaskId}, status: ${status})`,
-    );
+    throw new PreconditionError({
+      code: "research_task_not_awaiting_verification",
+      hint: "Submit the ResearchTask for verification (transition to awaiting_verification) before creating a verification.",
+      details: { researchTaskId, currentStatus: status, requiredStatus: "awaiting_verification" },
+    });
   }
 }
 
@@ -208,7 +222,11 @@ function assertPassedVerificationHasEvidence({
   evidenceSummary: string;
 }): void {
   if (status === "passed" && evidenceSummary.trim().length === 0) {
-    throw new Error("ResearchTaskVerification status passed requires a non-empty evidenceSummary.");
+    throw new PreconditionError({
+      code: "research_task_verification_evidence_required",
+      hint: "Provide a non-empty evidenceSummary when marking a verification as passed.",
+      details: { status },
+    });
   }
 }
 

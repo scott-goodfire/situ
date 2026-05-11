@@ -17,6 +17,8 @@ import {
   CLAUDE_AGENT_TURN_WORK_ITEM_PURPOSE,
   CLAUDE_MANAGER_RESEARCH_PROJECT_WORK_ITEM_PURPOSE,
   CLAUDE_SCIENTIST_RESEARCH_TASK_WORK_ITEM_PURPOSE,
+  CLAUDE_REPORTER_SESSION_WORK_ITEM_PURPOSE,
+  CLAUDE_SCRIBE_SESSION_WORK_ITEM_PURPOSE,
   CLAUDE_VERIFIER_RESEARCH_TASK_WORK_ITEM_PURPOSE,
   type WorkItemHandler,
   type WorkItem,
@@ -30,7 +32,9 @@ const handlers: Record<string, WorkItemHandler | undefined> = {
   [CLAUDE_AGENT_TURN_WORK_ITEM_PURPOSE]: executeClaudeAgentTurn,
   [CLAUDE_MANAGER_RESEARCH_PROJECT_WORK_ITEM_PURPOSE]: executeClaudeAgentTurn,
   [CLAUDE_SCIENTIST_RESEARCH_TASK_WORK_ITEM_PURPOSE]: executeClaudeAgentTurn,
-  [CLAUDE_VERIFIER_RESEARCH_TASK_WORK_ITEM_PURPOSE]: executeClaudeAgentTurn,
+  [CLAUDE_VERIFIER_RESEARCH_TASK_WORK_ITEM_PURPOSE]: verifierWorkItemHandler,
+  [CLAUDE_SCRIBE_SESSION_WORK_ITEM_PURPOSE]: executeClaudeAgentTurn,
+  [CLAUDE_REPORTER_SESSION_WORK_ITEM_PURPOSE]: executeClaudeAgentTurn,
 };
 
 export async function handleClaimedWorkItem({ workItem }: { workItem: WorkItem }): Promise<void> {
@@ -98,6 +102,24 @@ async function handleClaimedWorkItemInner({ workItem }: { workItem: WorkItem }):
 
 export const workItemLeaseMs = LEASE_MS;
 export const workItemMaxAttempts = MAX_ATTEMPTS;
+
+export async function verifierWorkItemHandler({ workItem }: { workItem: WorkItem }): Promise<void> {
+  const researchTaskId = workItem.targetId;
+  const researchTask = await researchTaskRepository.get({ researchTaskId });
+  if (!researchTask || researchTask.status !== "awaiting_verification") {
+    await recordAppEvent({
+      type: "work_item.verifier_skipped_already_resolved",
+      message: `Verifier work item skipped: researchTask ${researchTaskId} status=${researchTask?.status ?? "missing"}`,
+      payload: {
+        workItemId: workItem.id,
+        researchTaskId,
+        researchTaskStatus: researchTask?.status ?? null,
+      },
+    });
+    return;
+  }
+  await executeClaudeAgentTurn({ workItem });
+}
 
 export async function finalizeDomainFailureForWorkItem({
   workItem,

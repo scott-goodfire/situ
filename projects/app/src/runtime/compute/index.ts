@@ -1,11 +1,13 @@
 export {
   CUDA_VISIBLE_DEVICES_METADATA_KEY,
+  DEFAULT_LOCAL_COMPUTE_POOL,
   claimComputeForResearchTask,
+  computePoolForResearchTask,
   computeEnvForWorkItem,
   emptyComputeStatusCounts,
-  ensureDefaultLocalComputeTarget,
-  explicitComputeTargetConcurrency,
+  ensureDefaultLocalComputeTargets,
   heartbeatComputeLeaseForWorkItem,
+  liveComputeTargetCount,
   releaseComputeForWorkItem,
 } from "./compute-leases";
 export {

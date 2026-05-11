@@ -9,9 +9,9 @@ describe("runComputeCommand", () => {
     );
   });
 
-  test("rejects resume for compute commands", async () => {
-    await expect(runComputeCommand({ argv: ["list", "--resume"] })).rejects.toThrow(
-      "situ compute does not support --resume",
+  test("rejects unknown compute subcommands", async () => {
+    await expect(runComputeCommand({ argv: ["claim", "--session", "ses_test"] })).rejects.toThrow(
+      "unknown compute command: claim",
     );
   });
 });

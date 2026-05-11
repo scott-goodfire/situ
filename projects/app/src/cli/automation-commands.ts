@@ -1,10 +1,13 @@
 import { ensureRuntimeContext } from "../config/session-context";
 import type { SessionRuntimeContext } from "../config/session-context";
 import { defaultRuntimeHost, defaultRuntimePort } from "../config/runtime";
+import { recordAppEvent } from "../app-events";
+import { computeTargetRepository } from "../data/repositories/compute-targets";
 import { commandLineModule } from "../modules/command-line";
 import { printResult } from "./__shared__";
-import { seedSessionObjective, runAutomationUntilIdle } from "../runtime/automation";
+import { seedSessionObjective, waitForAutomationUntilIdle } from "../runtime/automation";
 import type { AutomationProgress } from "../runtime/automation";
+import { CUDA_VISIBLE_DEVICES_METADATA_KEY } from "../runtime/compute";
 import { hasAnthropicKey } from "../secrets/local-secret-store";
 
 export type ExecLifecycleHandle = {
@@ -25,18 +28,26 @@ export type ExecServerOptions = {
 
 type AutomationCommandOptions = {
   objective?: string;
-  resume: boolean;
   sessionId?: string;
   server: ExecServerOptions;
   json: boolean;
+  compute?: ExecComputeOptions;
 };
 
 type ExecCommandOptions = AutomationCommandOptions & {
   timeoutSeconds: number;
 };
 
+type ExecComputeOptions = {
+  pool: string;
+  kind: string;
+  label?: string;
+  cudaVisibleDevices?: string;
+};
+
 type ExecResearchProject = Awaited<ReturnType<typeof seedSessionObjective>>["researchProject"];
-type ExecAutomationSummary = Awaited<ReturnType<typeof runAutomationUntilIdle>>;
+type ExecAutomationSummary = Awaited<ReturnType<typeof waitForAutomationUntilIdle>>;
+type ExecComputeTarget = Awaited<ReturnType<typeof computeTargetRepository.upsert>>;
 
 export async function runExecCommand({
   argv,
@@ -51,11 +62,12 @@ export async function runExecCommand({
   const lifecycle = beforeAutomation
     ? await beforeAutomation({ runtime, server: options.server })
     : undefined;
-  printExecStart({ runtime, lifecycle });
   try {
+    const computeTarget = await registerExecComputeTarget({ options });
+    printExecStart({ runtime, lifecycle, computeTarget });
     const researchProject = await seedObjectiveForExec({ options });
     const summary = await runExecAutomation({ options });
-    printExecResult({ options, runtime, lifecycle, researchProject, summary });
+    printExecResult({ options, runtime, lifecycle, researchProject, summary, computeTarget });
     return exitCodeFromExecSummary({ summary });
   } finally {
     await teardownExecLifecycle({ lifecycle });
@@ -63,20 +75,23 @@ export async function runExecCommand({
 }
 
 async function assertExecCanRun({ options }: { options: ExecCommandOptions }): Promise<void> {
-  if (!options.objective && !options.resume && !options.sessionId) {
-    throw new Error("objective is required unless --resume or --session is provided");
+  if (!options.objective && !options.sessionId) {
+    throw new Error("objective is required unless --session is provided");
   }
   if (!(await hasAnthropicKey())) {
     throw new Error("SITU_ANTHROPIC_KEY is required for headless exec.");
   }
+  if (options.compute && !options.objective) {
+    throw new Error(
+      "compute options are only supported when launching a fresh situ exec objective.",
+    );
+  }
 }
 
 function runtimeContextOptions({ options }: { options: ExecCommandOptions }): {
-  resume: boolean;
   sessionId?: string;
 } {
   return {
-    resume: options.resume,
     sessionId: options.sessionId,
   };
 }
@@ -91,8 +106,44 @@ async function seedObjectiveForExec({
   }
   const result = await seedSessionObjective({
     objective: options.objective,
+    executionMode: "headless",
   });
   return result.researchProject;
+}
+
+async function registerExecComputeTarget({
+  options,
+}: {
+  options: ExecCommandOptions;
+}): Promise<ExecComputeTarget | undefined> {
+  if (!options.compute) {
+    return undefined;
+  }
+  const target = await computeTargetRepository.upsert({
+    pool: options.compute.pool,
+    kind: options.compute.kind,
+    label: options.compute.label,
+    metadata: execComputeMetadata({ compute: options.compute }),
+  });
+  await recordAppEvent({
+    type: "compute_target.upserted",
+    message: `Compute target registered by situ exec: ${target.id}`,
+    payload: { computeTargetId: target.id, pool: target.pool },
+  });
+  return target;
+}
+
+function execComputeMetadata({
+  compute,
+}: {
+  compute: ExecComputeOptions;
+}): Record<string, unknown> {
+  if (!compute.cudaVisibleDevices) {
+    return {};
+  }
+  return {
+    [CUDA_VISIBLE_DEVICES_METADATA_KEY]: compute.cudaVisibleDevices,
+  };
 }
 
 function runExecAutomation({
@@ -100,9 +151,9 @@ function runExecAutomation({
 }: {
   options: ExecCommandOptions;
 }): Promise<ExecAutomationSummary> {
-  return runAutomationUntilIdle({
+  return waitForAutomationUntilIdle({
     timeoutSeconds: options.timeoutSeconds,
-    onProgress: options.json ? undefined : printProgress,
+    onProgress: options.json ? undefined : createPrintProgress(),
     autoConfirmBaselines: true,
   });
 }
@@ -113,18 +164,21 @@ function printExecResult({
   lifecycle,
   researchProject,
   summary,
+  computeTarget,
 }: {
   options: ExecCommandOptions;
   runtime: SessionRuntimeContext;
   lifecycle: ExecLifecycleHandle | undefined;
   researchProject: ExecResearchProject | undefined;
   summary: ExecAutomationSummary;
+  computeTarget: ExecComputeTarget | undefined;
 }): void {
   printResult({
     json: options.json,
     value: {
       sessionId: runtime.sessionId,
       webUrl: lifecycle?.webUrl ?? null,
+      computeTarget: computeTarget ?? null,
       researchProject,
       summary,
     },
@@ -135,15 +189,22 @@ function printExecResult({
 function printExecStart({
   runtime,
   lifecycle,
+  computeTarget,
 }: {
   runtime: SessionRuntimeContext;
   lifecycle: ExecLifecycleHandle | undefined;
+  computeTarget: ExecComputeTarget | undefined;
 }): void {
   console.error("[situ-exec] Running headless automation");
   if (lifecycle?.webUrl) {
     console.error(`[situ-exec] Web UI: ${lifecycle.webUrl}`);
   }
   console.error(`[situ-exec] Session: ${runtime.sessionId}`);
+  if (computeTarget) {
+    console.error(
+      `[situ-exec] Compute target: ${computeTarget.id} pool=${computeTarget.pool} label=${computeTarget.label ?? ""}`,
+    );
+  }
 }
 
 function exitCodeFromExecSummary({ summary }: { summary: ExecAutomationSummary }): number {
@@ -156,7 +217,23 @@ function exitCodeFromExecSummary({ summary }: { summary: ExecAutomationSummary }
   if (summary.status === "blocked_on_compute") {
     return 4;
   }
+  if (summary.status === "timeout") {
+    return 5;
+  }
   return 2;
+}
+
+function isDeadlocked({ summary }: { summary: ExecAutomationSummary }): boolean {
+  if (summary.status !== "timeout") {
+    return false;
+  }
+  const { state } = summary;
+  return (
+    state.pendingUserQuestions > 0 ||
+    state.pendingBaselineConfirmations > 0 ||
+    state.triageHypotheses > 0 ||
+    state.computeBlockers.length > 0
+  );
 }
 
 async function teardownExecLifecycle({
@@ -196,7 +273,10 @@ function parseAutomationOptions({ argv }: { argv: string[] }): {
       { rawName: "--port <port>" },
       { rawName: "--session <session>" },
       { rawName: "--timeout <seconds>" },
-      { rawName: "--resume" },
+      { rawName: "--compute-pool <pool>" },
+      { rawName: "--compute-kind <kind>" },
+      { rawName: "--compute-label <label>" },
+      { rawName: "--cuda-visible-devices <devices>" },
       { rawName: "--json" },
       { rawName: "-h, --help" },
     ],
@@ -235,14 +315,46 @@ function parseAutomationOptions({ argv }: { argv: string[] }): {
           : defaultRuntimePort,
         allowPortFallback: !port,
       },
-      resume: commandLineModule.booleanOption({ value: parsed.options.resume }),
       json: commandLineModule.booleanOption({ value: parsed.options.json }),
+      compute: execComputeOptions({ parsed }),
     },
     parsed,
   };
 }
 
-function printProgress({ state }: AutomationProgress): void {
+function execComputeOptions({
+  parsed,
+}: {
+  parsed: ReturnType<typeof commandLineModule.parseOptions>;
+}): ExecComputeOptions | undefined {
+  const pool = commandLineModule.optionalStringOption({
+    value: parsed.options.computePool,
+    flag: "--compute-pool",
+  });
+  const kind = commandLineModule.optionalStringOption({
+    value: parsed.options.computeKind,
+    flag: "--compute-kind",
+  });
+  const label = commandLineModule.optionalStringOption({
+    value: parsed.options.computeLabel,
+    flag: "--compute-label",
+  });
+  const cudaVisibleDevices = commandLineModule.optionalStringOption({
+    value: parsed.options.cudaVisibleDevices,
+    flag: "--cuda-visible-devices",
+  });
+  if (!pool && !kind && !label && !cudaVisibleDevices) {
+    return undefined;
+  }
+  return {
+    pool: pool ?? "local",
+    kind: kind ?? "local",
+    label,
+    cudaVisibleDevices,
+  };
+}
+
+function formatStateBody({ state }: { state: AutomationProgress["state"] }): string {
   const missingPools = distinctComputePools({
     state,
     kind: "missing_pool",
@@ -251,25 +363,53 @@ function printProgress({ state }: AutomationProgress): void {
     state,
     kind: "busy_pool",
   });
-  console.error(
-    [
-      "[situ-exec]",
-      `activeResearchTasks=${state.activeResearchTasks}`,
-      `pendingWorkItems=${state.pendingWorkItems}`,
-      `claimedWorkItems=${state.claimedWorkItems}`,
-      `runningClaudeAgentRuns=${state.runningClaudeAgentRuns}`,
-      `triageHypotheses=${state.triageHypotheses}`,
-      `pendingUserQuestions=${state.pendingUserQuestions}`,
-      `pendingBaselineConfirmations=${state.pendingBaselineConfirmations}`,
-      `computeBlocked=${state.computeBlockers.length}`,
-      `missingComputePools=${missingPools.length ? missingPools.join(",") : "none"}`,
-      `busyComputePools=${busyPools.length ? busyPools.join(",") : "none"}`,
-      `failed=${state.failedResearchTasks + state.failedWorkItems + state.failedClaudeAgentRuns}`,
-    ].join(" "),
-  );
+  return [
+    `activeResearchTasks=${state.activeResearchTasks}`,
+    `pendingWorkItems=${state.pendingWorkItems}`,
+    `claimedWorkItems=${state.claimedWorkItems}`,
+    `runningClaudeAgentRuns=${state.runningClaudeAgentRuns}`,
+    `triageHypotheses=${state.triageHypotheses}`,
+    `pendingUserQuestions=${state.pendingUserQuestions}`,
+    `pendingBaselineConfirmations=${state.pendingBaselineConfirmations}`,
+    `computeBlocked=${state.computeBlockers.length}`,
+    `missingComputePools=${missingPools.length ? missingPools.join(",") : "none"}`,
+    `busyComputePools=${busyPools.length ? busyPools.join(",") : "none"}`,
+    `failed=${state.failedResearchTasks + state.failedWorkItems + state.failedClaudeAgentRuns}`,
+  ].join(" ");
+}
+
+function formatProgressLine({ state }: AutomationProgress): string {
+  return `[situ-exec] ${formatStateBody({ state })}`;
+}
+
+function formatFinalSummaryLine({ summary }: { summary: ExecAutomationSummary }): string {
+  const deadlock = isDeadlocked({ summary }) ? "yes" : "no";
+  return `[situ-exec] Final: status=${summary.status} ${formatStateBody({ state: summary.state })} deadlock=${deadlock}`;
+}
+
+function createPrintProgress(): (progress: AutomationProgress) => void {
+  let lastLine = "";
+  return (progress) => {
+    const line = formatProgressLine(progress);
+    if (line === lastLine) {
+      return;
+    }
+    lastLine = line;
+    console.error(line);
+  };
 }
 
 function execResultText({
+  runtime,
+  summary,
+}: {
+  runtime: SessionRuntimeContext;
+  summary: ExecAutomationSummary;
+}): string {
+  return `${formatFinalSummaryLine({ summary })}\n${execStatusLine({ runtime, summary })}`;
+}
+
+function execStatusLine({
   runtime,
   summary,
 }: {
@@ -328,7 +468,6 @@ function distinctComputePools({
 
 function printAutomationHelp(): void {
   console.log(`Usage:
-  situ exec --objective "objective" [--timeout 600] [--host ${defaultRuntimeHost}] [--port ${defaultRuntimePort}] [--resume] [--session id] [--json]
-  situ exec --resume [--objective "objective"] [--timeout 600] [--host ${defaultRuntimeHost}] [--port ${defaultRuntimePort}] [--json]
-  situ resume <session-id> [--objective "objective"] [--timeout 600] [--host ${defaultRuntimeHost}] [--port ${defaultRuntimePort}] [--json]`);
+  situ exec --objective "objective" [--timeout 600] [--host ${defaultRuntimeHost}] [--port ${defaultRuntimePort}] [--session id] [--compute-pool local] [--compute-kind local] [--compute-label label] [--cuda-visible-devices value] [--json]
+  situ exec --session <session-id> [--objective "objective"] [--timeout 600] [--host ${defaultRuntimeHost}] [--port ${defaultRuntimePort}] [--json]`);
 }

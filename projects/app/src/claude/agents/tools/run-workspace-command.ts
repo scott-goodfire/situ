@@ -3,6 +3,7 @@ import { z } from "zod";
 import { computeEnvForWorkItem } from "../../../runtime/compute";
 import { runExperimentWorkspaceCommand } from "../../../runtime/worktrees";
 import { defineTool } from "./__shared__/define-tool";
+import { Result } from "./__shared__/result";
 
 const inputSchema = z.object({
   command: z.string().describe("Shell command to run inside the experiment worktree."),
@@ -23,9 +24,10 @@ export const runWorkspaceCommandTool = defineTool({
     "Run a shell command inside an experiment worktree for a Scientist task when the active task skill allows it, including isolated explore baseline work and exploit/debug experiment work. The experiment worktree is prepared automatically from the experiment id when needed. Write temporary logs/results to $SITU_EXPERIMENT_OUTPUT_DIR or $SITU_COMMAND_OUTPUT_DIR, not the worktree root.",
   roles: ["scientist"],
   inputSchema,
+  resultEnvelope: true,
   handler: async ({ input, context }) => {
     const timeoutSeconds = input.timeoutSeconds;
-    return {
+    return Result.ok({
       command: await runExperimentWorkspaceCommand({
         experimentId: input.experimentId,
         command: input.command,
@@ -34,6 +36,6 @@ export const runWorkspaceCommandTool = defineTool({
         timeoutMs: timeoutSeconds === undefined ? undefined : timeoutSeconds * 1000,
         maxOutputBytes: input.maxOutputBytes,
       }),
-    };
+    });
   },
 });

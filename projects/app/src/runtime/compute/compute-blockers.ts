@@ -2,8 +2,9 @@ import { asc, eq } from "drizzle-orm";
 
 import { getDb } from "../../data/db/client";
 import { computeTargets, researchTasks } from "../../data/db/schema";
-import { jsonModule } from "../../modules/json";
 import type { ComputeTargetStatus } from "../../data/repositories/compute-targets";
+import type { ResearchTaskType } from "../../data/repositories/research-tasks";
+import { computePoolForResearchTask } from "./compute-leases";
 
 export type ComputeBlockerKind = "missing_pool" | "busy_pool";
 
@@ -20,6 +21,7 @@ export type ComputeBlocker = {
 
 export type ComputeBlockerResearchTaskRow = {
   id: string;
+  type: ResearchTaskType;
   title: string;
   payloadJson: string;
 };
@@ -35,6 +37,7 @@ export async function readComputeBlockers(): Promise<ComputeBlocker[]> {
     getDb()
       .select({
         id: researchTasks.id,
+        type: researchTasks.type,
         title: researchTasks.title,
         payloadJson: researchTasks.payloadJson,
       })
@@ -64,7 +67,7 @@ export function computeBlockersForPlannedResearchTasks({
   computeTargets: readonly ComputeBlockerTargetRow[];
 }): ComputeBlocker[] {
   return researchTasks.flatMap((task) => {
-    const pool = computePoolFromPayload({ payloadJson: task.payloadJson });
+    const pool = computePoolForResearchTask({ researchTask: task });
     if (!pool) {
       return [];
     }
@@ -95,11 +98,4 @@ export function computeBlockersForPlannedResearchTasks({
       },
     ];
   });
-}
-
-function computePoolFromPayload({ payloadJson }: { payloadJson: string }): string | undefined {
-  const payload = jsonModule.parseRecord({ raw: payloadJson });
-  const compute = jsonModule.record({ value: payload.compute });
-  const pool = compute.pool;
-  return typeof pool === "string" && pool.trim() ? pool.trim() : undefined;
 }

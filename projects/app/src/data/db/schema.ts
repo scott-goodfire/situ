@@ -101,7 +101,7 @@ export const claudeAgents = sqliteTable(
   {
     id: text("id").primaryKey(),
     kind: text("kind", {
-      enum: ["manager", "scientist", "verifier"],
+      enum: ["manager", "scientist", "verifier", "scribe", "reporter"],
     }).notNull(),
     displayName: text("display_name").notNull(),
     claudeAgentId: text("claude_agent_id"),
@@ -143,7 +143,7 @@ export const researchProjects = sqliteTable(
     id: text("id").primaryKey(),
     goal: text("goal").notNull(),
     phase: text("phase", {
-      enum: ["onboarding", "search", "reporting", "complete"],
+      enum: ["onboarding", "baseline", "search", "reporting", "complete"],
     })
       .notNull()
       .default("onboarding"),
@@ -196,6 +196,32 @@ export const researchProjectInteractions = sqliteTable(
   (table) => ({
     statusCreatedIdx: index("research_project_interactions_status_idx").on(
       table.status,
+      table.createdAt,
+    ),
+  }),
+);
+
+export const feedEntries = sqliteTable(
+  "feed_entries",
+  {
+    id: text("id").primaryKey(),
+    researchProjectId: text("research_project_id")
+      .notNull()
+      .references(() => researchProjects.id),
+    summaryMarkdown: text("summary_markdown").notNull(),
+    severity: text("severity", {
+      enum: ["info", "progress", "stuck", "failure"],
+    }).notNull(),
+    citedAppEventIdsJson: text("cited_app_event_ids_json").notNull().default("[]"),
+    windowStartedAt: text("window_started_at").notNull(),
+    windowEndedAt: text("window_ended_at").notNull(),
+    createdByAgentId: text("created_by_agent_id").references(() => claudeAgents.id),
+    ...syncTracking(),
+    ...timestamps(),
+  },
+  (table) => ({
+    projectCreatedIdx: index("feed_entries_project_created_idx").on(
+      table.researchProjectId,
       table.createdAt,
     ),
   }),
@@ -391,6 +417,9 @@ export const experiments = sqliteTable("experiments", {
 
 export const baselines = sqliteTable("baselines", {
   id: text("id").primaryKey(),
+  researchProjectId: text("research_project_id")
+    .notNull()
+    .references(() => researchProjects.id),
   createdByResearchTaskId: text("created_by_research_task_id").references(() => researchTasks.id),
   createdByAgentId: text("created_by_agent_id").references(() => claudeAgents.id),
   title: text("title").notNull(),
@@ -400,6 +429,7 @@ export const baselines = sqliteTable("baselines", {
   })
     .notNull()
     .default("triage"),
+  ...payloadJson(),
   ...syncTracking(),
   ...timestamps(),
 });

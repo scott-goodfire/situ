@@ -38,8 +38,8 @@ this category should follow the same pattern.
 - `SITU_DEV` — when truthy (`1` / `true` / `yes`), `printHelp()` in
   `projects/app/src/cli.ts` reveals the full command and flag surface
   (currently `situ skills sync`, the `situ self update` alias, and the internal
-  `self-update` flags `--repo`, `--install-home`, `--bin-dir`, `--tarball`,
-  plus `compute add`'s `--id` and `--metadata-json`). Read via
+  `self-update` flags `--repo`, `--install-home`, `--bin-dir`, `--tarball`).
+  Read via
   `devModeEnabled()` from `config/runtime.ts`.
 - `SITU_DISABLE_SCHEDULER` — skip starting the runtime scheduler in
   `situ app`. Read via `schedulerDisabled()` from `config/runtime.ts`.

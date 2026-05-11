@@ -68,8 +68,10 @@ Use tests for deterministic product questions:
 
 Use evals for agentic questions:
 
-- Manager asks the right onboarding question or establishes a baseline
-- Manager plans ResearchTasks with useful worker and verification prompts
+- Manager asks the right onboarding question or uses `create_project_baseline`
+  before confirmation
+- Manager plans ResearchTasks with useful worker and verification prompts only
+  when project phase is `search`
 - Scientist creates evidence instead of prose-only progress
 - Scientist selects or creates a primary hypothesis before creating an experiment
 - Verifier catches cheating, duplicates, weak evidence, or comparability breaks
@@ -153,6 +155,27 @@ process. New test files extend the right group or get a new
   alongside source. Cheap.
 - Skip: thin wrappers over typed Drizzle queries that the type system
   already verifies.
+
+### Asserting on tool result envelopes
+
+All 69 custom tools use `defineTool({ resultEnvelope: true })`. Failure
+paths no longer surface as thrown exceptions at the tool boundary;
+they come back as JSON envelopes of the form
+`{ ok: false, code, hint, details? }`. Tests that exercise tool
+handlers should parse the envelope and assert on its shape:
+
+```ts
+const result = await toolHandler({ input, context });
+const envelope = JSON.parse(result.content);
+expect(envelope.ok).toBe(false);
+expect(envelope.code).toBe("no_candidate_commit");
+```
+
+`await expect(...).rejects.toThrow()` still applies to non-envelope
+code paths: CLI subcommand handlers, repository contract tests that
+call the repository directly (repositories throw `PreconditionError`,
+which the tool wrapper catches and converts to an envelope), and any
+helper that runs outside the `defineTool` wrapper.
 
 ## Web-side patterns
 

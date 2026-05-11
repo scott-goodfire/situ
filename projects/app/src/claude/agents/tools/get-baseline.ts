@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { baselineRepository } from "../../../data/repositories/baselines";
 import { defineTool } from "./__shared__/define-tool";
+import { Result } from "./__shared__/result";
 import { allRoles } from "./__shared__/roles";
 
 const inputSchema = z.object({
@@ -13,9 +14,11 @@ export const getBaselineTool = defineTool({
   description: "Read one situ baseline with its activity timeline.",
   roles: allRoles,
   inputSchema,
-  handler: async ({ input }) => ({
-    result: await baselineRepository.getWithActivities({
-      baselineId: input.baselineId,
+  resultEnvelope: true,
+  handler: async ({ input }) =>
+    Result.ok({
+      result: await baselineRepository.getWithActivities({
+        baselineId: input.baselineId,
+      }),
     }),
-  }),
 });

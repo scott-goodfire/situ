@@ -1,17 +1,24 @@
 import { afterEach, describe, expect, test } from "bun:test";
 
-import { defaultMaxScientistConcurrency, maxScientistConcurrency } from "./runtime";
+import {
+  defaultMaxScientistConcurrency,
+  defaultMaxVerifierConcurrency,
+  maxScientistConcurrency,
+  maxVerifierConcurrency,
+} from "./runtime";
 
 const originalEnv = {
   MAX_SITU_SCIENTIST_CONCURRENCY: process.env.MAX_SITU_SCIENTIST_CONCURRENCY,
+  MAX_SITU_VERIFIER_CONCURRENCY: process.env.MAX_SITU_VERIFIER_CONCURRENCY,
 };
 
 describe("runtime config", () => {
   afterEach(() => {
     setEnv("MAX_SITU_SCIENTIST_CONCURRENCY", originalEnv.MAX_SITU_SCIENTIST_CONCURRENCY);
+    setEnv("MAX_SITU_VERIFIER_CONCURRENCY", originalEnv.MAX_SITU_VERIFIER_CONCURRENCY);
   });
 
-  test("defaults maximum Scientist concurrency to four", () => {
+  test("defaults maximum Scientist concurrency", () => {
     delete process.env.MAX_SITU_SCIENTIST_CONCURRENCY;
 
     expect(maxScientistConcurrency()).toBe(defaultMaxScientistConcurrency);
@@ -29,6 +36,26 @@ describe("runtime config", () => {
 
     process.env.MAX_SITU_SCIENTIST_CONCURRENCY = "many";
     expect(maxScientistConcurrency()).toBe(defaultMaxScientistConcurrency);
+  });
+
+  test("defaults maximum Verifier concurrency", () => {
+    delete process.env.MAX_SITU_VERIFIER_CONCURRENCY;
+
+    expect(maxVerifierConcurrency()).toBe(defaultMaxVerifierConcurrency);
+  });
+
+  test("reads positive integer maximum Verifier concurrency", () => {
+    process.env.MAX_SITU_VERIFIER_CONCURRENCY = " 64 ";
+
+    expect(maxVerifierConcurrency()).toBe(64);
+  });
+
+  test("falls back for invalid maximum Verifier concurrency values", () => {
+    process.env.MAX_SITU_VERIFIER_CONCURRENCY = "0";
+    expect(maxVerifierConcurrency()).toBe(defaultMaxVerifierConcurrency);
+
+    process.env.MAX_SITU_VERIFIER_CONCURRENCY = "many";
+    expect(maxVerifierConcurrency()).toBe(defaultMaxVerifierConcurrency);
   });
 });
 

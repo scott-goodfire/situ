@@ -38,7 +38,7 @@ export type LocalSettingsRecord = {
   updatedAt: Timestamp;
 };
 
-export type ClaudeAgentKind = "manager" | "scientist" | "verifier";
+export type ClaudeAgentKind = "manager" | "scientist" | "verifier" | "scribe" | "reporter";
 
 export type ClaudeAgentRecord = {
   id: string;
@@ -86,7 +86,7 @@ export type ClaudeAgentEventRecord = {
   createdAt: Timestamp;
 };
 
-export type ResearchProjectPhase = "onboarding" | "search" | "reporting" | "complete";
+export type ResearchProjectPhase = "onboarding" | "baseline" | "search" | "reporting" | "complete";
 
 export type ResearchProjectRecord = {
   id: string;
@@ -99,6 +99,21 @@ export type ResearchProjectRecord = {
   startedAt: Timestamp | null;
   completedAt: Timestamp | null;
   payload: ProtocolPayload;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+};
+
+export type FeedEntrySeverity = "info" | "progress" | "stuck" | "failure";
+
+export type FeedEntryRecord = {
+  id: string;
+  researchProjectId: string;
+  summaryMarkdown: string;
+  severity: FeedEntrySeverity;
+  citedAppEventIds: string[];
+  windowStartedAt: Timestamp;
+  windowEndedAt: Timestamp;
+  createdByAgentId: string | null;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 };
@@ -202,11 +217,13 @@ export type ExperimentRecord = {
 
 export type BaselineRecord = {
   id: string;
+  researchProjectId: string;
   createdByResearchTaskId: string | null;
   createdByAgentId: string | null;
   title: string;
   summary: string;
   status: ResearchStatus;
+  payload: ProtocolPayload;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 };

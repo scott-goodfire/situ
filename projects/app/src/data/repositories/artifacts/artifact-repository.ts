@@ -4,7 +4,7 @@ import { getDb } from "../../db/client";
 import { artifacts } from "../../db/schema";
 import { runSyncedWrite } from "../../db/sync";
 import { dateTimeModule } from "../../../modules/date-time";
-import { clampRepositoryLimit, matchesRepositorySearch } from "../__shared__";
+import { clampRepositoryLimit, matchesRepositorySearch, PreconditionError } from "../__shared__";
 
 type ArtifactRecord = typeof artifacts.$inferSelect;
 
@@ -48,7 +48,11 @@ async function getArtifactRecord({
 async function requireArtifactRecord({ artifactId }: ArtifactIdInput): Promise<ArtifactRecord> {
   const artifact = await getArtifactRecord({ artifactId });
   if (!artifact) {
-    throw new Error(`Artifact not found: ${artifactId}`);
+    throw new PreconditionError({
+      code: "artifact_not_found",
+      hint: "List or search artifacts; this id may be abbreviated or stale.",
+      details: { artifactId },
+    });
   }
   return artifact;
 }

@@ -10,12 +10,13 @@ import {
   researchTasks,
   workItems,
 } from "../../data/db/schema";
+import { baselineRepository } from "../../data/repositories/baselines";
 import { researchProjectInteractionRepository } from "../../data/repositories/research-project-interactions";
 import { researchProjectRepository } from "../../data/repositories/research-projects";
+import { jsonModule } from "../../modules/json";
 import { hasAnthropicKey } from "../../secrets/local-secret-store";
 import { readComputeBlockers, type ComputeBlocker } from "../compute";
 import { enqueueManagerResearchProjectWork } from "../dispatch";
-import { createRuntimeScheduler } from "../scheduler";
 
 export type AutomationState = {
   activeResearchTasks: number;
@@ -52,7 +53,7 @@ export type AutomationProgress = {
   state: AutomationState;
 };
 
-export async function runAutomationUntilIdle({
+export async function waitForAutomationUntilIdle({
   timeoutSeconds,
   pollMs = 1_000,
   settleMs = 2_000,
@@ -71,56 +72,50 @@ export async function runAutomationUntilIdle({
     throw new Error("SITU_ANTHROPIC_KEY is required for headless exec.");
   }
 
-  const scheduler = createRuntimeScheduler();
   const deadline = DateTime.utc().plus({ seconds: timeoutSeconds });
   let lastBusyAt = Date.now();
   let state = await readAutomationState();
   let lastProgressSignature = "";
-  scheduler.start();
-  try {
-    while (DateTime.utc() < deadline) {
-      if (autoConfirmBaselines) {
-        const confirmed = await autoConfirmPendingBaselines();
-        if (confirmed > 0) {
-          lastBusyAt = Date.now();
-        }
-      }
-      state = await readAutomationState();
-      const progressSignature = JSON.stringify(state);
-      if (progressSignature !== lastProgressSignature) {
-        lastProgressSignature = progressSignature;
-        onProgress?.({ state });
-      }
-      const missingComputeBlockers = state.computeBlockers.filter(
-        (blocker) => blocker.kind === "missing_pool",
-      );
-      if (missingComputeBlockers.length > 0) {
-        return {
-          status: "blocked_on_compute",
-          state,
-          computeBlockers: missingComputeBlockers,
-        };
-      }
-      if (isAutomationBlocked({ state, ignoreTriageHypotheses })) {
-        return {
-          status: "blocked_on_user",
-          state,
-          blockers: await readAutomationBlockers(),
-        };
-      }
-      if (isAutomationIdle({ state, ignoreTriageHypotheses })) {
-        if (Date.now() - lastBusyAt >= settleMs) {
-          return { status: "idle", state };
-        }
-      } else {
+  while (DateTime.utc() < deadline) {
+    if (autoConfirmBaselines) {
+      const confirmed = await autoConfirmPendingBaselines();
+      if (confirmed > 0) {
         lastBusyAt = Date.now();
       }
-      await sleep({ ms: pollMs });
     }
-    return { status: "timeout", state: await readAutomationState() };
-  } finally {
-    await scheduler.stop();
+    state = await readAutomationState();
+    const progressSignature = JSON.stringify(state);
+    if (progressSignature !== lastProgressSignature) {
+      lastProgressSignature = progressSignature;
+      onProgress?.({ state });
+    }
+    const missingComputeBlockers = state.computeBlockers.filter(
+      (blocker) => blocker.kind === "missing_pool",
+    );
+    if (missingComputeBlockers.length > 0) {
+      return {
+        status: "blocked_on_compute",
+        state,
+        computeBlockers: missingComputeBlockers,
+      };
+    }
+    if (isAutomationBlocked({ state, ignoreTriageHypotheses })) {
+      return {
+        status: "blocked_on_user",
+        state,
+        blockers: await readAutomationBlockers(),
+      };
+    }
+    if (isAutomationIdle({ state, ignoreTriageHypotheses })) {
+      if (Date.now() - lastBusyAt >= settleMs) {
+        return { status: "idle", state };
+      }
+    } else {
+      lastBusyAt = Date.now();
+    }
+    await sleep({ ms: pollMs });
   }
+  return { status: "timeout", state: await readAutomationState() };
 }
 
 async function autoConfirmPendingBaselines(): Promise<number> {
@@ -142,11 +137,19 @@ async function autoConfirmPendingBaselines(): Promise<number> {
     const project = await researchProjectRepository.require({
       researchProjectId: interaction.researchProjectId,
     });
-    if (project.phase === "onboarding") {
+    if (project.phase === "baseline") {
+      const baseline = await baselineForConfirmation({ interaction });
+      if (baseline.status !== "accepted") {
+        await baselineRepository.accept({
+          baselineId: baseline.id,
+          actor: "exec",
+          comment: "Project baseline auto-confirmed by situ exec.",
+        });
+      }
       await researchProjectRepository.updatePhase({
         researchProjectId: interaction.researchProjectId,
         phase: "search",
-        baselineSummary: interaction.details,
+        baselineSummary: baseline.summary,
       });
     }
     await enqueueManagerResearchProjectWork({
@@ -154,6 +157,30 @@ async function autoConfirmPendingBaselines(): Promise<number> {
     });
   }
   return pending.length;
+}
+
+async function baselineForConfirmation({
+  interaction,
+}: {
+  interaction: typeof researchProjectInteractions.$inferSelect;
+}): Promise<Awaited<ReturnType<typeof baselineRepository.require>>> {
+  const payload = jsonModule.parseRecord({ raw: interaction.payloadJson });
+  const baselineId = payload.baselineId;
+  if (typeof baselineId !== "string" || !baselineId.trim()) {
+    throw new Error(`Baseline confirmation is missing baselineId: ${interaction.id}`);
+  }
+  const baseline = await baselineRepository.require({ baselineId });
+  if (baseline.researchProjectId !== interaction.researchProjectId) {
+    throw new Error(
+      `Baseline ${baseline.id} does not belong to ResearchProject ${interaction.researchProjectId}.`,
+    );
+  }
+  if (baseline.createdByResearchTaskId) {
+    throw new Error(
+      `Baseline confirmation requires a Manager-created project baseline: ${baseline.id}`,
+    );
+  }
+  return baseline;
 }
 
 export async function readAutomationState(): Promise<AutomationState> {

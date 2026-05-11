@@ -23,3 +23,9 @@ export function getDb(): BunSQLiteDatabase<typeof schema> {
   db = drizzle(sqlite, { schema });
   return db;
 }
+
+export function resetDbForTests(): void {
+  sqlite?.close();
+  sqlite = undefined;
+  db = undefined;
+}

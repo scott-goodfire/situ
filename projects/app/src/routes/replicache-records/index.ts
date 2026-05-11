@@ -5,6 +5,7 @@ import {
   hypothesisActivityRecord,
 } from "./activity-records";
 import {
+  feedEntryRecord,
   researchProjectInteractionRecord,
   researchProjectRecord,
   researchTaskRecord,
@@ -42,6 +43,7 @@ export const replicacheRecord = {
   appEvent: appEventRecord,
   researchProject: researchProjectRecord,
   researchProjectInteraction: researchProjectInteractionRecord,
+  feedEntry: feedEntryRecord,
   researchTask: researchTaskRecord,
   researchTaskVerification: researchTaskVerificationRecord,
   workItem: workItemRecord,

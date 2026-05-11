@@ -73,7 +73,10 @@ export function claudeAgentToolsForBlueprint({
         },
       ],
     },
-    ...claudeAgentToolParamsForRole({ role: blueprint.role }),
+    ...claudeAgentToolParamsForRole({
+      role: blueprint.role,
+      executionMode: blueprint.executionMode,
+    }),
   ];
 }
 
@@ -107,6 +110,7 @@ function claudeAgentNeedsUpdate({
 
   const expectedToolKeys = claudeAgentToolParamsForRole({
     role: blueprint.role,
+    executionMode: blueprint.executionMode,
   }).map(customToolKey);
   const actualToolKeys = remoteAgent.tools
     .filter((tool) => tool.type === "custom")

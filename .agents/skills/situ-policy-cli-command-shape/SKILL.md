@@ -15,17 +15,21 @@ Every command in `cli/` follows the same shape: parse args → ensure context (i
   CAC-backed option parsing live in `modules/command-line`.
 - Entry function: `({ argv }: { argv: string[] }): Promise<number>`.
 - Argument parsing builds a discriminated union typed locally
-  (`type ComputeCommand = { kind: "list"; ... } | { kind: "add"; ... }`).
+  (`type SkillCommand = { kind: "install"; ... } | { kind: "uninstall"; ... }`).
 - Command option parsing uses `commandLineModule.parseOptions` unless the
   command has parser behavior CAC cannot model cleanly.
-- Commands that read or write session state call `ensureRuntimeContext({ resume, sessionId })` before dispatching.
+- Commands that read or write session state call `ensureRuntimeContext({ sessionId })` before dispatching.
 - Result output goes through `printResult({ json, value, text })` from `cli/__shared__`. Help text and progress streams are exempt.
 - Exit codes are numeric returns. `process.exit(0)` only for early-exit (`--help`, version); `process.exit(1)` only at the top of stand-alone scripts.
-- Session-bound commands accept `json`, `resume`, `sessionId`. Sessionless commands accept `json` when they emit JSON.
+- Session-bound commands accept `json` and explicit `sessionId` when they emit JSON or target session state. Sessionless commands accept `json` when they emit JSON.
 
 ## Exceptions
 
 - Sessionless commands (`self-update`, `doctor`) skip `ensureRuntimeContext` — they operate on install paths or runtime data only.
+- `situ compute` is a read-only diagnostic surface. It requires an explicit
+  `--session` and does not register compute. Compute registration belongs to
+  fresh `situ exec --objective ...` launches through `--compute-pool`,
+  `--compute-kind`, `--compute-label`, and `--cuda-visible-devices`.
 
 ## Avoid
 

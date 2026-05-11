@@ -4,7 +4,7 @@ import { isPlainObject } from "lodash-es";
 import { getDb } from "../../db/client";
 import { measurements } from "../../db/schema";
 import { runSyncedWrite } from "../../db/sync";
-import { clampRepositoryLimit, matchesRepositorySearch } from "../__shared__";
+import { clampRepositoryLimit, matchesRepositorySearch, PreconditionError } from "../__shared__";
 
 type MeasurementRecord = typeof measurements.$inferSelect;
 type MetricScalar = boolean | number | string;
@@ -48,7 +48,11 @@ export const measurementRepository = {
     payload?: MeasurementPayload;
   }): Promise<MeasurementRecord> {
     if (!evaluationId.trim()) {
-      throw new Error("evaluationId is required for measurements.");
+      throw new PreconditionError({
+        code: "measurement_evaluation_required",
+        hint: "Create an Evaluation first via evaluationRepository.create and pass its id as evaluationId.",
+        details: { evaluationId },
+      });
     }
     const measurementId = crypto.randomUUID();
     runSyncedWrite({
@@ -80,7 +84,11 @@ export const measurementRepository = {
   async require({ measurementId }: { measurementId: string }): Promise<MeasurementRecord> {
     const measurement = await measurementRepository.get({ measurementId });
     if (!measurement) {
-      throw new Error(`Measurement not found: ${measurementId}`);
+      throw new PreconditionError({
+        code: "measurement_not_found",
+        hint: "List or search measurements; this id may be abbreviated or stale.",
+        details: { measurementId },
+      });
     }
     return measurement;
   },

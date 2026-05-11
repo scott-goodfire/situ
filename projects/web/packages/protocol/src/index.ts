@@ -7,6 +7,8 @@ export type {
   ClaudeAgentEnvironmentRecord,
   ClaudeAgentRunRecord,
   ClaudeAgentEventRecord,
+  FeedEntryRecord,
+  FeedEntrySeverity,
   ResearchProjectInteractionKind,
   ResearchProjectInteractionRecord,
   ResearchProjectPhase,

@@ -3,6 +3,7 @@ import { COMPUTE_TARGET_STATUSES } from "@situ/protocol";
 
 import { computeTargetRepository } from "../../../data/repositories/compute-targets";
 import { defineTool } from "./__shared__/define-tool";
+import { Result } from "./__shared__/result";
 import { allRoles } from "./__shared__/roles";
 
 const inputSchema = z.object({
@@ -17,11 +18,13 @@ export const searchComputeTargetsTool = defineTool({
     "Search registered compute targets by pool and status without claiming or mutating leases.",
   roles: allRoles,
   inputSchema,
-  handler: async ({ input }) => ({
-    computeTargets: await computeTargetRepository.search({
-      pool: input.pool,
-      status: input.status,
-      limit: input.limit ?? 10,
+  resultEnvelope: true,
+  handler: async ({ input }) =>
+    Result.ok({
+      computeTargets: await computeTargetRepository.search({
+        pool: input.pool,
+        status: input.status,
+        limit: input.limit ?? 10,
+      }),
     }),
-  }),
 });

@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { experimentRepository } from "../../../data/repositories/experiments";
 import { defineTool } from "./__shared__/define-tool";
+import { Result } from "./__shared__/result";
 import { scienceRoles } from "./__shared__/roles";
 
 const inputSchema = z.object({
@@ -14,11 +15,13 @@ export const addExperimentCommentTool = defineTool({
   description: "Add a durable comment to a situ experiment.",
   roles: scienceRoles,
   inputSchema,
-  handler: async ({ input, context }) => ({
-    activity: await experimentRepository.addComment({
+  resultEnvelope: true,
+  handler: async ({ input, context }) => {
+    const activity = await experimentRepository.addComment({
       experimentId: input.experimentId,
       actorAgentId: context.agentId,
       body: input.body,
-    }),
-  }),
+    });
+    return Result.ok({ activity });
+  },
 });

@@ -52,11 +52,13 @@ export function experimentRecord({ row }: { row: ExperimentRow }): ExperimentRec
 export function baselineRecord({ row }: { row: BaselineRow }): BaselineRecord {
   return {
     id: row.id,
+    researchProjectId: row.researchProjectId,
     createdByResearchTaskId: row.createdByResearchTaskId,
     createdByAgentId: row.createdByAgentId,
     title: row.title,
     summary: row.summary,
     status: row.status,
+    payload: payloadRecord({ payloadJson: row.payloadJson, label: `baselines/${row.id}` }),
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };

@@ -25,7 +25,8 @@ SITU_ANTHROPIC_KEY=sk-ant-... situ app
 ## Set up with Claude
 
 If you use [Claude Code](https://claude.ai/code), it can walk you
-through the setup and kick off the autoresearch process immediately.
+through setup, launch situ, and let the Manager save or confirm a setup
+baseline before research tasks run.
 
 ```zsh
 # Install situ
@@ -72,10 +73,14 @@ web/API server, and records runtime state in a per-session SQLite database:
 The runtime dispatches work across three Claude Managed Agent roles:
 
 - **Manager** breaks the goal into research tasks and decides what to run next.
-- **Scientist** works in isolated worktrees, establishes baselines, runs
-  experiments, and records measurements.
+- **Scientist** works in isolated worktrees, runs experiments, and records
+  measurements.
 - **Verifier** reviews evidence and marks research tasks as accepted or needing
   follow-up.
+
+Before research tasks start, the Manager creates a durable project baseline for
+user confirmation. In headless `situ exec`, that confirmation is auto-accepted
+only after the baseline has been saved.
 
 ## Documentation
 

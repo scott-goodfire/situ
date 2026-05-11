@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { experimentRepository } from "../../../data/repositories/experiments";
 import { defineTool } from "./__shared__/define-tool";
+import { Result } from "./__shared__/result";
 import { allRoles } from "./__shared__/roles";
 
 const inputSchema = z.object({
@@ -13,9 +14,11 @@ export const getExperimentTool = defineTool({
   description: "Read one situ experiment with its activity timeline.",
   roles: allRoles,
   inputSchema,
-  handler: async ({ input }) => ({
-    result: await experimentRepository.getWithActivities({
-      experimentId: input.experimentId,
+  resultEnvelope: true,
+  handler: async ({ input }) =>
+    Result.ok({
+      result: await experimentRepository.getWithActivities({
+        experimentId: input.experimentId,
+      }),
     }),
-  }),
 });

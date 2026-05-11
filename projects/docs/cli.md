@@ -11,19 +11,14 @@ and the launch registry — lives under `~/.situ`.
 ## Synopsis
 
 ```bash
-situ app [--host 127.0.0.1] [--port 5500] [--resume] [--session <id>]
-situ exec --objective "<text>" [--timeout 600] [--host 127.0.0.1] [--port 5500] [--resume] [--session <id>] [--json]
-situ exec --resume [--objective "<text>"] [--timeout 600] [--host 127.0.0.1] [--port 5500] [--json]
-situ resume <session-id> [--objective "<text>"] [--timeout 600] [--host 127.0.0.1] [--port 5500] [--json]
+situ app [--host 127.0.0.1] [--port 5500] [--session <id>]
+situ exec --objective "<text>" [--timeout 600] [--host 127.0.0.1] [--port 5500] [--session <id>] [--compute-pool local] [--compute-kind local] [--compute-label <label>] [--cuda-visible-devices <devices>] [--json]
+situ exec --session <id> [--objective "<text>"] [--timeout 600] [--host 127.0.0.1] [--port 5500] [--json]
 situ status [--session <id>] [--json]
 situ sessions [--all] [--json]
 situ events [--session <id>] [--limit 20] [--follow] [--json]
-situ compute list --session <id> [--pool <name>] [--status <status>] [--limit 50] [--json]
-situ compute add --session <id> [--pool local] [--kind local] [--label <label>] [--cuda-visible-devices <devices>] [--json]
-situ compute drain <target-id> --session <id> [--json]
-situ compute restore <target-id> --session <id> [--json]
-situ compute remove <target-id> --session <id> [--force] [--json]
 situ instructions
+situ report <session-id> [--effort medium|high] [--output-dir <path>]
 situ skill install
 situ skill uninstall
 situ skill show-path
@@ -42,75 +37,72 @@ situ --version
   session, and the read-only commands fall back to the most recent session for
   the current working directory when `--session` is omitted.
 - Most commands accept `--json` for machine-readable output suitable for piping.
+- `--effort medium|high` (or `-e medium|high`) is accepted on any command and
+  selects the agent model tier: `high` (Opus, default) or `medium` (Sonnet).
+  Applied across all three agent roles for the session.
 
 ## Session commands
 
 ### `situ app`
 
-Boots the local situ web app. In dev (running from source) Vite is mounted as
+Boots the local situ runtime: web app, scheduler, shutdown handlers, and the
+default local compute pool. In dev (running from source) Vite is mounted as
 middleware so you get HMR without a second port; from an installed binary the
 same routes serve the pre-built SPA.
 
 ```bash
-situ app [--host 127.0.0.1] [--port 5500] [--resume] [--session <id>]
+situ app [--host 127.0.0.1] [--port 5500] [--session <id>]
 ```
 
-| Flag             | Default     | Description                                                     |
-| ---------------- | ----------- | --------------------------------------------------------------- |
-| `--host <host>`  | `127.0.0.1` | Bind address                                                    |
-| `--port <port>`  | `5500`      | Port. When omitted, situ falls forward to the next free port.   |
-| `--resume`       | —           | Reuse the most recent session for the current working directory |
-| `--session <id>` | —           | Resume a specific session by id                                 |
+| Flag             | Default     | Description                                                   |
+| ---------------- | ----------- | ------------------------------------------------------------- |
+| `--host <host>`  | `127.0.0.1` | Bind address                                                  |
+| `--port <port>`  | `5500`      | Port. When omitted, situ falls forward to the next free port. |
+| `--session <id>` | —           | Open a specific session by id                                 |
 
 ```bash
 situ app                                    # http://127.0.0.1:5500, or next free port
 SITU_ANTHROPIC_KEY=sk-ant-... situ app
-situ app --port 4400 --resume
+situ app --port 4400 --session sit_abc...
 ```
 
 ### `situ exec`
 
-Runs a headless session — drives the automation loop until idle and prints the
-outcome. Useful for scripting or CI.
+Runs a headless session. It starts the same local app runtime as `situ app`,
+seeds or opens the target session, waits until automation reaches idle or the
+timeout, then stops the app runtime. Useful for scripting or CI.
 
 ```bash
-situ exec --objective "<text>" [--timeout 600] [--host 127.0.0.1] [--port 5500] [--resume] [--session <id>] [--json]
-situ exec --resume [--objective "<text>"] [--timeout 600] [--host 127.0.0.1] [--port 5500] [--json]
+situ exec --objective "<text>" [--timeout 600] [--host 127.0.0.1] [--port 5500] [--session <id>] [--compute-pool local] [--compute-kind local] [--compute-label <label>] [--cuda-visible-devices <devices>] [--json]
+situ exec --session <id> [--objective "<text>"] [--timeout 600] [--host 127.0.0.1] [--port 5500] [--json]
 ```
 
-| Flag                     | Default     | Description                                                                               |
-| ------------------------ | ----------- | ----------------------------------------------------------------------------------------- |
-| `-o, --objective <text>` | —           | The research goal for the session. Required unless `--resume` or `--session` is provided. |
-| `--host <host>`          | `127.0.0.1` | Bind address. Uses the same server as the app UI.                                         |
-| `--port <port>`          | `5500`      | Port. When omitted, situ falls forward to the next free port.                             |
-| `--timeout <seconds>`    | `600`       | Maximum wall-clock seconds the automation loop will run                                   |
-| `--resume`               | —           | Resume the most recent session for the current working directory                          |
-| `--session <id>`         | —           | Resume a specific session by id                                                           |
-| `--json`                 | —           | Print machine-readable summary instead of progress lines                                  |
+| Flag                               | Default     | Description                                                                        |
+| ---------------------------------- | ----------- | ---------------------------------------------------------------------------------- |
+| `-o, --objective <text>`           | —           | The research goal for the session. Required unless `--session` is provided.        |
+| `--host <host>`                    | `127.0.0.1` | Bind address. Uses the same server as the app UI.                                  |
+| `--port <port>`                    | `5500`      | Port. When omitted, situ falls forward to the next free port.                      |
+| `--timeout <seconds>`              | `600`       | Maximum wall-clock seconds `situ exec` will wait for the app runtime to reach idle |
+| `--session <id>`                   | —           | Target a specific session by id                                                    |
+| `--compute-pool <pool>`            | `local`     | Register a compute target for this fresh exec run                                  |
+| `--compute-kind <kind>`            | `local`     | Compute target kind for this fresh exec run                                        |
+| `--compute-label <text>`           | —           | Human-readable label for the registered compute target                             |
+| `--cuda-visible-devices <devices>` | —           | Set `CUDA_VISIBLE_DEVICES` for Scientist commands that lease the target            |
+| `--json`                           | —           | Print machine-readable summary instead of progress lines                           |
 
-Exit code is `0` when the loop reaches idle, `2` on timeout, and `3` when the run is blocked on pending user input.
+Compute flags are accepted only when `situ exec` is given an objective. They are
+not valid for session-only `situ exec --session ...` continuations.
+
+Exit code is `0` when the run reaches idle, `3` when the run is blocked on pending user input, `4` when planned work requires missing compute, and `5` on timeout.
 While running, `situ exec` prints `[situ-exec]` status lines and the web UI URL
 to stderr for live inspection. With `--json`, the final stdout payload includes
 `webUrl`.
 
 ```bash
 situ exec --objective "Investigate the current task" --timeout 600
-situ exec --resume --timeout 300
+situ exec --objective "Run one H100-backed experiment at a time" --compute-pool local --compute-label gpu0 --cuda-visible-devices 0
+situ exec --session sit_abc... --timeout 300
 situ exec --session sit_abc... --objective "Continue from here"
-```
-
-### `situ resume`
-
-Convenience wrapper for resuming a session by id. Equivalent to
-`situ exec --resume --session <session-id> [...rest]`.
-
-```bash
-situ resume <session-id> [--objective "<text>"] [--timeout 600] [--json]
-```
-
-```bash
-situ resume sit_abc123
-situ resume sit_abc123 --objective "Add the missing tests"
 ```
 
 ### `situ status`
@@ -169,43 +161,6 @@ situ events --follow --limit 50      # tail live
 situ events --session sit_abc --json | jq .
 ```
 
-## Operational commands
-
-### `situ compute`
-
-Manages compute targets — the local pool entries that situ leases when running
-experiment worktrees. Compute state is per-session, so every compute subcommand
-requires an explicit `--session`; `--resume` is not supported for compute.
-
-```bash
-situ compute list    --session <id> [--pool <name>] [--status <status>] [--limit 50] [--json]
-situ compute add     --session <id> [--pool local]  [--kind local]      [--label <label>] [--cuda-visible-devices <devices>] [--json]
-situ compute drain   <target-id> --session <id> [--json]
-situ compute restore <target-id> --session <id> [--json]
-situ compute remove  <target-id> --session <id> [--force] [--json]
-```
-
-`<status>` is one of `idle`, `claimed`, `draining`, `dead`.
-
-| Flag (varies by subcommand)        | Default       | Description                                                 |
-| ---------------------------------- | ------------- | ----------------------------------------------------------- |
-| `--pool <name>`                    | `local` (add) | Pool to target                                              |
-| `--kind <kind>`                    | `local` (add) | Compute target kind                                         |
-| `--status <status>`                | —             | Filter list results                                         |
-| `--limit <n>`                      | `50` (list)   | Cap list results                                            |
-| `--label <label>`                  | —             | Human-readable label for the target                         |
-| `--cuda-visible-devices <devices>` | —             | Shorthand that injects `CUDA_VISIBLE_DEVICES` into metadata |
-| `--session <id>`                   | —             | Required session that owns the compute target state         |
-| `--force`                          | —             | `remove`: drop a target even if it is currently claimed     |
-| `--json`                           | —             | Print structured output                                     |
-
-```bash
-situ compute list --session ses_abc123 --pool local --status idle
-situ compute add --session ses_abc123 --pool local --label "GPU 0" --cuda-visible-devices 0
-situ compute drain ct_abc123 --session ses_abc123
-situ compute remove ct_abc123 --session ses_abc123 --force
-```
-
 ### `situ instructions`
 
 Prints a guided first-run setup script for an AI coding agent to follow when
@@ -220,6 +175,24 @@ situ instructions
 ```bash
 situ instructions > SITU_SETUP.md
 ```
+
+### `situ report`
+
+Generates a written report and trajectory chart for a completed or in-progress
+research session.
+
+```bash
+situ report <session-id> [--effort medium|high] [--output-dir <path>]
+```
+
+| Flag                  | Default                        | Description                             |
+| --------------------- | ------------------------------ | --------------------------------------- |
+| `<session-id>`        | —                              | Session to summarize                    |
+| `--effort <effort>`   | `high`                         | Reporter model tier, `medium` or `high` |
+| `--output-dir <path>` | `~/.situ/reports/<slug>-<id>/` | Directory for report artifacts          |
+
+Exit code is `0` when the Reporter work item completes successfully, or `2`
+when report generation fails.
 
 ### `situ skill`
 
@@ -291,7 +264,7 @@ Selected variables that affect CLI behavior:
 | `SITU_ANTHROPIC_KEY`             | Anthropic API key used by every Claude call. Takes precedence over the key saved through the UI. |
 | `SITU_HOME`                      | Runtime data root. Defaults to `~/.situ`.                                                        |
 | `SITU_REPO_PATH`                 | Repo to associate with a session. Defaults to the launch directory.                              |
-| `MAX_SITU_SCIENTIST_CONCURRENCY` | Maximum concurrent Scientist work items before compute-target limits. Defaults to `4`.           |
+| `MAX_SITU_SCIENTIST_CONCURRENCY` | Maximum concurrent Scientist work items before compute-target limits. Defaults to `12`.          |
 
 ## See also
 

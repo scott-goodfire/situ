@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { and, asc, count, eq, inArray } from "drizzle-orm";
 
 import {
   enqueueClaudeAgentWork,
@@ -6,10 +6,10 @@ import {
   scientistResearchTaskPrompt,
   verifierResearchTaskPrompt,
 } from "../../claude/agents/runs";
+import { maxScientistConcurrency, maxVerifierConcurrency } from "../../config/runtime";
 import { getDb } from "../../data/db/client";
 import {
   appEvents,
-  baselines,
   researchProjectInteractions,
   researchProjects,
   researchTaskVerifications,
@@ -37,7 +37,7 @@ type ResearchTaskRecord = typeof researchTasks.$inferSelect;
 export type ScientistResearchTaskEnqueueSkipReason =
   | "task_not_planned"
   | "verifier_owned_task"
-  | "missing_verified_baseline"
+  | "project_phase_not_search"
   | "work_already_open"
   | "compute_pool_missing"
   | "compute_pool_busy";
@@ -68,17 +68,24 @@ export async function dispatchActiveResearchProject(): Promise<void> {
   if (!project) {
     return;
   }
-  if (await hasOpenResearchTaskWork({ researchProjectId: project.id })) {
+  const cap = maxScientistConcurrency();
+  const openCount = await countOpenResearchTasks({ researchProjectId: project.id });
+  if (openCount >= cap) {
     return;
   }
-  await enqueueManagerResearchProjectWork({ researchProjectId: project.id });
+  await enqueueManagerResearchProjectWork({
+    researchProjectId: project.id,
+    plannedTaskBudget: cap - openCount,
+  });
 }
 
 export async function enqueueManagerResearchProjectWork({
   researchProjectId,
+  plannedTaskBudget,
   ignorePlannedResearchTasks = false,
 }: {
   researchProjectId: string;
+  plannedTaskBudget?: number;
   ignorePlannedResearchTasks?: boolean;
 }): Promise<{ workItemId: string; claudeAgentRunId: string } | undefined> {
   const db = getDb();
@@ -86,9 +93,16 @@ export async function enqueueManagerResearchProjectWork({
   if (project.status !== "active") {
     return undefined;
   }
-  if (
-    await hasOpenResearchTaskWork({ researchProjectId: project.id, ignorePlannedResearchTasks })
-  ) {
+  const cap = maxScientistConcurrency();
+  const openCount = await countOpenResearchTasks({
+    researchProjectId: project.id,
+    ignorePlannedResearchTasks,
+  });
+  if (openCount >= cap) {
+    return undefined;
+  }
+  const budget = plannedTaskBudget ?? cap - openCount;
+  if (budget <= 0) {
     return undefined;
   }
 
@@ -131,31 +145,36 @@ export async function enqueueManagerResearchProjectWork({
       interactions,
       researchTasks: projectTasks,
       verifications,
+      plannedTaskBudget: budget,
     }),
     payload: {
       researchProjectId: project.id,
       researchProjectPhase: project.phase,
+      plannedTaskBudget: budget,
     },
   });
 }
 
-async function hasOpenResearchTaskWork({
+async function countOpenResearchTasks({
   researchProjectId,
   ignorePlannedResearchTasks = false,
 }: {
   researchProjectId: string;
   ignorePlannedResearchTasks?: boolean;
-}): Promise<boolean> {
+}): Promise<number> {
   const openStatuses: ResearchTaskRecord["status"][] = ignorePlannedResearchTasks
     ? ["running", "awaiting_verification"]
     : ["planned", "running", "awaiting_verification"];
-  const openTask = await getDb().query.researchTasks.findFirst({
-    where: and(
-      eq(researchTasks.researchProjectId, researchProjectId),
-      inArray(researchTasks.status, openStatuses),
-    ),
-  });
-  return openTask !== undefined;
+  const [row] = await getDb()
+    .select({ value: count() })
+    .from(researchTasks)
+    .where(
+      and(
+        eq(researchTasks.researchProjectId, researchProjectId),
+        inArray(researchTasks.status, openStatuses),
+      ),
+    );
+  return row?.value ?? 0;
 }
 
 export async function dispatchPlannedResearchTask(): Promise<void> {
@@ -172,34 +191,44 @@ export async function dispatchPlannedResearchTask(): Promise<void> {
   }
 
   const blockedProjectIds = new Set<string>();
+  let scientistBudget = maxScientistConcurrency();
   for (const task of plannedTasks) {
-    if (await isBlockedByMissingVerifiedBaseline({ task })) {
+    if (await isBlockedByProjectPhase({ task })) {
       blockedProjectIds.add(task.researchProjectId);
+      await recordNonComputeSkippedEnqueue({
+        result: {
+          status: "skipped",
+          reason: "project_phase_not_search",
+          researchTaskId: task.id,
+        },
+      });
       continue;
     }
     if (task.type === "verify") {
       await enqueueVerifierResearchTaskWork({ researchTaskId: task.id });
-      return;
+      continue;
+    }
+    if (scientistBudget <= 0) {
+      continue;
     }
     const result = await enqueueScientistResearchTaskWork({ researchTaskId: task.id });
     if (result.status === "enqueued") {
-      return;
+      scientistBudget -= 1;
+      continue;
     }
     if (scientistEnqueueWasComputeBlocked(result)) {
       await recordComputeBlockedEnqueue({ result });
       continue;
     }
-    return;
+    // Non-compute skip (task_not_planned race, work_already_open, etc.) — keep
+    // trying other planned tasks rather than halting the tick.
   }
 
   for (const researchProjectId of blockedProjectIds) {
-    const enqueued = await enqueueManagerResearchProjectWork({
+    await enqueueManagerResearchProjectWork({
       researchProjectId,
       ignorePlannedResearchTasks: true,
     });
-    if (enqueued) {
-      return;
-    }
   }
 }
 
@@ -215,8 +244,8 @@ export async function enqueueScientistResearchTaskWork({
   if (task.type === "verify") {
     return skippedScientistEnqueue({ task, reason: "verifier_owned_task" });
   }
-  if (await isBlockedByMissingVerifiedBaseline({ task })) {
-    return skippedScientistEnqueue({ task, reason: "missing_verified_baseline" });
+  if (await isBlockedByProjectPhase({ task })) {
+    return skippedScientistEnqueue({ task, reason: "project_phase_not_search" });
   }
   if (
     await hasOpenResearchTaskAgentWork({
@@ -254,7 +283,7 @@ export async function enqueueScientistResearchTaskWork({
   return { status: "enqueued", ...enqueued };
 }
 
-function skippedScientistEnqueue({
+async function skippedScientistEnqueue({
   task,
   reason,
   compute,
@@ -262,13 +291,79 @@ function skippedScientistEnqueue({
   task: ResearchTaskRecord;
   reason: ScientistResearchTaskEnqueueSkipReason;
   compute?: { pool: string; poolKnown: boolean };
-}): ScientistResearchTaskEnqueueResult {
-  return {
+}): Promise<ScientistResearchTaskEnqueueResult> {
+  const result: ScientistResearchTaskEnqueueResult = {
     status: "skipped",
     reason,
     researchTaskId: task.id,
     compute,
   };
+  if (isNonComputeSkipReason(reason)) {
+    await recordNonComputeSkippedEnqueue({ result });
+  }
+  return result;
+}
+
+function isNonComputeSkipReason(reason: ScientistResearchTaskEnqueueSkipReason): boolean {
+  return reason !== "compute_pool_missing" && reason !== "compute_pool_busy";
+}
+
+async function recordNonComputeSkippedEnqueue({
+  result,
+}: {
+  result: Extract<ScientistResearchTaskEnqueueResult, { status: "skipped" }>;
+}): Promise<void> {
+  if (await nonComputeSkippedEventExists({ result })) {
+    return;
+  }
+  logModule.warn(obs.log.researchTask.enqueueSkipped, {
+    researchTaskId: result.researchTaskId,
+    reason: result.reason,
+  });
+  await recordAppEvent({
+    type: "research_task.enqueue_skipped",
+    message: nonComputeSkippedMessage({ result }),
+    payload: {
+      researchTaskId: result.researchTaskId,
+      reason: result.reason,
+    },
+  });
+}
+
+async function nonComputeSkippedEventExists({
+  result,
+}: {
+  result: Extract<ScientistResearchTaskEnqueueResult, { status: "skipped" }>;
+}): Promise<boolean> {
+  const events = await getDb()
+    .select({ payloadJson: appEvents.payloadJson })
+    .from(appEvents)
+    .where(eq(appEvents.type, "research_task.enqueue_skipped"));
+  return events.some((event) => {
+    const payload = jsonModule.parseRecord({ raw: event.payloadJson });
+    return payload.researchTaskId === result.researchTaskId && payload.reason === result.reason;
+  });
+}
+
+function nonComputeSkippedMessage({
+  result,
+}: {
+  result: Extract<ScientistResearchTaskEnqueueResult, { status: "skipped" }>;
+}): string {
+  const id = result.researchTaskId;
+  switch (result.reason) {
+    case "task_not_planned":
+      return `ResearchTask ${id} is not in planned status; skipping Scientist enqueue.`;
+    case "verifier_owned_task":
+      return `ResearchTask ${id} is a verify task; Scientist enqueue is not applicable.`;
+    case "project_phase_not_search":
+      return `ResearchTask ${id} cannot enqueue work until its project baseline is confirmed and phase is search.`;
+    case "work_already_open":
+      return `ResearchTask ${id} already has open Scientist work; skipping new enqueue.`;
+    case "compute_pool_missing":
+    case "compute_pool_busy":
+      return `ResearchTask ${id} skipped Scientist enqueue: ${result.reason}.`;
+  }
 }
 
 function scientistEnqueueWasComputeBlocked(
@@ -331,48 +426,27 @@ async function computeBlockedEventExists({
   });
 }
 
-async function isBlockedByMissingVerifiedBaseline({
-  task,
-}: {
-  task: ResearchTaskRecord;
-}): Promise<boolean> {
-  if (task.type !== "exploit") {
-    return false;
-  }
-  return !(await hasVerifiedBaselineEvidence({ researchProjectId: task.researchProjectId }));
-}
-
-async function hasVerifiedBaselineEvidence({
-  researchProjectId,
-}: {
-  researchProjectId: string;
-}): Promise<boolean> {
-  const rows = await getDb()
-    .select({ baselineId: baselines.id })
-    .from(baselines)
-    .innerJoin(researchTasks, eq(baselines.createdByResearchTaskId, researchTasks.id))
-    .where(
-      and(
-        eq(researchTasks.researchProjectId, researchProjectId),
-        eq(researchTasks.status, "verified"),
-      ),
-    )
-    .limit(1);
-  return rows.length > 0;
+async function isBlockedByProjectPhase({ task }: { task: ResearchTaskRecord }): Promise<boolean> {
+  const project = await researchProjectRepository.require({
+    researchProjectId: task.researchProjectId,
+  });
+  return project.phase !== "search";
 }
 
 export async function dispatchAwaitingResearchTaskVerification(): Promise<void> {
   if (!(await hasAnthropicKey())) {
     return;
   }
-  const task = await getDb().query.researchTasks.findFirst({
-    where: eq(researchTasks.status, "awaiting_verification"),
-    orderBy: [asc(researchTasks.updatedAt), asc(researchTasks.id)],
-  });
-  if (!task) {
-    return;
+  const limit = maxVerifierConcurrency();
+  const tasks = await getDb()
+    .select()
+    .from(researchTasks)
+    .where(eq(researchTasks.status, "awaiting_verification"))
+    .orderBy(asc(researchTasks.updatedAt), asc(researchTasks.id))
+    .limit(limit);
+  for (const task of tasks) {
+    await enqueueVerifierResearchTaskWork({ researchTaskId: task.id });
   }
-  await enqueueVerifierResearchTaskWork({ researchTaskId: task.id });
 }
 
 export async function enqueueVerifierResearchTaskWork({

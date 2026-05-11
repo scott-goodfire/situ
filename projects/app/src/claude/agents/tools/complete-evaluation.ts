@@ -1,15 +1,27 @@
-import type { ClaudeAgentToolDefinition } from "./types";
-import { evaluationRepository } from "../../../data/repositories/evaluations";
-import { scienceRoles } from "./__shared__/roles";
-import { toolTransitionModule } from "./__shared__/tool-transition-module";
+import { z } from "zod";
 
-export const completeEvaluationTool: ClaudeAgentToolDefinition = toolTransitionModule.define({
+import { evaluationRepository } from "../../../data/repositories/evaluations";
+import { defineTool } from "./__shared__/define-tool";
+import { Result } from "./__shared__/result";
+import { scienceRoles } from "./__shared__/roles";
+
+const inputSchema = z.object({
+  evaluationId: z.string().describe("Evaluation id to complete."),
+  comment: z.string().describe("Short transition comment explaining the decision."),
+});
+
+export const completeEvaluationTool = defineTool({
   name: "complete_evaluation",
   description: "Mark an evaluation done with a transition comment.",
   roles: scienceRoles,
-  idKey: "evaluationId",
-  idDescription: "Evaluation id to complete.",
-  handler: ({ id, comment, actorAgentId }) =>
-    evaluationRepository.complete({ evaluationId: id, comment, actorAgentId }),
-  resultKey: "evaluation",
+  inputSchema,
+  resultEnvelope: true,
+  handler: async ({ input, context }) => {
+    const evaluation = await evaluationRepository.complete({
+      evaluationId: input.evaluationId,
+      comment: input.comment,
+      actorAgentId: context.agentId,
+    });
+    return Result.ok({ evaluation });
+  },
 });

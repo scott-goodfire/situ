@@ -1,6 +1,8 @@
 import { realpath, stat } from "node:fs/promises";
 import { isAbsolute, relative, resolve } from "node:path";
 
+import { PreconditionError } from "../../data/repositories/__shared__";
+
 export async function resolveWorkspaceDirectory({
   workspaceRoot,
   path,
@@ -15,7 +17,11 @@ export async function resolveWorkspaceDirectory({
   });
   const pathStat = await stat(resolvedPath);
   if (!pathStat.isDirectory()) {
-    throw new Error(`Workspace path is not a directory: ${path}`);
+    throw new PreconditionError({
+      code: "experiment_worktree_path_not_directory",
+      hint: "Pass a path that resolves to a directory inside the experiment worktree.",
+      details: { path },
+    });
   }
   return resolvedPath;
 }
@@ -31,7 +37,11 @@ export async function assertSameRealPath({
 }): Promise<void> {
   const [leftRealPath, rightRealPath] = await Promise.all([realpath(left), realpath(right)]);
   if (leftRealPath !== rightRealPath) {
-    throw new Error(`${label}: ${left}`);
+    throw new PreconditionError({
+      code: "experiment_worktree_path_mismatch",
+      hint: `Resolved paths do not match for: ${label}`,
+      details: { label, left, right },
+    });
   }
 }
 
@@ -60,10 +70,17 @@ async function resolveWorkspacePath({
 
 function assertWorkspacePath({ path }: { path: string }): void {
   if (!path.trim()) {
-    throw new Error("Experiment workspace path is required.");
+    throw new PreconditionError({
+      code: "experiment_worktree_path_required",
+      hint: "Provide a non-empty experiment worktree path.",
+    });
   }
   if (path.includes("\0")) {
-    throw new Error(`Workspace path contains an invalid character: ${path}`);
+    throw new PreconditionError({
+      code: "experiment_worktree_path_invalid",
+      hint: "Experiment worktree paths may not contain NUL characters.",
+      details: { path },
+    });
   }
 }
 
@@ -72,5 +89,9 @@ function assertPathInside({ root, path }: { root: string; path: string }): void 
   if (rel === "" || (!rel.startsWith("..") && !isAbsolute(rel))) {
     return;
   }
-  throw new Error(`Workspace path escapes experiment worktree: ${path}`);
+  throw new PreconditionError({
+    code: "experiment_worktree_path_escape",
+    hint: "Use a path that stays inside the experiment worktree.",
+    details: { path },
+  });
 }

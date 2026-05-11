@@ -8,6 +8,7 @@ import { researchProjectRepository } from "../../data/repositories/research-proj
 import { dateTimeModule } from "../../modules/date-time";
 import { textModule } from "../../modules/text";
 import { enqueueManagerResearchProjectWork } from "../dispatch";
+import type { ResearchProjectExecutionMode } from "../../data/repositories/research-projects";
 
 export type SeedObjectiveResult = {
   researchProject: Awaited<ReturnType<typeof researchProjectRepository.create>>;
@@ -15,8 +16,10 @@ export type SeedObjectiveResult = {
 
 export async function seedSessionObjective({
   objective,
+  executionMode = "interactive",
 }: {
   objective: string;
+  executionMode?: ResearchProjectExecutionMode;
 }): Promise<SeedObjectiveResult> {
   const normalizedObjective = textModule.requiredText({
     value: objective,
@@ -43,6 +46,8 @@ export async function seedSessionObjective({
     payload: {
       objective: normalizedObjective,
       rootObjective: true,
+      executionMode,
+      headless: executionMode === "headless",
     },
   });
   await enqueueManagerResearchProjectWork({ researchProjectId: researchProject.id });

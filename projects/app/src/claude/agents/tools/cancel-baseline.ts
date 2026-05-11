@@ -1,15 +1,27 @@
-import type { ClaudeAgentToolDefinition } from "./types";
-import { baselineRepository } from "../../../data/repositories/baselines";
-import { scienceRoles } from "./__shared__/roles";
-import { toolTransitionModule } from "./__shared__/tool-transition-module";
+import { z } from "zod";
 
-export const cancelBaselineTool: ClaudeAgentToolDefinition = toolTransitionModule.define({
+import { baselineRepository } from "../../../data/repositories/baselines";
+import { defineTool } from "./__shared__/define-tool";
+import { Result } from "./__shared__/result";
+import { scienceRoles } from "./__shared__/roles";
+
+const inputSchema = z.object({
+  baselineId: z.string().describe("Baseline id to cancel."),
+  comment: z.string().describe("Short transition comment explaining the decision."),
+});
+
+export const cancelBaselineTool = defineTool({
   name: "cancel_baseline",
   description: "Cancel a baseline with a transition comment.",
   roles: scienceRoles,
-  idKey: "baselineId",
-  idDescription: "Baseline id to cancel.",
-  handler: ({ id, comment, actorAgentId }) =>
-    baselineRepository.cancel({ baselineId: id, comment, actorAgentId }),
-  resultKey: "baseline",
+  inputSchema,
+  resultEnvelope: true,
+  handler: async ({ input, context }) => {
+    const baseline = await baselineRepository.cancel({
+      baselineId: input.baselineId,
+      comment: input.comment,
+      actorAgentId: context.agentId,
+    });
+    return Result.ok({ baseline });
+  },
 });

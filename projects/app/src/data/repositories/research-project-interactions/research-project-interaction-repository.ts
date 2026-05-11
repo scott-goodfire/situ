@@ -5,7 +5,7 @@ import { researchProjectInteractions, researchProjects } from "../../db/schema";
 import { runSyncedWrite } from "../../db/sync";
 import { dateTimeModule } from "../../../modules/date-time";
 import { textModule } from "../../../modules/text";
-import { clampRepositoryLimit, matchesRepositorySearch } from "../__shared__";
+import { clampRepositoryLimit, matchesRepositorySearch, PreconditionError } from "../__shared__";
 import { researchProjectRepository } from "../research-projects";
 
 type ResearchProjectInteractionRecord = typeof researchProjectInteractions.$inferSelect;
@@ -49,9 +49,11 @@ export const researchProjectInteractionRepository = {
     assertInteractionKind({ kind });
     const project = await researchProjectRepository.require({ researchProjectId });
     if (["complete", "failed", "canceled"].includes(project.status)) {
-      throw new Error(
-        `Cannot create interaction for terminal ResearchProject: ${researchProjectId}`,
-      );
+      throw new PreconditionError({
+        code: "research_project_terminal",
+        hint: "ResearchProject is in a terminal status; create or use a non-terminal project before opening an interaction.",
+        details: { researchProjectId, currentStatus: project.status },
+      });
     }
 
     const now = dateTimeModule.nowIso();
@@ -104,7 +106,11 @@ export const researchProjectInteractionRepository = {
   }): Promise<ResearchProjectInteractionRecord> {
     const interaction = await researchProjectInteractionRepository.get({ interactionId });
     if (!interaction) {
-      throw new Error(`ResearchProject interaction not found: ${interactionId}`);
+      throw new PreconditionError({
+        code: "research_project_interaction_not_found",
+        hint: "List or search ResearchProject interactions; this id may be abbreviated or stale.",
+        details: { interactionId },
+      });
     }
     return interaction;
   },
@@ -177,9 +183,11 @@ export const researchProjectInteractionRepository = {
     assertInteractionStatus({ status });
     const current = await researchProjectInteractionRepository.require({ interactionId });
     if (current.status !== "pending") {
-      throw new Error(
-        `ResearchProject interaction cannot transition from status: ${current.status} (interactionId: ${interactionId})`,
-      );
+      throw new PreconditionError({
+        code: "research_project_interaction_not_pending",
+        hint: "Only pending interactions can transition; this one is already resolved or canceled.",
+        details: { interactionId, currentStatus: current.status },
+      });
     }
     assertValidResolvedStatus({ kind: current.kind, status });
 
@@ -214,7 +222,11 @@ function assertInteractionKind(input: { kind: string }): asserts input is {
   kind: ResearchProjectInteractionKind;
 } {
   if (!interactionKinds.has(input.kind as ResearchProjectInteractionKind)) {
-    throw new Error(`Invalid researchProject interaction kind: ${input.kind}`);
+    throw new PreconditionError({
+      code: "research_project_interaction_invalid_kind",
+      hint: "Use one of: question, baseline_confirmation.",
+      details: { kind: input.kind, allowed: Array.from(interactionKinds) },
+    });
   }
 }
 
@@ -222,7 +234,11 @@ function assertInteractionStatus(input: { status: string }): asserts input is {
   status: ResearchProjectInteractionStatus;
 } {
   if (!interactionStatuses.has(input.status as ResearchProjectInteractionStatus)) {
-    throw new Error(`Invalid researchProject interaction status: ${input.status}`);
+    throw new PreconditionError({
+      code: "research_project_interaction_invalid_status",
+      hint: "Use one of: pending, answered, confirmed, rejected, canceled.",
+      details: { status: input.status, allowed: Array.from(interactionStatuses) },
+    });
   }
 }
 
@@ -234,9 +250,17 @@ function assertValidResolvedStatus({
   status: ResearchProjectInteractionStatus;
 }): void {
   if (kind === "question" && status !== "answered" && status !== "canceled") {
-    throw new Error(`Question interaction cannot transition to status: ${status}`);
+    throw new PreconditionError({
+      code: "research_project_interaction_question_invalid_status",
+      hint: "Question interactions can only transition to answered or canceled.",
+      details: { kind, status, allowed: ["answered", "canceled"] },
+    });
   }
   if (kind === "baseline_confirmation" && !["confirmed", "rejected", "canceled"].includes(status)) {
-    throw new Error(`Baseline confirmation cannot transition to status: ${status}`);
+    throw new PreconditionError({
+      code: "research_project_interaction_baseline_invalid_status",
+      hint: "Baseline confirmation interactions can only transition to confirmed, rejected, or canceled.",
+      details: { kind, status, allowed: ["confirmed", "rejected", "canceled"] },
+    });
   }
 }

@@ -301,7 +301,7 @@ describe("experiment worktrees", () => {
     expect(commandSchema.required).toEqual(["command", "experimentId"]);
     expect(commandSchema.properties?.experimentId).toBeTruthy();
 
-    const command = JSON.parse(
+    const commandEnvelope = JSON.parse(
       (
         await commandTool.handler({
           input: {
@@ -312,19 +312,23 @@ describe("experiment worktrees", () => {
         })
       ).content,
     ) as {
-      command: {
-        success: boolean;
-        worktreePath: string;
-        baseCommit: string;
-        changedFiles: string[];
+      ok: true;
+      data: {
+        command: {
+          success: boolean;
+          worktreePath: string;
+          baseCommit: string;
+          changedFiles: string[];
+        };
       };
     };
-    expect(command.command.success).toBe(true);
-    expect(command.command.worktreePath).toContain(experiment.id);
-    expect(command.command.baseCommit).toBeTruthy();
-    expect(command.command.changedFiles).toContain("tool-candidate.txt");
+    const command = commandEnvelope.data.command;
+    expect(command.success).toBe(true);
+    expect(command.worktreePath).toContain(experiment.id);
+    expect(command.baseCommit).toBeTruthy();
+    expect(command.changedFiles).toContain("tool-candidate.txt");
 
-    const captured = JSON.parse(
+    const capturedEnvelope = JSON.parse(
       (
         await captureTool.handler({
           input: {
@@ -335,13 +339,17 @@ describe("experiment worktrees", () => {
         })
       ).content,
     ) as {
-      candidate: {
-        candidateCommit: string | null;
-        patchArtifactId: string | null;
+      ok: true;
+      data: {
+        candidate: {
+          candidateCommit: string | null;
+          patchArtifactId: string | null;
+        };
       };
     };
-    expect(captured.candidate.candidateCommit).toBeTruthy();
-    expect(captured.candidate.patchArtifactId).toBeTruthy();
+    const candidate = capturedEnvelope.data.candidate;
+    expect(candidate.candidateCommit).toBeTruthy();
+    expect(candidate.patchArtifactId).toBeTruthy();
   });
 
   test("Scientist workspace command tool reads and writes the experiment worktree", async () => {
@@ -349,66 +357,82 @@ describe("experiment worktrees", () => {
     const experiment = await createExperiment({ researchTaskId: task.id });
     const commandTool = requireTool({ name: "run_workspace_command" });
 
-    const written = JSON.parse(
-      (
-        await commandTool.handler({
-          input: {
-            experimentId: experiment.id,
-            command:
-              "mkdir -p src && printf 'candidate from workspace command\\n' > src/candidate.txt",
-          },
-          context: toolContext({ activeResearchTaskId: task.id }),
-        })
-      ).content,
-    ) as { command: { experimentId: string; worktreePath: string; changedFiles: string[] } };
+    const written = (
+      JSON.parse(
+        (
+          await commandTool.handler({
+            input: {
+              experimentId: experiment.id,
+              command:
+                "mkdir -p src && printf 'candidate from workspace command\\n' > src/candidate.txt",
+            },
+            context: toolContext({ activeResearchTaskId: task.id }),
+          })
+        ).content,
+      ) as {
+        ok: true;
+        data: { command: { experimentId: string; worktreePath: string; changedFiles: string[] } };
+      }
+    ).data.command;
 
-    expect(written.command.experimentId).toBe(experiment.id);
-    expect(written.command.worktreePath).toContain(experiment.id);
-    expect(written.command.changedFiles).toContain("src/candidate.txt");
-    expect(existsSync(join(written.command.worktreePath, "src/candidate.txt"))).toBe(true);
+    expect(written.experimentId).toBe(experiment.id);
+    expect(written.worktreePath).toContain(experiment.id);
+    expect(written.changedFiles).toContain("src/candidate.txt");
+    expect(existsSync(join(written.worktreePath, "src/candidate.txt"))).toBe(true);
 
-    const read = JSON.parse(
-      (
-        await commandTool.handler({
-          input: {
-            experimentId: experiment.id,
-            command: "cat src/candidate.txt",
-          },
-          context: toolContext({ activeResearchTaskId: task.id }),
-        })
-      ).content,
-    ) as { command: { success: boolean; stdout: string; worktreePath: string } };
-    expect(read.command.success).toBe(true);
-    expect(read.command.stdout).toBe("candidate from workspace command\n");
-    expect(read.command.worktreePath).toBe(written.command.worktreePath);
+    const read = (
+      JSON.parse(
+        (
+          await commandTool.handler({
+            input: {
+              experimentId: experiment.id,
+              command: "cat src/candidate.txt",
+            },
+            context: toolContext({ activeResearchTaskId: task.id }),
+          })
+        ).content,
+      ) as {
+        ok: true;
+        data: { command: { success: boolean; stdout: string; worktreePath: string } };
+      }
+    ).data.command;
+    expect(read.success).toBe(true);
+    expect(read.stdout).toBe("candidate from workspace command\n");
+    expect(read.worktreePath).toBe(written.worktreePath);
 
-    const absoluteCwd = JSON.parse(
+    const absoluteCwd = (
+      JSON.parse(
+        (
+          await commandTool.handler({
+            input: {
+              experimentId: experiment.id,
+              command: "pwd",
+              workingDirectory: written.worktreePath,
+            },
+            context: toolContext({ activeResearchTaskId: task.id }),
+          })
+        ).content,
+      ) as { ok: true; data: { command: { success: boolean; stdout: string; cwd: string } } }
+    ).data.command;
+    const realWorktreePath = await realpath(written.worktreePath);
+    expect(absoluteCwd.success).toBe(true);
+    expect(absoluteCwd.cwd).toBe(realWorktreePath);
+    expect(absoluteCwd.stdout.trim()).toBe(realWorktreePath);
+
+    const escape = JSON.parse(
       (
         await commandTool.handler({
           input: {
             experimentId: experiment.id,
             command: "pwd",
-            workingDirectory: written.command.worktreePath,
+            workingDirectory: "..",
           },
           context: toolContext({ activeResearchTaskId: task.id }),
         })
       ).content,
-    ) as { command: { success: boolean; stdout: string; cwd: string } };
-    const realWorktreePath = await realpath(written.command.worktreePath);
-    expect(absoluteCwd.command.success).toBe(true);
-    expect(absoluteCwd.command.cwd).toBe(realWorktreePath);
-    expect(absoluteCwd.command.stdout.trim()).toBe(realWorktreePath);
-
-    await expect(
-      commandTool.handler({
-        input: {
-          experimentId: experiment.id,
-          command: "pwd",
-          workingDirectory: "..",
-        },
-        context: toolContext({ activeResearchTaskId: task.id }),
-      }),
-    ).rejects.toThrow("escapes experiment worktree");
+    ) as { ok: false; code: string };
+    expect(escape.ok).toBe(false);
+    expect(escape.code).toBe("experiment_worktree_path_escape");
   });
 
   test("Scientist workspace command receives leased compute target env", async () => {
@@ -442,25 +466,30 @@ describe("experiment worktrees", () => {
     }
 
     const commandTool = requireTool({ name: "run_workspace_command" });
-    const command = JSON.parse(
-      (
-        await commandTool.handler({
-          input: {
-            experimentId: experiment.id,
-            command:
-              'printf \'%s\\n%s\\n%s\\n\' "$SITU_COMPUTE_TARGET_ID" "$SITU_COMPUTE_POOL" "$CUDA_VISIBLE_DEVICES"',
-          },
-          context: {
-            ...toolContext({ activeResearchTaskId: task.id }),
-            workItem,
-          },
-        })
-      ).content,
-    ) as { command: { success: boolean; stdout: string; changedFiles: string[] } };
+    const command = (
+      JSON.parse(
+        (
+          await commandTool.handler({
+            input: {
+              experimentId: experiment.id,
+              command:
+                'printf \'%s\\n%s\\n%s\\n\' "$SITU_COMPUTE_TARGET_ID" "$SITU_COMPUTE_POOL" "$CUDA_VISIBLE_DEVICES"',
+            },
+            context: {
+              ...toolContext({ activeResearchTaskId: task.id }),
+              workItem,
+            },
+          })
+        ).content,
+      ) as {
+        ok: true;
+        data: { command: { success: boolean; stdout: string; changedFiles: string[] } };
+      }
+    ).data.command;
 
-    expect(command.command.success).toBe(true);
-    expect(command.command.stdout).toBe("target-workspace-env\ngpu\n7\n");
-    expect(command.command.changedFiles).toEqual([]);
+    expect(command.success).toBe(true);
+    expect(command.stdout).toBe("target-workspace-env\ngpu\n7\n");
+    expect(command.changedFiles).toEqual([]);
 
     const target = await computeTargetRepository.require({
       computeTargetId: "target-workspace-env",
@@ -491,100 +520,121 @@ describe("experiment worktrees", () => {
     const commandTool = requireTool({ name: "run_readonly_workspace_command" });
     const dirtyFile = join(repoPath, "source-write.txt");
 
-    expect(commandTool.roles).toEqual(["manager", "scientist", "verifier"]);
+    expect(commandTool.roles).toEqual(["manager", "scientist", "verifier", "reporter"]);
 
-    const command = JSON.parse(
-      (
-        await commandTool.handler({
-          input: { command: "cat README.md" },
-          context: toolContext(),
-        })
-      ).content,
-    ) as {
-      command: {
-        success: boolean;
-        stdout: string;
-        workspacePath: string;
-        readOnlyViolation: boolean;
-        changedFiles: string[];
-      };
-    };
-    expect(command.command.success).toBe(true);
-    expect(command.command.stdout).toBe("baseline\n");
-    expect(command.command.workspacePath).toBe(repoPath);
-    expect(command.command.readOnlyViolation).toBe(false);
-    expect(command.command.changedFiles).toEqual([]);
-
-    const outputWrite = JSON.parse(
-      (
-        await commandTool.handler({
-          input: {
-            command:
-              "printf 'source log\\n' > \"$SITU_COMMAND_OUTPUT_DIR/run.log\" && printf '%s' \"$SITU_COMMAND_OUTPUT_DIR\"",
-          },
-          context: toolContext(),
-        })
-      ).content,
-    ) as {
-      command: {
-        success: boolean;
-        stdout: string;
-        readOnlyViolation: boolean;
-        changedFiles: string[];
-      };
-    };
-    const outputDir = outputWrite.command.stdout.trim();
-    expect(outputWrite.command.success).toBe(true);
-    expect(outputWrite.command.readOnlyViolation).toBe(false);
-    expect(outputWrite.command.changedFiles).toEqual([]);
-    expect(existsSync(join(repoPath, "run.log"))).toBe(false);
-    await expect(readFile(join(outputDir, "run.log"), "utf8")).resolves.toBe("source log\n");
-
-    const absoluteCwd = JSON.parse(
-      (
-        await commandTool.handler({
-          input: { command: "pwd", workingDirectory: repoPath },
-          context: toolContext(),
-        })
-      ).content,
-    ) as { command: { success: boolean; stdout: string; cwd: string } };
-    expect(absoluteCwd.command.success).toBe(true);
-    expect(absoluteCwd.command.cwd).toBe(repoPath);
-    expect(absoluteCwd.command.stdout.trim()).toBe(repoPath);
-
-    try {
-      const writeAttempt = JSON.parse(
+    const command = (
+      JSON.parse(
         (
           await commandTool.handler({
-            input: { command: "printf 'nope\\n' > source-write.txt" },
+            input: { command: "cat README.md" },
             context: toolContext(),
           })
         ).content,
       ) as {
-        command: {
-          commandSucceeded: boolean;
-          success: boolean;
-          readOnlyViolation: boolean;
-          changedFiles: string[];
+        ok: true;
+        data: {
+          command: {
+            success: boolean;
+            stdout: string;
+            workspacePath: string;
+            readOnlyViolation: boolean;
+            changedFiles: string[];
+          };
         };
-      };
-      expect(writeAttempt.command.commandSucceeded).toBe(true);
-      expect(writeAttempt.command.success).toBe(false);
-      expect(writeAttempt.command.readOnlyViolation).toBe(true);
-      expect(writeAttempt.command.changedFiles).toContain("source-write.txt");
+      }
+    ).data.command;
+    expect(command.success).toBe(true);
+    expect(command.stdout).toBe("baseline\n");
+    expect(command.workspacePath).toBe(repoPath);
+    expect(command.readOnlyViolation).toBe(false);
+    expect(command.changedFiles).toEqual([]);
+
+    const outputWrite = (
+      JSON.parse(
+        (
+          await commandTool.handler({
+            input: {
+              command:
+                "printf 'source log\\n' > \"$SITU_COMMAND_OUTPUT_DIR/run.log\" && printf '%s' \"$SITU_COMMAND_OUTPUT_DIR\"",
+            },
+            context: toolContext(),
+          })
+        ).content,
+      ) as {
+        ok: true;
+        data: {
+          command: {
+            success: boolean;
+            stdout: string;
+            readOnlyViolation: boolean;
+            changedFiles: string[];
+          };
+        };
+      }
+    ).data.command;
+    const outputDir = outputWrite.stdout.trim();
+    expect(outputWrite.success).toBe(true);
+    expect(outputWrite.readOnlyViolation).toBe(false);
+    expect(outputWrite.changedFiles).toEqual([]);
+    expect(existsSync(join(repoPath, "run.log"))).toBe(false);
+    await expect(readFile(join(outputDir, "run.log"), "utf8")).resolves.toBe("source log\n");
+
+    const absoluteCwd = (
+      JSON.parse(
+        (
+          await commandTool.handler({
+            input: { command: "pwd", workingDirectory: repoPath },
+            context: toolContext(),
+          })
+        ).content,
+      ) as { ok: true; data: { command: { success: boolean; stdout: string; cwd: string } } }
+    ).data.command;
+    expect(absoluteCwd.success).toBe(true);
+    expect(absoluteCwd.cwd).toBe(repoPath);
+    expect(absoluteCwd.stdout.trim()).toBe(repoPath);
+
+    try {
+      const writeAttempt = (
+        JSON.parse(
+          (
+            await commandTool.handler({
+              input: { command: "printf 'nope\\n' > source-write.txt" },
+              context: toolContext(),
+            })
+          ).content,
+        ) as {
+          ok: true;
+          data: {
+            command: {
+              commandSucceeded: boolean;
+              success: boolean;
+              readOnlyViolation: boolean;
+              changedFiles: string[];
+            };
+          };
+        }
+      ).data.command;
+      expect(writeAttempt.commandSucceeded).toBe(true);
+      expect(writeAttempt.success).toBe(false);
+      expect(writeAttempt.readOnlyViolation).toBe(true);
+      expect(writeAttempt.changedFiles).toContain("source-write.txt");
     } finally {
       await rm(dirtyFile, { force: true });
     }
 
-    await expect(
-      commandTool.handler({
-        input: { command: "pwd", workingDirectory: ".." },
-        context: toolContext(),
-      }),
-    ).rejects.toThrow("escapes workspace");
+    const escape = JSON.parse(
+      (
+        await commandTool.handler({
+          input: { command: "pwd", workingDirectory: ".." },
+          context: toolContext(),
+        })
+      ).content,
+    ) as { ok: false; code: string };
+    expect(escape.ok).toBe(false);
+    expect(escape.code).toBe("workspace_path_escape");
   });
 
-  test("create_artifact does not treat ResearchTask ids as legacy task foreign keys", async () => {
+  test("create_artifact records ResearchTask authorship without task foreign keys", async () => {
     const researchTask = await createResearchTask();
     const experiment = await createExperiment();
     const artifactTool = requireTool({ name: "create_artifact" });
@@ -594,25 +644,32 @@ describe("experiment worktrees", () => {
     };
     expect(schema.properties?.researchTaskId).toBeUndefined();
 
-    const created = JSON.parse(
-      (
-        await artifactTool.handler({
-          input: {
-            title: "ResearchTask synthesis report",
-            path: "reports/synthesis.md",
-            kind: "report",
-            body: "Durable synthesis report body.",
-            entityKind: "experiment",
-            entityId: experiment.id,
-          },
-          context: toolContext({ activeResearchTaskId: researchTask.id }),
-        })
-      ).content,
-    ) as { artifact: { body: string; createdByResearchTaskId: string | null; entityId: string } };
+    const created = (
+      JSON.parse(
+        (
+          await artifactTool.handler({
+            input: {
+              title: "ResearchTask synthesis report",
+              path: "reports/synthesis.md",
+              kind: "report",
+              body: "Durable synthesis report body.",
+              entityKind: "experiment",
+              entityId: experiment.id,
+            },
+            context: toolContext({ activeResearchTaskId: researchTask.id }),
+          })
+        ).content,
+      ) as {
+        ok: true;
+        data: {
+          artifact: { body: string; createdByResearchTaskId: string | null; entityId: string };
+        };
+      }
+    ).data.artifact;
 
-    expect(created.artifact.body).toBe("Durable synthesis report body.");
-    expect(created.artifact.entityId).toBe(experiment.id);
-    expect(created.artifact.createdByResearchTaskId).toBe(researchTask.id);
+    expect(created.body).toBe("Durable synthesis report body.");
+    expect(created.entityId).toBe(experiment.id);
+    expect(created.createdByResearchTaskId).toBe(researchTask.id);
   });
 
   test("record_experiment_comparison creates linked evaluation and measurement records", async () => {
@@ -634,7 +691,7 @@ describe("experiment worktrees", () => {
     });
     const comparisonTool = requireTool({ name: "record_experiment_comparison" });
 
-    const comparison = JSON.parse(
+    const result = JSON.parse(
       (
         await comparisonTool.handler({
           input: {
@@ -651,23 +708,26 @@ describe("experiment worktrees", () => {
         })
       ).content,
     ) as {
-      comparison: {
-        evaluation: { id: string; associatedBaselineId: string; associatedExperimentId: string };
-        measurement: { id: string; evaluationId: string; payloadJson: string };
+      ok: true;
+      data: {
+        comparison: {
+          evaluation: { id: string; associatedBaselineId: string; associatedExperimentId: string };
+          measurement: { id: string; evaluationId: string; payloadJson: string };
+        };
       };
     };
+    expect(result.ok).toBe(true);
+    const comparison = result.data.comparison;
 
-    expect(comparison.comparison.evaluation.associatedBaselineId).toBe(baseline.id);
-    expect(comparison.comparison.evaluation.associatedExperimentId).toBe(experiment.id);
-    expect(comparison.comparison.measurement.evaluationId).toBe(
-      comparison.comparison.evaluation.id,
-    );
+    expect(comparison.evaluation.associatedBaselineId).toBe(baseline.id);
+    expect(comparison.evaluation.associatedExperimentId).toBe(experiment.id);
+    expect(comparison.measurement.evaluationId).toBe(comparison.evaluation.id);
 
     const storedEvaluation = await getDb().query.evaluations.findFirst({
-      where: eq(evaluations.id, comparison.comparison.evaluation.id),
+      where: eq(evaluations.id, comparison.evaluation.id),
     });
     const storedMeasurement = await getDb().query.measurements.findFirst({
-      where: eq(measurements.id, comparison.comparison.measurement.id),
+      where: eq(measurements.id, comparison.measurement.id),
     });
     const payload = JSON.parse(storedMeasurement?.payloadJson ?? "{}") as {
       measurementType?: string;
@@ -712,8 +772,13 @@ async function createResearchTask({
   const project = await researchProjectRepository.create({
     goal: `Worktree test project ${crypto.randomUUID()}`,
   });
-  return researchTaskRepository.create({
+  const searchProject = await researchProjectRepository.updatePhase({
     researchProjectId: project.id,
+    phase: "search",
+    baselineSummary: "Confirmed setup baseline.",
+  });
+  return researchTaskRepository.create({
+    researchProjectId: searchProject.id,
     type,
     title: "Experiment ResearchTask",
     workerPrompt: "Exercise experiment workflow.",

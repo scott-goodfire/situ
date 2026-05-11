@@ -25,12 +25,14 @@ Source files stay under 400 lines. Test files have a softer 600-line cap (co-loc
 | --------------------------------------------------- | ----- | ---------------------------------------- |
 | `data/db/schema.ts`                                 | 599   | table groups by domain                   |
 | `data/db/migrate.ts`                                | 428   | runner vs migration list                 |
-| `cli/compute-command.ts`                            | 406   | parsing / dispatch / formatting          |
+| `cli/automation-commands.ts`                        | 434   | exec parsing / compute setup / progress  |
+| `runtime/dispatch/research-projects.ts`             | 500   | manager vs scientist/verifier dispatch   |
+| `repositories/baselines/baseline-repository.ts`     | 407   | setup baseline vs evidence baseline APIs |
 | `repositories/evaluations/evaluation-repository.ts` | 401   | evaluation methods / measurement helpers |
 
-`runtime/worktrees/worktrees.test.ts` (535 lines),
-`runtime/dispatch/research-projects.test.ts` (457 lines), and
-`repositories/repository-contracts.test.ts` (406 lines) are over the
+`runtime/worktrees/worktrees.test.ts` (787 lines),
+`runtime/dispatch/research-projects.test.ts` (844 lines), and
+`repositories/repository-contracts.test.ts` (512 lines) are over the
 source cap but inside the test cap.
 
 ## Avoid

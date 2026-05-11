@@ -25,6 +25,7 @@ import { researchProjectRepository } from "../../data/repositories/research-proj
 import { researchTaskVerificationRepository } from "../../data/repositories/research-task-verifications";
 import { researchTaskRepository } from "../../data/repositories/research-tasks";
 import { createApp } from "../../server";
+import { ensureDefaultLocalComputeTargets } from "../compute";
 import {
   CLAUDE_MANAGER_RESEARCH_PROJECT_WORK_ITEM_PURPOSE,
   CLAUDE_SCIENTIST_RESEARCH_TASK_WORK_ITEM_PURPOSE,
@@ -32,6 +33,7 @@ import {
 } from "../work-items";
 import {
   dispatchActiveResearchProject,
+  dispatchAwaitingResearchTaskVerification,
   enqueueManagerResearchProjectWork,
   enqueueScientistResearchTaskWork,
   enqueueVerifierResearchTaskWork,
@@ -61,8 +63,9 @@ describe("researchProject runtime flow", () => {
     await ensureRuntimeContext({ sessionId: "ses_research_projects" });
   });
 
-  beforeEach(() => {
+  beforeEach(async () => {
     resetTables();
+    await ensureDefaultLocalComputeTargets({ desiredCount: 12 });
   });
 
   afterAll(async () => {
@@ -147,6 +150,7 @@ describe("researchProject runtime flow", () => {
     expect(workPayload.researchProjectPhase).toBe("onboarding");
     expect(stringValue(workPayload.content)).toContain(`ResearchProject id: ${project.id}`);
     expect(stringValue(workPayload.content)).toContain("ask_user_question");
+    expect(stringValue(workPayload.content)).toContain("create_project_baseline");
     expect(stringValue(workPayload.content)).toContain("present_baseline_for_confirmation");
 
     const run = await getDb().query.claudeAgentRuns.findFirst({
@@ -220,16 +224,22 @@ describe("researchProject runtime flow", () => {
     );
   });
 
-  test("confirming a baseline advances the project out of onboarding", async () => {
+  test("confirming a baseline advances the project into search", async () => {
     const app = createApp({ mode: { kind: "prod", webRoot: tempRoot } });
     const project = await researchProjectRepository.create({
       goal: "Confirm the onboarding baseline before opening the rest of the workspace.",
+    });
+    const baseline = await baselineRepository.createOrUpdateProjectBaseline({
+      researchProjectId: project.id,
+      title: "Confirmed project baseline",
+      summary: "Baseline summary and proposed next steps.",
     });
     const interaction = await researchProjectInteractionRepository.create({
       researchProjectId: project.id,
       kind: "baseline_confirmation",
       prompt: "Is this baseline ready?",
       details: "Baseline summary and proposed next steps.",
+      payload: { baselineId: baseline.id },
     });
 
     const response = await app.request(
@@ -252,6 +262,7 @@ describe("researchProject runtime flow", () => {
     expect(storedProject.phase).toBe("search");
     expect(storedProject.status).toBe("active");
     expect(storedProject.baselineSummary).toBe("Baseline summary and proposed next steps.");
+    expect((await baselineRepository.require({ baselineId: baseline.id })).status).toBe("accepted");
 
     const workItem = await getDb().query.workItems.findFirst({
       where: eq(workItems.targetId, project.id),
@@ -261,7 +272,7 @@ describe("researchProject runtime flow", () => {
   });
 
   test("ResearchTask dispatch targets Scientist and Verifier work", async () => {
-    const project = await researchProjectRepository.create({ goal: "Run a verified task." });
+    const project = await createSearchProject({ goal: "Run a verified task." });
     const task = await researchTaskRepository.create({
       researchProjectId: project.id,
       type: "explore",
@@ -303,7 +314,7 @@ describe("researchProject runtime flow", () => {
   });
 
   test("planned verify ResearchTasks route directly to Verifier", async () => {
-    const project = await researchProjectRepository.create({
+    const project = await createSearchProject({
       goal: "Verify evidence without Scientist implementation.",
     });
     const task = await researchTaskRepository.create({
@@ -339,21 +350,21 @@ describe("researchProject runtime flow", () => {
     expect(scientistWork).toBeUndefined();
   });
 
-  test("exploit ResearchTasks wait for verified baseline evidence", async () => {
+  test("planned ResearchTasks wait for confirmed project baseline", async () => {
     const project = await researchProjectRepository.create({
-      goal: "Do not run candidates before a verified baseline.",
+      goal: "Do not run candidates before a confirmed project baseline.",
     });
     const exploitTask = await researchTaskRepository.create({
       researchProjectId: project.id,
       type: "exploit",
       title: "Try depth twelve",
       workerPrompt: "Run the DEPTH=12 candidate.",
-      verificationPrompt: "Reject if no verified baseline exists.",
+      verificationPrompt: "Reject if the project baseline is not confirmed.",
     });
 
     await expect(
       enqueueScientistResearchTaskWork({ researchTaskId: exploitTask.id }),
-    ).resolves.toMatchObject({ status: "skipped", reason: "missing_verified_baseline" });
+    ).resolves.toMatchObject({ status: "skipped", reason: "project_phase_not_search" });
     await dispatchPlannedResearchTask();
 
     expect((await researchTaskRepository.require({ researchTaskId: exploitTask.id })).status).toBe(
@@ -371,41 +382,31 @@ describe("researchProject runtime flow", () => {
     expect(managerWork?.targetId).toBe(project.id);
   });
 
-  test("planned baseline work can run before older blocked exploit work", async () => {
-    const project = await researchProjectRepository.create({
-      goal: "Run the baseline before queued candidates.",
+  test("exploit ResearchTasks run in search without Scientist-created baseline evidence", async () => {
+    const project = await createSearchProject({
+      goal: "Run queued candidates after setup baseline confirmation.",
     });
     const exploitTask = await researchTaskRepository.create({
       researchProjectId: project.id,
       type: "exploit",
       title: "Try queued candidate",
-      workerPrompt: "Run the candidate after baseline evidence exists.",
-      verificationPrompt: "Reject if no verified baseline exists.",
-    });
-    const baselineTask = await researchTaskRepository.create({
-      researchProjectId: project.id,
-      type: "explore",
-      title: "Measure baseline",
-      workerPrompt: "Run the unmodified baseline.",
-      verificationPrompt: "Check that baseline metrics are durable.",
+      workerPrompt: "Run the candidate after setup baseline confirmation.",
+      verificationPrompt: "Compare against the confirmed setup baseline.",
     });
 
     await dispatchPlannedResearchTask();
 
     expect((await researchTaskRepository.require({ researchTaskId: exploitTask.id })).status).toBe(
-      "planned",
-    );
-    expect((await researchTaskRepository.require({ researchTaskId: baselineTask.id })).status).toBe(
       "running",
     );
     const workItem = await getDb().query.workItems.findFirst({
-      where: eq(workItems.targetId, baselineTask.id),
+      where: eq(workItems.targetId, exploitTask.id),
     });
     expect(workItem?.purpose).toBe(CLAUDE_SCIENTIST_RESEARCH_TASK_WORK_ITEM_PURPOSE);
   });
 
   test("compute-blocked tasks do not stall later runnable tasks", async () => {
-    const project = await researchProjectRepository.create({
+    const project = await createSearchProject({
       goal: "Skip blocked compute work and keep dispatching.",
     });
     const blockedTask = await researchTaskRepository.create({
@@ -422,6 +423,10 @@ describe("researchProject runtime flow", () => {
       title: "Run local task",
       workerPrompt: "Run a command without compute.",
       verificationPrompt: "Check the command output.",
+    });
+    orderPlannedTasks({
+      firstResearchTaskId: blockedTask.id,
+      secondResearchTaskId: runnableTask.id,
     });
 
     await dispatchPlannedResearchTask();
@@ -451,7 +456,7 @@ describe("researchProject runtime flow", () => {
       pool: "gpu",
       kind: "local",
     });
-    const project = await researchProjectRepository.create({
+    const project = await createSearchProject({
       goal: "Skip busy compute work and keep dispatching.",
     });
     const ownerTask = await researchTaskRepository.create({
@@ -481,6 +486,10 @@ describe("researchProject runtime flow", () => {
       workerPrompt: "Run a command without compute.",
       verificationPrompt: "Check the command output.",
     });
+    orderPlannedTasks({
+      firstResearchTaskId: blockedTask.id,
+      secondResearchTaskId: runnableTask.id,
+    });
 
     await dispatchPlannedResearchTask();
 
@@ -499,8 +508,195 @@ describe("researchProject runtime flow", () => {
     ]);
   });
 
-  test("exploit ResearchTasks run after verified baseline evidence exists", async () => {
+  test("dispatchPlannedResearchTask drains multiple planned tasks in one tick", async () => {
+    const project = await createSearchProject({
+      goal: "Drain planned ResearchTasks without one-per-tick latency.",
+    });
+    const tasks = await Promise.all(
+      [0, 1, 2, 3].map((index) =>
+        researchTaskRepository.create({
+          researchProjectId: project.id,
+          type: "explore",
+          title: `Inspect task ${index}`,
+          workerPrompt: `Inspect task ${index} and record evidence.`,
+          verificationPrompt: "Check that the evidence supports the worker summary.",
+        }),
+      ),
+    );
+
+    await dispatchPlannedResearchTask();
+
+    for (const task of tasks) {
+      expect((await researchTaskRepository.require({ researchTaskId: task.id })).status).toBe(
+        "running",
+      );
+    }
+    const scientistWorkItems = await getDb()
+      .select()
+      .from(workItems)
+      .where(eq(workItems.purpose, CLAUDE_SCIENTIST_RESEARCH_TASK_WORK_ITEM_PURPOSE));
+    expect(scientistWorkItems).toHaveLength(4);
+  });
+
+  test("dispatchPlannedResearchTask Scientist enqueues cap at MAX_SITU_SCIENTIST_CONCURRENCY per tick", async () => {
+    const previous = process.env.MAX_SITU_SCIENTIST_CONCURRENCY;
+    process.env.MAX_SITU_SCIENTIST_CONCURRENCY = "2";
+    try {
+      const project = await createSearchProject({
+        goal: "Cap per-tick Scientist enqueues at the configured concurrency.",
+      });
+      const tasks = await Promise.all(
+        [0, 1, 2, 3, 4].map((index) =>
+          researchTaskRepository.create({
+            researchProjectId: project.id,
+            type: "explore",
+            title: `Capped task ${index}`,
+            workerPrompt: `Inspect task ${index} and record evidence.`,
+            verificationPrompt: "Check that the evidence supports the worker summary.",
+          }),
+        ),
+      );
+
+      await dispatchPlannedResearchTask();
+
+      const runningCount = (
+        await Promise.all(
+          tasks.map((task) =>
+            researchTaskRepository
+              .require({ researchTaskId: task.id })
+              .then((stored) => (stored.status === "running" ? 1 : 0)),
+          ),
+        )
+      ).reduce<number>((acc, value) => acc + value, 0);
+      expect(runningCount).toBe(2);
+      const scientistWorkItems = await getDb()
+        .select()
+        .from(workItems)
+        .where(eq(workItems.purpose, CLAUDE_SCIENTIST_RESEARCH_TASK_WORK_ITEM_PURPOSE));
+      expect(scientistWorkItems).toHaveLength(2);
+    } finally {
+      if (previous === undefined) {
+        delete process.env.MAX_SITU_SCIENTIST_CONCURRENCY;
+      } else {
+        process.env.MAX_SITU_SCIENTIST_CONCURRENCY = previous;
+      }
+    }
+  });
+
+  test("dispatchAwaitingResearchTaskVerification drains multiple awaiting tasks in one tick", async () => {
+    const project = await createSearchProject({
+      goal: "Drain awaiting verifications without one-per-tick latency.",
+    });
+    const tasks = await Promise.all(
+      [0, 1, 2].map((index) =>
+        researchTaskRepository.create({
+          researchProjectId: project.id,
+          type: "explore",
+          title: `Awaiting task ${index}`,
+          workerPrompt: `Inspect task ${index}.`,
+          verificationPrompt: "Verify the evidence.",
+        }),
+      ),
+    );
+    for (const task of tasks) {
+      await researchTaskRepository.claimPlanned({ researchTaskId: task.id });
+      await researchTaskRepository.transition({
+        researchTaskId: task.id,
+        status: "awaiting_verification",
+        resultSummary: "Worker inspected the flow.",
+      });
+    }
+
+    await dispatchAwaitingResearchTaskVerification();
+
+    const verifierWorkItems = await getDb()
+      .select()
+      .from(workItems)
+      .where(eq(workItems.purpose, CLAUDE_VERIFIER_RESEARCH_TASK_WORK_ITEM_PURPOSE));
+    expect(verifierWorkItems).toHaveLength(3);
+  });
+
+  test("non-compute Scientist enqueue skips emit research_task.enqueue_skipped events", async () => {
+    const project = await createSearchProject({
+      goal: "Surface Scientist skip reasons in the app event feed.",
+    });
+    const verifyTask = await researchTaskRepository.create({
+      researchProjectId: project.id,
+      type: "verify",
+      title: "Verify hypothesis duplication",
+      workerPrompt: "Verify whether the hypothesis duplicates evidence.",
+      verificationPrompt: "Record a verification judgment.",
+    });
+    const blockedProject = await researchProjectRepository.create({
+      goal: "Surface project phase skip reasons in the app event feed.",
+    });
+    const blockedTask = await researchTaskRepository.create({
+      researchProjectId: blockedProject.id,
+      type: "exploit",
+      title: "Try a candidate before baseline",
+      workerPrompt: "Run a candidate variant.",
+      verificationPrompt: "Reject without baseline evidence.",
+    });
+    const exploreTask = await researchTaskRepository.create({
+      researchProjectId: project.id,
+      type: "explore",
+      title: "Inspect the flow",
+      workerPrompt: "Inspect the flow and record evidence.",
+      verificationPrompt: "Check the recorded evidence.",
+    });
+
+    await expect(
+      enqueueScientistResearchTaskWork({ researchTaskId: verifyTask.id }),
+    ).resolves.toMatchObject({ status: "skipped", reason: "verifier_owned_task" });
+    await expect(
+      enqueueScientistResearchTaskWork({ researchTaskId: blockedTask.id }),
+    ).resolves.toMatchObject({ status: "skipped", reason: "project_phase_not_search" });
+    const enqueued = await enqueueScientistResearchTaskWork({
+      researchTaskId: exploreTask.id,
+    });
+    expect(enqueued.status).toBe("enqueued");
+    await expect(
+      enqueueScientistResearchTaskWork({ researchTaskId: exploreTask.id }),
+    ).resolves.toMatchObject({ status: "skipped", reason: "task_not_planned" });
+
+    expect(enqueueSkippedEvents()).toEqual(
+      expect.arrayContaining([
+        { researchTaskId: verifyTask.id, reason: "verifier_owned_task" },
+        { researchTaskId: blockedTask.id, reason: "project_phase_not_search" },
+        { researchTaskId: exploreTask.id, reason: "task_not_planned" },
+      ]),
+    );
+    expect(enqueueSkippedEvents()).toHaveLength(3);
+  });
+
+  test("repeat Scientist enqueue skips de-dupe app events per (task, reason)", async () => {
     const project = await researchProjectRepository.create({
+      goal: "De-dupe repeated Scientist skip events.",
+    });
+    const exploitTask = await researchTaskRepository.create({
+      researchProjectId: project.id,
+      type: "exploit",
+      title: "Try a candidate before baseline",
+      workerPrompt: "Run a candidate variant.",
+      verificationPrompt: "Reject without baseline evidence.",
+    });
+
+    for (let attempt = 0; attempt < 3; attempt++) {
+      await expect(
+        enqueueScientistResearchTaskWork({ researchTaskId: exploitTask.id }),
+      ).resolves.toMatchObject({
+        status: "skipped",
+        reason: "project_phase_not_search",
+      });
+    }
+
+    expect(enqueueSkippedEvents()).toEqual([
+      { researchTaskId: exploitTask.id, reason: "project_phase_not_search" },
+    ]);
+  });
+
+  test("exploit ResearchTasks still run with verified baseline evidence in search phase", async () => {
+    const project = await createSearchProject({
       goal: "Run candidates after a verified baseline.",
     });
     const baselineTask = await researchTaskRepository.create({
@@ -616,6 +812,19 @@ function resetTables(): void {
   db.delete(researchProjects).run();
 }
 
+async function createSearchProject({
+  goal,
+}: {
+  goal: string;
+}): Promise<Awaited<ReturnType<typeof researchProjectRepository.create>>> {
+  const project = await researchProjectRepository.create({ goal });
+  return researchProjectRepository.updatePhase({
+    researchProjectId: project.id,
+    phase: "search",
+    baselineSummary: "Confirmed setup baseline.",
+  });
+}
+
 function computeBlockedEvents(): Array<{
   researchTaskId: string;
   pool: string;
@@ -631,6 +840,43 @@ function computeBlockedEvents(): Array<{
       return {
         researchTaskId: stringValue(payload.researchTaskId),
         pool: stringValue(payload.pool),
+        reason: stringValue(payload.reason),
+      };
+    });
+}
+
+function orderPlannedTasks({
+  firstResearchTaskId,
+  secondResearchTaskId,
+}: {
+  firstResearchTaskId: string;
+  secondResearchTaskId: string;
+}): void {
+  getDb()
+    .update(researchTasks)
+    .set({ createdAt: "2026-05-11T00:00:00.000Z" })
+    .where(eq(researchTasks.id, firstResearchTaskId))
+    .run();
+  getDb()
+    .update(researchTasks)
+    .set({ createdAt: "2026-05-11T00:00:01.000Z" })
+    .where(eq(researchTasks.id, secondResearchTaskId))
+    .run();
+}
+
+function enqueueSkippedEvents(): Array<{
+  researchTaskId: string;
+  reason: string;
+}> {
+  return getDb()
+    .select()
+    .from(appEvents)
+    .where(eq(appEvents.type, "research_task.enqueue_skipped"))
+    .all()
+    .map((event) => {
+      const payload = jsonRecord(JSON.parse(event.payloadJson));
+      return {
+        researchTaskId: stringValue(payload.researchTaskId),
         reason: stringValue(payload.reason),
       };
     });

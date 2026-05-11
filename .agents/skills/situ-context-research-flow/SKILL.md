@@ -29,9 +29,11 @@ Locate user onboarding and baseline flow:
 - single active project behavior
 - manager onboarding work
 - user questions
+- `create_project_baseline`
 - baseline confirmation
+- `present_baseline_for_confirmation`
 - blocked-on-user state
-- project phase change from onboarding into search/workspace
+- project phase change from onboarding/baseline into search/workspace
 
 Locate manager, scientist, and verifier handoffs:
 
@@ -39,13 +41,20 @@ Locate manager, scientist, and verifier handoffs:
 - scientist prompt and runtime guidance
 - verifier prompt and runtime guidance
 - tools that ask the user or present a baseline
-- tools that create research tasks
+- `create_research_task` and its phase gate
 - tools that submit work for verification
 - tools that record verification judgment
+- manager reads `verification.payload.signals` on rejected verdicts. When
+  `signals.suspicious_holdout_divergence` is set, the Verifier saw the dev
+  and held-out splits disagree in direction with meaningful held-out
+  movement — the hypothesis is still alive. Manager dispatches a redesign
+  exploit ResearchTask targeting the same hypothesis instead of pruning
+  the line.
 
 Locate task dispatch and queue behavior:
 
 - manager work enqueueing
+- pre-search ResearchTask creation/dispatch blocking
 - planned task claiming
 - scientist work enqueueing
 - awaiting-verification task detection
@@ -64,8 +73,9 @@ Locate sync and UI behavior:
 
 Locate proof:
 
-- route/runtime tests for project creation, baseline confirmation, task
-  dispatch, verifier dispatch, and Replicache output
+- route/runtime tests for project creation, baseline creation, baseline
+  confirmation, automation auto-confirmation, task dispatch, verifier dispatch,
+  and Replicache output
 - repository tests for project/task/verification persistence
 - prompt tests or evals for Manager, Scientist, and Verifier behavior
 - runtime-skill evals for role guidance
@@ -92,8 +102,9 @@ Build a file-backed answer to:
 Draw this flow in notes and attach a source reference to every arrow:
 
 ```text
-user goal -> ResearchProject -> onboarding -> baseline confirmation
--> ResearchTask planning -> Scientist -> Verifier -> workspace/report
+user goal -> ResearchProject -> onboarding -> project baseline
+-> baseline confirmation -> phase=search -> ResearchTask planning
+-> Scientist -> Verifier -> workspace/report
 ```
 
 If an arrow has no source reference, mark it as an assumption. If one

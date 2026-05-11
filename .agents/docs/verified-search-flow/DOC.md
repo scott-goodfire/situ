@@ -13,7 +13,9 @@ changes the system's belief about what is promising.
 
 ```text
 Research Project
+  -> project baseline
   -> baseline confirmation
+  -> search phase
   -> verified research task tree
   -> evidence-backed report
 ```
@@ -78,7 +80,9 @@ durable research state. It should establish enough context to state:
 - what, if anything, blocks it from proceeding
 
 The manager may ask the user a concrete blocking question. If it can proceed,
-it presents the baseline and starting plan for confirmation.
+it calls `create_project_baseline` to create or revise the durable
+Manager-owned setup baseline, then calls `present_baseline_for_confirmation`
+with that baseline id.
 
 ```text
 [Research Project]
@@ -94,24 +98,29 @@ it presents the baseline and starting plan for confirmation.
     |        v
     |     [Manager Onboarding]
     |
-    +--> [Present Baseline]
+    +--> [create_project_baseline]
+             |
+             v
+          [present_baseline_for_confirmation]
              |
              v
           [User Confirm]
              |
              v
-          [Verified Task Workspace Opens]
+          [Search Workspace Opens]
 ```
 
 The rest of the research workspace should stay visually gated during onboarding.
-After baseline confirmation, the workspace opens and the verified research task
-tree becomes the center of the app.
+After baseline confirmation, the project enters `search` phase, the workspace
+opens, and the verified research task tree becomes the center of the app.
+`ResearchTask` creation and Scientist dispatch are blocked before `search`, even
+if onboarding has already started.
 
 ## Verified research task loop
 
-After onboarding, the manager repeatedly plans one or more research tasks from
-the current search state. A research task is planned work with two primary prose
-instructions:
+After project phase is `search`, the manager repeatedly plans one or more
+research tasks from the current search state. A research task is planned work
+with two primary prose instructions:
 
 - a worker prompt: what a scientist should produce
 - a verification prompt: what must be checked before the task counts
@@ -467,13 +476,23 @@ Verification status semantics are intentionally simple:
 - `needs_more_evidence` reopens the ResearchTask as planned work so evidence can
   be gathered before another verification attempt.
 
+Verifiers may also emit advisory `signals` on the verification payload
+that ride on top of the verdict. The first such signal is
+`suspicious_holdout_divergence`, which the Verifier sets when a
+candidate's dev and held-out splits disagree on the same evidence.
+The signal does not change the verdict — a candidate can still pass,
+fail, or come back as suspicious independently — it advises the
+Manager about redesign-versus-discard. When the Manager sees
+`suspicious_holdout_divergence` on a verification payload, it files a
+redesign exploit task rather than pruning the branch outright.
+
 Verifiers record ResearchTaskVerification rows. They do not create science
 records, artifacts, measurements, experiments, or hypothesis lifecycle changes.
 
 ## User responsibilities
 
-The user sets the goal and approves the baseline. After that, the system should
-minimize interruptions.
+The user sets the goal and approves the project baseline. After that, the
+system should minimize interruptions.
 
 The system should ask the user only when:
 
@@ -490,7 +509,7 @@ internal orchestration detail.
 Primary surfaces:
 
 - research goal and current phase
-- baseline and assumptions
+- project baseline and assumptions
 - active search tree
 - hypotheses and their evidence state
 - experiments and branch lineage
@@ -596,7 +615,7 @@ The system should feel like a disciplined autonomous research loop:
 
 ```text
 Set a goal.
-Confirm the baseline.
+Confirm the project baseline.
 Watch the verified research task tree unfold.
 Inspect evidence and branch decisions.
 Receive a report that explains what was tried, what worked, what failed, and why.

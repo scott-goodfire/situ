@@ -1,9 +1,11 @@
 # Getting started
 
 situ uses [Claude Managed Agents](https://platform.claude.com/docs/en/managed-agents/overview)
-to run autoresearch on your codebase. Give it a goal, and situ plans research
-tasks, runs experiments, records measurements, and verifies findings you can
-inspect in a local web UI.
+to run autoresearch on your codebase. Give it a goal, and the Manager first
+creates a durable project baseline for confirmation. After that baseline is
+confirmed and the project enters `search`, situ plans research tasks, runs
+experiments, records measurements, and verifies findings you can inspect in a
+local web UI.
 
 The app and session database run on your machine. Claude calls require network
 access and an Anthropic API key.
@@ -38,7 +40,8 @@ files under `~/.local/share/situ`.
 
 If you use [Claude Code](https://claude.ai/code), it can walk you through
 first-run setup, configure your Anthropic key, pick a target directory, launch
-situ, and narrate live progress from the event log.
+situ, let the Manager save or confirm the setup baseline, and narrate live
+progress from the event log.
 
 ```bash
 # After installing situ
@@ -68,13 +71,27 @@ mise run exec -- \
   --timeout 600
 ```
 
-## Resume and inspect
+Headless `situ exec` auto-confirms baseline confirmations only after the
+Manager has saved a durable project baseline. ResearchTasks still wait until the
+project reaches `search`.
+
+`situ exec` starts the same local app runtime as `situ app`, including the web
+server and scheduler, then stops that runtime when the run becomes idle or
+times out. The printed web URL stays available while the command is running.
+
+## Continue and inspect
 
 ```bash
-situ exec --resume --timeout 300
+situ sessions
+situ exec --session <session-id> --timeout 300
 situ status
 situ events --follow
 ```
 
 Most commands target the latest session for the current working directory. Pass
 `--session <id>` when you want a specific session.
+
+Compute targets are registered only when launching a fresh
+`situ exec --objective ...` run with flags such as `--compute-pool`,
+`--compute-label`, and `--cuda-visible-devices`. Session-only exec commands do
+not register compute.

@@ -32,5 +32,6 @@ Situ's value is the inspectable record left behind, not the chat transcript. If 
 
 ## See also
 
+- `situ-policy-measurement-payload-shape`
 - `situ-policy-mutations-via-runsyncedwrite`
 - `situ-policy-status-record-transitions`

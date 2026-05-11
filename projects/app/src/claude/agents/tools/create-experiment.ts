@@ -1,8 +1,10 @@
 import { z } from "zod";
 
+import { PreconditionError } from "../../../data/repositories/__shared__";
 import { experimentRepository } from "../../../data/repositories/experiments";
 import { researchTaskRepository } from "../../../data/repositories/research-tasks";
 import { defineTool } from "./__shared__/define-tool";
+import { Result } from "./__shared__/result";
 import { toolContextModule } from "./__shared__/tool-context-module";
 
 const inputSchema = z.object({
@@ -35,6 +37,7 @@ export const createExperimentTool = defineTool({
   description: "Create a durable experiment record for Scientist work.",
   roles: ["scientist"],
   inputSchema,
+  resultEnvelope: true,
   handler: async ({ input, context }) => {
     const researchTaskId = toolContextModule.researchTaskId({
       explicit: input.researchTaskId,
@@ -48,11 +51,16 @@ export const createExperimentTool = defineTool({
         parentExperimentId: input.parentExperimentId,
       }));
     if (!associatedHypothesisId) {
-      throw new Error(
-        "associatedHypothesisId is required because every Experiment must test one primary Hypothesis.",
-      );
+      throw new PreconditionError({
+        code: "missing_associated_hypothesis",
+        hint: "Pass associatedHypothesisId explicitly, or run from a hypothesis-targeted ResearchTask, or include parentExperimentId so the hypothesis can be inherited. Every Experiment must test one primary Hypothesis.",
+        details: {
+          researchTaskId,
+          parentExperimentId: input.parentExperimentId,
+        },
+      });
     }
-    return {
+    return Result.ok({
       experiment: await experimentRepository.create({
         title: input.title,
         summary: input.summary,
@@ -61,7 +69,7 @@ export const createExperimentTool = defineTool({
         associatedHypothesisId,
         parentExperimentId: input.parentExperimentId,
       }),
-    };
+    });
   },
 });
 

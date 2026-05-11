@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { measurementRepository } from "../../../data/repositories/measurements";
 import { defineTool } from "./__shared__/define-tool";
+import { Result } from "./__shared__/result";
 import { allRoles } from "./__shared__/roles";
 
 const inputSchema = z.object({
@@ -13,9 +14,11 @@ export const getMeasurementTool = defineTool({
   description: "Read one situ measurement.",
   roles: allRoles,
   inputSchema,
-  handler: async ({ input }) => ({
-    measurement: await measurementRepository.require({
-      measurementId: input.measurementId,
+  resultEnvelope: true,
+  handler: async ({ input }) =>
+    Result.ok({
+      measurement: await measurementRepository.require({
+        measurementId: input.measurementId,
+      }),
     }),
-  }),
 });

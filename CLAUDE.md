@@ -51,13 +51,13 @@ Bun workspaces, declared in the root `package.json`. The shared dep `catalog:` t
 
 ## App architecture (`projects/app/src/`)
 
-Entry point is `cli.ts` → `server.ts`. The CLI dispatches subcommands (`exec`, `compute`, `sessions`, `status`, `events`, `self-update`, `skills`, `doctor`) before falling through to the long-running app server. `parseRootCommand` in `cli/root-command.ts` is the registry; `cli/command-checks.ts` validates it (run by `mise run check`).
+Entry point is `cli.ts` → `server.ts`. The CLI dispatches subcommands (`exec`, `report`, `compute`, `sessions`, `status`, `events`, `instructions`, `self-update`, `skills`, `doctor`) before falling through to the long-running app server. `parseRootCommand` in `cli/root-command.ts` is the registry; `cli/command-checks.ts` validates it (run by `mise run check`).
 
 Source tree, by responsibility:
 
 - `claude/agents/` — everything Managed-Agent-related
-  - `roles/{manager,scientist,verifier}/{blueprint,system}.ts` and `roles/registry.ts` — the three roles. Each blueprint declares the model, allowed tools, and system prompt.
-  - `tools/` — one file per custom tool (~80 files: `create-*`, `accept-*`, `complete-*`, `fail-*`, `cancel-*`, `get-*`, `add-*-comment`, etc.). Every tool is declared via `defineTool` from `tools/__shared__/define-tool.ts` — it takes a zod `inputSchema`, derives the wire-format JSON Schema via `z.toJSONSchema`, runs `inputSchema.parse(input)` before calling the handler, and wraps the handler's return with `{ content: JSON.stringify(value, null, 2) }`. Handlers therefore receive a typed `input` and return the raw result object. Context fallbacks (`researchProjectId`, `researchTaskId`) go through `toolContextModule({ explicit, context })`. The registry test enforces shape.
+  - `roles/{manager,scientist,verifier,scribe,reporter}/{blueprint,system}.ts` and `roles/registry.ts` — the five roles. Each blueprint declares the model, allowed tools, and system prompt. Manager/Scientist/Verifier pick their model from `DEFAULT_CLAUDE_AGENT_MODEL` (effort-driven via `SITU_EFFORT`); Scribe is locked to Sonnet regardless of effort; Reporter defaults to Opus and accepts a per-invocation `modelOverride` for `situ report --effort`.
+  - `tools/` — one file per custom tool (~72 files: `create-*`, `accept-*`, `complete-*`, `fail-*`, `cancel-*`, `get-*`, `add-*-comment`, etc.). Every tool is declared via `defineTool({ ..., resultEnvelope: true })` from `tools/__shared__/define-tool.ts` — it parses input with the zod `inputSchema`, derives the wire-format JSON Schema via `z.toJSONSchema`, and expects the handler to return `Result.ok(data)` / `Result.fail({ code, hint, details? })` from `tools/__shared__/result.ts`. The wrapper catches `ZodError` (→ `invalid_input`), `PreconditionError` from repositories (preserves `code` / `hint` / `details`), and unknown errors (→ `internal_error`), serializing each as a JSON envelope on `content`. Context fallbacks (`researchProjectId`, `researchTaskId`) go through `toolContextModule({ explicit, context })`. The registry test enforces shape.
   - `skills/` — runtime skill registry + uploader. Skills are uploaded lazily when Situ creates/updates Claude agents (`situ skills sync` forces it).
   - `runs/` — Claude session/run lifecycle: `enqueue-turn`, `execute-turn`, `reconcile-session`, `handle-custom-tool-use`, `prompts.ts`, `run-state.ts`. `role-for-work-item.ts` picks the role for a queued work item.
   - `resources/` — Claude resource handles (sessions, runs, agents).
@@ -118,7 +118,7 @@ Don't restate policy content as inline comments — the policy is the source. If
 
 - **Formatter / linter**: `oxfmt` and `oxlint` (not Prettier/ESLint). `mise run format` writes; `mise run format:check` verifies.
 - **Type checker**: `tsgo` (TypeScript native preview). `bun x tsgo --build` uses project references.
-- **Package manager**: `bun@1.2.20`, pinned. `bun.lock` is committed.
+- **Package manager**: `bun@1.3.13`, pinned. `bun.lock` is committed.
 - **Git hooks**: lefthook (`lefthook.yml`). Pre-commit runs oxfmt/oxlint/markdownlint/typos/actionlint on staged files; pre-push runs `mise run check` and `mise run fallow:audit -- --changed-since main`.
 - **Dead-code / duplication**: Fallow. Baselines under `.fallow/`; refresh with `mise run fallow:baseline`.
 

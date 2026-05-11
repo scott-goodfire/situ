@@ -26,6 +26,7 @@ export type TinyAutoresearchLiveExecSeedVerification = Readonly<{
   profile?: "hypothesis" | "experiment" | "measurement" | "adversarial" | "report" | "general";
   judgment: string;
   evidenceSummary: string;
+  signals?: Readonly<Record<string, unknown>>;
 }>;
 
 export type TinyAutoresearchLiveExecSeedResearchTask = Readonly<{
@@ -55,7 +56,7 @@ export type TinyAutoresearchLiveExecConfig = Readonly<{
   timeoutSeconds: number;
   isWatchEnabled?: boolean;
   goal?: string;
-  projectPhase?: "onboarding" | "search" | "reporting" | "complete";
+  projectPhase?: "onboarding" | "baseline" | "search" | "reporting" | "complete";
   baselineSummary?: string;
   title?: string;
   type?: "explore" | "exploit" | "debug" | "verify" | "synthesize" | "prune";

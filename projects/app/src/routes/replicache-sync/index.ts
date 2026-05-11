@@ -8,6 +8,7 @@ import { claudeAgentRunsSyncPatch } from "./claude-agent-runs";
 import { claudeAgentsSyncPatch } from "./claude-agents";
 import { computeTargetsSyncPatch } from "./compute-targets";
 import { entityLinksSyncPatch } from "./entity-links";
+import { feedEntriesSyncPatch } from "./feed-entries";
 import { evaluationActivitiesSyncPatch } from "./evaluation-activities";
 import { evaluationsSyncPatch } from "./evaluations";
 import { experimentActivitiesSyncPatch } from "./experiment-activities";
@@ -34,6 +35,7 @@ const replicacheSyncCollections: ReplicacheSyncPatch[] = [
   appEventsSyncPatch,
   researchProjectsSyncPatch,
   researchProjectInteractionsSyncPatch,
+  feedEntriesSyncPatch,
   researchTasksSyncPatch,
   researchTaskVerificationsSyncPatch,
   workItemsSyncPatch,

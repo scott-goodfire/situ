@@ -16,7 +16,7 @@ catalog instead of re-pinning versions.
   "name": "situ-workspace",
   "private": true,
   "type": "module",
-  "packageManager": "bun@1.2.20",
+  "packageManager": "bun@1.3.13",
   "workspaces": {
     "packages": ["projects/app", "projects/e2e-tests", "projects/web", "projects/web/packages/*"],
     "catalog": { "react": "^19.2.6", "lodash-es": "^4.17.21", "...": "..." }

@@ -35,6 +35,7 @@ type ResearchProjectFixture = Readonly<{
   phase: string;
   status: string;
   priority: string;
+  payloadJson: string;
 }>;
 
 type ResearchProjectInteractionFixture = Readonly<{
@@ -137,6 +138,7 @@ function researchProject(overrides: Partial<ResearchProjectFixture>): ResearchPr
     phase: "onboarding",
     status: "in_progress",
     priority: "high",
+    payloadJson: "{}",
     ...overrides,
   };
 }
@@ -195,7 +197,7 @@ evalite("manager planning prompt", {
           "compact checklists, not essays",
           "create_research_task",
           'targetKind="hypothesis"',
-          "up to five ResearchTasks",
+          "per-turn ResearchTask budget",
           "one ResearchTask per independent candidate direction",
           "do not bundle multiple exploit variants",
           "create_experiment.parentExperimentId",
@@ -245,8 +247,9 @@ evalite("manager research project prompt onboarding checkpoints", {
         researchProject: researchProject({
           id: "research-project-onboarding-1",
           title: "Baseline before research",
-          content: "Explore the codebase, establish a baseline, and wait for user approval.",
-          goal: "Explore the codebase, establish a baseline, and wait for user approval.",
+          content:
+            "Explore the codebase, create a durable project setup baseline, and wait for user approval.",
+          goal: "Explore the codebase, create a durable project setup baseline, and wait for user approval.",
         }),
         interactions: [
           researchProjectInteraction({
@@ -260,7 +263,7 @@ evalite("manager research project prompt onboarding checkpoints", {
           "You are situ Manager. Drive one ResearchProject",
           "ResearchProject id: research-project-onboarding-1",
           "Phase: onboarding",
-          "Research goal: Explore the codebase, establish a baseline, and wait for user approval.",
+          "Research goal: Explore the codebase, create a durable project setup baseline, and wait for user approval.",
           "Prior user checkpoints:",
           "- question interaction-question-1 (answered)",
           "Prompt: What should define success?",
@@ -281,11 +284,12 @@ evalite("manager research project prompt onboarding checkpoints", {
           "Write record text in a human-sounding way",
           "compact checklists, not essays",
           "ask_user_question",
+          "create_project_baseline",
+          "Manager-owned setup state",
           "present_baseline_for_confirmation",
-          "Do not continue autonomous research until the user confirms.",
+          "headless exec auto-confirms baseline confirmations only after the baseline is durable",
+          "Do not call create_research_task until the ResearchProject phase is search.",
           "Never treat a pending confirmation as approval.",
-          "Only call complete_research_project after onboarding approval has been confirmed",
-          "no user interaction is pending",
           "verified evidence or reporting-phase final output",
           "Each ResearchTask must include workerPrompt assignment prose and a verificationPrompt.",
           "For type verify, workerPrompt is the Verifier assignment.",
@@ -293,7 +297,7 @@ evalite("manager research project prompt onboarding checkpoints", {
           "brittle literal edit recipe",
           "preserve evaluation/data comparability",
           "crash/OOM/timeout evidence",
-          "up to five ResearchTasks",
+          "per-turn ResearchTask budget",
           "one ResearchTask per independent candidate direction",
           "do not bundle multiple exploit variants",
           "create_experiment.parentExperimentId",
@@ -304,6 +308,32 @@ evalite("manager research project prompt onboarding checkpoints", {
           "Compare only verified results when deciding whether to branch, retry, prune, ask the user, or report.",
         ],
         forbidden: ["AgentObjective", "ResearchRun", "ResearchMove", "Critic", "create_analysis"],
+      },
+    },
+    {
+      input: {
+        researchProject: researchProject({
+          id: "research-project-headless-1",
+          title: "Headless baseline before research",
+          content: "Explore the codebase and proceed without interactive questions.",
+          goal: "Explore the codebase and proceed without interactive questions.",
+          payloadJson: JSON.stringify({
+            executionMode: "headless",
+            headless: true,
+          }),
+        }),
+        interactions: [],
+      },
+      expected: {
+        required: [
+          "ResearchProject id: research-project-headless-1",
+          "Execution mode: headless",
+          "Headless exec mode: do not call ask_user_question",
+          "explicit assumptions in create_project_baseline",
+          "fail_research_project",
+          "Do not call create_research_task until the ResearchProject phase is search.",
+        ],
+        forbidden: ["call ask_user_question with one concrete blocking question"],
       },
     },
   ],
@@ -431,8 +461,8 @@ evalite("verifier research task verification prompt", {
           "missing or wrong parentExperimentId on deepening experiments",
           "full durable record ids exactly as returned by tools",
           "status passed, failed, suspicious, or needs_more_evidence",
-          "passed requires a non-empty evidenceSummary",
-          "needs_more_evidence reopens it as planned work",
+          "requires a non-empty evidenceSummary",
+          "needs_more_evidence reopens the task as planned work",
           "evidence-backed judgment",
         ],
         forbidden: [

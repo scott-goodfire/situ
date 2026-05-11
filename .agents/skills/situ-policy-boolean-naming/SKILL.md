@@ -31,8 +31,8 @@ DOM-aligned props and CLI flags.
   in subprocess / process-result types. These match Node and Bun
   process-result vocabulary; renaming them costs more than it gains.
 - **CLI flag bag fields** match the flag name as written
-  (`json: boolean`, `resume: boolean`, `all: boolean`, `follow: boolean`,
-  `force: boolean`). They're DOM-style flags, not domain booleans.
+  (`json: boolean`, `all: boolean`, `follow: boolean`, `force: boolean`).
+  They're DOM-style flags, not domain booleans.
 - **DOM / JSX props** that mirror HTML attributes accept the native
   spelling (`disabled`, `required`, `checked`, `readOnly`).
 - **Internal options-bag fields** with conventional flag-style meaning

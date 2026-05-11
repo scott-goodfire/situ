@@ -1,8 +1,8 @@
 import { reconcileClaudeManagedSession } from "../../claude/agents/runs";
-import { maxScientistConcurrency } from "../../config/runtime";
+import { maxScientistConcurrency, maxVerifierConcurrency } from "../../config/runtime";
 import {
-  ensureDefaultLocalComputeTarget,
-  explicitComputeTargetConcurrency,
+  ensureDefaultLocalComputeTargets,
+  liveComputeTargetCount,
   recoverOrphanComputeLeases,
 } from "../compute";
 import {
@@ -15,11 +15,15 @@ import {
   countClaimedWorkItems,
   handleClaimedWorkItem,
   recoverExpiredWorkItemLeases,
+  CLAUDE_MANAGER_RESEARCH_PROJECT_WORK_ITEM_PURPOSE,
   CLAUDE_SCIENTIST_RESEARCH_TASK_WORK_ITEM_PURPOSE,
+  CLAUDE_SCRIBE_SESSION_WORK_ITEM_PURPOSE,
+  CLAUDE_VERIFIER_RESEARCH_TASK_WORK_ITEM_PURPOSE,
   workItemLeaseMs,
   workItemMaxAttempts,
 } from "../work-items";
 import { createScheduler } from "./scheduler";
+import { dispatchScribeNarrationIfDue } from "./scribe-dispatch";
 import type { RuntimeScheduler, SchedulerJob } from "./types";
 
 export function createRuntimeScheduler(): RuntimeScheduler {
@@ -34,7 +38,7 @@ function runtimeSchedulerJobs(): SchedulerJob[] {
       name: "compute-target-bootstrap",
       intervalMs: 10_000,
       run: async () => {
-        await ensureDefaultLocalComputeTarget();
+        await ensureDefaultLocalComputeTargets({ desiredCount: maxScientistConcurrency() });
       },
     },
     {
@@ -66,12 +70,12 @@ function runtimeSchedulerJobs(): SchedulerJob[] {
       },
     },
     {
-      name: "work-item-dispatcher",
+      name: "manager-work-item-dispatcher",
       intervalMs: 1_000,
       run: async () => {
         const workItem = await claimDueWorkItem({
           leaseMs: workItemLeaseMs,
-          excludePurpose: CLAUDE_SCIENTIST_RESEARCH_TASK_WORK_ITEM_PURPOSE,
+          purpose: CLAUDE_MANAGER_RESEARCH_PROJECT_WORK_ITEM_PURPOSE,
         });
         if (workItem) {
           await handleClaimedWorkItem({ workItem });
@@ -89,6 +93,40 @@ function runtimeSchedulerJobs(): SchedulerJob[] {
         const workItem = await claimDueWorkItem({
           leaseMs: workItemLeaseMs,
           purpose: CLAUDE_SCIENTIST_RESEARCH_TASK_WORK_ITEM_PURPOSE,
+        });
+        if (workItem) {
+          await handleClaimedWorkItem({ workItem });
+        }
+      },
+    },
+    {
+      name: "verifier-work-item-dispatcher",
+      intervalMs: 1_000,
+      concurrency: maxVerifierConcurrency(),
+      run: async () => {
+        const workItem = await claimDueWorkItem({
+          leaseMs: workItemLeaseMs,
+          purpose: CLAUDE_VERIFIER_RESEARCH_TASK_WORK_ITEM_PURPOSE,
+        });
+        if (workItem) {
+          await handleClaimedWorkItem({ workItem });
+        }
+      },
+    },
+    {
+      name: "scribe-narration-tick",
+      intervalMs: 10_000,
+      run: async () => {
+        await dispatchScribeNarrationIfDue();
+      },
+    },
+    {
+      name: "scribe-work-item-dispatcher",
+      intervalMs: 1_000,
+      run: async () => {
+        const workItem = await claimDueWorkItem({
+          leaseMs: workItemLeaseMs,
+          purpose: CLAUDE_SCRIBE_SESSION_WORK_ITEM_PURPOSE,
         });
         if (workItem) {
           await handleClaimedWorkItem({ workItem });
@@ -119,10 +157,8 @@ export async function canClaimScientistWorkItem(): Promise<boolean> {
   const activeCount = await countClaimedWorkItems({
     purpose: CLAUDE_SCIENTIST_RESEARCH_TASK_WORK_ITEM_PURPOSE,
   });
-  const computeLimit = await explicitComputeTargetConcurrency();
+  const liveCount = await liveComputeTargetCount();
   const concurrencyLimit =
-    computeLimit === undefined
-      ? maxScientistConcurrency()
-      : Math.min(maxScientistConcurrency(), computeLimit);
+    liveCount === 0 ? maxScientistConcurrency() : Math.min(maxScientistConcurrency(), liveCount);
   return activeCount < concurrencyLimit;
 }
