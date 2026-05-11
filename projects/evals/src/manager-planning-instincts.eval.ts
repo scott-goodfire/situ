@@ -21,9 +21,9 @@ type PlanningCase = Readonly<{
   expectation: CaseExpectation;
 }>;
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
+const moduleDir = dirname(fileURLToPath(import.meta.url));
 const SKILL_PATH = join(
-  __dirname,
+  moduleDir,
   "../../app/src/claude/agents/skills/runtime/situ-manager-runtime/SKILL.md",
 );
 
