@@ -61,12 +61,11 @@ export function createScheduler({ jobs }: { jobs: readonly SchedulerJob[] }): Ru
         clearInterval(interval);
       }
       intervals.length = 0;
-      await Promise.race([
-        Promise.allSettled(activeRuns),
-        new Promise((resolve) => {
-          setTimeout(resolve, 5_000);
-        }),
-      ]);
+      // Don't wait for in-flight job promises to settle. They reference
+      // long-running Claude agent turns (5-10 min) and Anthropic SDK streams
+      // that can't be cancelled cleanly from here. Clearing the intervals
+      // stops new dispatches; the abandoned promises die when the process
+      // exits.
       activeRuns.clear();
       runningJobCounts.clear();
       started = false;

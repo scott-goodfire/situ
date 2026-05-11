@@ -19,7 +19,26 @@ export function migrate(): void {
   sqlite.exec("PRAGMA journal_mode = WAL;");
   sqlite.exec("PRAGMA foreign_keys = ON;");
   sqlite.exec(SCHEMA_SQL);
+  ensureColumn({ sqlite, table: "session", column: "claude_memory_store_id", type: "TEXT" });
   sqlite.close();
+}
+
+function ensureColumn({
+  sqlite,
+  table,
+  column,
+  type,
+}: {
+  sqlite: Database;
+  table: string;
+  column: string;
+  type: string;
+}): void {
+  const rows = sqlite.query(`PRAGMA table_info(${table})`).all() as { name: string }[];
+  if (rows.some((row) => row.name === column)) {
+    return;
+  }
+  sqlite.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${type};`);
 }
 
 const SYNC_COLUMNS = `
@@ -68,6 +87,7 @@ CREATE TABLE IF NOT EXISTS session (
     CHECK (status IN ('active', 'closed', 'failed', 'canceled')),
   claude_session_id TEXT UNIQUE,
   claude_environment_id TEXT,
+  claude_memory_store_id TEXT,
   closed_at TEXT,
   ${SYNC_COLUMNS},
   ${TIMESTAMPS}

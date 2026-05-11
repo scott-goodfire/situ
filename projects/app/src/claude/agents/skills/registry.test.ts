@@ -4,11 +4,40 @@ import { join } from "node:path";
 import { afterEach, describe, expect, test } from "bun:test";
 
 import type { ManagedAgentsBeta } from "../resources";
+import { claudeAgentBlueprintForRole, type ClaudeAgentRole } from "../roles";
 import { claudeAgentSkillDefinitions, syncClaudeAgentRuntimeSkills } from ".";
 
 const originalSituHome = process.env.SITU_HOME;
 const originalSkillsDir = process.env.SITU_AGENT_SKILLS_DIR;
 const temporaryRoots = new Set<string>();
+
+describe("Claude agent runtime skill registry", () => {
+  test("registers every skill that any blueprint references with the right role", () => {
+    const byName = new Map(claudeAgentSkillDefinitions.map((d) => [d.name, d]));
+    const roles: readonly ClaudeAgentRole[] = [
+      "manager",
+      "scientist",
+      "verifier",
+      "scribe",
+      "reporter",
+    ];
+    const missing: { role: ClaudeAgentRole; name: string; reason: string }[] = [];
+    for (const role of roles) {
+      const blueprint = claudeAgentBlueprintForRole({ role });
+      for (const name of blueprint.skillNames) {
+        const def = byName.get(name);
+        if (!def) {
+          missing.push({ role, name, reason: "not registered" });
+          continue;
+        }
+        if (!def.roles.includes(role)) {
+          missing.push({ role, name, reason: `roles missing ${role}` });
+        }
+      }
+    }
+    expect(missing).toEqual([]);
+  });
+});
 
 describe("Claude agent runtime skill sync", () => {
   afterEach(async () => {

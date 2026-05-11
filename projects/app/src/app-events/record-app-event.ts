@@ -1,5 +1,6 @@
 import { appEvents } from "../data/db/schema";
 import { runSyncedWrite } from "../data/db/sync";
+import { dateTimeModule } from "../modules/date-time";
 
 export async function recordAppEvent({
   type,
@@ -19,6 +20,7 @@ export async function recordAppEvent({
           payloadJson: JSON.stringify(payload),
           syncVersion,
           syncDeleted: false,
+          createdAt: dateTimeModule.nowIso(),
         })
         .run();
     },

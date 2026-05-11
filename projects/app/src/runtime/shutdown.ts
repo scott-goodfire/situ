@@ -10,6 +10,8 @@ type Closeable = {
   close: () => void | Promise<void>;
 };
 
+const SHUTDOWN_HARD_EXIT_MS = 5_000;
+
 export function installShutdownHandlers({
   server,
   scheduler,
@@ -26,6 +28,13 @@ export function installShutdownHandlers({
     }
     stopping = true;
     logModule.info(obs.log.shutdown.signalReceived, { [obs.attr.shutdown.signal]: signal });
+    const hardExitTimer = setTimeout(() => {
+      console.error(
+        `[situ] Shutdown exceeded ${SHUTDOWN_HARD_EXIT_MS}ms; forcing exit after ${signal}.`,
+      );
+      process.exit(0);
+    }, SHUTDOWN_HARD_EXIT_MS);
+    hardExitTimer.unref();
     await scheduler.stop();
     await server.stop(true);
     for (const closeable of closeables) {
@@ -35,6 +44,7 @@ export function installShutdownHandlers({
         logModule.warn(obs.log.shutdown.closeableFailed, { error });
       }
     }
+    clearTimeout(hardExitTimer);
     process.exit(0);
   };
 

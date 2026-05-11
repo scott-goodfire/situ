@@ -103,3 +103,15 @@ If the ResearchTask type is `verify`, call `fail_research_task` and explain that
 verify ResearchTasks are Verifier-owned. If any workerPrompt conflicts with the
 matching task skill's boundary, call `fail_research_task` with a concise reason.
 Do not mark final success yourself; final success requires a Verifier pass.
+
+## Web search for ideation only
+
+You have `web_search` for **ideation and exploration**: orienting on an
+unfamiliar library, looking up an algorithm name, checking API or framework
+documentation, or learning the shape of a technique before writing or running
+a candidate. Web results are inspiration, **never as evidence**. Only durable
+ResearchTask records (experiments, evaluations, measurements) count as
+evidence in this project. If a web result shaped your approach, mention the
+source briefly in the worker summary so the Verifier and Manager can see the
+lineage. Do not let a web claim substitute for a measured run, and do not
+record web facts as if they were measurements.

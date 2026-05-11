@@ -1,6 +1,9 @@
 import { DxEmptyState, DxSpinner } from "@situ/web-ui";
 import { ProjectView } from "@situ/web-app-ui";
 import { ResearchProjectPage } from "../research-project-page";
+import { useBaselines } from "../../hooks/baselines";
+import { useEvaluations } from "../../hooks/evaluations";
+import { useMeasurements } from "../../hooks/measurements";
 import {
   isProjectKickedOff,
   useResearchProjectInteractions,
@@ -17,6 +20,9 @@ export function ProjectPage() {
   const researchTasks = useResearchTasks();
   const verifications = useResearchTaskVerifications();
   const interactions = useResearchProjectInteractions();
+  const baselines = useBaselines();
+  const evaluations = useEvaluations();
+  const measurements = useMeasurements();
 
   if (researchProjectsResult.status === "loading") {
     return <DxEmptyState heading="Loading project" action={<DxSpinner size={20} />} />;
@@ -41,6 +47,9 @@ export function ProjectPage() {
       interactions={interactions.map((interaction) =>
         researchProjectAdapters.toInteraction({ interaction }),
       )}
+      baselines={baselines}
+      evaluations={evaluations}
+      measurements={measurements}
     />
   );
 }

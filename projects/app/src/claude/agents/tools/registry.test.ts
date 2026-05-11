@@ -18,6 +18,7 @@ const recordToolTriples = [
   ["artifact", "get_artifact", "list_artifacts", "search_artifacts"],
   ["entity_link", "get_entity_link", "list_entity_links", "search_entity_links"],
   ["compute_target", "get_compute_target", "list_compute_targets", "search_compute_targets"],
+  ["app_event", "get_app_event", "list_app_events", "search_app_events"],
 ] as const;
 
 const transitionTools = [
@@ -154,6 +155,33 @@ describe("Claude agent tool registry", () => {
     expect(verifierTools.has("record_research_task_verification")).toBe(true);
     expect(verifierTools.has("complete_experiment")).toBe(false);
     expect(verifierTools.has("add_evaluation_comment")).toBe(false);
+  });
+
+  test("gives scribe broad read visibility plus its own write surface", () => {
+    const scribeTools = roleToolNames({ role: "scribe" });
+
+    // The scribe needs to "see" the session to narrate it.
+    for (const toolName of [
+      "list_research_tasks",
+      "get_research_task",
+      "search_research_tasks",
+      "list_experiments",
+      "search_experiments",
+      "list_artifacts",
+      "list_hypotheses",
+      "run_readonly_workspace_command",
+    ]) {
+      expect(scribeTools.has(toolName)).toBe(true);
+    }
+
+    // The scribe's own write surface.
+    expect(scribeTools.has("write_feed_entry")).toBe(true);
+
+    // No write tools from other roles.
+    expect(scribeTools.has("run_workspace_command")).toBe(false);
+    expect(scribeTools.has("create_research_task")).toBe(false);
+    expect(scribeTools.has("create_artifact")).toBe(false);
+    expect(scribeTools.has("ask_user_question")).toBe(false);
   });
 
   test("hides user-question tool from headless manager tool params", () => {

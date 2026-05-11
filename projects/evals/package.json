@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "check": "tsgo --noEmit -p tsconfig.json",
-    "test": "evalite run src/prompts.eval.ts --hideTable --noCache && evalite run src/runtime-skills.eval.ts --hideTable --noCache && evalite run src/explore-task-shape.eval.ts --hideTable --noCache && evalite run src/worlds/tiny-autoresearch/state.eval.ts --hideTable --noCache",
+    "test": "evalite run src/prompts.eval.ts --hideTable --noCache && evalite run src/role-systems.eval.ts --hideTable --noCache && evalite run src/runtime-skills.eval.ts --hideTable --noCache && evalite run src/explore-task-shape.eval.ts --hideTable --noCache && evalite run src/worlds/tiny-autoresearch/state.eval.ts --hideTable --noCache",
     "test:watch": "evalite watch src/prompts.eval.ts",
     "evals": "bun run src/worlds/tiny-autoresearch/live-agent-eval.ts"
   },

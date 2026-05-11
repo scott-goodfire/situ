@@ -6,7 +6,7 @@ This was an autoresearch run on that design surface, using a loop adapted from [
 
 Source logbook: [scott-goodfire/logbook-autoresearch-and-nanochat](https://github.com/scott-goodfire/logbook-autoresearch-and-nanochat). Underlying task: [karpathy/nanochat](https://github.com/karpathy/nanochat).
 
-Note: `situ` hasn't been run on this project yet — an update will be added here over the next week or two.
+_Note: The latest version of situ hasn't been run on this project yet — an update will be added here over the next week or two._
 
 ## Files
 

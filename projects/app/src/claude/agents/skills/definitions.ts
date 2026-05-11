@@ -55,6 +55,30 @@ export const claudeAgentSkillDefinitions: readonly ClaudeAgentSkillDefinition[] 
     directoryName: "situ-verifier-verify-task",
     roles: ["verifier"],
   },
+  {
+    name: "situ-scribe-runtime",
+    displayTitle: "situ Scribe Runtime",
+    directoryName: "situ-scribe-runtime",
+    roles: ["scribe"],
+  },
+  {
+    name: "situ-scribe-narrate-session",
+    displayTitle: "situ Scribe Narrate Session",
+    directoryName: "situ-scribe-narrate-session",
+    roles: ["scribe"],
+  },
+  {
+    name: "situ-reporter-runtime",
+    displayTitle: "situ Reporter Runtime",
+    directoryName: "situ-reporter-runtime",
+    roles: ["reporter"],
+  },
+  {
+    name: "situ-reporter-generate-report",
+    displayTitle: "situ Reporter Generate Report",
+    directoryName: "situ-reporter-generate-report",
+    roles: ["reporter"],
+  },
 ];
 
 export function claudeAgentSkillDefinitionByName({

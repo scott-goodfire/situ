@@ -9,5 +9,6 @@ export const reporterBlueprint: ClaudeAgentBlueprint = {
   model: modelForEffort({ effort: "high" }),
   system: REPORTER_SYSTEM,
   defaultToolsetEnabled: false,
+  webSearchEnabled: true,
   skillNames: ["situ-reporter-runtime", "situ-reporter-generate-report"],
 };

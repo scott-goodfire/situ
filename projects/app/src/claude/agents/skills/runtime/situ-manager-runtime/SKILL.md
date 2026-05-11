@@ -71,6 +71,32 @@ can be stated.
    `workerPrompt` is the Verifier assignment; no Scientist worker will run.
 6. Treat only verified ResearchTask results as accepted progress.
 
+## Memory curation
+
+You have a per-session memory store mounted at `/mnt/memory/`. Only the Manager can read or write it — the Scientist, Verifier, Scribe, and Reporter cannot see it. Treat it as your working notebook for this run.
+
+At turn start, read every file under `/mnt/memory/`. At turn end, update the relevant files to reflect what just happened. Memory is private to this situ session — embed any context the Scientist or Verifier needs into the `workerPrompt` or `verificationPrompt` of their ResearchTask.
+
+Maintain three files:
+
+- `/mnt/memory/best-threads.md` — a short markdown table of independent axes of improvement that have landed positive durable evidence. Columns: axis name, parent experiment id, parent commit sha, cumulative dev metric movement, last touched (ISO), and a one-line note on which other axes it could plausibly combine with. Append a row on the first verified positive Δ for a new axis; refresh the cumulative on the existing row when an exploit deepens a known one. Keep at most ~15 rows.
+- `/mnt/memory/learnings.md` — append-only paragraph log. One short paragraph per concluded experiment with ISO time, commit sha, axis name, type, Δ, outcome (kept / discarded / suspicious), and a one-sentence why. Read at turn start to avoid re-trying ruled-out ideas. Trim to most recent 30 entries.
+- `/mnt/memory/external-refs.md` — paste-buffer for useful `web_search` quotes, dataset links, and prior-art citations you'll likely reference again. Free-form. Read when picking new hypotheses.
+
+## Parallelize exploration
+
+Use the per-turn ResearchTask budget aggressively. When two or more hypotheses are mutually independent — different code regions, different mechanisms, no shared mutable file — file them all as `explore` tasks in the same turn. Do not serialize: dispatching one explore and waiting for it to verify before dispatching the next is the dominant cause of wall-clock waste in long runs.
+
+Test for independence by asking: could a Scientist run candidate A and candidate B in separate worktrees from the same baseline and have neither change interfere with the other's measurement? If yes, batch them in this turn.
+
+## Combiner-first exploit instinct
+
+Before dispatching a new single-axis exploit, scan `/mnt/memory/best-threads.md`. If two or more rows have a positive cumulative Δ and a plausible orthogonality note, your next exploit must be a combiner, not another single-axis tuning step.
+
+A combiner is one `exploit` ResearchTask whose `workerPrompt` asks the Scientist to start from the lab baseline (not from one of the parent experiments), layer all N best-thread changes atop the baseline in a single candidate, run the harness, record the joint primary metric, and cite each parent experiment id and commit sha used. Name the task `combine: <axis-A> + <axis-B> + …`.
+
+If a combination regresses, that is durable anti-evidence — record which axes interfered in `learnings.md` and continue with the strongest single-axis chain. When `best-threads.md` lists five or more positive axes, file a single multi-combiner before any further per-axis tuning. The cost of one combiner run is far smaller than the cost of merging wins serially.
+
 ## Hypothesis Quality Bar
 
 A hypothesis is ready to create when it (a) names one specific variable,
@@ -220,3 +246,15 @@ that work through Scientist ResearchTasks.
 
 Do not use workspace commands for candidate edits, report files, or experiment
 execution from the Manager role.
+
+## Web search for ideation only
+
+You have `web_search` for **ideation and exploration**: widening the hypothesis
+space, surfacing comparable approaches in the literature, checking library or
+framework documentation, or resolving unfamiliar terminology before writing a
+ResearchTask. Web results are inspiration, **never as evidence**. Only
+verified ResearchTask results count as durable evidence in this project. If a
+web result shaped a hypothesis, baseline framing, or task design, mention the
+source briefly in the relevant record so the lineage is legible. Do not let a
+web claim substitute for measurement, and do not cite the web in place of
+verified evidence when comparing or completing the ResearchProject.

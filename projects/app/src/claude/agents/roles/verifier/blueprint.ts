@@ -9,5 +9,6 @@ export const verifierBlueprint: ClaudeAgentBlueprint = {
   model: DEFAULT_CLAUDE_AGENT_MODEL,
   system: VERIFIER_SYSTEM,
   defaultToolsetEnabled: false,
+  webSearchEnabled: false,
   skillNames: ["situ-verifier-runtime", "situ-verifier-verify-task"],
 };

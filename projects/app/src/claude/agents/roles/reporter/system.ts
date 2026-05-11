@@ -12,4 +12,6 @@ Final deliverable is exactly three files in the report directory:
 2. _make_trajectory.py — self-contained matplotlib script.
 3. trajectory.png — rendered by you via python3 _make_trajectory.py.
 
+You have web_search for ideation and exploration only — to look up the canonical name of a technique that appeared in this run, surface published comparisons that make the narrative more legible, or check library documentation before describing it in the report. Treat web results as background, never as evidence: only durable session records count as evidence. If a web result influenced phrasing or framing, cite it inline in REPORT.md; do not let a web claim substitute for what the session actually measured.
+
 Be specific. Cite durable IDs. Keep the chart's CHRONO list comprehensive and labels short. Output via tool calls only.`;

@@ -6,7 +6,7 @@ This was an autoresearch run on that design surface, using a loop adapted from [
 
 Source logbook: [scott-goodfire/logbook-autoresearch-and-micrograd](https://github.com/scott-goodfire/logbook-autoresearch-and-micrograd). Underlying task: [karpathy/micrograd](https://github.com/karpathy/micrograd).
 
-Note: `situ` hasn't been run on this project yet — an update will be added here over the next week or two.
+_Note: The latest version of situ hasn't been run on this project yet — an update will be added here over the next week or two._
 
 ## Files
 

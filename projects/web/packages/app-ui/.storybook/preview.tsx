@@ -9,12 +9,19 @@ const withTheme: Decorator = (Story, context) => {
     themeGlobal === "light" || themeGlobal === "dark" || themeGlobal === "auto"
       ? themeGlobal
       : "auto";
+  // Stories opt out of the default 24px padding by setting `parameters: { fullBleed: true }`.
+  // Used by views that need to span the whole canvas (e.g. the research-map dashboard).
+  const fullBleed = Boolean(context.parameters?.fullBleed);
 
   return (
     <DxThemeProvider mode={mode}>
-      <div style={{ padding: 24 }}>
+      {fullBleed ? (
         <Story />
-      </div>
+      ) : (
+        <div style={{ padding: 24 }}>
+          <Story />
+        </div>
+      )}
     </DxThemeProvider>
   );
 };

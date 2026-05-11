@@ -38,3 +38,7 @@ An experiment is "kept" if its research task ended `verified` and its measuremen
 ## Phases
 
 There is no durable "phase" field on experiments. Group them yourself based on hypothesis lineage, time gaps, or thematic clusters from titles. Three to five phases is usually right. Name them concisely (e.g. "Phase 1 exploratory search", "Phase 2 first-letter family").
+
+## Web search for ideation only
+
+You have `web_search` for **ideation and exploration**: looking up the canonical name of a technique that appeared in this run, surfacing published comparisons that make the narrative more legible, or checking library documentation before describing it. Web results are background context, **never as evidence**. Only durable session records (experiments, evaluations, measurements, verifications) count as evidence for what the run produced. If a web result influenced phrasing or framing in REPORT.md, cite the source inline. Do not let a web claim substitute for what the session actually measured, and do not let outside reading override the kept-vs-discarded decisions already in the durable record.

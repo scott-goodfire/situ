@@ -1,6 +1,9 @@
-import { DxAccordion, DxBadge, DxCard, DxMarkdown, DxStatBlock } from "@situ/web-ui";
-import type { ReactNode } from "react";
+import { DxBadge, DxCard, DxMarkdown, DxStatBlock, mono } from "@situ/web-ui";
+import { useState, type ReactNode } from "react";
 import type {
+  BaselineRecord,
+  EvaluationRecord,
+  MeasurementRecord,
   ResearchProjectRecord,
   ResearchTaskRecord,
   ResearchTaskVerificationRecord,
@@ -24,6 +27,9 @@ export type ProjectViewProps = {
   researchTasks: ResearchTaskRecord[];
   verifications: ResearchTaskVerificationRecord[];
   interactions: ResearchProjectInteractionRecord[];
+  baselines?: BaselineRecord[];
+  evaluations?: EvaluationRecord[];
+  measurements?: MeasurementRecord[];
 };
 
 export function ProjectView({
@@ -31,6 +37,9 @@ export function ProjectView({
   researchTasks,
   verifications,
   interactions,
+  baselines = [],
+  evaluations = [],
+  measurements = [],
 }: ProjectViewProps) {
   if (!project) {
     return (
@@ -60,6 +69,20 @@ export function ProjectView({
     (interaction) => interaction.status === "pending",
   ).length;
 
+  const projectBaselines = baselines.filter(
+    (baseline) => baseline.researchProjectId === project.id,
+  );
+  const baselineEntries = projectBaselines.map((baseline) => {
+    const baselineEvaluations = evaluations.filter(
+      (evaluation) => evaluation.associatedBaselineId === baseline.id,
+    );
+    const evaluationIds = new Set(baselineEvaluations.map((evaluation) => evaluation.id));
+    const baselineMeasurements = measurements.filter((measurement) =>
+      evaluationIds.has(measurement.evaluationId),
+    );
+    return { baseline, evaluations: baselineEvaluations, measurements: baselineMeasurements };
+  });
+
   return (
     <div className={s.project}>
       <header className={s.header}>
@@ -72,21 +95,9 @@ export function ProjectView({
         </DxBadge>
       </header>
 
-      <DxAccordion
-        items={[
-          {
-            id: "objective",
-            question: "Objective",
-            answer: project.goal ? (
-              <div className={s.prose}>
-                <DxMarkdown>{project.goal}</DxMarkdown>
-              </div>
-            ) : (
-              <p className={s.empty}>No objective set.</p>
-            ),
-          },
-        ]}
-      />
+      <Section title="Objective">
+        <ExpandableProse content={project.goal} emptyLabel="No objective set." />
+      </Section>
 
       <Section title="Status">
         <div className={s.statsGrid}>
@@ -125,6 +136,42 @@ export function ProjectView({
         ) : (
           <p className={s.empty}>No baseline summary yet.</p>
         )}
+        {baselineEntries.length > 0 ? (
+          <ul role="list" className={s.baselineList}>
+            {baselineEntries.map(({ baseline, measurements: baselineMeasurements }) => (
+              <li key={baseline.id} className={s.baselineEntry}>
+                <DxCard>
+                  <div className={s.baselineEntryBody}>
+                    <header className={s.baselineEntryHeader}>
+                      <p className={s.baselineEyebrow}>
+                        <span className={mono}>{baseline.id}</span>
+                      </p>
+                      <h3 className={s.baselineTitle}>{baseline.title}</h3>
+                    </header>
+                    {baseline.summary ? (
+                      <div className={s.prose}>
+                        <DxMarkdown>{baseline.summary}</DxMarkdown>
+                      </div>
+                    ) : null}
+                    {baselineMeasurements.length > 0 ? (
+                      <div className={s.measurementsBlock}>
+                        <p className={s.measurementsLabel}>Measurements</p>
+                        <ul role="list" className={s.measurementList}>
+                          {baselineMeasurements.map((measurement) => (
+                            <li key={measurement.id} className={s.measurementItem}>
+                              <span className={mono}>{measurement.actor}</span>
+                              <span className={s.measurementBody}>{measurement.body}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null}
+                  </div>
+                </DxCard>
+              </li>
+            ))}
+          </ul>
+        ) : null}
       </Section>
 
       <Section title="Report">
@@ -157,5 +204,32 @@ function Section({ title, children }: { title: ReactNode; children: ReactNode })
       <h2 className={s.sectionLabel}>{title}</h2>
       {children}
     </section>
+  );
+}
+
+const PROSE_EXPAND_THRESHOLD = 200;
+
+function ExpandableProse({ content, emptyLabel }: { content: string | null; emptyLabel: string }) {
+  const [expanded, setExpanded] = useState(false);
+  if (!content) {
+    return <p className={s.empty}>{emptyLabel}</p>;
+  }
+  const showToggle = content.length > PROSE_EXPAND_THRESHOLD;
+  const proseClass = expanded || !showToggle ? s.prose : s.proseTruncated;
+  return (
+    <>
+      <div className={proseClass}>
+        <DxMarkdown>{content}</DxMarkdown>
+      </div>
+      {showToggle ? (
+        <button
+          type="button"
+          onClick={() => setExpanded((value) => !value)}
+          className={s.expandToggle}
+        >
+          {expanded ? "Show less" : "Show more"}
+        </button>
+      ) : null}
+    </>
   );
 }

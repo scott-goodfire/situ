@@ -61,3 +61,13 @@ export const content = style({
     },
   },
 });
+
+export const contentFullBleed = style({
+  flex: "1 1 auto",
+  display: "flex",
+  flexDirection: "column",
+  minWidth: 0,
+  minHeight: 0,
+  padding: 0,
+  overflow: "hidden",
+});

@@ -9,5 +9,6 @@ export type ClaudeAgentBlueprint = {
   readonly model: string;
   readonly system: string;
   readonly defaultToolsetEnabled: boolean;
+  readonly webSearchEnabled: boolean;
   readonly skillNames: readonly string[];
 };

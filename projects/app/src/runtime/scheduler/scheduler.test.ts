@@ -55,6 +55,36 @@ describe("runtime scheduler", () => {
     releaseAll({ blockers });
     await stopped;
   });
+
+  test("stop returns immediately when jobs are still mid-flight", async () => {
+    let started = 0;
+    const scheduler = createScheduler({
+      jobs: [
+        {
+          name: "never-resolving-job",
+          intervalMs: 5,
+          run: () => {
+            started += 1;
+            // Never resolves — mimics a long-running Claude agent turn that
+            // can't be cancelled cleanly from the scheduler.
+            return new Promise<void>(() => {});
+          },
+        },
+      ],
+    });
+
+    scheduler.start();
+    await waitFor(() => started >= 1);
+
+    const stopStart = Date.now();
+    await scheduler.stop();
+    const stopElapsed = Date.now() - stopStart;
+
+    // The old implementation awaited Promise.race with a 5-second timeout;
+    // the new implementation just clears the intervals and returns. Should be
+    // well under 500ms even on a slow CI box.
+    expect(stopElapsed).toBeLessThan(500);
+  });
 });
 
 async function waitFor(predicate: () => boolean): Promise<void> {

@@ -49,6 +49,8 @@ type ExecResearchProject = Awaited<ReturnType<typeof seedSessionObjective>>["res
 type ExecAutomationSummary = Awaited<ReturnType<typeof waitForAutomationUntilIdle>>;
 type ExecComputeTarget = Awaited<ReturnType<typeof computeTargetRepository.upsert>>;
 
+export const EXEC_TEARDOWN_HARD_EXIT_MS = 5_000;
+
 export async function runExecCommand({
   argv,
   beforeAutomation,
@@ -68,10 +70,45 @@ export async function runExecCommand({
     const researchProject = await seedObjectiveForExec({ options });
     const summary = await runExecAutomation({ options });
     printExecResult({ options, runtime, lifecycle, researchProject, summary, computeTarget });
-    return exitCodeFromExecSummary({ summary });
+    const exitCode = exitCodeFromExecSummary({ summary });
+    armExecHardExitWatchdog({ exitCode });
+    return exitCode;
   } finally {
     await teardownExecLifecycle({ lifecycle });
   }
+}
+
+export type ExecHardExitWatchdog = {
+  cancel: () => void;
+};
+
+export function armExecHardExitWatchdog({
+  exitCode,
+  delayMs = EXEC_TEARDOWN_HARD_EXIT_MS,
+  onExit = (code) => process.exit(code),
+  onWarn = (message) => console.error(message),
+}: {
+  exitCode: number;
+  delayMs?: number;
+  onExit?: (code: number) => void;
+  onWarn?: (message: string) => void;
+}): ExecHardExitWatchdog {
+  // Force-exit if teardown hangs. The scheduler intervals stop on
+  // `scheduler.stop()`, but in-flight Anthropic SDK streams, OTel exporter
+  // flushes, or stuck server connections can hold async resources. We accept
+  // that those background promises die abruptly when the process exits — the
+  // alternative is a multi-minute hang waiting for Claude agent turns to
+  // finish.
+  const timer = setTimeout(() => {
+    onWarn(`[situ-exec] Teardown exceeded ${delayMs}ms; forcing exit ${exitCode}.`);
+    onExit(exitCode);
+  }, delayMs);
+  timer.unref();
+  return {
+    cancel: () => {
+      clearTimeout(timer);
+    },
+  };
 }
 
 async function assertExecCanRun({ options }: { options: ExecCommandOptions }): Promise<void> {

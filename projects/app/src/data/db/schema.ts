@@ -87,6 +87,7 @@ export const session = sqliteTable(
       .default("active"),
     claudeSessionId: text("claude_session_id"),
     claudeEnvironmentId: text("claude_environment_id"),
+    claudeMemoryStoreId: text("claude_memory_store_id"),
     closedAt: text("closed_at"),
     ...syncTracking(),
     ...timestamps(),

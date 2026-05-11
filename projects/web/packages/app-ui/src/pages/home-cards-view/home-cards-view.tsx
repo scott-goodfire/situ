@@ -13,7 +13,7 @@ export type HomeCardLink = {
 export function HomeCardsView({ cards }: { cards: HomeCardLink[] }) {
   return (
     <DxSection title="Home">
-      <ul className={s.grid}>
+      <ul role="list" className={s.grid}>
         {cards.map((card) => (
           <li key={card.id} className={s.gridItem}>
             {card.renderLink({

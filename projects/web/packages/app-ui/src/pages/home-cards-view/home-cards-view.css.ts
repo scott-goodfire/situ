@@ -12,10 +12,14 @@ export const grid = style({
 
 export const gridItem = style({
   display: "block",
+  listStyle: "none",
   selectors: {
     "& a": {
       textDecoration: "none",
       color: "inherit",
+    },
+    "&::marker": {
+      content: "''",
     },
   },
 });

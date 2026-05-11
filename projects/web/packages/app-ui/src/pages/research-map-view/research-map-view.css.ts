@@ -173,7 +173,11 @@ export const scrollArea = style({
 export const surface = style({
   position: "relative",
   display: "grid",
-  gridTemplateColumns: "320px var(--canvas-width, 100%)",
+  // When --canvas-width fits within the parent, stretch the timeline column via
+  // 1fr so the lanes/grid/bars fill the viewport instead of leaving empty
+  // space at the right. When --canvas-width exceeds the parent, the minmax
+  // floor wins and the scrollArea handles horizontal scroll.
+  gridTemplateColumns: "320px minmax(var(--canvas-width, 100%), 1fr)",
   gridTemplateRows: "52px var(--body-height, auto)",
   width: "max-content",
   minWidth: "100%",
@@ -198,6 +202,9 @@ export const rulerRow = style({
   position: "sticky",
   top: 0,
   zIndex: zIndex.stickyRuler,
+  // Clip tick labels and the now-pill that would otherwise extend past the
+  // right edge and inflate the surrounding scrollArea's scrollWidth.
+  overflow: "hidden",
   background: vars.color.card01Hex,
 });
 
@@ -342,6 +349,11 @@ export const nowMarkerPill = style({
 
 export const timelineBody = style({
   position: "relative",
+  // Clip experiment node labels that extend past the right edge so they don't
+  // inflate the scrollArea's scrollWidth and break horizontal scroll.
+  // Existing text-overflow: ellipsis on .nodeLabel handles the visible
+  // truncation.
+  overflow: "hidden",
   minHeight: 96,
   background: vars.color.background,
 });

@@ -40,6 +40,7 @@ export async function ensureLocalSession(): Promise<typeof session.$inferSelect>
     syncVersion,
     claudeSessionId: null,
     claudeEnvironmentId: null,
+    claudeMemoryStoreId: null,
     closedAt: null,
   };
 }

@@ -10,6 +10,7 @@ export const managerBlueprint: ClaudeAgentBlueprint = {
   model: DEFAULT_CLAUDE_AGENT_MODEL,
   system: MANAGER_SYSTEM,
   defaultToolsetEnabled: false,
+  webSearchEnabled: true,
   skillNames: ["situ-manager-runtime"],
 };
 

@@ -9,6 +9,7 @@ export const scientistBlueprint: ClaudeAgentBlueprint = {
   model: DEFAULT_CLAUDE_AGENT_MODEL,
   system: SCIENTIST_SYSTEM,
   defaultToolsetEnabled: false,
+  webSearchEnabled: true,
   skillNames: [
     "situ-scientist-runtime",
     "situ-scientist-explore-task",

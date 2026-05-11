@@ -11,5 +11,6 @@ export const scribeBlueprint: ClaudeAgentBlueprint = {
   model: modelForEffort({ effort: "medium" }),
   system: SCRIBE_SYSTEM,
   defaultToolsetEnabled: false,
+  webSearchEnabled: true,
   skillNames: ["situ-scribe-runtime", "situ-scribe-narrate-session"],
 };

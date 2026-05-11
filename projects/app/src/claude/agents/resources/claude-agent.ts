@@ -61,17 +61,25 @@ export function claudeAgentToolsForBlueprint({
 }: {
   blueprint: ClaudeAgentBlueprint;
 }): Array<BetaManagedAgentsAgentToolset20260401Params | BetaManagedAgentsCustomToolParams> {
+  const toolsetConfigs: BetaManagedAgentsAgentToolset20260401Params["configs"] = [
+    {
+      name: "read",
+      enabled: true,
+      permission_policy: { type: "always_allow" },
+    },
+  ];
+  if (blueprint.webSearchEnabled) {
+    toolsetConfigs.push({
+      name: "web_search",
+      enabled: true,
+      permission_policy: { type: "always_allow" },
+    });
+  }
   return [
     {
       type: "agent_toolset_20260401",
       default_config: { enabled: blueprint.defaultToolsetEnabled },
-      configs: [
-        {
-          name: "read",
-          enabled: true,
-          permission_policy: { type: "always_allow" },
-        },
-      ],
+      configs: toolsetConfigs,
     },
     ...claudeAgentToolParamsForRole({
       role: blueprint.role,
@@ -89,25 +97,54 @@ function claudeAgentNeedsUpdate({
   blueprint: ClaudeAgentBlueprint;
   expectedSkills: BetaManagedAgentsSkillParams[];
 }): boolean {
-  if (remoteAgent.model.id !== blueprint.model) {
-    return true;
-  }
-  if (remoteAgent.system !== blueprint.system) {
-    return true;
-  }
+  if (remoteAgent.model.id !== blueprint.model) return true;
+  if (remoteAgent.system !== blueprint.system) return true;
+  if (!toolsetMatchesBlueprint({ remoteAgent, blueprint })) return true;
+  if (!customToolsMatchBlueprint({ remoteAgent, blueprint })) return true;
+  return !skillsMatchBlueprint({ remoteAgent, expectedSkills });
+}
 
+function toolsetMatchesBlueprint({
+  remoteAgent,
+  blueprint,
+}: {
+  remoteAgent: BetaManagedAgentsAgent;
+  blueprint: ClaudeAgentBlueprint;
+}): boolean {
   const remoteToolset = remoteAgent.tools.find((tool) => tool.type === "agent_toolset_20260401");
-  if (remoteToolset?.default_config.enabled !== blueprint.defaultToolsetEnabled) {
-    return true;
+  if (remoteToolset?.default_config.enabled !== blueprint.defaultToolsetEnabled) return false;
+  if (!toolsetConfigEnabled({ toolset: remoteToolset, name: "read", expected: true })) {
+    return false;
   }
-  const remoteReadConfig = remoteToolset.configs.find((config) => config.name === "read");
-  if (
-    remoteReadConfig?.enabled !== true ||
-    remoteReadConfig.permission_policy.type !== "always_allow"
-  ) {
-    return true;
-  }
+  return toolsetConfigEnabled({
+    toolset: remoteToolset,
+    name: "web_search",
+    expected: blueprint.webSearchEnabled,
+  });
+}
 
+function toolsetConfigEnabled({
+  toolset,
+  name,
+  expected,
+}: {
+  toolset: BetaManagedAgentsAgent["tools"][number] | undefined;
+  name: string;
+  expected: boolean;
+}): boolean {
+  if (!toolset || toolset.type !== "agent_toolset_20260401") return false;
+  const config = toolset.configs.find((entry) => entry.name === name);
+  const enabled = config?.enabled === true && config.permission_policy.type === "always_allow";
+  return enabled === expected;
+}
+
+function customToolsMatchBlueprint({
+  remoteAgent,
+  blueprint,
+}: {
+  remoteAgent: BetaManagedAgentsAgent;
+  blueprint: ClaudeAgentBlueprint;
+}): boolean {
   const expectedToolKeys = claudeAgentToolParamsForRole({
     role: blueprint.role,
     executionMode: blueprint.executionMode,
@@ -115,13 +152,20 @@ function claudeAgentNeedsUpdate({
   const actualToolKeys = remoteAgent.tools
     .filter((tool) => tool.type === "custom")
     .map(customToolKey);
-  if (!sameStringSet({ left: expectedToolKeys, right: actualToolKeys })) {
-    return true;
-  }
+  return sameStringSet({ left: expectedToolKeys, right: actualToolKeys });
+}
 
-  const expectedSkillKeys = expectedSkills.map(skillKey);
-  const actualSkillKeys = remoteAgent.skills.map(skillKey);
-  return !sameStringSet({ left: expectedSkillKeys, right: actualSkillKeys });
+function skillsMatchBlueprint({
+  remoteAgent,
+  expectedSkills,
+}: {
+  remoteAgent: BetaManagedAgentsAgent;
+  expectedSkills: BetaManagedAgentsSkillParams[];
+}): boolean {
+  return sameStringSet({
+    left: expectedSkills.map(skillKey),
+    right: remoteAgent.skills.map(skillKey),
+  });
 }
 
 async function upsertClaudeAgentRecord({

@@ -99,17 +99,22 @@ export function AppShell() {
         </DxSidebar>
       }
       topBar={topBar}
+      fullBleed={useIsFullBleedRoute()}
     >
       <ContentArea />
     </DxAppFrame>
   );
 }
 
-function ContentArea() {
+function useIsFullBleedRoute(): boolean {
   const matchRoute = useMatchRoute();
-  const isDashboard = Boolean(matchRoute({ to: "/" }));
+  return Boolean(matchRoute({ to: "/dashboard" }));
+}
+
+function ContentArea() {
+  const isFullBleed = useIsFullBleedRoute();
   return (
-    <div className={isDashboard ? s.contentFullBleed : s.content}>
+    <div className={isFullBleed ? s.contentFullBleed : s.content}>
       <Outlet />
     </div>
   );

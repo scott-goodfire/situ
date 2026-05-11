@@ -6,7 +6,7 @@ import { eq } from "drizzle-orm";
 
 import { getDb } from "../data/db/client";
 import { computeTargets } from "../data/db/schema";
-import { runExecCommand } from "./automation-commands";
+import { armExecHardExitWatchdog, runExecCommand } from "./automation-commands";
 import { startRuntimeApp } from "./runtime-app";
 
 const originalEnv = {
@@ -147,7 +147,43 @@ describe("runExecCommand", () => {
       }),
     ).rejects.toThrow("compute options are only supported");
   });
+
+  test("hard-exit watchdog fires onExit with the correct code if not cancelled", async () => {
+    const exits: number[] = [];
+    const warnings: string[] = [];
+    armExecHardExitWatchdog({
+      exitCode: 5,
+      delayMs: 20,
+      onExit: (code) => exits.push(code),
+      onWarn: (message) => warnings.push(message),
+    });
+
+    await sleep(60);
+
+    expect(exits).toEqual([5]);
+    expect(warnings[0]).toContain("Teardown exceeded 20ms");
+    expect(warnings[0]).toContain("forcing exit 5");
+  });
+
+  test("hard-exit watchdog stays silent when cancelled before the delay elapses", async () => {
+    const exits: number[] = [];
+    const watchdog = armExecHardExitWatchdog({
+      exitCode: 5,
+      delayMs: 50,
+      onExit: (code) => exits.push(code),
+      onWarn: () => {},
+    });
+    watchdog.cancel();
+
+    await sleep(100);
+
+    expect(exits).toEqual([]);
+  });
 });
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 function restoreEnv(): void {
   for (const [key, value] of Object.entries(originalEnv)) {

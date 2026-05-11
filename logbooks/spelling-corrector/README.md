@@ -6,6 +6,8 @@ This was an autoresearch run on that design surface, using a loop adapted from [
 
 Source logbook: [scott-goodfire/logbook-autoresearch-and-spelling-corrector](https://github.com/scott-goodfire/logbook-autoresearch-and-spelling-corrector). Underlying task: [Peter Norvig — How to Write a Spelling Corrector](https://norvig.com/spell-correct.html).
 
+_Note: The latest version of situ hasn't been run on this project yet — an update will be added here over the next week or two._
+
 ## Files
 
 - `autoresearch.md` — summary of the run: headline numbers, phase overview, what worked, what broke

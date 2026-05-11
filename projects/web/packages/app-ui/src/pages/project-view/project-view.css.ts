@@ -77,3 +77,106 @@ export const reportFooter = style({
   color: vars.color.mutedForeground,
   fontSize: vars.text.productSm,
 });
+
+export const proseTruncated = style([
+  prose,
+  {
+    display: "-webkit-box",
+    WebkitLineClamp: 3,
+    WebkitBoxOrient: "vertical",
+    overflow: "hidden",
+  },
+]);
+
+export const expandToggle = style({
+  alignSelf: "flex-start",
+  marginTop: 4,
+  padding: 0,
+  background: "none",
+  border: "none",
+  color: vars.color.mutedForeground,
+  fontFamily: "inherit",
+  fontSize: vars.text.productSm,
+  fontWeight: 500,
+  cursor: "pointer",
+  textDecoration: "underline",
+  textUnderlineOffset: 3,
+  selectors: {
+    "&:hover": {
+      color: vars.color.foreground,
+    },
+  },
+});
+
+export const baselineList = style({
+  listStyle: "none",
+  margin: 0,
+  marginTop: 6,
+  padding: 0,
+  display: "grid",
+  gap: 10,
+});
+
+export const baselineEntry = style({
+  display: "block",
+});
+
+export const baselineEntryBody = style({
+  display: "grid",
+  gap: 10,
+});
+
+export const baselineEntryHeader = style({
+  display: "grid",
+  gap: 4,
+});
+
+export const baselineEyebrow = style({
+  margin: 0,
+  color: vars.color.mutedForegroundTertiary,
+  fontSize: vars.text.productSm,
+});
+
+export const baselineTitle = style({
+  margin: 0,
+  color: vars.color.foreground,
+  fontSize: vars.text.productLg,
+  fontWeight: 500,
+});
+
+export const measurementsBlock = style({
+  display: "grid",
+  gap: 6,
+});
+
+export const measurementsLabel = style({
+  margin: 0,
+  color: vars.color.mutedForeground,
+  fontSize: vars.text.productSm,
+  fontWeight: 600,
+  letterSpacing: "0.04em",
+  textTransform: "uppercase",
+});
+
+export const measurementList = style({
+  listStyle: "none",
+  margin: 0,
+  padding: 0,
+  display: "grid",
+  gap: 6,
+});
+
+export const measurementItem = style({
+  display: "grid",
+  gap: 2,
+  paddingLeft: 10,
+  borderLeft: `2px solid ${vars.color.border01_5}`,
+  fontSize: vars.text.body,
+  color: vars.color.foreground,
+});
+
+export const measurementBody = style({
+  color: vars.color.mutedForeground,
+  fontSize: vars.text.productSm,
+  whiteSpace: "pre-wrap",
+});

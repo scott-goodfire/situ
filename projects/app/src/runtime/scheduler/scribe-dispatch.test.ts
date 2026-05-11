@@ -6,7 +6,7 @@ import { eq } from "drizzle-orm";
 
 import { ensureRuntimeContext, resetRuntimeContextForTests } from "../../config/session-context";
 import { getDb, resetDbForTests } from "../../data/db/client";
-import { feedEntries, researchProjects, workItems } from "../../data/db/schema";
+import { claudeAgentRuns, feedEntries, researchProjects, workItems } from "../../data/db/schema";
 import { feedEntryRepository } from "../../data/repositories/feed-entries";
 import { researchProjectRepository } from "../../data/repositories/research-projects";
 import { CLAUDE_SCRIBE_SESSION_WORK_ITEM_PURPOSE } from "../work-items";
@@ -62,6 +62,24 @@ describe("dispatchScribeNarrationIfDue", () => {
     expect(items).toHaveLength(1);
     expect(items[0]?.targetId).toBe(project.id);
     expect(items[0]?.status).toBe("pending");
+  });
+
+  test("enqueued scribe work item carries a non-empty content prompt", async () => {
+    await researchProjectRepository.create({
+      goal: "Exercise scribe dispatch (content shape).",
+    });
+
+    await dispatchScribeNarrationIfDue();
+
+    const items = scribeWorkItems();
+    expect(items).toHaveLength(1);
+    const firstItem = items[0];
+    if (!firstItem) {
+      throw new Error("Expected one scribe work item.");
+    }
+    const payload = JSON.parse(firstItem.payloadJson) as { content?: unknown };
+    expect(typeof payload.content).toBe("string");
+    expect((payload.content as string).trim().length).toBeGreaterThan(0);
   });
 
   test("skips when the latest narration is within the interval", async () => {
@@ -122,6 +140,7 @@ function scribeWorkItemCount(): number {
 
 function resetTables(): void {
   const db = getDb();
+  db.delete(claudeAgentRuns).run();
   db.delete(workItems).run();
   db.delete(feedEntries).run();
   db.delete(researchProjects).run();

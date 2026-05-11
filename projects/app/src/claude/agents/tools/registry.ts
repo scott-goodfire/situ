@@ -71,6 +71,9 @@ import { computePoolsOverviewTool } from "./compute-pools-overview";
 import { getComputeTargetTool } from "./get-compute-target";
 import { listComputeTargetsTool } from "./list-compute-targets";
 import { searchComputeTargetsTool } from "./search-compute-targets";
+import { getAppEventTool } from "./get-app-event";
+import { listAppEventsTool } from "./list-app-events";
+import { searchAppEventsTool } from "./search-app-events";
 
 export const claudeAgentToolDefinitions: readonly ClaudeAgentToolDefinition[] = [
   askUserQuestionTool,
@@ -142,6 +145,9 @@ export const claudeAgentToolDefinitions: readonly ClaudeAgentToolDefinition[] = 
   getComputeTargetTool,
   listComputeTargetsTool,
   searchComputeTargetsTool,
+  getAppEventTool,
+  listAppEventsTool,
+  searchAppEventsTool,
 ];
 
 export function claudeAgentToolParamsForRole({

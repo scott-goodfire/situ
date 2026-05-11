@@ -251,6 +251,27 @@ function inputFromSpec(spec: StorySpec): BuildResearchMapModelInput {
 const meta: Meta<typeof ResearchMapView> = {
   title: "App UI/Research Map View",
   component: ResearchMapView,
+  parameters: {
+    layout: "fullscreen",
+    fullBleed: true,
+  },
+  args: {
+    fullBleed: true,
+  },
+  decorators: [
+    (Story) => (
+      <div
+        style={{
+          height: "100vh",
+          minHeight: 0,
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        <Story />
+      </div>
+    ),
+  ],
 };
 
 export default meta;
