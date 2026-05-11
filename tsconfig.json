@@ -1,0 +1,4 @@
+{
+  "files": [],
+  "references": [{ "path": "./projects/docs" }, { "path": "./projects/web" }]
+}
