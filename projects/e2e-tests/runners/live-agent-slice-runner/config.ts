@@ -8,7 +8,7 @@ import {
   RESEARCH_TASK_TYPES,
   VERIFICATION_PROFILES,
   VERIFICATION_STATUSES,
-  type LiveAgentSliceEvalConfig,
+  type LiveAgentSliceRunnerConfig,
 } from "./types";
 
 const positiveSeconds = z
@@ -50,7 +50,7 @@ const seedResearchTaskSchema = z
     path: ["targetId"],
   });
 
-const liveAgentSliceEvalConfigSchema = z
+const liveAgentSliceRunnerConfigSchema = z
   .object({
     driver: z.enum(DRIVERS),
     goal: z.string().trim().min(1, "goal is required."),
@@ -72,22 +72,22 @@ const liveAgentSliceEvalConfigSchema = z
     path: ["targetId"],
   });
 
-export function readLiveAgentSliceEvalConfig({
+export function readLiveAgentSliceRunnerConfig({
   argv,
 }: {
   argv: string[];
-}): LiveAgentSliceEvalConfig {
+}): LiveAgentSliceRunnerConfig {
   const raw = argv[2];
   if (!raw) {
-    throw new Error("Live agent slice eval config JSON is required.");
+    throw new Error("Live agent slice runner config JSON is required.");
   }
-  return parseLiveAgentSliceEvalConfig({ value: JSON.parse(raw) as unknown });
+  return parseLiveAgentSliceRunnerConfig({ value: JSON.parse(raw) as unknown });
 }
 
-export function parseLiveAgentSliceEvalConfig({
+export function parseLiveAgentSliceRunnerConfig({
   value,
 }: {
   value: unknown;
-}): LiveAgentSliceEvalConfig {
-  return liveAgentSliceEvalConfigSchema.parse(value);
+}): LiveAgentSliceRunnerConfig {
+  return liveAgentSliceRunnerConfigSchema.parse(value);
 }

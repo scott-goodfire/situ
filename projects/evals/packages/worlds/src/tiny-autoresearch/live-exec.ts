@@ -87,7 +87,7 @@ export async function runTinyAutoresearchLiveExec({
     cmd: [
       "bun",
       "run",
-      "src/runtime/automation/live-agent-slice-eval.ts",
+      "runners/live-agent-slice-runner.ts",
       jsonModule.stringify({
         value: {
           driver: config.driver,
@@ -107,7 +107,7 @@ export async function runTinyAutoresearchLiveExec({
         },
       }),
     ],
-    cwd: world.appRoot,
+    cwd: world.e2eRoot,
     env: tinyAutoresearchWorldEnv({
       world,
       env: { SITU_ANTHROPIC_KEY: key },

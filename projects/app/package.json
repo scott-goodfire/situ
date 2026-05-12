@@ -3,15 +3,19 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "exports": {
+    "./runtime": "./src/runtime/public.ts"
+  },
   "scripts": {
     "app": "bun run src/cli.ts",
     "check": "tsgo --noEmit -p tsconfig.json",
     "check:cli": "bun run src/cli/command-checks.ts",
     "check:cli-docs": "bun run src/cli/docs-checks.ts",
     "test:cli": "bun test src/cli",
-    "test:skills": "bun test src/claude/agents/skills/registry.test.ts",
-    "test:tools": "bun test src/claude/agents/tools/*.test.ts",
+    "test:skills": "bun test src/claude/agents/skills",
+    "test:tools": "bun test src/claude/agents/tools",
     "test:prompts": "bun test src/claude/agents/runs",
+    "test:roles": "bun test src/claude/agents/roles",
     "test:automation": "bun test src/runtime/automation",
     "test:research-projects": "bun test src/runtime/dispatch/research-projects.test.ts",
     "test:settings": "bun test src/routes/settings.test.ts",

@@ -1,12 +1,13 @@
-import { ensureRuntimeContext } from "../../../config/session-context";
 import { researchProjectRepository } from "@situ/research-projects";
-import { readLiveAgentSliceEvalConfig } from "./config";
+import { ensureRuntimeContext } from "@situ/app/runtime";
+
+import { readLiveAgentSliceRunnerConfig } from "./config";
 import { runLiveAgentSliceDriver } from "./drivers";
-import { hasFailedRuntimeState, printLiveAgentSliceEvalReport } from "./report";
+import { hasFailedRuntimeState, printLiveAgentSliceRunnerReport } from "./report";
 import { seedResearchTasks } from "./seed-research-tasks";
 
-export async function runLiveAgentSliceEvalCli({ argv }: { argv: string[] }): Promise<void> {
-  const config = readLiveAgentSliceEvalConfig({ argv });
+export async function runLiveAgentSliceRunnerCli({ argv }: { argv: string[] }): Promise<void> {
+  const config = readLiveAgentSliceRunnerConfig({ argv });
   const runtime = await ensureRuntimeContext();
   const researchProject = await researchProjectRepository.create({
     goal: config.goal,
@@ -45,7 +46,7 @@ export async function runLiveAgentSliceEvalCli({ argv }: { argv: string[] }): Pr
   const finalResearchProject = await researchProjectRepository.require({
     researchProjectId: researchProject.id,
   });
-  printLiveAgentSliceEvalReport({
+  printLiveAgentSliceRunnerReport({
     sessionId: runtime.sessionId,
     researchProject: finalResearchProject,
     summary,

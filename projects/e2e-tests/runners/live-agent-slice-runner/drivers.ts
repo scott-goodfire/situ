@@ -1,23 +1,26 @@
-import { maxScientistConcurrency } from "../../../config/runtime";
+import { computeModule } from "@situ/compute";
 import { researchTaskRepository } from "@situ/research-projects";
+import { workItemModule } from "@situ/work-items";
 import {
+  createRuntimeScheduler,
   enqueueManagerResearchProjectWork,
   enqueueScientistResearchTaskWork,
   enqueueVerifierResearchTaskWork,
-} from "../../dispatch";
-import { computeModule } from "@situ/compute";
-import { workItemModule } from "@situ/work-items";
-import { createRuntimeScheduler } from "../../scheduler";
-import { handleClaimedWorkItem, workItemLeaseMs } from "../../work-items";
-import { readAutomationState, waitForAutomationUntilIdle } from "../runner";
+  handleClaimedWorkItem,
+  maxScientistConcurrency,
+  readAutomationState,
+  waitForAutomationUntilIdle,
+  workItemLeaseMs,
+} from "@situ/app/runtime";
+
 import { createConfiguredResearchTask } from "./seed-research-tasks";
-import type { LiveAgentSliceEvalConfig, LiveAgentSliceSummary } from "./types";
+import type { LiveAgentSliceRunnerConfig, LiveAgentSliceSummary } from "./types";
 
 export async function runLiveAgentSliceDriver({
   config,
   researchProjectId,
 }: {
-  config: LiveAgentSliceEvalConfig;
+  config: LiveAgentSliceRunnerConfig;
   researchProjectId: string;
 }): Promise<LiveAgentSliceSummary> {
   switch (config.driver) {
@@ -51,7 +54,7 @@ async function runVerifierTurn({
   config,
   researchProjectId,
 }: {
-  config: LiveAgentSliceEvalConfig;
+  config: LiveAgentSliceRunnerConfig;
   researchProjectId: string;
 }): Promise<LiveAgentSliceSummary> {
   const task = await createConfiguredResearchTask({ config, researchProjectId });
@@ -78,7 +81,7 @@ async function runScientistVerifierLoop({
   config,
   researchProjectId,
 }: {
-  config: LiveAgentSliceEvalConfig;
+  config: LiveAgentSliceRunnerConfig;
   researchProjectId: string;
 }): Promise<LiveAgentSliceSummary> {
   await computeModule.ensureDefaultLocalTargets({ desiredCount: maxScientistConcurrency() });

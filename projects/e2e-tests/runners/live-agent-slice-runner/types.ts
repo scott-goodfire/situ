@@ -7,7 +7,7 @@ import type {
   ResearchTaskVerificationProfile,
   ResearchTaskVerificationStatus,
 } from "@situ/research-projects";
-import type { AutomationState } from "../runner";
+import type { AutomationState } from "@situ/app/runtime";
 
 export const DRIVERS = ["manager_turn", "scientist_verifier", "verifier_turn"] as const;
 export const PROJECT_PHASES = [
@@ -75,7 +75,7 @@ export type SeedResearchTaskConfig = Readonly<{
   verification?: SeedVerificationConfig;
 }>;
 
-export type LiveAgentSliceEvalConfig = Readonly<{
+export type LiveAgentSliceRunnerConfig = Readonly<{
   driver: LiveAgentSliceDriver;
   goal: string;
   timeoutSeconds: number;

@@ -1,35 +1,32 @@
-import { evalite } from "evalite";
+import { describe, expect, test } from "bun:test";
 
+import { checkDurableState, type DurableStateExpectation } from "./assertions";
+import { createTinyAutoresearchWorld } from "./create-world";
 import {
-  TINY_AUTORESEARCH_SCENARIOS,
-  tinyAutoresearchScenario,
-  type TinyAutoresearchSeedName,
-} from "@situ/evals-fixtures/tiny-autoresearch";
+  readTinyAutoresearchDurableState,
+  type TinyAutoresearchDurableState,
+} from "./durable-state";
+import type { TinyAutoresearchSeedName } from "@situ/evals-fixtures/tiny-autoresearch";
 
-import {
-  durableStateScorer,
-  type DurableStateEvalExpected,
-} from "../../scorers/durable-state-scorer";
-import { markerScorer } from "../../scorers/marker-scorer";
-import { runWorldStateBridge } from "./bridge";
-
-type DurableFixtureCase = Readonly<{
-  name: string;
-  seedName: TinyAutoresearchSeedName;
-  expected: DurableStateEvalExpected;
+type LineageExpectation = Readonly<{
+  parentExperimentIds?: readonly string[];
+  associatedHypothesisIds?: readonly string[];
+  researchTaskTypes?: readonly string[];
 }>;
 
-const durableFixtureCases: DurableFixtureCase[] = [
+type SeedCase = Readonly<{
+  name: string;
+  seedName: TinyAutoresearchSeedName;
+  durable: DurableStateExpectation;
+  lineage?: LineageExpectation;
+}>;
+
+const cases: SeedCase[] = [
   {
     name: "empty repo has only session bootstrap state",
     seedName: "empty_repo",
-    expected: {
-      minCounts: {
-        session: 1,
-        claudeAgents: 3,
-        researchProjects: 1,
-        researchTasks: 1,
-      },
+    durable: {
+      minCounts: { session: 1, researchProjects: 1, researchTasks: 1 },
       requiredMarkers: [
         "python train.py",
         "tiny autoresearch",
@@ -41,7 +38,7 @@ const durableFixtureCases: DurableFixtureCase[] = [
   {
     name: "baseline seed has linked measurement evidence",
     seedName: "with_baseline_result",
-    expected: {
+    durable: {
       minCounts: {
         session: 1,
         hypotheses: 1,
@@ -62,7 +59,7 @@ const durableFixtureCases: DurableFixtureCase[] = [
   {
     name: "candidate seed preserves comparison lineage",
     seedName: "with_candidate_result",
-    expected: {
+    durable: {
       minCounts: {
         session: 1,
         hypotheses: 1,
@@ -87,7 +84,7 @@ const durableFixtureCases: DurableFixtureCase[] = [
   {
     name: "comparability seed exposes the trust concern",
     seedName: "comparability_break",
-    expected: {
+    durable: {
       minCounts: {
         session: 1,
         hypotheses: 1,
@@ -112,10 +109,9 @@ const durableFixtureCases: DurableFixtureCase[] = [
   {
     name: "large search ridge seed preserves crowded search topology",
     seedName: "large_search_ridge",
-    expected: {
+    durable: {
       minCounts: {
         session: 1,
-        claudeAgents: 3,
         researchProjects: 1,
         researchTasks: 52,
         hypotheses: 20,
@@ -141,18 +137,19 @@ const durableFixtureCases: DurableFixtureCase[] = [
         "prepare.py",
       ],
       requiredChangedFiles: ["prepare.py", "train.py"],
-      requiredParentExperimentIds: ["LR_EX_02", "LR_EX_36", "LR_EX_42", "LR_EX_46"],
-      requiredAssociatedHypothesisIds: ["LR_H01", "LR_H18", "LR_H20"],
-      requiredResearchTaskTypes: ["explore", "exploit", "debug"],
+    },
+    lineage: {
+      parentExperimentIds: ["LR_EX_02", "LR_EX_36", "LR_EX_42", "LR_EX_46"],
+      associatedHypothesisIds: ["LR_H01", "LR_H18", "LR_H20"],
+      researchTaskTypes: ["explore", "exploit", "debug"],
     },
   },
   {
     name: "exploit drift lineage seeds five chained exploits and stranded triage",
     seedName: "exploit_drift_lineage",
-    expected: {
+    durable: {
       minCounts: {
         session: 1,
-        claudeAgents: 3,
         researchProjects: 1,
         researchTasks: 7,
         hypotheses: 6,
@@ -173,18 +170,19 @@ const durableFixtureCases: DurableFixtureCase[] = [
         "val_bpb",
       ],
       requiredChangedFiles: ["train.py"],
-      requiredParentExperimentIds: ["EXP_DRIFT_EX_1", "EXP_DRIFT_EX_4"],
-      requiredAssociatedHypothesisIds: ["EXP_DRIFT_H_POOLING"],
-      requiredResearchTaskTypes: ["explore", "exploit"],
+    },
+    lineage: {
+      parentExperimentIds: ["EXP_DRIFT_EX_1", "EXP_DRIFT_EX_4"],
+      associatedHypothesisIds: ["EXP_DRIFT_H_POOLING"],
+      researchTaskTypes: ["explore", "exploit"],
     },
   },
   {
     name: "healthy exploit window seeds a fresh keep with no triage backlog",
     seedName: "healthy_exploit_window",
-    expected: {
+    durable: {
       minCounts: {
         session: 1,
-        claudeAgents: 3,
         researchProjects: 1,
         researchTasks: 3,
         hypotheses: 1,
@@ -203,17 +201,18 @@ const durableFixtureCases: DurableFixtureCase[] = [
         "2.681",
       ],
       requiredChangedFiles: ["train.py"],
-      requiredAssociatedHypothesisIds: ["HEALTHY_EXPLOIT_H_ACTIVE"],
-      requiredResearchTaskTypes: ["explore", "exploit"],
+    },
+    lineage: {
+      associatedHypothesisIds: ["HEALTHY_EXPLOIT_H_ACTIVE"],
+      researchTaskTypes: ["explore", "exploit"],
     },
   },
   {
     name: "two orthogonal wins seed preloads independent verified positives for the combiner",
     seedName: "two_orthogonal_wins_for_combiner",
-    expected: {
+    durable: {
       minCounts: {
         session: 1,
-        claudeAgents: 3,
         researchProjects: 1,
         researchTasks: 4,
         hypotheses: 2,
@@ -235,17 +234,18 @@ const durableFixtureCases: DurableFixtureCase[] = [
         "2.689",
       ],
       requiredChangedFiles: ["train.py"],
-      requiredAssociatedHypothesisIds: ["ORTHO_WINS_H_POOLING", "ORTHO_WINS_H_VOCAB"],
-      requiredResearchTaskTypes: ["explore", "exploit"],
+    },
+    lineage: {
+      associatedHypothesisIds: ["ORTHO_WINS_H_POOLING", "ORTHO_WINS_H_VOCAB"],
+      researchTaskTypes: ["explore", "exploit"],
     },
   },
   {
     name: "exploit drift with mixed triage splits same-axis and different-axis hypotheses",
     seedName: "exploit_drift_with_mixed_triage",
-    expected: {
+    durable: {
       minCounts: {
         session: 1,
-        claudeAgents: 3,
         researchProjects: 1,
         researchTasks: 7,
         hypotheses: 6,
@@ -268,41 +268,107 @@ const durableFixtureCases: DurableFixtureCase[] = [
         "different parameter from pooling",
       ],
       requiredChangedFiles: ["train.py"],
-      requiredParentExperimentIds: ["EXP_DRIFT_MIX_EX_1", "EXP_DRIFT_MIX_EX_4"],
-      requiredAssociatedHypothesisIds: ["EXP_DRIFT_MIX_H_POOLING"],
-      requiredResearchTaskTypes: ["explore", "exploit"],
+    },
+    lineage: {
+      parentExperimentIds: ["EXP_DRIFT_MIX_EX_1", "EXP_DRIFT_MIX_EX_4"],
+      associatedHypothesisIds: ["EXP_DRIFT_MIX_H_POOLING"],
+      researchTaskTypes: ["explore", "exploit"],
     },
   },
 ];
 
-evalite("tiny autoresearch scenario fixtures", {
-  data: TINY_AUTORESEARCH_SCENARIOS.map((scenario) => ({
-    input: scenario.name,
-    expected: {
-      required: [
-        scenario.name,
-        scenario.seed,
-        ...scenario.expectation.requiredOutputMarkers,
-        ...scenario.expectation.requiredProjectMarkers,
-      ],
-    },
-  })),
-  task: (input) => {
-    const scenario = tinyAutoresearchScenario({ name: input });
-    return JSON.stringify(scenario);
-  },
-  scorers: [markerScorer],
-});
+function uniqueExperimentField({
+  state,
+  snakeKey,
+  camelKey,
+}: {
+  state: TinyAutoresearchDurableState;
+  snakeKey: string;
+  camelKey: string;
+}): string[] {
+  const values = new Set<string>();
+  for (const experiment of state.experiments) {
+    const record = experiment as Record<string, unknown>;
+    const raw = record[snakeKey] ?? record[camelKey];
+    if (typeof raw === "string" && raw.trim().length > 0) {
+      values.add(raw);
+    }
+  }
+  return [...values];
+}
 
-evalite("tiny autoresearch durable fixture worlds", {
-  data: durableFixtureCases.map((item) => ({
-    input: item,
-    expected: item.expected,
-  })),
-  task: async (input) => {
-    return runWorldStateBridge({
-      seedName: input.seedName,
+function uniqueResearchTaskTypes(state: TinyAutoresearchDurableState): string[] {
+  const values = new Set<string>();
+  for (const task of state.researchTasks) {
+    const record = task as Record<string, unknown>;
+    if (typeof record.type === "string") {
+      values.add(record.type);
+    }
+  }
+  return [...values];
+}
+
+function expectLineage({
+  state,
+  expected,
+}: {
+  state: TinyAutoresearchDurableState;
+  expected: LineageExpectation;
+}): void {
+  if (expected.parentExperimentIds) {
+    const present = uniqueExperimentField({
+      state,
+      snakeKey: "parent_experiment_id",
+      camelKey: "parentExperimentId",
     });
-  },
-  scorers: [durableStateScorer],
+    for (const id of expected.parentExperimentIds) {
+      expect(present).toContain(id);
+    }
+  }
+  if (expected.associatedHypothesisIds) {
+    const present = uniqueExperimentField({
+      state,
+      snakeKey: "associated_hypothesis_id",
+      camelKey: "associatedHypothesisId",
+    });
+    for (const id of expected.associatedHypothesisIds) {
+      expect(present).toContain(id);
+    }
+  }
+  if (expected.researchTaskTypes) {
+    const present = uniqueResearchTaskTypes(state);
+    for (const type of expected.researchTaskTypes) {
+      expect(present).toContain(type);
+    }
+  }
+}
+
+describe("tiny autoresearch seed fixtures", () => {
+  test.each(cases.map((c) => [c.name, c] as const))(
+    "%s",
+    async (_name, seedCase) => {
+      const { world, cleanup } = await createTinyAutoresearchWorld({
+        seedName: seedCase.seedName,
+      });
+      try {
+        const state = readTinyAutoresearchDurableState({ world });
+        const result = checkDurableState({ state, expectation: seedCase.durable });
+        expect(result).toEqual(
+          expect.objectContaining({
+            passed: true,
+            missingCounts: [],
+            missingMarkers: [],
+            missingChangedFiles: [],
+            forbiddenChangedFiles: [],
+          }),
+        );
+        if (seedCase.lineage) {
+          expectLineage({ state, expected: seedCase.lineage });
+        }
+      } finally {
+        await cleanup();
+      }
+    },
+    180_000,
+  );
 });

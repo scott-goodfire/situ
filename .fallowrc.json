@@ -9,6 +9,8 @@
     "projects/web/packages/ui/.storybook/main.ts",
     "projects/web/packages/app-ui/.storybook/main.ts",
     "projects/e2e-tests/tests/*.spec.ts",
+    "projects/e2e-tests/runners/live-agent-slice-runner.ts",
+    "projects/e2e-tests/runners/live-research-task-runner.ts",
     "projects/evals/evalite.config.ts",
     "projects/evals/src/*.eval.ts",
     "projects/evals/src/worlds/*/runner.ts",
@@ -25,8 +27,8 @@
   ],
   "dynamicallyLoaded": [
     "projects/app/src/claude/agents/skills/runtime/**",
-    "projects/app/src/runtime/automation/live-agent-slice-eval.ts",
-    "projects/app/src/runtime/automation/live-research-task-eval.ts"
+    "projects/e2e-tests/runners/live-agent-slice-runner.ts",
+    "projects/e2e-tests/runners/live-research-task-runner.ts"
   ],
   "publicPackages": ["@situ/evals-*", "@situ/protocol", "@situ/web-*"],
   "ignoreExports": [

@@ -1,6 +1,6 @@
 import { researchTaskRepository } from "@situ/research-projects";
 import { researchTaskVerificationRepository } from "@situ/research-projects";
-import type { LiveAgentSliceEvalConfig, SeedResearchTaskConfig } from "./types";
+import type { LiveAgentSliceRunnerConfig, SeedResearchTaskConfig } from "./types";
 
 export async function seedResearchTasks({
   researchProjectId,
@@ -58,7 +58,7 @@ export async function createConfiguredResearchTask({
   config,
   researchProjectId,
 }: {
-  config: LiveAgentSliceEvalConfig;
+  config: LiveAgentSliceRunnerConfig;
   researchProjectId: string;
 }): Promise<Awaited<ReturnType<typeof researchTaskRepository.create>>> {
   if (!config.title?.trim()) {

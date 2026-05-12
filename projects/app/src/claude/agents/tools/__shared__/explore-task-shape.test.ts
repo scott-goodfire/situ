@@ -1,18 +1,21 @@
-import { evalite } from "evalite";
+import { describe, expect, test } from "bun:test";
 
-import { findExploitShapeTokens } from "../../app/src/claude/agents/tools/__shared__/explore-task-shape";
+import { findExploitShapeTokens, type ExploitShapeToken } from "./explore-task-shape";
 
-type Case = {
+type ExploreShapeCase = {
   readonly name: string;
   readonly workerPrompt: string;
-  readonly expected: {
-    readonly shouldMatch: boolean;
-    readonly mustContain: readonly string[];
-    readonly note: string;
-  };
+  readonly expected:
+    | {
+        readonly shouldMatch: true;
+        readonly mustContain: readonly ExploitShapeToken[];
+      }
+    | {
+        readonly shouldMatch: false;
+      };
 };
 
-const cases: Case[] = [
+const cases: ExploreShapeCase[] = [
   {
     name: "misfile: capture + record exploit verbs in explore prompt",
     workerPrompt:
@@ -20,7 +23,6 @@ const cases: Case[] = [
     expected: {
       shouldMatch: true,
       mustContain: ["capture_experiment_candidate", "record_experiment_comparison"],
-      note: "Real misfiling pattern (6fd6ca35-style). Manager wrote an exploit recipe under type: explore.",
     },
   },
   {
@@ -30,7 +32,6 @@ const cases: Case[] = [
     expected: {
       shouldMatch: true,
       mustContain: ["git reset --hard", "submit_experiment"],
-      note: "Real misfiling pattern (2c79a66e-style). Mutating shell + exploit tool inside explore.",
     },
   },
   {
@@ -40,7 +41,6 @@ const cases: Case[] = [
     expected: {
       shouldMatch: true,
       mustContain: ["git commit -am"],
-      note: "Lone exploit verb is still enough to refuse.",
     },
   },
   {
@@ -50,7 +50,6 @@ const cases: Case[] = [
     expected: {
       shouldMatch: true,
       mustContain: ["create_experiment"],
-      note: "Direct tool name reference. No legitimate explore would name this.",
     },
   },
   {
@@ -59,8 +58,6 @@ const cases: Case[] = [
       "Inspect the last 20 commits in main using git log --oneline and summarize what changed in the training loop. Identify any commit that may have introduced the val_bpb regression.",
     expected: {
       shouldMatch: false,
-      mustContain: [],
-      note: "Mentions 'git' but only in read-only verbs (log). Must not false-positive.",
     },
   },
   {
@@ -69,8 +66,6 @@ const cases: Case[] = [
       "List existing experiments and hypotheses for the project; identify the three with the largest val_bpb gap; write a one-paragraph summary per experiment.",
     expected: {
       shouldMatch: false,
-      mustContain: [],
-      note: "Mentions 'experiment' (a word, not a tool name) but no exploit tool names. Must not false-positive.",
     },
   },
   {
@@ -79,45 +74,20 @@ const cases: Case[] = [
       "Read projects/app/src/runtime/automation/runner.ts and write a one-paragraph summary of the work-item claim path. Cite three line numbers.",
     expected: {
       shouldMatch: false,
-      mustContain: [],
-      note: "Pure read-only explore work. Zero exploit signal.",
     },
   },
 ];
 
-evalite("explore-task shape validator", {
-  data: () =>
-    cases.map((aCase) => ({
-      input: aCase.workerPrompt,
-      expected: aCase.expected,
-      meta: { name: aCase.name },
-    })),
-  task: async (workerPrompt: string) => findExploitShapeTokens({ workerPrompt }),
-  scorers: [
-    {
-      name: "hit-rate",
-      description:
-        "Misfilings: every expected token is detected. Legitimate explores: detector stays silent.",
-      scorer: ({ output, expected }: { output: string[]; expected: Case["expected"] }) => {
-        if (!expected.shouldMatch) {
-          return {
-            score: output.length === 0 ? 1 : 0,
-            metadata: {
-              falsePositiveTokens: output,
-              note: expected.note,
-            },
-          };
-        }
-        const missing = expected.mustContain.filter((token) => !output.includes(token));
-        return {
-          score: missing.length === 0 && output.length > 0 ? 1 : 0,
-          metadata: {
-            matchedTokens: output,
-            missingExpectedTokens: missing,
-            note: expected.note,
-          },
-        };
-      },
-    },
-  ],
+describe("findExploitShapeTokens", () => {
+  test.each(cases.map((c) => [c.name, c] as const))("%s", (_name, evalCase) => {
+    const matched = findExploitShapeTokens({ workerPrompt: evalCase.workerPrompt });
+    if (evalCase.expected.shouldMatch) {
+      expect(matched.length).toBeGreaterThan(0);
+      for (const expectedToken of evalCase.expected.mustContain) {
+        expect(matched).toContain(expectedToken);
+      }
+    } else {
+      expect(matched).toEqual([]);
+    }
+  });
 });

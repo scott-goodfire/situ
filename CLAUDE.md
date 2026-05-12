@@ -18,19 +18,20 @@ All workflows go through `mise`. The top-level scripts in `package.json` just sh
 - `mise run lint:policies` — structural lint of `.agents/skills/*` (cross-refs, sections, voice, format)
 - `mise run app` — run the local app from source with Vite middleware
 - `mise run e2e-tests` — Playwright suite under `projects/e2e-tests/` that boots the real CLI against a temp `SITU_HOME`
-- `mise run evals` — live agent evals (require `SITU_ANTHROPIC_KEY`). Non-LLM eval checks run via `mise run test`.
+- `mise run evals` — live agent evals (require `SITU_ANTHROPIC_KEY`). All entries under `projects/evals/src/` are LLM-backed; non-LLM checks live as co-located `*.test.ts` files and run via `mise run test`.
 - `mise run db:generate` / `mise run db:migrate` — drizzle-kit for the per-session SQLite schema
 - `mise run release:build` — build a platform tarball under `dist/release/`
 - `mise run fallow:audit -- --changed-since main` — quality gate that pre-push runs
 
 ### Running a single test
 
-`@situ/app` uses `bun test`; web packages use `vitest`; evals use `evalite`.
+`@situ/app` uses `bun test`; `@situ/e2e-tests` runner unit tests use `bun test`; web packages use `vitest`; live agent evals use `evalite`; Playwright covers product e2e specs.
 
 - One app test file: `bun --filter=@situ/app test src/path/to/file.test.ts`
-- A pre-grouped slice (see `projects/app/package.json` scripts): e.g. `bun --filter=@situ/app run test:skills`, `test:tools`, `test:prompts`, `test:automation`, `test:research-projects`, `test:repositories`, `test:worktrees`, `test:compute`, `test:observability`, `test:settings`, `test:diagnostics`, `test:modules`, `test:cli`
+- A pre-grouped slice (see `projects/app/package.json` scripts): e.g. `bun --filter=@situ/app run test:skills`, `test:tools`, `test:prompts`, `test:roles`, `test:automation`, `test:research-projects`, `test:repositories`, `test:worktrees`, `test:compute`, `test:observability`, `test:settings`, `test:diagnostics`, `test:modules`, `test:cli`
 - One web test file: `bun x vitest run path/to/file.test.ts`
-- A single evalite suite: `bun --filter=@situ/evals exec evalite run src/prompts.eval.ts --hideTable --noCache`
+- A single live agent eval suite: `bun --filter=@situ/evals exec evalite run src/manager-planning-instincts.eval.ts --hideTable --noCache` (requires `SITU_ANTHROPIC_KEY`)
+- E2E runner unit tests: `bun --filter=@situ/e2e-tests run test:runners`
 
 `scripts/check.sh` is the single source of truth for which test slices are required — add a slice there if you add a new one.
 
@@ -45,8 +46,8 @@ Bun workspaces, declared in the root `package.json`. The shared dep `catalog:` t
   - `ui` (`@situ/web-ui`) — vanilla-extract `dx-*` primitives, Storybook on `:6006`
   - `app-ui` (`@situ/web-app-ui`) — Situ-specific page views consuming the primitives, Storybook on `:6007`
   - `protocol` (`@situ/protocol`) — shared record types crossing the wire (Replicache, routes)
-- `projects/evals/` (`@situ/evals`) + `projects/evals/packages/{fixtures,worlds}` — evalite-driven prompt/runtime-skill scoring plus fixture worlds and live agent eval entry points
-- `projects/e2e-tests/` — Playwright smoke suite against the real `situ` CLI
+- `projects/evals/` (`@situ/evals`) + `projects/evals/packages/{fixtures,worlds}` — live LLM-backed Evalite suites plus fixture worlds and seeded SQLite state. Every `*.eval.ts` under `src/` is live-LLM and gated on `SITU_ANTHROPIC_KEY`. The fixture/world packages have their own `bun:test` unit tests.
+- `projects/e2e-tests/` — `tests/` holds Playwright specs against the real `situ` CLI; `runners/` holds bun-script subprocess targets (live agent slice runners) invoked by evals-worlds via `world.e2eRoot`. The runners import the app's runtime via the `@situ/app/runtime` subpath export declared in `projects/app/package.json`.
 - `projects/docs/` — VitePress site (`mise run docs:dev`)
 
 ## App architecture (`projects/app/src/`)
@@ -66,7 +67,8 @@ Source tree, by responsibility:
   - `work-items/` — durable queue: claim tokens, leases, retries
   - `dispatch/` — domain dispatch: `research-projects.ts` (and its test) is the canonical example of how a domain event becomes a work item becomes a Managed Agent turn
   - `compute/` — compute target pools and leases (`compute list/add/drain/restore/remove` CLI surface lives here)
-  - `automation/` — `runner.ts` is the headless `situ exec` loop; also hosts live-agent-slice evals
+  - `automation/` — `runner.ts` is the headless `situ exec` loop and exposes `waitForAutomationUntilIdle` / `readAutomationState` for slice runners
+  - `public.ts` — the small workspace-public surface exposed via the `@situ/app/runtime` subpath export, consumed by `projects/e2e-tests/runners/` to drive live agent slice runs
   - `worktrees/` — git worktree management for experiment runs
 - `data/` — persistence
   - `db/` — drizzle schema + migration runner; per-session SQLite at `~/.situ/sessions/<id>/session.sqlite`

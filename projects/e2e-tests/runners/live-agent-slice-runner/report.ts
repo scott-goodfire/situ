@@ -1,7 +1,7 @@
-import type { AutomationState } from "../runner";
+import type { AutomationState } from "@situ/app/runtime";
 import type { LiveAgentSliceSummary } from "./types";
 
-export function printLiveAgentSliceEvalReport({
+export function printLiveAgentSliceRunnerReport({
   sessionId,
   researchProject,
   summary,

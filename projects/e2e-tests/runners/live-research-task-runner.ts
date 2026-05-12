@@ -1,33 +1,34 @@
 import { RESEARCH_TASK_PRIORITIES, RESEARCH_TASK_TYPES } from "@situ/protocol";
 import { z } from "zod";
 
-import { ensureRuntimeContext } from "../../config/session-context";
-import { maxScientistConcurrency } from "../../config/runtime";
-import { researchProjectRepository } from "@situ/research-projects";
-import { researchTaskRepository } from "@situ/research-projects";
 import { computeModule } from "@situ/compute";
-import { createRuntimeScheduler } from "../scheduler";
-import { waitForAutomationUntilIdle } from "./runner";
+import { researchProjectRepository, researchTaskRepository } from "@situ/research-projects";
+import {
+  createRuntimeScheduler,
+  ensureRuntimeContext,
+  maxScientistConcurrency,
+  waitForAutomationUntilIdle,
+} from "@situ/app/runtime";
 
-const liveResearchTaskEvalConfigSchema = z.object({
-  goal: z.string().trim().min(1, "Live research task eval goal is required."),
-  title: z.string().trim().min(1, "Live research task eval title is required."),
+const liveResearchTaskRunnerConfigSchema = z.object({
+  goal: z.string().trim().min(1, "Live research task runner goal is required."),
+  title: z.string().trim().min(1, "Live research task runner title is required."),
   type: z.enum(RESEARCH_TASK_TYPES).optional(),
   priority: z.enum(RESEARCH_TASK_PRIORITIES).optional(),
-  workerPrompt: z.string().trim().min(1, "Live research task eval workerPrompt is required."),
+  workerPrompt: z.string().trim().min(1, "Live research task runner workerPrompt is required."),
   verificationPrompt: z
     .string()
     .trim()
-    .min(1, "Live research task eval verificationPrompt is required."),
+    .min(1, "Live research task runner verificationPrompt is required."),
   timeoutSeconds: z
     .number()
     .refine(
       (value) => Number.isFinite(value) && value > 0,
-      "Live research task eval timeoutSeconds must be a positive number.",
+      "Live research task runner timeoutSeconds must be a positive number.",
     ),
 });
 
-type LiveResearchTaskEvalConfig = z.infer<typeof liveResearchTaskEvalConfigSchema>;
+type LiveResearchTaskRunnerConfig = z.infer<typeof liveResearchTaskRunnerConfigSchema>;
 
 async function main(): Promise<void> {
   const config = readConfig();
@@ -101,12 +102,12 @@ async function main(): Promise<void> {
   }
 }
 
-function readConfig(): LiveResearchTaskEvalConfig {
+function readConfig(): LiveResearchTaskRunnerConfig {
   const raw = Bun.argv[2];
   if (!raw) {
-    throw new Error("Live research task eval config JSON is required.");
+    throw new Error("Live research task runner config JSON is required.");
   }
-  return liveResearchTaskEvalConfigSchema.parse(JSON.parse(raw) as unknown);
+  return liveResearchTaskRunnerConfigSchema.parse(JSON.parse(raw) as unknown);
 }
 
 await main();

@@ -1,10 +1,10 @@
 import { describe, expect, test } from "bun:test";
 
-import { parseLiveAgentSliceEvalConfig, readLiveAgentSliceEvalConfig } from "./config";
+import { parseLiveAgentSliceRunnerConfig, readLiveAgentSliceRunnerConfig } from "./config";
 
-describe("live agent slice eval config", () => {
+describe("live agent slice runner config", () => {
   test("parses required fields and defaults optional fields", () => {
-    const config = parseLiveAgentSliceEvalConfig({
+    const config = parseLiveAgentSliceRunnerConfig({
       value: {
         driver: "manager_turn",
         goal: "  Find the baseline  ",
@@ -22,7 +22,7 @@ describe("live agent slice eval config", () => {
   });
 
   test("parses seeded research tasks and default verification profile", () => {
-    const config = parseLiveAgentSliceEvalConfig({
+    const config = parseLiveAgentSliceRunnerConfig({
       value: {
         driver: "verifier_turn",
         goal: "Verify seeded evidence.",
@@ -65,14 +65,14 @@ describe("live agent slice eval config", () => {
   });
 
   test("rejects missing argv config", () => {
-    expect(() => readLiveAgentSliceEvalConfig({ argv: ["bun", "script.ts"] })).toThrow(
-      "Live agent slice eval config JSON is required.",
+    expect(() => readLiveAgentSliceRunnerConfig({ argv: ["bun", "script.ts"] })).toThrow(
+      "Live agent slice runner config JSON is required.",
     );
   });
 
   test("rejects invalid timeout", () => {
     expect(() =>
-      parseLiveAgentSliceEvalConfig({
+      parseLiveAgentSliceRunnerConfig({
         value: {
           driver: "manager_turn",
           goal: "Find the baseline.",

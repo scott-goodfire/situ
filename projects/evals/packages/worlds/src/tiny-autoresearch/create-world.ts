@@ -21,6 +21,7 @@ export type TinyAutoresearchWorld = Readonly<{
   sessionId: string;
   workspaceKey: string;
   appRoot: string;
+  e2eRoot: string;
   keep: boolean;
 }>;
 
@@ -52,6 +53,7 @@ export async function createTinyAutoresearchWorld({
     sessionId,
     workspaceKey: workspaceKeyForPath({ path: workspacePath }),
     appRoot: resolve(import.meta.dir, "../../../../../app"),
+    e2eRoot: resolve(import.meta.dir, "../../../../../e2e-tests"),
     keep,
   };
 
