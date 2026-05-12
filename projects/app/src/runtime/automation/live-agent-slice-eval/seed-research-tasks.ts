@@ -1,5 +1,5 @@
-import { researchTaskRepository } from "../../../data/repositories/research-tasks";
-import { researchTaskVerificationRepository } from "../../../data/repositories/research-task-verifications";
+import { researchTaskRepository } from "@situ/research-projects";
+import { researchTaskVerificationRepository } from "@situ/research-projects";
 import type { LiveAgentSliceEvalConfig, SeedResearchTaskConfig } from "./types";
 
 export async function seedResearchTasks({

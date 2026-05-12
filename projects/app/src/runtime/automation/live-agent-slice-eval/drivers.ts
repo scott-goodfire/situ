@@ -1,5 +1,5 @@
 import { maxScientistConcurrency } from "../../../config/runtime";
-import { researchTaskRepository } from "../../../data/repositories/research-tasks";
+import { researchTaskRepository } from "@situ/research-projects";
 import {
   enqueueManagerResearchProjectWork,
   enqueueScientistResearchTaskWork,

@@ -17,11 +17,8 @@ import {
   type WorkItem,
 } from "../../data/db/schema";
 import { computeModule, computeTargetRepository } from "@situ/compute";
-import { researchProjectRepository } from "../../data/repositories/research-projects";
-import {
-  researchTaskRepository,
-  type ResearchTaskRecord,
-} from "../../data/repositories/research-tasks";
+import { researchProjectRepository } from "@situ/research-projects";
+import { researchTaskRepository, type ResearchTaskRecord } from "@situ/research-projects";
 import { dateTimeModule } from "../../modules/date-time";
 import { recoverOrphanComputeLeases } from ".";
 

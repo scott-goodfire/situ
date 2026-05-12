@@ -10,6 +10,9 @@
     "check": "tsgo --noEmit -p tsconfig.json",
     "test": "bun test src"
   },
+  "dependencies": {
+    "@situ/common": "workspace:*"
+  },
   "devDependencies": {
     "@types/bun": "catalog:"
   }

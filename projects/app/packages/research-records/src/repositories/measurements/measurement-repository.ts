@@ -1,3 +1,4 @@
+import type { Repository } from "@situ/common";
 import { and, desc, eq, type SQL } from "drizzle-orm";
 import { isPlainObject } from "lodash-es";
 
@@ -152,7 +153,7 @@ export const measurementRepository = {
       )
       .slice(0, clampRepositoryLimit({ limit }));
   },
-};
+} satisfies Repository<MeasurementRecord, "measurementId">;
 
 export function normalizeMeasurementPayload({
   payload,

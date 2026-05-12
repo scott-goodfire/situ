@@ -1,3 +1,4 @@
+import type { Repository } from "@situ/common";
 import { asc, desc, eq } from "drizzle-orm";
 
 import { getResearchRecordsContext } from "../../context";
@@ -368,4 +369,4 @@ export const experimentRepository = {
   complete: transitions.complete,
   cancel: transitions.cancel,
   fail: transitions.fail,
-};
+} satisfies Repository<ExperimentRecord, "experimentId">;

@@ -1,8 +1,5 @@
 import { jsonModule } from "../../../modules/json";
-import {
-  researchProjectExecutionMode,
-  researchProjectRepository,
-} from "../../../data/repositories/research-projects";
+import { researchProjectExecutionMode, researchProjectRepository } from "@situ/research-projects";
 import { obs, withSpan } from "../../../observability";
 import type { ClaudeAgentExecutionMode, ClaudeAgentRole } from "../roles";
 import { workItemModule, type WorkItem } from "@situ/work-items";

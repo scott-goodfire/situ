@@ -1,3 +1,4 @@
+import type { Repository } from "@situ/common";
 import { asc, desc, eq } from "drizzle-orm";
 
 import { getResearchRecordsContext } from "../../context";
@@ -274,7 +275,7 @@ export const hypothesisRepository = {
   async fail(input: Parameters<typeof transitions.fail>[0]): Promise<Hypothesis> {
     return transitions.fail(input);
   },
-};
+} satisfies Repository<Hypothesis, "hypothesisId">;
 
 function insertHypothesisActivity({
   db,

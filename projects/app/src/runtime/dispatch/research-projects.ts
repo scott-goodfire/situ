@@ -19,8 +19,8 @@ import {
 } from "../../data/db/schema";
 import { recordAppEvent } from "../../app-events";
 import { experimentRepository } from "@situ/research-records";
-import { researchProjectRepository } from "../../data/repositories/research-projects";
-import { researchTaskRepository } from "../../data/repositories/research-tasks";
+import { researchProjectRepository } from "@situ/research-projects";
+import { researchTaskRepository } from "@situ/research-projects";
 import { jsonModule } from "../../modules/json";
 import { logModule } from "../../modules/log";
 import { obs } from "../../observability";

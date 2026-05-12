@@ -1,3 +1,4 @@
+import type { BaseRepository } from "@situ/common";
 import { and, desc, eq, gte } from "drizzle-orm";
 
 import { getDb } from "../../db/client";
@@ -34,4 +35,4 @@ export const claudeAgentEventRepository = {
     });
     return rows.slice(0, clampRepositoryLimit({ limit }));
   },
-};
+} satisfies BaseRepository<ClaudeAgentEventRecord>;

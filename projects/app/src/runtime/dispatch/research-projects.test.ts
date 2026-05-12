@@ -19,12 +19,12 @@ import {
   workItems,
 } from "../../data/db/schema";
 import { baselineRepository } from "@situ/research-records";
-import { createOrUpdateProjectBaseline } from "../../data/repositories/baselines";
+import { createOrUpdateProjectBaseline } from "../project-baselines";
 import { computeModule, computeTargetRepository } from "@situ/compute";
-import { researchProjectInteractionRepository } from "../../data/repositories/research-project-interactions";
-import { researchProjectRepository } from "../../data/repositories/research-projects";
-import { researchTaskVerificationRepository } from "../../data/repositories/research-task-verifications";
-import { researchTaskRepository } from "../../data/repositories/research-tasks";
+import { researchProjectInteractionRepository } from "@situ/research-projects";
+import { researchProjectRepository } from "@situ/research-projects";
+import { researchTaskVerificationRepository } from "@situ/research-projects";
+import { researchTaskRepository } from "@situ/research-projects";
 import { createApp } from "../../server";
 import {
   CLAUDE_MANAGER_RESEARCH_PROJECT_WORK_ITEM_PURPOSE,

@@ -1,3 +1,4 @@
+import type { NumberKeyedRepository } from "@situ/common";
 import { and, desc, eq, gte } from "drizzle-orm";
 
 import { getDb } from "../../db/client";
@@ -65,4 +66,4 @@ export const appEventRepository = {
     );
     return filtered.slice(0, clampRepositoryLimit({ limit }));
   },
-};
+} satisfies NumberKeyedRepository<AppEventRecord, "appEventId">;

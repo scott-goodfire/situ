@@ -5,7 +5,7 @@ import { evaluationRepository } from "@situ/research-records";
 import { experimentRepository } from "@situ/research-records";
 import { hypothesisRepository } from "@situ/research-records";
 import { measurementRepository } from "@situ/research-records";
-import { researchTaskRepository } from "../../../../data/repositories/research-tasks";
+import { researchTaskRepository } from "@situ/research-projects";
 
 export const ENTITY_KINDS = [
   "research_task",

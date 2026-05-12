@@ -1,7 +1,7 @@
 import type { ComputeTargetRecord } from "@situ/compute";
 
 import type { WorkItem } from "../../data/db/schema";
-import { researchTaskRepository } from "../../data/repositories/research-tasks";
+import { researchTaskRepository } from "@situ/research-projects";
 import { applyComputeLeaseRecoveryAction } from "./apply-compute-lease-recovery-action";
 import { computeLeaseRecoveryAction } from "./compute-lease-recovery-action";
 import { hasOpenWorkItemForComputeTarget } from "./open-work-item-for-compute-target";

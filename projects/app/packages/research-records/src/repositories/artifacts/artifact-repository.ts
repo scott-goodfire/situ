@@ -1,3 +1,4 @@
+import type { Repository } from "@situ/common";
 import { desc, eq } from "drizzle-orm";
 
 import { getResearchRecordsContext } from "../../context";
@@ -160,7 +161,7 @@ export const artifactRepository = {
     });
     return filtered.slice(0, clampRepositoryLimit({ limit }));
   },
-};
+} satisfies Repository<ArtifactRecord, "artifactId">;
 
 function inlineArtifactPath({ artifactId }: { artifactId: string }): string {
   return `inline/${artifactId}.md`;

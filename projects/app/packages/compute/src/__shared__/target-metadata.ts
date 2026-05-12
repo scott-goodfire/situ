@@ -1,4 +1,4 @@
-import { parseRecord } from "./parse-record";
+import { parseRecord } from "@situ/common";
 import type { ComputeTargetRecord } from "../types";
 
 export function targetMetadata({

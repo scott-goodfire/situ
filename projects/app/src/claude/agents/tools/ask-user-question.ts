@@ -1,11 +1,8 @@
 import { z } from "zod";
 
 import { PreconditionError } from "../../../data/repositories/__shared__";
-import { researchProjectInteractionRepository } from "../../../data/repositories/research-project-interactions";
-import {
-  researchProjectIsHeadless,
-  researchProjectRepository,
-} from "../../../data/repositories/research-projects";
+import { researchProjectInteractionRepository } from "@situ/research-projects";
+import { researchProjectIsHeadless, researchProjectRepository } from "@situ/research-projects";
 import { defineTool } from "./__shared__/define-tool";
 import { Result } from "./__shared__/result";
 import { toolContextModule } from "./__shared__/tool-context-module";

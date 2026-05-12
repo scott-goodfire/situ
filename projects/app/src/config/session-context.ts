@@ -84,14 +84,17 @@ export async function ensureRuntimeContext(
     { configureComputePackage },
     { configureWorkItemsPackage },
     { configureResearchRecordsPackage },
+    { configureResearchProjectsPackage },
   ] = await Promise.all([
     import("../data/db/configure-compute-package"),
     import("../data/db/configure-work-items-package"),
     import("../data/db/configure-research-records-package"),
+    import("../data/db/configure-research-projects-package"),
   ]);
   configureComputePackage();
   configureWorkItemsPackage();
   configureResearchRecordsPackage();
+  configureResearchProjectsPackage();
   return context;
 }
 

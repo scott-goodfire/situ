@@ -3,8 +3,8 @@ import { z } from "zod";
 
 import { ensureRuntimeContext } from "../../config/session-context";
 import { maxScientistConcurrency } from "../../config/runtime";
-import { researchProjectRepository } from "../../data/repositories/research-projects";
-import { researchTaskRepository } from "../../data/repositories/research-tasks";
+import { researchProjectRepository } from "@situ/research-projects";
+import { researchTaskRepository } from "@situ/research-projects";
 import { computeModule } from "@situ/compute";
 import { createRuntimeScheduler } from "../scheduler";
 import { waitForAutomationUntilIdle } from "./runner";

@@ -1,3 +1,4 @@
+import type { Repository } from "@situ/common";
 import { eq } from "drizzle-orm";
 
 import { getDb } from "../../db/client";
@@ -80,4 +81,4 @@ export const localSettingsRepository = {
 
     return localSettingsRepository.require({ localSettingsId });
   },
-};
+} satisfies Repository<LocalSettingsRecord, "localSettingsId">;

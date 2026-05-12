@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import type { ResearchTaskRecord } from "../../../data/repositories/research-tasks";
+import type { ResearchTaskRecord } from "@situ/research-projects";
 import {
   SEARCH_BALANCE_SIGNAL_WINDOW,
   VERIFIER_LINEAGE_NOISE_FLOOR_DEPTH,

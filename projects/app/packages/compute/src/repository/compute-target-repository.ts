@@ -1,3 +1,4 @@
+import type { Repository } from "@situ/common";
 import { and, asc, eq, isNotNull, ne, or, type SQL } from "drizzle-orm";
 import { DateTime } from "luxon";
 
@@ -418,4 +419,4 @@ export const computeTargetRepository = {
     }
     return computeTarget;
   },
-};
+} satisfies Repository<ComputeTargetRecord, "computeTargetId">;

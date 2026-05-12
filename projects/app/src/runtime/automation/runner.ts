@@ -11,8 +11,8 @@ import {
   workItems,
 } from "../../data/db/schema";
 import { baselineRepository } from "@situ/research-records";
-import { researchProjectInteractionRepository } from "../../data/repositories/research-project-interactions";
-import { researchProjectRepository } from "../../data/repositories/research-projects";
+import { researchProjectInteractionRepository } from "@situ/research-projects";
+import { researchProjectRepository } from "@situ/research-projects";
 import { jsonModule } from "../../modules/json";
 import { hasAnthropicKey } from "../../secrets/local-secret-store";
 import type { ComputeBlocker } from "@situ/compute";

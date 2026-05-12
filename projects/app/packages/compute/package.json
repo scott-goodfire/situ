@@ -11,6 +11,7 @@
     "test": "bun test src"
   },
   "dependencies": {
+    "@situ/common": "workspace:*",
     "drizzle-orm": "^0.45.2",
     "luxon": "catalog:"
   },

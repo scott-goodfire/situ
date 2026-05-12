@@ -1,3 +1,4 @@
+import type { Repository } from "@situ/common";
 import { desc, eq } from "drizzle-orm";
 
 import { getResearchRecordsContext } from "../../context";
@@ -125,7 +126,7 @@ export const entityLinkRepository = {
     );
     return filtered.slice(0, clampRepositoryLimit({ limit }));
   },
-};
+} satisfies Repository<EntityLinkRecord, "entityLinkId">;
 
 function matchesEntityLinkSearchInput({
   entityLink,

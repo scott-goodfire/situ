@@ -5,7 +5,7 @@ import { homedir } from "node:os";
 import { enqueueClaudeAgentWork } from "../../claude/agents/runs";
 import { modelForEffort, type Effort } from "../../claude/agents/roles/models";
 import { ensureRuntimeContext } from "../../config/session-context";
-import { researchProjectRepository } from "../../data/repositories/research-projects";
+import { researchProjectRepository } from "@situ/research-projects";
 import { hasAnthropicKey } from "../../secrets/local-secret-store";
 import { workItemModule } from "@situ/work-items";
 import {

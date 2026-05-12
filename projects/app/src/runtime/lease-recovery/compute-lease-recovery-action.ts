@@ -1,6 +1,6 @@
 import type { ComputeTargetRecord } from "@situ/compute";
 
-import type { ResearchTaskRecord } from "../../data/repositories/research-tasks";
+import type { ResearchTaskRecord } from "@situ/research-projects";
 
 export enum ComputeLeaseRecoveryActionKind {
   Keep = "keep",

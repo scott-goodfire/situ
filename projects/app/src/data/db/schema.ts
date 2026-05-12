@@ -7,14 +7,7 @@
  * than the extra import churn adds.
  */
 import { sql } from "drizzle-orm";
-import {
-  type AnySQLiteColumn,
-  index,
-  integer,
-  sqliteTable,
-  text,
-  uniqueIndex,
-} from "drizzle-orm/sqlite-core";
+import { index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 function timestamps() {
   return {
@@ -138,69 +131,16 @@ export const claudeAgentEnvironments = sqliteTable(
   }),
 );
 
-export const researchProjects = sqliteTable(
-  "research_projects",
-  {
-    id: text("id").primaryKey(),
-    goal: text("goal").notNull(),
-    phase: text("phase", {
-      enum: ["onboarding", "baseline", "search", "reporting", "complete"],
-    })
-      .notNull()
-      .default("onboarding"),
-    status: text("status", {
-      enum: ["active", "blocked_on_user", "complete", "failed", "canceled"],
-    })
-      .notNull()
-      .default("active"),
-    baselineSummary: text("baseline_summary"),
-    resultSummary: text("result_summary"),
-    createdByAgentId: text("created_by_agent_id").references(() => claudeAgents.id),
-    startedAt: text("started_at"),
-    completedAt: text("completed_at"),
-    ...payloadJson(),
-    ...syncTracking(),
-    ...timestamps(),
-  },
-  (table) => ({
-    statusCreatedIdx: index("research_projects_status_created_idx").on(
-      table.status,
-      table.createdAt,
-    ),
-  }),
-);
-
-export const researchProjectInteractions = sqliteTable(
-  "research_project_interactions",
-  {
-    id: text("id").primaryKey(),
-    researchProjectId: text("research_project_id")
-      .notNull()
-      .references(() => researchProjects.id),
-    kind: text("kind", {
-      enum: ["question", "baseline_confirmation"],
-    }).notNull(),
-    prompt: text("prompt").notNull(),
-    details: text("details").notNull().default(""),
-    status: text("status", {
-      enum: ["pending", "answered", "confirmed", "rejected", "canceled"],
-    })
-      .notNull()
-      .default("pending"),
-    response: text("response"),
-    createdByAgentId: text("created_by_agent_id").references(() => claudeAgents.id),
-    resolvedAt: text("resolved_at"),
-    ...payloadJson(),
-    ...syncTracking(),
-    ...timestamps(),
-  },
-  (table) => ({
-    statusCreatedIdx: index("research_project_interactions_status_idx").on(
-      table.status,
-      table.createdAt,
-    ),
-  }),
-);
+// Research-project orchestration tables live in @situ/research-projects;
+// re-exported so the drizzle client's schema includes them and existing
+// import paths keep working.
+import {
+  researchProjectInteractions,
+  researchProjects,
+  researchTaskVerifications,
+  researchTasks,
+} from "@situ/research-projects";
+export { researchProjectInteractions, researchProjects, researchTaskVerifications, researchTasks };
 
 export const feedEntries = sqliteTable(
   "feed_entries",
@@ -223,91 +163,6 @@ export const feedEntries = sqliteTable(
   (table) => ({
     projectCreatedIdx: index("feed_entries_project_created_idx").on(
       table.researchProjectId,
-      table.createdAt,
-    ),
-  }),
-);
-
-export const researchTasks = sqliteTable(
-  "research_tasks",
-  {
-    id: text("id").primaryKey(),
-    researchProjectId: text("research_project_id")
-      .notNull()
-      .references(() => researchProjects.id),
-    parentResearchTaskId: text("parent_research_task_id").references(
-      (): AnySQLiteColumn => researchTasks.id,
-    ),
-    type: text("type", {
-      enum: ["explore", "exploit", "debug", "verify", "synthesize", "prune"],
-    }).notNull(),
-    status: text("status", {
-      enum: [
-        "planned",
-        "running",
-        "awaiting_verification",
-        "verified",
-        "rejected",
-        "pruned",
-        "failed",
-        "canceled",
-      ],
-    })
-      .notNull()
-      .default("planned"),
-    priority: text("priority", {
-      enum: ["urgent", "high", "normal", "low"],
-    })
-      .notNull()
-      .default("normal"),
-    title: text("title").notNull(),
-    workerPrompt: text("worker_prompt").notNull(),
-    verificationPrompt: text("verification_prompt").notNull(),
-    resultSummary: text("result_summary"),
-    targetKind: text("target_kind"),
-    targetId: text("target_id"),
-    createdByAgentId: text("created_by_agent_id").references(() => claudeAgents.id),
-    startedAt: text("started_at"),
-    completedAt: text("completed_at"),
-    ...payloadJson(),
-    ...syncTracking(),
-    ...timestamps(),
-  },
-  (table) => ({
-    projectStatusIdx: index("research_tasks_project_status_idx").on(
-      table.researchProjectId,
-      table.status,
-      table.createdAt,
-    ),
-  }),
-);
-
-export const researchTaskVerifications = sqliteTable(
-  "research_task_verifications",
-  {
-    id: text("id").primaryKey(),
-    researchTaskId: text("research_task_id")
-      .notNull()
-      .references(() => researchTasks.id),
-    profile: text("profile", {
-      enum: ["hypothesis", "experiment", "measurement", "adversarial", "report", "general"],
-    })
-      .notNull()
-      .default("general"),
-    status: text("status", {
-      enum: ["passed", "failed", "suspicious", "needs_more_evidence"],
-    }).notNull(),
-    verifierPrompt: text("verifier_prompt").notNull(),
-    judgment: text("judgment").notNull(),
-    evidenceSummary: text("evidence_summary").notNull().default(""),
-    createdByAgentId: text("created_by_agent_id").references(() => claudeAgents.id),
-    ...payloadJson(),
-    ...syncTracking(),
-    ...timestamps(),
-  },
-  (table) => ({
-    taskIdx: index("research_task_verifications_task_idx").on(
-      table.researchTaskId,
       table.createdAt,
     ),
   }),

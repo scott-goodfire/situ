@@ -3,11 +3,8 @@ import { z } from "zod";
 
 import { experimentRepository } from "@situ/research-records";
 import { hypothesisRepository } from "@situ/research-records";
-import { researchProjectRepository } from "../../../data/repositories/research-projects";
-import {
-  researchTaskRepository,
-  type ResearchTaskRecord,
-} from "../../../data/repositories/research-tasks";
+import { researchProjectRepository } from "@situ/research-projects";
+import { researchTaskRepository, type ResearchTaskRecord } from "@situ/research-projects";
 import { getAnthropicClient } from "../anthropic-client";
 import { defineTool } from "./__shared__/define-tool";
 import { planningAdviceSystemPrompt } from "./__shared__/planning-advice-prompt";

@@ -4,8 +4,8 @@ import {
   RESEARCH_TASK_VERIFICATION_STATUSES,
 } from "@situ/protocol";
 
-import { researchTaskVerificationRepository } from "../../../data/repositories/research-task-verifications";
-import { researchTaskRepository } from "../../../data/repositories/research-tasks";
+import { researchTaskVerificationRepository } from "@situ/research-projects";
+import { researchTaskRepository } from "@situ/research-projects";
 import { defineTool } from "./__shared__/define-tool";
 import { Result } from "./__shared__/result";
 import { toolContextModule } from "./__shared__/tool-context-module";

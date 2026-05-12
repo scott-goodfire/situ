@@ -20,7 +20,7 @@ import {
 import { baselineRepository } from "@situ/research-records";
 import { experimentRepository } from "@situ/research-records";
 import { hypothesisRepository } from "@situ/research-records";
-import { researchProjectRepository } from "../../../data/repositories/research-projects";
+import { researchProjectRepository } from "@situ/research-projects";
 import type { ClaudeAgentToolContext } from "./types";
 import { recordExperimentComparisonTool } from "./record-experiment-comparison";
 

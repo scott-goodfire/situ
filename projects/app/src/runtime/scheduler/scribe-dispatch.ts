@@ -4,7 +4,7 @@ import { enqueueClaudeAgentWork } from "../../claude/agents/runs";
 import { getDb } from "../../data/db/client";
 import { workItems } from "../../data/db/schema";
 import { feedEntryRepository } from "../../data/repositories/feed-entries";
-import { researchProjectRepository } from "../../data/repositories/research-projects";
+import { researchProjectRepository } from "@situ/research-projects";
 import { CLAUDE_SCRIBE_SESSION_WORK_ITEM_PURPOSE } from "../work-items/purposes";
 import { scribeIntervalMs } from "./scribe-interval";
 

@@ -1,8 +1,8 @@
 import { z } from "zod";
 
 import { PreconditionError } from "../../../data/repositories/__shared__";
-import { createOrUpdateProjectBaseline } from "../../../data/repositories/baselines";
-import { researchProjectRepository } from "../../../data/repositories/research-projects";
+import { createOrUpdateProjectBaseline } from "../../../runtime/project-baselines";
+import { researchProjectRepository } from "@situ/research-projects";
 import { defineTool } from "./__shared__/define-tool";
 import { Result } from "./__shared__/result";
 import { toolContextModule } from "./__shared__/tool-context-module";

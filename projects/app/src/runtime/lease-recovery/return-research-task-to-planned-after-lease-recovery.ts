@@ -1,5 +1,5 @@
 import { recordAppEvent } from "../../app-events";
-import { researchTaskRepository } from "../../data/repositories/research-tasks";
+import { researchTaskRepository } from "@situ/research-projects";
 
 export async function returnResearchTaskToPlannedAfterLeaseRecovery({
   researchTaskId,

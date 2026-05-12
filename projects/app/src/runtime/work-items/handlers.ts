@@ -6,11 +6,8 @@ import { recordAppEvent } from "../../app-events";
 import { logModule } from "../../modules/log";
 import { obs, withSpan } from "../../observability";
 import { experimentRepository } from "@situ/research-records";
-import { researchProjectRepository } from "../../data/repositories/research-projects";
-import {
-  researchTaskRepository,
-  type ResearchTaskRecord,
-} from "../../data/repositories/research-tasks";
+import { researchProjectRepository } from "@situ/research-projects";
+import { researchTaskRepository, type ResearchTaskRecord } from "@situ/research-projects";
 import {
   CLAUDE_AGENT_TURN_WORK_ITEM_PURPOSE,
   CLAUDE_MANAGER_RESEARCH_PROJECT_WORK_ITEM_PURPOSE,

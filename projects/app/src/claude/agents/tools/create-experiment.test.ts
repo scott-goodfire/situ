@@ -15,8 +15,8 @@ import {
 } from "../../../data/db/schema";
 import { experimentRepository } from "@situ/research-records";
 import { hypothesisRepository } from "@situ/research-records";
-import { researchProjectRepository } from "../../../data/repositories/research-projects";
-import { researchTaskRepository } from "../../../data/repositories/research-tasks";
+import { researchProjectRepository } from "@situ/research-projects";
+import { researchTaskRepository } from "@situ/research-projects";
 import { createExperimentTool } from "./create-experiment";
 import type { ClaudeAgentToolContext } from "./types";
 

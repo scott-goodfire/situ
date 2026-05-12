@@ -19,14 +19,14 @@ import {
   researchTaskVerifications,
   researchTasks,
 } from "../../../data/db/schema";
-import { createOrUpdateProjectBaseline } from "../../../data/repositories/baselines";
+import { createOrUpdateProjectBaseline } from "../../../runtime/project-baselines";
 import { computeTargetRepository } from "@situ/compute";
 import { experimentRepository } from "@situ/research-records";
 import { hypothesisRepository } from "@situ/research-records";
-import { researchProjectInteractionRepository } from "../../../data/repositories/research-project-interactions";
-import { researchProjectRepository } from "../../../data/repositories/research-projects";
-import { researchTaskVerificationRepository } from "../../../data/repositories/research-task-verifications";
-import { researchTaskRepository } from "../../../data/repositories/research-tasks";
+import { researchProjectInteractionRepository } from "@situ/research-projects";
+import { researchProjectRepository } from "@situ/research-projects";
+import { researchTaskVerificationRepository } from "@situ/research-projects";
+import { researchTaskRepository } from "@situ/research-projects";
 import type { ClaudeAgentToolContext } from "./types";
 import { askUserQuestionTool } from "./ask-user-question";
 import { completeResearchProjectTool } from "./complete-research-project";

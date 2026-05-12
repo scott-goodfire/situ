@@ -1,3 +1,4 @@
+import type { Repository } from "@situ/common";
 import { desc, eq } from "drizzle-orm";
 
 import { getDb } from "../../db/client";
@@ -6,7 +7,7 @@ import { runSyncedWrite } from "../../db/sync";
 import { dateTimeModule } from "../../../modules/date-time";
 import { textModule } from "../../../modules/text";
 import { clampRepositoryLimit, PreconditionError } from "../__shared__";
-import { researchProjectRepository } from "../research-projects";
+import { researchProjectRepository } from "@situ/research-projects";
 
 type FeedEntryRecord = typeof feedEntries.$inferSelect;
 type FeedEntrySeverity = FeedEntryRecord["severity"];
@@ -106,7 +107,7 @@ export const feedEntryRepository = {
     });
     return rows[0];
   },
-};
+} satisfies Repository<FeedEntryRecord, "feedEntryId">;
 
 function assertFeedEntrySeverity({ severity }: { severity: string }): void {
   if (!feedEntrySeverities.has(severity as FeedEntrySeverity)) {

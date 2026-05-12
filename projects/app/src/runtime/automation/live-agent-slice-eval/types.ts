@@ -2,11 +2,11 @@ import type {
   ResearchTaskPriority,
   ResearchTaskStatus,
   ResearchTaskType,
-} from "../../../data/repositories/research-tasks";
+} from "@situ/research-projects";
 import type {
   ResearchTaskVerificationProfile,
   ResearchTaskVerificationStatus,
-} from "../../../data/repositories/research-task-verifications";
+} from "@situ/research-projects";
 import type { AutomationState } from "../runner";
 
 export const DRIVERS = ["manager_turn", "scientist_verifier", "verifier_turn"] as const;

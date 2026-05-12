@@ -7,7 +7,7 @@ import { ensureRuntimeContext, resetRuntimeContextForTests } from "../../../conf
 import { getDb, resetDbForTests } from "../../../data/db/client";
 import { feedEntries, researchProjects } from "../../../data/db/schema";
 import { feedEntryRepository } from "../../../data/repositories/feed-entries";
-import { researchProjectRepository } from "../../../data/repositories/research-projects";
+import { researchProjectRepository } from "@situ/research-projects";
 import type { ClaudeAgentToolContext } from "./types";
 import { writeFeedEntryTool } from "./write-feed-entry";
 

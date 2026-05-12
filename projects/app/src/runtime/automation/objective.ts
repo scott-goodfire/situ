@@ -4,11 +4,11 @@ import { getRuntimeContext } from "../../config/session-context";
 import { ensureLocalSession } from "../../claude/agents/resources";
 import { session as sessionTable } from "../../data/db/schema";
 import { runSyncedWrite } from "../../data/db/sync";
-import { researchProjectRepository } from "../../data/repositories/research-projects";
+import { researchProjectRepository } from "@situ/research-projects";
 import { dateTimeModule } from "../../modules/date-time";
 import { textModule } from "../../modules/text";
 import { enqueueManagerResearchProjectWork } from "../dispatch";
-import type { ResearchProjectExecutionMode } from "../../data/repositories/research-projects";
+import type { ResearchProjectExecutionMode } from "@situ/research-projects";
 
 export type SeedObjectiveResult = {
   researchProject: Awaited<ReturnType<typeof researchProjectRepository.create>>;

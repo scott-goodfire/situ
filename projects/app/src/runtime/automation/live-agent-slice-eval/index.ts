@@ -1,5 +1,5 @@
 import { ensureRuntimeContext } from "../../../config/session-context";
-import { researchProjectRepository } from "../../../data/repositories/research-projects";
+import { researchProjectRepository } from "@situ/research-projects";
 import { readLiveAgentSliceEvalConfig } from "./config";
 import { runLiveAgentSliceDriver } from "./drivers";
 import { hasFailedRuntimeState, printLiveAgentSliceEvalReport } from "./report";

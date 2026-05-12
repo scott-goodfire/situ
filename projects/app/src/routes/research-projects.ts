@@ -2,8 +2,8 @@ import { Hono } from "hono";
 import { z } from "zod";
 
 import { baselineRepository } from "@situ/research-records";
-import { researchProjectInteractionRepository } from "../data/repositories/research-project-interactions";
-import { researchProjectRepository } from "../data/repositories/research-projects";
+import { researchProjectInteractionRepository } from "@situ/research-projects";
+import { researchProjectRepository } from "@situ/research-projects";
 import { jsonModule } from "../modules/json";
 import { enqueueManagerResearchProjectWork } from "../runtime/dispatch";
 import { hasAnthropicKey } from "../secrets/local-secret-store";

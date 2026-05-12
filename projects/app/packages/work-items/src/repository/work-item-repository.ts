@@ -1,3 +1,4 @@
+import type { BaseRepository } from "@situ/common";
 import { and, desc, eq, gte, inArray, type SQL } from "drizzle-orm";
 
 import { getWorkItemsContext } from "../context";
@@ -37,4 +38,4 @@ export const workItemRepository = {
       : rows;
     return filtered.slice(0, clampRepositoryLimit({ limit }));
   },
-};
+} satisfies BaseRepository<WorkItemRecord>;

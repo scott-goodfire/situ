@@ -4,7 +4,7 @@ import { safePathSegment, worktreeModule } from "@situ/worktrees";
 
 import { getRuntimeContext } from "../../config/session-context";
 import { experimentRepository } from "@situ/research-records";
-import { researchTaskRepository } from "../../data/repositories/research-tasks";
+import { researchTaskRepository } from "@situ/research-projects";
 import type { PrepareExperimentWorktreeResult, WorktreeRuntimeContext } from "./types";
 
 type ExperimentRecord = Awaited<ReturnType<typeof experimentRepository.require>>;

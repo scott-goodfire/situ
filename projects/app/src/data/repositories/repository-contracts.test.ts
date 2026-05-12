@@ -12,11 +12,11 @@ import { evaluationRepository } from "@situ/research-records";
 import { experimentRepository } from "@situ/research-records";
 import { hypothesisRepository } from "@situ/research-records";
 import { measurementRepository } from "@situ/research-records";
-import { researchProjectInteractionRepository } from "./research-project-interactions";
-import { researchProjectRepository } from "./research-projects";
-import { researchTaskVerificationRepository } from "./research-task-verifications";
-import type { ResearchTaskRecord } from "./research-tasks";
-import { researchTaskRepository } from "./research-tasks";
+import { researchProjectInteractionRepository } from "@situ/research-projects";
+import { researchProjectRepository } from "@situ/research-projects";
+import { researchTaskVerificationRepository } from "@situ/research-projects";
+import type { ResearchTaskRecord } from "@situ/research-projects";
+import { researchTaskRepository } from "@situ/research-projects";
 import { feedEntryRepository } from "./feed-entries";
 import { clampRepositoryLimit } from "./__shared__";
 

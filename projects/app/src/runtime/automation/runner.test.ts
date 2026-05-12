@@ -18,8 +18,8 @@ import {
   workItems,
 } from "../../data/db/schema";
 import { baselineRepository } from "@situ/research-records";
-import { createOrUpdateProjectBaseline } from "../../data/repositories/baselines";
-import { researchProjectRepository } from "../../data/repositories/research-projects";
+import { createOrUpdateProjectBaseline } from "../project-baselines";
+import { researchProjectRepository } from "@situ/research-projects";
 import {
   readAutomationState,
   seedSessionObjective,

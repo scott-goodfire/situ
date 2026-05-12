@@ -61,10 +61,36 @@
         "mitata": "^1.0.34",
       },
     },
+    "projects/app/packages/common": {
+      "name": "@situ/common",
+      "version": "0.0.1",
+      "dependencies": {
+        "luxon": "catalog:",
+      },
+      "devDependencies": {
+        "@types/bun": "catalog:",
+        "@types/luxon": "catalog:",
+      },
+    },
     "projects/app/packages/compute": {
       "name": "@situ/compute",
       "version": "0.0.1",
       "dependencies": {
+        "@situ/common": "workspace:*",
+        "drizzle-orm": "^0.45.2",
+        "luxon": "catalog:",
+      },
+      "devDependencies": {
+        "@types/bun": "catalog:",
+        "@types/luxon": "catalog:",
+      },
+    },
+    "projects/app/packages/research-projects": {
+      "name": "@situ/research-projects",
+      "version": "0.0.1",
+      "dependencies": {
+        "@situ/common": "workspace:*",
+        "@situ/protocol": "workspace:*",
         "drizzle-orm": "^0.45.2",
         "luxon": "catalog:",
       },
@@ -77,6 +103,7 @@
       "name": "@situ/research-records",
       "version": "0.0.1",
       "dependencies": {
+        "@situ/common": "workspace:*",
         "drizzle-orm": "^0.45.2",
         "luxon": "catalog:",
       },
@@ -89,6 +116,7 @@
       "name": "@situ/work-items",
       "version": "0.0.1",
       "dependencies": {
+        "@situ/common": "workspace:*",
         "drizzle-orm": "^0.45.2",
         "luxon": "catalog:",
         "zod": "^4.0.0",
@@ -101,6 +129,9 @@
     "projects/app/packages/worktrees": {
       "name": "@situ/worktrees",
       "version": "0.0.1",
+      "dependencies": {
+        "@situ/common": "workspace:*",
+      },
       "devDependencies": {
         "@types/bun": "catalog:",
       },
@@ -910,6 +941,8 @@
 
     "@situ/app": ["@situ/app@workspace:projects/app"],
 
+    "@situ/common": ["@situ/common@workspace:projects/app/packages/common"],
+
     "@situ/compute": ["@situ/compute@workspace:projects/app/packages/compute"],
 
     "@situ/docs": ["@situ/docs@workspace:projects/docs"],
@@ -923,6 +956,8 @@
     "@situ/evals-worlds": ["@situ/evals-worlds@workspace:projects/evals/packages/worlds"],
 
     "@situ/protocol": ["@situ/protocol@workspace:projects/web/packages/protocol"],
+
+    "@situ/research-projects": ["@situ/research-projects@workspace:projects/app/packages/research-projects"],
 
     "@situ/research-records": ["@situ/research-records@workspace:projects/app/packages/research-records"],
 
