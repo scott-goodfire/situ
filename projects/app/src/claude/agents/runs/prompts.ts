@@ -6,6 +6,8 @@ import type {
 } from "../../../data/db/schema";
 import { jsonModule } from "../../../modules/json";
 
+export const SEARCH_BALANCE_SIGNAL_WINDOW = 10;
+
 export function managerResearchProjectPrompt({
   researchProject,
   interactions,
@@ -47,6 +49,7 @@ export function managerResearchProjectPrompt({
         verification.evidenceSummary ? `  Evidence: ${verification.evidenceSummary}` : undefined,
       ])
     : ["- none"];
+  const balanceLines = searchBalanceSignalLines({ tasks: projectTasks });
   const executionMode = researchProjectPromptExecutionMode({ project: researchProject });
   const isHeadless = executionMode === "headless";
   const onboardingQuestionInstruction = isHeadless
@@ -73,6 +76,9 @@ export function managerResearchProjectPrompt({
     "",
     "Verification results:",
     ...verificationLines.filter((line): line is string => line !== undefined),
+    "",
+    "Search balance signal:",
+    ...balanceLines,
     "",
     "Record writing style:",
     "Write record text in a human-sounding way: plain, specific, and easy to scan.",
@@ -198,4 +204,39 @@ export function verifierResearchTaskPrompt({
     "8. Identify the evidence axis the verificationPrompt asked for: improvement (move a metric), preservation (refactor/simplification with metric unchanged within tolerance), behavioral (make a previously broken path correctly fire), or cleanup (shrink surface area). Judge against that axis. An unchanged metric is passed when the prompt framed the task as preservation, cleanup, or behavioral and the stated quality goal is met. For improvement-axis tasks, a recorded Δ that maps to only one or two changed dev items out of N is at the noise floor — mark suspicious unless the verificationPrompt explicitly accepted sub-quantum improvements with a confirming follow-up experiment.",
     "9. Call record_research_task_verification with status passed, failed, suspicious, or needs_more_evidence and a concise evidence-backed judgment. passed means the experiment honestly tested the prompt and produced trustworthy signal (positive, null, or negative outcomes all qualify) and requires a non-empty evidenceSummary. failed means the experiment ran fairly and did not meet acceptance criteria — an honest negative. suspicious means the experiment is not a valid test (no-effect patch, unreachable branch, noise-floor improvement, comparability break, reward hack). needs_more_evidence reopens the task as planned work.",
   ].join("\n");
+}
+
+export function searchBalanceSignalLines({
+  tasks,
+}: {
+  tasks: (typeof researchTasks.$inferSelect)[];
+}): string[] {
+  if (tasks.length === 0) {
+    return ["- No ResearchTasks recorded yet for this project."];
+  }
+  const sorted = [...tasks].sort((a, b) => {
+    if (a.createdAt === b.createdAt) {
+      return b.id.localeCompare(a.id);
+    }
+    return b.createdAt.localeCompare(a.createdAt);
+  });
+  const recent = sorted.slice(0, SEARCH_BALANCE_SIGNAL_WINDOW);
+  const tally = recent.reduce<Record<string, number>>((acc, task) => {
+    acc[task.type] = (acc[task.type] ?? 0) + 1;
+    return acc;
+  }, {});
+  const tallyEntries = Object.entries(tally)
+    .sort(([typeA], [typeB]) => typeA.localeCompare(typeB))
+    .map(([type, count]) => `${type}=${count}`)
+    .join(", ");
+  const indexOfLastExplore = sorted.findIndex((task) => task.type === "explore");
+  const tasksSinceLastExplore = indexOfLastExplore === -1 ? sorted.length : indexOfLastExplore;
+  const exploreLine =
+    indexOfLastExplore === -1
+      ? `- No explore task has ever been recorded in this project (${sorted.length} non-explore tasks so far).`
+      : `- Tasks since the last explore: ${tasksSinceLastExplore} (cadence gate at 5; non-explore tasks are rejected once it reaches 5).`;
+  return [
+    `- Recent task type tally (last ${recent.length}, of ${sorted.length} total): ${tallyEntries}.`,
+    exploreLine,
+  ];
 }
