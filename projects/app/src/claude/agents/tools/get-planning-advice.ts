@@ -6,7 +6,7 @@ import { hypothesisRepository } from "@situ/research-records";
 import { researchProjectRepository } from "@situ/research-projects";
 import { researchTaskRepository, type ResearchTaskRecord } from "@situ/research-projects";
 import { getAnthropicClient } from "../anthropic-client";
-import { defineTool } from "./__shared__/define-tool";
+import { defineTool } from "./define-tool";
 import { planningAdviceSystemPrompt } from "./__shared__/planning-advice-prompt";
 import {
   fallbackPlanningAdvice,
@@ -15,7 +15,7 @@ import {
   PLANNING_ADVICE_MODEL,
   type PlanningAdvice,
 } from "./__shared__/planning-advice-types";
-import { Result } from "./__shared__/result";
+import { Result } from "@situ/agent-tools";
 import { toolContextModule } from "./__shared__/tool-context-module";
 
 export { fallbackPlanningAdvice, parsePlanningAdvice, planningAdviceSchema, PLANNING_ADVICE_MODEL };

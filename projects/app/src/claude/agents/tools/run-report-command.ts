@@ -3,8 +3,8 @@ import { z } from "zod";
 
 import { PreconditionError } from "../../../data/repositories/__shared__";
 import { workItemModule } from "@situ/work-items";
-import { defineTool } from "./__shared__/define-tool";
-import { Result } from "./__shared__/result";
+import { defineTool } from "./define-tool";
+import { Result } from "@situ/agent-tools";
 
 const DEFAULT_TIMEOUT_MS = 60_000;
 const MAX_TIMEOUT_MS = 10 * 60_000;

@@ -3,8 +3,8 @@ import { z } from "zod";
 import { PreconditionError } from "../../../data/repositories/__shared__";
 import { createOrUpdateProjectBaseline } from "../../../runtime/project-baselines";
 import { researchProjectRepository } from "@situ/research-projects";
-import { defineTool } from "./__shared__/define-tool";
-import { Result } from "./__shared__/result";
+import { defineTool } from "./define-tool";
+import { Result } from "@situ/agent-tools";
 import { toolContextModule } from "./__shared__/tool-context-module";
 
 const inputSchema = z.object({

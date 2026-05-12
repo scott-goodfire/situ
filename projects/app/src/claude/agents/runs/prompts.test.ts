@@ -125,6 +125,8 @@ function task(
     payloadJson: overrides.payloadJson ?? "{}",
     syncVersion: overrides.syncVersion ?? 1,
     syncDeleted: overrides.syncDeleted ?? false,
+    startedAt: overrides.startedAt ?? null,
+    completedAt: overrides.completedAt ?? null,
     createdAt: overrides.createdAt,
     updatedAt: overrides.updatedAt ?? overrides.createdAt,
   };

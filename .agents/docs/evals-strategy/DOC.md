@@ -8,8 +8,10 @@ database, scheduler, API, Replicache sync, and browser UI work. Evals assume
 that infrastructure is available and ask whether agents make good research
 decisions with it.
 
-In Situ, **evals are LLM-backed**. Non-LLM checks for prompt markers, runtime
-skill markers, fixture shape, or seeded durable state are tests.
+In situ, **evals are always LLM-backed**. Non-LLM checks for prompt markers,
+runtime skill markers, fixture shape, or seeded durable state are co-located
+tests (`*.test.ts` next to the source they exercise). Whole-app live tests
+that exercise the runtime end-to-end live under `projects/e2e-tests/`.
 
 ## Current Layer
 
@@ -22,37 +24,33 @@ projects/evals/
     src/tiny-autoresearch/
   packages/worlds/
     src/tiny-autoresearch/
-  src/prompts.eval.ts
-  src/runtime-skills.eval.ts
-  src/explore-task-shape.eval.ts
-  src/worlds/tiny-autoresearch/state.eval.ts
+  src/manager-planning-instincts.eval.ts
+  src/manager-memory-maintenance.eval.ts
+  src/planning-advice.eval.ts
+  src/scientist-combiner-task.eval.ts
   src/worlds/tiny-autoresearch/live-agent-eval.ts
 ```
 
-The prompt, runtime-skill, explore-task-shape, and state suites are tests
-and should run often. `explore-task-shape.eval.ts` is a deterministic
-suite of seven fixture cases that validates the Manager prompt against
-exploit-shape verbs being filed under the `explore` ResearchTask type.
-Fixture packages are TypeScript workspace packages so eval worlds can import
-typed repository files, scenario prompts, expectations, and durable-state seed
-records without parsing YAML at runtime.
-Live agent evals run through `mise run evals` and require `SITU_ANTHROPIC_KEY`.
-The default live eval is the tiny autoresearch baseline Scientist/Verifier
-case. Use `mise run evals -- --list` to see the full named suite.
+Every file under `projects/evals/src/` hits a real Claude endpoint and requires
+`SITU_ANTHROPIC_KEY`. Non-LLM marker and shape checks live as `*.test.ts`
+next to the prompt, runtime skill, tool, or fixture they exercise.
+
+Fixture and world packages are TypeScript workspace packages so eval worlds
+can import typed repository files, scenario prompts, expectations, and
+durable-state seed records without parsing YAML at runtime.
+
+Live agent evals run through `mise run evals` and require
+`SITU_ANTHROPIC_KEY`. The default live eval is the tiny autoresearch baseline
+Scientist/Verifier case. Use `mise run evals -- --list` to see the full named
+suite.
 
 See `.agents/docs/evals-playbook/DOC.md` for how to choose tests, e2e tests,
 evals, and long-running soak checks.
 
 ## What To Evaluate
 
-Prefer behavior checks over full text snapshots:
-
-- role prompts mention the required tools and boundaries
-- runtime skills name the right role, procedure, and durable outputs
-- tool affordances guide agents toward durable records
-- Verifier and Scientist guidance preserves evidence and comparability
-
-When live agent evals are added, they should assert on durable state:
+Prefer behavior checks over full text snapshots. For live agent evals, assert
+on durable state:
 
 - ResearchProjects and ResearchProjectInteractions created in the expected phase
 - ResearchTasks created, completed, failed, or submitted for verification
@@ -60,6 +58,13 @@ When live agent evals are added, they should assert on durable state:
 - hypotheses created with useful content
 - baselines, experiments, evaluations, measurements, artifacts, and entity links
   created in the expected order
+
+For non-LLM checks (which are co-located tests, not evals):
+
+- role prompts mention the required tools and boundaries
+- runtime skills name the right role, procedure, and durable outputs
+- tool affordances guide agents toward durable records
+- Verifier and Scientist guidance preserves evidence and comparability
 
 ## Tests First
 

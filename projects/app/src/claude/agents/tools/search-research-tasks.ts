@@ -2,8 +2,8 @@ import { z } from "zod";
 import { RESEARCH_TASK_STATUSES, RESEARCH_TASK_TYPES } from "@situ/protocol";
 
 import { researchTaskRepository } from "@situ/research-projects";
-import { defineTool } from "./__shared__/define-tool";
-import { Result } from "./__shared__/result";
+import { defineTool } from "./define-tool";
+import { Result } from "@situ/agent-tools";
 import { allRoles } from "./__shared__/roles";
 
 const inputSchema = z.object({

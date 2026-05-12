@@ -1,8 +1,8 @@
 import { z } from "zod";
 
 import { researchTaskRepository } from "@situ/research-projects";
-import { defineTool } from "./__shared__/define-tool";
-import { Result } from "./__shared__/result";
+import { defineTool } from "./define-tool";
+import { Result } from "@situ/agent-tools";
 import { toolContextModule } from "./__shared__/tool-context-module";
 
 const evidenceSummaryError =

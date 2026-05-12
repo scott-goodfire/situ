@@ -1,30 +1,31 @@
 ---
 name: situ-run-and-verify-evals
-description: Use when running, watching, or verifying Situ live agent evals.
+description: Use when running, watching, or verifying Situ live agent evals. All `projects/evals/src/*.eval.ts` files are LLM-backed; non-LLM checks live as co-located tests.
 ---
 
 # Situ Run And Verify Evals
 
 ## Current Evals
 
-This repo keeps non-LLM prompt/runtime/world tests next to the live eval
-fixtures:
+All entries under `projects/evals/src/` are live agent evals that hit real
+Claude Managed Agents or Anthropic message endpoints:
 
 ```text
 projects/evals/evalite.config.ts
-projects/evals/src/prompts.eval.ts
-projects/evals/src/runtime-skills.eval.ts
+projects/evals/src/manager-planning-instincts.eval.ts
+projects/evals/src/manager-memory-maintenance.eval.ts
+projects/evals/src/planning-advice.eval.ts
+projects/evals/src/scientist-combiner-task.eval.ts
 projects/evals/src/scorers/
 projects/evals/src/worlds/__shared__/
-projects/evals/src/worlds/tiny-autoresearch/state.eval.ts
 projects/evals/src/worlds/tiny-autoresearch/live-agent-eval.ts
 projects/evals/packages/fixtures/
 projects/evals/packages/worlds/
 ```
 
-Non-LLM prompt, runtime-skill, fixture, and seeded-world checks are tests. Live
-agent evals intentionally hit Claude Managed Agents and require
-`SITU_ANTHROPIC_KEY`.
+All live agent evals require `SITU_ANTHROPIC_KEY`. Non-LLM prompt, runtime
+skill, fixture, and seeded-world checks are co-located tests next to the code
+they exercise — not evals.
 
 ## Run Live Agent Evals
 
@@ -98,7 +99,8 @@ it small and explicit:
 - assertions on durable records, not only final prose
 
 Live agent evals should fail clearly when credentials are missing and should
-not read saved runtime secrets unless the eval explicitly documents that choice.
+not read saved runtime secrets unless the eval explicitly documents that
+choice.
 
 ## Verify
 

@@ -23,7 +23,7 @@ import {
 import { ensureRuntimeContext } from "./config/session-context";
 import { initObservability } from "./observability";
 import { installInfo } from "./config/install-info";
-import { runDoctorCommand } from "./diagnostics/doctor";
+import { runDoctorCommand } from "./doctor";
 import { parseRootCommand } from "./cli/root-command";
 import { startRuntimeApp } from "./cli/runtime-app";
 

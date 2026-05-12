@@ -6,9 +6,9 @@ import { PreconditionError } from "../../../data/repositories/__shared__";
 import { experimentRepository } from "@situ/research-records";
 import { researchProjectRepository } from "@situ/research-projects";
 import { researchTaskRepository } from "@situ/research-projects";
-import { defineTool } from "./__shared__/define-tool";
+import { defineTool } from "./define-tool";
 import { findExploitShapeTokens } from "./__shared__/explore-task-shape";
-import { Result } from "./__shared__/result";
+import { Result } from "@situ/agent-tools";
 import { toolContextModule } from "./__shared__/tool-context-module";
 import { ENTITY_KINDS, toolEntityReferenceModule } from "./__shared__/tool-entity-reference-module";
 

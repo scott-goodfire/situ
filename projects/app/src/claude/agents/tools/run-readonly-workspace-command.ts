@@ -1,8 +1,8 @@
 import { z } from "zod";
 
 import { computeModule } from "@situ/compute";
-import { defineTool } from "./__shared__/define-tool";
-import { Result } from "./__shared__/result";
+import { defineTool } from "./define-tool";
+import { Result } from "@situ/agent-tools";
 import { allRoles } from "./__shared__/roles";
 import { runReadonlyWorkspaceCommand } from "./__shared__/source-workspace";
 

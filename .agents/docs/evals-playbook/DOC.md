@@ -11,25 +11,31 @@ watched while it runs.
 
 ## Tests vs Evals
 
-Use tests when the question is whether the product or infrastructure works:
-routes, repositories, migrations, scheduler dispatch, settings, Replicache sync,
-browser UI, and deterministic status transitions. A test may use fake agent
-output to prove the system stores or displays it correctly.
+In situ, evals are **always LLM-backed**. If the assertion does not need a real
+Claude call, it is a test or an e2e test:
 
-Use evals when the question is whether an agent behaves well given working
-tools and state: Manager onboarding, baseline judgment, ResearchTask planning,
-Scientist evidence creation, Verifier skepticism, explore/exploit decisions,
-and final evidence-linked synthesis.
-
-Evals are LLM-backed. Non-LLM checks for prompt markers, runtime skill markers,
-fixture shape, or seeded durable state are tests. Product E2E tests live under
-`projects/e2e-tests`.
+- **Tests** (`mise run test`) — co-located `*.test.ts` files next to the
+  source they exercise. They cover routes, repositories, migrations, scheduler
+  dispatch, settings, Replicache sync, browser UI, deterministic status
+  transitions, prompt markers, runtime skill markers, fixture shape, and
+  seeded durable-state shape. A test may use fake agent output to prove the
+  system stores or displays it correctly.
+- **Live agent evals** (`mise run evals`) — Evalite suites under
+  `projects/evals/src/` that hit real Claude Managed Agents or Anthropic
+  message endpoints. Require `SITU_ANTHROPIC_KEY`. They answer whether an
+  agent behaves well given working tools and state: Manager onboarding,
+  baseline judgment, ResearchTask planning, Scientist evidence creation,
+  Verifier skepticism, explore/exploit decisions, and final
+  evidence-linked synthesis.
+- **Product E2E tests** (`projects/e2e-tests/`) — Playwright specs and live
+  agent slice runners that exercise the full runtime end-to-end. May require
+  `SITU_ANTHROPIC_KEY` and gate on `SITU_E2E_SKIP_LIVE_AGENT`.
 
 ## Layers
 
-Tests protect mechanical behavior. They run without credentials through
-`mise run test` and cover prompt markers, runtime skill markers, fixture shape,
-and fixture-backed durable state.
+Tests protect mechanical behavior and prompt/skill content. They run without
+credentials through `mise run test` and live co-located with the source they
+exercise.
 
 Live agent evals protect model/tool behavior. They run through
 `mise run evals`, require `SITU_ANTHROPIC_KEY`, and intentionally hit real

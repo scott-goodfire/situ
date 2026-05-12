@@ -3,8 +3,8 @@ import { z } from "zod";
 
 import { PreconditionError } from "../../../data/repositories/__shared__";
 import type { ClaudeAgentToolContext } from "./types";
-import { defineTool } from "./__shared__/define-tool";
-import { Result } from "./__shared__/result";
+import { defineTool } from "./define-tool";
+import { Result } from "@situ/agent-tools";
 
 const stubContext = {
   agentId: "agent_test",

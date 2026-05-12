@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
-import { claudeAgentSkillDefinitions } from "../claude/agents/skills";
+import { claudeAgentSkillDefinitions } from "./claude/agents/skills";
 import { buildDoctorReport, buildDoctorSpaAssetsReport } from "./doctor";
 
 const originalEnv = {

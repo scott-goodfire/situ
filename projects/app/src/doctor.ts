@@ -1,22 +1,22 @@
 import { constants } from "node:fs";
 import { access, mkdir } from "node:fs/promises";
-import { localStateHome } from "../config/paths";
-import { installInfo } from "../config/install-info";
-import { hasAnthropicKey } from "../secrets/local-secret-store";
+import { localStateHome } from "./config/paths";
+import { installInfo } from "./config/install-info";
+import { hasAnthropicKey } from "./secrets/local-secret-store";
 import {
   claudeAgentSkillDefinitionByName,
   runtimeSkillDiagnostics,
   type RuntimeSkillDiagnostics,
-} from "../claude/agents/skills";
-import { claudeAgentBlueprintForRole, type ClaudeAgentRole } from "../claude/agents/roles";
-import { claudeAgentToolParamsForRole } from "../claude/agents/tools";
+} from "./claude/agents/skills";
+import { claudeAgentBlueprintForRole, type ClaudeAgentRole } from "./claude/agents/roles";
+import { claudeAgentToolParamsForRole } from "./claude/agents/tools";
 import {
   missingSourceSpaAppFiles,
   missingSpaAssets,
   resolveSpaAssets,
   sourceSpaRootPath,
   type SpaAssets,
-} from "../spa";
+} from "./spa";
 
 export type AgentBlueprintDiagnostics = {
   isHealthy: boolean;

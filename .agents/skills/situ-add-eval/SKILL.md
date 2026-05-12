@@ -1,6 +1,6 @@
 ---
 name: situ-add-eval
-description: Use when adding or changing a Situ live agent eval.
+description: Use when adding or changing a Situ live agent eval. For non-LLM marker or fixture checks, write a co-located test instead — see `situ-policy-test-file-placement`.
 ---
 
 # Situ Add Eval
@@ -23,35 +23,27 @@ find projects/evals -maxdepth 4 -type f | sort
 
 ## Choose The Layer
 
-Use product tests, not evals, when the question is deterministic app behavior:
-API routes, repositories, scheduler dispatch, settings, Replicache sync, browser
-UI, or persistence of fake agent output.
+In situ, evals are always LLM-backed. If your assertion doesn't need a real
+Claude call, it is a test or an e2e test — not an eval:
 
-Use tests when the check is mechanical:
-
-- prompt markers
-- runtime skill markers
-- fixture schema and scenario shape
-- durable-state shape from seeded worlds
-
-These tests may use Evalite, but they are not evals because no LLM is being
-judged.
-
-Use a live agent eval only when model or tool choice matters. Live agent evals
-require `SITU_ANTHROPIC_KEY` and should usually target 2-3 minutes. A focused
-Scientist-plus-Verifier eval may use a larger explicit budget.
+- **Co-located `*.test.ts`** — prompt markers, runtime skill markers, fixture
+  shape, deterministic prompt-output checks, seeded durable-state shape. See
+  `situ-policy-test-file-placement`.
+- **Playwright spec under `projects/e2e-tests/tests/`** — whole-app live flows,
+  CLI smoke, live agent slice runs that exercise multiple system layers
+  end-to-end. See `situ-policy-e2e-test-shape`.
+- **Live agent eval under `projects/evals/src/`** — Evalite suite that hits a
+  real Claude Managed Agent or Anthropic message endpoint. Use this only when
+  the question is whether the model makes the right agentic move given a staged
+  world. Requires `SITU_ANTHROPIC_KEY`.
 
 ## Fixture And World Shape
 
-Put pure data in `@situ/evals-fixtures`.
-
-Put temp repositories, migrations, SQLite seeding, CLI calls, and live world
-helpers in `@situ/evals-worlds`.
-
-Keep non-LLM marker/world tests under `projects/evals/src/*.eval.ts`. Keep live
-eval scripts near the world they exercise. If a Node/Vitest Evalite file needs
-Bun-only app behavior, call a Bun bridge script instead of importing
-`bun:sqlite` directly.
+Put pure data in `@situ/evals-fixtures`. Put temp repositories, migrations,
+SQLite seeding, CLI calls, and live world helpers in `@situ/evals-worlds`.
+Both packages live under `projects/evals/packages/` because they exist to serve
+eval suites. Their own unit tests live as co-located `*.test.ts` inside those
+packages (bun:test).
 
 ## Live Agent Eval Shape
 
@@ -69,12 +61,9 @@ treat a successful final text response as sufficient.
 
 ## Verification
 
-For test changes:
+For test changes (co-located `*.test.ts`):
 
 ```bash
-bun --filter=@situ/evals run check
-bun --filter=@situ/evals-fixtures run check
-bun --filter=@situ/evals-worlds run check
 mise run test
 ```
 
@@ -89,5 +78,6 @@ and report that the live eval was intentionally skipped.
 
 ## Reporting
 
-Report which layer changed, which fixture stage the eval covers, what durable
-state it asserts, and exactly which commands were or were not run.
+Report which layer changed (test, e2e, or live agent eval), which fixture stage
+the eval covers, what durable state it asserts, and exactly which commands were
+or were not run.

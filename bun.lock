@@ -38,6 +38,7 @@
         "@opentelemetry/sdk-node": "catalog:",
         "@opentelemetry/sdk-trace-base": "catalog:",
         "@opentelemetry/semantic-conventions": "catalog:",
+        "@situ/agent-tools": "workspace:*",
         "@situ/compute": "workspace:*",
         "@situ/protocol": "workspace:*",
         "@situ/web-design-tokens": "workspace:*",
@@ -59,6 +60,18 @@
         "@types/luxon": "catalog:",
         "drizzle-kit": "^0.31.10",
         "mitata": "^1.0.34",
+      },
+    },
+    "projects/app/packages/agent-tools": {
+      "name": "@situ/agent-tools",
+      "version": "0.0.1",
+      "dependencies": {
+        "@anthropic-ai/sdk": "^0.95.1",
+        "@situ/common": "workspace:*",
+        "zod": "^4.0.0",
+      },
+      "devDependencies": {
+        "@types/bun": "catalog:",
       },
     },
     "projects/app/packages/common": {
@@ -938,6 +951,8 @@
     "@sindresorhus/is": ["@sindresorhus/is@7.2.0", "", {}, "sha512-P1Cz1dWaFfR4IR+U13mqqiGsLFf1KbayybWwdd2vfctdV6hDpUkgCY0nKOLLTMSoRd/jJNjtbqzf13K8DCCXQw=="],
 
     "@sindresorhus/merge-streams": ["@sindresorhus/merge-streams@4.0.0", "", {}, "sha512-tlqY9xq5ukxTUZBmoOp+m61cqwQD5pHJtFY3Mn8CA8ps6yghLH/Hw8UPdqg4OLmFW3IFlcXnQNmo/dh8HzXYIQ=="],
+
+    "@situ/agent-tools": ["@situ/agent-tools@workspace:projects/app/packages/agent-tools"],
 
     "@situ/app": ["@situ/app@workspace:projects/app"],
 

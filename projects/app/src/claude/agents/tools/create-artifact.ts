@@ -1,8 +1,8 @@
 import { z } from "zod";
 
 import { artifactRepository } from "@situ/research-records";
-import { defineTool } from "./__shared__/define-tool";
-import { Result } from "./__shared__/result";
+import { defineTool } from "./define-tool";
+import { Result } from "@situ/agent-tools";
 import { ENTITY_KINDS, toolEntityReferenceModule } from "./__shared__/tool-entity-reference-module";
 
 const inputSchema = z
