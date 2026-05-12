@@ -25,7 +25,7 @@ import { dateTimeModule } from "../../modules/date-time";
 import {
   CLAUDE_SCIENTIST_RESEARCH_TASK_WORK_ITEM_PURPOSE,
   CLAUDE_VERIFIER_RESEARCH_TASK_WORK_ITEM_PURPOSE,
-} from "./types";
+} from "./purposes";
 import { finalizeDomainFailureForWorkItem, verifierWorkItemHandler } from "./handlers";
 
 describe("work item domain failure finalization", () => {

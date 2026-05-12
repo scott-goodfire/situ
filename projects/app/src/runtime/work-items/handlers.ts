@@ -1,6 +1,8 @@
+import { computeModule } from "@situ/compute";
+import { workItemModule, type WorkItem, type WorkItemHandler } from "@situ/work-items";
+
 import { executeClaudeAgentTurn } from "../../claude/agents/runs";
 import { recordAppEvent } from "../../app-events";
-import { computeModule } from "@situ/compute";
 import { logModule } from "../../modules/log";
 import { obs, withSpan } from "../../observability";
 import { experimentRepository } from "../../data/repositories/experiments";
@@ -9,20 +11,14 @@ import {
   researchTaskRepository,
   type ResearchTaskRecord,
 } from "../../data/repositories/research-tasks";
-import { completeWorkItem } from "./complete-work-item";
-import { failOrRetryWorkItem } from "./fail-work-item";
-import { extendWorkItemLease } from "./lease";
-import { workItemPayload } from "./payload";
 import {
   CLAUDE_AGENT_TURN_WORK_ITEM_PURPOSE,
   CLAUDE_MANAGER_RESEARCH_PROJECT_WORK_ITEM_PURPOSE,
-  CLAUDE_SCIENTIST_RESEARCH_TASK_WORK_ITEM_PURPOSE,
   CLAUDE_REPORTER_SESSION_WORK_ITEM_PURPOSE,
+  CLAUDE_SCIENTIST_RESEARCH_TASK_WORK_ITEM_PURPOSE,
   CLAUDE_SCRIBE_SESSION_WORK_ITEM_PURPOSE,
   CLAUDE_VERIFIER_RESEARCH_TASK_WORK_ITEM_PURPOSE,
-  type WorkItemHandler,
-  type WorkItem,
-} from "./types";
+} from "./purposes";
 
 const MAX_ATTEMPTS = 3;
 const LEASE_MS = 10 * 60 * 1000;
@@ -54,7 +50,7 @@ async function handleClaimedWorkItemInner({ workItem }: { workItem: WorkItem }):
   const handler = handlers[workItem.purpose];
   if (!handler) {
     const error = new Error(`No handler registered for work item purpose: ${workItem.purpose}`);
-    const outcome = await failOrRetryWorkItem({
+    const outcome = await workItemModule.failOrRetry({
       workItem,
       maxAttempts: 1,
       error,
@@ -67,7 +63,7 @@ async function handleClaimedWorkItemInner({ workItem }: { workItem: WorkItem }):
   }
 
   const heartbeat = setInterval(() => {
-    void extendWorkItemLease({ workItem, leaseMs: LEASE_MS }).catch((error) => {
+    void workItemModule.extendLease({ workItem, leaseMs: LEASE_MS }).catch((error) => {
       logModule.warn(obs.log.workItem.leaseExtensionFailed, {
         [obs.attr.workItem.id]: workItem.id,
         error,
@@ -83,10 +79,10 @@ async function handleClaimedWorkItemInner({ workItem }: { workItem: WorkItem }):
   try {
     await computeModule.heartbeatLeaseForWorkItem({ workItem });
     await handler({ workItem });
-    await completeWorkItem({ workItem });
+    await workItemModule.complete({ workItem });
     await computeModule.releaseForWorkItem({ workItem, reason: "work_item_complete" });
   } catch (error) {
-    const outcome = await failOrRetryWorkItem({
+    const outcome = await workItemModule.failOrRetry({
       workItem,
       error,
       maxAttempts: MAX_ATTEMPTS,
@@ -224,7 +220,7 @@ function activeResearchTaskIdForWorkItem({ workItem }: { workItem: WorkItem }): 
   if (workItem.targetKind === "researchTask") {
     return workItem.targetId;
   }
-  return workItemPayload({ workItem }).activeResearchTaskId;
+  return workItemModule.payload({ workItem }).activeResearchTaskId;
 }
 
 function researchTaskIsTerminal({ researchTask }: { researchTask: ResearchTaskRecord }): boolean {

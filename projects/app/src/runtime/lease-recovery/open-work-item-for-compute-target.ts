@@ -1,5 +1,4 @@
-import type { WorkItem } from "../../data/db/schema";
-import { workItemPayload } from "../work-items/payload";
+import { workItemModule, type WorkItem } from "@situ/work-items";
 
 export function hasOpenWorkItemForComputeTarget({
   openWorkItems,
@@ -11,7 +10,7 @@ export function hasOpenWorkItemForComputeTarget({
   researchTaskId: string;
 }): boolean {
   return openWorkItems.some((workItem) => {
-    const payload = workItemPayload({ workItem });
+    const payload = workItemModule.payload({ workItem });
     return (
       readPayloadString({ payload, key: "activeResearchTaskId" }) === researchTaskId &&
       readPayloadString({ payload, key: "computeTargetId" }) === targetId

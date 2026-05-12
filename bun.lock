@@ -41,6 +41,8 @@
         "@situ/compute": "workspace:*",
         "@situ/protocol": "workspace:*",
         "@situ/web-design-tokens": "workspace:*",
+        "@situ/work-items": "workspace:*",
+        "@situ/worktrees": "workspace:*",
         "cac": "catalog:",
         "drizzle-orm": "^0.45.2",
         "hono": "^4.12.18",
@@ -65,6 +67,19 @@
       "dependencies": {
         "drizzle-orm": "^0.45.2",
         "luxon": "catalog:",
+      },
+      "devDependencies": {
+        "@types/bun": "catalog:",
+        "@types/luxon": "catalog:",
+      },
+    },
+    "projects/app/packages/work-items": {
+      "name": "@situ/work-items",
+      "version": "0.0.1",
+      "dependencies": {
+        "drizzle-orm": "^0.45.2",
+        "luxon": "catalog:",
+        "zod": "^4.0.0",
       },
       "devDependencies": {
         "@types/bun": "catalog:",
@@ -904,6 +919,8 @@
     "@situ/web-design-tokens": ["@situ/web-design-tokens@workspace:projects/web/packages/design-tokens"],
 
     "@situ/web-ui": ["@situ/web-ui@workspace:projects/web/packages/ui"],
+
+    "@situ/work-items": ["@situ/work-items@workspace:projects/app/packages/work-items"],
 
     "@situ/worktrees": ["@situ/worktrees@workspace:projects/app/packages/worktrees"],
 

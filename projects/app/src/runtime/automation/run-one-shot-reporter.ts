@@ -7,8 +7,8 @@ import { modelForEffort, type Effort } from "../../claude/agents/roles/models";
 import { ensureRuntimeContext } from "../../config/session-context";
 import { researchProjectRepository } from "../../data/repositories/research-projects";
 import { hasAnthropicKey } from "../../secrets/local-secret-store";
+import { workItemModule } from "@situ/work-items";
 import {
-  claimDueWorkItem,
   handleClaimedWorkItem,
   workItemLeaseMs,
   CLAUDE_REPORTER_SESSION_WORK_ITEM_PURPOSE,
@@ -75,7 +75,7 @@ export async function runOneShotReporter({
     },
   });
 
-  const claimed = await claimDueWorkItem({
+  const claimed = await workItemModule.claimDue({
     leaseMs: workItemLeaseMs,
     purpose: CLAUDE_REPORTER_SESSION_WORK_ITEM_PURPOSE,
   });

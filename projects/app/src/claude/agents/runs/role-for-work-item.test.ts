@@ -1,12 +1,12 @@
 import { describe, expect, test } from "bun:test";
 
+import type { WorkItem } from "@situ/work-items";
 import {
   CLAUDE_AGENT_TURN_WORK_ITEM_PURPOSE,
   CLAUDE_MANAGER_RESEARCH_PROJECT_WORK_ITEM_PURPOSE,
   CLAUDE_SCIENTIST_RESEARCH_TASK_WORK_ITEM_PURPOSE,
   CLAUDE_VERIFIER_RESEARCH_TASK_WORK_ITEM_PURPOSE,
-  type WorkItem,
-} from "../../../runtime/work-items/types";
+} from "../../../runtime/work-items/purposes";
 import { roleForWorkItem } from "./role-for-work-item";
 
 describe("roleForWorkItem", () => {

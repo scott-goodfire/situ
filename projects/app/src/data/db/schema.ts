@@ -313,42 +313,10 @@ export const researchTaskVerifications = sqliteTable(
   }),
 );
 
-export const workItems = sqliteTable(
-  "work_items",
-  {
-    id: text("id").primaryKey(),
-    purpose: text("purpose").notNull(),
-    targetKind: text("target_kind").notNull(),
-    targetId: text("target_id").notNull(),
-    status: text("status", {
-      enum: ["pending", "claimed", "done", "failed", "canceled"],
-    })
-      .notNull()
-      .default("pending"),
-    ownerAgentId: text("owner_agent_id").references(() => claudeAgents.id),
-    ownerWorkflowId: text("owner_workflow_id"),
-    attempt: integer("attempt").notNull().default(0),
-    availableAt: text("available_at")
-      .notNull()
-      .default(sql`CURRENT_TIMESTAMP`),
-    claimedAt: text("claimed_at"),
-    leaseExpiresAt: text("lease_expires_at"),
-    completedAt: text("completed_at"),
-    ...payloadJson(),
-    ...syncTracking(),
-    ...timestamps(),
-  },
-  (table) => ({
-    statusAvailableIdx: index("work_items_status_available_idx").on(
-      table.status,
-      table.availableAt,
-    ),
-    leaseIdx: index("work_items_lease_idx").on(table.status, table.leaseExpiresAt),
-    openTargetIdx: uniqueIndex("work_items_open_target_unique")
-      .on(table.purpose, table.targetKind, table.targetId)
-      .where(sql`${table.status} IN ('pending', 'claimed')`),
-  }),
-);
+// The work_items table lives in @situ/work-items; re-exported here so the
+// drizzle client's schema includes it and existing import paths still work.
+import { workItems } from "@situ/work-items";
+export { workItems };
 
 export const claudeAgentRuns = sqliteTable(
   "claude_agent_runs",

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { workItemRepository } from "../../../data/repositories/work-items";
+import { workItemRepository } from "@situ/work-items";
 import { defineTool } from "./__shared__/define-tool";
 import { Result } from "./__shared__/result";
 import { allRoles } from "./__shared__/roles";

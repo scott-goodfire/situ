@@ -10,6 +10,7 @@ import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 import { Database } from "bun:sqlite";
 import { COMPUTE_TARGETS_TABLE_SQL } from "@situ/compute";
+import { WORK_ITEMS_TABLE_SQL } from "@situ/work-items";
 import { ensureRuntimeContext, migrationSessionId } from "../../config/session-context";
 import { sqlitePath } from "../../config/paths";
 
@@ -192,24 +193,7 @@ CREATE TABLE IF NOT EXISTS research_task_verifications (
   ${TIMESTAMPS}
 );
 
-CREATE TABLE IF NOT EXISTS work_items (
-  id TEXT PRIMARY KEY,
-  purpose TEXT NOT NULL,
-  target_kind TEXT NOT NULL,
-  target_id TEXT NOT NULL,
-  status TEXT NOT NULL DEFAULT 'pending'
-    CHECK (status IN ('pending', 'claimed', 'done', 'failed', 'canceled')),
-  owner_agent_id TEXT REFERENCES claude_agents(id),
-  owner_workflow_id TEXT,
-  attempt INTEGER NOT NULL DEFAULT 0,
-  available_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  claimed_at TEXT,
-  lease_expires_at TEXT,
-  completed_at TEXT,
-  ${PAYLOAD_JSON},
-  ${SYNC_COLUMNS},
-  ${TIMESTAMPS}
-);
+${WORK_ITEMS_TABLE_SQL}
 
 CREATE TABLE IF NOT EXISTS claude_agent_runs (
   id TEXT PRIMARY KEY,
@@ -412,13 +396,6 @@ CREATE TABLE IF NOT EXISTS feed_entries (
   ${TIMESTAMPS}
 );
 
-CREATE INDEX IF NOT EXISTS work_items_status_available_idx
-  ON work_items(status, available_at);
-CREATE INDEX IF NOT EXISTS work_items_lease_idx
-  ON work_items(status, lease_expires_at);
-CREATE UNIQUE INDEX IF NOT EXISTS work_items_open_target_unique
-  ON work_items(purpose, target_kind, target_id)
-  WHERE status IN ('pending', 'claimed');
 CREATE INDEX IF NOT EXISTS claude_agent_runs_status_idx
   ON claude_agent_runs(status, updated_at);
 CREATE INDEX IF NOT EXISTS app_events_created_idx

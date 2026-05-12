@@ -6,8 +6,9 @@ import {
   enqueueVerifierResearchTaskWork,
 } from "../../dispatch";
 import { computeModule } from "@situ/compute";
+import { workItemModule } from "@situ/work-items";
 import { createRuntimeScheduler } from "../../scheduler";
-import { claimDueWorkItem, handleClaimedWorkItem, workItemLeaseMs } from "../../work-items";
+import { handleClaimedWorkItem, workItemLeaseMs } from "../../work-items";
 import { readAutomationState, waitForAutomationUntilIdle } from "../runner";
 import { createConfiguredResearchTask } from "./seed-research-tasks";
 import type { LiveAgentSliceEvalConfig, LiveAgentSliceSummary } from "./types";
@@ -112,7 +113,7 @@ async function handleNextWorkItem({
 }: {
   expectedWorkItemId: string;
 }): Promise<void> {
-  const workItem = await claimDueWorkItem({ leaseMs: workItemLeaseMs });
+  const workItem = await workItemModule.claimDue({ leaseMs: workItemLeaseMs });
   if (!workItem) {
     throw new Error(`No pending work item was available to claim: ${expectedWorkItemId}`);
   }

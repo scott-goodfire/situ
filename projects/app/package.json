@@ -42,6 +42,7 @@
     "@situ/compute": "workspace:*",
     "@situ/protocol": "workspace:*",
     "@situ/web-design-tokens": "workspace:*",
+    "@situ/work-items": "workspace:*",
     "@situ/worktrees": "workspace:*",
     "cac": "catalog:",
     "drizzle-orm": "^0.45.2",

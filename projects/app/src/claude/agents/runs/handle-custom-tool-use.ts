@@ -1,7 +1,7 @@
 import { logModule } from "../../../modules/log";
 import { jsonModule } from "../../../modules/json";
 import { obs, withSpan } from "../../../observability";
-import type { WorkItem } from "../../../runtime/work-items/types";
+import type { WorkItem } from "@situ/work-items";
 import { getAnthropicClient } from "../anthropic-client";
 import type { ClaudeAgentRole } from "../roles";
 import { claudeAgentToolDefinitionByName, claudeAgentToolDefinitionForRole } from "../tools";

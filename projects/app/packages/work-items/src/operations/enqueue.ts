@@ -1,18 +1,17 @@
 import { and, eq, inArray } from "drizzle-orm";
 
-import { getDb } from "../../data/db/client";
-import { workItems } from "../../data/db/schema";
-import { runSyncedWrite } from "../../data/db/sync";
-import { dateTimeModule } from "../../modules/date-time";
-import type { WorkItemPayload } from "./types";
+import { getWorkItemsContext } from "../context";
+import { workItems } from "../schema";
+import { nowIso } from "../__shared__";
+import type { WorkItemPayload } from "../types";
 
-export async function enqueueWorkItem({
+export async function enqueue({
   purpose,
   targetKind,
   targetId,
   payload = {},
   ownerAgentId,
-  availableAt = dateTimeModule.nowIso(),
+  availableAt = nowIso(),
 }: {
   purpose: string;
   targetKind: string;
@@ -21,20 +20,26 @@ export async function enqueueWorkItem({
   ownerAgentId?: string;
   availableAt?: string;
 }): Promise<{ workItemId: string; syncVersion: number }> {
-  const existing = await getDb().query.workItems.findFirst({
-    where: and(
-      eq(workItems.purpose, purpose),
-      eq(workItems.targetKind, targetKind),
-      eq(workItems.targetId, targetId),
-      inArray(workItems.status, ["pending", "claimed"]),
-    ),
-  });
+  const { getDb, runSyncedWrite } = getWorkItemsContext();
+  const db = getDb();
+  const [existing] = await db
+    .select()
+    .from(workItems)
+    .where(
+      and(
+        eq(workItems.purpose, purpose),
+        eq(workItems.targetKind, targetKind),
+        eq(workItems.targetId, targetId),
+        inArray(workItems.status, ["pending", "claimed"]),
+      ),
+    )
+    .limit(1);
   if (existing) {
     return { workItemId: existing.id, syncVersion: existing.syncVersion };
   }
 
   const workItemId = crypto.randomUUID();
-  const now = dateTimeModule.nowIso();
+  const now = nowIso();
   const { syncVersion } = runSyncedWrite({
     write: ({ db: tx, syncVersion: version }) => {
       tx.insert(workItems)

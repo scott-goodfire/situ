@@ -1,11 +1,13 @@
 import { eq } from "drizzle-orm";
 
-import { workItems, type WorkItem } from "../../data/db/schema";
-import { runSyncedWrite } from "../../data/db/sync";
-import { dateTimeModule } from "../../modules/date-time";
+import { getWorkItemsContext } from "../context";
+import { workItems } from "../schema";
+import { nowIso } from "../__shared__";
+import type { WorkItem } from "../types";
 
-export async function completeWorkItem({ workItem }: { workItem: WorkItem }): Promise<void> {
-  const completedAt = dateTimeModule.nowIso();
+export async function complete({ workItem }: { workItem: WorkItem }): Promise<void> {
+  const { runSyncedWrite } = getWorkItemsContext();
+  const completedAt = nowIso();
   runSyncedWrite({
     write: ({ db, syncVersion }) => {
       db.update(workItems)

@@ -1,6 +1,7 @@
 import { reconcileClaudeManagedSession } from "../../claude/agents/runs";
 import { maxScientistConcurrency, maxVerifierConcurrency } from "../../config/runtime";
 import { computeModule } from "@situ/compute";
+import { workItemModule } from "@situ/work-items";
 import { recoverOrphanComputeLeases } from "../lease-recovery";
 import {
   dispatchActiveResearchProject,
@@ -8,10 +9,7 @@ import {
   dispatchPlannedResearchTask,
 } from "../dispatch";
 import {
-  claimDueWorkItem,
-  countClaimedWorkItems,
   handleClaimedWorkItem,
-  recoverExpiredWorkItemLeases,
   CLAUDE_MANAGER_RESEARCH_PROJECT_WORK_ITEM_PURPOSE,
   CLAUDE_SCIENTIST_RESEARCH_TASK_WORK_ITEM_PURPOSE,
   CLAUDE_SCRIBE_SESSION_WORK_ITEM_PURPOSE,
@@ -70,7 +68,7 @@ function runtimeSchedulerJobs(): SchedulerJob[] {
       name: "manager-work-item-dispatcher",
       intervalMs: 1_000,
       run: async () => {
-        const workItem = await claimDueWorkItem({
+        const workItem = await workItemModule.claimDue({
           leaseMs: workItemLeaseMs,
           purpose: CLAUDE_MANAGER_RESEARCH_PROJECT_WORK_ITEM_PURPOSE,
         });
@@ -87,7 +85,7 @@ function runtimeSchedulerJobs(): SchedulerJob[] {
         if (!(await canClaimScientistWorkItem())) {
           return;
         }
-        const workItem = await claimDueWorkItem({
+        const workItem = await workItemModule.claimDue({
           leaseMs: workItemLeaseMs,
           purpose: CLAUDE_SCIENTIST_RESEARCH_TASK_WORK_ITEM_PURPOSE,
         });
@@ -101,7 +99,7 @@ function runtimeSchedulerJobs(): SchedulerJob[] {
       intervalMs: 1_000,
       concurrency: maxVerifierConcurrency(),
       run: async () => {
-        const workItem = await claimDueWorkItem({
+        const workItem = await workItemModule.claimDue({
           leaseMs: workItemLeaseMs,
           purpose: CLAUDE_VERIFIER_RESEARCH_TASK_WORK_ITEM_PURPOSE,
         });
@@ -121,7 +119,7 @@ function runtimeSchedulerJobs(): SchedulerJob[] {
       name: "scribe-work-item-dispatcher",
       intervalMs: 1_000,
       run: async () => {
-        const workItem = await claimDueWorkItem({
+        const workItem = await workItemModule.claimDue({
           leaseMs: workItemLeaseMs,
           purpose: CLAUDE_SCRIBE_SESSION_WORK_ITEM_PURPOSE,
         });
@@ -134,10 +132,16 @@ function runtimeSchedulerJobs(): SchedulerJob[] {
       name: "work-item-lease-sweeper",
       intervalMs: 5_000,
       run: async () => {
-        await recoverExpiredWorkItemLeases({
+        const failed = await workItemModule.recoverExpiredLeases({
           maxAttempts: workItemMaxAttempts,
           limit: 20,
         });
+        for (const workItem of failed) {
+          await computeModule.releaseForWorkItem({
+            workItem,
+            reason: "work_item_lease_expired",
+          });
+        }
       },
     },
     {
@@ -151,7 +155,7 @@ function runtimeSchedulerJobs(): SchedulerJob[] {
 }
 
 export async function canClaimScientistWorkItem(): Promise<boolean> {
-  const activeCount = await countClaimedWorkItems({
+  const activeCount = await workItemModule.countClaimed({
     purpose: CLAUDE_SCIENTIST_RESEARCH_TASK_WORK_ITEM_PURPOSE,
   });
   const liveCount = await computeModule.liveTargetCount();

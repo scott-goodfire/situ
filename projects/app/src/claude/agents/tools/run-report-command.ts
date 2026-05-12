@@ -2,7 +2,7 @@ import { mkdir } from "node:fs/promises";
 import { z } from "zod";
 
 import { PreconditionError } from "../../../data/repositories/__shared__";
-import { workItemPayload } from "../../../runtime/work-items/payload";
+import { workItemModule } from "@situ/work-items";
 import { defineTool } from "./__shared__/define-tool";
 import { Result } from "./__shared__/result";
 
@@ -35,7 +35,7 @@ export const runReportCommandTool = defineTool({
         hint: "Provide a non-empty command string.",
       });
     }
-    const outputDir = workItemPayload({ workItem: context.workItem }).reportOutputDir;
+    const outputDir = workItemModule.payload({ workItem: context.workItem }).reportOutputDir;
     if (!outputDir || typeof outputDir !== "string") {
       throw new PreconditionError({
         code: "missing_report_output_dir",

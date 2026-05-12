@@ -5,12 +5,11 @@ import { afterAll, beforeAll, beforeEach, describe, expect, test } from "bun:tes
 
 import { ensureRuntimeContext } from "../../config/session-context";
 import { getDb } from "../../data/db/client";
-import { workItems } from "../../data/db/schema";
+import { workItemModule, workItems } from "@situ/work-items";
 import {
   CLAUDE_MANAGER_RESEARCH_PROJECT_WORK_ITEM_PURPOSE,
   CLAUDE_SCIENTIST_RESEARCH_TASK_WORK_ITEM_PURPOSE,
-} from "./types";
-import { claimDueWorkItem, countClaimedWorkItems } from "./claim-work-item";
+} from "./purposes";
 
 const originalEnv = {
   SITU_DB_PATH: process.env.SITU_DB_PATH,
@@ -20,7 +19,7 @@ const originalEnv = {
 
 let tempRoot: string;
 
-describe("claimDueWorkItem", () => {
+describe("workItemModule.claimDue", () => {
   beforeAll(async () => {
     tempRoot = await mkdtemp(join(tmpdir(), "situ-work-item-claim-"));
     const repoPath = join(tempRoot, "repo");
@@ -45,7 +44,7 @@ describe("claimDueWorkItem", () => {
   test("can claim only Scientist work", async () => {
     insertPendingWorkItems();
 
-    const claimed = await claimDueWorkItem({
+    const claimed = await workItemModule.claimDue({
       leaseMs: 1_000,
       purpose: CLAUDE_SCIENTIST_RESEARCH_TASK_WORK_ITEM_PURPOSE,
     });
@@ -56,7 +55,7 @@ describe("claimDueWorkItem", () => {
   test("can skip Scientist work", async () => {
     insertPendingWorkItems();
 
-    const claimed = await claimDueWorkItem({
+    const claimed = await workItemModule.claimDue({
       leaseMs: 1_000,
       excludePurpose: CLAUDE_SCIENTIST_RESEARCH_TASK_WORK_ITEM_PURPOSE,
     });
@@ -66,18 +65,18 @@ describe("claimDueWorkItem", () => {
 
   test("counts claimed work for one purpose", async () => {
     insertPendingWorkItems();
-    await claimDueWorkItem({
+    await workItemModule.claimDue({
       leaseMs: 1_000,
       purpose: CLAUDE_SCIENTIST_RESEARCH_TASK_WORK_ITEM_PURPOSE,
     });
 
     await expect(
-      countClaimedWorkItems({
+      workItemModule.countClaimed({
         purpose: CLAUDE_SCIENTIST_RESEARCH_TASK_WORK_ITEM_PURPOSE,
       }),
     ).resolves.toBe(1);
     await expect(
-      countClaimedWorkItems({
+      workItemModule.countClaimed({
         purpose: CLAUDE_MANAGER_RESEARCH_PROJECT_WORK_ITEM_PURPOSE,
       }),
     ).resolves.toBe(0);

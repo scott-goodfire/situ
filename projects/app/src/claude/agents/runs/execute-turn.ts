@@ -5,8 +5,7 @@ import {
 } from "../../../data/repositories/research-projects";
 import { obs, withSpan } from "../../../observability";
 import type { ClaudeAgentExecutionMode, ClaudeAgentRole } from "../roles";
-import { workItemPayload } from "../../../runtime/work-items/payload";
-import type { WorkItem } from "../../../runtime/work-items/types";
+import { workItemModule, type WorkItem } from "@situ/work-items";
 import { getAnthropicClient } from "../anthropic-client";
 import { eventType, recordManagedEvent, textFromAgentMessage } from "../events";
 import {
@@ -36,7 +35,7 @@ type ManagedStreamStats = {
 };
 
 export async function executeClaudeAgentTurn({ workItem }: { workItem: WorkItem }): Promise<void> {
-  const payload = workItemPayload({ workItem });
+  const payload = workItemModule.payload({ workItem });
   const content = payload.content;
   const claudeAgentRunId = payload.claudeAgentRunId ?? workItem.targetId;
   if (!content) {

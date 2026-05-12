@@ -4,7 +4,7 @@ import { getDb } from "../../../data/db/client";
 import { claudeAgentRuns } from "../../../data/db/schema";
 import { runSyncedWrite } from "../../../data/db/sync";
 import { dateTimeModule } from "../../../modules/date-time";
-import { enqueueWorkItem } from "../../../runtime/work-items/enqueue-work-item";
+import { workItemModule } from "@situ/work-items";
 
 export async function enqueueClaudeAgentWork({
   purpose,
@@ -29,7 +29,7 @@ export async function enqueueClaudeAgentWork({
 
   const claudeAgentRunId = crypto.randomUUID();
   const resolvedTargetId = targetId ?? claudeAgentRunId;
-  const { workItemId } = await enqueueWorkItem({
+  const { workItemId } = await workItemModule.enqueue({
     purpose,
     targetKind,
     targetId: resolvedTargetId,

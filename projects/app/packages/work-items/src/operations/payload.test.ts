@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
 
-import type { WorkItem } from "../../data/db/schema";
-import { dateTimeModule } from "../../modules/date-time";
 import { workItemPayload } from "./payload";
+import { nowIso } from "../__shared__";
+import type { WorkItem } from "../types";
 
 describe("work item payload parsing", () => {
   test("returns parsed object payloads typed by the payload schema", () => {
@@ -34,7 +34,7 @@ describe("work item payload parsing", () => {
 });
 
 function workItemRecord({ payloadJson }: { payloadJson: string }): WorkItem {
-  const now = dateTimeModule.nowIso();
+  const now = nowIso();
   return {
     id: "work_item_payload_test",
     purpose: "test",

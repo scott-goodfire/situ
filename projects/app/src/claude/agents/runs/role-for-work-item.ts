@@ -1,11 +1,11 @@
-import type { WorkItem } from "../../../runtime/work-items/types";
+import type { WorkItem } from "@situ/work-items";
 import {
   CLAUDE_MANAGER_RESEARCH_PROJECT_WORK_ITEM_PURPOSE,
   CLAUDE_REPORTER_SESSION_WORK_ITEM_PURPOSE,
   CLAUDE_SCIENTIST_RESEARCH_TASK_WORK_ITEM_PURPOSE,
   CLAUDE_SCRIBE_SESSION_WORK_ITEM_PURPOSE,
   CLAUDE_VERIFIER_RESEARCH_TASK_WORK_ITEM_PURPOSE,
-} from "../../../runtime/work-items/types";
+} from "../../../runtime/work-items/purposes";
 import type { ClaudeAgentRole } from "../roles";
 
 export function roleForWorkItem({ workItem }: { workItem: WorkItem }): ClaudeAgentRole {
