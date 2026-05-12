@@ -11,18 +11,10 @@ mitata = "mitata"
 
 [files]
 extend-exclude = [
-  ".fallow/**",
   "bun.lock",
   "*.bin",
   "**/dist/**",
   "**/node_modules/**",
-  "projects/docs/.vitepress/cache/**",
-  "projects/docs/.vitepress/dist/**",
-  "projects/web/.tanstack/**",
-  # Fixture and test-data files use intentional short prefix codes
-  # (`wrk_01`, `tsk_plan_01`, `agt_manager_01`, etc.) that look like typos.
-  "projects/web/packages/app-ui/src/fixtures/**",
-  "projects/evals/packages/fixtures/**",
   # /examples/ holds pristine third-party fixtures (corpora, test sets, foreign
   # source) for laboratory runs — see .agents/skills/situ-run-laboratory-example.
   "examples/**",

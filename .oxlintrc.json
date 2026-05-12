@@ -45,23 +45,5 @@
     "browser": true,
     "node": true
   },
-  "overrides": [
-    {
-      "files": ["**/*.test.ts", "**/*.test.tsx", "projects/e2e-tests/**/*.ts"],
-      "rules": {
-        "typescript/no-explicit-any": "off",
-        "no-console": "off"
-      }
-    },
-    {
-      "files": ["projects/web/**/*.tsx", "projects/web/packages/**/*.tsx"],
-      "plugins": ["react", "jsx-a11y"]
-    },
-    {
-      "files": ["projects/e2e-tests/**/*.ts"],
-      "rules": {
-        "react/rules-of-hooks": "off"
-      }
-    }
-  ]
+  "overrides": []
 }

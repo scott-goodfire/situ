@@ -6,8 +6,6 @@
     "**/dist/**",
     "**/.fallow/**",
     "**/.tanstack/**",
-    "projects/docs/.vitepress/cache/**",
-    "projects/docs/.vitepress/dist/**",
     // /examples/ holds pristine third-party markdown — see
     // .agents/skills/situ-run-laboratory-example.
     "examples/**",

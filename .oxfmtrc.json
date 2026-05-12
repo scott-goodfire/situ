@@ -15,8 +15,6 @@
     ".situ/",
     "storybook-static/",
     "**/storybook-static/",
-    "**/dist/",
-    "projects/app/drizzle/",
-    "evals/dist/"
+    "**/dist/"
   ]
 }
