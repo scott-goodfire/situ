@@ -1,9 +1,10 @@
 import { realpath, stat } from "node:fs/promises";
 import { isAbsolute, relative, resolve } from "node:path";
 
+import { worktreeModule } from "@situ/worktrees";
+
 import { getRuntimeContext, type SessionRuntimeContext } from "../../../../config/session-context";
 import { PreconditionError } from "../../../../data/repositories/__shared__";
-import { commandOutputEnv } from "../../../../runtime/worktrees/command-output-env";
 
 type SourceWorkspaceRuntimeContext = Pick<SessionRuntimeContext, "repoPath" | "sessionHome">;
 
@@ -73,7 +74,10 @@ export async function runReadonlyWorkspaceCommand({
     max: 1024 * 1024,
   });
   const beforeSnapshot = sourceWorkspaceSnapshot({ cwd: workspacePath });
-  const outputEnv = await commandOutputEnv({ label: "source", runtime });
+  const outputEnv = await worktreeModule.commandOutputEnv({
+    label: "source",
+    outputRoot: runtime.sessionHome,
+  });
 
   const result = Bun.spawnSync({
     cmd: [process.env.SHELL ?? "/bin/bash", "-lc", command],

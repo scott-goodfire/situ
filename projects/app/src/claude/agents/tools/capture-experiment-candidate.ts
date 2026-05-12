@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { captureExperimentCandidate } from "../../../runtime/worktrees";
+import { captureExperimentCandidate } from "../../../runtime/experiment-worktrees";
 import { defineTool } from "./__shared__/define-tool";
 import { Result } from "./__shared__/result";
 

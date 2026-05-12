@@ -102,6 +102,11 @@ export const researchProjectRepository = {
     return rows.find((project) => !terminalProjectStatuses.has(project.status));
   },
 
+  async findMostRecent(): Promise<ResearchProjectRecord | undefined> {
+    const [row] = await researchProjectRepository.list({ limit: 1 });
+    return row;
+  },
+
   async search({
     query,
     status,

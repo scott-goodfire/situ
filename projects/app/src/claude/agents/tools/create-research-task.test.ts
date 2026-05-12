@@ -10,6 +10,8 @@ import {
   baselineActivities,
   baselines,
   computeTargets,
+  experimentActivities,
+  experiments,
   hypotheses,
   hypothesisActivities,
   researchProjectInteractions,
@@ -19,6 +21,7 @@ import {
 } from "../../../data/db/schema";
 import { baselineRepository } from "../../../data/repositories/baselines";
 import { computeTargetRepository } from "@situ/compute";
+import { experimentRepository } from "../../../data/repositories/experiments";
 import { hypothesisRepository } from "../../../data/repositories/hypotheses";
 import { researchProjectInteractionRepository } from "../../../data/repositories/research-project-interactions";
 import { researchProjectRepository } from "../../../data/repositories/research-projects";
@@ -309,15 +312,190 @@ describe("create_research_task tool", () => {
     });
 
     expect(envelope.ok).toBe(false);
-    expect(envelope.code).toBe("explore_prompt_has_exploit_shape");
+    expect(envelope.code).toBe("read_only_task_prompt_has_exploit_shape");
     expect(String(envelope.hint)).toContain("exploit");
     const details = jsonRecord(envelope.details);
     expect(details.suggestedType).toBe("exploit");
+    expect(details.taskType).toBe("explore");
     expect(Array.isArray(details.matchedTokens)).toBe(true);
     expect(details.matchedTokens).toContain("capture_experiment_candidate");
     expect(details.matchedTokens).toContain("record_experiment_comparison");
 
     expect(await researchTaskRepositoryCount()).toBe(0);
+  });
+
+  test("rejects synthesize tasks whose workerPrompt names exploit-shape tool calls", async () => {
+    const project = await researchProjectRepository.create({
+      goal: "Catch synthesize-typed tasks that secretly require candidate work.",
+    });
+    await researchProjectRepository.updatePhase({
+      researchProjectId: project.id,
+      phase: "search",
+    });
+
+    const envelope = await runCreateResearchTaskToolEnvelope({
+      researchProjectId: project.id,
+      type: "synthesize",
+      title: "Summarize and apply the candidate change",
+      workerPrompt:
+        "Compose a synthesis and call create_experiment to run a candidate variant on top of the verified branch.",
+      verificationPrompt: "Confirm the report is durable.",
+    });
+
+    expect(envelope.ok).toBe(false);
+    expect(envelope.code).toBe("read_only_task_prompt_has_exploit_shape");
+    const details = jsonRecord(envelope.details);
+    expect(details.taskType).toBe("synthesize");
+    expect(details.suggestedType).toBe("exploit");
+    expect(await researchTaskRepositoryCount()).toBe(0);
+  });
+
+  test("rejects prune tasks whose workerPrompt names exploit-shape tool calls", async () => {
+    const project = await researchProjectRepository.create({
+      goal: "Prune tasks must not run new candidate experiments.",
+    });
+    await researchProjectRepository.updatePhase({
+      researchProjectId: project.id,
+      phase: "search",
+    });
+
+    const envelope = await runCreateResearchTaskToolEnvelope({
+      researchProjectId: project.id,
+      type: "prune",
+      title: "Prune the qwerty branch with a confirming run",
+      workerPrompt:
+        "Run capture_experiment_candidate on the qwerty branch to confirm before pruning, then git commit -am 'prune'.",
+      verificationPrompt: "Confirm prune is justified.",
+    });
+
+    expect(envelope.ok).toBe(false);
+    expect(envelope.code).toBe("read_only_task_prompt_has_exploit_shape");
+    const details = jsonRecord(envelope.details);
+    expect(details.taskType).toBe("prune");
+    expect(await researchTaskRepositoryCount()).toBe(0);
+  });
+
+  test("rejects exploit tasks whose parentExperimentId references an experiment with no captured candidate commit", async () => {
+    const project = await researchProjectRepository.create({
+      goal: "Block exploit tasks that name uncaptured parents.",
+    });
+    await researchProjectRepository.updatePhase({
+      researchProjectId: project.id,
+      phase: "search",
+    });
+    const hypothesis = await hypothesisRepository.create({
+      title: "Stacked anchor hypothesis",
+      summary: "Combine first-letter anchor with extra-vocab fallback.",
+    });
+    const parent = await experimentRepository.create({
+      title: "Parent experiment with no captured commit yet",
+      summary: "Parent that has not yet finished capturing its candidate commit.",
+      associatedHypothesisId: hypothesis.id,
+    });
+
+    const envelope = await runCreateResearchTaskToolEnvelope({
+      researchProjectId: project.id,
+      type: "exploit",
+      title: "Deepen the stacked anchor lineage",
+      workerPrompt: "Deepen the verified branch with one focused candidate variant.",
+      verificationPrompt: "Verify the candidate inherits the parent commit.",
+      targetKind: "hypothesis",
+      targetId: hypothesis.id,
+      parentExperimentId: parent.id,
+    });
+
+    expect(envelope.ok).toBe(false);
+    expect(envelope.code).toBe("parent_experiment_missing_candidate_commit");
+    const details = jsonRecord(envelope.details);
+    expect(details.parentExperimentId).toBe(parent.id);
+    expect(await researchTaskRepositoryCount()).toBe(0);
+  });
+
+  test("allows exploit tasks whose parentExperimentId references an experiment with a captured candidate commit and persists the field on the task payload", async () => {
+    const project = await researchProjectRepository.create({
+      goal: "Accept exploit tasks whose parents have captured commits.",
+    });
+    await researchProjectRepository.updatePhase({
+      researchProjectId: project.id,
+      phase: "search",
+    });
+    const hypothesis = await hypothesisRepository.create({
+      title: "Captured-parent hypothesis",
+      summary: "The parent experiment already captured a candidate commit.",
+    });
+    const parent = await experimentRepository.create({
+      title: "Parent experiment with a captured commit",
+      summary: "Parent that already has its candidate commit captured.",
+      associatedHypothesisId: hypothesis.id,
+      candidateCommit: "f6fed76",
+    });
+
+    const payload = await runCreateResearchTaskTool({
+      researchProjectId: project.id,
+      type: "exploit",
+      title: "Deepen the captured-parent lineage",
+      workerPrompt: "Deepen the verified branch with one focused candidate variant.",
+      verificationPrompt: "Verify the candidate inherits the parent commit.",
+      targetKind: "hypothesis",
+      targetId: hypothesis.id,
+      parentExperimentId: parent.id,
+    });
+    const task = jsonRecord(payload.researchTask);
+    expect(task.type).toBe("exploit");
+    expect(JSON.parse(String(task.payloadJson))).toMatchObject({
+      parentExperimentId: parent.id,
+    });
+  });
+
+  test("rejects exploit tasks whose parentExperimentId references an unknown experiment", async () => {
+    const project = await researchProjectRepository.create({
+      goal: "Catch typo'd or stale parentExperimentId references.",
+    });
+    await researchProjectRepository.updatePhase({
+      researchProjectId: project.id,
+      phase: "search",
+    });
+    const hypothesis = await hypothesisRepository.create({
+      title: "Some hypothesis",
+      summary: "Anything testable.",
+    });
+
+    const envelope = await runCreateResearchTaskToolEnvelope({
+      researchProjectId: project.id,
+      type: "exploit",
+      title: "Deepen a phantom parent",
+      workerPrompt: "Deepen the verified branch with one focused candidate variant.",
+      verificationPrompt: "Verify the candidate inherits the parent commit.",
+      targetKind: "hypothesis",
+      targetId: hypothesis.id,
+      parentExperimentId: "00000000-0000-4000-8000-000000000000",
+    });
+
+    expect(envelope.ok).toBe(false);
+    expect(envelope.code).toBe("parent_experiment_not_found");
+    expect(await researchTaskRepositoryCount()).toBe(0);
+  });
+
+  test("rejects parentExperimentId on non-deepening task types", async () => {
+    const project = await researchProjectRepository.create({
+      goal: "parentExperimentId is only valid on exploit/debug tasks.",
+    });
+    await researchProjectRepository.updatePhase({
+      researchProjectId: project.id,
+      phase: "search",
+    });
+
+    const envelope = await runCreateResearchTaskToolEnvelope({
+      researchProjectId: project.id,
+      type: "explore",
+      title: "Explore the search space",
+      workerPrompt: "Read the dev miss categories and propose hypotheses.",
+      verificationPrompt: "Check that hypothesis claims cite dev evidence.",
+      parentExperimentId: "00000000-0000-4000-8000-000000000000",
+    });
+
+    expect(envelope.ok).toBe(false);
+    expect(envelope.code).toBe("invalid_input");
   });
 
   test("allows explore tasks whose workerPrompt is purely diagnostic", async () => {
@@ -633,6 +811,8 @@ function resetTables(): void {
   db.delete(artifacts).run();
   db.delete(baselineActivities).run();
   db.delete(baselines).run();
+  db.delete(experimentActivities).run();
+  db.delete(experiments).run();
   db.delete(hypothesisActivities).run();
   db.delete(hypotheses).run();
   db.delete(researchProjectInteractions).run();

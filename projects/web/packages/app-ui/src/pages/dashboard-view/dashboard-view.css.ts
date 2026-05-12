@@ -81,5 +81,5 @@ export const projectLink = style({
 export const mapArea = style({
   flex: "1 1 auto",
   minHeight: 0,
-  display: "flex",
+  minWidth: 0,
 });

@@ -60,11 +60,15 @@ can be stated.
    direction; do not bundle multiple exploit variants into one Scientist
    workerPrompt. Candidate experiment tasks should target their primary
    hypothesis with `targetKind: "hypothesis"` and `targetId`. When an exploit
-   task deepens a verified experiment, name that verified parent experiment id
-   in `workerPrompt` and require `create_experiment.parentExperimentId` to
-   match it in `verificationPrompt`. Write task prompts as objective,
-   constraints, sanity checks, run/evidence requirements, and acceptance
-   criteria. Do not give only a brittle literal edit recipe.
+   or debug task deepens a verified experiment, pass `parentExperimentId` as
+   a top-level argument to `create_research_task`. The tool validates the
+   parent has a captured `candidateCommit` at plan time, and the Scientist's
+   `create_experiment` inherits it automatically — do not repeat the id in
+   `workerPrompt`. The `verificationPrompt` should still reject a missing or
+   wrong `create_experiment.parentExperimentId` on the resulting Experiment
+   record. Write task prompts as objective, constraints, sanity checks,
+   run/evidence requirements, and acceptance criteria. Do not give only a
+   brittle literal edit recipe.
 5. Use type `verify` for Verifier-owned checks: duplicate review,
    comparability review, adversarial evidence review, and other ResearchTasks that
    should only record a ResearchTaskVerification. For type `verify`,

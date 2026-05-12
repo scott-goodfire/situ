@@ -99,6 +99,21 @@ describe("dispatchScribeNarrationIfDue", () => {
     expect(scribeWorkItemCount()).toBe(0);
   });
 
+  test("does not enqueue a second scribe work item while an earlier one is still pending", async () => {
+    const project = await researchProjectRepository.create({
+      goal: "Exercise scribe dispatch (open work-item guard).",
+    });
+
+    await dispatchScribeNarrationIfDue();
+    await dispatchScribeNarrationIfDue();
+    await dispatchScribeNarrationIfDue();
+
+    const items = scribeWorkItems();
+    expect(items).toHaveLength(1);
+    expect(items[0]?.targetId).toBe(project.id);
+    expect(items[0]?.status).toBe("pending");
+  });
+
   test("enqueues again once the latest narration is older than the interval", async () => {
     const project = await researchProjectRepository.create({
       goal: "Exercise scribe dispatch (old narration).",

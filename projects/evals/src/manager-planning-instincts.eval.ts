@@ -55,6 +55,19 @@ Recent verified ResearchTasks (oldest first):
 
 There is only one positive axis recorded. You have one ResearchTask slot this turn. State the title of the ResearchTask you will file. Reply with only the title — no explanation, no other text.`;
 
+const structuredParentSnapshot = `Project phase: search. Per-turn ResearchTask budget: 1.
+
+A single verified parent experiment is available to deepen:
+
+  Experiment id: E_FL (candidateCommit abc1234 captured)
+  Hypothesis id: H_FL ("first-letter prior in correction()")
+  Last verified dev_accuracy Δ: +0.014 (0.748 → 0.762)
+
+You want to deepen this lineage with a tighter penalty threshold. Reply with exactly two lines and nothing else:
+
+  title: <your task title>
+  parentExperimentId: <the create_research_task argument you will pass, or "none">`;
+
 const parallelSnapshot = `Project phase: search. Per-turn ResearchTask budget: 3.
 
 No exploit lineages have landed wins yet. /mnt/memory/best-threads.md is empty.
@@ -79,8 +92,29 @@ const cases: readonly PlanningCase[] = [
     name: "parallelize_three_independent_explores",
     userMessage: parallelSnapshot,
     expectation: {
-      requiredAnyOf: ["H_LEN", "Length-asymmetric"],
+      requiredAnyOf: [
+        "H_LEN",
+        "H_KEY",
+        "H_BIG",
+        "Length-asymmetric",
+        "length-asymmetric",
+        "QWERTY",
+        "qwerty",
+        "bigram",
+      ],
       forbidden: ["only one", "one at a time", "wait for"],
+    },
+  },
+  {
+    name: "passes_parent_experiment_id_as_structured_argument",
+    userMessage: structuredParentSnapshot,
+    expectation: {
+      requiredAnyOf: ["parentExperimentId: E_FL", "parentExperimentId:E_FL"],
+      forbidden: [
+        "parentExperimentId: none",
+        "parentExperimentId:none",
+        "parentExperimentId: None",
+      ],
     },
   },
   {

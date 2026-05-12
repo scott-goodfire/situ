@@ -1,11 +1,11 @@
 import { mkdir, stat, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 
+import { safePathSegment, worktreeModule } from "@situ/worktrees";
+
 import { getRuntimeContext } from "../../config/session-context";
 import { artifactRepository } from "../../data/repositories/artifacts";
 import { experimentRepository } from "../../data/repositories/experiments";
-import { git } from "./git-command";
-import { safePathSegment } from "./path-utils";
 import type { CaptureExperimentCandidateResult, WorktreeRuntimeContext } from "./types";
 
 export async function captureExperimentCandidate({
@@ -24,12 +24,13 @@ export async function captureExperimentCandidate({
     throw new Error(`Experiment worktree has not been prepared: ${experimentId}`);
   }
 
-  const status = await git({
-    cwd: worktreePath,
-    args: ["status", "--porcelain=v1", "--untracked-files=all"],
-    trimStdout: true,
+  const result = await worktreeModule.captureCandidate({
+    worktreePath,
+    baseCommit,
+    commitMessage: commitMessage ?? `situ experiment ${experimentId}`,
   });
-  if (!status.trim()) {
+
+  if (result.isEmpty) {
     await experimentRepository.addActivity({
       experimentId,
       actor: "system",
@@ -45,21 +46,10 @@ export async function captureExperimentCandidate({
     };
   }
 
-  await createCandidateCommit({
-    commitMessage: commitMessage ?? `situ experiment ${experimentId}`,
-    worktreePath,
-  });
-  const candidateCommit = await git({
-    cwd: worktreePath,
-    args: ["rev-parse", "HEAD"],
-    trimStdout: true,
-  });
   const patchPath = await writeCandidatePatch({
-    baseCommit,
-    candidateCommit,
     experimentId,
     runtime,
-    worktreePath,
+    patchContent: result.patchContent,
   });
   const patchStat = await stat(patchPath);
   const artifact = await artifactRepository.create({
@@ -75,18 +65,18 @@ export async function captureExperimentCandidate({
 
   await experimentRepository.updateCandidateMetadata({
     experimentId,
-    candidateCommit,
+    candidateCommit: result.candidateCommit,
   });
 
   await experimentRepository.addActivity({
     experimentId,
     actor: "system",
     kind: "recorded",
-    body: `Captured candidate commit ${candidateCommit.slice(0, 12)}.`,
+    body: `Captured candidate commit ${result.candidateCommit.slice(0, 12)}.`,
     payload: {
       activityType: "experiment_candidate_captured",
       baseCommit,
-      candidateCommit,
+      candidateCommit: result.candidateCommit,
       patchArtifactId: artifact.id,
       patchPath,
     },
@@ -95,51 +85,20 @@ export async function captureExperimentCandidate({
   return {
     experimentId,
     baseCommit,
-    candidateCommit,
+    candidateCommit: result.candidateCommit,
     patchArtifactId: artifact.id,
   };
 }
 
-async function createCandidateCommit({
-  commitMessage,
-  worktreePath,
-}: {
-  commitMessage: string;
-  worktreePath: string;
-}): Promise<void> {
-  await git({ cwd: worktreePath, args: ["add", "-A"] });
-  await git({
-    cwd: worktreePath,
-    args: [
-      "-c",
-      "user.name=situ",
-      "-c",
-      "user.email=situ@local.invalid",
-      "commit",
-      "-m",
-      commitMessage,
-    ],
-  });
-}
-
 async function writeCandidatePatch({
-  baseCommit,
-  candidateCommit,
   experimentId,
   runtime,
-  worktreePath,
+  patchContent,
 }: {
-  baseCommit: string;
-  candidateCommit: string;
   experimentId: string;
   runtime: WorktreeRuntimeContext;
-  worktreePath: string;
+  patchContent: string;
 }): Promise<string> {
-  const patch = await git({
-    cwd: worktreePath,
-    args: ["diff", "--binary", baseCommit, candidateCommit],
-    trimStdout: false,
-  });
   const patchPath = join(
     runtime.sessionHome,
     "artifacts",
@@ -147,6 +106,6 @@ async function writeCandidatePatch({
     "candidate.patch",
   );
   await mkdir(dirname(patchPath), { recursive: true });
-  await writeFile(patchPath, patch);
+  await writeFile(patchPath, patchContent);
   return patchPath;
 }

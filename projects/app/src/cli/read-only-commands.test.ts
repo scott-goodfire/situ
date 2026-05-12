@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { afterEach, describe, expect, test } from "bun:test";
 
 import { currentWorkspace } from "../config/session-context";
-import { git } from "../runtime/worktrees/git-command";
+import { worktreeModule } from "@situ/worktrees";
 import { runSessionsCommand, runStatusCommand } from "./read-only-commands";
 
 const originalEnv = {
@@ -192,10 +192,10 @@ async function createSessionFixture({
 }
 
 async function initLabRepoWithCommit({ labRepoPath }: { labRepoPath: string }): Promise<string> {
-  await git({ cwd: labRepoPath, args: ["init", "--initial-branch", "main"] });
+  await worktreeModule.git({ cwd: labRepoPath, args: ["init", "--initial-branch", "main"] });
   await writeFile(join(labRepoPath, "README.md"), "baseline\n");
-  await git({ cwd: labRepoPath, args: ["add", "README.md"] });
-  await git({
+  await worktreeModule.git({ cwd: labRepoPath, args: ["add", "README.md"] });
+  await worktreeModule.git({
     cwd: labRepoPath,
     args: [
       "-c",
@@ -207,7 +207,7 @@ async function initLabRepoWithCommit({ labRepoPath }: { labRepoPath: string }): 
       "initial",
     ],
   });
-  return git({ cwd: labRepoPath, args: ["rev-parse", "HEAD"], trimStdout: true });
+  return worktreeModule.git({ cwd: labRepoPath, args: ["rev-parse", "HEAD"], trimStdout: true });
 }
 
 async function createExperimentWorktrees({
@@ -239,14 +239,14 @@ async function createExperimentWorktrees({
       continue;
     }
     const worktreePath = join(worktreesRoot, seed.id);
-    await git({
+    await worktreeModule.git({
       cwd: labRepoPath,
       args: ["worktree", "add", "--detach", worktreePath, baseCommit],
     });
     if (seed.worktree.commitSubject) {
       await writeFile(join(worktreePath, "note.txt"), `${seed.id}\n`);
-      await git({ cwd: worktreePath, args: ["add", "note.txt"] });
-      await git({
+      await worktreeModule.git({ cwd: worktreePath, args: ["add", "note.txt"] });
+      await worktreeModule.git({
         cwd: worktreePath,
         args: [
           "-c",

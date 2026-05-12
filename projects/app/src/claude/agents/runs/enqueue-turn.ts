@@ -1,3 +1,6 @@
+import { eq } from "drizzle-orm";
+
+import { getDb } from "../../../data/db/client";
 import { claudeAgentRuns } from "../../../data/db/schema";
 import { runSyncedWrite } from "../../../data/db/sync";
 import { dateTimeModule } from "../../../modules/date-time";
@@ -36,6 +39,13 @@ export async function enqueueClaudeAgentWork({
       claudeAgentRunId,
     },
   });
+
+  const existingRun = await getDb().query.claudeAgentRuns.findFirst({
+    where: eq(claudeAgentRuns.workItemId, workItemId),
+  });
+  if (existingRun) {
+    return { workItemId, claudeAgentRunId: existingRun.id };
+  }
 
   const now = dateTimeModule.nowIso();
   runSyncedWrite({

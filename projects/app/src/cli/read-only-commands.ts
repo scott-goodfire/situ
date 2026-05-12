@@ -14,7 +14,7 @@ import {
   type ComputeBlockerResearchTaskRow,
   type ComputeBlockerTargetRow,
 } from "@situ/compute";
-import { git } from "../runtime/worktrees/git-command";
+import { worktreeModule } from "@situ/worktrees";
 
 type ExperimentWorktreeRow = {
   experimentId: string;
@@ -197,7 +197,7 @@ async function readWorktreeHead({
     return { ...base, headCommit: null, headSubject: null };
   }
   try {
-    const output = await git({
+    const output = await worktreeModule.git({
       cwd: row.worktreePath,
       args: ["log", "-1", "--format=%H%n%s"],
       trimStdout: true,

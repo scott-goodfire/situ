@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { computeModule } from "@situ/compute";
-import { runExperimentWorkspaceCommand } from "../../../runtime/worktrees";
+import { runExperimentWorkspaceCommand } from "../../../runtime/experiment-worktrees";
 import { defineTool } from "./__shared__/define-tool";
 import { Result } from "./__shared__/result";
 

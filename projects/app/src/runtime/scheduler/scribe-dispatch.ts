@@ -1,4 +1,8 @@
+import { and, eq, inArray } from "drizzle-orm";
+
 import { enqueueClaudeAgentWork } from "../../claude/agents/runs";
+import { getDb } from "../../data/db/client";
+import { workItems } from "../../data/db/schema";
 import { feedEntryRepository } from "../../data/repositories/feed-entries";
 import { researchProjectRepository } from "../../data/repositories/research-projects";
 import { CLAUDE_SCRIBE_SESSION_WORK_ITEM_PURPOSE } from "../work-items/types";
@@ -20,6 +24,18 @@ export async function dispatchScribeNarrationIfDue(): Promise<void> {
     if (elapsedMs < intervalMs) {
       return;
     }
+  }
+
+  const openScribeWork = await getDb().query.workItems.findFirst({
+    where: and(
+      eq(workItems.purpose, CLAUDE_SCRIBE_SESSION_WORK_ITEM_PURPOSE),
+      eq(workItems.targetKind, "researchProject"),
+      eq(workItems.targetId, project.id),
+      inArray(workItems.status, ["pending", "claimed"]),
+    ),
+  });
+  if (openScribeWork) {
+    return;
   }
 
   const content = [

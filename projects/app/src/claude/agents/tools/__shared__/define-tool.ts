@@ -1,9 +1,29 @@
 import { z } from "zod";
 
-import { PreconditionError } from "../../../../data/repositories/__shared__";
 import type { ClaudeAgentRole } from "../../roles";
 import type { ClaudeAgentToolContext, ClaudeAgentToolDefinition } from "../types";
 import { Result, type ToolResult } from "./result";
+
+/**
+ * Duck-type check for PreconditionError. Workspace packages (@situ/compute,
+ * @situ/worktrees, …) each carry their own PreconditionError class, so a
+ * cross-package `instanceof` would miss them. We match on `name` plus the
+ * required envelope fields instead.
+ */
+function isPreconditionError(error: unknown): error is {
+  code: string;
+  hint: string;
+  details?: Record<string, unknown>;
+} {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+  if (error.name !== "PreconditionError") {
+    return false;
+  }
+  const candidate = error as { code?: unknown; hint?: unknown };
+  return typeof candidate.code === "string" && typeof candidate.hint === "string";
+}
 
 type LegacyHandler<Schema extends z.ZodTypeAny> = (input: {
   input: z.infer<Schema>;
@@ -95,7 +115,7 @@ async function runEnvelopeHandler<Schema extends z.ZodTypeAny, T>({
     const result = await handler({ input, context });
     return wrap(result);
   } catch (error) {
-    if (error instanceof PreconditionError) {
+    if (isPreconditionError(error)) {
       return wrap(
         Result.fail({
           code: error.code,

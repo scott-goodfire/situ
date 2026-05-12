@@ -129,49 +129,87 @@ export function ProjectView({
       </Section>
 
       <Section title="Baseline">
-        {project.baselineSummary ? (
+        {baselineEntries.length > 0 ? (
+          <ul role="list" className={s.baselineList}>
+            {baselineEntries.map(
+              ({
+                baseline,
+                evaluations: baselineEvaluations,
+                measurements: baselineMeasurements,
+              }) => (
+                <li key={baseline.id} className={s.baselineEntry}>
+                  <DxCard>
+                    <div className={s.baselineEntryBody}>
+                      <header className={s.baselineEntryHeader}>
+                        <p className={s.baselineEyebrow}>
+                          <span className={mono}>{baseline.id}</span>
+                        </p>
+                        <h3 className={s.baselineTitle}>{baseline.title}</h3>
+                      </header>
+                      {baseline.summary ? (
+                        <div className={s.prose}>
+                          <DxMarkdown>{baseline.summary}</DxMarkdown>
+                        </div>
+                      ) : null}
+                      <div className={s.evaluationsBlock}>
+                        <p className={s.evaluationsLabel}>Evaluation</p>
+                        {baselineEvaluations.length > 0 ? (
+                          <ul role="list" className={s.evaluationList}>
+                            {baselineEvaluations.map((evaluation) => {
+                              const evalMeasurements = baselineMeasurements.filter(
+                                (measurement) => measurement.evaluationId === evaluation.id,
+                              );
+                              return (
+                                <li key={evaluation.id} className={s.evaluationItem}>
+                                  <header className={s.evaluationHeader}>
+                                    <p className={s.evaluationEyebrow}>
+                                      <span className={mono}>{evaluation.id}</span>
+                                    </p>
+                                    <h4 className={s.evaluationTitle}>{evaluation.title}</h4>
+                                  </header>
+                                  {evaluation.summary ? (
+                                    <div className={s.prose}>
+                                      <DxMarkdown>{evaluation.summary}</DxMarkdown>
+                                    </div>
+                                  ) : null}
+                                  {evalMeasurements.length > 0 ? (
+                                    <div className={s.measurementsBlock}>
+                                      <p className={s.measurementsLabel}>Measurements</p>
+                                      <ul role="list" className={s.measurementList}>
+                                        {evalMeasurements.map((measurement) => (
+                                          <li key={measurement.id} className={s.measurementItem}>
+                                            <span className={mono}>{measurement.actor}</span>
+                                            <span className={s.measurementBody}>
+                                              {measurement.body}
+                                            </span>
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                  ) : (
+                                    <p className={s.empty}>No measurements recorded.</p>
+                                  )}
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        ) : (
+                          <p className={s.empty}>No evaluation run yet.</p>
+                        )}
+                      </div>
+                    </div>
+                  </DxCard>
+                </li>
+              ),
+            )}
+          </ul>
+        ) : project.baselineSummary ? (
           <div className={s.prose}>
             <DxMarkdown>{project.baselineSummary}</DxMarkdown>
           </div>
         ) : (
-          <p className={s.empty}>No baseline summary yet.</p>
+          <p className={s.empty}>No baseline yet.</p>
         )}
-        {baselineEntries.length > 0 ? (
-          <ul role="list" className={s.baselineList}>
-            {baselineEntries.map(({ baseline, measurements: baselineMeasurements }) => (
-              <li key={baseline.id} className={s.baselineEntry}>
-                <DxCard>
-                  <div className={s.baselineEntryBody}>
-                    <header className={s.baselineEntryHeader}>
-                      <p className={s.baselineEyebrow}>
-                        <span className={mono}>{baseline.id}</span>
-                      </p>
-                      <h3 className={s.baselineTitle}>{baseline.title}</h3>
-                    </header>
-                    {baseline.summary ? (
-                      <div className={s.prose}>
-                        <DxMarkdown>{baseline.summary}</DxMarkdown>
-                      </div>
-                    ) : null}
-                    {baselineMeasurements.length > 0 ? (
-                      <div className={s.measurementsBlock}>
-                        <p className={s.measurementsLabel}>Measurements</p>
-                        <ul role="list" className={s.measurementList}>
-                          {baselineMeasurements.map((measurement) => (
-                            <li key={measurement.id} className={s.measurementItem}>
-                              <span className={mono}>{measurement.actor}</span>
-                              <span className={s.measurementBody}>{measurement.body}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    ) : null}
-                  </div>
-                </DxCard>
-              </li>
-            ))}
-          </ul>
-        ) : null}
       </Section>
 
       <Section title="Report">

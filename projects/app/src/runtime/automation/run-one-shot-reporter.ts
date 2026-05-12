@@ -37,10 +37,12 @@ export async function runOneShotReporter({
 
   await ensureRuntimeContext({ sessionId });
 
-  const project = await researchProjectRepository.findActive();
+  const project =
+    (await researchProjectRepository.findActive()) ??
+    (await researchProjectRepository.findMostRecent());
   if (!project) {
     throw new Error(
-      `No active research project found in session ${sessionId}. Reports require a research project to summarize.`,
+      `No research project found in session ${sessionId}. Reports require a research project to summarize.`,
     );
   }
 

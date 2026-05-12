@@ -1,12 +1,10 @@
-import { existsSync } from "node:fs";
-import { mkdir } from "node:fs/promises";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
+
+import { safePathSegment, worktreeModule } from "@situ/worktrees";
 
 import { getRuntimeContext } from "../../config/session-context";
 import { experimentRepository } from "../../data/repositories/experiments";
 import { researchTaskRepository } from "../../data/repositories/research-tasks";
-import { assertCleanGitWorktree, git, sourceGitRoot } from "./git-command";
-import { safePathSegment } from "./path-utils";
 import type { PrepareExperimentWorktreeResult, WorktreeRuntimeContext } from "./types";
 
 type ExperimentRecord = Awaited<ReturnType<typeof experimentRepository.require>>;
@@ -29,25 +27,20 @@ export async function prepareExperimentWorktree({
     };
   }
 
-  const repoPath = await sourceGitRoot({ repoPath: runtime.repoPath });
-  if (requireCleanSource) {
-    await assertCleanGitWorktree({ repoPath, label: "source workspace" });
-  }
-
-  const baseCommit = await resolveBaseCommit({ experiment, repoPath });
+  const resolvedRepoPath = await worktreeModule.sourceGitRoot({ repoPath: runtime.repoPath });
+  const baseCommit = await resolveBaseCommit({ experiment, repoPath: resolvedRepoPath });
   const worktreePath = join(
     runtime.sessionHome,
     "worktrees",
     safePathSegment({ value: experimentId }),
   );
 
-  await mkdir(dirname(worktreePath), { recursive: true });
-  if (!existsSync(worktreePath)) {
-    await git({
-      cwd: repoPath,
-      args: ["worktree", "add", "--detach", worktreePath, baseCommit],
-    });
-  }
+  await worktreeModule.create({
+    repoPath: resolvedRepoPath,
+    worktreePath,
+    baseCommit,
+    requireCleanSource,
+  });
 
   await experimentRepository.updateWorktreeMetadata({
     experimentId,
@@ -82,7 +75,7 @@ async function resolveBaseCommit({
     return parentCandidateCommit;
   }
 
-  return git({
+  return worktreeModule.git({
     cwd: repoPath,
     args: ["rev-parse", "HEAD"],
     trimStdout: true,

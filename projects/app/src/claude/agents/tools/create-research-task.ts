@@ -3,6 +3,7 @@ import { RESEARCH_TASK_PRIORITIES, RESEARCH_TASK_TYPES } from "@situ/protocol";
 
 import { computeTargetRepository, DEFAULT_LOCAL_COMPUTE_POOL } from "@situ/compute";
 import { PreconditionError } from "../../../data/repositories/__shared__";
+import { experimentRepository } from "../../../data/repositories/experiments";
 import { researchProjectRepository } from "../../../data/repositories/research-projects";
 import { researchTaskRepository } from "../../../data/repositories/research-tasks";
 import { defineTool } from "./__shared__/define-tool";
@@ -10,6 +11,9 @@ import { findExploitShapeTokens } from "./__shared__/explore-task-shape";
 import { Result } from "./__shared__/result";
 import { toolContextModule } from "./__shared__/tool-context-module";
 import { ENTITY_KINDS, toolEntityReferenceModule } from "./__shared__/tool-entity-reference-module";
+
+const READ_ONLY_TASK_TYPES = new Set(["explore", "synthesize", "prune"]);
+const PARENT_INHERITING_TASK_TYPES = new Set(["exploit", "debug"]);
 
 const inputSchema = z
   .object({
@@ -41,6 +45,12 @@ const inputSchema = z
       .string()
       .describe("Optional durable entity id this ResearchTask targets. Required for exploit tasks.")
       .optional(),
+    parentExperimentId: z
+      .string()
+      .describe(
+        "Parent experiment id when this task deepens a verified lineage. Only valid for type 'exploit' or 'debug'. The tool validates the parent has a captured candidateCommit at plan time and the Scientist's create_experiment inherits it automatically — do not repeat the id in workerPrompt.",
+      )
+      .optional(),
     computePool: z
       .string()
       .trim()
@@ -71,6 +81,13 @@ const inputSchema = z
           "computePool applies only to Scientist-routed ResearchTasks; type verify is routed directly to Verifier.",
       });
     }
+    if (input.parentExperimentId && !PARENT_INHERITING_TASK_TYPES.has(input.type)) {
+      context.addIssue({
+        code: "custom",
+        path: ["parentExperimentId"],
+        message: `parentExperimentId is only valid for type 'exploit' or 'debug' (got '${input.type}'). Drop the field or change the type.`,
+      });
+    }
   });
 
 export const createResearchTaskTool = defineTool({
@@ -93,13 +110,32 @@ export const createResearchTaskTool = defineTool({
         details: { researchProjectId, currentPhase: project.phase },
       });
     }
-    if (input.type === "explore") {
+    if (READ_ONLY_TASK_TYPES.has(input.type)) {
       const matchedTokens = findExploitShapeTokens({ workerPrompt: input.workerPrompt });
       if (matchedTokens.length > 0) {
         throw new PreconditionError({
-          code: "explore_prompt_has_exploit_shape",
-          hint: `The workerPrompt names exploit-shape verbs/tools (${matchedTokens.join(", ")}), so this ResearchTask should be type: 'exploit' with targetKind: 'hypothesis' and a hypothesis targetId. Recreate the task with the correct type, or rewrite the workerPrompt to a read-only investigation if it should remain explore.`,
-          details: { matchedTokens, suggestedType: "exploit" },
+          code: "read_only_task_prompt_has_exploit_shape",
+          hint: `The workerPrompt names exploit-shape verbs/tools (${matchedTokens.join(", ")}), but ${input.type} ResearchTasks cannot run candidate commands. Recreate the task with type: 'exploit' (and a hypothesis targetId), or rewrite the workerPrompt to read-only work if the type should remain ${input.type}.`,
+          details: { matchedTokens, taskType: input.type, suggestedType: "exploit" },
+        });
+      }
+    }
+    if (input.parentExperimentId) {
+      const parentExperiment = await experimentRepository.get({
+        experimentId: input.parentExperimentId,
+      });
+      if (!parentExperiment) {
+        throw new PreconditionError({
+          code: "parent_experiment_not_found",
+          hint: `parentExperimentId ${input.parentExperimentId} does not match any existing experiment. Use search_experiments to find a verified deepening parent.`,
+          details: { parentExperimentId: input.parentExperimentId, taskType: input.type },
+        });
+      }
+      if (!parentExperiment.candidateCommit) {
+        throw new PreconditionError({
+          code: "parent_experiment_missing_candidate_commit",
+          hint: `parentExperimentId ${input.parentExperimentId} has no captured candidateCommit. The Scientist cannot inherit from a parent that never captured its commit. Choose a different parent (most recent verified experiment with a captured candidate), or wait for the parent to finish capturing.`,
+          details: { parentExperimentId: input.parentExperimentId, taskType: input.type },
         });
       }
     }
@@ -118,6 +154,9 @@ export const createResearchTaskTool = defineTool({
     };
     if (computePool) {
       payload.compute = { pool: computePool };
+    }
+    if (input.parentExperimentId) {
+      payload.parentExperimentId = input.parentExperimentId;
     }
     const researchTask = await researchTaskRepository.create({
       researchProjectId,

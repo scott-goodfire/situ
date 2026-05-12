@@ -73,6 +73,19 @@ async function assertResearchProjectCanComplete({
     researchProjectId,
     limit: 100,
   });
+  const inFlightTasks = tasks.filter(
+    (task) => task.status === "running" || task.status === "awaiting_verification",
+  );
+  if (inFlightTasks.length > 0) {
+    throw new PreconditionError({
+      code: "complete_research_project_blocked_by_in_flight_tasks",
+      hint: `Wait for ${inFlightTasks.length} in-flight ResearchTask(s) (running or awaiting_verification) to settle, or cancel/fail them, before completing the ResearchProject.`,
+      details: {
+        researchProjectId,
+        inFlightTaskIds: inFlightTasks.map((task) => task.id),
+      },
+    });
+  }
   const hasVerifiedEvidence = tasks.some((task) => task.status === "verified");
   if (!hasVerifiedEvidence && project.phase !== "reporting") {
     throw new PreconditionError({

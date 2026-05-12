@@ -71,6 +71,13 @@
         "@types/luxon": "catalog:",
       },
     },
+    "projects/app/packages/worktrees": {
+      "name": "@situ/worktrees",
+      "version": "0.0.1",
+      "devDependencies": {
+        "@types/bun": "catalog:",
+      },
+    },
     "projects/docs": {
       "name": "@situ/docs",
       "version": "0.0.1",
@@ -897,6 +904,8 @@
     "@situ/web-design-tokens": ["@situ/web-design-tokens@workspace:projects/web/packages/design-tokens"],
 
     "@situ/web-ui": ["@situ/web-ui@workspace:projects/web/packages/ui"],
+
+    "@situ/worktrees": ["@situ/worktrees@workspace:projects/app/packages/worktrees"],
 
     "@speed-highlight/core": ["@speed-highlight/core@1.2.15", "", {}, "sha512-BMq1K3DsElxDWawkX6eLg9+CKJrTVGCBAWVuHXVUV2u0s2711qiChLSId6ikYPfxhdYocLNt3wWwSvDiTvFabw=="],
 

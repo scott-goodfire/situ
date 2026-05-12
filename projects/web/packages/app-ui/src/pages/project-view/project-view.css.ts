@@ -144,6 +144,53 @@ export const baselineTitle = style({
   fontWeight: 500,
 });
 
+export const evaluationsBlock = style({
+  display: "grid",
+  gap: 8,
+});
+
+export const evaluationsLabel = style({
+  margin: 0,
+  color: vars.color.mutedForeground,
+  fontSize: vars.text.productSm,
+  fontWeight: 600,
+  letterSpacing: "0.04em",
+  textTransform: "uppercase",
+});
+
+export const evaluationList = style({
+  listStyle: "none",
+  margin: 0,
+  padding: 0,
+  display: "grid",
+  gap: 10,
+});
+
+export const evaluationItem = style({
+  display: "grid",
+  gap: 8,
+  paddingLeft: 10,
+  borderLeft: `2px solid ${vars.color.border01_5}`,
+});
+
+export const evaluationHeader = style({
+  display: "grid",
+  gap: 2,
+});
+
+export const evaluationEyebrow = style({
+  margin: 0,
+  color: vars.color.mutedForegroundTertiary,
+  fontSize: vars.text.productSm,
+});
+
+export const evaluationTitle = style({
+  margin: 0,
+  color: vars.color.foreground,
+  fontSize: vars.text.productBase,
+  fontWeight: 500,
+});
+
 export const measurementsBlock = style({
   display: "grid",
   gap: 6,

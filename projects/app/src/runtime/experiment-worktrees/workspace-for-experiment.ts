@@ -1,7 +1,8 @@
+import { worktreeModule } from "@situ/worktrees";
+
 import { experimentRepository } from "../../data/repositories/experiments";
 import { prepareExperimentWorktree } from "./prepare-experiment-worktree";
 import type { ResolvedExperimentWorkspace, WorktreeRuntimeContext } from "./types";
-import { assertSameRealPath } from "./workspace-paths";
 
 export async function workspaceForExperiment({
   experimentId,
@@ -36,7 +37,7 @@ export async function workspaceForExperiment({
       : await prepareExperimentWorktree({ experimentId, runtime });
 
   if (worktreePath) {
-    await assertSameRealPath({
+    await worktreeModule.assertSameRealPath({
       left: worktreePath,
       right: workspace.worktreePath,
       label: `Experiment worktreePath does not match ${experimentId}`,

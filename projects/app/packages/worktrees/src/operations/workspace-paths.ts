@@ -1,7 +1,7 @@
 import { realpath, stat } from "node:fs/promises";
 import { isAbsolute, relative, resolve } from "node:path";
 
-import { PreconditionError } from "../../data/repositories/__shared__";
+import { PreconditionError } from "../__shared__/precondition-error";
 
 export async function resolveWorkspaceDirectory({
   workspaceRoot,
