@@ -1,7 +1,13 @@
 import { describe, expect, test } from "bun:test";
 
 import type { ResearchTaskRecord } from "../../../data/repositories/research-tasks";
-import { SEARCH_BALANCE_SIGNAL_WINDOW, searchBalanceSignalLines } from "./prompts";
+import {
+  SEARCH_BALANCE_SIGNAL_WINDOW,
+  VERIFIER_LINEAGE_NOISE_FLOOR_DEPTH,
+  searchBalanceSignalLines,
+  verifierResearchTaskPrompt,
+  type VerifierLineageAncestor,
+} from "./prompts";
 
 describe("searchBalanceSignalLines", () => {
   test("reports an empty-state line when the project has no ResearchTasks yet", () => {
@@ -48,6 +54,56 @@ describe("searchBalanceSignalLines", () => {
     expect(lines[0]).toContain(`of ${tasks.length} total`);
   });
 });
+
+describe("verifierResearchTaskPrompt lineage block", () => {
+  test("renders a no-lineage line when no ancestors are passed", () => {
+    const prompt = verifierResearchTaskPrompt({ researchTask: verifierTask(), lineage: [] });
+    expect(prompt).toContain("Lineage:\n- No parent experiment chain for this candidate.");
+  });
+
+  test("renders ancestor chain with depth, ids, status, title, and commit", () => {
+    const lineage: VerifierLineageAncestor[] = [
+      ancestor({
+        experimentId: "exp_anchor_b",
+        title: "first+last anchor cascading fallback",
+        status: "accepted",
+        candidateCommit: "7c46d73",
+      }),
+      ancestor({
+        experimentId: "exp_anchor_a",
+        title: "anchor + extra-vocab fallback stacked",
+        status: "accepted",
+        candidateCommit: "f6fed76",
+      }),
+    ];
+    const prompt = verifierResearchTaskPrompt({ researchTask: verifierTask(), lineage });
+    expect(prompt).toContain("Lineage:\n- This candidate sits 3 deep in its exploit chain");
+    expect(prompt).toContain(
+      "1. exp_anchor_b (accepted) — first+last anchor cascading fallback @ 7c46d73",
+    );
+    expect(prompt).toContain(
+      "2. exp_anchor_a (accepted) — anchor + extra-vocab fallback stacked @ f6fed76",
+    );
+  });
+
+  test("the long-chain noise-floor instruction names the configured depth", () => {
+    const prompt = verifierResearchTaskPrompt({ researchTask: verifierTask(), lineage: [] });
+    expect(prompt).toContain(`${VERIFIER_LINEAGE_NOISE_FLOOR_DEPTH}+ rungs deep`);
+  });
+});
+
+function verifierTask(overrides: Partial<ResearchTaskRecord> = {}): ResearchTaskRecord {
+  return task({
+    id: overrides.id ?? "t_verify",
+    type: overrides.type ?? "exploit",
+    createdAt: overrides.createdAt ?? "2026-01-01T00:00:00.000Z",
+    ...overrides,
+  });
+}
+
+function ancestor(input: VerifierLineageAncestor): VerifierLineageAncestor {
+  return input;
+}
 
 function task(
   overrides: Partial<ResearchTaskRecord> & Pick<ResearchTaskRecord, "id" | "type" | "createdAt">,

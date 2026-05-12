@@ -166,11 +166,23 @@ export function scientistResearchTaskPrompt({
   ].join("\n");
 }
 
+export type VerifierLineageAncestor = {
+  readonly experimentId: string;
+  readonly title: string;
+  readonly status: string;
+  readonly candidateCommit: string | null;
+};
+
+export const VERIFIER_LINEAGE_NOISE_FLOOR_DEPTH = 5;
+
 export function verifierResearchTaskPrompt({
   researchTask,
+  lineage = [],
 }: {
   researchTask: typeof researchTasks.$inferSelect;
+  lineage?: readonly VerifierLineageAncestor[];
 }): string {
+  const lineageLines = verifierLineageLines({ lineage });
   return [
     "You are situ Verifier. Review one ResearchTask before it can count as progress.",
     `ResearchTask id: ${researchTask.id}`,
@@ -190,6 +202,9 @@ export function verifierResearchTaskPrompt({
     "Worker result summary:",
     researchTask.resultSummary ?? "(no worker summary recorded)",
     "",
+    "Lineage:",
+    ...lineageLines,
+    "",
     "Output style:",
     "Write one clear judgment sentence plus a short evidence summary. Keep exact durable ids.",
     "",
@@ -201,9 +216,29 @@ export function verifierResearchTaskPrompt({
     "5. Use run_readonly_workspace_command for direct repository checks when needed; do not create or mutate experiment worktrees during verification.",
     "6. Check for missing evidence, missing primary hypothesis on experiments, missing or wrong parentExperimentId on deepening experiments, duplicated work, eval leakage, reward hacking, weak baselines, invalid comparisons, and overclaimed summaries as relevant to the verificationPrompt.",
     "7. Before judging a metric experiment, confirm the candidate diff actually exercised on dev inputs. If the patched code path is structurally unreachable, fires 0x on dev inputs, or the recorded metric matches baseline by trivial vacuous reasoning, the experiment did not test the hypothesis — use status suspicious, not passed.",
+    `7b. Read the Lineage block above. If this candidate sits ${VERIFIER_LINEAGE_NOISE_FLOOR_DEPTH}+ rungs deep on a single exploit chain and the recorded Δ is at or under the per-task noise floor, mark suspicious even when the experiment is procedurally clean. Long chains of below-floor wins are how greedy exploit collapses look from inside the loop — they should not accumulate into "progress" without an independent signal.`,
     "8. Identify the evidence axis the verificationPrompt asked for: improvement (move a metric), preservation (refactor/simplification with metric unchanged within tolerance), behavioral (make a previously broken path correctly fire), or cleanup (shrink surface area). Judge against that axis. An unchanged metric is passed when the prompt framed the task as preservation, cleanup, or behavioral and the stated quality goal is met. For improvement-axis tasks, a recorded Δ that maps to only one or two changed dev items out of N is at the noise floor — mark suspicious unless the verificationPrompt explicitly accepted sub-quantum improvements with a confirming follow-up experiment.",
     "9. Call record_research_task_verification with status passed, failed, suspicious, or needs_more_evidence and a concise evidence-backed judgment. passed means the experiment honestly tested the prompt and produced trustworthy signal (positive, null, or negative outcomes all qualify) and requires a non-empty evidenceSummary. failed means the experiment ran fairly and did not meet acceptance criteria — an honest negative. suspicious means the experiment is not a valid test (no-effect patch, unreachable branch, noise-floor improvement, comparability break, reward hack). needs_more_evidence reopens the task as planned work.",
   ].join("\n");
+}
+
+function verifierLineageLines({
+  lineage,
+}: {
+  lineage: readonly VerifierLineageAncestor[];
+}): string[] {
+  if (lineage.length === 0) {
+    return ["- No parent experiment chain for this candidate."];
+  }
+  const depth = lineage.length + 1;
+  const ancestorLines = lineage.map((ancestor, index) => {
+    const commitSuffix = ancestor.candidateCommit ? ` @ ${ancestor.candidateCommit}` : "";
+    return `  ${index + 1}. ${ancestor.experimentId} (${ancestor.status}) — ${ancestor.title}${commitSuffix}`;
+  });
+  return [
+    `- This candidate sits ${depth} deep in its exploit chain (this experiment + ${lineage.length} ancestor${lineage.length === 1 ? "" : "s"}, newest first):`,
+    ...ancestorLines,
+  ];
 }
 
 export function searchBalanceSignalLines({

@@ -5,6 +5,7 @@ import {
   managerResearchProjectPrompt,
   scientistResearchTaskPrompt,
   verifierResearchTaskPrompt,
+  type VerifierLineageAncestor,
 } from "../../claude/agents/runs";
 import { maxScientistConcurrency, maxVerifierConcurrency } from "../../config/runtime";
 import { getDb } from "../../data/db/client";
@@ -17,6 +18,7 @@ import {
   workItems,
 } from "../../data/db/schema";
 import { recordAppEvent } from "../../app-events";
+import { experimentRepository } from "../../data/repositories/experiments";
 import { researchProjectRepository } from "../../data/repositories/research-projects";
 import { researchTaskRepository } from "../../data/repositories/research-tasks";
 import { jsonModule } from "../../modules/json";
@@ -470,16 +472,52 @@ export async function enqueueVerifierResearchTaskWork({
     task.status === "planned"
       ? await preparePlannedVerifyTaskForVerifier({ researchTaskId: task.id })
       : task;
+  const lineage = await loadVerifierLineage({ researchTaskId: verifierTask.id });
   return enqueueClaudeAgentWork({
     purpose: CLAUDE_VERIFIER_RESEARCH_TASK_WORK_ITEM_PURPOSE,
     targetKind: "researchTask",
     targetId: verifierTask.id,
-    content: verifierResearchTaskPrompt({ researchTask: verifierTask }),
+    content: verifierResearchTaskPrompt({ researchTask: verifierTask, lineage }),
     payload: {
       activeResearchTaskId: verifierTask.id,
       researchProjectId: verifierTask.researchProjectId,
     },
   });
+}
+
+const VERIFIER_LINEAGE_MAX_DEPTH = 10;
+
+async function loadVerifierLineage({
+  researchTaskId,
+}: {
+  researchTaskId: string;
+}): Promise<VerifierLineageAncestor[]> {
+  const candidateExperiments = await experimentRepository.listByResearchTask({ researchTaskId });
+  const childExperiment = candidateExperiments[0];
+  if (!childExperiment?.parentExperimentId) {
+    return [];
+  }
+  const ancestors: VerifierLineageAncestor[] = [];
+  let cursorId: string | null = childExperiment.parentExperimentId;
+  const visited = new Set<string>([childExperiment.id]);
+  while (cursorId && ancestors.length < VERIFIER_LINEAGE_MAX_DEPTH) {
+    if (visited.has(cursorId)) {
+      break;
+    }
+    visited.add(cursorId);
+    const ancestor = await experimentRepository.get({ experimentId: cursorId });
+    if (!ancestor) {
+      break;
+    }
+    ancestors.push({
+      experimentId: ancestor.id,
+      title: ancestor.title,
+      status: ancestor.status,
+      candidateCommit: ancestor.candidateCommit,
+    });
+    cursorId = ancestor.parentExperimentId;
+  }
+  return ancestors;
 }
 
 async function hasOpenResearchTaskAgentWork({
