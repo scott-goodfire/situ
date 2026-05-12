@@ -549,6 +549,170 @@ describe("create_research_task tool", () => {
     });
   });
 
+  test("blocks a new exploit task when the last 5 ResearchTasks contain no explore", async () => {
+    const project = await researchProjectRepository.create({
+      goal: "Force exploration on the cadence boundary.",
+    });
+    await researchProjectRepository.updatePhase({
+      researchProjectId: project.id,
+      phase: "search",
+    });
+    const hypothesis = await hypothesisRepository.create({
+      title: "Stacked anchor + extra-vocab",
+      summary: "Layering the anchor on top of extra-vocab improved dev.",
+    });
+    for (let i = 0; i < 5; i += 1) {
+      await researchTaskRepository.create({
+        researchProjectId: project.id,
+        type: "exploit",
+        title: `Exploit run ${i + 1}`,
+        workerPrompt: "Deepen the anchor lineage.",
+        verificationPrompt: "Verify the candidate fired on dev.",
+        targetKind: "hypothesis",
+        targetId: hypothesis.id,
+      });
+    }
+
+    const envelope = await runCreateResearchTaskToolEnvelope({
+      researchProjectId: project.id,
+      type: "exploit",
+      title: "Yet another exploit",
+      workerPrompt: "Deepen the anchor lineage one more time.",
+      verificationPrompt: "Verify the candidate fired on dev.",
+      targetKind: "hypothesis",
+      targetId: hypothesis.id,
+    });
+
+    expect(envelope.ok).toBe(false);
+    expect(envelope.code).toBe("explore_cadence_requires_explore");
+    const details = jsonRecord(envelope.details);
+    expect(details.window).toBe(5);
+    expect(details.attemptedType).toBe("exploit");
+    expect(details.recentTaskTypes).toEqual([
+      "exploit",
+      "exploit",
+      "exploit",
+      "exploit",
+      "exploit",
+    ]);
+  });
+
+  test("allows a new explore task even when the last 5 ResearchTasks are all exploit", async () => {
+    const project = await researchProjectRepository.create({
+      goal: "Explore always escapes the cadence gate.",
+    });
+    await researchProjectRepository.updatePhase({
+      researchProjectId: project.id,
+      phase: "search",
+    });
+    const hypothesis = await hypothesisRepository.create({
+      title: "Stacked anchor + extra-vocab",
+      summary: "Layering the anchor on top of extra-vocab improved dev.",
+    });
+    for (let i = 0; i < 5; i += 1) {
+      await researchTaskRepository.create({
+        researchProjectId: project.id,
+        type: "exploit",
+        title: `Exploit run ${i + 1}`,
+        workerPrompt: "Deepen the anchor lineage.",
+        verificationPrompt: "Verify the candidate fired on dev.",
+        targetKind: "hypothesis",
+        targetId: hypothesis.id,
+      });
+    }
+
+    const payload = await runCreateResearchTaskTool({
+      researchProjectId: project.id,
+      type: "explore",
+      title: "Read recent miss categories on the dev set",
+      workerPrompt: "Inspect the dev set and propose two fresh hypotheses.",
+      verificationPrompt: "Check that hypothesis claims cite dev evidence.",
+    });
+    const task = jsonRecord(payload.researchTask);
+    expect(task.type).toBe("explore");
+  });
+
+  test("does not trigger the cadence gate when the project has fewer than 5 ResearchTasks", async () => {
+    const project = await researchProjectRepository.create({
+      goal: "Cadence gate does not fire below the window.",
+    });
+    await researchProjectRepository.updatePhase({
+      researchProjectId: project.id,
+      phase: "search",
+    });
+    const hypothesis = await hypothesisRepository.create({
+      title: "Single-axis tweak hypothesis",
+      summary: "An early hypothesis used to prime the project.",
+    });
+    for (let i = 0; i < 4; i += 1) {
+      await researchTaskRepository.create({
+        researchProjectId: project.id,
+        type: "exploit",
+        title: `Exploit run ${i + 1}`,
+        workerPrompt: "Deepen the anchor lineage.",
+        verificationPrompt: "Verify the candidate fired on dev.",
+        targetKind: "hypothesis",
+        targetId: hypothesis.id,
+      });
+    }
+
+    const payload = await runCreateResearchTaskTool({
+      researchProjectId: project.id,
+      type: "exploit",
+      title: "Fifth exploit before any explore",
+      workerPrompt: "Deepen the anchor lineage.",
+      verificationPrompt: "Verify the candidate fired on dev.",
+      targetKind: "hypothesis",
+      targetId: hypothesis.id,
+    });
+    const task = jsonRecord(payload.researchTask);
+    expect(task.type).toBe("exploit");
+  });
+
+  test("recent explore within the window resets the cadence gate", async () => {
+    const project = await researchProjectRepository.create({
+      goal: "An explore inside the window keeps the gate open.",
+    });
+    await researchProjectRepository.updatePhase({
+      researchProjectId: project.id,
+      phase: "search",
+    });
+    const hypothesis = await hypothesisRepository.create({
+      title: "Stacked anchor + extra-vocab",
+      summary: "Layering the anchor on top of extra-vocab improved dev.",
+    });
+    await researchTaskRepository.create({
+      researchProjectId: project.id,
+      type: "explore",
+      title: "Initial diagnostic explore",
+      workerPrompt: "Read the dev miss categories.",
+      verificationPrompt: "Check dev citations.",
+    });
+    for (let i = 0; i < 4; i += 1) {
+      await researchTaskRepository.create({
+        researchProjectId: project.id,
+        type: "exploit",
+        title: `Exploit run ${i + 1}`,
+        workerPrompt: "Deepen the anchor lineage.",
+        verificationPrompt: "Verify the candidate fired on dev.",
+        targetKind: "hypothesis",
+        targetId: hypothesis.id,
+      });
+    }
+
+    const payload = await runCreateResearchTaskTool({
+      researchProjectId: project.id,
+      type: "exploit",
+      title: "Fifth exploit after a recent explore",
+      workerPrompt: "Deepen the anchor lineage.",
+      verificationPrompt: "Verify the candidate fired on dev.",
+      targetKind: "hypothesis",
+      targetId: hypothesis.id,
+    });
+    const task = jsonRecord(payload.researchTask);
+    expect(task.type).toBe("exploit");
+  });
+
   test("create_project_baseline creates and revises Manager-owned setup baselines", async () => {
     const project = await researchProjectRepository.create({
       goal: "Prepare a setup baseline.",

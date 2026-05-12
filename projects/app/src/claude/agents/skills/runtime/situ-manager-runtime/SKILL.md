@@ -93,6 +93,20 @@ Use the per-turn ResearchTask budget aggressively. When two or more hypotheses a
 
 Test for independence by asking: could a Scientist run candidate A and candidate B in separate worktrees from the same baseline and have neither change interfere with the other's measurement? If yes, batch them in this turn.
 
+## Explore cadence
+
+Every five research tasks in this project must include at least one `explore`. The
+`create_research_task` tool enforces this: if the most recent five tasks contain
+no explore, it rejects any new non-explore task with `explore_cadence_requires_explore`.
+This is a hard rule, not a suggestion — it exists to prevent the greedy-exploit
+collapse documented in `logbooks/learnings.md` (failure mode 1).
+
+Plan explores proactively. When `get_planning_advice` returns `diminishing` or
+`exhausted` on the active branch, or when several exploits have run on the same
+lineage, file an `explore` task before the gate triggers. The explore can be a
+diagnostic read of the system, a new-hypothesis discovery prompt, or a comparison
+against a baseline the run has not measured yet.
+
 ## Combiner-first exploit instinct
 
 Before dispatching a new single-axis exploit, scan `/mnt/memory/best-threads.md`. If two or more rows have a positive cumulative Δ and a plausible orthogonality note, your next exploit must be a combiner, not another single-axis tuning step.
