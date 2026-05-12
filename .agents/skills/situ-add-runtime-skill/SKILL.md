@@ -48,14 +48,16 @@ sed -n '1,120p' projects/app/src/claude/agents/roles/manager/blueprint.ts
    the tools already exposed to the role.
 5. Register the skill in `claudeAgentSkillDefinitions`.
 6. Add the skill name to the appropriate role blueprint `skillNames`.
-7. Extend `evals/runtime-skills.eval.ts` with marker coverage.
+7. Extend
+   `projects/app/src/claude/agents/skills/runtime/runtime-skills.test.ts`
+   with marker coverage for the new skill.
 
 ## Verify
 
 Fast local checks:
 
 ```bash
-bun --filter=@situ/evals run test
+bun --filter=@situ/app run test:skills
 bun --filter=@situ/app run check:cli
 SITU_HOME="$(mktemp -d)" bun run projects/app/src/cli.ts doctor --json
 ```

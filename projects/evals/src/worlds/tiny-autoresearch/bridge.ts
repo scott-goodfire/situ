@@ -1,22 +1,8 @@
-import type { TinyAutoresearchSeedName } from "@situ/evals-fixtures/tiny-autoresearch";
-
 import { jsonModule } from "../../modules/json";
-import { runBridgeCommand, type LiveExecOutput, type WorldStateOutput } from "../__shared__";
+import { runBridgeCommand, type LiveExecOutput } from "../__shared__";
 import type { TinyAutoresearchLiveAgentEvalCase } from "./live-agent-eval-case";
 
 const RUNNER_ENTRY = new URL("./runner.ts", import.meta.url);
-
-export async function runWorldStateBridge({
-  seedName,
-}: {
-  seedName: TinyAutoresearchSeedName;
-}): Promise<WorldStateOutput> {
-  return runBridgeCommand<WorldStateOutput>({
-    runnerEntryUrl: RUNNER_ENTRY,
-    args: ["state", seedName],
-    timeoutMs: 90_000,
-  });
-}
 
 export async function runLiveExecBridge({
   evalCase,

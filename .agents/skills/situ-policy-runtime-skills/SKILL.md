@@ -16,7 +16,8 @@ Runtime skills are Claude Skills loaded by Situ's Managed Agents.
   registers every runtime skill. `registry.ts` is the public facade for skill
   params, diagnostics, and sync.
 - Role blueprints reference only skills valid for that role.
-- `evals/runtime-skills.eval.ts` covers required markers for each role skill.
+- `projects/app/src/claude/agents/skills/runtime/runtime-skills.test.ts`
+  covers required markers for each role skill (co-located bun:test).
 - Release builds copy runtime skills to `share/skills`.
 - `situ doctor --json` reports skill source and missing files without
   network calls.

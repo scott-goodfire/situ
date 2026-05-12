@@ -1,13 +1,16 @@
 ---
 name: situ-policy-evalite-marker-scorer
-description: Use whenever adding, modifying, or reviewing Evalite suites under evals — new prompt evals, runtime skill evals, or other deterministic marker-based checks.
+description: Use whenever adding, modifying, or reviewing live agent Evalite suites under projects/evals/src — the marker-scorer pattern used by Manager/Scientist/Verifier prompt evals.
 ---
 
 # Evalite Marker Scorer
 
-Evalite suites use marker-based scorers: each case lists `required` and
-optional `forbidden` strings, and the scorer returns `1` only if every
-required marker appears and no forbidden marker does.
+Live agent Evalite suites use marker-based scorers: each case lists
+`required` (or `requiredAnyOf`) and optional `forbidden` strings, and the
+scorer returns `1` only if every required marker appears in the real Claude
+response and no forbidden marker does. Non-LLM marker checks belong in
+co-located `*.test.ts` files using `expectRequiredMarkers` /
+`expectForbiddenMarkers` helpers — see `situ-policy-test-file-placement`.
 
 ```ts
 const requiredMarkers = {
@@ -33,18 +36,23 @@ fails the eval and you scan a 200-line block to find it).
 
 ## Rules
 
-- Eval files live at `evals/<area>.eval.ts` and use
+- Live agent eval files live at `projects/evals/src/<area>.eval.ts` (or
+  `projects/evals/src/worlds/<name>/live-agent-eval.ts`) and use
   `import { evalite } from "evalite"`.
 - Each suite defines a marker scorer with `name`, `description`,
   `scorer`. The scorer returns `{ score: 0 | 1, metadata: { missing,
 forbiddenHits } }`.
 - Cases include `input`, `expected: { required: string[]; forbidden?:
-string[] }`, and the suite-level `task` produces the string to score.
+string[] }` (or `requiredAnyOf`), and the suite-level `task` produces the
+  real-model string to score.
 - Required markers are short, distinctive substrings of the expected
   output (a tool name, a marker phrase, a code identifier) — not full
   paragraphs.
 - Fixtures are constructed via small factory helpers
   (`task(overrides)`, `hypothesis(overrides)`) so cases stay terse.
+- Live agent evals must require `SITU_ANTHROPIC_KEY` explicitly and fail
+  cleanly when it is absent (see existing `data: async () => { ... }`
+  preflight in the suites).
 
 ## Avoid
 

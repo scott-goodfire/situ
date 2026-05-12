@@ -1,83 +1,65 @@
 ---
 name: situ-policy-eval-world-shape
-description: Use whenever adding, modifying, or reviewing an eval world — bridge, runner, state-mode tests, live agent evals, or anything under projects/evals/src/worlds.
+description: Use whenever adding, modifying, or reviewing an eval world — bridge, runner, live agent evals, or anything under projects/evals/src/worlds.
 ---
 
 # Eval World Shape
 
-Evalite-backed tests and live agent evals organize around **worlds** under
-`projects/evals/src/worlds/`. The directory structure encodes a two-axis model.
+Live agent evals organize around **worlds** under
+`projects/evals/src/worlds/`. Each world stages a real Claude Managed Agent
+slice. Non-LLM checks on fixture data or seeded durable state live as
+`*.test.ts` files inside `packages/fixtures/<name>/` and
+`packages/worlds/<name>/`, not under `evals/src/worlds/`.
 
 ```text
 evals/src/
-├── prompts.eval.ts                  # prompt marker tests
-├── runtime-skills.eval.ts
 ├── scorers/                         # cross-world scoring helpers
 └── worlds/
     ├── __shared__/                  # the "base"
     │   ├── run-bridge-command.ts    # generic subprocess invoker
-    │   ├── types.ts                 # WorldStateOutput, LiveExecOutput
+    │   ├── types.ts                 # LiveExecOutput
     │   └── index.ts
     └── tiny-autoresearch/           # one folder per world
-        ├── bridge.ts                # typed wrappers around shared invoker
-        ├── runner.ts                # subprocess entry; dispatches argv
-        ├── state.eval.ts            # state-mode Evalite-backed test suite
+        ├── bridge.ts                # typed wrapper around shared invoker
+        ├── runner.ts                # subprocess entry; sets up the world
         └── live-agent-eval.ts       # live agent eval entry point
 ```
 
-## Two-axis model
-
-1. **World identity** — what is being simulated. One subfolder per
-   world. Domain rules and durable-state shape live in
-   `packages/worlds/<name>/`; fixtures live in
-   `packages/fixtures/<name>/`.
-2. **Mode** — how the world is driven. Two flavors, baked into
-   the runner subprocess boundary:
-   - `state` — seed → snapshot durable state → exit (no API, fast,
-     deterministic)
-   - `live-exec` — seed → run live Claude session → snapshot durable
-     state (real API, slow)
-
-Both modes share the same bridge subprocess and output shape; the mode
-is just an argv selector.
-
 ## Rules
 
-- **Each world directory contains four files** plus optional `index.ts`:
-  - `bridge.ts` — typed wrappers around `runBridgeCommand` from
-    `worlds/__shared__/`. One function per mode (`runWorldStateBridge`,
-    `runLiveExecBridge`).
-  - `runner.ts` — the subprocess entry. Parses `state <seed>` and
-    `live <timeout>` argv, calls `packages/worlds/<name>/`
-    helpers, prints JSON to stdout, exits.
-  - `state.eval.ts` — Evalite-backed test suite for state mode. Imports scenarios
-    from `packages/fixtures/<name>/` and calls
-    `runWorldStateBridge`.
-  - `live-agent-eval.ts` — live agent eval entry point for real Claude Managed
-    Agent behavior.
+- **Each world directory contains three files** plus optional `index.ts`:
+  - `bridge.ts` — typed wrapper around `runBridgeCommand` from
+    `worlds/__shared__/`. Exposes `runLiveExecBridge` and similar
+    live-only wrappers that shell out via `world.e2eRoot` to a runner
+    under `projects/e2e-tests/runners/`.
+  - `runner.ts` — the subprocess entry. Sets up the seeded
+    `TinyAutoresearchWorld`, invokes the live exec helper from
+    `@situ/evals-worlds`, prints JSON to stdout, exits.
+  - `live-agent-eval.ts` — Evalite suite that drives real Claude
+    Managed Agent behavior through the bridge.
 - **`worlds/__shared__/`** holds the cross-world kernel:
   - `run-bridge-command.ts` — generic subprocess invoker; takes a
     `runnerEntryUrl: URL`, `args`, `timeoutMs`. Spawns `bun run`,
     waits with timeout, parses JSON stdout.
-  - `types.ts` — `WorldStateOutput<S>`, `LiveExecOutput<S>`. Every
-    world conforms.
+  - `types.ts` — `LiveExecOutput<S>`. Every live world conforms.
   - `index.ts` — barrel for the cross-world bridge helpers.
 - **Bridge files are tiny** (≤30 lines). Anything more belongs in
   `worlds/__shared__/` (if generic) or in the world's runner / package
   (if world-specific).
-- **A world that only supports one mode** omits the unused eval file
-  and the unused bridge function. The runner can still accept both
-  argv commands or just the supported one.
 - **Filenames inside the world folder don't carry the world name**
   (`bridge.ts`, not `tiny-autoresearch-bridge.ts`). The directory
   carries it.
+- **The slice CLI that the bridge invokes lives under
+  `projects/e2e-tests/runners/`**, not in `projects/app/src/`. It imports
+  the runtime surface via the `@situ/app/runtime` subpath export.
 
 ## Avoid
 
 - A world with an inline subprocess invoker instead of using
   `runBridgeCommand` from `__shared__/`.
-- Eval files at `evals/src/<name>.eval.ts` (flat) when they belong to
-  a world — move them under `worlds/<name>/`.
+- A non-LLM fixture-shape or seeded-state check living under
+  `evals/src/worlds/` — those belong as `*.test.ts` in the corresponding
+  `packages/fixtures/<name>/` or `packages/worlds/<name>/` package.
 - A new world definition that lives only in `evals/src/worlds/` and
   not in `packages/worlds/<name>/` + `packages/fixtures/<name>/`.
   The world's domain rules and fixture pack live in their respective
@@ -88,14 +70,16 @@ is just an argv selector.
 ## Adding a new world
 
 1. Create `packages/worlds/<name>/` with the world rules + durable
-   state + live-exec helpers.
-2. Create `packages/fixtures/<name>/` with seed scenarios.
-3. Create `evals/src/worlds/<name>/` with the four orchestration
-   files. Copy a sibling world's bridge as a template, change the
-   `RUNNER_ENTRY` URL, change the seed name type, narrow the eval
-   scenarios.
-4. Verify the state-mode test and live eval command both run through the
-   package scripts.
+   state + live-exec helpers. Add co-located `*.test.ts` files for any
+   non-LLM state-shape coverage.
+2. Create `packages/fixtures/<name>/` with seed scenarios. Add co-located
+   `*.test.ts` files for fixture-shape coverage.
+3. Create `evals/src/worlds/<name>/` with the three orchestration files.
+   Copy a sibling world's bridge as a template, change the `RUNNER_ENTRY`
+   URL, change the seed name type, narrow the eval scenarios.
+4. Add a runner CLI under `projects/e2e-tests/runners/` if the world needs
+   a new slice driver. Otherwise reuse an existing runner.
+5. Verify the live eval command runs through the `evals` package script.
 
 ## See also
 

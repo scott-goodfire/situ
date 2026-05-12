@@ -1,7 +1,6 @@
 import type { TinyAutoresearchSeedName } from "@situ/evals-fixtures/tiny-autoresearch";
 import {
   createTinyAutoresearchWorld,
-  readTinyAutoresearchDurableState,
   runTinyAutoresearchLiveExec,
   type TinyAutoresearchLiveExecConfig,
 } from "@situ/evals-worlds/tiny-autoresearch";
@@ -11,18 +10,7 @@ import { jsonModule } from "../../modules/json";
 const [command, commandValue] = Bun.argv.slice(2);
 
 try {
-  if (command === "state") {
-    const { world, cleanup } = await createTinyAutoresearchWorld({
-      seedName: seedName({ value: commandValue }),
-    });
-    try {
-      console.log(
-        jsonModule.stringify({ value: { state: readTinyAutoresearchDurableState({ world }) } }),
-      );
-    } finally {
-      await cleanup();
-    }
-  } else if (command === "live") {
+  if (command === "live") {
     const liveConfig = liveExecConfig({ value: commandValue });
     const { world, cleanup } = await createTinyAutoresearchWorld({
       seedName: liveConfig.seedName,

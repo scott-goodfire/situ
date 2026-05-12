@@ -10,8 +10,12 @@ Run:
 mise run test
 ```
 
-The evals package contributes tests for prompt markers, runtime skill markers,
-fixture shape, and fixture-backed durable state behavior.
+The `evals` package itself contains only LLM-backed Evalite suites. Non-LLM
+checks for prompts, runtime skills, and tool helpers live as co-located
+`*.test.ts` files next to the source they exercise (`projects/app/`). Fixture
+data and seeded-world shape checks live as `*.test.ts` files inside
+`@situ/evals-fixtures` and `@situ/evals-worlds`. All of those run as part of
+`mise run test`.
 
 ## Live Agent Evals
 
