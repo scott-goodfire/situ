@@ -146,21 +146,6 @@ export const researchTaskRepository = {
     return rows.slice(0, clampRepositoryLimit({ limit }));
   },
 
-  async listMostRecentByResearchProject({
-    researchProjectId,
-    limit = 10,
-  }: {
-    researchProjectId: string;
-    limit?: number;
-  }): Promise<ResearchTaskRecord[]> {
-    const rows = await getDb()
-      .select()
-      .from(researchTasks)
-      .where(eq(researchTasks.researchProjectId, researchProjectId))
-      .orderBy(desc(researchTasks.createdAt), desc(researchTasks.id));
-    return rows.slice(0, clampRepositoryLimit({ limit }));
-  },
-
   async listByStatus({
     status,
     limit = 20,

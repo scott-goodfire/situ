@@ -15,12 +15,6 @@ import { ENTITY_KINDS, toolEntityReferenceModule } from "./__shared__/tool-entit
 const READ_ONLY_TASK_TYPES = new Set(["explore", "synthesize", "prune"]);
 const PARENT_INHERITING_TASK_TYPES = new Set(["exploit", "debug"]);
 
-// Forced-exploration cadence. When the last EXPLORE_CADENCE_WINDOW
-// research tasks for a project contain no `explore` task, the Manager
-// must plan an explore next. This guards against the greedy-exploit
-// collapse documented in `logbooks/learnings.md` (failure mode 1).
-const EXPLORE_CADENCE_WINDOW = 5;
-
 const inputSchema = z
   .object({
     researchProjectId: z
@@ -115,27 +109,6 @@ export const createResearchTaskTool = defineTool({
         hint: `create_research_task is only available after the project baseline is confirmed and the project is in search phase. Current phase is ${project.phase}. Use create_project_baseline and present_baseline_for_confirmation to get the project to search phase first.`,
         details: { researchProjectId, currentPhase: project.phase },
       });
-    }
-    if (input.type !== "explore") {
-      const recentTasks = await researchTaskRepository.listMostRecentByResearchProject({
-        researchProjectId,
-        limit: EXPLORE_CADENCE_WINDOW,
-      });
-      if (
-        recentTasks.length >= EXPLORE_CADENCE_WINDOW &&
-        !recentTasks.some((task) => task.type === "explore")
-      ) {
-        throw new PreconditionError({
-          code: "explore_cadence_requires_explore",
-          hint: `The last ${EXPLORE_CADENCE_WINDOW} ResearchTasks in this project contain no 'explore' task. To prevent greedy-exploit collapse, the next ResearchTask must be type: 'explore' with a fresh diagnostic direction or hypothesis-discovery prompt. After the explore lands, exploit/debug/synthesize/prune become available again.`,
-          details: {
-            researchProjectId,
-            window: EXPLORE_CADENCE_WINDOW,
-            recentTaskTypes: recentTasks.map((task) => task.type),
-            attemptedType: input.type,
-          },
-        });
-      }
     }
     if (READ_ONLY_TASK_TYPES.has(input.type)) {
       const matchedTokens = findExploitShapeTokens({ workerPrompt: input.workerPrompt });

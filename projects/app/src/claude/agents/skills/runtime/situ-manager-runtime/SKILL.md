@@ -95,17 +95,19 @@ Test for independence by asking: could a Scientist run candidate A and candidate
 
 ## Explore cadence
 
-Every five research tasks in this project must include at least one `explore`. The
-`create_research_task` tool enforces this: if the most recent five tasks contain
-no explore, it rejects any new non-explore task with `explore_cadence_requires_explore`.
-This is a hard rule, not a suggestion — it exists to prevent the greedy-exploit
-collapse documented in `logbooks/learnings.md` (failure mode 1).
+Watch the **Search balance signal** at the top of your prompt. It shows the task-type
+tally over the last 10 ResearchTasks and how many tasks have passed since the most
+recent `explore`. When that counter climbs past four or five — or when the tally is
+dominated by exploit/debug — your next ResearchTask should be an `explore`, not
+another exploit. This is judgment, not a tool-level rule; the signal exists so you
+catch greedy-exploit collapse (failure mode 1 in `logbooks/learnings.md`) before it
+costs a run.
 
-Plan explores proactively. When `get_planning_advice` returns `diminishing` or
-`exhausted` on the active branch, or when several exploits have run on the same
-lineage, file an `explore` task before the gate triggers. The explore can be a
-diagnostic read of the system, a new-hypothesis discovery prompt, or a comparison
-against a baseline the run has not measured yet.
+An explore can be a diagnostic read of the system, a new-hypothesis discovery
+prompt, or a comparison against a baseline the run has not measured yet.
+`get_planning_advice` is the complementary tool when you want a fuller diversity
+report — combine its `diminishing` / `exhausted` branch status with the inline signal
+when deciding whether the next batch should branch.
 
 ## Combiner-first exploit instinct
 

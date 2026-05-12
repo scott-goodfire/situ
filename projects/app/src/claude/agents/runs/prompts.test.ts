@@ -26,7 +26,7 @@ describe("searchBalanceSignalLines", () => {
     const lines = searchBalanceSignalLines({ tasks });
     expect(lines[0]).toBe("- Recent task type tally (last 5, of 5 total): exploit=4, explore=1.");
     expect(lines[1]).toBe(
-      "- Tasks since the last explore: 4 (cadence gate at 5; non-explore tasks are rejected once it reaches 5).",
+      "- Tasks since the last explore: 4 (greedy-exploit collapse risk rises after four or five; plan an explore before another exploit when this climbs).",
     );
   });
 
