@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { PreconditionError } from "../../../data/repositories/__shared__";
-import { experimentRepository } from "../../../data/repositories/experiments";
+import { experimentRepository } from "@situ/research-records";
 import { researchTaskRepository } from "../../../data/repositories/research-tasks";
 import { jsonModule } from "../../../modules/json";
 import { defineTool } from "./__shared__/define-tool";

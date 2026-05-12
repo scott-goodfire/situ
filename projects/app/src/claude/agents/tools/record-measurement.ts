@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { measurementRepository } from "../../../data/repositories/measurements";
+import { measurementRepository } from "@situ/research-records";
 import { defineTool } from "./__shared__/define-tool";
 import { Result } from "./__shared__/result";
 import { toolContextModule } from "./__shared__/tool-context-module";

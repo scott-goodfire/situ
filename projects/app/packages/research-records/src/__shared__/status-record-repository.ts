@@ -1,7 +1,7 @@
-import { runSyncedWrite, type SyncWriteDb } from "../../db/sync";
-import { dateTimeModule } from "../../../modules/date-time";
+import { getResearchRecordsContext } from "../context";
+import type { ResearchRecordStatus, ResearchRecordsDb } from "../types";
+import { nowIso } from "./now-iso";
 import { PreconditionError } from "./precondition-error";
-import type { ResearchRecordStatus } from "./repository-utils";
 
 type StatusTransitionInput<IdKey extends string> = {
   [Key in IdKey]: string;
@@ -19,14 +19,14 @@ type StatusTransitionConfig<Row extends StatusRecord> = {
   defaultActor: string;
   recordLabel: string;
   updateStatus: (input: {
-    db: SyncWriteDb;
+    db: ResearchRecordsDb;
     id: string;
     status: ResearchRecordStatus;
     syncVersion: number;
     updatedAt: string;
   }) => void;
   insertActivity: (input: {
-    db: SyncWriteDb;
+    db: ResearchRecordsDb;
     id: string;
     actor: string;
     actorAgentId?: string;
@@ -75,6 +75,7 @@ export function createStatusRecordTransitions<IdKey extends string, Row extends 
       to: input.status,
       id,
     });
+    const { runSyncedWrite } = getResearchRecordsContext();
     runSyncedWrite({
       write: ({ db, syncVersion }) => {
         updateStatus({
@@ -82,7 +83,7 @@ export function createStatusRecordTransitions<IdKey extends string, Row extends 
           id,
           status: input.status,
           syncVersion,
-          updatedAt: dateTimeModule.nowIso(),
+          updatedAt: nowIso(),
         });
         insertActivity({
           db,

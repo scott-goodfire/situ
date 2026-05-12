@@ -1,16 +1,15 @@
 import { asc, desc, eq } from "drizzle-orm";
 
-import { getDb } from "../../db/client";
-import { experimentActivities, experiments } from "../../db/schema";
-import { runSyncedWrite, type SyncWriteDb } from "../../db/sync";
-import { dateTimeModule } from "../../../modules/date-time";
+import { getResearchRecordsContext } from "../../context";
+import { experimentActivities, experiments } from "../../schema";
 import {
   clampRepositoryLimit,
   createStatusRecordTransitions,
   matchesRepositorySearch,
+  nowIso,
   PreconditionError,
-  type ResearchRecordStatus,
-} from "../__shared__";
+} from "../../__shared__";
+import type { ResearchRecordStatus, ResearchRecordsDb } from "../../types";
 import { hypothesisRepository } from "../hypotheses";
 
 type ExperimentRecord = typeof experiments.$inferSelect;
@@ -30,7 +29,7 @@ function insertExperimentActivity({
   syncVersion,
   ...input
 }: ExperimentActivityInput & {
-  db: SyncWriteDb;
+  db: ResearchRecordsDb;
   syncVersion: number;
 }): void {
   db.insert(experimentActivities)
@@ -48,6 +47,7 @@ function insertExperimentActivity({
 }
 
 async function addExperimentActivity(input: ExperimentActivityInput): Promise<ExperimentActivity> {
+  const { runSyncedWrite } = getResearchRecordsContext();
   runSyncedWrite({
     write: ({ db, syncVersion }) => {
       insertExperimentActivity({ db, ...input, syncVersion });
@@ -61,7 +61,8 @@ async function requireLatestExperimentActivity({
 }: {
   experimentId: string;
 }): Promise<ExperimentActivity> {
-  const rows = await getDb()
+  const db = getResearchRecordsContext().getDb();
+  const rows = await db
     .select()
     .from(experimentActivities)
     .where(eq(experimentActivities.experimentId, experimentId))
@@ -82,9 +83,13 @@ async function getExperimentRecord({
 }: {
   experimentId: string;
 }): Promise<ExperimentRecord | undefined> {
-  return getDb().query.experiments.findFirst({
-    where: eq(experiments.id, experimentId),
-  });
+  const db = getResearchRecordsContext().getDb();
+  const [row] = await db
+    .select()
+    .from(experiments)
+    .where(eq(experiments.id, experimentId))
+    .limit(1);
+  return row;
 }
 
 async function requireExperimentRecord({
@@ -109,11 +114,7 @@ const transitions = createStatusRecordTransitions<"experimentId", ExperimentReco
   recordLabel: "Experiment",
   updateStatus: ({ db, id, status, syncVersion, updatedAt }) => {
     db.update(experiments)
-      .set({
-        status,
-        syncVersion,
-        updatedAt,
-      })
+      .set({ status, syncVersion, updatedAt })
       .where(eq(experiments.id, id))
       .run();
   },
@@ -157,8 +158,9 @@ export const experimentRepository = {
     candidateCommit?: string;
   }): Promise<ExperimentRecord> {
     await hypothesisRepository.require({ hypothesisId: associatedHypothesisId });
+    const { runSyncedWrite } = getResearchRecordsContext();
     const experimentId = crypto.randomUUID();
-    const now = dateTimeModule.nowIso();
+    const now = nowIso();
     runSyncedWrite({
       write: ({ db, syncVersion }) => {
         db.insert(experiments)
@@ -204,9 +206,13 @@ export const experimentRepository = {
   }: {
     worktreePath: string;
   }): Promise<ExperimentRecord | undefined> {
-    return getDb().query.experiments.findFirst({
-      where: eq(experiments.worktreePath, worktreePath),
-    });
+    const db = getResearchRecordsContext().getDb();
+    const [row] = await db
+      .select()
+      .from(experiments)
+      .where(eq(experiments.worktreePath, worktreePath))
+      .limit(1);
+    return row;
   },
 
   async require({ experimentId }: { experimentId: string }): Promise<ExperimentRecord> {
@@ -218,7 +224,8 @@ export const experimentRepository = {
     activities: ExperimentActivity[];
   }> {
     const experiment = await requireExperimentRecord({ experimentId });
-    const activities = await getDb()
+    const db = getResearchRecordsContext().getDb();
+    const activities = await db
       .select()
       .from(experimentActivities)
       .where(eq(experimentActivities.experimentId, experimentId))
@@ -231,7 +238,8 @@ export const experimentRepository = {
   }: {
     limit?: number;
   } = {}): Promise<ExperimentRecord[]> {
-    const rows = await getDb()
+    const db = getResearchRecordsContext().getDb();
+    const rows = await db
       .select()
       .from(experiments)
       .orderBy(desc(experiments.createdAt), desc(experiments.id));
@@ -243,7 +251,8 @@ export const experimentRepository = {
   }: {
     researchTaskId: string;
   }): Promise<ExperimentRecord[]> {
-    return getDb()
+    const db = getResearchRecordsContext().getDb();
+    return db
       .select()
       .from(experiments)
       .where(eq(experiments.createdByResearchTaskId, researchTaskId))
@@ -259,7 +268,8 @@ export const experimentRepository = {
     status?: ResearchRecordStatus;
     limit?: number;
   } = {}): Promise<ExperimentRecord[]> {
-    const rows = await getDb()
+    const db = getResearchRecordsContext().getDb();
+    const rows = await db
       .select()
       .from(experiments)
       .where(status ? eq(experiments.status, status) : undefined)
@@ -320,16 +330,12 @@ export const experimentRepository = {
     worktreePath: string;
     baseCommit: string;
   }): Promise<ExperimentRecord> {
-    const updatedAt = dateTimeModule.nowIso();
+    const { runSyncedWrite } = getResearchRecordsContext();
+    const updatedAt = nowIso();
     runSyncedWrite({
       write: ({ db, syncVersion }) => {
         db.update(experiments)
-          .set({
-            worktreePath,
-            baseCommit,
-            syncVersion,
-            updatedAt,
-          })
+          .set({ worktreePath, baseCommit, syncVersion, updatedAt })
           .where(eq(experiments.id, experimentId))
           .run();
       },
@@ -344,15 +350,12 @@ export const experimentRepository = {
     experimentId: string;
     candidateCommit: string;
   }): Promise<ExperimentRecord> {
-    const updatedAt = dateTimeModule.nowIso();
+    const { runSyncedWrite } = getResearchRecordsContext();
+    const updatedAt = nowIso();
     runSyncedWrite({
       write: ({ db, syncVersion }) => {
         db.update(experiments)
-          .set({
-            candidateCommit,
-            syncVersion,
-            updatedAt,
-          })
+          .set({ candidateCommit, syncVersion, updatedAt })
           .where(eq(experiments.id, experimentId))
           .run();
       },

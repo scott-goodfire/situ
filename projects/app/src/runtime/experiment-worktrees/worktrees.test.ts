@@ -16,10 +16,10 @@ import {
   measurements,
   workItems,
 } from "../../data/db/schema";
-import { baselineRepository } from "../../data/repositories/baselines";
+import { baselineRepository } from "@situ/research-records";
 import { computeTargetRepository } from "@situ/compute";
-import { experimentRepository } from "../../data/repositories/experiments";
-import { hypothesisRepository } from "../../data/repositories/hypotheses";
+import { experimentRepository } from "@situ/research-records";
+import { hypothesisRepository } from "@situ/research-records";
 import { researchProjectRepository } from "../../data/repositories/research-projects";
 import {
   researchTaskRepository,
@@ -675,6 +675,7 @@ describe("experiment worktrees", () => {
   test("record_experiment_comparison creates linked evaluation and measurement records", async () => {
     const task = await createResearchTask();
     const baseline = await baselineRepository.create({
+      researchProjectId: task.researchProjectId,
       title: "Baseline behavior",
       summary: "Baseline output was old.",
       createdByResearchTaskId: task.id,

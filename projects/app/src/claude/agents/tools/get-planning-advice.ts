@@ -1,8 +1,8 @@
 import type Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 
-import { experimentRepository } from "../../../data/repositories/experiments";
-import { hypothesisRepository } from "../../../data/repositories/hypotheses";
+import { experimentRepository } from "@situ/research-records";
+import { hypothesisRepository } from "@situ/research-records";
 import { researchProjectRepository } from "../../../data/repositories/research-projects";
 import {
   researchTaskRepository,

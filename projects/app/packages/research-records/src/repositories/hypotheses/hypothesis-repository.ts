@@ -1,16 +1,15 @@
 import { asc, desc, eq } from "drizzle-orm";
 
-import { getDb } from "../../db/client";
-import { hypotheses, hypothesisActivities } from "../../db/schema";
-import { runSyncedWrite, type SyncWriteDb } from "../../db/sync";
-import { dateTimeModule } from "../../../modules/date-time";
+import { getResearchRecordsContext } from "../../context";
+import { hypotheses, hypothesisActivities } from "../../schema";
 import {
   clampRepositoryLimit,
   createStatusRecordTransitions,
   matchesRepositorySearch,
+  nowIso,
   PreconditionError,
-  type ResearchRecordStatus,
-} from "../__shared__";
+} from "../../__shared__";
+import type { ResearchRecordStatus, ResearchRecordsDb } from "../../types";
 
 type Hypothesis = typeof hypotheses.$inferSelect;
 type HypothesisActivity = typeof hypothesisActivities.$inferSelect;
@@ -52,9 +51,9 @@ type ActivityInput = HypothesisIdInput & {
 async function findHypothesis({
   hypothesisId,
 }: HypothesisIdInput): Promise<Hypothesis | undefined> {
-  return getDb().query.hypotheses.findFirst({
-    where: eq(hypotheses.id, hypothesisId),
-  });
+  const db = getResearchRecordsContext().getDb();
+  const [row] = await db.select().from(hypotheses).where(eq(hypotheses.id, hypothesisId)).limit(1);
+  return row;
 }
 
 async function requireHypothesis({ hypothesisId }: HypothesisIdInput): Promise<Hypothesis> {
@@ -77,6 +76,7 @@ async function insertActivity({
   payload,
   actorAgentId,
 }: ActivityInput): Promise<HypothesisActivity> {
+  const { runSyncedWrite, getDb } = getResearchRecordsContext();
   runSyncedWrite({
     write: ({ db, syncVersion }) => {
       insertHypothesisActivity({
@@ -141,7 +141,8 @@ export const hypothesisRepository = {
     createdByResearchTaskId,
     createdByAgentId,
   }: CreateHypothesisInput): Promise<Hypothesis> {
-    const now = dateTimeModule.nowIso();
+    const { runSyncedWrite } = getResearchRecordsContext();
+    const now = nowIso();
     const hypothesisId = crypto.randomUUID();
     runSyncedWrite({
       write: ({ db, syncVersion }) => {
@@ -195,7 +196,8 @@ export const hypothesisRepository = {
     activities: HypothesisActivity[];
   }> {
     const hypothesis = await requireHypothesis({ hypothesisId });
-    const activities = await getDb()
+    const db = getResearchRecordsContext().getDb();
+    const activities = await db
       .select()
       .from(hypothesisActivities)
       .where(eq(hypothesisActivities.hypothesisId, hypothesisId))
@@ -204,7 +206,8 @@ export const hypothesisRepository = {
   },
 
   async list({ limit = 10 }: ListInput = {}): Promise<Hypothesis[]> {
-    const rows = await getDb()
+    const db = getResearchRecordsContext().getDb();
+    const rows = await db
       .select()
       .from(hypotheses)
       .orderBy(desc(hypotheses.createdAt), desc(hypotheses.id));
@@ -212,7 +215,8 @@ export const hypothesisRepository = {
   },
 
   async search({ query, status, limit = 10 }: SearchInput = {}): Promise<Hypothesis[]> {
-    const rows = await getDb()
+    const db = getResearchRecordsContext().getDb();
+    const rows = await db
       .select()
       .from(hypotheses)
       .orderBy(desc(hypotheses.createdAt), desc(hypotheses.id));
@@ -282,7 +286,7 @@ function insertHypothesisActivity({
   syncVersion,
   actorAgentId,
 }: {
-  db: SyncWriteDb;
+  db: ResearchRecordsDb;
   hypothesisId: string;
   actor: string;
   kind: string;

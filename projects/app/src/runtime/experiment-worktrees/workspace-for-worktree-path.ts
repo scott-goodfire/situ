@@ -1,4 +1,4 @@
-import { experimentRepository } from "../../data/repositories/experiments";
+import { experimentRepository } from "@situ/research-records";
 import type { ResolvedExperimentWorkspace } from "./types";
 
 export async function workspaceForWorktreePath({

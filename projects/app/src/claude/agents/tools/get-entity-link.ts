@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { entityLinkRepository } from "../../../data/repositories/entity-links";
+import { entityLinkRepository } from "@situ/research-records";
 import { defineTool } from "./__shared__/define-tool";
 import { Result } from "./__shared__/result";
 import { allRoles } from "./__shared__/roles";

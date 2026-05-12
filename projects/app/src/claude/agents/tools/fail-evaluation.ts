@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { evaluationRepository } from "../../../data/repositories/evaluations";
+import { evaluationRepository } from "@situ/research-records";
 import { defineTool } from "./__shared__/define-tool";
 import { Result } from "./__shared__/result";
 import { scienceRoles } from "./__shared__/roles";

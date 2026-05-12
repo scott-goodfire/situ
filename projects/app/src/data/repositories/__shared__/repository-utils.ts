@@ -1,12 +1,3 @@
-export type ResearchRecordStatus =
-  | "triage"
-  | "accepted"
-  | "active"
-  | "in_review"
-  | "done"
-  | "canceled"
-  | "failed";
-
 export function clampRepositoryLimit({
   limit = 10,
   max = 50,

@@ -10,6 +10,7 @@ import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 import { Database } from "bun:sqlite";
 import { COMPUTE_TARGETS_TABLE_SQL } from "@situ/compute";
+import { RESEARCH_RECORDS_TABLES_SQL } from "@situ/research-records";
 import { WORK_ITEMS_TABLE_SQL } from "@situ/work-items";
 import { ensureRuntimeContext, migrationSessionId } from "../../config/session-context";
 import { sqlitePath } from "../../config/paths";
@@ -217,154 +218,12 @@ CREATE TABLE IF NOT EXISTS claude_agent_runs (
   ${TIMESTAMPS}
 );
 
-CREATE TABLE IF NOT EXISTS hypotheses (
-  id TEXT PRIMARY KEY,
-  created_by_research_task_id TEXT REFERENCES research_tasks(id),
-  created_by_agent_id TEXT REFERENCES claude_agents(id),
-  title TEXT NOT NULL,
-  summary TEXT NOT NULL,
-  status TEXT NOT NULL DEFAULT 'triage'
-    CHECK (status IN ('triage', 'accepted', 'active', 'in_review', 'done', 'canceled', 'failed')),
-  ${SYNC_COLUMNS},
-  ${TIMESTAMPS}
-);
-
-CREATE TABLE IF NOT EXISTS experiments (
-  id TEXT PRIMARY KEY,
-  created_by_research_task_id TEXT REFERENCES research_tasks(id),
-  created_by_agent_id TEXT REFERENCES claude_agents(id),
-  associated_hypothesis_id TEXT NOT NULL REFERENCES hypotheses(id),
-  parent_experiment_id TEXT REFERENCES experiments(id),
-  title TEXT NOT NULL,
-  summary TEXT NOT NULL,
-  status TEXT NOT NULL DEFAULT 'triage'
-    CHECK (status IN ('triage', 'accepted', 'active', 'in_review', 'done', 'canceled', 'failed')),
-  worktree_path TEXT,
-  base_commit TEXT,
-  candidate_commit TEXT,
-  ${SYNC_COLUMNS},
-  ${TIMESTAMPS}
-);
-
-CREATE TABLE IF NOT EXISTS baselines (
-  id TEXT PRIMARY KEY,
-  research_project_id TEXT NOT NULL REFERENCES research_projects(id),
-  created_by_research_task_id TEXT REFERENCES research_tasks(id),
-  created_by_agent_id TEXT REFERENCES claude_agents(id),
-  title TEXT NOT NULL,
-  summary TEXT NOT NULL,
-  status TEXT NOT NULL DEFAULT 'triage'
-    CHECK (status IN ('triage', 'accepted', 'active', 'in_review', 'done', 'canceled', 'failed')),
-  ${PAYLOAD_JSON},
-  ${SYNC_COLUMNS},
-  ${TIMESTAMPS}
-);
-
-CREATE TABLE IF NOT EXISTS evaluations (
-  id TEXT PRIMARY KEY,
-  created_by_research_task_id TEXT REFERENCES research_tasks(id),
-  created_by_agent_id TEXT REFERENCES claude_agents(id),
-  title TEXT NOT NULL,
-  summary TEXT NOT NULL,
-  status TEXT NOT NULL DEFAULT 'triage'
-    CHECK (status IN ('triage', 'accepted', 'active', 'in_review', 'done', 'canceled', 'failed')),
-  associated_baseline_id TEXT REFERENCES baselines(id),
-  associated_experiment_id TEXT REFERENCES experiments(id),
-  ${SYNC_COLUMNS},
-  ${TIMESTAMPS}
-);
-
-CREATE TABLE IF NOT EXISTS measurements (
-  id TEXT PRIMARY KEY,
-  created_by_research_task_id TEXT REFERENCES research_tasks(id),
-  created_by_agent_id TEXT REFERENCES claude_agents(id),
-  evaluation_id TEXT NOT NULL REFERENCES evaluations(id),
-  actor TEXT NOT NULL,
-  body TEXT NOT NULL,
-  ${PAYLOAD_JSON},
-  ${SYNC_COLUMNS},
-  ${CREATED_AT}
-);
-
-CREATE TABLE IF NOT EXISTS artifacts (
-  id TEXT PRIMARY KEY,
-  created_by_research_task_id TEXT REFERENCES research_tasks(id),
-  created_by_agent_id TEXT REFERENCES claude_agents(id),
-  entity_kind TEXT NOT NULL,
-  entity_id TEXT NOT NULL,
-  kind TEXT NOT NULL,
-  title TEXT NOT NULL,
-  body TEXT NOT NULL DEFAULT '',
-  path TEXT NOT NULL,
-  media_type TEXT,
-  size_bytes INTEGER,
-  ${SYNC_COLUMNS},
-  ${CREATED_AT}
-);
-
-CREATE TABLE IF NOT EXISTS entity_links (
-  id TEXT PRIMARY KEY,
-  from_kind TEXT NOT NULL,
-  from_id TEXT NOT NULL,
-  to_kind TEXT NOT NULL,
-  to_id TEXT NOT NULL,
-  relationship TEXT NOT NULL,
-  ${SYNC_COLUMNS},
-  ${CREATED_AT}
-);
+${RESEARCH_RECORDS_TABLES_SQL}
 
 CREATE TABLE IF NOT EXISTS app_events (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   type TEXT NOT NULL,
   message TEXT NOT NULL,
-  ${PAYLOAD_JSON},
-  ${SYNC_COLUMNS},
-  ${CREATED_AT}
-);
-
-CREATE TABLE IF NOT EXISTS hypothesis_activities (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  hypothesis_id TEXT NOT NULL REFERENCES hypotheses(id),
-  actor_agent_id TEXT REFERENCES claude_agents(id),
-  actor TEXT NOT NULL,
-  kind TEXT NOT NULL,
-  body TEXT NOT NULL,
-  ${PAYLOAD_JSON},
-  ${SYNC_COLUMNS},
-  ${CREATED_AT}
-);
-
-CREATE TABLE IF NOT EXISTS experiment_activities (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  experiment_id TEXT NOT NULL REFERENCES experiments(id),
-  actor_agent_id TEXT REFERENCES claude_agents(id),
-  actor TEXT NOT NULL,
-  kind TEXT NOT NULL,
-  body TEXT NOT NULL,
-  ${PAYLOAD_JSON},
-  ${SYNC_COLUMNS},
-  ${CREATED_AT}
-);
-
-CREATE TABLE IF NOT EXISTS baseline_activities (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  baseline_id TEXT NOT NULL REFERENCES baselines(id),
-  actor_agent_id TEXT REFERENCES claude_agents(id),
-  actor TEXT NOT NULL,
-  kind TEXT NOT NULL,
-  body TEXT NOT NULL,
-  ${PAYLOAD_JSON},
-  ${SYNC_COLUMNS},
-  ${CREATED_AT}
-);
-
-CREATE TABLE IF NOT EXISTS evaluation_activities (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  evaluation_id TEXT NOT NULL REFERENCES evaluations(id),
-  actor_agent_id TEXT REFERENCES claude_agents(id),
-  actor TEXT NOT NULL,
-  kind TEXT NOT NULL,
-  body TEXT NOT NULL,
   ${PAYLOAD_JSON},
   ${SYNC_COLUMNS},
   ${CREATED_AT}

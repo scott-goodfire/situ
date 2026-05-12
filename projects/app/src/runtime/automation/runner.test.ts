@@ -17,7 +17,8 @@ import {
   researchTasks,
   workItems,
 } from "../../data/db/schema";
-import { baselineRepository } from "../../data/repositories/baselines";
+import { baselineRepository } from "@situ/research-records";
+import { createOrUpdateProjectBaseline } from "../../data/repositories/baselines";
 import { researchProjectRepository } from "../../data/repositories/research-projects";
 import {
   readAutomationState,
@@ -286,7 +287,7 @@ describe("automation runner", () => {
     const project = await researchProjectRepository.create({
       goal: "Auto-confirm the setup baseline.",
     });
-    const baseline = await baselineRepository.createOrUpdateProjectBaseline({
+    const baseline = await createOrUpdateProjectBaseline({
       researchProjectId: project.id,
       title: "Exec setup baseline",
       summary: "Exec should auto-confirm this setup baseline.",

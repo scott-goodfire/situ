@@ -13,8 +13,8 @@ import {
   researchProjects,
   researchTasks,
 } from "../../../data/db/schema";
-import { experimentRepository } from "../../../data/repositories/experiments";
-import { hypothesisRepository } from "../../../data/repositories/hypotheses";
+import { experimentRepository } from "@situ/research-records";
+import { hypothesisRepository } from "@situ/research-records";
 import { researchProjectRepository } from "../../../data/repositories/research-projects";
 import { researchTaskRepository } from "../../../data/repositories/research-tasks";
 import { createExperimentTool } from "./create-experiment";

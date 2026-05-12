@@ -5,13 +5,13 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 
 import { ensureRuntimeContext } from "../../config/session-context";
 import { computeTargetRepository } from "@situ/compute";
-import { artifactRepository } from "./artifacts";
-import { baselineRepository } from "./baselines";
-import { entityLinkRepository } from "./entity-links";
-import { evaluationRepository } from "./evaluations";
-import { experimentRepository } from "./experiments";
-import { hypothesisRepository } from "./hypotheses";
-import { measurementRepository } from "./measurements";
+import { artifactRepository } from "@situ/research-records";
+import { baselineRepository } from "@situ/research-records";
+import { entityLinkRepository } from "@situ/research-records";
+import { evaluationRepository } from "@situ/research-records";
+import { experimentRepository } from "@situ/research-records";
+import { hypothesisRepository } from "@situ/research-records";
+import { measurementRepository } from "@situ/research-records";
 import { researchProjectInteractionRepository } from "./research-project-interactions";
 import { researchProjectRepository } from "./research-projects";
 import { researchTaskVerificationRepository } from "./research-task-verifications";
@@ -238,6 +238,7 @@ describe("repository contracts", () => {
       title: "Repository science ResearchTask",
     });
     const baseline = await baselineRepository.create({
+      researchProjectId: researchTask.researchProjectId,
       title: "Repository baseline",
       summary: "Baseline summary.",
       createdByResearchTaskId: researchTask.id,

@@ -80,12 +80,18 @@ export async function ensureRuntimeContext(
   // Wire workspace packages lazily: importing the wiring modules statically
   // would form a cycle (they pull in app-events → sync → db/client → paths
   // → session-context). Dynamic imports keep the static graph acyclic.
-  const [{ configureComputePackage }, { configureWorkItemsPackage }] = await Promise.all([
+  const [
+    { configureComputePackage },
+    { configureWorkItemsPackage },
+    { configureResearchRecordsPackage },
+  ] = await Promise.all([
     import("../data/db/configure-compute-package"),
     import("../data/db/configure-work-items-package"),
+    import("../data/db/configure-research-records-package"),
   ]);
   configureComputePackage();
   configureWorkItemsPackage();
+  configureResearchRecordsPackage();
   return context;
 }
 

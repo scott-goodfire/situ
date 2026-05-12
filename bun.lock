@@ -73,6 +73,18 @@
         "@types/luxon": "catalog:",
       },
     },
+    "projects/app/packages/research-records": {
+      "name": "@situ/research-records",
+      "version": "0.0.1",
+      "dependencies": {
+        "drizzle-orm": "^0.45.2",
+        "luxon": "catalog:",
+      },
+      "devDependencies": {
+        "@types/bun": "catalog:",
+        "@types/luxon": "catalog:",
+      },
+    },
     "projects/app/packages/work-items": {
       "name": "@situ/work-items",
       "version": "0.0.1",
@@ -911,6 +923,8 @@
     "@situ/evals-worlds": ["@situ/evals-worlds@workspace:projects/evals/packages/worlds"],
 
     "@situ/protocol": ["@situ/protocol@workspace:projects/web/packages/protocol"],
+
+    "@situ/research-records": ["@situ/research-records@workspace:projects/app/packages/research-records"],
 
     "@situ/web": ["@situ/web@workspace:projects/web"],
 

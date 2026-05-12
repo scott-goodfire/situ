@@ -1,6 +1,6 @@
 import { worktreeModule } from "@situ/worktrees";
 
-import { experimentRepository } from "../../data/repositories/experiments";
+import { experimentRepository } from "@situ/research-records";
 import { prepareExperimentWorktree } from "./prepare-experiment-worktree";
 import type { ResolvedExperimentWorkspace, WorktreeRuntimeContext } from "./types";
 

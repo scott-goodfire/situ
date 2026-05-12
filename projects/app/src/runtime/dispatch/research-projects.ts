@@ -18,7 +18,7 @@ import {
   workItems,
 } from "../../data/db/schema";
 import { recordAppEvent } from "../../app-events";
-import { experimentRepository } from "../../data/repositories/experiments";
+import { experimentRepository } from "@situ/research-records";
 import { researchProjectRepository } from "../../data/repositories/research-projects";
 import { researchTaskRepository } from "../../data/repositories/research-tasks";
 import { jsonModule } from "../../modules/json";

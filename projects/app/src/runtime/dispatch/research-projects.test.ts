@@ -18,7 +18,8 @@ import {
   researchTasks,
   workItems,
 } from "../../data/db/schema";
-import { baselineRepository } from "../../data/repositories/baselines";
+import { baselineRepository } from "@situ/research-records";
+import { createOrUpdateProjectBaseline } from "../../data/repositories/baselines";
 import { computeModule, computeTargetRepository } from "@situ/compute";
 import { researchProjectInteractionRepository } from "../../data/repositories/research-project-interactions";
 import { researchProjectRepository } from "../../data/repositories/research-projects";
@@ -228,7 +229,7 @@ describe("researchProject runtime flow", () => {
     const project = await researchProjectRepository.create({
       goal: "Confirm the onboarding baseline before opening the rest of the workspace.",
     });
-    const baseline = await baselineRepository.createOrUpdateProjectBaseline({
+    const baseline = await createOrUpdateProjectBaseline({
       researchProjectId: project.id,
       title: "Confirmed project baseline",
       summary: "Baseline summary and proposed next steps.",
@@ -706,6 +707,7 @@ describe("researchProject runtime flow", () => {
       verificationPrompt: "Check that baseline metrics are durable.",
     });
     await baselineRepository.create({
+      researchProjectId: project.id,
       title: "Verified baseline",
       summary: "Baseline metric is durable.",
       createdByResearchTaskId: baselineTask.id,

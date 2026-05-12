@@ -17,9 +17,9 @@ import {
   measurements,
   researchProjects,
 } from "../../../data/db/schema";
-import { baselineRepository } from "../../../data/repositories/baselines";
-import { experimentRepository } from "../../../data/repositories/experiments";
-import { hypothesisRepository } from "../../../data/repositories/hypotheses";
+import { baselineRepository } from "@situ/research-records";
+import { experimentRepository } from "@situ/research-records";
+import { hypothesisRepository } from "@situ/research-records";
 import { researchProjectRepository } from "../../../data/repositories/research-projects";
 import type { ClaudeAgentToolContext } from "./types";
 import { recordExperimentComparisonTool } from "./record-experiment-comparison";

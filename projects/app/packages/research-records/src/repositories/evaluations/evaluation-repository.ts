@@ -1,16 +1,15 @@
 import { asc, desc, eq } from "drizzle-orm";
 
-import { getDb } from "../../db/client";
-import { evaluationActivities, evaluations, measurements } from "../../db/schema";
-import { runSyncedWrite, type SyncWriteDb } from "../../db/sync";
-import { dateTimeModule } from "../../../modules/date-time";
+import { getResearchRecordsContext } from "../../context";
+import { evaluationActivities, evaluations, measurements } from "../../schema";
 import {
   clampRepositoryLimit,
   createStatusRecordTransitions,
   matchesRepositorySearch,
+  nowIso,
   PreconditionError,
-  type ResearchRecordStatus,
-} from "../__shared__";
+} from "../../__shared__";
+import type { ResearchRecordStatus, ResearchRecordsDb } from "../../types";
 import { baselineRepository } from "../baselines";
 import { experimentRepository } from "../experiments";
 import {
@@ -46,7 +45,7 @@ function insertEvaluationActivity({
   syncVersion,
   ...input
 }: EvaluationActivityInput & {
-  db: SyncWriteDb;
+  db: ResearchRecordsDb;
   syncVersion: number;
 }): void {
   db.insert(evaluationActivities)
@@ -64,6 +63,7 @@ function insertEvaluationActivity({
 }
 
 async function addEvaluationActivity(input: EvaluationActivityInput): Promise<EvaluationActivity> {
+  const { runSyncedWrite } = getResearchRecordsContext();
   runSyncedWrite({
     write: ({ db, syncVersion }) => {
       insertEvaluationActivity({ db, ...input, syncVersion });
@@ -77,7 +77,8 @@ async function requireLatestEvaluationActivity({
 }: {
   evaluationId: string;
 }): Promise<EvaluationActivity> {
-  const rows = await getDb()
+  const db = getResearchRecordsContext().getDb();
+  const rows = await db
     .select()
     .from(evaluationActivities)
     .where(eq(evaluationActivities.evaluationId, evaluationId))
@@ -98,9 +99,13 @@ async function getEvaluationRecord({
 }: {
   evaluationId: string;
 }): Promise<EvaluationRecord | undefined> {
-  return getDb().query.evaluations.findFirst({
-    where: eq(evaluations.id, evaluationId),
-  });
+  const db = getResearchRecordsContext().getDb();
+  const [row] = await db
+    .select()
+    .from(evaluations)
+    .where(eq(evaluations.id, evaluationId))
+    .limit(1);
+  return row;
 }
 
 async function requireEvaluationRecord({
@@ -127,8 +132,9 @@ async function createEvaluationWithActivity({
   associatedBaselineId,
   associatedExperimentId,
 }: CreateEvaluationInput): Promise<EvaluationRecord> {
+  const { runSyncedWrite } = getResearchRecordsContext();
   const evaluationId = crypto.randomUUID();
-  const now = dateTimeModule.nowIso();
+  const now = nowIso();
   runSyncedWrite({
     write: ({ db, syncVersion }) => {
       db.insert(evaluations)
@@ -168,11 +174,7 @@ const transitions = createStatusRecordTransitions<"evaluationId", EvaluationReco
   recordLabel: "Evaluation",
   updateStatus: ({ db, id, status, syncVersion, updatedAt }) => {
     db.update(evaluations)
-      .set({
-        status,
-        syncVersion,
-        updatedAt,
-      })
+      .set({ status, syncVersion, updatedAt })
       .where(eq(evaluations.id, id))
       .run();
   },
@@ -212,13 +214,14 @@ export const evaluationRepository = {
     measurements: MeasurementRecord[];
   }> {
     const evaluation = await requireEvaluationRecord({ evaluationId });
+    const db = getResearchRecordsContext().getDb();
     const [activities, measurementRows] = await Promise.all([
-      getDb()
+      db
         .select()
         .from(evaluationActivities)
         .where(eq(evaluationActivities.evaluationId, evaluationId))
         .orderBy(asc(evaluationActivities.createdAt), asc(evaluationActivities.id)),
-      getDb()
+      db
         .select()
         .from(measurements)
         .where(eq(measurements.evaluationId, evaluationId))
@@ -232,7 +235,8 @@ export const evaluationRepository = {
   }: {
     limit?: number;
   } = {}): Promise<EvaluationRecord[]> {
-    const rows = await getDb()
+    const db = getResearchRecordsContext().getDb();
+    const rows = await db
       .select()
       .from(evaluations)
       .orderBy(desc(evaluations.createdAt), desc(evaluations.id));
@@ -248,7 +252,8 @@ export const evaluationRepository = {
     status?: ResearchRecordStatus;
     limit?: number;
   } = {}): Promise<EvaluationRecord[]> {
-    const rows = await getDb()
+    const db = getResearchRecordsContext().getDb();
+    const rows = await db
       .select()
       .from(evaluations)
       .where(status ? eq(evaluations.status, status) : undefined)
@@ -340,9 +345,10 @@ export const evaluationRepository = {
       });
     }
 
+    const { runSyncedWrite } = getResearchRecordsContext();
     const evaluationId = crypto.randomUUID();
     const measurementId = crypto.randomUUID();
-    const now = dateTimeModule.nowIso();
+    const now = nowIso();
     runSyncedWrite({
       write: ({ db, syncVersion }) => {
         db.insert(evaluations)

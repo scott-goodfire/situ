@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { z } from "zod";
 
-import { baselineRepository } from "../data/repositories/baselines";
+import { baselineRepository } from "@situ/research-records";
 import { researchProjectInteractionRepository } from "../data/repositories/research-project-interactions";
 import { researchProjectRepository } from "../data/repositories/research-projects";
 import { jsonModule } from "../modules/json";

@@ -19,10 +19,10 @@ import {
   researchTaskVerifications,
   researchTasks,
 } from "../../../data/db/schema";
-import { baselineRepository } from "../../../data/repositories/baselines";
+import { createOrUpdateProjectBaseline } from "../../../data/repositories/baselines";
 import { computeTargetRepository } from "@situ/compute";
-import { experimentRepository } from "../../../data/repositories/experiments";
-import { hypothesisRepository } from "../../../data/repositories/hypotheses";
+import { experimentRepository } from "@situ/research-records";
+import { hypothesisRepository } from "@situ/research-records";
 import { researchProjectInteractionRepository } from "../../../data/repositories/research-project-interactions";
 import { researchProjectRepository } from "../../../data/repositories/research-projects";
 import { researchTaskVerificationRepository } from "../../../data/repositories/research-task-verifications";
@@ -594,7 +594,7 @@ describe("create_research_task tool", () => {
     const project = await researchProjectRepository.create({
       goal: "Confirm setup baseline.",
     });
-    const baseline = await baselineRepository.createOrUpdateProjectBaseline({
+    const baseline = await createOrUpdateProjectBaseline({
       researchProjectId: project.id,
       title: "Setup baseline",
       summary: "Baseline shown to the user.",

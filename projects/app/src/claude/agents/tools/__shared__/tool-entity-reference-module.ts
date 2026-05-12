@@ -1,10 +1,10 @@
-import { artifactRepository } from "../../../../data/repositories/artifacts";
-import { baselineRepository } from "../../../../data/repositories/baselines";
+import { artifactRepository } from "@situ/research-records";
+import { baselineRepository } from "@situ/research-records";
 import { computeTargetRepository } from "@situ/compute";
-import { evaluationRepository } from "../../../../data/repositories/evaluations";
-import { experimentRepository } from "../../../../data/repositories/experiments";
-import { hypothesisRepository } from "../../../../data/repositories/hypotheses";
-import { measurementRepository } from "../../../../data/repositories/measurements";
+import { evaluationRepository } from "@situ/research-records";
+import { experimentRepository } from "@situ/research-records";
+import { hypothesisRepository } from "@situ/research-records";
+import { measurementRepository } from "@situ/research-records";
 import { researchTaskRepository } from "../../../../data/repositories/research-tasks";
 
 export const ENTITY_KINDS = [

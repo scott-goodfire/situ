@@ -345,121 +345,19 @@ export const claudeAgentRuns = sqliteTable(
   }),
 );
 
-export const hypotheses = sqliteTable("hypotheses", {
-  id: text("id").primaryKey(),
-  createdByResearchTaskId: text("created_by_research_task_id").references(() => researchTasks.id),
-  createdByAgentId: text("created_by_agent_id").references(() => claudeAgents.id),
-  title: text("title").notNull(),
-  summary: text("summary").notNull(),
-  status: text("status", {
-    enum: ["triage", "accepted", "active", "in_review", "done", "canceled", "failed"],
-  })
-    .notNull()
-    .default("triage"),
-  ...syncTracking(),
-  ...timestamps(),
-});
-
-export const experiments = sqliteTable("experiments", {
-  id: text("id").primaryKey(),
-  createdByResearchTaskId: text("created_by_research_task_id").references(() => researchTasks.id),
-  createdByAgentId: text("created_by_agent_id").references(() => claudeAgents.id),
-  associatedHypothesisId: text("associated_hypothesis_id")
-    .notNull()
-    .references(() => hypotheses.id),
-  parentExperimentId: text("parent_experiment_id").references(
-    (): AnySQLiteColumn => experiments.id,
-  ),
-  title: text("title").notNull(),
-  summary: text("summary").notNull(),
-  status: text("status", {
-    enum: ["triage", "accepted", "active", "in_review", "done", "canceled", "failed"],
-  })
-    .notNull()
-    .default("triage"),
-  worktreePath: text("worktree_path"),
-  baseCommit: text("base_commit"),
-  candidateCommit: text("candidate_commit"),
-  ...syncTracking(),
-  ...timestamps(),
-});
-
-export const baselines = sqliteTable("baselines", {
-  id: text("id").primaryKey(),
-  researchProjectId: text("research_project_id")
-    .notNull()
-    .references(() => researchProjects.id),
-  createdByResearchTaskId: text("created_by_research_task_id").references(() => researchTasks.id),
-  createdByAgentId: text("created_by_agent_id").references(() => claudeAgents.id),
-  title: text("title").notNull(),
-  summary: text("summary").notNull(),
-  status: text("status", {
-    enum: ["triage", "accepted", "active", "in_review", "done", "canceled", "failed"],
-  })
-    .notNull()
-    .default("triage"),
-  ...payloadJson(),
-  ...syncTracking(),
-  ...timestamps(),
-});
-
-export const evaluations = sqliteTable("evaluations", {
-  id: text("id").primaryKey(),
-  createdByResearchTaskId: text("created_by_research_task_id").references(() => researchTasks.id),
-  createdByAgentId: text("created_by_agent_id").references(() => claudeAgents.id),
-  title: text("title").notNull(),
-  summary: text("summary").notNull(),
-  status: text("status", {
-    enum: ["triage", "accepted", "active", "in_review", "done", "canceled", "failed"],
-  })
-    .notNull()
-    .default("triage"),
-  associatedBaselineId: text("associated_baseline_id").references(() => baselines.id),
-  associatedExperimentId: text("associated_experiment_id").references(() => experiments.id),
-  ...syncTracking(),
-  ...timestamps(),
-});
-
-export const measurements = sqliteTable("measurements", {
-  id: text("id").primaryKey(),
-  createdByResearchTaskId: text("created_by_research_task_id").references(() => researchTasks.id),
-  createdByAgentId: text("created_by_agent_id").references(() => claudeAgents.id),
-  evaluationId: text("evaluation_id")
-    .notNull()
-    .references(() => evaluations.id),
-  actor: text("actor").notNull(),
-  body: text("body").notNull(),
-  ...payloadJson(),
-  ...syncTracking(),
-  ...createdAtOnly(),
-});
-
-export const artifacts = sqliteTable("artifacts", {
-  id: text("id").primaryKey(),
-  createdByResearchTaskId: text("created_by_research_task_id").references(() => researchTasks.id),
-  createdByAgentId: text("created_by_agent_id").references(() => claudeAgents.id),
-  entityKind: text("entity_kind").notNull(),
-  entityId: text("entity_id").notNull(),
-  kind: text("kind").notNull(),
-  title: text("title").notNull(),
-  body: text("body").notNull().default(""),
-  path: text("path").notNull(),
-  mediaType: text("media_type"),
-  sizeBytes: integer("size_bytes"),
-  ...syncTracking(),
-  ...createdAtOnly(),
-});
-
-export const entityLinks = sqliteTable("entity_links", {
-  id: text("id").primaryKey(),
-  fromKind: text("from_kind").notNull(),
-  fromId: text("from_id").notNull(),
-  toKind: text("to_kind").notNull(),
-  toId: text("to_id").notNull(),
-  relationship: text("relationship").notNull(),
-  ...syncTracking(),
-  ...createdAtOnly(),
-});
+// Research-record tables live in @situ/research-records; re-exported here so
+// the drizzle client's schema includes them and existing import paths keep
+// working.
+import {
+  artifacts,
+  baselines,
+  entityLinks,
+  evaluations,
+  experiments,
+  hypotheses,
+  measurements,
+} from "@situ/research-records";
+export { artifacts, baselines, entityLinks, evaluations, experiments, hypotheses, measurements };
 
 export const appEvents = sqliteTable(
   "app_events",
@@ -476,61 +374,13 @@ export const appEvents = sqliteTable(
   }),
 );
 
-export const hypothesisActivities = sqliteTable("hypothesis_activities", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  hypothesisId: text("hypothesis_id")
-    .notNull()
-    .references(() => hypotheses.id),
-  actorAgentId: text("actor_agent_id").references(() => claudeAgents.id),
-  actor: text("actor").notNull(),
-  kind: text("kind").notNull(),
-  body: text("body").notNull(),
-  ...payloadJson(),
-  ...syncTracking(),
-  ...createdAtOnly(),
-});
-
-export const experimentActivities = sqliteTable("experiment_activities", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  experimentId: text("experiment_id")
-    .notNull()
-    .references(() => experiments.id),
-  actorAgentId: text("actor_agent_id").references(() => claudeAgents.id),
-  actor: text("actor").notNull(),
-  kind: text("kind").notNull(),
-  body: text("body").notNull(),
-  ...payloadJson(),
-  ...syncTracking(),
-  ...createdAtOnly(),
-});
-
-export const baselineActivities = sqliteTable("baseline_activities", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  baselineId: text("baseline_id")
-    .notNull()
-    .references(() => baselines.id),
-  actorAgentId: text("actor_agent_id").references(() => claudeAgents.id),
-  actor: text("actor").notNull(),
-  kind: text("kind").notNull(),
-  body: text("body").notNull(),
-  ...payloadJson(),
-  ...syncTracking(),
-  ...createdAtOnly(),
-});
-
-export const evaluationActivities = sqliteTable("evaluation_activities", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  evaluationId: text("evaluation_id")
-    .notNull()
-    .references(() => evaluations.id),
-  actorAgentId: text("actor_agent_id").references(() => claudeAgents.id),
-  actor: text("actor").notNull(),
-  kind: text("kind").notNull(),
-  body: text("body").notNull(),
-  ...payloadJson(),
-  ...syncTracking(),
-  ...createdAtOnly(),
-});
+// Activity tables for the research records also live in @situ/research-records.
+export {
+  baselineActivities,
+  evaluationActivities,
+  experimentActivities,
+  hypothesisActivities,
+} from "@situ/research-records";
 
 // The compute_targets table lives in @situ/compute; re-exported here so the
 // drizzle client's schema includes it and existing import paths still work.

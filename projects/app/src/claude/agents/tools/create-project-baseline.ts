@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { PreconditionError } from "../../../data/repositories/__shared__";
-import { baselineRepository } from "../../../data/repositories/baselines";
+import { createOrUpdateProjectBaseline } from "../../../data/repositories/baselines";
 import { researchProjectRepository } from "../../../data/repositories/research-projects";
 import { defineTool } from "./__shared__/define-tool";
 import { Result } from "./__shared__/result";
@@ -67,7 +67,7 @@ export const createProjectBaselineTool = defineTool({
       });
     }
 
-    const baseline = await baselineRepository.createOrUpdateProjectBaseline({
+    const baseline = await createOrUpdateProjectBaseline({
       researchProjectId,
       title: input.title,
       summary: input.summary,

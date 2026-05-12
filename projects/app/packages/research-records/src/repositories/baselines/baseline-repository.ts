@@ -1,19 +1,15 @@
-import { and, asc, desc, eq, isNull } from "drizzle-orm";
+import { asc, desc, eq } from "drizzle-orm";
 
-import { getDb } from "../../db/client";
-import { baselineActivities, baselines, researchProjects } from "../../db/schema";
-import { runSyncedWrite, type SyncWriteDb } from "../../db/sync";
-import { dateTimeModule } from "../../../modules/date-time";
-import { textModule } from "../../../modules/text";
+import { getResearchRecordsContext } from "../../context";
+import { baselineActivities, baselines } from "../../schema";
 import {
   clampRepositoryLimit,
   createStatusRecordTransitions,
   matchesRepositorySearch,
+  nowIso,
   PreconditionError,
-  type ResearchRecordStatus,
-} from "../__shared__";
-import { researchProjectRepository } from "../research-projects";
-import { researchTaskRepository } from "../research-tasks";
+} from "../../__shared__";
+import type { ResearchRecordStatus, ResearchRecordsDb } from "../../types";
 
 type BaselineRecord = typeof baselines.$inferSelect;
 type BaselineActivity = typeof baselineActivities.$inferSelect;
@@ -32,7 +28,7 @@ function insertBaselineActivity({
   syncVersion,
   ...input
 }: BaselineActivityInput & {
-  db: SyncWriteDb;
+  db: ResearchRecordsDb;
   syncVersion: number;
 }): void {
   db.insert(baselineActivities)
@@ -50,6 +46,7 @@ function insertBaselineActivity({
 }
 
 async function addBaselineActivity(input: BaselineActivityInput): Promise<BaselineActivity> {
+  const { runSyncedWrite } = getResearchRecordsContext();
   runSyncedWrite({
     write: ({ db, syncVersion }) => {
       insertBaselineActivity({ db, ...input, syncVersion });
@@ -63,7 +60,8 @@ async function requireLatestBaselineActivity({
 }: {
   baselineId: string;
 }): Promise<BaselineActivity> {
-  const rows = await getDb()
+  const db = getResearchRecordsContext().getDb();
+  const rows = await db
     .select()
     .from(baselineActivities)
     .where(eq(baselineActivities.baselineId, baselineId))
@@ -84,9 +82,9 @@ async function getBaselineRecord({
 }: {
   baselineId: string;
 }): Promise<BaselineRecord | undefined> {
-  return getDb().query.baselines.findFirst({
-    where: eq(baselines.id, baselineId),
-  });
+  const db = getResearchRecordsContext().getDb();
+  const [row] = await db.select().from(baselines).where(eq(baselines.id, baselineId)).limit(1);
+  return row;
 }
 
 async function requireBaselineRecord({
@@ -110,14 +108,7 @@ const transitions = createStatusRecordTransitions<"baselineId", BaselineRecord>(
   defaultActor: "agent",
   recordLabel: "Baseline",
   updateStatus: ({ db, id, status, syncVersion, updatedAt }) => {
-    db.update(baselines)
-      .set({
-        status,
-        syncVersion,
-        updatedAt,
-      })
-      .where(eq(baselines.id, id))
-      .run();
+    db.update(baselines).set({ status, syncVersion, updatedAt }).where(eq(baselines.id, id)).run();
   },
   insertActivity: ({ db, id, actor, actorAgentId, kind, body, payload, syncVersion }) => {
     insertBaselineActivity({
@@ -145,25 +136,29 @@ export const baselineRepository = {
     createdByAgentId,
     payload = {},
   }: {
-    researchProjectId?: string;
+    researchProjectId: string;
     title: string;
     summary: string;
     createdByResearchTaskId?: string;
     createdByAgentId?: string;
     payload?: Record<string, unknown>;
   }): Promise<BaselineRecord> {
-    const resolvedResearchProjectId = await resolveResearchProjectId({
-      researchProjectId,
-      createdByResearchTaskId,
-    });
+    if (!researchProjectId) {
+      throw new PreconditionError({
+        code: "baseline_research_project_required",
+        hint: "Pass researchProjectId. Auto-resolution from createdByResearchTaskId is an app-side concern; resolve the project id before calling baselineRepository.create.",
+        details: {},
+      });
+    }
+    const { runSyncedWrite } = getResearchRecordsContext();
     const baselineId = crypto.randomUUID();
-    const now = dateTimeModule.nowIso();
+    const now = nowIso();
     runSyncedWrite({
       write: ({ db, syncVersion }) => {
         db.insert(baselines)
           .values({
             id: baselineId,
-            researchProjectId: resolvedResearchProjectId,
+            researchProjectId,
             title,
             summary,
             createdByResearchTaskId,
@@ -191,104 +186,6 @@ export const baselineRepository = {
     return requireBaselineRecord({ baselineId });
   },
 
-  async createOrUpdateProjectBaseline({
-    researchProjectId,
-    title,
-    summary,
-    createdByAgentId,
-    payload = {},
-  }: {
-    researchProjectId: string;
-    title: string;
-    summary: string;
-    createdByAgentId?: string;
-    payload?: Record<string, unknown>;
-  }): Promise<BaselineRecord> {
-    await researchProjectRepository.require({ researchProjectId });
-    const current = await baselineRepository.findProjectBaseline({ researchProjectId });
-    const normalizedTitle = textModule.requiredText({ value: title, label: "title" });
-    const normalizedSummary = textModule.requiredText({ value: summary, label: "summary" });
-    const now = dateTimeModule.nowIso();
-    if (!current) {
-      const baselineId = crypto.randomUUID();
-      runSyncedWrite({
-        write: ({ db, syncVersion }) => {
-          db.insert(baselines)
-            .values({
-              id: baselineId,
-              researchProjectId,
-              title: normalizedTitle,
-              summary: normalizedSummary,
-              createdByAgentId,
-              status: "active",
-              payloadJson: JSON.stringify(payload),
-              syncVersion,
-              syncDeleted: false,
-              createdAt: now,
-              updatedAt: now,
-            })
-            .run();
-          insertBaselineActivity({
-            db,
-            baselineId,
-            actor: "manager",
-            actorAgentId: createdByAgentId,
-            kind: "recorded",
-            body: normalizedSummary,
-            payload: { activityType: "project_baseline_created" },
-            syncVersion,
-          });
-          db.update(researchProjects)
-            .set({
-              phase: "baseline",
-              baselineSummary: normalizedSummary,
-              syncVersion,
-              updatedAt: now,
-            })
-            .where(eq(researchProjects.id, researchProjectId))
-            .run();
-        },
-      });
-      return requireBaselineRecord({ baselineId });
-    }
-
-    runSyncedWrite({
-      write: ({ db, syncVersion }) => {
-        db.update(baselines)
-          .set({
-            title: normalizedTitle,
-            summary: normalizedSummary,
-            status: "active",
-            payloadJson: JSON.stringify(payload),
-            syncVersion,
-            updatedAt: now,
-          })
-          .where(eq(baselines.id, current.id))
-          .run();
-        insertBaselineActivity({
-          db,
-          baselineId: current.id,
-          actor: "manager",
-          actorAgentId: createdByAgentId,
-          kind: "comment",
-          body: normalizedSummary,
-          payload: { activityType: "project_baseline_revised" },
-          syncVersion,
-        });
-        db.update(researchProjects)
-          .set({
-            phase: "baseline",
-            baselineSummary: normalizedSummary,
-            syncVersion,
-            updatedAt: now,
-          })
-          .where(eq(researchProjects.id, researchProjectId))
-          .run();
-      },
-    });
-    return requireBaselineRecord({ baselineId: current.id });
-  },
-
   async get({ baselineId }: { baselineId: string }): Promise<BaselineRecord | undefined> {
     return getBaselineRecord({ baselineId });
   },
@@ -302,13 +199,13 @@ export const baselineRepository = {
   }: {
     researchProjectId: string;
   }): Promise<BaselineRecord | undefined> {
-    return getDb().query.baselines.findFirst({
-      where: and(
-        eq(baselines.researchProjectId, researchProjectId),
-        isNull(baselines.createdByResearchTaskId),
-      ),
-      orderBy: [desc(baselines.updatedAt), desc(baselines.id)],
-    });
+    const db = getResearchRecordsContext().getDb();
+    const rows = await db
+      .select()
+      .from(baselines)
+      .where(eq(baselines.researchProjectId, researchProjectId))
+      .orderBy(desc(baselines.updatedAt), desc(baselines.id));
+    return rows.find((row) => row.createdByResearchTaskId === null);
   },
 
   async getWithActivities({ baselineId }: { baselineId: string }): Promise<{
@@ -316,7 +213,8 @@ export const baselineRepository = {
     activities: BaselineActivity[];
   }> {
     const baseline = await requireBaselineRecord({ baselineId });
-    const activities = await getDb()
+    const db = getResearchRecordsContext().getDb();
+    const activities = await db
       .select()
       .from(baselineActivities)
       .where(eq(baselineActivities.baselineId, baselineId))
@@ -329,7 +227,8 @@ export const baselineRepository = {
   }: {
     limit?: number;
   } = {}): Promise<BaselineRecord[]> {
-    const rows = await getDb()
+    const db = getResearchRecordsContext().getDb();
+    const rows = await db
       .select()
       .from(baselines)
       .orderBy(desc(baselines.createdAt), desc(baselines.id));
@@ -345,7 +244,8 @@ export const baselineRepository = {
     status?: ResearchRecordStatus;
     limit?: number;
   } = {}): Promise<BaselineRecord[]> {
-    const rows = await getDb()
+    const db = getResearchRecordsContext().getDb();
+    const rows = await db
       .select()
       .from(baselines)
       .where(status ? eq(baselines.status, status) : undefined)
@@ -396,25 +296,3 @@ export const baselineRepository = {
   cancel: transitions.cancel,
   fail: transitions.fail,
 };
-
-async function resolveResearchProjectId({
-  researchProjectId,
-  createdByResearchTaskId,
-}: {
-  researchProjectId?: string;
-  createdByResearchTaskId?: string;
-}): Promise<string> {
-  if (researchProjectId) {
-    await researchProjectRepository.require({ researchProjectId });
-    return researchProjectId;
-  }
-  if (createdByResearchTaskId) {
-    const task = await researchTaskRepository.require({ researchTaskId: createdByResearchTaskId });
-    return task.researchProjectId;
-  }
-  throw new PreconditionError({
-    code: "baseline_research_project_required",
-    hint: "Pass researchProjectId, or pass createdByResearchTaskId so the project can be inferred from the task.",
-    details: {},
-  });
-}

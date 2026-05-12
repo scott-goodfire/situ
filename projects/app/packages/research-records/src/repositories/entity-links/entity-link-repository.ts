@@ -1,10 +1,13 @@
 import { desc, eq } from "drizzle-orm";
 
-import { getDb } from "../../db/client";
-import { entityLinks } from "../../db/schema";
-import { runSyncedWrite } from "../../db/sync";
-import { dateTimeModule } from "../../../modules/date-time";
-import { clampRepositoryLimit, matchesRepositorySearch, PreconditionError } from "../__shared__";
+import { getResearchRecordsContext } from "../../context";
+import { entityLinks } from "../../schema";
+import {
+  clampRepositoryLimit,
+  matchesRepositorySearch,
+  nowIso,
+  PreconditionError,
+} from "../../__shared__";
 
 type EntityLinkRecord = typeof entityLinks.$inferSelect;
 
@@ -39,9 +42,13 @@ const entityLinkSearchFields = ["fromKind", "fromId", "toKind", "toId", "relatio
 async function getEntityLinkRecord({
   entityLinkId,
 }: EntityLinkIdInput): Promise<EntityLinkRecord | undefined> {
-  return getDb().query.entityLinks.findFirst({
-    where: eq(entityLinks.id, entityLinkId),
-  });
+  const db = getResearchRecordsContext().getDb();
+  const [row] = await db
+    .select()
+    .from(entityLinks)
+    .where(eq(entityLinks.id, entityLinkId))
+    .limit(1);
+  return row;
 }
 
 async function requireEntityLinkRecord({
@@ -66,8 +73,9 @@ export const entityLinkRepository = {
     toId,
     relationship,
   }: CreateEntityLinkInput): Promise<EntityLinkRecord> {
+    const { runSyncedWrite } = getResearchRecordsContext();
     const entityLinkId = crypto.randomUUID();
-    const now = dateTimeModule.nowIso();
+    const now = nowIso();
     runSyncedWrite({
       write: ({ db, syncVersion }) => {
         db.insert(entityLinks)
@@ -97,7 +105,8 @@ export const entityLinkRepository = {
   },
 
   async list({ limit = 10 }: ListEntityLinksInput = {}): Promise<EntityLinkRecord[]> {
-    const rows = await getDb()
+    const db = getResearchRecordsContext().getDb();
+    const rows = await db
       .select()
       .from(entityLinks)
       .orderBy(desc(entityLinks.createdAt), desc(entityLinks.id));
@@ -106,7 +115,8 @@ export const entityLinkRepository = {
 
   async search(input: SearchEntityLinksInput = {}): Promise<EntityLinkRecord[]> {
     const { limit = 10 } = input;
-    const rows = await getDb()
+    const db = getResearchRecordsContext().getDb();
+    const rows = await db
       .select()
       .from(entityLinks)
       .orderBy(desc(entityLinks.createdAt), desc(entityLinks.id));

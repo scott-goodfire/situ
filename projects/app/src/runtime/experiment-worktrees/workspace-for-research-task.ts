@@ -1,4 +1,4 @@
-import { experimentRepository } from "../../data/repositories/experiments";
+import { experimentRepository } from "@situ/research-records";
 import type { ResolvedExperimentWorkspace, WorktreeRuntimeContext } from "./types";
 import { workspaceForExperiment } from "./workspace-for-experiment";
 

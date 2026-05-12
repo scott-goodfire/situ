@@ -1,10 +1,13 @@
 import { desc, eq } from "drizzle-orm";
 
-import { getDb } from "../../db/client";
-import { artifacts } from "../../db/schema";
-import { runSyncedWrite } from "../../db/sync";
-import { dateTimeModule } from "../../../modules/date-time";
-import { clampRepositoryLimit, matchesRepositorySearch, PreconditionError } from "../__shared__";
+import { getResearchRecordsContext } from "../../context";
+import { artifacts } from "../../schema";
+import {
+  clampRepositoryLimit,
+  matchesRepositorySearch,
+  nowIso,
+  PreconditionError,
+} from "../../__shared__";
 
 type ArtifactRecord = typeof artifacts.$inferSelect;
 
@@ -40,9 +43,9 @@ type SearchArtifactsInput = {
 async function getArtifactRecord({
   artifactId,
 }: ArtifactIdInput): Promise<ArtifactRecord | undefined> {
-  return getDb().query.artifacts.findFirst({
-    where: eq(artifacts.id, artifactId),
-  });
+  const db = getResearchRecordsContext().getDb();
+  const [row] = await db.select().from(artifacts).where(eq(artifacts.id, artifactId)).limit(1);
+  return row;
 }
 
 async function requireArtifactRecord({ artifactId }: ArtifactIdInput): Promise<ArtifactRecord> {
@@ -70,9 +73,10 @@ export const artifactRepository = {
     mediaType,
     sizeBytes,
   }: CreateArtifactInput): Promise<ArtifactRecord> {
+    const { runSyncedWrite } = getResearchRecordsContext();
     const artifactId = crypto.randomUUID();
     const artifactPath = path?.trim() || inlineArtifactPath({ artifactId });
-    const now = dateTimeModule.nowIso();
+    const now = nowIso();
     runSyncedWrite({
       write: ({ db, syncVersion }) => {
         db.insert(artifacts)
@@ -107,7 +111,8 @@ export const artifactRepository = {
   },
 
   async list({ limit = 10 }: ListArtifactsInput = {}): Promise<ArtifactRecord[]> {
-    const rows = await getDb()
+    const db = getResearchRecordsContext().getDb();
+    const rows = await db
       .select()
       .from(artifacts)
       .orderBy(desc(artifacts.createdAt), desc(artifacts.id));
@@ -121,7 +126,8 @@ export const artifactRepository = {
     kind,
     limit = 10,
   }: SearchArtifactsInput = {}): Promise<ArtifactRecord[]> {
-    const rows = await getDb()
+    const db = getResearchRecordsContext().getDb();
+    const rows = await db
       .select()
       .from(artifacts)
       .orderBy(desc(artifacts.createdAt), desc(artifacts.id));

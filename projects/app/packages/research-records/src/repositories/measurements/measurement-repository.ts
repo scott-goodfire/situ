@@ -1,10 +1,9 @@
 import { and, desc, eq, type SQL } from "drizzle-orm";
 import { isPlainObject } from "lodash-es";
 
-import { getDb } from "../../db/client";
-import { measurements } from "../../db/schema";
-import { runSyncedWrite } from "../../db/sync";
-import { clampRepositoryLimit, matchesRepositorySearch, PreconditionError } from "../__shared__";
+import { getResearchRecordsContext } from "../../context";
+import { measurements } from "../../schema";
+import { clampRepositoryLimit, matchesRepositorySearch, PreconditionError } from "../../__shared__";
 
 type MeasurementRecord = typeof measurements.$inferSelect;
 type MetricScalar = boolean | number | string;
@@ -54,6 +53,7 @@ export const measurementRepository = {
         details: { evaluationId },
       });
     }
+    const { runSyncedWrite } = getResearchRecordsContext();
     const measurementId = crypto.randomUUID();
     runSyncedWrite({
       write: ({ db, syncVersion }) => {
@@ -76,9 +76,13 @@ export const measurementRepository = {
   },
 
   async get({ measurementId }: { measurementId: string }): Promise<MeasurementRecord | undefined> {
-    return getDb().query.measurements.findFirst({
-      where: eq(measurements.id, measurementId),
-    });
+    const db = getResearchRecordsContext().getDb();
+    const [row] = await db
+      .select()
+      .from(measurements)
+      .where(eq(measurements.id, measurementId))
+      .limit(1);
+    return row;
   },
 
   async require({ measurementId }: { measurementId: string }): Promise<MeasurementRecord> {
@@ -98,7 +102,8 @@ export const measurementRepository = {
   }: {
     limit?: number;
   } = {}): Promise<MeasurementRecord[]> {
-    const rows = await getDb()
+    const db = getResearchRecordsContext().getDb();
+    const rows = await db
       .select()
       .from(measurements)
       .orderBy(desc(measurements.createdAt), desc(measurements.id));
@@ -124,7 +129,8 @@ export const measurementRepository = {
       predicates.push(eq(measurements.createdByResearchTaskId, researchTaskId));
     }
 
-    const rows = await getDb()
+    const db = getResearchRecordsContext().getDb();
+    const rows = await db
       .select()
       .from(measurements)
       .where(predicates.length > 0 ? and(...predicates) : undefined)

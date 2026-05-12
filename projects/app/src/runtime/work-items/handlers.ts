@@ -5,7 +5,7 @@ import { executeClaudeAgentTurn } from "../../claude/agents/runs";
 import { recordAppEvent } from "../../app-events";
 import { logModule } from "../../modules/log";
 import { obs, withSpan } from "../../observability";
-import { experimentRepository } from "../../data/repositories/experiments";
+import { experimentRepository } from "@situ/research-records";
 import { researchProjectRepository } from "../../data/repositories/research-projects";
 import {
   researchTaskRepository,

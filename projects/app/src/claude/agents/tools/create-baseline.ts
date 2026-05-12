@@ -1,6 +1,7 @@
 import { z } from "zod";
 
-import { baselineRepository } from "../../../data/repositories/baselines";
+import { baselineRepository } from "@situ/research-records";
+import { researchTaskRepository } from "../../../data/repositories/research-tasks";
 import { defineTool } from "./__shared__/define-tool";
 import { Result } from "./__shared__/result";
 import { toolContextModule } from "./__shared__/tool-context-module";
@@ -24,17 +25,20 @@ export const createBaselineTool = defineTool({
   roles: ["scientist"],
   inputSchema,
   resultEnvelope: true,
-  handler: async ({ input, context }) =>
-    Result.ok({
+  handler: async ({ input, context }) => {
+    const researchTaskId = toolContextModule.requiredResearchTaskId({
+      explicit: input.researchTaskId,
+      context,
+    });
+    const task = await researchTaskRepository.require({ researchTaskId });
+    return Result.ok({
       baseline: await baselineRepository.create({
+        researchProjectId: task.researchProjectId,
         title: input.title,
         summary: input.summary,
-        createdByResearchTaskId: toolContextModule.researchTaskId({
-          explicit: input.researchTaskId,
-          context,
-          required: false,
-        }),
+        createdByResearchTaskId: researchTaskId,
         createdByAgentId: context.agentId,
       }),
-    }),
+    });
+  },
 });

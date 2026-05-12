@@ -4,8 +4,8 @@ import { dirname, join } from "node:path";
 import { safePathSegment, worktreeModule } from "@situ/worktrees";
 
 import { getRuntimeContext } from "../../config/session-context";
-import { artifactRepository } from "../../data/repositories/artifacts";
-import { experimentRepository } from "../../data/repositories/experiments";
+import { artifactRepository } from "@situ/research-records";
+import { experimentRepository } from "@situ/research-records";
 import type { CaptureExperimentCandidateResult, WorktreeRuntimeContext } from "./types";
 
 export async function captureExperimentCandidate({

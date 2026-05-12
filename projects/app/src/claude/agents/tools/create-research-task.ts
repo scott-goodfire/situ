@@ -3,7 +3,7 @@ import { RESEARCH_TASK_PRIORITIES, RESEARCH_TASK_TYPES } from "@situ/protocol";
 
 import { computeTargetRepository, DEFAULT_LOCAL_COMPUTE_POOL } from "@situ/compute";
 import { PreconditionError } from "../../../data/repositories/__shared__";
-import { experimentRepository } from "../../../data/repositories/experiments";
+import { experimentRepository } from "@situ/research-records";
 import { researchProjectRepository } from "../../../data/repositories/research-projects";
 import { researchTaskRepository } from "../../../data/repositories/research-tasks";
 import { defineTool } from "./__shared__/define-tool";
