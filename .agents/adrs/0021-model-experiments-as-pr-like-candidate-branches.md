@@ -35,6 +35,40 @@ experiment's current candidate commit when the same candidate branch is revised.
 
 Create a child experiment when the approach branches meaningfully.
 
+Experiment statuses stay small:
+
+```text
+active, in_review, accepted, rejected, abandoned
+```
+
+`active` means the candidate is being developed, measured, or revised.
+`in_review` means the current candidate commit is waiting for review.
+`accepted` means the current candidate commit is viable enough to keep or
+report. `rejected` means the approach was reviewed and should not be pursued
+as-is. `abandoned` means work stopped without a final review decision.
+
+Requested-changes flow:
+
+```text
+verifier reviews exp_123 at commit def222
+  -> Review(status: needs_more_evidence, reviewedCommit: def222)
+  -> Comment explaining requested changes
+  -> Notification(type: changes_requested) to the scientist
+  -> Task returns to in_progress or remains in_review with clear comment
+
+scientist wakes
+  -> reads notification, task, review, comments, artifacts, and measurements
+  -> reopens exp_123 worktree
+  -> fixes the same candidate branch
+  -> captures new candidate commit ghi333
+  -> records new measurements/artifacts for ghi333
+  -> comments summary
+  -> moves task to in_review
+```
+
+The exact task status depends on whether the next visible action is revision or
+review, but the decision and rationale must be visible in a comment/event.
+
 ## Consequences
 
 Experiment identity is stable across review iterations.

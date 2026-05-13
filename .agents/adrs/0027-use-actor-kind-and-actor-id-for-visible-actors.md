@@ -22,6 +22,8 @@ actorKind = "human" | "agent" | "system"
 actorId = opaque id
 ```
 
+Actor kind constants and stable local actor ids live in `@situ/common`.
+
 Only `agent` actors require an `Agent` row. The local human and system actors can
 be stable app-owned ids.
 
@@ -43,6 +45,10 @@ user model when needed.
 
 Package repositories store actor fields without knowing which boundary resolved
 the actor.
+
+App actions resolve the actor at the boundary and perform cross-package checks
+when an actor must correspond to a real `Agent` row. Packages validate actor
+shape but should not import app-level actor resolution.
 
 ## Related
 

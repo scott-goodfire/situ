@@ -19,7 +19,8 @@ Tools map to visible product actions:
 
 - list/search/get/update tasks
 - list unread notifications
-- mark notifications read or acted
+- mark notifications read or unread
+- dismiss or snooze notifications
 - create comments
 - assign/unassign tasks
 - create experiments

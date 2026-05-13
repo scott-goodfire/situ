@@ -27,6 +27,19 @@ Derived views can use:
 - experiment statuses
 - timestamps
 
+Initial derivation rules:
+
+- an experiment's current revision is its current candidate commit
+- evidence is current for an experiment when its commit field is empty or
+  matches the current candidate commit
+- frontier work is active or in-review experiments and their open tasks
+- terminal experiments are accepted, rejected, or abandoned
+- best-candidate views prefer accepted experiments with current approving
+  reviews and relevant measurements, then in-review or active experiments with
+  current evidence and no blocking review
+- domain-specific scores must be measurements, not hidden scoring fields
+- ties can be resolved by recency until a package spec defines a better view
+
 ## Consequences
 
 There is no `Branch` package initially.
@@ -35,7 +48,7 @@ Add a `Branch` model only if branches need first-class lifecycle such as branch
 owner, budget, status, frontier position, or persisted best-known score.
 
 Materialized summaries may be added for performance, but they must point back
-to source records.
+to source records and record which derivation produced them.
 
 ## Related
 

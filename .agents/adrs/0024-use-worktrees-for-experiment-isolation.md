@@ -23,7 +23,11 @@ Rules:
 - command tools run in an explicit workspace
 - candidate mutations happen in experiment worktrees
 - every experiment worktree is attached to an `Experiment`
+- running worktree commands have explicit ownership to avoid collisions
 - destructive git commands are allowed only inside the claimed worktree
+- command cwd must resolve inside the claimed workspace or worktree
+- command environment is filtered to an allowlist
+- commands have timeouts and captured exit status
 - command output is captured
 - parsed metrics become measurements
 - logs and bulky output become artifacts
@@ -39,6 +43,24 @@ measurements, comments, and experiment commit updates.
 
 A replacement scientist should be able to reopen the same experiment worktree
 after reading the task and review history.
+
+Command execution is represented by existing durable records, not a separate
+product primitive for command runs:
+
+```text
+run_experiment_command app action
+  -> validate actor, task, experiment, project, assignment, and worktree
+  -> record command_started event
+  -> @situ/worktrees runs subprocess with filtered env, timeout, captured output
+  -> record command_finished event
+  -> store stdout/stderr artifacts when non-empty or truncated
+  -> create measurements only from parsed metric values
+  -> update experiment candidate commit only through capture_candidate_commit
+```
+
+If command history later needs its own lifecycle, ownership, or query surface,
+introduce that as its own decision. Until then, events, artifacts,
+measurements, and experiment commits are the durable command record.
 
 ## Related
 

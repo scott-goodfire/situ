@@ -26,9 +26,22 @@ Test boundaries:
 - worktree and command execution has tests with temporary directories
 - scheduler rules have tests over visible task, agent, agent session,
   notification, and event rows
-- notification wake rules test unread, read, acted, and stale inbox rows
+- notification wake rules test unread, read, dismissed, snoozed, and stale
+  inbox rows
 
 Live model behavior belongs in evals.
+
+Eval scenarios should assert durable records, not only final prose. Important
+eval rubrics include:
+
+- subagent handoff can be reconstructed from tasks, comments, notifications,
+  and evidence
+- stale work recovery writes visible comments/events and preserves unfinished
+  context
+- requested changes are fixed on the same experiment branch when appropriate
+- reports cite current measurements, reviews, artifacts, and discarded paths
+- Claude session failures preserve product state and create recoverable
+  follow-up work
 
 ## Consequences
 

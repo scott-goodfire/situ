@@ -33,6 +33,13 @@ Subagents coordinate by reading and writing:
 Child Claude session threads become `AgentSession` records, but product state
 still lives in the primitives above.
 
+Subagent handoff is durable product state, not a private return value. A parent
+or coordinator gives a subagent context by creating or assigning a task,
+commenting on the task, linking relevant experiments/evidence, and notifying
+the agent. The subagent finishes by writing comments, measurements, reviews,
+artifacts, task updates, or experiment updates. The parent reads those records
+instead of relying on hidden child-thread memory.
+
 ## Consequences
 
 The app can fan out work without inventing private workflow messages.

@@ -34,12 +34,18 @@ projects/app/packages/<name>/
 
 Package READMEs explain:
 
+- purpose and non-goals
 - primitive owned
 - tables owned
+- record shape
+- public types and enums
+- status/type values and their semantics
 - repository surface
 - mutation surface
-- sync keys
+- sync keys and serializers
+- supported target kinds and actor fields, when applicable
 - invariants
+- app-owned behavior
 - tests
 - what belongs in the app package instead
 
@@ -54,6 +60,20 @@ README.
 Repository methods should use a small common vocabulary such as `create`,
 `get`, `require`, `list`, `search`, `upsert`, and named update methods. Methods
 take one object argument.
+
+Packages need a `SPEC.md` when the README would otherwise hide important
+behavioral contracts. This usually applies to packages with meaningful state
+transitions, wake behavior, runtime ownership, experiment isolation, evidence
+capture, or review semantics.
+
+Implement package docs before or alongside package code. A subagent should be
+able to read a package README/SPEC plus the ADRs and know what to build and how
+to test it.
+
+The architecture doc is not a package-local contract. If an implementation
+needs record fields, enums, mutation arguments, sync keys, or state-transition
+rules for a package, those details belong in that package's README or SPEC.
+Cross-cutting rules stay in ADRs.
 
 ## Related
 

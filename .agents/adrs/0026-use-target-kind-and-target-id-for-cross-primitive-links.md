@@ -24,6 +24,23 @@ targetKind = "task" | "experiment" | "measurement" | "artifact" | ...
 targetId = opaque id
 ```
 
+Target kind constants live in `@situ/common` so packages can validate targets
+without importing from `@situ/app`.
+
+Initial target kinds:
+
+- `project`
+- `task`
+- `comment`
+- `notification`
+- `experiment`
+- `measurement`
+- `review`
+- `artifact`
+- `agent`
+- `agent_session`
+- `event`
+
 Use generic targets for:
 
 - comments
@@ -44,6 +61,10 @@ ad hoc strings everywhere.
 
 Composed app schema may enforce integrity where practical without creating
 package import cycles.
+
+Repositories should validate that a target kind is known. App actions are
+responsible for cross-package existence checks when a mutation needs stronger
+integrity.
 
 ## Related
 

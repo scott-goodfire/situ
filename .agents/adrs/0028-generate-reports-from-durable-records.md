@@ -34,6 +34,11 @@ Reporter output includes:
 - patch artifacts for kept candidates
 - open questions and next tasks
 
+Report claims should cite source record ids when practical. Confidence,
+blockers, and next steps should be derived from current project summaries,
+task state, current experiment evidence, reviews, artifacts, and unresolved
+notifications rather than private model memory.
+
 ## Consequences
 
 Reports can explain both wins and discarded branches.

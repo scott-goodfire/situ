@@ -24,12 +24,33 @@ Staleness is inferred from:
 - task assignment
 - task status
 - task last activity
-- notification read/acted state
+- notification read, dismissed, and snoozed state
 - agent session last activity
 - recent events/comments
 
 When work is stale, the scheduler writes a visible comment/event, clears or
 updates assignment as needed, and returns the task to the board.
+
+If wake or resume repeatedly fails, the scheduler should:
+
+- record the failed attempt on the notification
+- mark the failed agent session state
+- write an event with the error code and remote ids
+- leave the notification undismissed
+- eventually comment on the task and requeue it if no visible work happens
+
+The scheduler is a visible-state scanner. Its baseline responsibilities are:
+
+- wake agents for unread, undismissed, unsnoozed notifications
+- record wake/resume attempts and failures
+- detect stale assigned work from visible timestamps and activity
+- requeue stale work by writing comments, events, assignment changes, task
+  status changes, and notifications through app actions
+
+It should not choose research strategy, silently auto-complete work, or create
+hidden jobs. If future scheduler behavior assigns ready backlog work from
+filters, that assignment must still be a visible app action with an assignment
+event and notification.
 
 ## Consequences
 

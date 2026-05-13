@@ -25,6 +25,19 @@ experiment worktree.
 - `reviewedCommit` when applicable
 - cited measurement ids
 - cited artifact ids
+- status
+- markdown rationale
+
+Review statuses stay small:
+
+```text
+approved, changes_requested, needs_more_evidence, rejected, commented
+```
+
+`approved` and `rejected` should cite the evidence that supports the judgment.
+`changes_requested` means the same experiment can be revised and resubmitted.
+`needs_more_evidence` means the reviewer cannot make a judgment from the
+current measurements or artifacts. `commented` is non-binding feedback.
 
 `Artifact` records include `sourceCommit` when applicable.
 
@@ -34,6 +47,10 @@ The system can show that `exp_123` was suspicious at `def222` and passed at
 `ghi333`.
 
 Reports can distinguish current best evidence from stale evidence.
+
+A review of an experiment commit is current only while `reviewedCommit` matches
+the experiment's current candidate commit. Older reviews remain useful history
+but should not be treated as approving or rejecting a newer revision.
 
 The app does not need an `ExperimentRevision` model yet. Git commits provide
 the revision identity.

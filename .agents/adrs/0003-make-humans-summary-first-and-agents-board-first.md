@@ -51,6 +51,13 @@ views are not the primary human workflow.
 Human steering should become ordinary product records, usually comments, task
 updates, or new tasks.
 
+For example, if the human says "pause new scoring experiments until leakage
+review is complete", the app should not create a hidden global pause flag by
+default. A coordinator should record the steering as a project comment, update
+the project open-questions or blocker summary, create or prioritize a leakage
+review task, label affected work, block relevant tasks with visible comments,
+and notify the right agent.
+
 ## Related
 
 - ADR 0001: Build A Local Autoresearch App

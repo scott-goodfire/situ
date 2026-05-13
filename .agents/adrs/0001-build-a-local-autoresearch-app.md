@@ -40,5 +40,6 @@ model has proven it needs them.
 
 ## Related
 
+- ADR 0000: Use Simple Agent-First Decision Heuristics
 - Architecture: `.agents/docs/architecture/DOC.md`
 - Reading: [AI-Scientist-v2](https://github.com/SakanaAI/AI-Scientist-v2)

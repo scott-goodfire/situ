@@ -8,9 +8,9 @@ it is not itself an ADR.
 ```text
 .agents/
   adrs/
-    0001-use-linear-like-primitives-over-workflows.md
-    0002-make-humans-summary-first-and-agents-board-first.md
-    0003-use-notifications-as-agent-inbox-and-wake-trigger.md
+    0000-use-simple-agent-first-decision-heuristics.md
+    0001-build-a-local-autoresearch-app.md
+    0002-optimize-for-global-maxima-search.md
   docs/
     adrs/
       DOC.md
@@ -25,6 +25,7 @@ that made the decision necessary, and the consequences of choosing it.
 
 Use ADRs for durable architecture choices:
 
+- decision heuristics and evaluation criteria
 - product model and user experience direction
 - high-level implementation framework and codebase structure
 - backend package boundaries
@@ -46,10 +47,10 @@ ordinary tasks.
 
 ```text
 .agents/docs/architecture/DOC.md
-  Current end-state architecture snapshot.
+  Materialized end-state architecture snapshot derived from accepted ADRs.
 
 .agents/adrs/*.md
-  Historical decision log. Explains why the architecture is shaped that way.
+  Canonical decision log. Explains why the architecture is shaped that way.
 
 projects/app/packages/*/README.md
   Package-local ownership, invariants, repository APIs, and test expectations.
@@ -58,8 +59,12 @@ projects/app/packages/*/SPEC.md
   Optional detailed package behavior spec when a README becomes too crowded.
 ```
 
-The architecture doc should reflect the current accepted direction. ADRs explain
-how and why that direction was chosen.
+ADRs are the source of truth for durable architecture decisions. The
+architecture doc should reflect the current accepted direction as a readable
+materialized view over those ADRs. If the architecture doc contains an important
+decision that cannot be traced back to ADRs, update the architecture doc to
+match the ADRs. If the team wants to keep that decision, record it in an ADR
+first, then update the architecture doc from the accepted ADR.
 
 ## Ordering Principle
 
@@ -85,8 +90,9 @@ example, package-specific ADRs should come after decisions about package
 boundaries, schema ownership, app actions, and sync shape.
 
 The goal is reproducibility. In principle, an agent should be able to read the
-ADR series from `0001` onward, implement each accepted decision, and end up with
-an app that matches the architecture doc.
+ADR series from `0000` onward, create or use the package READMEs/SPECs required
+by those ADRs, implement each accepted decision, and end up with an app that
+matches the architecture doc.
 
 ## Implementability Standard
 
@@ -116,10 +122,13 @@ ADR files use monotonically increasing four-digit numbers and short kebab-case
 titles:
 
 ```text
-0001-use-linear-like-primitives-over-workflows.md
-0002-make-humans-summary-first-and-agents-board-first.md
-0003-use-notifications-as-agent-inbox-and-wake-trigger.md
+0000-use-simple-agent-first-decision-heuristics.md
+0001-build-a-local-autoresearch-app.md
+0002-optimize-for-global-maxima-search.md
 ```
+
+Use `0000` only for the project-level decision rubric. Normal architecture
+decisions continue from `0001`.
 
 Do not renumber ADRs after they are created. If a decision changes, create a new
 ADR that explains the new decision. Keep the metadata simple; cross-link related

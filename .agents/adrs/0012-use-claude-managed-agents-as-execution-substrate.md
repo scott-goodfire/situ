@@ -37,8 +37,8 @@ Do not add `provider` fields or generic provider registries.
 `projects/app/src/managed-agents/` owns Claude session adaptation, callbacks,
 tool-result routing, and remote event ingestion.
 
-If a future system needs another provider, that should be a later ADR with a
-real reason.
+If a future system needs another provider, introduce that as its own decision
+with a real reason.
 
 ## Related
 

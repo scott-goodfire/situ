@@ -22,9 +22,23 @@ It records:
 - status
 - current baseline summary
 - current answer summary
+- confidence summary
+- blockers summary
 - open questions summary
+- progress checkpoints summary
 - final result summary
 - timestamps
+
+Project statuses stay human-facing:
+
+```text
+active, paused, blocked, complete, archived
+```
+
+`blocked` means the project summary should explain the visible blocker.
+`paused` means the human or coordinator intentionally stopped new work for now.
+`complete` means the final result summary and report artifacts are ready for
+the human. These statuses are dashboard state, not hidden scheduler policy.
 
 The visible task board owns the current state of the run. The project owns the
 human-facing summary of that run.

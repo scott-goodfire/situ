@@ -365,7 +365,8 @@ It records:
 - title
 - optional markdown body
 - read timestamp
-- acted timestamp
+- dismissed timestamp
+- snoozed until timestamp
 - delivery attempt timestamps, when useful
 - created timestamp
 
@@ -382,8 +383,10 @@ Examples:
 - human steering updates the project goal or priority
 
 Unread notifications are the scheduler's main signal for waking sleeping
-agents. Marking a notification read or acted is visible inbox state, not a
-lease.
+agents. Read state means the inbox item was seen. Dismissed state means the
+recipient cleared it from the inbox. Snoozed notifications are temporarily
+hidden from wake scans. These are visible inbox states, not leases or job
+completion markers.
 
 ### Experiment
 
@@ -615,7 +618,7 @@ Review queue
   plus reviews and latest measurements
 
 Agent inbox
-  unread notifications grouped by recipient
+  unread, undismissed, unsnoozed notifications grouped by recipient
 
 Active agent work
   tasks assigned to an agent and currently active
@@ -652,7 +655,7 @@ Agent tools
       -> events
 
 Scheduler
-  -> reads unread notifications and stale activity
+  -> reads wakeable notifications and stale activity
   -> wakes Managed Agent sessions for notified agents
   -> writes visible comments/status changes
 ```
@@ -741,7 +744,7 @@ The scheduler should be small. It should not own research policy.
 Responsibilities:
 
 - periodically inspect tasks and agents
-- wake agents with unread notifications
+- wake agents with unread, undismissed, unsnoozed notifications
 - create notifications for ready work when simple filters match
 - continue active agent sessions while they are producing events
 - mark quiet assignments as stale
@@ -755,7 +758,7 @@ Task is backlog + unassigned + matches Scientist filter
   -> assign visibly on the task
   -> create notification for scientist_1
 
-Notification is unread for scientist_1
+Notification is unread, undismissed, and unsnoozed for scientist_1
   -> wake or create a Scientist agent session
   -> scientist_1 reads inbox and opens the target task
 
@@ -789,11 +792,12 @@ Notification
   recipient = scientist_1
   target = task_123
   readAt = 2026-05-12T10:20:10Z
-  actedAt = null
+  dismissedAt = null
+  snoozedUntil = null
 
 Scheduler sees no activity after threshold
   -> writes a comment
-  -> marks old notification acted or stale
+  -> leaves or dismisses the old notification according to visible inbox state
   -> clears assignee
   -> moves task back to backlog
 ```
@@ -802,9 +806,10 @@ This is intentionally less precise than a lease, but it is easier to understand
 and inspect. Explicit ownership records are reserved for command execution and
 worktree ownership, where collision risk is real.
 
-An unread or unacted notification can wake an agent more than once. That is
-acceptable. If the agent repeatedly wakes and produces no visible activity, the
-staleness rule writes a comment and returns the work to the board.
+An unread and undismissed notification can wake an agent more than once. That
+is acceptable. If the agent repeatedly wakes and produces no visible activity,
+the staleness rule writes a comment and returns the work to the board. A
+snoozed notification does not wake the agent until the snooze expires.
 
 ## Worktrees and Commands
 
@@ -870,7 +875,8 @@ Agent tools should be thin wrappers around product actions:
 - list/search/get projects
 - list/search/get/update tasks
 - list unread notifications
-- mark notifications read or acted
+- mark notifications read or unread
+- dismiss or snooze notifications
 - create comments
 - assign/unassign tasks
 - add/remove task labels
@@ -1528,20 +1534,24 @@ Repository surface:
 - list unread by recipient
 - list recent by recipient
 - mark read
-- mark acted
-- mark stale or superseded when a task is requeued
+- mark unread
+- dismiss
+- snooze
 
 Mutations:
 
 - `notification/mark_read`
-- `notification/mark_acted`
+- `notification/mark_unread`
+- `notification/dismiss`
+- `notification/snooze`
 
 Package invariants:
 
 - notification recipient is an explicit actor
 - notification target is explicit
 - notifications wake agents but do not prescribe the action to take
-- read and acted timestamps are ordinary visible state, not leases
+- read, dismissed, and snoozed timestamps are ordinary visible inbox state, not
+  leases
 - notifications can be regenerated when still relevant
 
 ### `@situ/experiments`
@@ -1791,7 +1801,9 @@ task/update_status
 task/label
 comment/create
 notification/mark_read
-notification/mark_acted
+notification/mark_unread
+notification/dismiss
+notification/snooze
 experiment/create
 experiment/update
 experiment/update_status
@@ -1865,7 +1877,7 @@ The backend should persist:
 - remote session thread ids
 - raw events
 - tool calls and results
-- notification read/acted state
+- notification read/dismissed/snoozed state
 - last activity timestamps
 
 For multiagent sessions, child Claude session threads should become
@@ -1947,8 +1959,8 @@ Package behavior is tested where the behavior lives.
 - sync composition has tests for push, pull, deletion, and key prefixes
 - worktree and command execution have tests with temporary directories
 - scheduler rules have tests over visible task, agent, agent session, and event rows
-- notification wake rules have tests over unread, read, acted, and stale inbox
-  rows
+- notification wake rules have tests over unread, read, dismissed, snoozed, and
+  stale inbox rows
 
 Tests do not call live LLMs. Model-dependent behavior lives in evals. Live evals
 assert against durable records, not final prose alone.
