@@ -1,0 +1,9 @@
+[tasks.check]
+description = "Typecheck @situ/projects"
+dir = "{{ config_root }}"
+run = "bun run check"
+
+[tasks.test]
+description = "Run @situ/projects tests"
+dir = "{{ config_root }}"
+run = "bun run test"

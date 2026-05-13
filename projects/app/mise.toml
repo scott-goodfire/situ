@@ -1,0 +1,24 @@
+[tasks.check]
+description = "Typecheck the app project"
+dir = "{{ config_root }}"
+run = "bun run check"
+
+[tasks.test]
+description = "Run app project tests"
+dir = "{{ config_root }}"
+run = "bun run test"
+
+[tasks.app]
+description = "Run the app CLI"
+dir = "{{ config_root }}"
+run = 'bun run app "$@"'
+
+[tasks."db:generate"]
+description = "Generate app database migrations"
+dir = "{{ config_root }}"
+run = "bun run db:generate"
+
+[tasks."db:migrate"]
+description = "Apply app database migrations"
+dir = "{{ config_root }}"
+run = "bun run db:migrate"

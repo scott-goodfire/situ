@@ -1,0 +1,25 @@
+{
+  "name": "@situ/app",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "app": "bun run src/cli.ts",
+    "check": "tsgo -b tsconfig.json --pretty false",
+    "test": "bun test",
+    "db:generate": "bun run src/cli.ts db generate",
+    "db:migrate": "bun run src/cli.ts db migrate"
+  },
+  "dependencies": {
+    "@situ/comments": "workspace:*",
+    "@situ/common": "workspace:*",
+    "@situ/events": "workspace:*",
+    "@situ/notifications": "workspace:*",
+    "@situ/projects": "workspace:*",
+    "@situ/tasks": "workspace:*",
+    "hono": "catalog:"
+  },
+  "devDependencies": {
+    "@types/bun": "catalog:"
+  }
+}
