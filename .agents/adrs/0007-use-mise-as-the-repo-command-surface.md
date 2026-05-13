@@ -36,6 +36,11 @@ Project and package `package.json` scripts may also wrap local `mise` tasks for
 Bun workspace compatibility, but common workflows must be exposed through
 `mise`.
 
+The command surface owns the compiler choice. Typechecking tasks use the
+TypeScript 7 native preview command, `tsgo`, through `mise` and package scripts.
+Do not introduce parallel `tsc` check paths that make local development, CI, and
+subagent verification disagree.
+
 Agents should prefer `mise run <task>` over direct tool invocations unless they
 are debugging a specific task implementation.
 

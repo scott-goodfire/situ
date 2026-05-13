@@ -63,9 +63,18 @@ mise run check
 mise run test
 ```
 
+`mise run check` should use the repo's standard TypeScript 7 check path,
+`tsgo -b`, either directly through the package script or through a thin wrapper.
+Package checks should not silently fall back to `tsc`.
+
 If a package has docs/spec validation, build output, generated code, or local
 fixtures, add local tasks with ordinary names such as `spec:check`, `build`,
 `generate`, or `fixtures:update`.
+
+Generated package output belongs outside the package contract. Examples include
+`dist/`, generated declarations, and `*.tsbuildinfo`. These files may exist
+locally after checks or builds, but they should not be treated as hand-authored
+package state.
 
 The root `mise.toml` should expose corresponding namespaced tasks for package
 commands that are part of normal development:

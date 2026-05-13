@@ -24,7 +24,7 @@ Situ will use focused mechanical quality gates for code and meta docs.
 Baseline tools include:
 
 - formatter and TypeScript/JavaScript linter
-- TypeScript typechecking
+- TypeScript 7 typechecking through `@typescript/native-preview` and `tsgo -b`
 - package and app tests
 - `markdownlint-cli2` for markdown structure
 - `typos` for prose and identifier spell-checking
@@ -38,6 +38,11 @@ output can remain separate or informational until the baseline is clean.
 
 Prefer small tools with clear ownership over one large meta-runner that hides
 which rule failed.
+
+TypeScript configuration should stay compatible with TypeScript 7. In
+particular, do not use `baseUrl`; path aliases should use explicit relative
+targets instead. Generated typecheck artifacts such as `dist/` and
+`*.tsbuildinfo` are build output, not source.
 
 ## Consequences
 

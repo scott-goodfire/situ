@@ -17,6 +17,8 @@ stay boring and easy to reason about.
 The backend stack is:
 
 - Bun for runtime and CLI execution
+- TypeScript 7 native preview for typechecking, installed as
+  `@typescript/native-preview` and invoked with `tsgo`
 - Hono for HTTP routing
 - SQLite for local durable state
 - Drizzle or a similarly direct typed query layer for schema and migrations
@@ -34,6 +36,11 @@ Replicache push mutations or the same app actions used by push mutations.
 
 The stack choice should be made before package-level ADRs so implementers know
 what APIs and constraints to assume.
+
+Until TypeScript 7 is published through the regular `typescript` package, the
+project should treat `@typescript/native-preview` as the intentional TypeScript
+7 dependency. Agents should not replace it with `typescript@latest` or switch
+checks back to `tsc` unless the ADR is updated.
 
 ## Related
 
