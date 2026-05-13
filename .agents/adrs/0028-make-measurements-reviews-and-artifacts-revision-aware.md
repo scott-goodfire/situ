@@ -4,7 +4,7 @@ implementation_status: not_started
 created: 2026-05-12
 ---
 
-# 0022. Make Measurements, Reviews, And Artifacts Revision-Aware
+# 0028. Make Measurements, Reviews, And Artifacts Revision-Aware
 
 ## Context
 
@@ -43,8 +43,8 @@ current measurements or artifacts. `commented` is non-binding feedback.
 
 ## Consequences
 
-The system can show that `exp_123` was suspicious at `def222` and passed at
-`ghi333`.
+The system can show that `exp_123` needed more evidence at `def222` and was
+approved at `ghi333`.
 
 Reports can distinguish current best evidence from stale evidence.
 
@@ -57,5 +57,5 @@ the revision identity.
 
 ## Related
 
-- ADR 0021: Model Experiments As PR-Like Candidate Branches
-- ADR 0024: Use Worktrees For Experiment Isolation
+- ADR 0027: Model Experiments As PR-Like Candidate Branches
+- ADR 0030: Use Worktrees For Experiment Isolation

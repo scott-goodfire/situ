@@ -4,7 +4,7 @@ implementation_status: not_started
 created: 2026-05-12
 ---
 
-# 0012. Use Claude Managed Agents As Execution Substrate
+# 0018. Use Claude Managed Agents As Execution Substrate
 
 ## Context
 
@@ -42,5 +42,5 @@ with a real reason.
 
 ## Related
 
-- ADR 0014: Use AgentSessions For Claude Runtime State
+- ADR 0020: Use AgentSessions For Claude Runtime State
 - Architecture: `.agents/docs/architecture/DOC.md`

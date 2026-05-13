@@ -4,7 +4,7 @@ implementation_status: not_started
 created: 2026-05-12
 ---
 
-# 0027. Use Actor Kind And Actor Id For Visible Actors
+# 0033. Use Actor Kind And Actor Id For Visible Actors
 
 ## Context
 
@@ -52,5 +52,5 @@ shape but should not import app-level actor resolution.
 
 ## Related
 
-- ADR 0010: Use App Actions As Shared Write Boundary
-- ADR 0018: Use Task As Agent Work Item
+- ADR 0016: Use App Actions As Shared Write Boundary
+- ADR 0024: Use Task As Agent Work Item

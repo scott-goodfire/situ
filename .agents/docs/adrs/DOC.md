@@ -11,6 +11,7 @@ it is not itself an ADR.
     0000-use-simple-agent-first-decision-heuristics.md
     0001-build-a-local-autoresearch-app.md
     0002-optimize-for-global-maxima-search.md
+    0007-use-mise-as-the-repo-command-surface.md
   docs/
     adrs/
       DOC.md
@@ -28,6 +29,7 @@ Use ADRs for durable architecture choices:
 - decision heuristics and evaluation criteria
 - product model and user experience direction
 - high-level implementation framework and codebase structure
+- developer command surface, CI, release, and meta-layer conventions
 - backend package boundaries
 - data model decisions
 - runtime and agent coordination decisions
@@ -77,6 +79,7 @@ The sequence should move from broad constraints to narrow contracts:
 Problem and product shape
   -> human and agent experience
   -> implementation framework and technology bets
+  -> command surface, CI, release, and meta-layer conventions
   -> codebase/package structure
   -> core primitives and data model
   -> runtime mechanics
@@ -125,14 +128,17 @@ titles:
 0000-use-simple-agent-first-decision-heuristics.md
 0001-build-a-local-autoresearch-app.md
 0002-optimize-for-global-maxima-search.md
+0007-use-mise-as-the-repo-command-surface.md
 ```
 
 Use `0000` only for the project-level decision rubric. Normal architecture
 decisions continue from `0001`.
 
-Do not renumber ADRs after they are created. If a decision changes, create a new
-ADR that explains the new decision. Keep the metadata simple; cross-link related
-ADRs in the body when helpful.
+During early design, the ADR sequence may be intentionally resequenced to keep
+the story coherent. Once implementation work depends on the sequence, avoid
+renumbering. If a decision changes after that point, create a new ADR that
+explains the new decision. Keep the metadata simple; cross-link related ADRs in
+the body when helpful.
 
 ## Frontmatter
 
@@ -261,13 +267,14 @@ evals.
 ## Scope
 
 Prefer central ADRs in `.agents/adrs/` rather than per-package ADR folders.
-Many important decisions cut across packages, sync, tools, scheduler behavior,
-and UI expectations.
+Many important decisions cut across packages, sync, tools, command surfaces,
+CI/release behavior, scheduler behavior, meta-layer guidance, and UI
+expectations.
 
 Package-local details belong in package docs:
 
 ```text
-.agents/adrs/0007-use-notifications-as-agent-inbox-and-wake-trigger.md
+.agents/adrs/0021-use-notifications-as-agent-inbox-and-wake-trigger.md
   Why notifications exist and what role they play in the architecture.
 
 projects/app/packages/notifications/README.md

@@ -38,4 +38,5 @@ what APIs and constraints to assume.
 ## Related
 
 - ADR 0001: Build A Local Autoresearch App
+- ADR 0007: Use Mise As The Repo Command Surface
 - Architecture: `.agents/docs/architecture/DOC.md`

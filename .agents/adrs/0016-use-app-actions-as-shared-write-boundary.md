@@ -4,7 +4,7 @@ implementation_status: not_started
 created: 2026-05-12
 ---
 
-# 0010. Use App Actions As Shared Write Boundary
+# 0016. Use App Actions As Shared Write Boundary
 
 ## Context
 
@@ -78,5 +78,5 @@ in one transaction.
 
 ## Related
 
-- ADR 0007: Use Replicache Push As Primary Write API
-- ADR 0008: Split Backend Into Primitive Packages
+- ADR 0013: Use Replicache Push As Primary Write API
+- ADR 0014: Split Backend Into Primitive Packages

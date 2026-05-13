@@ -4,7 +4,7 @@ implementation_status: not_started
 created: 2026-05-12
 ---
 
-# 0023. Derive Branch And Frontier Views Before Adding Branch Models
+# 0029. Derive Branch And Frontier Views Before Adding Branch Models
 
 ## Context
 
@@ -53,4 +53,4 @@ to source records and record which derivation produced them.
 ## Related
 
 - ADR 0002: Optimize For Global Maxima Search
-- ADR 0021: Model Experiments As PR-Like Candidate Branches
+- ADR 0027: Model Experiments As PR-Like Candidate Branches

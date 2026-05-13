@@ -225,10 +225,13 @@ A `Project` is the user's research goal.
 It records:
 
 - goal markdown
-- status: `active`, `paused`, `complete`, `failed`, `canceled`
+- status: `active`, `paused`, `blocked`, `complete`, `archived`
 - current baseline summary
 - current answer summary
+- confidence summary
+- blockers summary
 - open questions summary
+- progress checkpoints summary
 - final result summary
 - timestamps
 
@@ -456,7 +459,8 @@ It records:
 - target task, experiment, measurement, artifact, or report
 - reviewed commit, when the target is an experiment
 - reviewed measurements and artifacts, when relevant
-- status: `passed`, `failed`, `suspicious`, `needs_more_evidence`
+- status: `approved`, `changes_requested`, `needs_more_evidence`, `rejected`,
+  or `commented`
 - markdown judgment
 - reviewer
 - cited records
@@ -667,6 +671,72 @@ The app server is deliberately ordinary:
 - Drizzle or a similarly direct query layer for schema and migrations
 - Replicache-compatible sync for the web app
 - Bun for CLI/runtime execution
+
+## Repository Command Surface
+
+`mise.toml` is the canonical command surface for humans, agents, and CI. The
+root `mise.toml` is the command index for the whole repo. Projects and packages
+can also have local `mise.toml` files so agents can work from the directory
+they are changing.
+
+Common commands should be available as `mise run <task>`:
+
+- `update`
+- `check`
+- `test`
+- `lint`
+- `format`
+- `format:check`
+- `typos`
+- `markdownlint`
+- `actionlint`
+- `audit`
+- `db:generate`
+- `db:migrate`
+- `release:build`
+
+Root `package.json` scripts are compatibility wrappers around `mise`. Project
+and package `package.json` scripts may also wrap local `mise` tasks for Bun
+workspace compatibility, but recurring repo workflows should be surfaced
+through `mise` so agents do not have to guess command spelling.
+
+Root namespaced tasks delegate into local project and package tasks:
+
+```text
+mise run check
+mise run app:check
+mise run app:tasks:test
+
+cd projects/app
+mise run check
+
+cd projects/app/packages/tasks
+mise run test
+```
+
+Use `<project>:<task>` for project tasks and `app:<package>:<task>` for app
+package tasks. Local project/package task names stay short: `check`, `test`,
+`lint`, `format:check`, `build`, `dev`, `generate`, or `spec:check`.
+
+Root `scripts/` contains thin developer and verification helpers. `config/scripts/`
+contains release, install, and distribution helpers. Scripts should be boring:
+`bash`, `set -euo pipefail`, short step labels, `SITU_*` overrides, and no
+hidden product orchestration.
+
+GitHub Actions install tools through mise, install dependencies with Bun, and
+call the same `mise run` tasks used locally. Release workflows build
+per-platform tarballs, publish checksums, and smoke-test the installed artifact
+with isolated `SITU_HOME`, `SITU_INSTALL_HOME`, and `SITU_BIN_DIR`.
+
+Mechanical quality gates apply to both source and the `.agents` layer:
+formatting, linting, typechecking, tests, markdownlint, typos, actionlint,
+dependency audit, and Fallow-style codebase health checks. No single meta-runner
+owns the quality stack; each tool has one job.
+
+Agent skills and policies should stay slim. ADRs and package READMEs/SPECs are
+the source of truth. Skills are navigation and procedure aids: they point agents
+to the relevant ADRs, package specs, tests, and `mise` commands instead of
+repeating large architecture decisions.
 
 ## Agent Model
 
@@ -1011,7 +1081,7 @@ Scientist wakes:
 
 Second review:
   reviewed commit: ghi333
-  status: passed
+  status: approved
 ```
 
 The back-and-forth is PR-like. The experiment remains stable, but the evidence
@@ -1043,11 +1113,11 @@ Task: Review experiment exp_123
 Status: in_review
 
 Review A:
-  status: passed
+  status: approved
   focus: metric comparability
 
 Review B:
-  status: suspicious
+  status: needs_more_evidence
   focus: possible benchmark leakage
 
 Task comment from Coordinator:
@@ -1319,7 +1389,7 @@ export type TaskStatus = (typeof TASK_STATUSES)[number];
 Status values are snake_case strings so the database, Replicache payloads, and
 agent markdown all use the same spelling.
 
-Status transitions are visible record updates. A review can say a task passed;
+Status transitions are visible record updates. A review can approve a candidate;
 it does not secretly move the task to `done`.
 
 Keep the status set small. Add labels before adding statuses when the new value

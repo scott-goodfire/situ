@@ -4,7 +4,7 @@ implementation_status: not_started
 created: 2026-05-12
 ---
 
-# 0013. Support Subagents Through Shared Primitives
+# 0019. Support Subagents Through Shared Primitives
 
 ## Context
 
@@ -54,4 +54,4 @@ remain readable as a normal board of work and evidence.
 ## Related
 
 - ADR 0004: Use Linear-Like Primitives Over Workflows
-- ADR 0015: Use Notifications As Agent Inbox And Wake Trigger
+- ADR 0021: Use Notifications As Agent Inbox And Wake Trigger

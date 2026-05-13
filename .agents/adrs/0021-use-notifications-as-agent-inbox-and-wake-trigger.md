@@ -4,7 +4,7 @@ implementation_status: not_started
 created: 2026-05-12
 ---
 
-# 0015. Use Notifications As Agent Inbox And Wake Trigger
+# 0021. Use Notifications As Agent Inbox And Wake Trigger
 
 ## Context
 
@@ -88,5 +88,5 @@ attempt metadata and an event, but does not dismiss the notification.
 ## Related
 
 - ADR 0004: Use Linear-Like Primitives Over Workflows
-- ADR 0016: Use Visible Staleness Instead Of Leases
+- ADR 0022: Use Visible Staleness Instead Of Leases
 - Reading: [Linear Inbox](https://linear.app/docs/inbox)

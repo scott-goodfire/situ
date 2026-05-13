@@ -4,7 +4,7 @@ implementation_status: not_started
 created: 2026-05-12
 ---
 
-# 0009. Packages Own Schema, App Composes Database
+# 0015. Packages Own Schema, App Composes Database
 
 ## Context
 
@@ -45,5 +45,5 @@ database layer, not primitive packages.
 
 ## Related
 
-- ADR 0008: Split Backend Into Primitive Packages
-- ADR 0011: Define Common Package Contract
+- ADR 0014: Split Backend Into Primitive Packages
+- ADR 0017: Define Common Package Contract

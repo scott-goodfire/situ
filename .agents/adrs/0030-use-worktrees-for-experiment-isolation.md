@@ -4,7 +4,7 @@ implementation_status: not_started
 created: 2026-05-12
 ---
 
-# 0024. Use Worktrees For Experiment Isolation
+# 0030. Use Worktrees For Experiment Isolation
 
 ## Context
 
@@ -64,5 +64,5 @@ measurements, and experiment commits are the durable command record.
 
 ## Related
 
-- ADR 0021: Model Experiments As PR-Like Candidate Branches
-- ADR 0022: Make Measurements, Reviews, And Artifacts Revision-Aware
+- ADR 0027: Model Experiments As PR-Like Candidate Branches
+- ADR 0028: Make Measurements, Reviews, And Artifacts Revision-Aware

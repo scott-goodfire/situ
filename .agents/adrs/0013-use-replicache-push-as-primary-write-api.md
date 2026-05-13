@@ -4,7 +4,7 @@ implementation_status: not_started
 created: 2026-05-12
 ---
 
-# 0007. Use Replicache Push As Primary Write API
+# 0013. Use Replicache Push As Primary Write API
 
 ## Context
 
@@ -67,4 +67,4 @@ registers package serializers; a table does not sync merely because it exists.
 ## Related
 
 - ADR 0006: Use Bun, Hono, SQLite, Drizzle, And Replicache
-- ADR 0010: Use App Actions As Shared Write Boundary
+- ADR 0016: Use App Actions As Shared Write Boundary

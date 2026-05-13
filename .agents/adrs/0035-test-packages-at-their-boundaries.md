@@ -4,7 +4,7 @@ implementation_status: not_started
 created: 2026-05-12
 ---
 
-# 0029. Test Packages At Their Boundaries
+# 0035. Test Packages At Their Boundaries
 
 ## Context
 
@@ -55,6 +55,6 @@ Live evals should assert durable records, not final prose alone.
 
 ## Related
 
-- ADR 0008: Split Backend Into Primitive Packages
-- ADR 0010: Use App Actions As Shared Write Boundary
-- ADR 0011: Define Common Package Contract
+- ADR 0014: Split Backend Into Primitive Packages
+- ADR 0016: Use App Actions As Shared Write Boundary
+- ADR 0017: Define Common Package Contract

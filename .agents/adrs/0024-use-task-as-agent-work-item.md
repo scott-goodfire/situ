@@ -4,7 +4,7 @@ implementation_status: not_started
 created: 2026-05-12
 ---
 
-# 0018. Use Task As Agent Work Item
+# 0024. Use Task As Agent Work Item
 
 ## Context
 
@@ -71,4 +71,4 @@ artifacts, events, notifications, and active/recent agent sessions.
 ## Related
 
 - ADR 0004: Use Linear-Like Primitives Over Workflows
-- ADR 0015: Use Notifications As Agent Inbox And Wake Trigger
+- ADR 0021: Use Notifications As Agent Inbox And Wake Trigger

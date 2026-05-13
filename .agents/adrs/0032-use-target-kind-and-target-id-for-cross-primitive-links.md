@@ -4,7 +4,7 @@ implementation_status: not_started
 created: 2026-05-12
 ---
 
-# 0026. Use Target Kind And Target Id For Cross-Primitive Links
+# 0032. Use Target Kind And Target Id For Cross-Primitive Links
 
 ## Context
 
@@ -68,5 +68,5 @@ integrity.
 
 ## Related
 
-- ADR 0009: Packages Own Schema, App Composes Database
-- ADR 0011: Define Common Package Contract
+- ADR 0015: Packages Own Schema, App Composes Database
+- ADR 0017: Define Common Package Contract

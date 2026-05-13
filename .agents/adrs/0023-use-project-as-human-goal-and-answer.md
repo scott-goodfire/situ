@@ -4,7 +4,7 @@ implementation_status: not_started
 created: 2026-05-12
 ---
 
-# 0017. Use Project As Human Goal And Answer
+# 0023. Use Project As Human Goal And Answer
 
 ## Context
 
@@ -56,4 +56,4 @@ evidence.
 ## Related
 
 - ADR 0003: Make Humans Summary-First And Agents Board-First
-- ADR 0028: Generate Reports From Durable Records
+- ADR 0034: Generate Reports From Durable Records

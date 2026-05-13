@@ -4,7 +4,7 @@ implementation_status: not_started
 created: 2026-05-12
 ---
 
-# 0028. Generate Reports From Durable Records
+# 0034. Generate Reports From Durable Records
 
 ## Context
 
@@ -52,4 +52,4 @@ of truth.
 ## Related
 
 - ADR 0003: Make Humans Summary-First And Agents Board-First
-- ADR 0017: Use Project As Human Goal And Answer
+- ADR 0023: Use Project As Human Goal And Answer

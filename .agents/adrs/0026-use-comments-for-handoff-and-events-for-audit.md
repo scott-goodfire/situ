@@ -4,7 +4,7 @@ implementation_status: not_started
 created: 2026-05-12
 ---
 
-# 0020. Use Comments For Handoff And Events For Audit
+# 0026. Use Comments For Handoff And Events For Audit
 
 ## Context
 
@@ -54,4 +54,4 @@ surface, introduce that as its own decision.
 ## Related
 
 - ADR 0005: Use Markdown As The Handoff Format
-- ADR 0015: Use Notifications As Agent Inbox And Wake Trigger
+- ADR 0021: Use Notifications As Agent Inbox And Wake Trigger

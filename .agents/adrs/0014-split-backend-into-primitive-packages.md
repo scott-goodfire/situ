@@ -4,7 +4,7 @@ implementation_status: not_started
 created: 2026-05-12
 ---
 
-# 0008. Split Backend Into Primitive Packages
+# 0014. Split Backend Into Primitive Packages
 
 ## Context
 
@@ -85,4 +85,4 @@ those decisions in this first slice.
 ## Related
 
 - ADR 0006: Use Bun, Hono, SQLite, Drizzle, And Replicache
-- ADR 0011: Define Common Package Contract
+- ADR 0017: Define Common Package Contract

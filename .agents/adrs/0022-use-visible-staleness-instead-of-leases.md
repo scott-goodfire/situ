@@ -4,7 +4,7 @@ implementation_status: not_started
 created: 2026-05-12
 ---
 
-# 0016. Use Visible Staleness Instead Of Leases
+# 0022. Use Visible Staleness Instead Of Leases
 
 ## Context
 
@@ -64,5 +64,5 @@ memory.
 
 ## Related
 
-- ADR 0015: Use Notifications As Agent Inbox And Wake Trigger
-- ADR 0024: Use Worktrees For Experiment Isolation
+- ADR 0021: Use Notifications As Agent Inbox And Wake Trigger
+- ADR 0030: Use Worktrees For Experiment Isolation

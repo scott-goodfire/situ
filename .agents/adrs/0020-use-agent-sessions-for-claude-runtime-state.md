@@ -4,7 +4,7 @@ implementation_status: not_started
 created: 2026-05-12
 ---
 
-# 0014. Use AgentSessions For Claude Runtime State
+# 0020. Use AgentSessions For Claude Runtime State
 
 ## Context
 
@@ -85,5 +85,5 @@ after reading the target state.
 
 ## Related
 
-- ADR 0012: Use Claude Managed Agents As Execution Substrate
-- ADR 0013: Support Subagents Through Shared Primitives
+- ADR 0018: Use Claude Managed Agents As Execution Substrate
+- ADR 0019: Support Subagents Through Shared Primitives

@@ -4,7 +4,7 @@ implementation_status: not_started
 created: 2026-05-12
 ---
 
-# 0011. Define Common Package Contract
+# 0017. Define Common Package Contract
 
 ## Context
 
@@ -19,6 +19,7 @@ Durable primitive packages use a shared structure:
 ```text
 projects/app/packages/<name>/
   README.md
+  mise.toml
   package.json
   tsconfig.json
   src/
@@ -35,6 +36,7 @@ projects/app/packages/<name>/
 Package READMEs explain:
 
 - purpose and non-goals
+- local `mise run` commands
 - primitive owned
 - tables owned
 - record shape
@@ -52,6 +54,26 @@ Package READMEs explain:
 ## Consequences
 
 Subagents can implement packages with lower cognitive load.
+
+Each durable primitive package should expose local `mise` tasks for the package
+commands an agent needs most often. At minimum:
+
+```text
+mise run check
+mise run test
+```
+
+If a package has docs/spec validation, build output, generated code, or local
+fixtures, add local tasks with ordinary names such as `spec:check`, `build`,
+`generate`, or `fixtures:update`.
+
+The root `mise.toml` should expose corresponding namespaced tasks for package
+commands that are part of normal development:
+
+```text
+mise run app:tasks:check
+mise run app:tasks:test
+```
 
 Utility packages such as `@situ/common` may omit record-only files when they do
 not own durable records. The exception should be documented in that package's
@@ -77,5 +99,5 @@ Cross-cutting rules stay in ADRs.
 
 ## Related
 
-- ADR 0008: Split Backend Into Primitive Packages
-- ADR 0009: Packages Own Schema, App Composes Database
+- ADR 0014: Split Backend Into Primitive Packages
+- ADR 0015: Packages Own Schema, App Composes Database

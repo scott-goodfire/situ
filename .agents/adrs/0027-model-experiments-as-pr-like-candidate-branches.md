@@ -4,7 +4,7 @@ implementation_status: not_started
 created: 2026-05-12
 ---
 
-# 0021. Model Experiments As PR-Like Candidate Branches
+# 0027. Model Experiments As PR-Like Candidate Branches
 
 ## Context
 
@@ -82,4 +82,4 @@ search history.
 ## Related
 
 - ADR 0002: Optimize For Global Maxima Search
-- ADR 0022: Make Measurements, Reviews, And Artifacts Revision-Aware
+- ADR 0028: Make Measurements, Reviews, And Artifacts Revision-Aware

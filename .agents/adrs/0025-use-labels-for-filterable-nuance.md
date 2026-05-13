@@ -4,7 +4,7 @@ implementation_status: not_started
 created: 2026-05-12
 ---
 
-# 0019. Use Labels For Filterable Nuance
+# 0025. Use Labels For Filterable Nuance
 
 ## Context
 
@@ -39,4 +39,4 @@ new tasks.
 ## Related
 
 - ADR 0004: Use Linear-Like Primitives Over Workflows
-- ADR 0018: Use Task As Agent Work Item
+- ADR 0024: Use Task As Agent Work Item

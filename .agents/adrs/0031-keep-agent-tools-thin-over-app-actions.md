@@ -4,7 +4,7 @@ implementation_status: not_started
 created: 2026-05-12
 ---
 
-# 0025. Keep Agent Tools Thin Over App Actions
+# 0031. Keep Agent Tools Thin Over App Actions
 
 ## Context
 
@@ -47,5 +47,5 @@ UI, CLI, scheduler, and agent tools should share behavior through app actions.
 
 ## Related
 
-- ADR 0010: Use App Actions As Shared Write Boundary
-- ADR 0024: Use Worktrees For Experiment Isolation
+- ADR 0016: Use App Actions As Shared Write Boundary
+- ADR 0030: Use Worktrees For Experiment Isolation
