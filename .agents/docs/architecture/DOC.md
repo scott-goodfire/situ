@@ -15,7 +15,8 @@ The backend should feel closer to Linear than to a workflow engine:
 - agents create and move ordinary tasks
 - handoff content is markdown, not a private payload format
 - assignment is visible, reversible, and inspectable
-- stale work is inferred from quiet owners or delegates, not lease machinery
+- notifications wake sleeping agents like an inbox, not a workflow queue
+- stale work is inferred from quiet assignees, not lease machinery
 - labels carry nuance that should not become status sprawl
 - views are derived from records, not separate workflow state
 - the same primitives power the UI, API, CLI, and agent tools
@@ -23,31 +24,37 @@ The backend should feel closer to Linear than to a workflow engine:
 The backend should avoid secret control flow. If something important happened,
 there should be a visible record a human can read.
 
+Humans should not need to operate the primitive board directly. The normal human
+experience is goal entry, progress summaries, read-only inspection, final
+reports, and occasional steering. Agents use the primitives the way humans use a
+focused issue tracker.
+
 ```text
-User goal
+Human goal
   -> Project
-      -> Tasks
-          -> agent comments, experiments, measurements, reviews, artifacts
-      -> Report
+      -> agent workspace
+          -> tasks, comments, notifications
+          -> experiments, measurements, reviews, artifacts
+      -> human summary views and reports
 ```
 
-## Linear Parallels
+## Human Linear Parallels
 
-Situ is not a Linear clone, but Linear is the right product reference for the
-backend shape. The data model should feel like an issue tracker that agents can
-use naturally.
+Situ is not a Linear clone, and Linear's agent features are not the reference
+point. The useful reference is how humans use Linear to coordinate work through
+clear primitives: issues, comments, statuses, labels, attachments, and saved
+views.
 
 ```text
-Linear issue           -> Situ Task
-Linear issue status    -> Situ Task status
-Linear label           -> Situ Task label
-Linear issue comment   -> Situ Comment
-Linear attachment      -> Situ Artifact
-Linear project         -> Situ Project
-Linear user/app user   -> Situ human actor / Agent
-Linear agent session   -> Situ Thread
-Linear activity feed   -> Situ Event timeline
-Linear custom view     -> Situ derived view
+Human creates issue        -> Situ agent creates Task
+Human writes comment       -> Situ agent writes Comment
+Human moves status         -> Situ agent updates Task status
+Human assigns owner        -> Situ agent claims Task
+Human applies label        -> Situ agent applies Label
+Human attaches evidence    -> Situ agent creates Artifact
+Human saves filtered view  -> Situ derives a view from primitive fields
+Human checks activity      -> Situ records Events for audit/debug
+Human gets notified        -> Situ creates Notifications for sleeping agents
 ```
 
 The useful lesson is not the exact table names. It is the restraint:
@@ -55,10 +62,74 @@ The useful lesson is not the exact table names. It is the restraint:
 - status is navigation, not policy
 - labels classify work without creating new workflows
 - assignment says who owns the next action
-- delegation says an agent is working on someone's behalf
 - comments carry narrative handoff
+- notifications tell actors what needs their attention
 - activity/events explain what happened
 - custom views are saved queries over ordinary records
+
+Situ's product UI can be more summary-oriented than Linear because humans are
+not expected to live in the task board. The board still needs to be coherent
+because agents live there, and humans must be able to inspect it when something
+is surprising.
+
+## Related System Context
+
+Several current agent systems point in the same direction, but none should be
+copied wholesale.
+
+```text
+Codex /goal
+  persistent objective on an active runtime context
+  -> Situ Project goal + AgentSession context
+
+Cursor /orchestrate
+  fan out a large task across parallel agents
+  -> Situ Coordinator creates Tasks; workers claim them; synthesis reconciles
+
+Sakana AI Scientist-v2
+  progressive agentic tree search over experiments
+  -> Situ Experiments form lineage; Measurements/Reviews score branches
+```
+
+The shared pattern is durable intent plus visible work products. The system
+should not hide the search in a private run graph when tasks, comments,
+experiments, measurements, reviews, and artifacts can explain it.
+
+```text
+Project goal
+  -> Coordinator task
+      -> Explorer tasks
+      -> Scientist experiment tasks
+          -> Experiments
+              -> Measurements
+              -> Reviews
+      -> Synthesis task
+      -> Report artifact
+```
+
+Long-running autonomy should look like a series of human-readable checkpoints:
+current objective, active task, evidence produced, review state, and next
+decision. That maps to Codex-style goals without making an agent session the
+product source of truth.
+
+GitHub pull request review is also a useful analogy. A Linear issue describes
+intended work. A GitHub pull request proposes a concrete branch. CI checks
+produce evidence. Reviews approve, comment, or request changes. Review
+discussion happens around the proposed change. Situ should mirror that shape:
+
+```text
+Task          -> issue-like intended work
+Experiment    -> PR-like candidate branch
+Measurement   -> CI/check-like observed evidence
+Review        -> approve/request-changes-like judgment
+Comment       -> review discussion and handoff
+Notification  -> inbox item that wakes the right agent
+```
+
+The important detail is revision awareness. An experiment can keep the same
+identity while its candidate commit changes during review. Measurements and
+reviews name the commit/evidence they observed so an old approval does not
+silently apply to a new candidate.
 
 ## Design Principles
 
@@ -111,7 +182,8 @@ Packages are useful when they make the backend easier to reason about:
 
 Do not create packages for tiny helpers that are only used in one place. Do
 extract packages for durable concepts such as tasks, comments, experiments, and
-reviews.
+reviews. Notifications also deserve a package because they are an inbox
+primitive, not scheduler-local state.
 
 New primitive packages are for concepts with their own lifecycle, UI surface,
 sync records, repository, and tests. Extend an existing package when the new
@@ -124,6 +196,7 @@ The backend automates only the boring infrastructure:
 
 - start and resume Managed Agent sessions
 - expose tools that mutate durable records
+- create inbox notifications from visible state changes
 - notice stale assignments
 - run commands in the right workspace
 - store events and outputs
@@ -154,15 +227,21 @@ It records:
 - goal markdown
 - status: `active`, `paused`, `complete`, `failed`, `canceled`
 - current baseline summary
+- current answer summary
+- open questions summary
 - final result summary
 - timestamps
 
 The project is the top-level container. It should not own complex workflow
 state. The visible task board owns the current state of the run.
 
+`Project` is the human-level object. It is where the user's objective, current
+answer, open questions, and final outcome belong. Agent sessions may carry the
+goal in context, but the project record is the durable source of truth.
+
 ### Task
 
-A `Task` is the main unit of planning, handoff, execution, and review.
+A `Task` is the main unit of agent planning, handoff, execution, and review.
 It is the Situ equivalent of a Linear issue.
 
 It records:
@@ -174,8 +253,7 @@ It records:
 - priority
 - creator actor
 - assignee actor
-- delegated agent, when different from the assignee
-- active thread, when a Managed Agent is currently working
+- active agent session, when a Managed Agent is currently working
 - parent task
 - project
 - target record, when useful
@@ -209,19 +287,18 @@ Task ownership should stay simple:
 
 - `assigneeActorId` is the visible owner of the next action.
 - `assigneeActorKind` says whether that owner is a human, agent, or system.
-- `delegatedAgentId` is optional and means an agent is working on behalf of the
-  assignee.
-- `activeThreadId` points at transport state and should not be used as
+- `activeAgentSessionId` points at transport state and should not be used as
   ownership.
 
 For a fully autonomous run, assigning a task directly to a scientist agent is
-fine. For human-supervised work, assign the task to the human or coordinator and
-set `delegatedAgentId` to the working agent. Do not create a second ownership
-model in scheduler state.
+the normal case. Human steering is captured in the project goal, comments, and
+high-level controls, not in a second ownership model. If the product later
+needs separate "accountable owner" and "current worker" fields, add them only
+after the distinction is visible in the human UI.
 
 Task detail is the canonical page for handoff context. It should render:
 
-- title, body, status, type, priority, assignee, delegated agent, and labels
+- title, body, status, type, priority, assignee, and labels
 - parent and child tasks
 - linked target record
 - comments
@@ -229,7 +306,8 @@ Task detail is the canonical page for handoff context. It should render:
 - experiments and measurements linked to the task
 - artifacts
 - event timeline
-- active or recent threads
+- related notifications
+- active or recent agent sessions
 
 ### Label
 
@@ -275,9 +353,42 @@ confusing, what should be reviewed next. Do not store large logs in comments.
 Logs belong in artifacts, with the comment linking to the artifact and
 summarizing the useful part.
 
+### Notification
+
+A `Notification` is an inbox item for an actor.
+
+It records:
+
+- recipient actor
+- type
+- target record
+- title
+- optional markdown body
+- read timestamp
+- acted timestamp
+- delivery attempt timestamps, when useful
+- created timestamp
+
+Notifications are wake triggers, not workflow jobs. They say "this needs your
+attention"; the agent still wakes up, reads the target task or experiment, and
+decides what to do through normal tools.
+
+Examples:
+
+- a task is assigned to an agent
+- a task moves to `in_review` and a verifier should inspect it
+- a verifier requests changes on an experiment
+- a comment mentions an agent
+- human steering updates the project goal or priority
+
+Unread notifications are the scheduler's main signal for waking sleeping
+agents. Marking a notification read or acted is visible inbox state, not a
+lease.
+
 ### Experiment
 
-An `Experiment` is a concrete candidate attempt.
+An `Experiment` is a concrete candidate attempt. It is closest to a pull
+request: a stable candidate branch that may receive more commits during review.
 
 It records:
 
@@ -285,12 +396,18 @@ It records:
 - associated task
 - worktree path
 - base commit
-- candidate commit
+- current candidate commit
 - status: `active`, `kept`, `discarded`, `crashed`, `invalid`
 - parent experiment, when it branches from a prior candidate
 
 Experiments are for candidate lineage. They should not replace tasks. The task
 explains the assignment; the experiment records what was actually tried.
+
+Do not create a new experiment for every requested fix. If the scientist is
+fixing the same candidate branch after review feedback, update the same
+experiment's candidate commit and attach new measurements and reviews to that
+commit. Create a child experiment when the idea branches into a meaningfully
+different approach.
 
 Use an experiment when there is a concrete candidate attempt with evidence. Do
 not create experiments for vague ideas, reading notes, or one-off questions.
@@ -309,6 +426,7 @@ A `Measurement` is an observed result.
 It records:
 
 - experiment or task target
+- observed commit, when the target is an experiment
 - metric name
 - value
 - unit or direction, when known
@@ -322,6 +440,10 @@ Measurements should be boring observations, not conclusions. A measurement can
 say `dev_accuracy = 0.755556`; a review or comment should say whether that
 number is trustworthy or useful.
 
+Measurements should be revision-aware when code changed. If an experiment moves
+from commit `def222` to `ghi333`, the old measurements remain attached to
+`def222` and new measurements are recorded for `ghi333`.
+
 ### Review
 
 A `Review` is a verifier's judgment.
@@ -329,6 +451,8 @@ A `Review` is a verifier's judgment.
 It records:
 
 - target task, experiment, measurement, artifact, or report
+- reviewed commit, when the target is an experiment
+- reviewed measurements and artifacts, when relevant
 - status: `passed`, `failed`, `suspicious`, `needs_more_evidence`
 - markdown judgment
 - reviewer
@@ -340,6 +464,10 @@ reviews plus a synthesis task or comment that explains the decision.
 Reviews are the formal judgment primitive. Use them when the answer should be
 queryable later. Use comments for ordinary discussion.
 
+A review is a judgment of specific evidence. If the candidate commit changes,
+the previous review remains useful history but does not automatically approve
+the new commit.
+
 ### Artifact
 
 An `Artifact` is a file or generated body worth keeping.
@@ -350,6 +478,7 @@ It records:
 - kind: `patch`, `log`, `report`, `plot`, `dataset`, `other`
 - title
 - path
+- source commit, when the artifact was produced from an experiment worktree
 - media type
 - optional body markdown
 
@@ -380,9 +509,9 @@ does not need a full users package for the local single-user case; actor fields
 can store `actorKind` plus `actorId`. `Agent` records are only for managed agent
 actors that need role profile, model, remote id, and task filters.
 
-### Thread
+### AgentSession
 
-A `Thread` is a Claude Managed Agents session or subagent session thread.
+An `AgentSession` is a Claude Managed Agents runtime session.
 
 It records:
 
@@ -392,15 +521,15 @@ It records:
 - project or task context
 - status
 - last activity timestamp
-- raw event cursor
+- remote event cursor
 
-Threads are transport and observability records. They should not be the product
-source of truth. Product state lives in projects, tasks, comments, experiments,
-measurements, reviews, and artifacts.
+Agent sessions are transport and observability records. They should not be the
+product source of truth. Product state lives in projects, tasks, comments,
+notifications, experiments, measurements, reviews, and artifacts.
 
-If a thread vanishes, the task should still explain the work. If a task is
-deleted or moved, the thread should not keep acting as if the old product state
-is current.
+If an agent session vanishes, the task should still explain the work. If a task
+is deleted or moved, the agent session should not keep acting as if the old
+product state is current.
 
 ### Event
 
@@ -423,46 +552,54 @@ needs to read the update as part of its work, write a comment as well.
 
 ## How The Models Are Used
 
-The task detail page is the center of gravity. Most records should be reachable
-from a task, even when they can also be listed globally.
+Inside the agent workspace, the task detail page is the center of gravity. Most
+records should be reachable from a task, even when they can also be listed
+globally.
 
 ```text
 Project
   -> Task
       -> comments          # narrative handoff
+      -> notifications     # inbox wake triggers
       -> labels            # filterable nuance
       -> experiments        # concrete attempts
           -> measurements   # observed results
           -> artifacts      # logs, patches, reports, plots
           -> reviews        # judgments
       -> events             # audit trail
-      -> threads            # Managed Agents transport
+      -> agent sessions    # Managed Agents transport
 ```
 
 When choosing where data belongs:
 
-- create a task when someone may need to decide, do, verify, or summarize work
-- add a comment when someone needs narrative context
+- create a task when an agent may need to decide, do, verify, or summarize work
+- add a comment when another agent needs narrative context
+- create a notification when an actor should wake up or pay attention
 - add a label when the task should be easier to find or group
 - create an experiment when a concrete candidate attempt starts
 - create a measurement when an observed value should be queryable
 - create a review when a judgment should be queryable
 - create an artifact when output is too large, file-like, or worth preserving
 - record an event when the system needs an audit trail
-- update a thread when Claude transport state changes
+- update an agent session when Claude transport state changes
 
-The split between comments, events, and threads is important:
+The split between comments, notifications, events, and agent sessions is
+important:
 
 ```text
 Comment
   human-readable work narrative
   "I tried X, got Y, please verify Z"
 
+Notification
+  inbox item and wake trigger
+  "Changes requested on exp_123"
+
 Event
   append-only audit/debug fact
   "task.status changed from in_progress to in_review"
 
-Thread
+AgentSession
   Managed Agents transport state
   "remote session thread abc last emitted event cursor 42"
 ```
@@ -477,16 +614,19 @@ Review queue
   tasks where status = in_review
   plus reviews and latest measurements
 
-Delegated work
-  tasks where delegatedAgentId is not null
+Agent inbox
+  unread notifications grouped by recipient
+
+Active agent work
+  tasks assigned to an agent and currently active
 
 Experiment lineage
   experiments grouped by parentExperimentId
   plus measurements, reviews, and artifacts
 
 Stale assignments
-  tasks with assignee/delegated agent
-  plus threads/events older than threshold
+  assigned tasks
+  plus agent sessions/events older than threshold
 ```
 
 If a view cannot be expressed from primitives, first ask which primitive is
@@ -508,11 +648,12 @@ CLI
 Agent tools
   -> app actions
       -> package repositories
+      -> notifications
       -> events
 
 Scheduler
-  -> reads package repositories
-  -> wakes Managed Agent threads
+  -> reads unread notifications and stale activity
+  -> wakes Managed Agent sessions for notified agents
   -> writes visible comments/status changes
 ```
 
@@ -571,17 +712,27 @@ Labels: area:scoring, signal:promising
 Body: markdown context and acceptance criteria
     |
     v
-Scientist sees it, assigns self or becomes delegated agent, moves to in_progress
+Coordinator assigns scientist_1
+    |
+    v
+Notification: "Task assigned: Try weighted edit costs"
+Recipient: scientist_1
+    |
+    v
+Scientist wakes, reads notification, opens task, moves to in_progress
     |
     v
 Scientist records experiment + measurement, moves task to in_review
     |
     v
-Verifier sees it, records review, moves task to done or rejected
+Notification wakes verifier_1
+    |
+    v
+Verifier records review, moves task to done or requests changes
 ```
 
-No hidden function needs to parse a payload and trigger the next step. The board
-is the trigger.
+No hidden function needs to parse a payload and trigger the next step.
+Notifications wake agents; the board provides the context.
 
 ## Scheduler
 
@@ -590,8 +741,9 @@ The scheduler should be small. It should not own research policy.
 Responsibilities:
 
 - periodically inspect tasks and agents
-- wake agents whose filters match ready work
-- continue active agent threads while they are producing events
+- wake agents with unread notifications
+- create notifications for ready work when simple filters match
+- continue active agent sessions while they are producing events
 - mark quiet assignments as stale
 - unassign or requeue stale tasks after a visible comment/event
 - run recurring maintenance, such as sync pokes or report generation prompts
@@ -600,46 +752,59 @@ The scheduler should prefer human-like rules:
 
 ```text
 Task is backlog + unassigned + matches Scientist filter
-  -> wake or create a Scientist thread
-  -> assign or delegate visibly on the task
+  -> assign visibly on the task
+  -> create notification for scientist_1
+
+Notification is unread for scientist_1
+  -> wake or create a Scientist agent session
+  -> scientist_1 reads inbox and opens the target task
 
 Task is in_progress + assignee quiet for too long
   -> comment "No activity for 20m; returning to backlog"
   -> clear assignee
-  -> clear delegated agent
   -> move to backlog
 ```
 
-This is enough. Avoid a separate queue table unless the task board cannot answer
-a concrete operational question.
+This is enough. Avoid a separate workflow queue unless the task board and inbox
+cannot answer a concrete operational question.
 
 ## Staleness Instead of Leases
 
-Ordinary agent work uses visible assignment and activity timestamps.
+Ordinary agent work uses visible assignment, notifications, and activity
+timestamps.
 
 ```text
 Task
   assigneeActorKind = agent
   assigneeActorId = scientist_1
-  delegatedAgentId = null
-  activeThreadId = thread_123
+  activeAgentSessionId = agent_session_123
   status = in_progress
   lastActivityAt = 2026-05-12T10:20:00Z
 
-Thread
+AgentSession
   status = idle
   lastEventAt = 2026-05-12T10:21:00Z
 
+Notification
+  recipient = scientist_1
+  target = task_123
+  readAt = 2026-05-12T10:20:10Z
+  actedAt = null
+
 Scheduler sees no activity after threshold
   -> writes a comment
+  -> marks old notification acted or stale
   -> clears assignee
-  -> clears delegated agent
   -> moves task back to backlog
 ```
 
 This is intentionally less precise than a lease, but it is easier to understand
 and inspect. Explicit ownership records are reserved for command execution and
 worktree ownership, where collision risk is real.
+
+An unread or unacted notification can wake an agent more than once. That is
+acceptable. If the agent repeatedly wakes and produces no visible activity, the
+staleness rule writes a comment and returns the work to the board.
 
 ## Worktrees and Commands
 
@@ -666,6 +831,11 @@ Scientist claims task
 ```
 
 The task explains why the work exists. The experiment explains what changed.
+When review requests changes, the same scientist should normally reopen the
+same experiment worktree, commit a fix on the same candidate branch, record new
+measurements for the new commit, and resubmit for review. A replacement
+scientist can do the same by reading the task, comments, reviews, artifacts, and
+worktree state.
 
 Command execution has three layers:
 
@@ -687,15 +857,22 @@ stdout/stderr is stored as an artifact. Measurements are created only when the
 action parses real metric values from output. Failed commands still leave events
 and usually artifacts so the next agent can inspect the failure.
 
+When a command runs in an experiment worktree, artifacts and measurements record
+the commit they came from whenever that commit is known.
+`capture_candidate_commit` updates the experiment's current candidate commit; it
+does not erase prior
+measurements, reviews, or artifacts from older commits.
+
 ## Tools
 
 Agent tools should be thin wrappers around product actions:
 
 - list/search/get projects
 - list/search/get/update tasks
+- list unread notifications
+- mark notifications read or acted
 - create comments
 - assign/unassign tasks
-- delegate/undelegate tasks to agents
 - add/remove task labels
 - create experiments
 - create measurements
@@ -743,7 +920,6 @@ Task
   type: experiment
   status: backlog
   assignee: none
-  delegated agent: none
   labels: area:scoring, signal:promising, needs:measurement
 
 Body:
@@ -764,24 +940,25 @@ Body:
 
 The scientist does not need a private schema. It reads the task like a person.
 
-### Human delegation to agent
+### Human steering
 
 ```text
-Task
-  title: Check whether the ranking metric is stable
-  type: review
-  status: in_progress
-  assignee: scott
-  delegated agent: verifier_1
-  labels: needs:verification
+Human summary view:
+  Current best candidate improved dev_accuracy from 0.748148 to 0.755556.
+  The verifier flagged possible benchmark leakage.
 
-Comment from Scott:
-  Please verify the latest experiment and call out any measurement caveats.
-  I am staying assigned so this remains in my review queue, but verifier_1 can
-  do the first pass.
+Human steering input:
+  Prioritize leakage checks before running new scoring experiments.
+
+Coordinator action:
+  -> creates review task assigned to verifier_1
+  -> labels it needs:verification and risk:high
+  -> creates notification for verifier_1
+  -> comments with the human instruction
 ```
 
-Delegation is visible state, not an invisible queue message.
+The human does not need to manipulate task fields. The agent turns steering into
+ordinary board changes.
 
 ### Scientist to verifier
 
@@ -801,13 +978,45 @@ Comment on task:
 
 The verifier can inspect the experiment, measurement, artifact, and diff.
 
+### Requested changes on same experiment
+
+```text
+Review on exp_123:
+  reviewed commit: def222
+  status: needs_more_evidence
+
+Body:
+  Accuracy improved, but the weighting looks dev-specific. Please revise the
+  candidate before this counts as a win.
+
+Notification:
+  recipient: scientist_1
+  target: exp_123
+  title: Changes requested on exp_123
+
+Scientist wakes:
+  -> reads notification
+  -> opens task and review
+  -> reopens exp_123 worktree
+  -> commits ghi333 on the same candidate branch
+  -> records new measurements for ghi333
+  -> comments "Addressed review feedback"
+  -> moves task back to in_review
+
+Second review:
+  reviewed commit: ghi333
+  status: passed
+```
+
+The back-and-forth is PR-like. The experiment remains stable, but the evidence
+and reviews are tied to specific commits.
+
 ### Stale work recovery
 
 ```text
 Task: Try keyboard-distance scoring
 Status: in_progress
 Assignee: scientist_2
-Delegated agent: none
 Last activity: 45 minutes ago
 
 Scheduler comment:
@@ -817,7 +1026,6 @@ Scheduler comment:
 Task update:
   status: backlog
   assignee: none
-  delegated agent: none
 ```
 
 No invisible lease expired. The board says what happened.
@@ -864,12 +1072,13 @@ projects/app/packages/
   projects/
   tasks/
   comments/
+  notifications/
   experiments/
   measurements/
   reviews/
   artifacts/
   agents/
-  threads/
+  agent-sessions/
   events/
   worktrees/
   common/
@@ -961,9 +1170,10 @@ targetId = opaque id
 ```
 
 Use generic targets for comments, reviews, artifacts, and events where the point
-is "this record can attach to several primitive kinds." Use direct columns such
-as `taskId` or `experimentId` when the relationship is part of the primitive's
-identity or common query path.
+is "this record can attach to several primitive kinds." Notifications also use
+generic targets because the inbox can point at tasks, experiments, reviews,
+comments, or projects. Use direct columns such as `taskId` or `experimentId`
+when the relationship is part of the primitive's identity or common query path.
 
 Actor references use the same explicit shape:
 
@@ -1048,6 +1258,7 @@ agent tool
 scheduler rule
   -> app action
       -> package mutations/repositories
+      -> notifications when another actor should pay attention
       -> events/comments when user-visible
       -> sync version bump
 ```
@@ -1057,14 +1268,15 @@ one synced transaction. For example, claiming a task updates assignee, status,
 activity timestamp, and event/comment state together. Clients should not have to
 sequence partial writes when partial success would be confusing.
 
-Delegation follows the same rule. If assigning a delegated agent also starts or
-resumes a Managed Agent thread, the app action should update task delegation,
-thread state, event state, and sync state in one transaction where possible.
+AgentSession startup follows the same rule. If assigning an agent also starts or
+resumes a Managed Agent session, the app action should update task assignment,
+notification state, agent session state, event state, and sync state in one
+transaction where possible.
 
 The boundary also resolves the actor. UI, CLI, scheduler, and agent-tool callers
 pass a human or agent actor into the app action; package repositories store the
-resulting `createdByActor`, `assigneeActor`, `delegatedAgentId`, or event actor
-fields without knowing where the actor came from.
+resulting `createdByActor`, `assigneeActor`, or event actor fields without
+knowing where the actor came from.
 
 ### Repository vocabulary
 
@@ -1131,10 +1343,12 @@ Each package owns serialization for its own records and key prefixes. The app
 sync route composes package serializers into one pull response.
 
 ```text
-@situ/tasks       -> tasks/<task-id>
-@situ/tasks       -> task-labels/<label-id>
-@situ/comments    -> comments/<comment-id>
-@situ/experiments -> experiments/<experiment-id>
+@situ/tasks          -> tasks/<task-id>
+@situ/tasks          -> task-labels/<label-id>
+@situ/comments       -> comments/<comment-id>
+@situ/notifications  -> notifications/<notification-id>
+@situ/experiments    -> experiments/<experiment-id>
+@situ/agent-sessions -> agent-sessions/<agent-session-id>
 ```
 
 Sync membership is explicit. A package table does not reach the web UI merely
@@ -1162,6 +1376,7 @@ Store source-of-truth evidence. Derive summaries when possible.
 - Reviews store judgments.
 - Experiments store candidate lineage.
 - Tasks store visible work state.
+- Notifications store inbox state and wake intent.
 
 Values such as best score, active frontier, or branch health can be derived from
 those records. Materialize them only when the UI or scheduler needs fast reads,
@@ -1214,6 +1429,8 @@ Repository surface:
 - update goal markdown
 - update status
 - update baseline summary
+- update current answer summary
+- update open questions summary
 - update final result summary
 - list active and recent projects
 
@@ -1226,6 +1443,7 @@ Mutations:
 Package invariants:
 
 - a project has durable goal markdown
+- project summaries are human-facing and derived from current primitive records
 - terminal projects do not return to active without an explicit reopen mutation
 - project records serialize cleanly for Replicache
 
@@ -1244,11 +1462,10 @@ Repository surface:
 - create task
 - update title, body, type, status, priority, target, parent, and labels
 - assign and unassign an actor
-- delegate and undelegate an agent
-- attach and clear active thread
+- attach and clear active agent session
 - create, archive, and list labels
 - list by project, status, assignee, target, and updated timestamp
-- list by delegated agent, label, type, and priority
+- list by label, type, priority, and active agent session
 - find stale assigned tasks
 
 Mutations:
@@ -1259,8 +1476,6 @@ Mutations:
 - `task/assign`
 - `task/unassign`
 - `task/label`
-- `task/delegate_agent`
-- `task/undelegate_agent`
 
 Package invariants:
 
@@ -1268,9 +1483,7 @@ Package invariants:
 - task body is markdown
 - status changes update `lastActivityAt`
 - assignment changes are visible record changes, not hidden leases
-- delegation changes are visible record changes, not hidden queue messages
-- `delegatedAgentId` is present only when there is an assignee the agent is
-  acting on behalf of
+- `activeAgentSessionId` is transport state and does not replace assignment
 - parent tasks belong to the same project
 - labels are filter metadata; they do not trigger workflow by themselves
 - archived labels remain on existing tasks for history but are not suggested for
@@ -1301,9 +1514,39 @@ Package invariants:
 - comments are append-only except for soft deletion if needed
 - comments can cite other durable records by kind/id
 
+### `@situ/notifications`
+
+Owns actor inbox items.
+
+Records:
+
+- `notifications`
+
+Repository surface:
+
+- create notification
+- list unread by recipient
+- list recent by recipient
+- mark read
+- mark acted
+- mark stale or superseded when a task is requeued
+
+Mutations:
+
+- `notification/mark_read`
+- `notification/mark_acted`
+
+Package invariants:
+
+- notification recipient is an explicit actor
+- notification target is explicit
+- notifications wake agents but do not prescribe the action to take
+- read and acted timestamps are ordinary visible state, not leases
+- notifications can be regenerated when still relevant
+
 ### `@situ/experiments`
 
-Owns candidate attempts and lineage.
+Owns PR-like candidate attempts and lineage.
 
 Records:
 
@@ -1315,6 +1558,7 @@ Repository surface:
 - attach to task
 - set worktree path
 - set base and candidate commits
+- update current candidate commit
 - update status
 - list by task, project, parent experiment, and status
 
@@ -1330,6 +1574,8 @@ Package invariants:
 - every experiment belongs to a project
 - every experiment may point at the task that requested it
 - worktree path, base commit, and candidate commit are explicit fields
+- candidate commit may change as review feedback is addressed on the same branch
+- child experiments represent meaningfully different approaches, not every fix
 - discarded and invalid experiments remain visible
 
 ### `@situ/measurements`
@@ -1343,7 +1589,8 @@ Records:
 Repository surface:
 
 - create measurement
-- list by experiment, task, project, metric name, and created timestamp
+- list by experiment, task, project, metric name, observed commit, and created
+  timestamp
 - summarize latest metrics for a project
 
 Mutations:
@@ -1353,6 +1600,7 @@ Mutations:
 Package invariants:
 
 - measurement target is explicit
+- observed commit is stored when the measurement came from experiment code
 - metric name and value are indexed fields
 - raw command output or caveats live in markdown body or artifacts
 - measurements are append-only
@@ -1368,7 +1616,7 @@ Records:
 Repository surface:
 
 - create review
-- list by target, reviewer, status, and project
+- list by target, reviewer, status, reviewed commit, and project
 - summarize review status for a task or experiment
 
 Mutations:
@@ -1378,6 +1626,8 @@ Mutations:
 Package invariants:
 
 - review target is explicit
+- reviewed commit is stored when the review judged experiment code
+- cited measurements and artifacts identify the evidence under review
 - judgment body is markdown
 - multiple reviews may attach to one target
 - review status does not secretly transition task status; agents or app actions
@@ -1395,6 +1645,7 @@ Repository surface:
 
 - create artifact
 - list by target, kind, project, and created timestamp
+- list by source commit when applicable
 - resolve artifact path
 
 Mutations:
@@ -1406,6 +1657,7 @@ Package invariants:
 - artifact target is explicit
 - artifact path is inside a Situ-managed output directory unless marked
   external
+- source commit is stored when the artifact came from an experiment worktree
 - large output is stored by path, not copied into task markdown
 
 ### `@situ/agents`
@@ -1431,27 +1683,27 @@ Package invariants:
 
 - agent records are visible actors
 - role profile is descriptive and filter-oriented
-- agents can be assigned tasks directly or delegated tasks by another assignee
+- agents are assigned tasks directly, the same way a person would own work
 - default task filters describe what the agent is likely to claim; they are not
   hard permissions
 - agent records do not own product state; tasks, comments, reviews, and
   experiments do
 
-### `@situ/threads`
+### `@situ/agent-sessions`
 
-Owns Managed Agent sessions and session threads.
+Owns Managed Agent runtime sessions.
 
 Records:
 
-- `threads`
+- `agent_sessions`
 
 Repository surface:
 
-- create thread
-- attach thread to project, task, and agent
+- create agent session
+- attach agent session to project, task, and agent
 - store remote session id and remote session thread id
 - update status and last activity
-- list active, idle, failed, and stale threads
+- list active, idle, failed, and stale agent sessions
 
 Mutations:
 
@@ -1459,11 +1711,11 @@ Mutations:
 
 Package invariants:
 
-- thread records are transport and observability state
-- threads do not replace task assignment or task delegation
-- child Managed Agent session threads are first-class rows
-- task `activeThreadId` is a convenience pointer to the current thread, not the
-  source of truth for who owns the task
+- agent session records are transport and observability state
+- agent sessions do not replace task assignment
+- child Claude session threads are first-class `AgentSession` rows
+- task `activeAgentSessionId` is a convenience pointer to the current agent
+  session, not the source of truth for who owns the task
 
 ### `@situ/events`
 
@@ -1535,11 +1787,11 @@ task/create
 task/update
 task/assign
 task/unassign
-task/delegate_agent
-task/undelegate_agent
 task/update_status
 task/label
 comment/create
+notification/mark_read
+notification/mark_acted
 experiment/create
 experiment/update
 experiment/update_status
@@ -1569,13 +1821,24 @@ real external integration boundary.
 
 The web app should read the same durable records the agents use.
 
-Primary views:
+The primary human experience is summary-first:
+
+- project goal and current answer
+- best candidate and confidence
+- recent progress checkpoints
+- active blockers and questions
+- final report artifacts
+- read-only drilldown into evidence
+
+Inspection views expose the primitive board when a human wants to understand or
+steer the run:
 
 - project overview
+- agent inbox
 - task board
 - task detail
 - label-filtered task lists
-- delegated work
+- active agent work
 - experiment lineage
 - measurement table
 - review panel
@@ -1583,12 +1846,13 @@ Primary views:
 - report artifacts
 
 The UI should not need to understand hidden backend transitions. If the UI can
-render tasks, comments, experiments, measurements, reviews, artifacts, agents,
-threads, and events, it can explain the run.
+render tasks, comments, notifications, experiments, measurements, reviews,
+artifacts, agents, agent sessions, and events, it can explain the run.
 
-Saved views should be stored as query definitions over primitive fields:
-statuses, assignees, delegated agents, labels, targets, and timestamps. Do not
-materialize view membership unless performance demands it.
+Human-facing summaries should be generated from the same records, not from
+agent memory. Saved inspection views should be stored as query definitions over
+primitive fields: statuses, assignees, labels, targets, active agent sessions, and
+timestamps. Do not materialize view membership unless performance demands it.
 
 ## Managed Agents Integration
 
@@ -1601,11 +1865,13 @@ The backend should persist:
 - remote session thread ids
 - raw events
 - tool calls and results
+- notification read/acted state
 - last activity timestamps
 
-For multiagent sessions, child session threads should become `Thread` records.
-Tool calls from child threads should include the originating thread id in tool
-context. The tool should still mutate normal product records.
+For multiagent sessions, child Claude session threads should become
+`AgentSession` records. Tool calls from child sessions should include the local
+`agentSessionId` and the remote Claude thread id in tool context. The tool
+should still mutate normal product records.
 
 ```text
 Claude session thread
@@ -1615,11 +1881,15 @@ Claude session thread
       -> UI updates
 ```
 
-The thread is how Claude communicated. The task is what changed.
+The agent session is how Claude communicated. The task is what changed.
+The notification is why the agent woke up.
 
 Managed Agent activity should be projected into product records by audience:
 
 ```text
+actor should wake or pay attention
+  -> Notification
+
 tool call started/finished
   -> Event
 
@@ -1636,12 +1906,12 @@ final judgment
   -> Review or Comment
 
 transport cursor, remote ids, raw callback metadata
-  -> Thread
+  -> AgentSession
 ```
 
-This keeps the Claude integration replaceable. If the agent platform changes,
-the product history still reads as tasks, comments, experiments, measurements,
-reviews, artifacts, and events.
+This keeps Claude transport state from leaking into the product model. The
+product history should read as tasks, comments, notifications, experiments,
+measurements, reviews, artifacts, and events.
 
 ## Reporting
 
@@ -1656,6 +1926,7 @@ Reporter input:
 - reviews
 - artifacts
 - important comments and events
+- unresolved notifications when they explain current blockers
 
 Reporter output:
 
@@ -1675,7 +1946,9 @@ Package behavior is tested where the behavior lives.
 - app actions have tests at the action boundary
 - sync composition has tests for push, pull, deletion, and key prefixes
 - worktree and command execution have tests with temporary directories
-- scheduler rules have tests over visible task, agent, thread, and event rows
+- scheduler rules have tests over visible task, agent, agent session, and event rows
+- notification wake rules have tests over unread, read, acted, and stale inbox
+  rows
 
 Tests do not call live LLMs. Model-dependent behavior lives in evals. Live evals
 assert against durable records, not final prose alone.
