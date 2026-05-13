@@ -1,6 +1,6 @@
-import type { ActorRef, IsoTimestamp, TargetRef } from "@situ/common";
+import type { ActorRef, IsoTimestamp, SyncMetadata, TargetRef } from "@situ/common";
 
-export type MeasurementRecord = {
+export type MeasurementRecord = SyncMetadata & {
   id: string;
   projectId: string;
   target: TargetRef;

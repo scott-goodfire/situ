@@ -1,6 +1,6 @@
-import type { ActorRef, IsoTimestamp, TargetRef } from "@situ/common";
+import type { ActorRef, IsoTimestamp, SyncMetadata, TargetRef } from "@situ/common";
 
-export type CommentRecord = {
+export type CommentRecord = SyncMetadata & {
   id: string;
   target: TargetRef;
   author: ActorRef;

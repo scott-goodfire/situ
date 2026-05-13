@@ -31,6 +31,8 @@ export type MeasurementRepository = {
 
 const encodeMeasurement = ({ measurement }: MeasurementWriteInput) => ({
   id: measurement.id,
+  syncVersion: measurement.syncVersion,
+  syncDeleted: measurement.syncDeleted,
   projectId: measurement.projectId,
   targetKind: measurement.target.targetKind,
   targetId: measurement.target.targetId,
@@ -46,6 +48,8 @@ const encodeMeasurement = ({ measurement }: MeasurementWriteInput) => ({
 
 const decodeMeasurement = ({ row }: { row: MeasurementRow }): MeasurementRecord => ({
   id: row.id,
+  syncVersion: row.syncVersion,
+  syncDeleted: row.syncDeleted,
   projectId: row.projectId,
   target: {
     targetKind: row.targetKind,

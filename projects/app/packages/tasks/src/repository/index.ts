@@ -1,5 +1,5 @@
 import { NotFoundError } from "@situ/errors";
-import { eq } from "drizzle-orm";
+import { eq, isNotNull } from "drizzle-orm";
 import type { BunSQLiteDatabase } from "drizzle-orm/bun-sqlite";
 
 import {
@@ -42,6 +42,7 @@ export type TaskRepository = {
   get(input: TaskByIdInput): TaskRecord | undefined;
   getLabel(input: LabelByIdInput): LabelRecord | undefined;
   listLabels(): LabelRecord[];
+  listAssignedToAgents(): TaskRecord[];
   require(input: TaskByIdInput): TaskRecord;
   requireLabel(input: LabelByIdInput): LabelRecord;
   listByProject(input: TaskByProjectInput): TaskRecord[];
@@ -59,6 +60,8 @@ type TaskRecordInput = {
 
 const encodeTask = ({ task }: TaskRecordInput): NewTaskRow => ({
   id: task.id,
+  syncVersion: task.syncVersion,
+  syncDeleted: task.syncDeleted,
   projectId: task.projectId,
   title: task.title,
   bodyMarkdown: task.bodyMarkdown,
@@ -103,6 +106,8 @@ const decodeTarget = ({ row }: TaskRowInput): TaskRecord["target"] => {
 
 const decodeTask = ({ row }: TaskRowInput): TaskRecord => ({
   id: row.id,
+  syncVersion: row.syncVersion,
+  syncDeleted: row.syncDeleted,
   projectId: row.projectId,
   title: row.title,
   bodyMarkdown: row.bodyMarkdown,
@@ -125,6 +130,8 @@ const decodeTask = ({ row }: TaskRowInput): TaskRecord => ({
 
 const encodeLabel = ({ label }: LabelWriteInput): NewLabelRow => ({
   id: label.id,
+  syncVersion: label.syncVersion,
+  syncDeleted: label.syncDeleted,
   name: label.name,
   color: label.color ?? null,
   archivedAt: label.archivedAt ?? null,
@@ -134,6 +141,8 @@ const encodeLabel = ({ label }: LabelWriteInput): NewLabelRow => ({
 
 const decodeLabel = ({ row }: { row: LabelRow }): LabelRecord => ({
   id: row.id,
+  syncVersion: row.syncVersion,
+  syncDeleted: row.syncDeleted,
   name: row.name,
   color: row.color ?? undefined,
   archivedAt: row.archivedAt ?? undefined,
@@ -182,6 +191,16 @@ export const createTaskRepository = ({ db }: CreateTaskRepositoryInput): TaskRep
         .from(labels)
         .all()
         .map((row) => decodeLabel({ row }));
+    },
+
+    listAssignedToAgents() {
+      return db
+        .select()
+        .from(tasks)
+        .where(isNotNull(tasks.assigneeActorId))
+        .all()
+        .map((row) => decodeTask({ row }))
+        .filter((task) => task.assignee?.actorKind === "agent");
     },
 
     require({ id }) {

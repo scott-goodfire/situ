@@ -31,6 +31,8 @@ export type ReviewRepository = {
 
 const encodeReview = ({ review }: ReviewWriteInput) => ({
   id: review.id,
+  syncVersion: review.syncVersion,
+  syncDeleted: review.syncDeleted,
   projectId: review.projectId,
   targetKind: review.target.targetKind,
   targetId: review.target.targetId,
@@ -47,6 +49,8 @@ const encodeReview = ({ review }: ReviewWriteInput) => ({
 
 const decodeReview = ({ row }: { row: ReviewRow }): ReviewRecord => ({
   id: row.id,
+  syncVersion: row.syncVersion,
+  syncDeleted: row.syncDeleted,
   projectId: row.projectId,
   target: {
     targetKind: row.targetKind,

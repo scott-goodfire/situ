@@ -1,6 +1,7 @@
-import { SYSTEM_ACTOR } from "@situ/common";
+import { createSyncMetadata } from "@situ/common";
 import type { CommentRecord } from "@situ/comments";
 
+import { resolveActionActor } from "./actors";
 import { recordEvent } from "./events";
 import type { AppRepositories } from "./repositories";
 import { ensureTargetExists, updateTargetActivity } from "./targets";
@@ -22,7 +23,10 @@ export const addComment = ({
   now,
   repositories,
 }: AddCommentInput): CommentRecord => {
-  const actor = input.actor ?? SYSTEM_ACTOR;
+  const actor = resolveActionActor({
+    actor: input.actor,
+    repositories,
+  });
   const timestamp = now();
 
   ensureTargetExists({
@@ -37,6 +41,7 @@ export const addComment = ({
       citedTargets: input.citedTargets ?? [],
       createdAt: timestamp,
       id: input.id ?? createId("comment"),
+      ...createSyncMetadata(),
       target: input.target,
       updatedAt: timestamp,
     },

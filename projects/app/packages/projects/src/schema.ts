@@ -1,4 +1,4 @@
-import { sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 import type { ProjectStatus } from "./types";
 
@@ -6,6 +6,8 @@ export const PROJECTS_TABLE = "projects";
 
 export const projects = sqliteTable(PROJECTS_TABLE, {
   id: text("id").primaryKey(),
+  syncVersion: integer("sync_version").notNull(),
+  syncDeleted: integer("sync_deleted", { mode: "boolean" }).notNull(),
   goalMarkdown: text("goal_markdown").notNull(),
   status: text("status").$type<ProjectStatus>().notNull(),
   currentBaselineSummary: text("current_baseline_summary").notNull(),

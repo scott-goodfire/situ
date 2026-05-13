@@ -9,6 +9,8 @@ const timestamp = "2026-05-12T12:00:00.000Z";
 
 const createExperiment = (): ExperimentRecord => ({
   id: "experiment_1",
+  syncVersion: 1,
+  syncDeleted: false,
   projectId: "project_1",
   taskId: "task_1",
   title: "Try wider beam search",
@@ -26,6 +28,8 @@ test("creates, lists, and revises experiments", () => {
   db.run(`
     CREATE TABLE experiments (
       id TEXT PRIMARY KEY,
+      sync_version INTEGER NOT NULL,
+      sync_deleted INTEGER NOT NULL,
       project_id TEXT NOT NULL,
       task_id TEXT,
       parent_experiment_id TEXT,

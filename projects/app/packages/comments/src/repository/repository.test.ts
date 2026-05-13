@@ -9,6 +9,8 @@ test("creates and lists comments by target", () => {
   db.run(`
     CREATE TABLE comments (
       id TEXT PRIMARY KEY,
+      sync_version INTEGER NOT NULL,
+      sync_deleted INTEGER NOT NULL,
       target_kind TEXT NOT NULL,
       target_id TEXT NOT NULL,
       author_actor_kind TEXT NOT NULL,
@@ -31,6 +33,8 @@ test("creates and lists comments by target", () => {
       citedTargets: [],
       createdAt: "2026-05-12T00:00:00.000Z",
       id: "comment_1",
+      syncVersion: 1,
+      syncDeleted: false,
       target: {
         targetKind: "task",
         targetId: "task_1",

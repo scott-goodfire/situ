@@ -39,6 +39,8 @@ type CommentRowInput = {
 
 const encodeComment = ({ comment }: CommentRecordInput): NewCommentRow => ({
   id: comment.id,
+  syncVersion: comment.syncVersion,
+  syncDeleted: comment.syncDeleted,
   targetKind: comment.target.targetKind,
   targetId: comment.target.targetId,
   authorActorKind: comment.author.actorKind,
@@ -51,6 +53,8 @@ const encodeComment = ({ comment }: CommentRecordInput): NewCommentRow => ({
 
 const decodeComment = ({ row }: CommentRowInput): CommentRecord => ({
   id: row.id,
+  syncVersion: row.syncVersion,
+  syncDeleted: row.syncDeleted,
   target: {
     targetKind: row.targetKind,
     targetId: row.targetId,

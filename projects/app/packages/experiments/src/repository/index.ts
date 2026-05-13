@@ -38,6 +38,8 @@ const encodeExperiment = ({ experiment }: ExperimentWriteInput) => ({
 
 const decodeExperiment = ({ row }: { row: ExperimentRow }): ExperimentRecord => ({
   id: row.id,
+  syncVersion: row.syncVersion,
+  syncDeleted: row.syncDeleted,
   projectId: row.projectId,
   taskId: row.taskId ?? undefined,
   parentExperimentId: row.parentExperimentId ?? undefined,

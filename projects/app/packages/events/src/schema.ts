@@ -1,10 +1,12 @@
 import type { ActorKind, TargetKind } from "@situ/common";
-import { sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 export const EVENTS_TABLE = "events";
 
 export const events = sqliteTable(EVENTS_TABLE, {
   id: text("id").primaryKey(),
+  syncVersion: integer("sync_version").notNull(),
+  syncDeleted: integer("sync_deleted", { mode: "boolean" }).notNull(),
   type: text("type").notNull(),
   actorKind: text("actor_kind").$type<ActorKind>().notNull(),
   actorId: text("actor_id").notNull(),

@@ -9,6 +9,8 @@ test("creates, gets, and updates projects", () => {
   db.run(`
     CREATE TABLE projects (
       id TEXT PRIMARY KEY,
+      sync_version INTEGER NOT NULL,
+      sync_deleted INTEGER NOT NULL,
       goal_markdown TEXT NOT NULL,
       status TEXT NOT NULL,
       current_baseline_summary TEXT NOT NULL,
@@ -34,6 +36,8 @@ test("creates, gets, and updates projects", () => {
       finalResultSummary: "",
       goalMarkdown: "Find the best answer.",
       id: "project_1",
+      syncVersion: 1,
+      syncDeleted: false,
       openQuestionsSummary: "",
       progressCheckpointsSummary: "",
       status: "active",

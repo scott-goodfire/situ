@@ -52,6 +52,8 @@ const decodeAgentSession = ({
   row: typeof agentSessions.$inferSelect;
 }): AgentSessionRecord => ({
   id: row.id,
+  syncVersion: row.syncVersion,
+  syncDeleted: row.syncDeleted,
   agentId: row.agentId,
   parentAgentSessionId: row.parentAgentSessionId ?? undefined,
   remoteClaudeAgentId: row.remoteClaudeAgentId ?? undefined,

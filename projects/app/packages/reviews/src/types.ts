@@ -1,4 +1,4 @@
-import type { ActorRef, IsoTimestamp, TargetRef } from "@situ/common";
+import type { ActorRef, IsoTimestamp, SyncMetadata, TargetRef } from "@situ/common";
 
 export const REVIEW_STATUSES = [
   "approved",
@@ -10,7 +10,7 @@ export const REVIEW_STATUSES = [
 
 export type ReviewStatus = (typeof REVIEW_STATUSES)[number];
 
-export type ReviewRecord = {
+export type ReviewRecord = SyncMetadata & {
   id: string;
   projectId: string;
   target: TargetRef;

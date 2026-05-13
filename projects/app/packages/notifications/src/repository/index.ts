@@ -43,6 +43,8 @@ type NotificationRowInput = {
 
 const encodeNotification = ({ notification }: NotificationRecordInput): NewNotificationRow => ({
   id: notification.id,
+  syncVersion: notification.syncVersion,
+  syncDeleted: notification.syncDeleted,
   recipientActorKind: notification.recipient.actorKind,
   recipientActorId: notification.recipient.actorId,
   type: notification.type,
@@ -55,10 +57,13 @@ const encodeNotification = ({ notification }: NotificationRecordInput): NewNotif
   snoozedUntil: notification.snoozedUntil ?? null,
   deliveryAttemptedAt: notification.deliveryAttemptedAt ?? null,
   createdAt: notification.createdAt,
+  updatedAt: notification.updatedAt,
 });
 
 const decodeNotification = ({ row }: NotificationRowInput): NotificationRecord => ({
   id: row.id,
+  syncVersion: row.syncVersion,
+  syncDeleted: row.syncDeleted,
   recipient: {
     actorKind: row.recipientActorKind,
     actorId: row.recipientActorId,
@@ -75,6 +80,7 @@ const decodeNotification = ({ row }: NotificationRowInput): NotificationRecord =
   snoozedUntil: row.snoozedUntil ?? undefined,
   deliveryAttemptedAt: row.deliveryAttemptedAt ?? undefined,
   createdAt: row.createdAt,
+  updatedAt: row.updatedAt,
 });
 
 /**

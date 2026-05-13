@@ -9,6 +9,8 @@ test("creates wakeable notifications and updates inbox state", () => {
   db.run(`
     CREATE TABLE notifications (
       id TEXT PRIMARY KEY,
+      sync_version INTEGER NOT NULL,
+      sync_deleted INTEGER NOT NULL,
       recipient_actor_kind TEXT NOT NULL,
       recipient_actor_id TEXT NOT NULL,
       type TEXT NOT NULL,
@@ -20,7 +22,8 @@ test("creates wakeable notifications and updates inbox state", () => {
       dismissed_at TEXT,
       snoozed_until TEXT,
       delivery_attempted_at TEXT,
-      created_at TEXT NOT NULL
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
     )
   `);
 
@@ -29,6 +32,8 @@ test("creates wakeable notifications and updates inbox state", () => {
     notification: {
       createdAt: "2026-05-12T00:00:00.000Z",
       id: "notification_1",
+      syncVersion: 1,
+      syncDeleted: false,
       recipient: {
         actorKind: "agent",
         actorId: "scientist_1",
@@ -39,6 +44,7 @@ test("creates wakeable notifications and updates inbox state", () => {
       },
       title: "Task assigned",
       type: "task_assigned",
+      updatedAt: "2026-05-12T00:00:00.000Z",
     },
   });
 
@@ -49,6 +55,8 @@ test("creates wakeable notifications and updates inbox state", () => {
     notification: {
       ...created,
       readAt: "2026-05-12T00:00:01.000Z",
+      syncVersion: 2,
+      updatedAt: "2026-05-12T00:00:01.000Z",
     },
   });
 

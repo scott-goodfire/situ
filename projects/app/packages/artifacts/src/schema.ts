@@ -1,5 +1,5 @@
 import type { ActorKind, TargetKind } from "@situ/common";
-import { sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 import type { ArtifactType } from "./types";
 
@@ -7,6 +7,8 @@ export const ARTIFACTS_TABLE = "artifacts";
 
 export const artifacts = sqliteTable(ARTIFACTS_TABLE, {
   id: text("id").primaryKey(),
+  syncVersion: integer("sync_version").notNull(),
+  syncDeleted: integer("sync_deleted", { mode: "boolean" }).notNull(),
   projectId: text("project_id").notNull(),
   targetKind: text("target_kind").$type<TargetKind>().notNull(),
   targetId: text("target_id").notNull(),

@@ -11,6 +11,14 @@ export const installSchema = ({ db }: InstallSchemaInput): void => {
   db.run("PRAGMA foreign_keys = ON");
 
   db.run(`
+    CREATE TABLE IF NOT EXISTS replicache_clients (
+      client_id TEXT PRIMARY KEY,
+      last_mutation_id INTEGER NOT NULL,
+      updated_at TEXT NOT NULL
+    )
+  `);
+
+  db.run(`
     CREATE TABLE IF NOT EXISTS replicache_mutations (
       client_id TEXT NOT NULL,
       mutation_id INTEGER NOT NULL,
@@ -20,8 +28,18 @@ export const installSchema = ({ db }: InstallSchemaInput): void => {
   `);
 
   db.run(`
+    CREATE TABLE IF NOT EXISTS sync_state (
+      id TEXT PRIMARY KEY,
+      last_version INTEGER NOT NULL,
+      updated_at TEXT NOT NULL
+    )
+  `);
+
+  db.run(`
     CREATE TABLE IF NOT EXISTS projects (
       id TEXT PRIMARY KEY,
+      sync_version INTEGER NOT NULL,
+      sync_deleted INTEGER NOT NULL,
       goal_markdown TEXT NOT NULL,
       status TEXT NOT NULL,
       current_baseline_summary TEXT NOT NULL,
@@ -39,6 +57,8 @@ export const installSchema = ({ db }: InstallSchemaInput): void => {
   db.run(`
     CREATE TABLE IF NOT EXISTS agents (
       id TEXT PRIMARY KEY,
+      sync_version INTEGER NOT NULL,
+      sync_deleted INTEGER NOT NULL,
       name TEXT NOT NULL,
       role TEXT NOT NULL,
       instructions_markdown TEXT NOT NULL,
@@ -53,6 +73,8 @@ export const installSchema = ({ db }: InstallSchemaInput): void => {
   db.run(`
     CREATE TABLE IF NOT EXISTS agent_sessions (
       id TEXT PRIMARY KEY,
+      sync_version INTEGER NOT NULL,
+      sync_deleted INTEGER NOT NULL,
       agent_id TEXT NOT NULL,
       parent_agent_session_id TEXT,
       remote_claude_agent_id TEXT,
@@ -92,6 +114,8 @@ export const installSchema = ({ db }: InstallSchemaInput): void => {
   db.run(`
     CREATE TABLE IF NOT EXISTS labels (
       id TEXT PRIMARY KEY,
+      sync_version INTEGER NOT NULL,
+      sync_deleted INTEGER NOT NULL,
       name TEXT NOT NULL,
       color TEXT,
       archived_at TEXT,
@@ -105,6 +129,8 @@ export const installSchema = ({ db }: InstallSchemaInput): void => {
   db.run(`
     CREATE TABLE IF NOT EXISTS tasks (
       id TEXT PRIMARY KEY,
+      sync_version INTEGER NOT NULL,
+      sync_deleted INTEGER NOT NULL,
       project_id TEXT NOT NULL,
       title TEXT NOT NULL,
       body_markdown TEXT NOT NULL,
@@ -133,6 +159,8 @@ export const installSchema = ({ db }: InstallSchemaInput): void => {
   db.run(`
     CREATE TABLE IF NOT EXISTS experiments (
       id TEXT PRIMARY KEY,
+      sync_version INTEGER NOT NULL,
+      sync_deleted INTEGER NOT NULL,
       project_id TEXT NOT NULL,
       task_id TEXT,
       parent_experiment_id TEXT,
@@ -154,6 +182,8 @@ export const installSchema = ({ db }: InstallSchemaInput): void => {
   db.run(`
     CREATE TABLE IF NOT EXISTS measurements (
       id TEXT PRIMARY KEY,
+      sync_version INTEGER NOT NULL,
+      sync_deleted INTEGER NOT NULL,
       project_id TEXT NOT NULL,
       target_kind TEXT NOT NULL,
       target_id TEXT NOT NULL,
@@ -177,6 +207,8 @@ export const installSchema = ({ db }: InstallSchemaInput): void => {
   db.run(`
     CREATE TABLE IF NOT EXISTS artifacts (
       id TEXT PRIMARY KEY,
+      sync_version INTEGER NOT NULL,
+      sync_deleted INTEGER NOT NULL,
       project_id TEXT NOT NULL,
       target_kind TEXT NOT NULL,
       target_id TEXT NOT NULL,
@@ -202,6 +234,8 @@ export const installSchema = ({ db }: InstallSchemaInput): void => {
   db.run(`
     CREATE TABLE IF NOT EXISTS reviews (
       id TEXT PRIMARY KEY,
+      sync_version INTEGER NOT NULL,
+      sync_deleted INTEGER NOT NULL,
       project_id TEXT NOT NULL,
       target_kind TEXT NOT NULL,
       target_id TEXT NOT NULL,
@@ -223,6 +257,8 @@ export const installSchema = ({ db }: InstallSchemaInput): void => {
   db.run(`
     CREATE TABLE IF NOT EXISTS comments (
       id TEXT PRIMARY KEY,
+      sync_version INTEGER NOT NULL,
+      sync_deleted INTEGER NOT NULL,
       target_kind TEXT NOT NULL,
       target_id TEXT NOT NULL,
       author_actor_kind TEXT NOT NULL,
@@ -239,6 +275,8 @@ export const installSchema = ({ db }: InstallSchemaInput): void => {
   db.run(`
     CREATE TABLE IF NOT EXISTS notifications (
       id TEXT PRIMARY KEY,
+      sync_version INTEGER NOT NULL,
+      sync_deleted INTEGER NOT NULL,
       recipient_actor_kind TEXT NOT NULL,
       recipient_actor_id TEXT NOT NULL,
       type TEXT NOT NULL,
@@ -250,7 +288,8 @@ export const installSchema = ({ db }: InstallSchemaInput): void => {
       dismissed_at TEXT,
       snoozed_until TEXT,
       delivery_attempted_at TEXT,
-      created_at TEXT NOT NULL
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
     )
   `);
 
@@ -266,6 +305,8 @@ export const installSchema = ({ db }: InstallSchemaInput): void => {
   db.run(`
     CREATE TABLE IF NOT EXISTS events (
       id TEXT PRIMARY KEY,
+      sync_version INTEGER NOT NULL,
+      sync_deleted INTEGER NOT NULL,
       type TEXT NOT NULL,
       actor_kind TEXT NOT NULL,
       actor_id TEXT NOT NULL,

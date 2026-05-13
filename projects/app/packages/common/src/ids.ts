@@ -1,6 +1,7 @@
 export type IdPrefix =
   | "agent"
   | "agent_session"
+  | "agent_session_log"
   | "artifact"
   | "comment"
   | "event"

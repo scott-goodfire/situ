@@ -1,5 +1,5 @@
 import type { ActorKind, TargetKind } from "@situ/common";
-import { sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 import type { NotificationType } from "./types";
 
@@ -7,6 +7,8 @@ export const NOTIFICATIONS_TABLE = "notifications";
 
 export const notifications = sqliteTable(NOTIFICATIONS_TABLE, {
   id: text("id").primaryKey(),
+  syncVersion: integer("sync_version").notNull(),
+  syncDeleted: integer("sync_deleted", { mode: "boolean" }).notNull(),
   recipientActorKind: text("recipient_actor_kind").$type<ActorKind>().notNull(),
   recipientActorId: text("recipient_actor_id").notNull(),
   type: text("type").$type<NotificationType>().notNull(),
@@ -19,6 +21,7 @@ export const notifications = sqliteTable(NOTIFICATIONS_TABLE, {
   snoozedUntil: text("snoozed_until"),
   deliveryAttemptedAt: text("delivery_attempted_at"),
   createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
 });
 
 export type NotificationRow = typeof notifications.$inferSelect;

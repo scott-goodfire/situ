@@ -288,3 +288,24 @@ test("durable primitives support a Linear-like task handoff flow", () => {
     ]),
   );
 });
+
+test("app actions validate agent actors at the write boundary", () => {
+  const db = createInMemoryDatabase();
+  const actions = createAppActions({ db });
+  const project = actions.createProject({
+    goalMarkdown: "Find a better local search strategy.",
+  });
+
+  expect(() =>
+    actions.createTask({
+      assignee: {
+        actorKind: "agent",
+        actorId: "missing_agent",
+      },
+      bodyMarkdown: "Try one candidate branch.",
+      projectId: project.id,
+      title: "Run experiment",
+      type: "implementation",
+    }),
+  ).toThrow("Agent not found: missing_agent");
+});

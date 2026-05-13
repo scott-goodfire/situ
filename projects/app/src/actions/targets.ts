@@ -1,3 +1,4 @@
+import { advanceSyncMetadata } from "@situ/common";
 import type { TargetRef } from "@situ/common";
 import { InvalidArgumentError } from "@situ/errors";
 import type { AgentSessionRecord } from "@situ/agent-sessions";
@@ -214,6 +215,7 @@ export const updateTargetActivity = ({
     task: {
       ...task,
       lastActivityAt: timestamp,
+      ...advanceSyncMetadata({ record: task }),
       updatedAt: timestamp,
     },
   });

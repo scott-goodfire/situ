@@ -39,6 +39,8 @@ type EventRowInput = {
 
 const encodeEvent = ({ event }: EventRecordInput): NewEventRow => ({
   id: event.id,
+  syncVersion: event.syncVersion,
+  syncDeleted: event.syncDeleted,
   type: event.type,
   actorKind: event.actor.actorKind,
   actorId: event.actor.actorId,
@@ -51,6 +53,8 @@ const encodeEvent = ({ event }: EventRecordInput): NewEventRow => ({
 
 const decodeEvent = ({ row }: EventRowInput): EventRecord => ({
   id: row.id,
+  syncVersion: row.syncVersion,
+  syncDeleted: row.syncDeleted,
   type: row.type,
   actor: {
     actorKind: row.actorKind,

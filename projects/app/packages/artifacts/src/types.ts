@@ -1,10 +1,10 @@
-import type { ActorRef, IsoTimestamp, TargetRef } from "@situ/common";
+import type { ActorRef, IsoTimestamp, SyncMetadata, TargetRef } from "@situ/common";
 
 export const ARTIFACT_TYPES = ["log", "report", "patch", "chart", "dataset", "note"] as const;
 
 export type ArtifactType = (typeof ARTIFACT_TYPES)[number];
 
-export type ArtifactRecord = {
+export type ArtifactRecord = SyncMetadata & {
   id: string;
   projectId: string;
   target: TargetRef;

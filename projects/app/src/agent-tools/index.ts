@@ -7,6 +7,7 @@ import type {
   CreateMeasurementInput,
   CreateReviewInput,
   NotificationInput,
+  RunExperimentCommandInput,
   SnoozeNotificationInput,
 } from "../actions/types";
 
@@ -59,6 +60,10 @@ export const createAgentTools = ({ actions, repositories }: CreateAgentToolsInpu
     return repositories.notifications.listWakeableByRecipient({
       recipientId: agentId,
     });
+  },
+
+  runExperimentCommand(input: RunExperimentCommandInput) {
+    return actions.runExperimentCommand(input);
   },
 
   markNotificationRead(input: NotificationInput) {

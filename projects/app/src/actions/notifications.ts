@@ -1,16 +1,20 @@
-import { SYSTEM_ACTOR } from "@situ/common";
+import { advanceSyncMetadata, createSyncMetadata } from "@situ/common";
 import type { NotificationRecord } from "@situ/notifications";
 import type { TaskRecord } from "@situ/tasks";
 
+import { ensureActorExists, resolveActionActor } from "./actors";
 import { recordEvent } from "./events";
 import type { AppRepositories } from "./repositories";
-import { targetForNotification, targetForTask } from "./targets";
+import { ensureTargetExists, targetForNotification, targetForTask } from "./targets";
 import type { Clock, IdFactory, NotificationInput, SnoozeNotificationInput } from "./types";
 import type { RecordNotificationDeliveryAttemptInput } from "./types";
 
 export type CreateNotificationInput = {
   createId: IdFactory;
-  notification: Omit<NotificationRecord, "createdAt" | "id">;
+  notification: Omit<
+    NotificationRecord,
+    "createdAt" | "id" | "syncDeleted" | "syncVersion" | "updatedAt"
+  >;
   now: Clock;
   repositories: AppRepositories;
 };
@@ -31,10 +35,24 @@ export const createNotification = ({
   now,
   repositories,
 }: CreateNotificationInput): NotificationRecord => {
+  const timestamp = now();
+
+  ensureActorExists({
+    actor: notification.recipient,
+    repositories,
+  });
+
+  ensureTargetExists({
+    repositories,
+    target: notification.target,
+  });
+
   const candidate: NotificationRecord = {
     ...notification,
     id: createId("notification"),
-    createdAt: now(),
+    ...createSyncMetadata(),
+    createdAt: timestamp,
+    updatedAt: timestamp,
   };
   const existing = repositories.notifications.findOpenEquivalent({
     notification: candidate,
@@ -96,14 +114,20 @@ export const markNotificationRead = ({
   now: Clock;
   repositories: AppRepositories;
 }): NotificationRecord => {
-  const actor = input.actor ?? SYSTEM_ACTOR;
+  const actor = resolveActionActor({
+    actor: input.actor,
+    repositories,
+  });
+  const timestamp = now();
   const notification = repositories.notifications.require({
     id: input.notificationId,
   });
   const updated = repositories.notifications.update({
     notification: {
       ...notification,
-      readAt: now(),
+      readAt: timestamp,
+      ...advanceSyncMetadata({ record: notification }),
+      updatedAt: timestamp,
     },
   });
 
@@ -137,7 +161,11 @@ export const markNotificationUnread = ({
   now: Clock;
   repositories: AppRepositories;
 }): NotificationRecord => {
-  const actor = input.actor ?? SYSTEM_ACTOR;
+  const actor = resolveActionActor({
+    actor: input.actor,
+    repositories,
+  });
+  const timestamp = now();
   const notification = repositories.notifications.require({
     id: input.notificationId,
   });
@@ -145,6 +173,8 @@ export const markNotificationUnread = ({
     notification: {
       ...notification,
       readAt: undefined,
+      ...advanceSyncMetadata({ record: notification }),
+      updatedAt: timestamp,
     },
   });
 
@@ -178,14 +208,20 @@ export const dismissNotification = ({
   now: Clock;
   repositories: AppRepositories;
 }): NotificationRecord => {
-  const actor = input.actor ?? SYSTEM_ACTOR;
+  const actor = resolveActionActor({
+    actor: input.actor,
+    repositories,
+  });
+  const timestamp = now();
   const notification = repositories.notifications.require({
     id: input.notificationId,
   });
   const updated = repositories.notifications.update({
     notification: {
       ...notification,
-      dismissedAt: now(),
+      dismissedAt: timestamp,
+      ...advanceSyncMetadata({ record: notification }),
+      updatedAt: timestamp,
     },
   });
 
@@ -219,14 +255,20 @@ export const recordNotificationDeliveryAttempt = ({
   now: Clock;
   repositories: AppRepositories;
 }): NotificationRecord => {
-  const actor = input.actor ?? SYSTEM_ACTOR;
+  const actor = resolveActionActor({
+    actor: input.actor,
+    repositories,
+  });
+  const timestamp = now();
   const notification = repositories.notifications.require({
     id: input.notificationId,
   });
   const updated = repositories.notifications.update({
     notification: {
       ...notification,
-      deliveryAttemptedAt: now(),
+      deliveryAttemptedAt: timestamp,
+      ...advanceSyncMetadata({ record: notification }),
+      updatedAt: timestamp,
     },
   });
 
@@ -260,7 +302,11 @@ export const snoozeNotification = ({
   now: Clock;
   repositories: AppRepositories;
 }): NotificationRecord => {
-  const actor = input.actor ?? SYSTEM_ACTOR;
+  const actor = resolveActionActor({
+    actor: input.actor,
+    repositories,
+  });
+  const timestamp = now();
   const notification = repositories.notifications.require({
     id: input.notificationId,
   });
@@ -268,6 +314,8 @@ export const snoozeNotification = ({
     notification: {
       ...notification,
       snoozedUntil: input.snoozedUntil,
+      ...advanceSyncMetadata({ record: notification }),
+      updatedAt: timestamp,
     },
   });
 

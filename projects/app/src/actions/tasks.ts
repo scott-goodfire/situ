@@ -1,11 +1,12 @@
-import { SYSTEM_ACTOR } from "@situ/common";
+import { advanceSyncMetadata, createSyncMetadata } from "@situ/common";
 import type { TaskRecord } from "@situ/tasks";
 
+import { ensureActorExists, resolveActionActor } from "./actors";
 import { addComment } from "./comments";
 import { recordEvent } from "./events";
 import { createTaskAssignedNotification } from "./notifications";
 import type { AppRepositories } from "./repositories";
-import { targetForTask } from "./targets";
+import { ensureTargetExists, targetForTask } from "./targets";
 import type {
   AssignTaskInput,
   Clock,
@@ -77,12 +78,35 @@ export const createTaskAction = ({
   now,
   repositories,
 }: CreateTaskActionInput): TaskRecord => {
-  const actor = input.actor ?? SYSTEM_ACTOR;
+  const actor = resolveActionActor({
+    actor: input.actor,
+    repositories,
+  });
   const timestamp = now();
 
   repositories.projects.require({
     id: input.projectId,
   });
+
+  if (input.assignee !== undefined) {
+    ensureActorExists({
+      actor: input.assignee,
+      repositories,
+    });
+  }
+
+  if (input.parentTaskId !== undefined) {
+    repositories.tasks.require({
+      id: input.parentTaskId,
+    });
+  }
+
+  if (input.target !== undefined) {
+    ensureTargetExists({
+      repositories,
+      target: input.target,
+    });
+  }
 
   const task = repositories.tasks.create({
     task: {
@@ -96,6 +120,7 @@ export const createTaskAction = ({
       parentTaskId: input.parentTaskId,
       priority: input.priority ?? 0,
       projectId: input.projectId,
+      ...createSyncMetadata(),
       status: input.status ?? "backlog",
       target: input.target,
       title: input.title,
@@ -150,7 +175,14 @@ export const assignTaskAction = ({
   now,
   repositories,
 }: AssignTaskActionInput): TaskRecord => {
-  const actor = input.actor ?? SYSTEM_ACTOR;
+  const actor = resolveActionActor({
+    actor: input.actor,
+    repositories,
+  });
+  ensureActorExists({
+    actor: input.assignee,
+    repositories,
+  });
   const task = repositories.tasks.require({
     id: input.taskId,
   });
@@ -160,6 +192,7 @@ export const assignTaskAction = ({
       ...task,
       assignee: input.assignee,
       lastActivityAt: timestamp,
+      ...advanceSyncMetadata({ record: task }),
       updatedAt: timestamp,
     },
   });
@@ -190,7 +223,10 @@ export const updateTaskStatusAction = ({
   now,
   repositories,
 }: UpdateTaskStatusActionInput): TaskRecord => {
-  const actor = input.actor ?? SYSTEM_ACTOR;
+  const actor = resolveActionActor({
+    actor: input.actor,
+    repositories,
+  });
   const task = repositories.tasks.require({
     id: input.taskId,
   });
@@ -199,6 +235,7 @@ export const updateTaskStatusAction = ({
     task: {
       ...task,
       lastActivityAt: timestamp,
+      ...advanceSyncMetadata({ record: task }),
       status: input.status,
       updatedAt: timestamp,
     },

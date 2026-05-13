@@ -1,4 +1,4 @@
-import type { ActorRef, IsoTimestamp, TargetRef } from "@situ/common";
+import type { ActorRef, IsoTimestamp, SyncMetadata, TargetRef } from "@situ/common";
 
 export const TASK_STATUSES = [
   "triage",
@@ -23,7 +23,7 @@ export const TASK_TYPES = [
 
 export type TaskType = (typeof TASK_TYPES)[number];
 
-export type LabelRecord = {
+export type LabelRecord = SyncMetadata & {
   id: string;
   name: string;
   color?: string;
@@ -32,7 +32,7 @@ export type LabelRecord = {
   updatedAt: IsoTimestamp;
 };
 
-export type TaskRecord = {
+export type TaskRecord = SyncMetadata & {
   id: string;
   projectId: string;
   title: string;

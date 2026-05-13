@@ -1,4 +1,4 @@
-import type { IsoTimestamp, TargetRef } from "@situ/common";
+import type { IsoTimestamp, SyncMetadata, TargetRef } from "@situ/common";
 
 export const AGENT_SESSION_STATUSES = ["active", "idle", "failed", "closed"] as const;
 
@@ -8,7 +8,7 @@ export const AGENT_SESSION_LOG_TYPES = ["remote_event", "tool_call", "tool_resul
 
 export type AgentSessionLogType = (typeof AGENT_SESSION_LOG_TYPES)[number];
 
-export type AgentSessionRecord = {
+export type AgentSessionRecord = SyncMetadata & {
   id: string;
   agentId: string;
   parentAgentSessionId?: string;

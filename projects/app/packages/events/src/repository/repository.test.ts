@@ -9,6 +9,8 @@ test("creates and lists events by target", () => {
   db.run(`
     CREATE TABLE events (
       id TEXT PRIMARY KEY,
+      sync_version INTEGER NOT NULL,
+      sync_deleted INTEGER NOT NULL,
       type TEXT NOT NULL,
       actor_kind TEXT NOT NULL,
       actor_id TEXT NOT NULL,
@@ -29,6 +31,8 @@ test("creates and lists events by target", () => {
       },
       createdAt: "2026-05-12T00:00:00.000Z",
       id: "event_1",
+      syncVersion: 1,
+      syncDeleted: false,
       message: "Task created",
       payload: {
         taskId: "task_1",

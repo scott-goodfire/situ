@@ -51,7 +51,14 @@ export const createServer = ({ db = createDatabase() }: CreateServerInput = {}) 
   );
 
   app.post("/api/replicache/pull", (context) =>
-    context.req.json().then(() => context.json(createPullResponse({ db }))),
+    context.req.json().then((request) =>
+      context.json(
+        createPullResponse({
+          db,
+          request,
+        }),
+      ),
+    ),
   );
 
   app.post("/api/replicache/push", (context) =>

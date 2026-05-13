@@ -1,6 +1,7 @@
-import { SYSTEM_ACTOR } from "@situ/common";
+import { createSyncMetadata } from "@situ/common";
 import type { ReviewRecord } from "@situ/reviews";
 
+import { ensureActorExists, resolveActionActor } from "./actors";
 import { addComment } from "./comments";
 import { recordEvent } from "./events";
 import { createNotification } from "./notifications";
@@ -34,7 +35,10 @@ export const createReviewAction = ({
   now,
   repositories,
 }: CreateReviewActionInput): ReviewRecord => {
-  const actor = input.actor ?? SYSTEM_ACTOR;
+  const actor = resolveActionActor({
+    actor: input.actor,
+    repositories,
+  });
   const timestamp = now();
 
   repositories.projects.require({ id: input.projectId });
@@ -51,6 +55,13 @@ export const createReviewAction = ({
     repositories.artifacts.require({ id: artifactId });
   }
 
+  if (input.notifyActor !== undefined) {
+    ensureActorExists({
+      actor: input.notifyActor,
+      repositories,
+    });
+  }
+
   const review = repositories.reviews.create({
     review: {
       citedArtifactIds: input.citedArtifactIds ?? [],
@@ -62,6 +73,7 @@ export const createReviewAction = ({
       reviewedCommit: input.reviewedCommit,
       reviewer: actor,
       status: input.status,
+      ...createSyncMetadata(),
       target: input.target,
       updatedAt: timestamp,
     },

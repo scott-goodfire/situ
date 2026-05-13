@@ -16,6 +16,7 @@ import { createAgentSessionAction, updateAgentSessionStatusAction } from "./agen
 import { createAgentAction } from "./agents";
 import { createArtifactAction } from "./artifacts";
 import { addComment } from "./comments";
+import { runExperimentCommandAction } from "./commands";
 import {
   captureCandidateCommitAction,
   createExperimentAction,
@@ -30,7 +31,11 @@ import {
   recordNotificationDeliveryAttempt,
   snoozeNotification,
 } from "./notifications";
-import { createProjectAction } from "./projects";
+import {
+  createFinalReportAction,
+  createProjectAction,
+  updateProjectSummariesAction,
+} from "./projects";
 import { createAppRepositories, type AppRepositories } from "./repositories";
 import { createReviewAction } from "./reviews";
 import { assignTaskAction, createTaskAction, updateTaskStatusAction } from "./tasks";
@@ -42,6 +47,7 @@ import type {
   CreateAgentSessionInput,
   CreateArtifactInput,
   CreateCommentInput,
+  CreateFinalReportInput,
   CreateExperimentInput,
   CreateLabelInput,
   CreateMeasurementInput,
@@ -51,9 +57,12 @@ import type {
   IdFactory,
   NotificationInput,
   RecordNotificationDeliveryAttemptInput,
+  RunExperimentCommandInput,
+  RunExperimentCommandResult,
   SnoozeNotificationInput,
   UpdateAgentSessionStatusInput,
   UpdateExperimentStatusInput,
+  UpdateProjectSummariesInput,
   UpdateTaskStatusInput,
 } from "./types";
 
@@ -68,6 +77,10 @@ export type AppActions = {
   createArtifact(input: CreateArtifactInput): ArtifactRecord;
   createComment(input: CreateCommentInput): CommentRecord;
   createExperiment(input: CreateExperimentInput): ExperimentRecord;
+  createFinalReport(input: CreateFinalReportInput): {
+    artifact: ArtifactRecord;
+    project: ProjectRecord;
+  };
   createLabel(input: CreateLabelInput): LabelRecord;
   createMeasurement(input: CreateMeasurementInput): MeasurementRecord;
   createProject(input: CreateProjectInput): ProjectRecord;
@@ -79,9 +92,11 @@ export type AppActions = {
   recordNotificationDeliveryAttempt(
     input: RecordNotificationDeliveryAttemptInput,
   ): NotificationRecord;
+  runExperimentCommand(input: RunExperimentCommandInput): Promise<RunExperimentCommandResult>;
   snoozeNotification(input: SnoozeNotificationInput): NotificationRecord;
   updateAgentSessionStatus(input: UpdateAgentSessionStatusInput): AgentSessionRecord;
   updateExperimentStatus(input: UpdateExperimentStatusInput): ExperimentRecord;
+  updateProjectSummaries(input: UpdateProjectSummariesInput): ProjectRecord;
   updateTaskStatus(input: UpdateTaskStatusInput): TaskRecord;
 };
 
@@ -205,6 +220,18 @@ export const createAppActions = ({
       });
     },
 
+    createFinalReport(input) {
+      return runWrite({
+        write: (repositories) =>
+          createFinalReportAction({
+            createId,
+            input,
+            now,
+            repositories,
+          }),
+      });
+    },
+
     createLabel(input) {
       return runWrite({
         write: (repositories) =>
@@ -313,6 +340,15 @@ export const createAppActions = ({
       });
     },
 
+    runExperimentCommand(input) {
+      return runExperimentCommandAction({
+        createId,
+        input,
+        now,
+        repositories: createAppRepositories({ db }),
+      });
+    },
+
     snoozeNotification(input) {
       return runWrite({
         write: (repositories) =>
@@ -341,6 +377,18 @@ export const createAppActions = ({
       return runWrite({
         write: (repositories) =>
           updateExperimentStatusAction({
+            createId,
+            input,
+            now,
+            repositories,
+          }),
+      });
+    },
+
+    updateProjectSummaries(input) {
+      return runWrite({
+        write: (repositories) =>
+          updateProjectSummariesAction({
             createId,
             input,
             now,

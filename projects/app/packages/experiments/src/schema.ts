@@ -1,4 +1,4 @@
-import { sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 import type { ExperimentStatus } from "./types";
 
@@ -6,6 +6,8 @@ export const EXPERIMENTS_TABLE = "experiments";
 
 export const experiments = sqliteTable(EXPERIMENTS_TABLE, {
   id: text("id").primaryKey(),
+  syncVersion: integer("sync_version").notNull(),
+  syncDeleted: integer("sync_deleted", { mode: "boolean" }).notNull(),
   projectId: text("project_id").notNull(),
   taskId: text("task_id"),
   parentExperimentId: text("parent_experiment_id"),

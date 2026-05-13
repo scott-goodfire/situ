@@ -75,7 +75,49 @@ test("replicache push writes through app actions and pull returns records", asyn
   const pullBody = await pullResponse.json();
 
   expect(pullResponse.status).toBe(200);
+  expect(pullBody.lastMutationIDChanges.client_1).toBe(3);
   expect(pullBody.patch.map((operation: { key: string }) => operation.key)).toEqual(
     expect.arrayContaining(["projects/project_1", "tasks/task_1"]),
   );
+
+  await Bun.sleep(2);
+
+  await app.request("/api/replicache/push", {
+    body: JSON.stringify({
+      clientID: "client_1",
+      mutations: [
+        {
+          id: 4,
+          name: "task/create",
+          args: {
+            bodyMarkdown: "Try a second candidate branch.",
+            id: "task_2",
+            projectId: "project_1",
+            title: "Run second experiment",
+            type: "implementation",
+          },
+        },
+      ],
+    }),
+    headers: {
+      "content-type": "application/json",
+    },
+    method: "POST",
+  });
+
+  const deltaResponse = await app.request("/api/replicache/pull", {
+    body: JSON.stringify({
+      cookie: pullBody.cookie,
+    }),
+    headers: {
+      "content-type": "application/json",
+    },
+    method: "POST",
+  });
+  const deltaBody = await deltaResponse.json();
+  const deltaKeys = deltaBody.patch.map((operation: { key: string }) => operation.key);
+
+  expect(deltaBody.lastMutationIDChanges.client_1).toBe(4);
+  expect(deltaKeys).toContain("tasks/task_2");
+  expect(deltaKeys).not.toContain("projects/project_1");
 });

@@ -6,6 +6,7 @@ import type { NotificationType } from "@situ/notifications";
 import type { ProjectStatus } from "@situ/projects";
 import type { ReviewStatus } from "@situ/reviews";
 import type { LabelRecord, TaskStatus, TaskType } from "@situ/tasks";
+import type { WorkspaceCommandResult } from "@situ/worktrees";
 
 import type { AppDatabase } from "../db";
 
@@ -23,6 +24,31 @@ export type CreateProjectInput = {
   goalMarkdown: string;
   id?: string;
   status?: ProjectStatus;
+};
+
+export type ProjectSummaryPatch = {
+  blockersSummary?: string;
+  confidenceSummary?: string;
+  currentAnswerSummary?: string;
+  currentBaselineSummary?: string;
+  finalResultSummary?: string;
+  openQuestionsSummary?: string;
+  progressCheckpointsSummary?: string;
+};
+
+export type UpdateProjectSummariesInput = {
+  actor?: ActorRef;
+  projectId: string;
+  summaries: ProjectSummaryPatch;
+};
+
+export type CreateFinalReportInput = {
+  actor?: ActorRef;
+  projectId: string;
+  reportMarkdown: string;
+  summaryMarkdown: string;
+  title?: string;
+  uri?: string;
 };
 
 export type CreateTaskInput = {
@@ -64,6 +90,7 @@ export type CreateAgentSessionInput = {
 export type UpdateAgentSessionStatusInput = {
   actor?: ActorRef;
   agentSessionId: string;
+  currentNotificationId?: string;
   remoteEventCursor?: string;
   status: AgentSessionStatus;
 };
@@ -95,6 +122,31 @@ export type CaptureCandidateCommitInput = {
   actor?: ActorRef;
   currentCandidateCommit: string;
   experimentId: string;
+};
+
+export type CommandMeasurementInput = {
+  name: string;
+  summaryMarkdown: string;
+  unit?: string;
+  value: Record<string, unknown>;
+};
+
+export type RunExperimentCommandInput = {
+  actor?: ActorRef;
+  args?: string[];
+  command: string;
+  cwd?: string;
+  env?: Record<string, string | undefined>;
+  experimentId: string;
+  measurements?: CommandMeasurementInput[];
+  taskId?: string;
+  timeoutMs?: number;
+};
+
+export type RunExperimentCommandResult = {
+  command: WorkspaceCommandResult;
+  artifactIds: string[];
+  measurementIds: string[];
 };
 
 export type CreateMeasurementInput = {

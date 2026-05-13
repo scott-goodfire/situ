@@ -1,6 +1,7 @@
-import { SYSTEM_ACTOR } from "@situ/common";
+import { advanceSyncMetadata, createSyncMetadata, SYSTEM_ACTOR } from "@situ/common";
 import type { AgentSessionRecord } from "@situ/agent-sessions";
 
+import { resolveActionActor } from "./actors";
 import { recordEvent } from "./events";
 import type { AppRepositories } from "./repositories";
 import { ensureTargetExists, targetForAgentSession } from "./targets";
@@ -61,6 +62,7 @@ export const createAgentSessionAction = ({
       remoteClaudeSessionId: input.remoteClaudeSessionId,
       remoteClaudeThreadId: input.remoteClaudeThreadId,
       status: input.status ?? "active",
+      ...createSyncMetadata(),
       createdAt: timestamp,
       updatedAt: timestamp,
     },
@@ -94,16 +96,28 @@ export const updateAgentSessionStatusAction = ({
   now,
   repositories,
 }: UpdateAgentSessionStatusActionInput): AgentSessionRecord => {
-  const actor = input.actor ?? SYSTEM_ACTOR;
+  const actor = resolveActionActor({
+    actor: input.actor,
+    repositories,
+  });
   const agentSession = repositories.agentSessions.require({
     id: input.agentSessionId,
   });
+
+  if (input.currentNotificationId !== undefined) {
+    repositories.notifications.require({
+      id: input.currentNotificationId,
+    });
+  }
+
   const timestamp = now();
   const updated = repositories.agentSessions.update({
     agentSession: {
       ...agentSession,
+      currentNotificationId: input.currentNotificationId ?? agentSession.currentNotificationId,
       lastActivityAt: timestamp,
       remoteEventCursor: input.remoteEventCursor ?? agentSession.remoteEventCursor,
+      ...advanceSyncMetadata({ record: agentSession }),
       status: input.status,
       updatedAt: timestamp,
     },

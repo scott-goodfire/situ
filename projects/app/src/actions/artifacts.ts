@@ -1,6 +1,7 @@
-import { SYSTEM_ACTOR } from "@situ/common";
+import { createSyncMetadata } from "@situ/common";
 import type { ArtifactRecord } from "@situ/artifacts";
 
+import { resolveActionActor } from "./actors";
 import { recordEvent } from "./events";
 import type { AppRepositories } from "./repositories";
 import { ensureTargetExists, targetForArtifact } from "./targets";
@@ -22,7 +23,10 @@ export const createArtifactAction = ({
   now,
   repositories,
 }: CreateArtifactActionInput): ArtifactRecord => {
-  const actor = input.actor ?? SYSTEM_ACTOR;
+  const actor = resolveActionActor({
+    actor: input.actor,
+    repositories,
+  });
   const timestamp = now();
 
   repositories.projects.require({ id: input.projectId });
@@ -49,6 +53,7 @@ export const createArtifactAction = ({
       projectId: input.projectId,
       sourceCommit: input.sourceCommit,
       summaryMarkdown: input.summaryMarkdown,
+      ...createSyncMetadata(),
       target: input.target,
       taskId: input.taskId,
       title: input.title,

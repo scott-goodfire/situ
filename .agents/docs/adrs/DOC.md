@@ -45,6 +45,13 @@ agent can read them in order and understand how to implement the resulting app.
 Detailed local contracts belong in package READMEs, package specs, tests, or
 ordinary tasks.
 
+ADRs describe the intended end state, not the migration path from the current
+branch to that state. They should say what the system should be true of once the
+decision is realized: the concepts that exist, the contracts they preserve, the
+boundaries they respect, and the behavior future code must maintain. If the
+current codebase is behind the decision, represent that gap with
+`implementation_status`, not with step-by-step migration prose in the ADR body.
+
 ## Relationship To Other Docs
 
 ```text
@@ -110,6 +117,11 @@ A good ADR answers:
 - what concepts are explicitly not introduced
 - what later decisions now depend on this one
 - what a future implementation must preserve
+
+Write those answers in target-state language. Prefer "Situ has...", "the app
+owns...", "packages expose...", and "agents use..." over "we will add...", "first
+build...", or "migrate from...". A separate implementation plan can decide what
+order to make changes in.
 
 An ADR does not need to include full code, but it should include enough concrete
 language that an agent can apply it without guessing the intended architecture.
@@ -231,6 +243,11 @@ Decision status and implementation status are intentionally separate.
 status = have we made the decision?
 implementation_status = has the codebase caught up?
 ```
+
+The ADR body should stay focused on the accepted target state even when
+`implementation_status` is `not_started`, `in_progress`, or
+`partially_implemented`. Use implementation status to communicate current
+distance from the target without turning the ADR into a backlog.
 
 Examples:
 

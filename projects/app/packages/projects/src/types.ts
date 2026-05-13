@@ -1,10 +1,10 @@
-import type { IsoTimestamp } from "@situ/common";
+import type { IsoTimestamp, SyncMetadata } from "@situ/common";
 
 export const PROJECT_STATUSES = ["active", "paused", "blocked", "complete", "archived"] as const;
 
 export type ProjectStatus = (typeof PROJECT_STATUSES)[number];
 
-export type ProjectRecord = {
+export type ProjectRecord = SyncMetadata & {
   id: string;
   goalMarkdown: string;
   status: ProjectStatus;

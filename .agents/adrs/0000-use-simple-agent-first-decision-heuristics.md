@@ -35,6 +35,8 @@ Prefer designs that are:
   or events
 - locally testable: important behavior can be tested at package or app-action
   boundaries
+- target-state oriented: decisions describe the system Situ should become, not
+  the migration steps for reaching that state from a particular branch
 
 When these heuristics conflict, prefer recoverability and clarity over local
 cleverness. Simplicity does not mean hiding real state in markdown. It means
@@ -57,6 +59,10 @@ state record, the implementation should be able to answer:
 
 If the answer is mostly "because the code is easier to orchestrate that way",
 the design is probably drifting toward hidden workflow machinery.
+
+ADRs should keep this target-state posture even when the implementation is
+behind. Current gaps belong in `implementation_status` and implementation plans,
+not in the decision itself.
 
 This ADR is intentionally broad. It should guide ambiguous choices without
 replacing more specific ADRs.

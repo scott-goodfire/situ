@@ -1,3 +1,4 @@
+import { createSyncMetadata } from "@situ/common";
 import type { LabelRecord } from "@situ/tasks";
 
 import type { AppRepositories } from "./repositories";
@@ -26,6 +27,7 @@ export const createLabelAction = ({
       id: input.id ?? createId("label"),
       name: input.name,
       color: input.color,
+      ...createSyncMetadata(),
       createdAt: timestamp,
       updatedAt: timestamp,
     },

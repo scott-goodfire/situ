@@ -1,6 +1,7 @@
-import { SYSTEM_ACTOR } from "@situ/common";
+import { createSyncMetadata } from "@situ/common";
 import type { AgentRecord } from "@situ/agents";
 
+import { resolveActionActor } from "./actors";
 import { recordEvent } from "./events";
 import type { AppRepositories } from "./repositories";
 import { targetForAgent } from "./targets";
@@ -22,7 +23,10 @@ export const createAgentAction = ({
   now,
   repositories,
 }: CreateAgentActionInput): AgentRecord => {
-  const actor = input.actor ?? SYSTEM_ACTOR;
+  const actor = resolveActionActor({
+    actor: input.actor,
+    repositories,
+  });
   const timestamp = now();
   const agent = repositories.agents.create({
     agent: {
@@ -30,6 +34,7 @@ export const createAgentAction = ({
       instructionsMarkdown: input.instructionsMarkdown,
       name: input.name,
       role: input.role,
+      ...createSyncMetadata(),
       status: input.status ?? "active",
       createdAt: timestamp,
       updatedAt: timestamp,

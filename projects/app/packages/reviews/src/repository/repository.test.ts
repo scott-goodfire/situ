@@ -7,6 +7,8 @@ import type { ReviewRecord } from "../types";
 
 const review: ReviewRecord = {
   id: "review_1",
+  syncVersion: 1,
+  syncDeleted: false,
   projectId: "project_1",
   target: {
     targetKind: "experiment",
@@ -30,6 +32,8 @@ test("creates and lists reviews by project", () => {
   db.run(`
     CREATE TABLE reviews (
       id TEXT PRIMARY KEY,
+      sync_version INTEGER NOT NULL,
+      sync_deleted INTEGER NOT NULL,
       project_id TEXT NOT NULL,
       target_kind TEXT NOT NULL,
       target_id TEXT NOT NULL,

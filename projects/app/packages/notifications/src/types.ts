@@ -1,5 +1,5 @@
 import { isIsoAtOrBefore, nowIso } from "@situ/common";
-import type { ActorRef, IsoTimestamp, TargetRef } from "@situ/common";
+import type { ActorRef, IsoTimestamp, SyncMetadata, TargetRef } from "@situ/common";
 
 export const NOTIFICATION_TYPES = [
   "task_assigned",
@@ -12,7 +12,7 @@ export const NOTIFICATION_TYPES = [
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 
-export type NotificationRecord = {
+export type NotificationRecord = SyncMetadata & {
   id: string;
   recipient: ActorRef;
   type: NotificationType;
@@ -24,6 +24,7 @@ export type NotificationRecord = {
   snoozedUntil?: IsoTimestamp;
   deliveryAttemptedAt?: IsoTimestamp;
   createdAt: IsoTimestamp;
+  updatedAt: IsoTimestamp;
 };
 
 export type WakeableNotificationState = Pick<

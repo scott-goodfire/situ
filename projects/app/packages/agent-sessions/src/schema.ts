@@ -1,5 +1,5 @@
 import type { TargetKind } from "@situ/common";
-import { sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 import type { AgentSessionLogType, AgentSessionStatus } from "./types";
 
@@ -8,6 +8,8 @@ export const AGENT_SESSION_LOGS_TABLE = "agent_session_logs";
 
 export const agentSessions = sqliteTable(AGENT_SESSIONS_TABLE, {
   id: text("id").primaryKey(),
+  syncVersion: integer("sync_version").notNull(),
+  syncDeleted: integer("sync_deleted", { mode: "boolean" }).notNull(),
   agentId: text("agent_id").notNull(),
   parentAgentSessionId: text("parent_agent_session_id"),
   remoteClaudeAgentId: text("remote_claude_agent_id"),

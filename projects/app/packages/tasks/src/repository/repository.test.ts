@@ -9,6 +9,8 @@ test("creates, lists, and updates tasks", () => {
   db.run(`
     CREATE TABLE labels (
       id TEXT PRIMARY KEY,
+      sync_version INTEGER NOT NULL,
+      sync_deleted INTEGER NOT NULL,
       name TEXT NOT NULL,
       color TEXT,
       archived_at TEXT,
@@ -19,6 +21,8 @@ test("creates, lists, and updates tasks", () => {
   db.run(`
     CREATE TABLE tasks (
       id TEXT PRIMARY KEY,
+      sync_version INTEGER NOT NULL,
+      sync_deleted INTEGER NOT NULL,
       project_id TEXT NOT NULL,
       title TEXT NOT NULL,
       body_markdown TEXT NOT NULL,
@@ -44,6 +48,8 @@ test("creates, lists, and updates tasks", () => {
   const label = tasks.createLabel({
     label: {
       id: "label_1",
+      syncVersion: 1,
+      syncDeleted: false,
       name: "risk:high",
       color: "red",
       createdAt: "2026-05-12T00:00:00.000Z",
@@ -59,6 +65,8 @@ test("creates, lists, and updates tasks", () => {
         actorId: "coordinator_1",
       },
       id: "task_1",
+      syncVersion: 1,
+      syncDeleted: false,
       labelIds: ["label_1"],
       lastActivityAt: "2026-05-12T00:00:00.000Z",
       priority: 0,

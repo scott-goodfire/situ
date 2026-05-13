@@ -8,6 +8,8 @@ export const LABELS_TABLE = "labels";
 
 export const tasks = sqliteTable(TASKS_TABLE, {
   id: text("id").primaryKey(),
+  syncVersion: integer("sync_version").notNull(),
+  syncDeleted: integer("sync_deleted", { mode: "boolean" }).notNull(),
   projectId: text("project_id").notNull(),
   title: text("title").notNull(),
   bodyMarkdown: text("body_markdown").notNull(),
@@ -30,6 +32,8 @@ export const tasks = sqliteTable(TASKS_TABLE, {
 
 export const labels = sqliteTable(LABELS_TABLE, {
   id: text("id").primaryKey(),
+  syncVersion: integer("sync_version").notNull(),
+  syncDeleted: integer("sync_deleted", { mode: "boolean" }).notNull(),
   name: text("name").notNull(),
   color: text("color"),
   archivedAt: text("archived_at"),

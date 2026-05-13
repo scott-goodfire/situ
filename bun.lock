@@ -34,8 +34,10 @@
         "@situ/projects": "workspace:*",
         "@situ/reviews": "workspace:*",
         "@situ/tasks": "workspace:*",
+        "@situ/worktrees": "workspace:*",
         "drizzle-orm": "catalog:",
         "hono": "catalog:",
+        "luxon": "catalog:",
       },
       "devDependencies": {
         "@types/bun": "catalog:",

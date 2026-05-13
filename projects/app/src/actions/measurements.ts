@@ -1,6 +1,7 @@
-import { SYSTEM_ACTOR } from "@situ/common";
+import { createSyncMetadata } from "@situ/common";
 import type { MeasurementRecord } from "@situ/measurements";
 
+import { resolveActionActor } from "./actors";
 import { recordEvent } from "./events";
 import type { AppRepositories } from "./repositories";
 import { ensureTargetExists, targetForMeasurement } from "./targets";
@@ -22,7 +23,10 @@ export const createMeasurementAction = ({
   now,
   repositories,
 }: CreateMeasurementActionInput): MeasurementRecord => {
-  const actor = input.actor ?? SYSTEM_ACTOR;
+  const actor = resolveActionActor({
+    actor: input.actor,
+    repositories,
+  });
   const timestamp = now();
 
   repositories.projects.require({ id: input.projectId });
@@ -40,6 +44,7 @@ export const createMeasurementAction = ({
       observedCommit: input.observedCommit,
       projectId: input.projectId,
       summaryMarkdown: input.summaryMarkdown,
+      ...createSyncMetadata(),
       target: input.target,
       unit: input.unit,
       value: input.value,

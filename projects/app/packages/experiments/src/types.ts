@@ -1,4 +1,4 @@
-import type { IsoTimestamp } from "@situ/common";
+import type { IsoTimestamp, SyncMetadata } from "@situ/common";
 
 export const EXPERIMENT_STATUSES = [
   "active",
@@ -10,7 +10,7 @@ export const EXPERIMENT_STATUSES = [
 
 export type ExperimentStatus = (typeof EXPERIMENT_STATUSES)[number];
 
-export type ExperimentRecord = {
+export type ExperimentRecord = SyncMetadata & {
   id: string;
   projectId: string;
   taskId?: string;

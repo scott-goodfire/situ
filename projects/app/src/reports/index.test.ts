@@ -66,4 +66,16 @@ test("generates reports from durable records", () => {
   expect(report).toContain("experiment_1: active at def222");
   expect(report).toContain("review_1: approved on def222");
   expect(report).toContain("Best Candidates");
+
+  const finalReport = actions.createFinalReport({
+    projectId: project.id,
+    reportMarkdown: report,
+    summaryMarkdown: "The wider beam candidate is currently best.",
+  });
+
+  expect(finalReport.project.status).toBe("complete");
+  expect(finalReport.artifact.type).toBe("report");
+  expect(repositories.projects.require({ id: project.id }).finalResultSummary).toBe(
+    "The wider beam candidate is currently best.",
+  );
 });

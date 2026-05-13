@@ -7,6 +7,8 @@ import type { AgentRecord } from "../types";
 
 const createAgent = (): AgentRecord => ({
   id: "agent_1",
+  syncVersion: 1,
+  syncDeleted: false,
   name: "Scientist 1",
   role: "scientist",
   instructionsMarkdown: "Explore promising candidates.",
@@ -20,6 +22,8 @@ test("creates, lists, and updates agents", () => {
   db.run(`
     CREATE TABLE agents (
       id TEXT PRIMARY KEY,
+      sync_version INTEGER NOT NULL,
+      sync_deleted INTEGER NOT NULL,
       name TEXT NOT NULL,
       role TEXT NOT NULL,
       instructions_markdown TEXT NOT NULL,

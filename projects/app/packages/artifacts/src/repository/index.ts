@@ -31,6 +31,8 @@ export type ArtifactRepository = {
 
 const encodeArtifact = ({ artifact }: ArtifactWriteInput) => ({
   id: artifact.id,
+  syncVersion: artifact.syncVersion,
+  syncDeleted: artifact.syncDeleted,
   projectId: artifact.projectId,
   targetKind: artifact.target.targetKind,
   targetId: artifact.target.targetId,
@@ -50,6 +52,8 @@ const encodeArtifact = ({ artifact }: ArtifactWriteInput) => ({
 
 const decodeArtifact = ({ row }: { row: ArtifactRow }): ArtifactRecord => ({
   id: row.id,
+  syncVersion: row.syncVersion,
+  syncDeleted: row.syncDeleted,
   projectId: row.projectId,
   target: {
     targetKind: row.targetKind,

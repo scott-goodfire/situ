@@ -9,6 +9,8 @@ const timestamp = "2026-05-12T12:00:00.000Z";
 
 const createAgentSession = (): AgentSessionRecord => ({
   id: "agent_session_1",
+  syncVersion: 1,
+  syncDeleted: false,
   agentId: "agent_1",
   remoteClaudeAgentId: "claude_agent_1",
   remoteClaudeSessionId: "claude_session_1",
@@ -42,6 +44,8 @@ test("creates sessions and transport logs", () => {
   db.run(`
     CREATE TABLE agent_sessions (
       id TEXT PRIMARY KEY,
+      sync_version INTEGER NOT NULL,
+      sync_deleted INTEGER NOT NULL,
       agent_id TEXT NOT NULL,
       parent_agent_session_id TEXT,
       remote_claude_agent_id TEXT,

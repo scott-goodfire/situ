@@ -154,6 +154,28 @@ const hasMutationRun = ({
   return row !== null && row !== undefined;
 };
 
+const updateClientLastMutationId = ({
+  clientId,
+  db,
+  mutationId,
+}: {
+  clientId: string;
+  db: AppDatabase;
+  mutationId: number;
+}): void => {
+  db.$client
+    .query(
+      `
+        INSERT INTO replicache_clients (client_id, last_mutation_id, updated_at)
+        VALUES (?, ?, ?)
+        ON CONFLICT(client_id) DO UPDATE SET
+          last_mutation_id = MAX(last_mutation_id, excluded.last_mutation_id),
+          updated_at = excluded.updated_at
+      `,
+    )
+    .run(clientId, mutationId, nowIso());
+};
+
 const recordMutationRun = ({
   clientId,
   db,
@@ -171,6 +193,33 @@ const recordMutationRun = ({
       `,
     )
     .run(clientId, mutationId, nowIso());
+
+  updateClientLastMutationId({
+    clientId,
+    db,
+    mutationId,
+  });
+};
+
+const applyMutationTransaction = ({
+  actions,
+  clientId,
+  db,
+  mutation,
+}: {
+  actions: AppActions;
+  clientId: string;
+  db: AppDatabase;
+  mutation: ReplicacheMutation;
+}): unknown => {
+  const run = db.$client.transaction(() => {
+    const result = applyMutation({ actions, mutation });
+    recordMutationRun({ clientId, db, mutationId: mutation.id });
+
+    return result;
+  });
+
+  return run();
 };
 
 /**
@@ -193,8 +242,12 @@ export const applyPush = ({ actions, db, request }: ApplyPushInput): ReplicacheP
     }
 
     try {
-      const result = applyMutation({ actions, mutation });
-      recordMutationRun({ clientId, db, mutationId: mutation.id });
+      const result = applyMutationTransaction({
+        actions,
+        clientId,
+        db,
+        mutation,
+      });
       mutationResults.push({
         id: mutation.id,
         ok: true,

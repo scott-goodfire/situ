@@ -1,6 +1,7 @@
-import { SYSTEM_ACTOR } from "@situ/common";
+import { advanceSyncMetadata, createSyncMetadata } from "@situ/common";
 import type { ExperimentRecord } from "@situ/experiments";
 
+import { resolveActionActor } from "./actors";
 import { recordEvent } from "./events";
 import type { AppRepositories } from "./repositories";
 import { targetForExperiment } from "./targets";
@@ -42,7 +43,10 @@ export const createExperimentAction = ({
   now,
   repositories,
 }: CreateExperimentActionInput): ExperimentRecord => {
-  const actor = input.actor ?? SYSTEM_ACTOR;
+  const actor = resolveActionActor({
+    actor: input.actor,
+    repositories,
+  });
   const timestamp = now();
 
   repositories.projects.require({ id: input.projectId });
@@ -65,6 +69,7 @@ export const createExperimentAction = ({
       projectId: input.projectId,
       status: "active",
       summaryMarkdown: input.summaryMarkdown,
+      ...createSyncMetadata(),
       taskId: input.taskId,
       title: input.title,
       updatedAt: timestamp,
@@ -102,7 +107,10 @@ export const updateExperimentStatusAction = ({
   now,
   repositories,
 }: UpdateExperimentStatusActionInput): ExperimentRecord => {
-  const actor = input.actor ?? SYSTEM_ACTOR;
+  const actor = resolveActionActor({
+    actor: input.actor,
+    repositories,
+  });
   const experiment = repositories.experiments.require({
     id: input.experimentId,
   });
@@ -110,6 +118,7 @@ export const updateExperimentStatusAction = ({
   const updated = repositories.experiments.update({
     experiment: {
       ...experiment,
+      ...advanceSyncMetadata({ record: experiment }),
       status: input.status,
       updatedAt: timestamp,
     },
@@ -143,7 +152,10 @@ export const captureCandidateCommitAction = ({
   now,
   repositories,
 }: CaptureCandidateCommitActionInput): ExperimentRecord => {
-  const actor = input.actor ?? SYSTEM_ACTOR;
+  const actor = resolveActionActor({
+    actor: input.actor,
+    repositories,
+  });
   const experiment = repositories.experiments.require({
     id: input.experimentId,
   });
@@ -152,6 +164,7 @@ export const captureCandidateCommitAction = ({
     experiment: {
       ...experiment,
       currentCandidateCommit: input.currentCandidateCommit,
+      ...advanceSyncMetadata({ record: experiment }),
       updatedAt: timestamp,
     },
   });
