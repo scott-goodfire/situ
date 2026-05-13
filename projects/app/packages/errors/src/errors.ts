@@ -6,7 +6,9 @@ export type ApplicationErrorInput = {
   message: string;
 };
 
-/** Error for a requested record or resource that does not exist. */
+/**
+ * Error for a missing record or resource.
+ */
 export class NotFoundError extends BaseError {
   constructor(input: ApplicationErrorInput) {
     super({
@@ -16,7 +18,9 @@ export class NotFoundError extends BaseError {
   }
 }
 
-/** Error for malformed or unsupported caller input. */
+/**
+ * Error for malformed caller input.
+ */
 export class InvalidArgumentError extends BaseError {
   constructor(input: ApplicationErrorInput) {
     super({
@@ -26,7 +30,9 @@ export class InvalidArgumentError extends BaseError {
   }
 }
 
-/** Error for a valid request that cannot run in the current state. */
+/**
+ * Error for unmet preconditions.
+ */
 export class PreconditionError extends BaseError {
   constructor(input: ApplicationErrorInput) {
     super({
@@ -36,7 +42,9 @@ export class PreconditionError extends BaseError {
   }
 }
 
-/** Error for concurrent or duplicate state that conflicts with the request. */
+/**
+ * Error for conflicting state.
+ */
 export class ConflictError extends BaseError {
   constructor(input: ApplicationErrorInput) {
     super({
@@ -46,7 +54,9 @@ export class ConflictError extends BaseError {
   }
 }
 
-/** Error for internal assumptions that should always hold. */
+/**
+ * Error for failed internal assumptions.
+ */
 export class InvariantError extends BaseError {
   constructor(input: ApplicationErrorInput) {
     super({
@@ -56,7 +66,9 @@ export class InvariantError extends BaseError {
   }
 }
 
-/** Error for accepted surfaces that have not been implemented yet. */
+/**
+ * Error for unavailable behavior.
+ */
 export class NotImplementedError extends BaseError {
   constructor(input: ApplicationErrorInput) {
     super({

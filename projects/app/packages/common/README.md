@@ -7,6 +7,7 @@ Shared type helpers and constants for primitive packages.
 ```bash
 mise run check
 mise run test
+mise run coverage
 ```
 
 ## Purpose

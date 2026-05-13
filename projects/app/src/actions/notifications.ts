@@ -6,6 +6,7 @@ import { recordEvent } from "./events";
 import type { AppRepositories } from "./repositories";
 import { targetForNotification, targetForTask } from "./targets";
 import type { Clock, IdFactory, NotificationInput, SnoozeNotificationInput } from "./types";
+import type { RecordNotificationDeliveryAttemptInput } from "./types";
 
 export type CreateNotificationInput = {
   createId: IdFactory;
@@ -21,7 +22,9 @@ export type CreateTaskAssignedNotificationInput = {
   task: TaskRecord;
 };
 
-/** Creates or reuses an open notification for the same recipient/type/target. */
+/**
+ * Creates or reuses an open notification.
+ */
 export const createNotification = ({
   createId,
   notification,
@@ -46,7 +49,9 @@ export const createNotification = ({
   });
 };
 
-/** Creates a task-assigned notification when the assignee is an agent. */
+/**
+ * Creates a task-assigned notification.
+ */
 export const createTaskAssignedNotification = ({
   createId,
   now,
@@ -77,7 +82,9 @@ export const createTaskAssignedNotification = ({
   });
 };
 
-/** Marks a notification as read. */
+/**
+ * Marks a notification as read.
+ */
 export const markNotificationRead = ({
   createId,
   input,
@@ -116,7 +123,9 @@ export const markNotificationRead = ({
   return updated;
 };
 
-/** Marks a notification as unread. */
+/**
+ * Marks a notification as unread.
+ */
 export const markNotificationUnread = ({
   createId,
   input,
@@ -155,7 +164,9 @@ export const markNotificationUnread = ({
   return updated;
 };
 
-/** Dismisses a notification from the recipient inbox. */
+/**
+ * Dismisses a notification.
+ */
 export const dismissNotification = ({
   createId,
   input,
@@ -194,7 +205,50 @@ export const dismissNotification = ({
   return updated;
 };
 
-/** Snoozes a notification until the provided timestamp. */
+/**
+ * Records a notification delivery attempt.
+ */
+export const recordNotificationDeliveryAttempt = ({
+  createId,
+  input,
+  now,
+  repositories,
+}: {
+  createId: IdFactory;
+  input: RecordNotificationDeliveryAttemptInput;
+  now: Clock;
+  repositories: AppRepositories;
+}): NotificationRecord => {
+  const actor = input.actor ?? SYSTEM_ACTOR;
+  const notification = repositories.notifications.require({
+    id: input.notificationId,
+  });
+  const updated = repositories.notifications.update({
+    notification: {
+      ...notification,
+      deliveryAttemptedAt: now(),
+    },
+  });
+
+  recordEvent({
+    createId,
+    event: {
+      actor,
+      message: "Notification delivery attempted",
+      payload: {},
+      target: targetForNotification({ notification: updated }),
+      type: "notification.delivery_attempted",
+    },
+    now,
+    repositories,
+  });
+
+  return updated;
+};
+
+/**
+ * Snoozes a notification.
+ */
 export const snoozeNotification = ({
   createId,
   input,

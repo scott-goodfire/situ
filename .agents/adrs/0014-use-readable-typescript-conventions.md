@@ -1,6 +1,6 @@
 ---
 status: accepted
-implementation_status: not_started
+implementation_status: implemented
 created: 2026-05-12
 ---
 
@@ -18,7 +18,8 @@ Situ will prefer readable TypeScript conventions.
 
 Default conventions:
 
-- exported functions, public helpers, and public classes get brief doc comments
+- exported functions, public helpers, and public classes get brief multiline doc
+  comments
 - functions take one object argument unless there is a clear local reason not to
 - prefer guard clauses and early returns over nested conditionals
 - avoid ternaries when the branches contain meaningful logic; never use nested
@@ -42,9 +43,17 @@ actions.assignTask({ taskId, assignee, actor });
 
 Agents should split files when a module stops being easy to scan.
 
-Doc comments should name what a function does, not repeat the signature. They
-are especially useful for exported functions, app actions, repository factories,
-and policy helpers that future agents may search for by concept.
+Doc comments should name what a function does, not repeat the signature or
+explain obvious internals. Prefer short multiline comments:
+
+```ts
+/**
+ * Compares two ISO timestamps.
+ */
+```
+
+They are especially useful for exported functions, app actions, repository
+factories, and policy helpers that future agents may search for by concept.
 
 Code review should treat unnecessary nesting, dense ternaries, and positional
 argument APIs as maintainability issues.

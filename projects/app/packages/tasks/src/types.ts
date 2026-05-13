@@ -23,6 +23,15 @@ export const TASK_TYPES = [
 
 export type TaskType = (typeof TASK_TYPES)[number];
 
+export type LabelRecord = {
+  id: string;
+  name: string;
+  color?: string;
+  archivedAt?: IsoTimestamp;
+  createdAt: IsoTimestamp;
+  updatedAt: IsoTimestamp;
+};
+
 export type TaskRecord = {
   id: string;
   projectId: string;

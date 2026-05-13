@@ -68,7 +68,9 @@ const recordTaskAssignment = ({
   });
 };
 
-/** Creates a task and notifies an agent assignee when present. */
+/**
+ * Creates a task.
+ */
 export const createTaskAction = ({
   createId,
   input,
@@ -139,7 +141,9 @@ export const createTaskAction = ({
   return task;
 };
 
-/** Assigns a task to a visible actor and creates agent inbox state if needed. */
+/**
+ * Assigns a task.
+ */
 export const assignTaskAction = ({
   createId,
   input,
@@ -177,7 +181,9 @@ export const assignTaskAction = ({
   return updated;
 };
 
-/** Updates task status and optionally writes the visible handoff comment. */
+/**
+ * Updates task status.
+ */
 export const updateTaskStatusAction = ({
   createId,
   input,

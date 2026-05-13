@@ -24,7 +24,9 @@ export type ProjectRepository = {
   update(input: ProjectWriteInput): ProjectRecord;
 };
 
-/** Creates the repository for project persistence. */
+/**
+ * Creates a project repository.
+ */
 export const createProjectRepository = ({
   db,
 }: CreateProjectRepositoryInput): ProjectRepository => {

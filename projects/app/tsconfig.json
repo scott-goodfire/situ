@@ -12,8 +12,15 @@
   "references": [
     { "path": "./packages/common" },
     { "path": "./packages/errors" },
+    { "path": "./packages/agents" },
+    { "path": "./packages/agent-sessions" },
     { "path": "./packages/projects" },
     { "path": "./packages/tasks" },
+    { "path": "./packages/experiments" },
+    { "path": "./packages/measurements" },
+    { "path": "./packages/artifacts" },
+    { "path": "./packages/reviews" },
+    { "path": "./packages/worktrees" },
     { "path": "./packages/comments" },
     { "path": "./packages/notifications" },
     { "path": "./packages/events" }

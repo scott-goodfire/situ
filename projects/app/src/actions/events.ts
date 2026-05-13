@@ -10,7 +10,9 @@ export type RecordEventInput = {
   repositories: AppRepositories;
 };
 
-/** Records an append-only event for product history and debugging. */
+/**
+ * Records an event.
+ */
 export const recordEvent = ({
   createId,
   event,

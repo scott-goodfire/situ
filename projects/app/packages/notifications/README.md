@@ -7,6 +7,7 @@ Actor inbox items that wake sleeping agents.
 ```bash
 mise run check
 mise run test
+mise run coverage
 ```
 
 ## Purpose

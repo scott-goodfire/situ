@@ -2,8 +2,15 @@ import { NotFoundError } from "@situ/errors";
 import { eq } from "drizzle-orm";
 import type { BunSQLiteDatabase } from "drizzle-orm/bun-sqlite";
 
-import { tasks, type NewTaskRow, type TaskRow } from "../schema";
-import type { TaskRecord } from "../types";
+import {
+  labels,
+  tasks,
+  type LabelRow,
+  type NewLabelRow,
+  type NewTaskRow,
+  type TaskRow,
+} from "../schema";
+import type { LabelRecord, TaskRecord } from "../types";
 
 export type CreateTaskRepositoryInput = {
   db: BunSQLiteDatabase<Record<string, unknown>>;
@@ -21,11 +28,24 @@ export type TaskWriteInput = {
   task: TaskRecord;
 };
 
+export type LabelByIdInput = {
+  id: string;
+};
+
+export type LabelWriteInput = {
+  label: LabelRecord;
+};
+
 export type TaskRepository = {
   create(input: TaskWriteInput): TaskRecord;
+  createLabel(input: LabelWriteInput): LabelRecord;
   get(input: TaskByIdInput): TaskRecord | undefined;
+  getLabel(input: LabelByIdInput): LabelRecord | undefined;
+  listLabels(): LabelRecord[];
   require(input: TaskByIdInput): TaskRecord;
+  requireLabel(input: LabelByIdInput): LabelRecord;
   listByProject(input: TaskByProjectInput): TaskRecord[];
+  updateLabel(input: LabelWriteInput): LabelRecord;
   update(input: TaskWriteInput): TaskRecord;
 };
 
@@ -103,12 +123,37 @@ const decodeTask = ({ row }: TaskRowInput): TaskRecord => ({
   updatedAt: row.updatedAt,
 });
 
-/** Creates the repository for task persistence. */
+const encodeLabel = ({ label }: LabelWriteInput): NewLabelRow => ({
+  id: label.id,
+  name: label.name,
+  color: label.color ?? null,
+  archivedAt: label.archivedAt ?? null,
+  createdAt: label.createdAt,
+  updatedAt: label.updatedAt,
+});
+
+const decodeLabel = ({ row }: { row: LabelRow }): LabelRecord => ({
+  id: row.id,
+  name: row.name,
+  color: row.color ?? undefined,
+  archivedAt: row.archivedAt ?? undefined,
+  createdAt: row.createdAt,
+  updatedAt: row.updatedAt,
+});
+
+/**
+ * Creates a task repository.
+ */
 export const createTaskRepository = ({ db }: CreateTaskRepositoryInput): TaskRepository => {
   const repository: TaskRepository = {
     create({ task }) {
       db.insert(tasks).values(encodeTask({ task })).run();
       return task;
+    },
+
+    createLabel({ label }) {
+      db.insert(labels).values(encodeLabel({ label })).run();
+      return label;
     },
 
     get({ id }) {
@@ -119,6 +164,24 @@ export const createTaskRepository = ({ db }: CreateTaskRepositoryInput): TaskRep
       }
 
       return decodeTask({ row });
+    },
+
+    getLabel({ id }) {
+      const row = db.select().from(labels).where(eq(labels.id, id)).get();
+
+      if (row === undefined) {
+        return undefined;
+      }
+
+      return decodeLabel({ row });
+    },
+
+    listLabels() {
+      return db
+        .select()
+        .from(labels)
+        .all()
+        .map((row) => decodeLabel({ row }));
     },
 
     require({ id }) {
@@ -137,6 +200,22 @@ export const createTaskRepository = ({ db }: CreateTaskRepositoryInput): TaskRep
       return task;
     },
 
+    requireLabel({ id }) {
+      const label = repository.getLabel({ id });
+
+      if (label !== undefined) {
+        return label;
+      }
+
+      throw new NotFoundError({
+        details: {
+          id,
+          resource: "Label",
+        },
+        message: `Label not found: ${id}`,
+      });
+    },
+
     listByProject({ projectId }) {
       return db
         .select()
@@ -149,6 +228,11 @@ export const createTaskRepository = ({ db }: CreateTaskRepositoryInput): TaskRep
     update({ task }) {
       db.update(tasks).set(encodeTask({ task })).where(eq(tasks.id, task.id)).run();
       return repository.require({ id: task.id });
+    },
+
+    updateLabel({ label }) {
+      db.update(labels).set(encodeLabel({ label })).where(eq(labels.id, label.id)).run();
+      return repository.requireLabel({ id: label.id });
     },
   };
 

@@ -4,6 +4,7 @@ import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import type { TaskStatus, TaskType } from "./types";
 
 export const TASKS_TABLE = "tasks";
+export const LABELS_TABLE = "labels";
 
 export const tasks = sqliteTable(TASKS_TABLE, {
   id: text("id").primaryKey(),
@@ -27,5 +28,16 @@ export const tasks = sqliteTable(TASKS_TABLE, {
   updatedAt: text("updated_at").notNull(),
 });
 
+export const labels = sqliteTable(LABELS_TABLE, {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  color: text("color"),
+  archivedAt: text("archived_at"),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
+});
+
 export type TaskRow = typeof tasks.$inferSelect;
 export type NewTaskRow = typeof tasks.$inferInsert;
+export type LabelRow = typeof labels.$inferSelect;
+export type NewLabelRow = typeof labels.$inferInsert;

@@ -1,4 +1,7 @@
 import { createServer } from "./server";
+import { createAppRepositories } from "./actions";
+import { createDatabase } from "./db";
+import { generateProjectReport } from "./reports";
 
 const DEFAULT_PORT = 7378;
 const VERSION = process.env.SITU_BUILD_VERSION ?? "0.0.0";
@@ -58,14 +61,42 @@ export const runCli = async (argv: string[] = process.argv.slice(2)): Promise<Cl
     return { code: 0, message: `situ listening on http://localhost:${port}` };
   }
 
-  if (
-    command === "exec" ||
-    command === "report" ||
-    command === "status" ||
-    command === "sessions" ||
-    command === "events"
-  ) {
-    return { code: 0, message: `${command} is not implemented in the foundation build yet` };
+  if (command === "report") {
+    const projectId = subcommand;
+
+    if (projectId === undefined) {
+      return { code: 1, message: "usage: situ report <project_id>" };
+    }
+
+    return {
+      code: 0,
+      message: generateProjectReport({
+        projectId,
+        repositories: createAppRepositories({
+          db: createDatabase(),
+        }),
+      }),
+    };
+  }
+
+  if (command === "events") {
+    const repositories = createAppRepositories({
+      db: createDatabase(),
+    });
+    const targetId = subcommand;
+
+    if (targetId === undefined) {
+      return { code: 1, message: "usage: situ events <target_id>" };
+    }
+
+    return {
+      code: 0,
+      message: JSON.stringify(repositories.events.listByTarget({ targetId }), undefined, 2),
+    };
+  }
+
+  if (command === "exec" || command === "status" || command === "sessions") {
+    return { code: 0, message: `${command} is not implemented yet` };
   }
 
   return { code: 1, message: `unknown command: ${command}` };

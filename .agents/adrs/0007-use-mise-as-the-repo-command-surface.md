@@ -1,6 +1,6 @@
 ---
 status: accepted
-implementation_status: partially_implemented
+implementation_status: verified
 created: 2026-05-12
 ---
 

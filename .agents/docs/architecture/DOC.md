@@ -275,12 +275,11 @@ triage -> backlog -> in_progress -> in_review -> done
 
 Suggested task types:
 
-- `idea` - a possible direction, not yet ready to run
-- `explore` - inspect the repo or research space
-- `experiment` - make and measure a candidate change
-- `debug` - recover a broken candidate or command
+- `coordination` - plan, split, assign, or reconcile work
+- `investigation` - inspect the repo or research space
+- `implementation` - make a candidate change
+- `measurement` - produce or validate evidence
 - `review` - verify evidence or attack a claim
-- `synthesis` - combine, summarize, or decide next direction
 - `report` - produce user-facing output
 
 These types are filters and cues, not a workflow engine. An agent can read a
@@ -319,10 +318,9 @@ A `Label` is a lightweight classifier for tasks.
 It records:
 
 - name
-- optional group
 - optional color
-- project or workspace scope
 - archived timestamp
+- timestamps
 
 Labels are where nuance goes when nuance should be filterable:
 
@@ -403,7 +401,7 @@ It records:
 - worktree path
 - base commit
 - current candidate commit
-- status: `active`, `kept`, `discarded`, `crashed`, `invalid`
+- status: `active`, `in_review`, `accepted`, `rejected`, `abandoned`
 - parent experiment, when it branches from a prior candidate
 
 Experiments are for candidate lineage. They should not replace tasks. The task
@@ -482,12 +480,12 @@ An `Artifact` is a file or generated body worth keeping.
 It records:
 
 - target record
-- kind: `patch`, `log`, `report`, `plot`, `dataset`, `other`
+- kind: `log`, `report`, `patch`, `chart`, `dataset`, `note`
 - title
-- path
+- URI
 - source commit, when the artifact was produced from an experiment worktree
 - media type
-- optional body markdown
+- summary markdown
 
 Artifacts store bulky evidence outside normal comments.
 
@@ -503,10 +501,8 @@ It records:
 
 - display name
 - role profile
-- model
+- instructions markdown
 - status
-- remote Claude agent id
-- default task filters
 
 Roles are product behavior, not a TypeScript state machine. A scientist is an
 agent whose instructions and task filters make it good at experiment tasks.
@@ -1145,6 +1141,9 @@ projects/app/src/
   actions/
 
 projects/app/packages/
+  agents/
+  agent-sessions/
+  artifacts/
   projects/
   tasks/
   comments/
@@ -1152,12 +1151,10 @@ projects/app/packages/
   experiments/
   measurements/
   reviews/
-  artifacts/
-  agents/
-  agent-sessions/
   events/
   worktrees/
   common/
+  errors/
 ```
 
 Each primitive package owns:

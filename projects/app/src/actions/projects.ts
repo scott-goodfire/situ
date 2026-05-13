@@ -13,7 +13,9 @@ export type CreateProjectActionInput = {
   repositories: AppRepositories;
 };
 
-/** Creates a project as the top-level human goal and answer container. */
+/**
+ * Creates a project.
+ */
 export const createProjectAction = ({
   createId,
   input,

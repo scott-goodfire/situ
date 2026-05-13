@@ -28,6 +28,7 @@ export type NotificationRepository = {
   get(input: NotificationByIdInput): NotificationRecord | undefined;
   require(input: NotificationByIdInput): NotificationRecord;
   listRecentByRecipient(input: NotificationByRecipientInput): NotificationRecord[];
+  listWakeable(): NotificationRecord[];
   listWakeableByRecipient(input: NotificationByRecipientInput): NotificationRecord[];
   update(input: NotificationWriteInput): NotificationRecord;
 };
@@ -76,7 +77,9 @@ const decodeNotification = ({ row }: NotificationRowInput): NotificationRecord =
   createdAt: row.createdAt,
 });
 
-/** Creates the repository for notification persistence. */
+/**
+ * Creates a notification repository.
+ */
 export const createNotificationRepository = ({
   db,
 }: CreateNotificationRepositoryInput): NotificationRepository => {
@@ -141,6 +144,24 @@ export const createNotificationRepository = ({
         .select()
         .from(notifications)
         .where(eq(notifications.recipientActorId, recipientId))
+        .orderBy(desc(notifications.createdAt))
+        .all()
+        .map((row) => decodeNotification({ row }));
+    },
+
+    listWakeable() {
+      const timestamp = nowIso();
+
+      return db
+        .select()
+        .from(notifications)
+        .where(
+          and(
+            isNull(notifications.readAt),
+            isNull(notifications.dismissedAt),
+            or(isNull(notifications.snoozedUntil), lte(notifications.snoozedUntil, timestamp)),
+          ),
+        )
         .orderBy(desc(notifications.createdAt))
         .all()
         .map((row) => decodeNotification({ row }));

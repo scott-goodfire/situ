@@ -9,7 +9,9 @@ export type BaseErrorInput = {
   message: string;
 };
 
-/** Base class for all structured Situ application errors. */
+/**
+ * Base class for structured application errors.
+ */
 export class BaseError extends Error {
   readonly details?: ErrorDetails;
   readonly kind: ErrorKind;

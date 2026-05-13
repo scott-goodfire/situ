@@ -1,6 +1,8 @@
 import { eq } from "drizzle-orm";
 import type { BunSQLiteDatabase } from "drizzle-orm/bun-sqlite";
 
+import { NotFoundError } from "@situ/errors";
+
 import { comments, type CommentRow, type NewCommentRow } from "../schema";
 import type { CommentRecord } from "../types";
 
@@ -24,6 +26,7 @@ export type CommentRepository = {
   create(input: CommentWriteInput): CommentRecord;
   get(input: CommentByIdInput): CommentRecord | undefined;
   listByTarget(input: CommentsByTargetInput): CommentRecord[];
+  require(input: CommentByIdInput): CommentRecord;
 };
 
 type CommentRecordInput = {
@@ -62,31 +65,53 @@ const decodeComment = ({ row }: CommentRowInput): CommentRecord => ({
   updatedAt: row.updatedAt,
 });
 
-/** Creates the repository for comment persistence. */
+/**
+ * Creates a comment repository.
+ */
 export const createCommentRepository = ({
   db,
-}: CreateCommentRepositoryInput): CommentRepository => ({
-  create({ comment }) {
-    db.insert(comments).values(encodeComment({ comment })).run();
-    return comment;
-  },
+}: CreateCommentRepositoryInput): CommentRepository => {
+  const repository: CommentRepository = {
+    create({ comment }) {
+      db.insert(comments).values(encodeComment({ comment })).run();
+      return comment;
+    },
 
-  get({ id }) {
-    const row = db.select().from(comments).where(eq(comments.id, id)).get();
+    get({ id }) {
+      const row = db.select().from(comments).where(eq(comments.id, id)).get();
 
-    if (row === undefined) {
-      return undefined;
-    }
+      if (row === undefined) {
+        return undefined;
+      }
 
-    return decodeComment({ row });
-  },
+      return decodeComment({ row });
+    },
 
-  listByTarget({ targetId }) {
-    return db
-      .select()
-      .from(comments)
-      .where(eq(comments.targetId, targetId))
-      .all()
-      .map((row) => decodeComment({ row }));
-  },
-});
+    listByTarget({ targetId }) {
+      return db
+        .select()
+        .from(comments)
+        .where(eq(comments.targetId, targetId))
+        .all()
+        .map((row) => decodeComment({ row }));
+    },
+
+    require({ id }) {
+      const comment = repository.get({ id });
+
+      if (comment !== undefined) {
+        return comment;
+      }
+
+      throw new NotFoundError({
+        details: {
+          id,
+          resource: "Comment",
+        },
+        message: `Comment not found: ${id}`,
+      });
+    },
+  };
+
+  return repository;
+};

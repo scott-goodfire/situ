@@ -16,7 +16,9 @@ export type CreateDatabaseOptions = {
   source?: string;
 };
 
-/** Creates the app SQLite database and installs schema by default. */
+/**
+ * Creates the app SQLite database.
+ */
 export const createDatabase = (input: CreateDatabaseOptions = {}): AppDatabase => {
   const source = input.source ?? process.env.SITU_DATABASE_PATH ?? ".situ/situ.sqlite";
 
@@ -37,7 +39,9 @@ export const createDatabase = (input: CreateDatabaseOptions = {}): AppDatabase =
   return db;
 };
 
-/** Creates an in-memory app database for tests and local probes. */
+/**
+ * Creates an in-memory app database.
+ */
 export const createInMemoryDatabase = (): AppDatabase =>
   createDatabase({
     source: ":memory:",

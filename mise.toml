@@ -161,6 +161,36 @@ description = "Collect @situ/errors test coverage"
 dir = "{{ config_root }}/projects/app/packages/errors"
 run = "mise run coverage"
 
+[tasks."app:agents:check"]
+description = "Typecheck @situ/agents"
+dir = "{{ config_root }}/projects/app/packages/agents"
+run = "mise run check"
+
+[tasks."app:agents:test"]
+description = "Run @situ/agents tests"
+dir = "{{ config_root }}/projects/app/packages/agents"
+run = "mise run test"
+
+[tasks."app:agents:coverage"]
+description = "Collect @situ/agents test coverage"
+dir = "{{ config_root }}/projects/app/packages/agents"
+run = "mise run coverage"
+
+[tasks."app:agent-sessions:check"]
+description = "Typecheck @situ/agent-sessions"
+dir = "{{ config_root }}/projects/app/packages/agent-sessions"
+run = "mise run check"
+
+[tasks."app:agent-sessions:test"]
+description = "Run @situ/agent-sessions tests"
+dir = "{{ config_root }}/projects/app/packages/agent-sessions"
+run = "mise run test"
+
+[tasks."app:agent-sessions:coverage"]
+description = "Collect @situ/agent-sessions test coverage"
+dir = "{{ config_root }}/projects/app/packages/agent-sessions"
+run = "mise run coverage"
+
 [tasks."app:common:check"]
 description = "Typecheck @situ/common"
 dir = "{{ config_root }}/projects/app/packages/common"
@@ -204,6 +234,81 @@ run = "mise run test"
 [tasks."app:tasks:coverage"]
 description = "Collect @situ/tasks test coverage"
 dir = "{{ config_root }}/projects/app/packages/tasks"
+run = "mise run coverage"
+
+[tasks."app:experiments:check"]
+description = "Typecheck @situ/experiments"
+dir = "{{ config_root }}/projects/app/packages/experiments"
+run = "mise run check"
+
+[tasks."app:experiments:test"]
+description = "Run @situ/experiments tests"
+dir = "{{ config_root }}/projects/app/packages/experiments"
+run = "mise run test"
+
+[tasks."app:experiments:coverage"]
+description = "Collect @situ/experiments test coverage"
+dir = "{{ config_root }}/projects/app/packages/experiments"
+run = "mise run coverage"
+
+[tasks."app:measurements:check"]
+description = "Typecheck @situ/measurements"
+dir = "{{ config_root }}/projects/app/packages/measurements"
+run = "mise run check"
+
+[tasks."app:measurements:test"]
+description = "Run @situ/measurements tests"
+dir = "{{ config_root }}/projects/app/packages/measurements"
+run = "mise run test"
+
+[tasks."app:measurements:coverage"]
+description = "Collect @situ/measurements test coverage"
+dir = "{{ config_root }}/projects/app/packages/measurements"
+run = "mise run coverage"
+
+[tasks."app:artifacts:check"]
+description = "Typecheck @situ/artifacts"
+dir = "{{ config_root }}/projects/app/packages/artifacts"
+run = "mise run check"
+
+[tasks."app:artifacts:test"]
+description = "Run @situ/artifacts tests"
+dir = "{{ config_root }}/projects/app/packages/artifacts"
+run = "mise run test"
+
+[tasks."app:artifacts:coverage"]
+description = "Collect @situ/artifacts test coverage"
+dir = "{{ config_root }}/projects/app/packages/artifacts"
+run = "mise run coverage"
+
+[tasks."app:reviews:check"]
+description = "Typecheck @situ/reviews"
+dir = "{{ config_root }}/projects/app/packages/reviews"
+run = "mise run check"
+
+[tasks."app:reviews:test"]
+description = "Run @situ/reviews tests"
+dir = "{{ config_root }}/projects/app/packages/reviews"
+run = "mise run test"
+
+[tasks."app:reviews:coverage"]
+description = "Collect @situ/reviews test coverage"
+dir = "{{ config_root }}/projects/app/packages/reviews"
+run = "mise run coverage"
+
+[tasks."app:worktrees:check"]
+description = "Typecheck @situ/worktrees"
+dir = "{{ config_root }}/projects/app/packages/worktrees"
+run = "mise run check"
+
+[tasks."app:worktrees:test"]
+description = "Run @situ/worktrees tests"
+dir = "{{ config_root }}/projects/app/packages/worktrees"
+run = "mise run test"
+
+[tasks."app:worktrees:coverage"]
+description = "Collect @situ/worktrees test coverage"
+dir = "{{ config_root }}/projects/app/packages/worktrees"
 run = "mise run coverage"
 
 [tasks."app:comments:check"]

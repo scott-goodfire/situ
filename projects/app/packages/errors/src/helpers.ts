@@ -14,11 +14,15 @@ export type StructuredErrorInput = {
   value: BaseError;
 };
 
-/** Returns true when a value is a structured Situ application error. */
+/**
+ * Checks whether a value is a structured application error.
+ */
 export const isBaseError = (input: IsBaseErrorInput): input is StructuredErrorInput =>
   input.value instanceof BaseError;
 
-/** Converts unknown thrown values into small serializable details. */
+/**
+ * Builds serializable error details.
+ */
 export const toErrorDetails = (input: ToErrorDetailsInput): ErrorDetails => {
   if (isBaseError(input)) {
     const error = input.value;

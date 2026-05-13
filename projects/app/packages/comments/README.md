@@ -7,6 +7,7 @@ Markdown handoff attached to visible product records.
 ```bash
 mise run check
 mise run test
+mise run coverage
 ```
 
 ## Purpose

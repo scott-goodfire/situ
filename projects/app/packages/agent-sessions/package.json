@@ -1,0 +1,22 @@
+{
+  "name": "@situ/agent-sessions",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "check": "tsgo -b tsconfig.json --pretty false",
+    "test": "bun test",
+    "coverage": "bun test --coverage --coverage-reporter=text --coverage-reporter=lcov --coverage-dir ../../../../.coverage/app/agent-sessions"
+  },
+  "dependencies": {
+    "@situ/common": "workspace:*",
+    "@situ/errors": "workspace:*",
+    "drizzle-orm": "catalog:"
+  },
+  "devDependencies": {
+    "@types/bun": "catalog:"
+  }
+}

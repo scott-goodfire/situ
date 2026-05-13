@@ -36,7 +36,9 @@ export type IsWakeableNotificationInput = {
   now?: IsoTimestamp;
 };
 
-/** Returns whether a notification should wake its recipient now. */
+/**
+ * Returns whether a notification can wake its recipient.
+ */
 export const isWakeableNotification = ({
   notification,
   now = nowIso(),

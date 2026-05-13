@@ -1,11 +1,17 @@
 import { eq } from "drizzle-orm";
 import type { BunSQLiteDatabase } from "drizzle-orm/bun-sqlite";
 
+import { NotFoundError } from "@situ/errors";
+
 import { events, type EventRow, type NewEventRow } from "../schema";
 import type { EventRecord } from "../types";
 
 export type CreateEventRepositoryInput = {
   db: BunSQLiteDatabase<Record<string, unknown>>;
+};
+
+export type EventByIdInput = {
+  id: string;
 };
 
 export type EventsByTargetInput = {
@@ -18,7 +24,9 @@ export type EventWriteInput = {
 
 export type EventRepository = {
   create(input: EventWriteInput): EventRecord;
+  get(input: EventByIdInput): EventRecord | undefined;
   listByTarget(input: EventsByTargetInput): EventRecord[];
+  require(input: EventByIdInput): EventRecord;
 };
 
 type EventRecordInput = {
@@ -57,19 +65,51 @@ const decodeEvent = ({ row }: EventRowInput): EventRecord => ({
   createdAt: row.createdAt,
 });
 
-/** Creates the repository for event persistence. */
-export const createEventRepository = ({ db }: CreateEventRepositoryInput): EventRepository => ({
-  create({ event }) {
-    db.insert(events).values(encodeEvent({ event })).run();
-    return event;
-  },
+/**
+ * Creates an event repository.
+ */
+export const createEventRepository = ({ db }: CreateEventRepositoryInput): EventRepository => {
+  const repository: EventRepository = {
+    create({ event }) {
+      db.insert(events).values(encodeEvent({ event })).run();
+      return event;
+    },
 
-  listByTarget({ targetId }) {
-    return db
-      .select()
-      .from(events)
-      .where(eq(events.targetId, targetId))
-      .all()
-      .map((row) => decodeEvent({ row }));
-  },
-});
+    get({ id }) {
+      const row = db.select().from(events).where(eq(events.id, id)).get();
+
+      if (row === undefined) {
+        return undefined;
+      }
+
+      return decodeEvent({ row });
+    },
+
+    listByTarget({ targetId }) {
+      return db
+        .select()
+        .from(events)
+        .where(eq(events.targetId, targetId))
+        .all()
+        .map((row) => decodeEvent({ row }));
+    },
+
+    require({ id }) {
+      const event = repository.get({ id });
+
+      if (event !== undefined) {
+        return event;
+      }
+
+      throw new NotFoundError({
+        details: {
+          id,
+          resource: "Event",
+        },
+        message: `Event not found: ${id}`,
+      });
+    },
+  };
+
+  return repository;
+};

@@ -7,6 +7,7 @@ Human-level goals, summaries, and project status.
 ```bash
 mise run check
 mise run test
+mise run coverage
 ```
 
 ## Purpose
@@ -16,8 +17,8 @@ and answer records for a local autoresearch run.
 
 ## Record Shape
 
-The initial type surface is in `src/types.ts`. Persistence arrives in the first
-backend vertical slice.
+The package owns project types, schema, repository behavior, sync prefix, and
+boundary tests.
 
 ## App-Owned Behavior
 

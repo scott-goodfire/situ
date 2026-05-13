@@ -7,6 +7,16 @@ import { createTaskRepository } from ".";
 test("creates, lists, and updates tasks", () => {
   const db = drizzle(new Database(":memory:"));
   db.run(`
+    CREATE TABLE labels (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      color TEXT,
+      archived_at TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    )
+  `);
+  db.run(`
     CREATE TABLE tasks (
       id TEXT PRIMARY KEY,
       project_id TEXT NOT NULL,
@@ -31,6 +41,15 @@ test("creates, lists, and updates tasks", () => {
   `);
 
   const tasks = createTaskRepository({ db });
+  const label = tasks.createLabel({
+    label: {
+      id: "label_1",
+      name: "risk:high",
+      color: "red",
+      createdAt: "2026-05-12T00:00:00.000Z",
+      updatedAt: "2026-05-12T00:00:00.000Z",
+    },
+  });
   const created = tasks.create({
     task: {
       bodyMarkdown: "Try the candidate.",
@@ -51,6 +70,8 @@ test("creates, lists, and updates tasks", () => {
     },
   });
 
+  expect(tasks.requireLabel({ id: label.id }).name).toBe("risk:high");
+  expect(tasks.listLabels()).toHaveLength(1);
   expect(tasks.listByProject({ projectId: "project_1" })).toHaveLength(1);
   expect(tasks.require({ id: created.id }).labelIds).toEqual(["label_1"]);
   expect(

@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@situ/common": "workspace:*",
+    "@situ/errors": "workspace:*",
     "drizzle-orm": "catalog:"
   },
   "devDependencies": {

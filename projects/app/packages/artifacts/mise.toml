@@ -1,0 +1,14 @@
+[tasks.check]
+description = "Typecheck @situ/artifacts"
+dir = "{{ config_root }}"
+run = "bun run check"
+
+[tasks.test]
+description = "Run @situ/artifacts tests"
+dir = "{{ config_root }}"
+run = "bun run test"
+
+[tasks.coverage]
+description = "Collect @situ/artifacts test coverage"
+dir = "{{ config_root }}"
+run = "bun run coverage"

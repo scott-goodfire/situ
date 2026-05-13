@@ -1,6 +1,6 @@
 ---
 status: accepted
-implementation_status: not_started
+implementation_status: verified
 created: 2026-05-12
 ---
 

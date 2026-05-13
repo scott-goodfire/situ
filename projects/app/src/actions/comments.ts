@@ -13,7 +13,9 @@ export type AddCommentInput = {
   repositories: AppRepositories;
 };
 
-/** Creates a markdown comment and records visible activity. */
+/**
+ * Creates a comment.
+ */
 export const addComment = ({
   createId,
   input,

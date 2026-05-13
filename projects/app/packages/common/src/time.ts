@@ -20,7 +20,9 @@ export type ToIsoTimestampInput = {
   dateTime: DateTime;
 };
 
-/** Converts a Luxon timestamp to the persistence ISO format. */
+/**
+ * Formats a timestamp as ISO.
+ */
 export const toIsoTimestamp = ({ dateTime }: ToIsoTimestampInput): IsoTimestamp => {
   const timestamp = dateTime.toUTC().toISO();
 
@@ -31,17 +33,23 @@ export const toIsoTimestamp = ({ dateTime }: ToIsoTimestampInput): IsoTimestamp 
   return dateTime.toUTC().toJSDate().toISOString();
 };
 
-/** Returns the current UTC timestamp in the persistence ISO format. */
+/**
+ * Returns the current UTC ISO timestamp.
+ */
 export const nowIso = ({ now = DateTime.utc() }: NowIsoInput = {}): IsoTimestamp =>
   toIsoTimestamp({ dateTime: now });
 
-/** Adds a Luxon duration to an ISO timestamp. */
+/**
+ * Adds a duration to an ISO timestamp.
+ */
 export const addDurationToIso = ({ duration, timestamp }: AddDurationInput): IsoTimestamp =>
   toIsoTimestamp({
     dateTime: DateTime.fromISO(timestamp, { zone: "utc" }).plus(duration),
   });
 
-/** Compares two ISO timestamps using Luxon parsing. */
+/**
+ * Compares two ISO timestamps.
+ */
 export const isIsoAtOrBefore = ({ left, right }: IsIsoAtOrBeforeInput): boolean =>
   DateTime.fromISO(left, { zone: "utc" }).toMillis() <=
   DateTime.fromISO(right, { zone: "utc" }).toMillis();
