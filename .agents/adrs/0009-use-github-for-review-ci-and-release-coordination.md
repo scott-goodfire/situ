@@ -47,4 +47,4 @@ is defined by the distribution ADR and release scripts.
 
 - ADR 0007: Use Mise As The Repo Command Surface
 - ADR 0010: Build Installable Local CLI Release Artifacts
-- ADR 0027: Model Experiments As PR-Like Candidate Branches
+- ADR 0032: Model Experiments As PR-Like Candidate Branches

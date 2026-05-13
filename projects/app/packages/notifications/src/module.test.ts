@@ -8,8 +8,20 @@ test("exports notification module metadata", () => {
 });
 
 test("wakeable notifications are unread, undismissed, and unsnoozed", () => {
-  expect(isWakeableNotification({ readAt: undefined, dismissedAt: undefined })).toBe(true);
   expect(
-    isWakeableNotification({ readAt: "2026-05-12T00:00:00.000Z", dismissedAt: undefined }),
+    isWakeableNotification({
+      notification: {
+        readAt: undefined,
+        dismissedAt: undefined,
+      },
+    }),
+  ).toBe(true);
+  expect(
+    isWakeableNotification({
+      notification: {
+        readAt: "2026-05-12T00:00:00.000Z",
+        dismissedAt: undefined,
+      },
+    }),
   ).toBe(false);
 });

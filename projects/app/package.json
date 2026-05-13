@@ -6,17 +6,20 @@
   "scripts": {
     "app": "bun run src/cli.ts",
     "check": "tsgo -b tsconfig.json --pretty false",
-    "test": "bun test",
+    "test": "bun test src",
+    "coverage": "bun test src --coverage --coverage-reporter=text --coverage-reporter=lcov --coverage-dir ../../.coverage/app",
     "db:generate": "bun run src/cli.ts db generate",
     "db:migrate": "bun run src/cli.ts db migrate"
   },
   "dependencies": {
     "@situ/comments": "workspace:*",
     "@situ/common": "workspace:*",
+    "@situ/errors": "workspace:*",
     "@situ/events": "workspace:*",
     "@situ/notifications": "workspace:*",
     "@situ/projects": "workspace:*",
     "@situ/tasks": "workspace:*",
+    "drizzle-orm": "catalog:",
     "hono": "catalog:"
   },
   "devDependencies": {

@@ -8,10 +8,13 @@
   },
   "scripts": {
     "check": "tsgo -b tsconfig.json --pretty false",
-    "test": "bun test"
+    "test": "bun test",
+    "coverage": "bun test --coverage --coverage-reporter=text --coverage-reporter=lcov --coverage-dir ../../../../.coverage/app/projects"
   },
   "dependencies": {
-    "@situ/common": "workspace:*"
+    "@situ/common": "workspace:*",
+    "@situ/errors": "workspace:*",
+    "drizzle-orm": "catalog:"
   },
   "devDependencies": {
     "@types/bun": "catalog:"

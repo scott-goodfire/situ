@@ -13,6 +13,7 @@
     "paths": {
       "@situ/comments": ["./projects/app/packages/comments/src/index.ts"],
       "@situ/common": ["./projects/app/packages/common/src/index.ts"],
+      "@situ/errors": ["./projects/app/packages/errors/src/index.ts"],
       "@situ/events": ["./projects/app/packages/events/src/index.ts"],
       "@situ/notifications": ["./projects/app/packages/notifications/src/index.ts"],
       "@situ/projects": ["./projects/app/packages/projects/src/index.ts"],

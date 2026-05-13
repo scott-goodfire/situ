@@ -23,6 +23,11 @@ description = "Run deterministic unit tests"
 dir = "{{ config_root }}"
 run = "bash scripts/test.sh"
 
+[tasks.coverage]
+description = "Collect repo test coverage"
+dir = "{{ config_root }}"
+run = "bash scripts/coverage.sh"
+
 [tasks.lint]
 description = "Run oxlint across the repo"
 dir = "{{ config_root }}"
@@ -62,6 +67,11 @@ run = 'actionlint "$@"'
 description = "Lint the slim .agents meta layer"
 dir = "{{ config_root }}"
 run = "bash scripts/lint-policies.sh"
+
+[tasks."lint:errors"]
+description = "Reject unstructured product errors"
+dir = "{{ config_root }}"
+run = "bash scripts/lint-errors.sh"
 
 [tasks.fallow]
 description = "Run Fallow codebase intelligence"
@@ -131,6 +141,26 @@ description = "Run app project tests"
 dir = "{{ config_root }}/projects/app"
 run = "mise run test"
 
+[tasks."app:coverage"]
+description = "Collect app project test coverage"
+dir = "{{ config_root }}/projects/app"
+run = "mise run coverage"
+
+[tasks."app:errors:check"]
+description = "Typecheck @situ/errors"
+dir = "{{ config_root }}/projects/app/packages/errors"
+run = "mise run check"
+
+[tasks."app:errors:test"]
+description = "Run @situ/errors tests"
+dir = "{{ config_root }}/projects/app/packages/errors"
+run = "mise run test"
+
+[tasks."app:errors:coverage"]
+description = "Collect @situ/errors test coverage"
+dir = "{{ config_root }}/projects/app/packages/errors"
+run = "mise run coverage"
+
 [tasks."app:common:check"]
 description = "Typecheck @situ/common"
 dir = "{{ config_root }}/projects/app/packages/common"
@@ -140,6 +170,11 @@ run = "mise run check"
 description = "Run @situ/common tests"
 dir = "{{ config_root }}/projects/app/packages/common"
 run = "mise run test"
+
+[tasks."app:common:coverage"]
+description = "Collect @situ/common test coverage"
+dir = "{{ config_root }}/projects/app/packages/common"
+run = "mise run coverage"
 
 [tasks."app:projects:check"]
 description = "Typecheck @situ/projects"
@@ -151,6 +186,11 @@ description = "Run @situ/projects tests"
 dir = "{{ config_root }}/projects/app/packages/projects"
 run = "mise run test"
 
+[tasks."app:projects:coverage"]
+description = "Collect @situ/projects test coverage"
+dir = "{{ config_root }}/projects/app/packages/projects"
+run = "mise run coverage"
+
 [tasks."app:tasks:check"]
 description = "Typecheck @situ/tasks"
 dir = "{{ config_root }}/projects/app/packages/tasks"
@@ -160,6 +200,11 @@ run = "mise run check"
 description = "Run @situ/tasks tests"
 dir = "{{ config_root }}/projects/app/packages/tasks"
 run = "mise run test"
+
+[tasks."app:tasks:coverage"]
+description = "Collect @situ/tasks test coverage"
+dir = "{{ config_root }}/projects/app/packages/tasks"
+run = "mise run coverage"
 
 [tasks."app:comments:check"]
 description = "Typecheck @situ/comments"
@@ -171,6 +216,11 @@ description = "Run @situ/comments tests"
 dir = "{{ config_root }}/projects/app/packages/comments"
 run = "mise run test"
 
+[tasks."app:comments:coverage"]
+description = "Collect @situ/comments test coverage"
+dir = "{{ config_root }}/projects/app/packages/comments"
+run = "mise run coverage"
+
 [tasks."app:notifications:check"]
 description = "Typecheck @situ/notifications"
 dir = "{{ config_root }}/projects/app/packages/notifications"
@@ -181,6 +231,11 @@ description = "Run @situ/notifications tests"
 dir = "{{ config_root }}/projects/app/packages/notifications"
 run = "mise run test"
 
+[tasks."app:notifications:coverage"]
+description = "Collect @situ/notifications test coverage"
+dir = "{{ config_root }}/projects/app/packages/notifications"
+run = "mise run coverage"
+
 [tasks."app:events:check"]
 description = "Typecheck @situ/events"
 dir = "{{ config_root }}/projects/app/packages/events"
@@ -190,6 +245,11 @@ run = "mise run check"
 description = "Run @situ/events tests"
 dir = "{{ config_root }}/projects/app/packages/events"
 run = "mise run test"
+
+[tasks."app:events:coverage"]
+description = "Collect @situ/events test coverage"
+dir = "{{ config_root }}/projects/app/packages/events"
+run = "mise run coverage"
 
 [tasks."db:generate"]
 description = "Generate Drizzle migrations"

@@ -8,6 +8,7 @@ run_test_step() {
 }
 
 run_test_step "app" mise run app:test
+run_test_step "errors" mise run app:errors:test
 run_test_step "common" mise run app:common:test
 run_test_step "projects" mise run app:projects:test
 run_test_step "tasks" mise run app:tasks:test

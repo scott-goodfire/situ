@@ -8,6 +8,11 @@ description = "Run app project tests"
 dir = "{{ config_root }}"
 run = "bun run test"
 
+[tasks.coverage]
+description = "Collect app project test coverage"
+dir = "{{ config_root }}"
+run = "bun run coverage"
+
 [tasks.app]
 description = "Run the app CLI"
 dir = "{{ config_root }}"

@@ -1,0 +1,21 @@
+{
+  "name": "@situ/errors",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "check": "tsgo -b tsconfig.json --pretty false",
+    "test": "bun test",
+    "coverage": "bun test --coverage --coverage-reporter=text --coverage-reporter=lcov --coverage-dir ../../../../.coverage/app/errors"
+  },
+  "dependencies": {
+    "lodash": "catalog:"
+  },
+  "devDependencies": {
+    "@types/bun": "catalog:",
+    "@types/lodash": "catalog:"
+  }
+}

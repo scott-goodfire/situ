@@ -1,3 +1,4 @@
+import { isIsoAtOrBefore, nowIso } from "@situ/common";
 import type { ActorRef, IsoTimestamp, TargetRef } from "@situ/common";
 
 export const NOTIFICATION_TYPES = [
@@ -30,10 +31,16 @@ export type WakeableNotificationState = Pick<
   "dismissedAt" | "readAt" | "snoozedUntil"
 >;
 
-export const isWakeableNotification = (
-  notification: WakeableNotificationState,
-  now: Date = new Date(),
-): boolean => {
+export type IsWakeableNotificationInput = {
+  notification: WakeableNotificationState;
+  now?: IsoTimestamp;
+};
+
+/** Returns whether a notification should wake its recipient now. */
+export const isWakeableNotification = ({
+  notification,
+  now = nowIso(),
+}: IsWakeableNotificationInput): boolean => {
   if (notification.readAt !== undefined || notification.dismissedAt !== undefined) {
     return false;
   }
@@ -42,5 +49,8 @@ export const isWakeableNotification = (
     return true;
   }
 
-  return Date.parse(notification.snoozedUntil) <= now.getTime();
+  return isIsoAtOrBefore({
+    left: notification.snoozedUntil,
+    right: now,
+  });
 };

@@ -7,3 +7,8 @@ run = "bun run check"
 description = "Run @situ/events tests"
 dir = "{{ config_root }}"
 run = "bun run test"
+
+[tasks.coverage]
+description = "Collect @situ/events test coverage"
+dir = "{{ config_root }}"
+run = "bun run coverage"

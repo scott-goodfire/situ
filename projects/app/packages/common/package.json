@@ -8,9 +8,14 @@
   },
   "scripts": {
     "check": "tsgo -b tsconfig.json --pretty false",
-    "test": "bun test"
+    "test": "bun test",
+    "coverage": "bun test --coverage --coverage-reporter=text --coverage-reporter=lcov --coverage-dir ../../../../.coverage/app/common"
+  },
+  "dependencies": {
+    "luxon": "catalog:"
   },
   "devDependencies": {
-    "@types/bun": "catalog:"
+    "@types/bun": "catalog:",
+    "@types/luxon": "catalog:"
   }
 }

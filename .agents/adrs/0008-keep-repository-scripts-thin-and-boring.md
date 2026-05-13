@@ -52,4 +52,4 @@ they should still be deterministic, environment-driven, and smoke-testable.
 
 - ADR 0007: Use Mise As The Repo Command Surface
 - ADR 0010: Build Installable Local CLI Release Artifacts
-- ADR 0012: Keep Agent Skills And Policies Slim
+- ADR 0017: Keep Agent Skills And Policies Slim

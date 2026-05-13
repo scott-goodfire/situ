@@ -61,4 +61,4 @@ project has a stable baseline.
 
 - ADR 0007: Use Mise As The Repo Command Surface
 - ADR 0008: Keep Repository Scripts Thin And Boring
-- ADR 0035: Test Packages At Their Boundaries
+- ADR 0040: Test Packages At Their Boundaries
