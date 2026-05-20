@@ -1,9 +1,0 @@
-{
-  "name": "@situ/web-design-tokens",
-  "version": "0.0.1",
-  "private": true,
-  "type": "module",
-  "exports": {
-    "./styles.css": "./src/styles.css"
-  }
-}
